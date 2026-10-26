@@ -52,7 +52,7 @@ describe('GitHub workflows', () => {
 
 describe('repo hygiene', () => {
   it('.gitignore does not ignore required files', () => {
-    const files = ['public/icons/icon-192.png', 'public/manifest.webmanifest', 'public/.nojekyll', 'public/fonts/OFL.txt', '.weave/plans/slope-tycoon.md', '.weave/learnings/slope-tycoon.md', 'package.json', 'src/main.ts', '.github/workflows/pages.yml', '.nvmrc'];
+    const files = ['public/icons/icon-192.png', 'public/manifest.webmanifest', 'public/.nojekyll', 'public/fonts/OFL.txt', 'package.json', 'src/main.ts', '.github/workflows/pages.yml', '.nvmrc'];
     for (const f of files) {
       let ignored = true;
       try { execFileSync('git', ['check-ignore', '-q', f]); } catch { ignored = false; }
@@ -60,7 +60,7 @@ describe('repo hygiene', () => {
     }
   });
   it('.gitignore ignores build output and screenshots', () => {
-    for (const f of ['dist/index.html', 'node_modules/x', '.weave/shots/a.png']) expect(() => execFileSync('git', ['check-ignore', '-q', f])).not.toThrow();
+    for (const f of ['dist/index.html', 'node_modules/x', '.weave/shots/a.png', '.weave/plans/x.md']) expect(() => execFileSync('git', ['check-ignore', '-q', f])).not.toThrow();
   });
   it('.nojekyll is shipped from public/ and not in the precache list', () => {
     expect(existsSync('public/.nojekyll')).toBe(true);

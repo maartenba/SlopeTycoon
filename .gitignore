@@ -25,3 +25,6 @@ site/shots-raw/
 *.tsbuildinfo
 # raw/unoptimised captures never go in docs/img (policy: docs/visual-qa.md "docs/img policy"); keepers are WebP via npm run docs:img
 docs/img/raw/
+
+# agent working folder (kept locally, not tracked)
+.weave/
