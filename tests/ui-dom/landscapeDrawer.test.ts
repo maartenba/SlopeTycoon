@@ -54,7 +54,7 @@ describe('Landscape drawer', () => {
     expect(card(dock, 'Dig pond').classList.contains('active')).toBe(true); // selected state = the shared card state
     expect(card(dock, 'Dig pond').querySelector('.num')?.textContent).toBe('1'); // key badge
     expect(card(dock, 'Dig pond').querySelector('.pr')?.textContent).toMatch(/\$\d+\/tile/);
-    expect(Array.from(root(dock).querySelectorAll('.tabs button')).map((b) => b.getAttribute('data-tab'))).toEqual(['water', 'terrain', 'nature', 'decor']);
+    expect(Array.from(root(dock).querySelectorAll('.tabs button')).map((b) => b.getAttribute('data-tab'))).toEqual(['water', 'nature', 'decor']);
     dock.remove();
   });
 
@@ -66,13 +66,11 @@ describe('Landscape drawer', () => {
     dock.remove();
   });
 
-  it('Terrain tab drives the terraform tool; Nature tab has trees + boulders; Decor tab lists every piece', () => {
+  it('there is no Terrain tab here (the Terrain drawer owns terraforming); Nature tab has trees + boulders; Decor tab lists every piece', () => {
     const { dock, log } = mount();
     dock.show('landscape');
-    tab(dock, 'terrain').click();
-    expect(log).toContain('activateTerraform');
-    card(dock, 'Smooth').click();
-    expect(log).toContain('terraform:smooth');
+    expect(root(dock).querySelector('.tabs button[data-tab="terrain"]')).toBeNull();
+    expect(root(dock).querySelectorAll('button[data-drawer="terrain"]').length).toBe(1);
     tab(dock, 'nature').click();
     const nat = (root(dock).textContent ?? '');
     expect(nat).toContain('Plant trees'); expect(nat).toContain('Boulders');
@@ -89,7 +87,7 @@ describe('Landscape drawer', () => {
   it('uses the shared card grid and controls of the other drawers (no one-off layout)', () => {
     const { dock } = mount();
     dock.show('landscape');
-    for (const t of ['water', 'terrain', 'nature', 'decor']) {
+    for (const t of ['water', 'nature', 'decor']) {
       tab(dock, t).click();
       expect(root(dock).querySelector('.body .rail .grid')).not.toBeNull();
       expect(cards(dock).length).toBeGreaterThan(1);

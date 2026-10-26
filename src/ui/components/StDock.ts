@@ -3,7 +3,7 @@ import { BUILDINGS } from '@/config/buildings';
 import { LIFTS, type LiftKind } from '@/config/lifts';
 import { OVERLAY_LABELS, OVERLAY_MODES, type OverlayMode } from '@/sim/Coverage';
 import { SEASON_CENTERS } from '@/render/Season';
-import { TERRAFORM_BRUSH_MAX, TERRAFORM_COST_PER_HALF_STEP } from '@/config/balance';
+import { TERRAFORM_BRUSH_MAX } from '@/config/balance';
 import type { SeasonId } from '@/core/events';
 import type { TerraformMode, TerraformTarget } from '@/build/TerraformTool';
 import { PISTE_COST_PER_TILE } from '@/world/Networks';
@@ -166,8 +166,10 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
 };
 
 interface LandItem { id: string; name: string; icon: string; price: string; key?: string; desc: string; stats: ReadonlyArray<readonly string[]>; rules: string[]; lock?: () => string | null; run(): void; on(): boolean }
-type LandTab = 'water' | 'terrain' | 'nature' | 'decor';
-const LAND_TABS: ReadonlyArray<{ id: LandTab; label: string; icon: string }> = [{ id: 'water', label: 'Water', icon: '💧' }, { id: 'terrain', label: 'Terrain', icon: '⛰️' }, { id: 'nature', label: 'Nature', icon: '🌲' }, { id: 'decor', label: 'Decor', icon: '🪴' }];
+/** Emoji text, or a trusted inline `<svg>` string from config (no emoji exists for a park bench / street lamp). */
+function setIcon(node: HTMLElement, ic: string): void { if (ic.startsWith('<svg')) node.innerHTML = ic; else node.textContent = ic; }
+type LandTab = 'water' | 'nature' | 'decor';
+const LAND_TABS: ReadonlyArray<{ id: LandTab; label: string; icon: string }> = [{ id: 'water', label: 'Water', icon: '💧' }, { id: 'nature', label: 'Nature', icon: '🌲' }, { id: 'decor', label: 'Decor', icon: '🪴' }];
 
 /** Bottom tool dock: category buttons; ONE drawer slides up above it. Absorbs the former toolbar/network/lift/build/overlay panels. */
 export class StDock extends StElement {
@@ -548,7 +550,7 @@ export class StDock extends StElement {
   private thumbEl(kind: 'building' | 'lift' | null, id: string, icon: string, size: number): HTMLElement {
     const t = el('div', 'thumb');
     if (kind) { this.cur?.thumbs.push({ img: t, kind, id, size, icon }); this.fillThumb(t, kind, id, icon, size); }
-    else t.textContent = icon;
+    else setIcon(t, icon);
     return t;
   }
 
@@ -735,7 +737,7 @@ export class StDock extends StElement {
       this.infoThumbKey = tk;
       this.infoThumb.textContent = '';
       if (meta.kind) this.fillThumb(this.infoThumb, meta.kind, m.id, m.icon, 96);
-      else this.infoThumb.textContent = m.icon;
+      else setIcon(this.infoThumb, m.icon);
     }
     const head: HTMLElement[] = [el('h4', '', m.title)];
     if (m.note) head.push(el('div', 'lockn', `🔒 ${m.note}`));
@@ -849,7 +851,6 @@ export class StDock extends StElement {
     if (!api) return;
     switch (this.landTab) {
       case 'water': api.landscape?.activate(api.landscape.state().mode === 'fill' ? 'fill' : 'pond'); break;
-      case 'terrain': api.activateTerraform(); break;
       case 'nature': { const m = api.landscape?.state().mode; if (m === 'rock' || m === 'rockClear') api.landscape?.activate(m); else api.nature?.setMode(api.nature.state().mode); break; }
       case 'decor': { const m = api.landscape?.state().mode; api.landscape?.activate(m === 'decorClear' ? 'decorClear' : 'decor'); break; }
     }
@@ -861,19 +862,13 @@ export class StDock extends StElement {
     if (!ls) return [];
     const m = ls.multiplier(), usd = (n: number): string => `$${Math.round(n * m)}`;
     const onLand = (mode: LandscapeMode): boolean => this.tool === 'landscape' && ls.state().mode === mode;
-    const t = api.terraform, nat = api.nature;
+    const nat = api.nature;
     switch (tab) {
       case 'water': return [
         { id: 'pond', name: 'Dig pond', icon: '💧', price: `${usd(LANDSCAPE.pond.costPerTile)}/tile`, key: '1', desc: 'Dig a pond: drag a rectangle (3–11 tiles) or click for the default size.', stats: [['Cost', `${usd(LANDSCAPE.pond.costPerTile)}/tile + earthworks`], ['Size', '3–11 tiles']],
           rules: [`Nearly level ground, ${LANDSCAPE.pond.waterGap}+ tiles from other water, buildings, pistes and lifts`, 'Freezes over in winter; counts as a lake for beaches and boat rentals'], lock: () => ls.pondLocked(), run: () => ls.activate('pond'), on: () => onLand('pond') && !ls.pondLocked() },
         { id: 'fill', name: 'Fill in', icon: '🪣', price: `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`, key: '2', desc: 'Fill a pond you dug back in to ground level.', stats: [['Cost', `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`]], rules: ['Click a pond you dug', 'Natural lakes cannot be filled'], run: () => ls.activate('fill'), on: () => onLand('fill') },
       ];
-      case 'terrain': return (['raise', 'lower', 'flatten', 'smooth'] as const).map((md, i) => ({
-        id: md, name: md[0]!.toUpperCase() + md.slice(1), icon: (['⬆️', '⬇️', '➖', '〰️'] as const)[i]!, price: `${usd(TERRAFORM_COST_PER_HALF_STEP)}/step`, key: String(i + 1),
-        desc: ({ raise: 'Raise the ground under the brush.', lower: 'Lower the ground under the brush.', flatten: 'Level a rectangle (drag).', smooth: 'Relax bumps and sharp edges.' } as const)[md],
-        stats: [['Cost', `${usd(TERRAFORM_COST_PER_HALF_STEP)} per half-step`]], rules: ['Same tool as the Terrain drawer', 'C: tile / corner target'],
-        run: () => { if (this.tool !== 'terraform') api.activateTerraform(); t.setMode(md); this.landSync?.(); }, on: () => this.tool === 'terraform' && t.state().mode === md,
-      }));
       case 'nature': return [
         ...(nat ? (['plant', 'clear'] as const).map((md, i) => ({
           id: md, name: md === 'plant' ? 'Plant trees' : 'Clear trees', icon: md === 'plant' ? '🌲' : '🪓', price: 'by area', key: String(i + 1),
@@ -901,7 +896,7 @@ export class StDock extends StElement {
 
   /** Side controls of a Landscape tab: the same kind of controls the Pistes drawer has (selects, buttons), never a custom layout. */
   private landControls(tab: LandTab): { node: HTMLElement; sync: () => void } {
-    const api = this.api!, ls = api.landscape!, t = api.terraform, nat = api.nature;
+    const api = this.api!, ls = api.landscape!, nat = api.nature;
     const side = el('div', 'pc'), marks: Array<() => void> = [];
     const range = (lo: number, hi: number, label: string): Array<{ value: string; label: string }> => Array.from({ length: hi - lo + 1 }, (_, i) => ({ value: String(lo + i), label: `${label} ${lo + i}` }));
     const brushSel = (lo: number, hi: number, label: string, get: () => number, set: (n: number) => void): void => {
@@ -913,13 +908,6 @@ export class StDock extends StElement {
     if (tab === 'water') {
       const lo = LANDSCAPE.pond.minExtent, hi = LANDSCAPE.pond.maxExtent;
       brushSel(lo, hi, 'Pond size', () => ls.state().pondSize, (n) => { if (ls.state().mode !== 'pond') ls.activate('pond'); ls.setBrush(n); });
-    } else if (tab === 'terrain') {
-      brushSel(1, TERRAFORM_BRUSH_MAX, 'Brush size', () => t.state().brush, (n) => t.setBrush(n));
-      const tg = makeSelect([{ value: 'tile', label: 'Target: tile' }, { value: 'corner', label: 'Target: corner' }], t.state().target, 'Tile or corner target (C toggles)', (v) => { t.setTarget(v as TerraformTarget); this.landSync?.(); });
-      marks.push(() => { tg.value = t.state().target; });
-      const sl = makeSelect([{ value: '1', label: 'Slope: gentle' }, { value: '2', label: 'Slope: steep' }], String(t.state().maxEdgeDelta ?? 1), 'Max slope between adjacent corners', (v) => t.setMaxEdgeDelta(Number(v) as 1 | 2));
-      sl.title = 'Max slope between adjacent corners';
-      side.append(tg, sl);
     } else if (tab === 'nature') {
       if (nat) {
         const sp = makeSelect(nat.groups.map((g) => ({ value: g.id, label: g.label })), nat.state().group, 'Species group (G cycles)', (v) => { nat.setGroup(v); this.landSync?.(); });
@@ -939,7 +927,6 @@ export class StDock extends StElement {
     const hint = el('div', 'trailnote');
     hint.textContent = ({
       water: 'Drag a rectangle on level ground; [ ] changes the default size. Streams: not available yet.',
-      terrain: 'Same tool as the Terrain drawer. Keys 1–4 mode, [ ] brush, C tile / corner.',
       nature: 'Trees: 1 plant / 2 clear, G species. Boulders: 3 / 4, drag to scatter. [ ] brush.',
       decor: 'Click to place, drag to draw a row; hedges, fences and walls follow the drag. R turns a piece.',
     } as const)[tab];

@@ -1,11 +1,10 @@
 # Landscaping (Landscape drawer)
 
-Answer to *"Should it be possible to create water, like we can plant trees? Some further landscaping would be good."*: yes. The **Landscape** drawer (dock, between Terrain and Bulldoze) has four tabs:
+Answer to *"Should it be possible to create water, like we can plant trees? Some further landscaping would be good."*: yes. The **Landscape** drawer (dock, between Terrain and Bulldoze) has three tabs (terraforming lives only in the separate **Terrain** drawer: no duplicate tab):
 
 | Tab | What it does | Reuses |
 |---|---|---|
 | **Water** | *Dig pond* (drag a rectangle 3-11 tiles, or click for the default size; `[ ]` changes it), *Fill in* (click a pond you dug) | new `LandscapeTool` |
-| **Terrain** | Raise / Lower / Flatten / **Smooth** buttons + brush | the existing `TerraformTool` (same tool as the Terrain drawer; that drawer also has the slope setting) |
 | **Nature** | Plant / Clear trees + species (existing), **Boulders** (paint) and **Remove boulders** | `PlantTool` + `LandscapeTool` |
 | **Decor** | Bench, Lamp post, Flower bed, Hedge, Picket fence, Stone wall, Fountain; eraser; turn | `LandscapeTool` |
 
@@ -35,7 +34,7 @@ Code: `src/config/landscape.ts` (costs / limits / decor catalogue), `src/sim/lan
 
 **Boulders** are ordinary `PropKind.Rock` props (`born = -1`, they never grow), so they are saved with the props, drawn by the rock layer, avoided by walkers like natural rocks and undone with the prop chunk snapshot. Brush 1-4, $25 each (0-2 per tile, deterministic per (seed, tile, day)), removal $12 each; refused on water, slopes > 2.6 and occupied tiles. Natural boulders can be removed too.
 
-**Decor** is one piece per tile (`Landscape.decor`, saved as `[x, y, kind, rot]`). Placing sets the new `OccFlag.Decor` bit, so every existing rule treats the tile as occupied (buildings: *Garden decor in the way*, paths / roads / lifts / piste painting refuse, terraform near it refuses, trees and boulders are not planted on it); the eraser clears it for free. Costs: bench 60, lamp 80, flower bed 40, hedge 30, fence 25, wall 45, fountain 600 (no upkeep). Oriented pieces (bench, flower bed, hedge, fence, wall) follow the **drag direction**, so one stroke along a path edges it; `R` turns them. Needs dry ground (<= 1.6 slope) without trees or rocks on the tile (*Clear the trees or rocks on this tile first*). Meshes are the village decor recipes (`VillageDecor.emit`; flower bed gets a full-tile variant), 3 draw calls, rebuilt only when `landscape.version` changes or terraforming moves the ground. Walk mode collision uses the same `decorCircles` as the village (bench, lamp, hedge, wall, fountain are solid; flower bed and fence are walkable).
+**Decor** is one piece per tile (`Landscape.decor`, saved as `[x, y, kind, rot]`). Placing sets the new `OccFlag.Decor` bit, so every existing rule treats the tile as occupied (buildings: *Garden decor in the way*, paths / roads / lifts / piste painting refuse, terraform near it refuses, trees and boulders are not planted on it); the eraser clears it for free. Costs: bench 60, lamp 80, flower bed 40, hedge 30, fence 25, wall 45, fountain 600 (no upkeep). Oriented pieces (bench, flower bed, hedge, fence, wall) follow the **drag direction**, so one stroke along a path edges it; `R` turns them. Needs dry ground (<= 1.6 slope) without trees or rocks on the tile (*Clear the trees or rocks on this tile first*). Meshes are the village decor recipes (bench = 0.84 x 0.28 slatted park bench with backrest, armrests and iron side frames; lamp = plinth, tapered pole, glowing lantern under a cap; card icons for those two are inline SVG since no emoji fits) (`VillageDecor.emit`; flower bed gets a full-tile variant), 3 draw calls, rebuilt only when `landscape.version` changes or terraforming moves the ground. Walk mode collision uses the same `decorCircles` as the village (bench, lamp, hedge, wall, fountain are solid; flower bed and fence are walkable).
 
 ## Keys, undo, saves, determinism
 

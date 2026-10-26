@@ -186,16 +186,32 @@ export class VillageDecor {
       const y = this.ground(it.x, it.z);
       switch (it.kind) {
         case 'path': plants.push(col(bx(it.w!, 0.025, it.d!), n % 2 ? 0xc9c1ad : 0xb9b29f, it.x, y + 0.012, it.z)); break;
-        case 'lamp':
-          wood.push(col(new THREE.CylinderGeometry(0.03, 0.04, 0.75, 10), 0x2f2a28, it.x, y + 0.375, it.z));
-          wood.push(col(bx(0.12, 0.03, 0.12), 0x2f2a28, it.x, y + 0.77, it.z));
-          glass.push(col(bx(0.09, 0.1, 0.09), 0xffd98a, it.x, y + 0.83, it.z));
+        case 'lamp': { // park lamp: stone plinth, base flare, slim tapered pole, collar, glowing lantern under a pointed cap
+          const IRON = 0x2f2a28, LT = 0x3a3431;
+          wood.push(col(new THREE.CylinderGeometry(0.085, 0.1, 0.07, 8), 0x8d8a82, it.x, y + 0.035, it.z));
+          wood.push(col(new THREE.CylinderGeometry(0.05, 0.07, 0.1, 8), IRON, it.x, y + 0.12, it.z));
+          wood.push(col(new THREE.CylinderGeometry(0.02, 0.034, 0.62, 8), IRON, it.x, y + 0.45, it.z));
+          wood.push(col(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 8), IRON, it.x, y + 0.77, it.z));
+          wood.push(col(bx(0.15, 0.03, 0.15), LT, it.x, y + 0.805, it.z));
+          glass.push(col(bx(0.11, 0.16, 0.11), 0xffd98a, it.x, y + 0.9, it.z));
+          for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) wood.push(col(bx(0.03, 0.16, 0.03), LT, it.x + dx * 0.065, y + 0.9, it.z + dz * 0.065));
+          wood.push(col(new THREE.ConeGeometry(0.13, 0.09, 4), LT, it.x, y + 1.025, it.z, Math.PI / 4));
+          wood.push(col(new THREE.SphereGeometry(0.03, 6, 4), LT, it.x, y + 1.09, it.z));
           break;
-        case 'bench':
-          wood.push(col(bx(0.2, 0.04, 0.6), 0x8b5a2b, it.x, y + 0.2, it.z, it.ry));
-          wood.push(col(bx(0.04, 0.2, 0.6), 0x8b5a2b, it.x + Math.cos(it.ry) * -0.09, y + 0.3, it.z + Math.sin(it.ry) * 0.09, it.ry));
-          for (const s of [-0.24, 0.24]) wood.push(col(bx(0.2, 0.2, 0.04), 0x3b2c20, it.x + Math.sin(it.ry) * s, y + 0.1, it.z + Math.cos(it.ry) * s, it.ry));
+        }
+        case 'bench': { // park bench: long along local z (0.84 x 0.28), slatted seat + two-slat backrest at -x, iron side frames with armrests
+          const c = Math.cos(it.ry), sn = Math.sin(it.ry), W = 0x8b5a2b, W2 = 0x9a6a38, IR = 0x2f2a28;
+          const P = (g: THREE.BufferGeometry, hex: number, lx: number, ly: number, lz: number): void => { wood.push(col(g, hex, it.x + lx * c + lz * sn, y + ly, it.z - lx * sn + lz * c, it.ry)); };
+          [-0.09, 0, 0.09].forEach((lx, i) => P(bx(0.085, 0.03, 0.84), i % 2 ? W2 : W, lx + 0.01, 0.23, 0));
+          P(bx(0.03, 0.07, 0.84), W2, -0.155, 0.34, 0); P(bx(0.03, 0.07, 0.84), W, -0.16, 0.43, 0);
+          for (const lz of [-0.37, 0.37]) {
+            P(bx(0.04, 0.5, 0.04), IR, -0.15, 0.25, lz); // back leg rises into the backrest
+            P(bx(0.04, 0.35, 0.04), IR, 0.11, 0.175, lz); // front leg rises into the armrest
+            P(bx(0.3, 0.03, 0.04), IR, -0.02, 0.07, lz); // foot rail
+            P(bx(0.3, 0.03, 0.05), IR, -0.02, 0.355, lz + Math.sign(lz) * 0.025); // armrest
+          }
           break;
+        }
         case 'planter':
           wood.push(col(bx(0.5, 0.14, 0.26), 0x7a4a24, it.x, y + 0.07, it.z));
           plants.push(col(bx(0.44, 0.04, 0.2), 0x2f6b2f, it.x, y + 0.16, it.z));
@@ -242,16 +258,21 @@ export class VillageDecor {
           } else for (let k = 0; k < 6; k++) { const t = (k + 0.5) / 6 - 0.5; plants.push(col(new THREE.IcosahedronGeometry(0.07, 0), FLOWERS[(n + k) % FLOWERS.length]!, it.x + c * t * it.w!, y + 0.12, it.z - sn * t * it.w!)); }
           break;
         }
-        case 'hedge': {
-          const L = it.w!, c = Math.cos(it.ry), sn = Math.sin(it.ry), k = Math.max(3, Math.round(L / 0.34));
-          plants.push(col(bx(L, 0.2, 0.2), 0x2f6b2f, it.x, y + 0.1, it.z, it.ry));
-          for (let i = 0; i < k; i++) { const t = ((i + 0.5) / k - 0.5) * L; plants.push(col(new THREE.IcosahedronGeometry(0.15, 0), (i + n) % 3 === 0 ? 0x3f7d33 : 0x357436, it.x + c * t, y + 0.2, it.z - sn * t)); }
+        case 'hedge': { // clipped hedge: dense box body with a slightly narrower top row and a few leafy lumps
+          const L = it.w!, c = Math.cos(it.ry), sn = Math.sin(it.ry), k = Math.max(3, Math.round(L / 0.3));
+          plants.push(col(bx(L, 0.2, 0.24), 0x2f6b2f, it.x, y + 0.1, it.z, it.ry));
+          plants.push(col(bx(L - 0.04, 0.07, 0.19), 0x3a7a37, it.x, y + 0.235, it.z, it.ry));
+          for (let i = 0; i < k; i++) { const t = ((i + 0.5) / k - 0.5) * L; plants.push(col(new THREE.IcosahedronGeometry(0.085, 0), (i + n) % 2 === 0 ? 0x44853a : 0x3a7a37, it.x + c * t, y + 0.29, it.z - sn * t)); }
           break;
         }
-        case 'wall': {
-          const L = it.w!;
-          wood.push(col(bx(L, 0.17, 0.14), n % 2 ? 0x9c9a92 : 0xa8a59b, it.x, y + 0.085, it.z, it.ry));
-          wood.push(col(bx(L + 0.04, 0.035, 0.19), 0xb9b6ac, it.x, y + 0.19, it.z, it.ry));
+        case 'wall': { // dry-stone wall: three staggered courses of blocks + cap stones
+          const L = it.w!, c = Math.cos(it.ry), sn = Math.sin(it.ry), k = Math.max(3, Math.round(L / 0.25));
+          for (let row = 0; row < 3; row++) for (let i = 0; i < k; i++) {
+            const t = ((i + 0.5 + (row % 2) * 0.5) / k - 0.5) * L;
+            if (Math.abs(t) > L / 2 - 0.02) continue;
+            wood.push(col(bx(L / k - 0.012, 0.055, 0.14), (i + row + n) % 3 === 0 ? 0x8f8d85 : (i + row) % 2 ? 0xa09d94 : 0xaeaba1, it.x + c * t, y + 0.03 + row * 0.058, it.z - sn * t, it.ry));
+          }
+          wood.push(col(bx(L + 0.03, 0.035, 0.18), 0xbab7ad, it.x, y + 0.2, it.z, it.ry));
           break;
         }
         case 'fence': {

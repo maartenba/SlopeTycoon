@@ -41,7 +41,7 @@ export function decorCircles(items: readonly DecorItem[]): number[][] {
   for (const it of items) {
     switch (it.kind) {
       case 'lamp': out.push([it.x, it.z, 0.08]); break;
-      case 'bench': { const ax = Math.sin(it.ry), az = Math.cos(it.ry); for (const k of [-0.2, 0, 0.2]) out.push([it.x + ax * k, it.z + az * k, 0.11]); break; }
+      case 'bench': { const ax = Math.sin(it.ry), az = Math.cos(it.ry); for (const k of [-0.28, 0, 0.28]) out.push([it.x + ax * k, it.z + az * k, 0.12]); break; }
       case 'planter': for (const k of [-0.18, 0, 0.18]) out.push([it.x + k, it.z, 0.13]); break;
       case 'shrub': out.push([it.x, it.z, (0.2 + ((it.ry * 37) % 5) * 0.03) * 0.85]); break;
       case 'fountain': for (const k of [-0.25, 0, 0.25]) out.push([it.x + k, it.z, 0.3]); break;
