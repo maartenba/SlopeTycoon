@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { budget } from '../perfMode';
 import type { MapSize } from '../../src/core/GameState';
 import { TOWN_SEEDS } from '../../src/config/townSeeds';
 import { createSim } from '../../src/game/createSim';
@@ -119,15 +120,15 @@ describe('buildTown', () => {
     expect(buildTown(noLodge, 'alpine', 1).failures.join(' ')).toMatch(/lodge/i);
   });
 
-  it('headless build time stays within 2.5 s on 128 (every archetype)', () => {
+  it('[perf] headless build time stays within 2.5 s on 128 (every archetype; x5 guard in npm test, strict in test:perf)', () => {
     for (const t of TOWNS) {
       const size: MapSize = 128;
       const sim = createSim({ ...townSimOptions(t.id, size), seed: TOWN_SEEDS[t.id][size]![0]!, now: () => 0 });
       const t0 = performance.now();
       buildTown(sim, t.id, TOWN_SEEDS[t.id][size]![0]!);
-      expect(performance.now() - t0, t.id).toBeLessThan(2500);
+      expect(performance.now() - t0, t.id).toBeLessThan(budget(2500));
     }
-  }, 60_000);
+  }, 120_000);
 });
 
 describe('town footpaths (rich pass 2)', () => {
