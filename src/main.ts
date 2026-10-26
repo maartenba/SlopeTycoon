@@ -475,7 +475,7 @@ const attractionsRef: AttractionSystem | null = attractions;
 let groomingView: GroomingView | null = null;
 let incidentView: IncidentView | null = null;
 let overlayMode: OverlayMode = 'off';
-const setOverlay = (m: OverlayMode): void => { overlayMode = m; covOverlay.setMode(m); dockRef?.syncOverlay(m); if (m !== 'off') tutorialRef?.engine.notify('overlay:cycled'); };
+const setOverlay = (m: OverlayMode): void => { overlayMode = m; covOverlay.setMode(m); dockRef?.syncOverlay(); if (m !== 'off') tutorialRef?.engine.notify('overlay:cycled'); };
 /** Recompute coverage: region-limited when only one building changed and no dependency statuses flipped. */
 const refreshCoverage = (b?: { x: number; y: number; w: number; h: number; type: string }, statusChanged = false): void => {
   sim.refreshCoverage(b, statusChanged);
@@ -569,6 +569,7 @@ const terraform = new TerraformTool({
   constructionMultiplier: () => economy.constructionMultiplier(),
   liftClearanceViolations: (changed) => (liftToolsRef ? liftClearanceViolations(grid, liftToolsRef.lifts, changed) : 0),
   onModeChange: (st) => dockRef?.syncTerraform(st),
+  onGhost: (g) => dockRef?.syncTerraGhost(g),
   onApplied: (r) => { if (r.touchedChunks.length) refreshProps(r.touchedChunks); covOverlay.invalidateHeights(); landscapeDecor?.invalidate(); },
 });
 
@@ -2303,6 +2304,10 @@ if (ui && !DEMO) {
       toggleGrid: () => { terrain.gridOverlay = !terrain.gridOverlay; },
       photo: () => { enterPhoto(); },
       walk: () => { enterWalk(); },
+      ride: () => { if (!startRide()) toast('No guest to ride with yet.', 'info'); },
+      rotate: (d) => renderer.controls.rotateSnap(d),
+      zoom: (f) => renderer.controls.zoomBy(f),
+      gridOn: () => terrain.gridOverlay,
       setSeason: (t) => { const r = applySeason(t); debugRef?.setSeason(t, r); commitSeason(t); },
     },
     autoFlatten: { get: getFlatten, set: setFlatten },
@@ -2690,6 +2695,8 @@ hideSplash();
 
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {
   fx: fxApi, view: viewApi, ff, startFf,
+  /** QA (touch e2e): the ToolManager and the touch wire (controller / gestures state). */
+  tools, touch: touchWire,
   /** Debug / QA: `achievements.unlock('first-lift')` (forced, toasts like a real unlock), `.engine`, `.announcer`, `.trophies()` opens the shelf. */
   achievements: { engine: ach, announcer: achAnnouncer, unlock: (id: string) => ach.unlock(id, true), select: (k: 'palette' | 'flags' | 'frame' | 'chair', id: string) => ach.select(k, id), trophies: () => { const t = document.querySelector('st-trophies') as (HTMLElement & { open(): void }) | null; t?.open(); return !!t; } },
   populateDemo, populateTown, findBear: findBearDebug, spawnBear: spawnBearDebug, findAnimal: findAnimalDebug, spawnGuests: (n: number, mix: 'mixed' | 'skiers' | 'hikers' = 'mixed') => spawnGuests(sim, n, mix, ++debugSpawnCount),

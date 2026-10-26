@@ -3,7 +3,7 @@ import { BUILDINGS } from '@/config/buildings';
 import { LIFTS, type LiftKind } from '@/config/lifts';
 import { OVERLAY_LABELS, OVERLAY_MODES, type OverlayMode } from '@/sim/Coverage';
 import { SEASON_CENTERS } from '@/render/Season';
-import { TERRAFORM_BRUSH_MAX } from '@/config/balance';
+import { TERRAFORM_BRUSH_MAX, TERRAFORM_COST_PER_HALF_STEP } from '@/config/balance';
 import type { SeasonId } from '@/core/events';
 import type { TerraformMode, TerraformTarget } from '@/build/TerraformTool';
 import { PISTE_COST_PER_TILE } from '@/world/Networks';
@@ -16,6 +16,7 @@ import { DRAWERS, FLATTEN_DRAWERS, digitSelectsItem, drawerReduce, type DrawerId
 import { ChangeGate } from '../keyedDiff';
 import { edgeState, popoverLeft, scrollIntoViewLeft, wheelToHorizontal } from '../drawerScroll';
 import { icon } from '../icons';
+import { TERRAIN_ICONS, VIEW_ICONS, overlayIcon } from '../dockIcons';
 import { relevance, seasonBadge, seasonSort, type SeasonMode, type SeasonTag } from '../seasonOrder';
 import type { LandscapeMode, LandscapeState } from '@/build/LandscapeTool';
 import { DECOR, DECOR_IDS, LANDSCAPE, type DecorKind } from '@/config/landscape';
@@ -57,7 +58,7 @@ export interface DockApi {
   activateTerraform(): void;
   /** Return to the default (select) tool. */
   resetTool(): void;
-  view: { overlay(): OverlayMode; setOverlay(m: OverlayMode): void; toggleGrid(): void; setSeason(t: number): void; /** Photo mode (P). */ photo?(): void; /** Walk mode (V). */ walk?(): void };
+  view: { overlay(): OverlayMode; setOverlay(m: OverlayMode): void; toggleGrid(): void; setSeason(t: number): void; /** Photo mode (P). */ photo?(): void; /** Walk mode (V). */ walk?(): void; /** Ride-along with an automatically picked guest. */ ride?(): void; /** Snap-rotate the iso camera (Q / E). */ rotate?(dir: 1 | -1): void; /** Zoom the iso camera by a factor (>1 = in). */ zoom?(factor: number): void; gridOn?(): boolean };
   autoFlatten: { get(): boolean; set(v: boolean): void };
   /** Lifts: 'Clear forest lane' (cut the trees a cable cannot clear with towers; default on). */
   clearLane?: { get(): boolean; set(v: boolean): void };
@@ -80,7 +81,7 @@ export interface DockApi {
 const LEVEL_LOCK = /^Unlocks at level (\d+)/;
 interface Rail { rail: HTMLElement; grid: HTMLElement }
 interface Card { id: string; el: HTMLButtonElement; price: HTMLElement; lock: HTMLElement; num: HTMLElement | null; badge: HTMLElement; tag: SeasonTag; /** Catalog index (the 'All' order). */ base: number; gate: ChangeGate<string | boolean> }
-type TerraEls = { modes: Map<string, HTMLButtonElement>; targets: Map<string, HTMLButtonElement>; slope: { value: string }; brush: HTMLElement };
+type TerraEls = { target: { value: string }; slope: { value: string }; brush: { value: string }; ghost: HTMLElement };
 /** DOM built once per drawer/tab and re-attached afterwards (no re-creation, images keep decoded state, scroll survives). */
 interface Built { drawer: DrawerId; sync?: () => void; nodes: HTMLElement[]; cards: Card[]; terraEls: TerraEls | null; rail: Rail | null; overlayBtns: Map<string, HTMLButtonElement>; thumbs: Array<{ img: HTMLElement; kind: 'building' | 'lift'; id: string; size: number; icon: string }> }
 
@@ -131,6 +132,7 @@ const css = `
 .thumb img{width:100%;height:100%;object-fit:contain;display:block}
 .info{position:absolute;bottom:calc(100% + 6px);left:0;width:320px;max-height:220px;box-sizing:border-box;display:grid;grid-template-columns:72px 1fr;gap:4px 8px;align-content:start;font-size:calc(11px * var(--ui-scale, 1));overflow:auto;padding:8px;background:rgba(20,28,40,.96);border:1px solid #5a7090;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:5;pointer-events:auto}
 .info[hidden]{display:none}
+.info .big svg[focusable]{width:100%;height:100%}
 .info .big{width:72px;height:72px;font-size:36px}
 .info .txt{display:flex;flex-direction:column;gap:3px;min-width:0}
 .info .rest{grid-column:1/-1;display:flex;flex-direction:column;gap:3px}
@@ -149,6 +151,11 @@ const css = `
 .drawer.tall{max-height:min(46vh,380px)}
 .drawer.tall .pane{max-height:calc(min(46vh,380px) - 48px)}
 .pc .small{grid-column:1/-1}
+.pc.one{width:190px;grid-template-columns:1fr}
+.pc .trailnote.bad{color:#ff9a8a}
+.gh{flex:none;align-self:stretch;display:flex;align-items:center;justify-content:center;width:16px;margin:0 -2px;writing-mode:vertical-rl;transform:rotate(180deg);font-size:calc(10px * var(--ui-scale, 1));font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffd070;opacity:.85;border-right:1px solid #5a7090}
+.card .thumb svg[focusable]{width:100%;height:100%;padding:4px;box-sizing:border-box}
+.pc select,.pc button{min-height:var(--touch-min,0px)}
 .pc .trailnote{grid-column:1/-1;font-size:11px;line-height:1.3;color:#cfe3f3;opacity:.9}.pc .trailnote[hidden]{display:none}
 .dock{display:flex;gap:3px;padding:5px 6px}
 .dock button{display:flex;flex-direction:column;align-items:center;min-width:64px;padding:4px 4px;font-size:calc(11px * var(--ui-scale, 1));position:relative}
@@ -165,6 +172,7 @@ const css = `
 .dock::-webkit-scrollbar{display:none}
 :host(.peek) .drawer{display:none} /* touch: while a building ghost is being aimed the open drawer steps aside (main/touchWire toggles the class) */
 .dock button{flex:0 0 auto;min-width:58px;min-height:var(--touch-min,0px)}
+.pc.one{width:148px}
 }
 `;
 
@@ -175,7 +183,7 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
   return e;
 };
 
-interface LandItem { id: string; name: string; icon: string; price: string; key?: string; desc: string; stats: ReadonlyArray<readonly string[]>; rules: string[]; lock?: () => string | null; run(): void; on(): boolean }
+interface LandItem { group?: string; id: string; name: string; icon: string; price: string; key?: string; desc: string; stats: ReadonlyArray<readonly string[]>; rules: string[]; lock?: () => string | null; run(): void; on(): boolean }
 /** Emoji text, or a trusted inline `<svg>` string from config (no emoji exists for a park bench / street lamp). */
 function setIcon(node: HTMLElement, ic: string): void { if (ic.startsWith('<svg')) node.innerHTML = ic; else node.textContent = ic; }
 type LandTab = 'water' | 'nature' | 'decor';
@@ -339,12 +347,19 @@ export class StDock extends StElement {
   syncTerraform(s: { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 }): void {
     const t = this.terraEls;
     if (!t) return;
-    for (const [m, b] of t.modes) b.classList.toggle('active', m === s.mode);
-    for (const [k, b] of t.targets) b.classList.toggle('active', k === s.target);
+    t.target.value = s.target;
     if (s.maxEdgeDelta) t.slope.value = String(s.maxEdgeDelta);
-    t.brush.textContent = `${s.brush}/${TERRAFORM_BRUSH_MAX}`;
+    t.brush.value = String(s.brush);
+    this.updateCards(); this.renderInfo();
   }
-  syncOverlay(m: OverlayMode): void { for (const [k, b] of this.overlayBtns) b.classList.toggle('active', k === m); }
+  /** Live ghost info of the terraform brush (cost, footprint); null when the cursor is off the map. */
+  syncTerraGhost(g: { text: string; blocked: boolean; tiles: number } | null): void {
+    const t = this.terraEls;
+    if (!t) return;
+    t.ghost.textContent = g ? `${g.text} · ${g.tiles === 0 ? '1 corner' : `${g.tiles} tile${g.tiles === 1 ? '' : 's'}`}` : 'Hover the map to preview the cost.';
+    t.ghost.classList.toggle('bad', !!g?.blocked);
+  }
+  syncOverlay(): void { if (this.state.open === 'view') { this.updateCards(); this.renderInfo(); } }
   setAutoFlatten(v: boolean): void { if (this.flatBox.checked !== v) this.flatBox.checked = v; }
   setClearLane(v: boolean): void { if (this.laneBox.checked !== v) this.laneBox.checked = v; }
   /** 'never' hides the Auto-flatten toggle for the current building. */
@@ -382,6 +397,7 @@ export class StDock extends StElement {
 
   private tagOf(drawer: DrawerId, id: string): SeasonTag {
     if (drawer === 'buildings') return BUILDINGS[id]?.season ?? 'all';
+    if (drawer === 'terrain' || drawer === 'view' || drawer === 'landscape') return 'all';
     if (drawer === 'lifts') return liftSeason(id as LiftKind);
     return networkSeason(id as NetworkItem['key']);
   }
@@ -512,7 +528,6 @@ export class StDock extends StElement {
     this.body.replaceChildren(...b.nodes);
     if (b.terraEls) this.syncTerraform(this.api.terraform.state());
     this.landSync?.();
-    if (open === 'view') this.syncOverlay(this.api.view.overlay());
     this.infoSig = '';
     this.updateCards();
     this.renderInfo();
@@ -530,7 +545,7 @@ export class StDock extends StElement {
       case 'lifts': this.buildGrid(Object.keys(LIFTS), 'lifts'); break;
       case 'paths': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'paths').map((i) => i.key), 'paths'); break;
       case 'pistes': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'pistes').map((i) => i.key), 'pistes'); this.pisteControls(); break;
-      case 'terrain': this.terrainPane(); break;
+      case 'terrain': this.buildGrid(this.tvItems('terrain').map((i) => i.id), 'terrain'); this.terrainControls(); break;
       case 'landscape': b.sync = this.landscapePane(this.landTab); break;
       case 'bulldoze': {
         const p = this.textPane('Click a building, lift, path, road or piste to demolish it (50% refund). Right-click or Esc to stop.');
@@ -543,7 +558,7 @@ export class StDock extends StElement {
         }
         this.body.appendChild(p); break;
       }
-      case 'view': this.viewPane(); break;
+      case 'view': this.buildGrid(this.tvItems('view').map((i) => i.id), 'view'); break;
       case 'ops': { const p = el('div', 'pane cols'); p.append(...(this.api?.operations?.panels() ?? [])); this.body.appendChild(p); break; }
       case 'marketing': { const p = el('div', 'pane cols'); p.append(...(this.api?.marketing?.panels() ?? [])); this.body.appendChild(p); break; }
       case 'pricing': { const p = el('div', 'pane cols'); p.append(...(this.api?.pricing?.panels() ?? [])); this.body.appendChild(p); break; }
@@ -567,7 +582,7 @@ export class StDock extends StElement {
   private itemMeta(drawer: DrawerId, id: string): { name: string; icon: string; kind: 'building' | 'lift' | null } {
     if (drawer === 'buildings') return { name: BUILDINGS[id]?.name ?? id, icon: BUILDING_ICONS[id] ?? (BUILDINGS[id]?.name.charAt(0) ?? '?'), kind: 'building' };
     if (drawer === 'lifts') return { name: LIFTS[id as LiftKind].name, icon: LIFT_ICONS[id as LiftKind], kind: 'lift' };
-    if (drawer === 'landscape') { const l = this.landItem(id); return { name: l?.name ?? id, icon: l?.icon ?? '?', kind: null }; }
+    if (drawer === 'landscape' || drawer === 'terrain' || drawer === 'view') { const l = this.landItem(id); return { name: l?.name ?? id, icon: l?.icon ?? '?', kind: null }; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     return { name: n?.name ?? id, icon: n?.icon ?? '?', kind: null };
   }
@@ -575,13 +590,17 @@ export class StDock extends StElement {
   private buildGrid(ids: string[], drawer: DrawerId): void {
     const grid = el('div', 'grid');
     grid.setAttribute('role', 'listbox');
+    let lastGroup = '';
     ids.forEach((id, i) => {
       const m = this.itemMeta(drawer, id);
+      const grp = drawer === 'terrain' || drawer === 'view' ? this.landItem(id)?.group : undefined;
+      if (grp && grp !== lastGroup) { const gh = el('div', 'gh', grp); gh.setAttribute('aria-hidden', 'true'); grid.appendChild(gh); }
+      if (grp) lastGroup = grp;
       const b = el('button', 'card');
       b.dataset.id = id;
       const lock = el('span', 'lk');
       const price = el('span', 'pr');
-      const lkey = drawer === 'landscape' ? this.landItem(id)?.key : undefined;
+      const lkey = drawer === 'landscape' || drawer === 'terrain' || drawer === 'view' ? this.landItem(id)?.key : undefined;
       const num = drawer === 'buildings' ? el('span', 'num', i < 9 ? String(i + 1) : '') : lkey ? el('span', 'num', lkey) : null;
       if (num) { num.hidden = drawer === 'buildings' ? i >= 9 : false; b.appendChild(num); }
       const badge = el('span', 'sb'); badge.hidden = true;
@@ -681,7 +700,7 @@ export class StDock extends StElement {
       this.hideInfo(); api.lifts.select(id as LiftKind);
     }
     else if (open === 'paths' || open === 'pistes') { this.hideInfo(); api.network.start(id as NetworkItem['key']); }
-    else if (open === 'landscape') {
+    else if (open === 'landscape' || open === 'terrain' || open === 'view') {
       const it = this.landItem(id), c = this.cards.find((k) => k.id === id);
       if (c?.el.classList.contains('locked')) { this.hover = id; this.popAnchor = c.el; this.renderInfo(); return; }
       this.hideInfo(); it?.run();
@@ -692,7 +711,7 @@ export class StDock extends StElement {
     const api = this.api!;
     if (drawer === 'buildings') return { text: formatMoney(api.buildings.cost(id)), cost: api.buildings.cost(id), lock: api.buildings.locked(id) };
     if (drawer === 'lifts') { const c = api.lifts.costPer100m(id as LiftKind); return { text: `${formatMoney(c)}/100m`, cost: c, lock: api.lifts.locked?.(id as LiftKind) ?? [] }; }
-    if (drawer === 'landscape') { const l = this.landItem(id), k = l?.lock?.(); return { text: l?.price ?? '', cost: 0, lock: k ? [k] : [] }; }
+    if (drawer === 'landscape' || drawer === 'terrain' || drawer === 'view') { const l = this.landItem(id), k = l?.lock?.(); return { text: l?.price ?? '', cost: 0, lock: k ? [k] : [] }; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     const c = n?.costPerTile || PISTE_COST_PER_TILE;
     return { text: `${formatMoney(c)}/tile`, cost: c, lock: [] };
@@ -706,7 +725,7 @@ export class StDock extends StElement {
     for (const c of this.cards) {
       const p = this.priceOf(open, c.id);
       const poor = open === 'buildings' && p.cost > api.funds();
-      const locked = p.lock.length > 0, isPoor = poor && !locked, act = open === 'landscape' ? !!this.landItem(c.id)?.on() : this.active?.drawer === open && this.active.id === c.id;
+      const locked = p.lock.length > 0, isPoor = poor && !locked, act = open === 'landscape' || open === 'terrain' || open === 'view' ? !!this.landItem(c.id)?.on() : this.active?.drawer === open && this.active.id === c.id;
       const lvl = p.lock.map((r) => LEVEL_LOCK.exec(r)?.[1]).find((n) => n !== undefined);
       const title = lvl ? p.lock.join('\n') : locked ? `Locked: ${p.lock.join(', ')}` : poor ? 'Not enough funds' : '';
       if (c.gate.set('price', p.text)) c.price.textContent = p.text;
@@ -724,7 +743,7 @@ export class StDock extends StElement {
     const api = this.api!;
     if (drawer === 'buildings') return buildingInfo(id, { locked: api.buildings.locked, cost: api.buildings.cost, multiplier: api.buildings.multiplier, season: this.season() });
     if (drawer === 'lifts') return liftInfo(id as LiftKind, api.lifts.costPer100m(id as LiftKind), this.season(), api.lifts.locked?.(id as LiftKind) ?? []);
-    if (drawer === 'landscape') { const l = this.landItem(id), k = l?.lock?.(); return l ? { id, title: l.name, desc: l.desc, icon: l.icon, stats: l.stats.map((x): [string, string] => [x[0] ?? '', x[1] ?? '']), reqs: [], rules: l.rules, note: k && LEVEL_LOCK.test(k) ? k : undefined } : null; }
+    if (drawer === 'landscape' || drawer === 'terrain' || drawer === 'view') { const l = this.landItem(id), k = l?.lock?.(); return l ? { id, title: l.name, desc: l.desc, icon: l.icon, stats: [...l.stats.map((x): [string, string] => [x[0] ?? '', x[1] ?? '']), ...(l.key ? [['Hotkey', l.key] as [string, string]] : [])], reqs: [], rules: l.rules, note: k && LEVEL_LOCK.test(k) ? k : undefined } : null; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     return n ? networkInfo(n, PISTE_COST_PER_TILE, this.season()) : null;
   }
@@ -812,29 +831,73 @@ export class StDock extends StElement {
     this.body.appendChild(side);
   }
 
-  private terrainPane(): void {
-    const api = this.api!.terraform;
-    const p = el('div', 'pane cols');
-    const modes = new Map<string, HTMLButtonElement>(), targets = new Map<string, HTMLButtonElement>();
-    const r1 = el('div', 'sec');
-    for (const [m, k, ic] of [['raise', '1', '⬆️'], ['lower', '2', '⬇️'], ['flatten', '3', '➖'], ['smooth', '4', '〰️']] as const) {
-      const b = this.btn(`${ic} ${m} (${k})`, `${m} terrain (${k})`, () => { if (this.tool !== 'terraform') this.api!.activateTerraform(); api.setMode(m); });
-      modes.set(m, b); r1.appendChild(b);
+  /** Cards of the Terrain and View drawers: same shape as Buildings / Landscape (icon, name, price or note, key badge, hover card, active state, group label). */
+  private tvItems(drawer: 'terrain' | 'view'): LandItem[] {
+    const api = this.api!;
+    if (drawer === 'terrain') {
+      const t = api.terraform, st = t.state(), m = api.buildings.multiplier();
+      const step = `$${Math.round(TERRAFORM_COST_PER_HALF_STEP * m)}`;
+      const edit = (md: TerraformMode): void => { if (this.tool !== 'terraform') api.activateTerraform(); t.setMode(md); };
+      const common: Array<[string, string]> = [['Brush', `${st.brush}/${TERRAFORM_BRUSH_MAX} (  [ ]  )`], ['Target', `${st.target} (C)`], ['Max slope', st.maxEdgeDelta === 2 ? 'steep' : 'gentle']];
+      const mk = (id: TerraformMode, name: string, key: string, desc: string, rules: string[]): LandItem => ({
+        group: 'Sculpt', id, name, icon: TERRAIN_ICONS[id]!, price: `${step}/step`, key, desc, stats: [['Cost', `${step}/half-step`], ...common], rules,
+        run: () => edit(id), on: () => this.tool === 'terraform' && t.state().mode === id,
+      });
+      return [
+        mk('raise', 'Raise', '1', 'Lift the ground under the brush by half a step per click.', ['Drag to raise a whole hill (one undo step)', 'Not under buildings, lift towers or water']),
+        mk('lower', 'Lower', '2', 'Dig the ground down under the brush.', ['Drag to cut a gully or a bowl', 'Not under buildings, lift towers or water']),
+        mk('flatten', 'Flatten', '3', 'Level everything under the brush to the height of the first tile you press on.', ['Press on the height you want, then drag', 'Handy for building plots']),
+        mk('smooth', 'Smooth', '4', 'Blend rough ground into gentle slopes under the brush.', ['Good for taking the bumps out of a piste line', 'Respects the max slope setting']),
+      ];
     }
-    const r2 = el('div', 'sec');
-    for (const t of ['tile', 'corner'] as const) { const b = this.btn(t, `${t} target (C toggles)`, () => api.setTarget(t)); targets.set(t, b); r2.appendChild(b); }
-    const brush = el('span', 'small');
-    r2.append(this.btn('−', 'smaller brush ([)', () => api.setBrush(api.state().brush - 1)), brush, this.btn('+', 'bigger brush (])', () => api.setBrush(api.state().brush + 1)));
-    const slope = makeSelect([{ value: '1', label: 'Slope: gentle' }, { value: '2', label: 'Slope: steep' }], '1', 'Max slope between adjacent corners', (v) => api.setMaxEdgeDelta(Number(v) as 1 | 2));
-    slope.title = 'Max slope between adjacent corners';
-    r2.appendChild(slope);
-    p.append(r1, r2);
-    p.appendChild(el('div', 'small', 'Click/drag on the map to edit terrain (active only while this drawer is open). Keys: 1–4 mode, [ ] brush, C target. Trees and boulders live in the Landscape drawer (Nature tab).'));
-    this.body.appendChild(p);
-    this.terraEls = { modes, targets, slope, brush };
-    this.syncTerraform(api.state());
+    const v = api.view;
+    const items: LandItem[] = [];
+    const add = (group: string, id: string, name: string, icon: string, key: string | undefined, desc: string, stats: Array<[string, string]>, run: () => void, on: () => boolean = () => false, price = ''): void => {
+      items.push({ group, id, name, icon, price, key, desc, stats, rules: [], run, on });
+    };
+    if (v.rotate) {
+      const r = v.rotate;
+      add('Camera', 'rotL', 'Rotate left', VIEW_ICONS.rotL!, 'Q', 'Turn the camera a quarter turn counter-clockwise.', [['Also', 'Alt + drag rotates freely']], () => r(-1), undefined, 'quarter turn');
+      add('Camera', 'rotR', 'Rotate right', VIEW_ICONS.rotR!, 'E', 'Turn the camera a quarter turn clockwise.', [['Also', 'Alt + drag rotates freely']], () => r(1), undefined, 'quarter turn');
+    }
+    if (v.zoom) {
+      const z = v.zoom;
+      add('Camera', 'zoomIn', 'Zoom in', VIEW_ICONS.zoomIn!, undefined, 'Move closer to the slopes.', [['Also', 'Mouse wheel / pinch']], () => z(1.25), undefined, 'wheel');
+      add('Camera', 'zoomOut', 'Zoom out', VIEW_ICONS.zoomOut!, undefined, 'Pull back to see the whole resort.', [['Also', 'Mouse wheel / pinch']], () => z(0.8), undefined, 'wheel');
+    }
+    add('Camera', 'grid', 'Tile grid', VIEW_ICONS.grid!, 'G', 'Show or hide the tile grid on the terrain, handy for placing things exactly.', [['Toggle', 'G']], () => { v.toggleGrid(); this.refresh(); }, () => v.gridOn?.() ?? false, 'toggle');
+    if (v.ride) { const f = v.ride; add('Modes', 'ride', 'Ride-along', VIEW_ICONS.ride!, undefined, 'Ride along with a guest on the slopes or lifts, from their point of view. Esc leaves.', [['Needs', 'a guest on the mountain']], () => f(), undefined, 'cosmetic'); }
+    if (v.walk) { const f = v.walk; add('Modes', 'walk', 'Walk mode', VIEW_ICONS.walk!, 'V', 'Explore your resort on foot in first person. Shift+V picks the start spot.', [['Move', 'W A S D · Shift run']], () => f(), undefined, 'first person'); }
+    if (v.photo) { const f = v.photo; add('Modes', 'photo', 'Photo mode', VIEW_ICONS.photo!, 'P', 'Free camera, filters and frames; exports a PNG to your device only. Nothing is uploaded.', [['Export', 'local PNG']], () => f(), undefined, 'free camera'); }
+    OVERLAY_MODES.forEach((m, i) => {
+      const nm = m === 'off' ? 'No overlay' : OVERLAY_LABELS[m];
+      add('Overlays', `ov:${m}`, nm, overlayIcon(m), i === 0 ? 'O' : undefined, m === 'off' ? 'Hide the map overlay. O cycles through all overlays.' : `Colour the map by ${OVERLAY_LABELS[m].toLowerCase()}. O cycles through all overlays.`, [['Cycle', 'O']], () => { v.setOverlay(m); this.syncOverlay(); }, () => v.overlay() === m, m === 'off' ? 'clear' : 'map');
+    });
+    for (const [n, k, t, ic] of [['Winter', 'winter', SEASON_CENTERS.winter, 'winter'], ['Spring', 'spring', SEASON_CENTERS.spring, 'spring'], ['Summer', 'summer', SEASON_CENTERS.summer, 'summer'], ['Autumn', 'autumn', SEASON_CENTERS.autumn, 'autumn']] as const) {
+      add('Season', `se:${k}`, n, VIEW_ICONS[ic]!, undefined, `Jump the scenery to ${n.toLowerCase()} to preview it (a view change only for the look of the world).`, [['Effect', 'look of the world']], () => v.setSeason(t), undefined, 'preview');
+    }
+    return items;
   }
 
+  /** Side controls of the Terrain drawer: same column of selects as Pistes & Trails (target, brush, slope) plus the live ghost line. */
+  private terrainControls(): void {
+    const api = this.api!.terraform;
+    const side = el('div', 'pc one');
+    const target = makeSelect([{ value: 'tile', label: 'Target: tile' }, { value: 'corner', label: 'Target: corner' }], 'tile', 'Edit a whole tile or a single corner (C toggles)', (v) => api.setTarget(v as TerraformTarget));
+    target.title = 'Tile or single corner (C toggles)';
+    const brush = makeSelect(Array.from({ length: TERRAFORM_BRUSH_MAX }, (_, i) => ({ value: String(i + 1), label: `Brush size ${i + 1}` })), String(api.state().brush), 'Brush size', (v) => api.setBrush(Number(v)));
+    brush.title = 'Brush size ([ ] changes it)';
+    const slope = makeSelect([{ value: '1', label: 'Slope: gentle' }, { value: '2', label: 'Slope: steep' }], '1', 'Max slope between adjacent corners', (v) => api.setMaxEdgeDelta(Number(v) as 1 | 2));
+    slope.title = 'Max slope between adjacent corners';
+    const ghost = el('div', 'trailnote', 'Hover the map to preview the cost.');
+    ghost.dataset.terraGhost = '';
+    const hint = el('div', '', 'Click or drag on the map to edit (active while this drawer is open). Keys 1–4 mode, [ ] brush, C target. Trees and boulders live in Landscape.');
+    side.title = hint.textContent ?? '';
+    side.append(target, brush, slope, ghost);
+    this.body.appendChild(side);
+    this.terraEls = { target, slope, brush, ghost };
+    this.syncTerraform(api.state());
+  }
   /** Start the tool that belongs to the open Landscape tab. */
   private activateLandTab(): void {
     const api = this.api;
@@ -880,6 +943,7 @@ export class StDock extends StElement {
     }
   }
   private landItem(id: string): LandItem | undefined {
+    if (this.state.open === 'terrain' || this.state.open === 'view') return this.tvItems(this.state.open).find((x) => x.id === id);
     for (const t of LAND_TABS) { const i = this.landItems(t.id).find((x) => x.id === id); if (i) return i; }
     return undefined;
   }
@@ -933,24 +997,4 @@ export class StDock extends StElement {
     return () => { ctl.sync(); this.updateCards(); this.renderInfo(); };
   }
 
-  private viewPane(): void {
-    const v = this.api!.view;
-    const p = el('div', 'pane cols');
-    const ov = el('div', 'sec');
-    ov.appendChild(el('b', '', 'Overlay (O cycles)'));
-    for (const m of OVERLAY_MODES) {
-      const b = this.btn(OVERLAY_LABELS[m].replace('Overlay: ', ''), OVERLAY_LABELS[m], () => { v.setOverlay(m); this.syncOverlay(m); });
-      this.overlayBtns.set(m, b); ov.appendChild(b);
-    }
-    const sea = el('div', 'sec');
-    sea.appendChild(el('b', '', 'Season'));
-    for (const [n, t] of [['❄️ Winter', SEASON_CENTERS.winter], ['🌱 Spring', SEASON_CENTERS.spring], ['☀️ Summer', SEASON_CENTERS.summer], ['🍂 Autumn', SEASON_CENTERS.autumn]] as const) sea.appendChild(this.btn(n, `Jump to ${n.split(' ')[1]}`, () => v.setSeason(t)));
-    const misc = el('div', 'sec');
-    misc.appendChild(this.btn('▦ Grid (G)', 'Toggle tile grid', () => v.toggleGrid()));
-    if (v.photo) { const pb = this.btn('Photo mode (P)', 'Photo mode: free camera, filters, frames and PNG export (P)', () => v.photo?.()); pb.prepend(icon('camera', 13), document.createTextNode(' ')); misc.appendChild(pb); }
-    if (v.walk) { const wb = this.btn('Walk mode (V)', 'Walk mode: explore your resort on foot in first person (V)', () => v.walk?.()); wb.prepend(icon('walk', 13), document.createTextNode(' ')); misc.appendChild(wb); }
-    p.append(ov, sea, misc);
-    this.body.appendChild(p);
-    this.syncOverlay(v.overlay());
-  }
 }

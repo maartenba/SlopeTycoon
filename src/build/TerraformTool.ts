@@ -29,6 +29,8 @@ export interface TerraformToolOptions {
   onApplied?: (result: TerraformResult) => void;
   /** Shared undo: begin one undo step for a drag. `stamp` wraps each edit (vertex rect + tile rect of the preview, `run` does charge + commit). */
   beginStroke?: () => TerrainStroke;
+  /** Live brush preview for the Terrain drawer (null = cursor left the map). */
+  onGhost?: (g: { text: string; blocked: boolean; tiles: number } | null) => void;
   onModeChange?: (state: { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta: 1 | 2 }) => void;
 }
 
@@ -113,7 +115,7 @@ export class TerraformTool {
   }
 
   private updateHover(p: PickResult | null, e: PointerEvent): void {
-    if (!p) { this.o.overlays.hide(); return; }
+    if (!p) { this.o.overlays.hide(); this.o.onGhost?.(null); return; }
     const { rect, res } = this.run(p, false);
     this.o.overlays.setVertexRect(rect.vx0, rect.vy0, rect.vx1, rect.vy1);
     this.o.overlays.setColor(res.reason === 'occupied' || res.reason === 'water' || res.reason === 'lift clearance' ? 0xff4444 : 0xffee55);
@@ -121,6 +123,7 @@ export class TerraformTool {
       cost: res.cost, blocked: res.reason === 'occupied' || res.reason === 'water' || res.reason === 'lift clearance', x: e.clientX, y: e.clientY,
       text: res.reason === 'lift clearance' ? 'Blocked: lift clearance' : res.reason === 'water' ? 'Blocked: water' : res.reason === 'occupied' ? 'Blocked: occupied' : res.ok ? `Cost: $${Math.round(res.cost)}` : 'No change',
     });
+    if (this.o.onGhost) { const bl = res.reason === 'occupied' || res.reason === 'water' || res.reason === 'lift clearance'; this.o.onGhost({ text: res.reason === 'lift clearance' ? 'Blocked: lift clearance' : res.reason === 'water' ? 'Blocked: water' : res.reason === 'occupied' ? 'Blocked: occupied' : res.ok ? `Cost $${Math.round(res.cost)}` : 'No change', blocked: bl, tiles: Math.max(0, (rect.vx1 - rect.vx0)) * Math.max(0, (rect.vy1 - rect.vy0)) }); }
   }
 
   /** Ignore when disabled, over UI (event not targeted at canvas). */

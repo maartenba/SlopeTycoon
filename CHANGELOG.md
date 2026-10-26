@@ -4,6 +4,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Drawers
+- **Terrain and View drawers redesigned** like Buildings / Pistes / Landscape: card rail with procedural SVG icons, key badges, cost hints, hover info cards, selected states, grouped sections (Sculpt; Camera / Modes / Overlays / Season) and a side control column (target, brush, slope, live ghost cost + tiles). The View drawer gains rotate, zoom and ride-along cards. All hotkeys unchanged.
+
 ### Touch and accessibility
 - **Touch support** for tablets and phones (`docs/touch.md`): one-finger pan, pinch zoom, two-finger twist rotate, tap to select or aim, a two-step building placement (ghost first, then tap again or press Place), long press to cancel, a pan / paint toggle for drag tools, a two-finger tap for undo, on-screen controls (and a joystick) for walk, ride-along and photo mode, 44 px targets, a compact layout for narrow and short screens, safe-area insets and no page zoom / scroll / pull-to-refresh. Settings > Accessibility > Touch controls: Auto / On / Off (Auto follows `(pointer: coarse)`). Desktop behaviour is unchanged.
 - **Colour-blind-safe palette** (Settings > Accessibility > Colour palette): Okabe-Ito based piste difficulty, overlay and status colours; reduced motion now also stills the animations inside the UI panels.
