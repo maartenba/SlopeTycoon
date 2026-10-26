@@ -1,8 +1,8 @@
 ---
 title: "Building"
 order: 3
-summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, terrain and trees."
-screenshots: [ui-buildings-drawer, ui-lifts-drawer]
+summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, terrain, trees and the Landscape drawer (ponds, decor)."
+screenshots: [ui-buildings-drawer, ui-lifts-drawer, ui-landscape, landscape-pond]
 ---
 {{fig:ui-buildings-drawer}}
 
@@ -39,3 +39,23 @@ Open **Terrain** to raise, lower, flatten or smooth the ground (keys <kbd>1</kbd
 {{fig:ui-lifts-drawer}}
 
 > [!NOTE] Lifts have their own tool: pick a lift type, click the bottom station, then the top station. More in [Lifts & pistes](page:lifts-pistes).
+
+## Landscape: ponds, terrain, nature and decor
+
+{{fig:ui-landscape}}
+
+The **Landscape** drawer (between Terrain and Bulldoze) has four tabs:
+
+| Tab | What you can do |
+|---|---|
+| **Water** | **Dig pond**: drag a rectangle of 3 to 11 tiles (or click for the default size, <kbd>[</kbd> <kbd>]</kbd> change it). **Fill in** turns a pond you dug back into ground. |
+| **Terrain** | Raise, lower, flatten and smooth, the same brush as the Terrain drawer. |
+| **Nature** | Plant and clear trees, paint **boulders** and remove them (natural ones too). |
+| **Decor** | Bench, lamp post, flower bed, hedge, picket fence, stone wall and fountain, plus an eraser. Oriented pieces follow your drag direction; <kbd>R</kbd> turns them. |
+
+{{fig:landscape-pond}}
+
+- **Unlock**: in Career, digging ponds unlocks at **resort level 2** (*Local favourite*). Everything else in the drawer is available from the start, and Sandbox has it all.
+- **Ponds** need nearly level ground, at least two tiles from other water, buildings and pistes (three from lifts). They cost about **$70 per water tile plus earthworks** (a 5×5 pond is roughly $1,500 to $3,000); filling in costs $35 per tile. A pond freezes over in winter like a natural lake and counts as a lake for a Beach or Boat Rental. Digging works in every season.
+- **Boulders** cost $25 each (removal $12). **Decor** costs $25 to $80 a piece (bench $60, lamp $80, flower bed $40, hedge $30, fence $25, wall $45) and the **fountain $600**; none has upkeep and the eraser is free. Decor needs dry, fairly level ground without trees or rocks, and occupies its tile.
+- Undo and redo (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) cover the whole drawer: one drag is one step. Its keys are listed in [Shortcuts](page:shortcuts).

@@ -32,6 +32,7 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 | Paths & Roads | Footpaths, roads and rail |
 | Pistes & Trails | Ski pistes by difficulty, plus hiking and biking trails |
 | Terrain | Raise, lower, flatten, smooth the ground; plant or clear trees |
+| Landscape | Dig ponds, shape terrain, boulders and trees, garden decor (see [Building](page:building)) |
 | Bulldoze | Remove buildings, lifts, paths and pistes |
 | View | Map overlays, grid, camera and photo/walk shortcuts |
 | Finance | Money overview, loans, reports |
@@ -41,7 +42,7 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 
 ## Bottom left and right
 
-- **Advice** (bottom left, next to Rudi's face) shows up to three suggestions. **Show me** moves the camera; **Dismiss** hides one for 30 in-game days.
+- **Advice** (bottom left, next to Rudi's face) shows up to three suggestions. **Show me** moves the camera (or opens the right drawer and highlights the card); **Dismiss** hides one for 30 in-game days.
 - **News** (bottom right) collects events, milestones and guest reviews. Important ones pop up as toasts.
 
 ## Help, pause and the camera

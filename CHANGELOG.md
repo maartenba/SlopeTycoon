@@ -4,6 +4,11 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Landscape drawer and bug round
+- **Landscape drawer** (`docs/landscaping.md`): dig and fill ponds (unlock at resort level 2), terrain, boulders and trees, and garden decor (bench, lamp, flower bed, hedge, fence, wall, fountain). Undoable, saved, ponds freeze in winter.
+- **Fixes**: *Show me* on the level-up card and goals always lands on the right drawer card with a highlight; hiking and biking trails can be painted in winter; the starter resort no longer has a decorative parking pad (a real Parking building instead); dock crash, roof snow and coplanar flicker fixes.
+- **Website and guide**: Landscape section in *Building*, new screenshots (`ui-landscape`, `landscape-pond`), re-shot Almabtrieb and Staff pictures, regenerated unlock tables.
+
 ### M5.4: depth (staff, festivals, stories, rivals, build tools)
 - **Staff** (`docs/staff.md`): a compact **Staff** tab in the Operations drawer with four crews (instructors, patrol, groomers, lift operators), wage level and morale; Auto by default, which keeps the simulation bit-identical to before. Six one-off **training courses** (instructors, patrol, snowcats, lift mechanics, rangers, hospitality), one at a time, each with a cost, training days and a small upkeep.
 - **Events and festivals** (`docs/festivals.md`): an Events calendar in the Marketing drawer. Book a Christmas Market, Winter Carnival, Summer Music Festival or World Cup race; the Almabtrieb, New Year, critic visits (announced three days ahead) and powder days happen by themselves. Every running festival **visibly dresses the village** (bunting, flags, banners with the festival name, market stalls, a procession of decorated cows / costumed revellers / racers, a grandstand and finish arch for the World Cup) in 3 draw calls; restrained fireworks on New Year's Eve and festival finales (off with Feedback intensity Off).

@@ -22,7 +22,7 @@ The title screen shows a live demo village. Pick **New game** (or **Scenarios** 
 
 ## Your first ten minutes
 
-The screen is a small valley with a **Base Lodge** and a road. Everything you build comes from the **dock** along the bottom. Every part of the screen is explained in [The interface](page:interface).
+The screen is a small valley with a **Base Lodge**, a road and a real **Parking** lot (there is no decorative car-park pad: every car park is a Parking building you can inspect, and its capacity counts). Everything you build comes from the **dock** along the bottom. Every part of the screen is explained in [The interface](page:interface).
 
 1. **Build a lift.** Open the **Lifts** drawer and pick a **T-bar** (the cheapest) or a 2-seat chairlift. Click where the bottom station should go, then where the top station should go. If the game says the line is too steep or the cable would hit something, move it a little. See [Lifts & pistes](page:lifts-pistes).
 2. **Paint a piste.** Open **Pistes & Trails**, choose a green (easy) piste and drag from the top of the lift down the slope. Pistes must connect to a lift station to count.
@@ -34,7 +34,7 @@ The screen is a small valley with a **Base Lodge** and a road. Everything you bu
 
 ## Let the game guide you
 
-- The **goals card** (top right) lists three goals at a time. Click **Show me** and the camera flies to where you need to look.
+- The **goals card** (top right) lists three goals at a time. Click **Show me** and the camera flies to where you need to look. If there is nothing to point at yet (for example you have not built the thing), it opens the right drawer on the right card instead and highlights it.
 - **Ranger Rudi** (bottom left, the *Advice* badge) answers “what should I do next?” using your actual resort. He never builds or spends anything for you.
 - The **tutorial** can be replayed from the Help dialog.
 

@@ -534,12 +534,12 @@
    {
     "w": 640,
     "file": "almabtrieb-640.webp",
-    "bytes": 38940
+    "bytes": 39116
    },
    {
     "w": 1280,
     "file": "almabtrieb-1280.webp",
-    "bytes": 105698
+    "bytes": 103418
    }
   ]
  },
@@ -566,12 +566,12 @@
    {
     "w": 640,
     "file": "ui-staff-640.webp",
-    "bytes": 53640
+    "bytes": 52852
    },
    {
     "w": 1280,
     "file": "ui-staff-1280.webp",
-    "bytes": 149052
+    "bytes": 146944
    }
   ]
  },
@@ -636,6 +636,38 @@
     "w": 1280,
     "file": "ui-profile-1280.webp",
     "bytes": 184364
+   }
+  ]
+ },
+ "ui-landscape": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-landscape-640.webp",
+    "bytes": 47620
+   },
+   {
+    "w": 1280,
+    "file": "ui-landscape-1280.webp",
+    "bytes": 126708
+   }
+  ]
+ },
+ "landscape-pond": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "landscape-pond-640.webp",
+    "bytes": 20334
+   },
+   {
+    "w": 1280,
+    "file": "landscape-pond-1280.webp",
+    "bytes": 47532
    }
   ]
  }

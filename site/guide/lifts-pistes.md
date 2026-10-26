@@ -43,6 +43,8 @@ Paint pistes by **difficulty**: green (easy), blue, red and black. The game colo
 - **Steepness**: a piste's real slope decides how hard it feels. A “green” painted on a cliff is still a cliff.
 - **Variety**: a good resort offers all difficulties; a goal asks for runs of green, blue and red, and another for a black run.
 
+> [!NOTE] **Hiking and biking trails can be painted all year**, including in deep winter: snow cover does not block them (they are just not used much until the snow melts).
+
 ### Slope profile and *Suggest a run*
 
 While you drag a piste or place a lift a small **profile card** shows the ground as a side view: altitude over distance, coloured by difficulty tile by tile, with today's **snowline** as a dashed line, plus length, drop and the average and steepest gradient. It tells you before you pay whether a "green" run is really green and whether the bottom will be bare in warm weather.

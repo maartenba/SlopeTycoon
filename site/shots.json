@@ -662,7 +662,7 @@
     "size": 128,
     "seed": 61,
     "start": "autumn",
-    "hour": 12,
+    "hour": 13,
     "zoom": 6,
     "target": "54,106",
     "extra": "starter=1&hints=0",
@@ -670,7 +670,7 @@
     "ticks": 300,
     "w": 1600,
     "h": 1000,
-    "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'almabtrieb',start:t,end:t+10});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+    "evalJs": "(()=>{const w=__slope.weather;w.current={kind:'clear',intensity:0,valleyT:9,snowline:w.current.snowline,wind:0.1,fog:0};})();(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'almabtrieb',start:t,end:t+10});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
     "steps": "wait:5000"
    }
   },
@@ -708,8 +708,49 @@
     "target": "lodge",
     "extra": "starter=1&mode=sandbox",
     "viewport": "1280x900",
-    "steps": "click:button[data-drawer=ops];wait:400;click:Staff;wait:800",
-    "evalJs": "__slope.progression.setLevel(4)"
+    "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:Staff;wait:800",
+    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)"
+   }
+  },
+  {
+   "id": "ui-landscape",
+   "alt": "The Landscape drawer on its Water tab: Dig pond and Fill in, with tabs for Terrain, Nature and Decor.",
+   "pages": [
+    "building"
+   ],
+   "kind": "harness",
+   "caption": "The Landscape drawer: Water, Terrain, Nature and Decor.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "evalJs": "__slope.progression.setLevel(2);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
+    "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:800"
+   }
+  },
+  {
+   "id": "landscape-pond",
+   "alt": "A pond dug on a level bench in summer, with a sand shore, boulders, a fountain, a fence, hedges and benches.",
+   "pages": [
+    "building"
+   ],
+   "kind": "harness",
+   "caption": "A pond with garden decor, all from the Landscape drawer.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "summer",
+    "hour": 12,
+    "zoom": 4,
+    "target": "lodge",
+    "extra": "starter=1&hints=0",
+    "w": 1600,
+    "h": 1000,
+    "evalJs": "(()=>{__slope.sim.progression.unlockAll=true;const L=__slope.landscapeDebug;const f=L.find(7);L.dig(f.x,f.y,7);for(const [k,r] of [['bench',1],['lamp',0],['flowerBed',0],['fountain',0],['hedge',0],['hedge',0],['hedge',0],['wall',1],['wall',1],['fence',0],['fence',0],['bench',0]]){let done=false;for(let dy=-8;dy<=8&&!done;dy++)for(let dx=-8;dx<=8&&!done;dx++){if(Math.abs(dx)<5&&Math.abs(dy)<5)continue;if(L.decor(k,f.x+dx,f.y+dy,r)==='ok')done=true;}}L.rocks(f.x+4,f.y+4,2);const p=__slope.sim.landscape.ponds[0];__slope.renderer.controls.target.set(f.x+0.5,p.level*0.5,f.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+    "steps": "wait:5000"
    }
   },
   {

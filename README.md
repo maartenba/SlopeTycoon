@@ -9,7 +9,7 @@ Status: pre-release (0.1.0) — playtest feedback welcome.
 
 ## Features
 
-- **Terrain**: seeded procedural valleys (presets, 64 / 128 / 256 map sizes), lakes and streams, forests, rocks; raise / lower / flatten terraforming; named seeds (`Alpine-Fox-1234`).
+- **Terrain**: seeded procedural valleys (presets, 64 / 128 / 256 map sizes), lakes and streams, forests, rocks; raise / lower / flatten terraforming; a Landscape drawer for ponds, boulders and garden decor; named seeds (`Alpine-Fox-1234`).
 - **Seasons & snow**: full year cycle (15-day months, 180-day year: winter and summer 60 days, spring and autumn 30) with weather, altitude snowline (high-altitude skiing alongside valley hiking in shoulder seasons), snow cover that builds and melts, day/night with optional fast nights, 50 % summer construction cost.
 - **Lifts**: magic carpets, T-bars, chairlifts, gondolas, funicular and more, with variants, auto-placed towers, visible cables and moving carriers, breakdowns, operating hours and energy cost.
 - **Pistes & paths**: paint pistes (difficulty from slope), paths, roads, rail; piste naming and inspector; quality, wear and traffic.

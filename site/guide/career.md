@@ -18,9 +18,11 @@ A level is reached when **all** of its requirements hold. Levels are *latched*: 
 
 {{fig:ui-levelup}}
 
+On the level-up card, **Show me** opens the drawer that holds a new unlock and points at its card with a highlight, so you do not have to hunt for it.
+
 ### What unlocks when
 
-Everything not listed is available from the start (including the starter chain of lifts, lodge, ticket office, parking, ski school, patrol hub, first-aid hut and the ranger station).
+Everything not listed is available from the start (including the Landscape drawer apart from digging ponds, and the starter chain of lifts, lodge, ticket office, parking, ski school, patrol hub, first-aid hut and the ranger station).
 
 {{gen:unlocks}}
 

@@ -14,7 +14,7 @@ Lower **Quality** (Settings or the *Graphics* menu in the top bar), shrink the b
 
 ## Nobody is coming
 
-Check, in order: is a **lift open** and connected to a **piste**? Are the **Base Lodge** and **parking** connected by road and path? Is it the right season (a ski-only resort gets few visitors in July)? Is the day pass far too dear (see [Money](page:money))? Ranger Rudi's Advice list usually names the problem.
+Check, in order: is a **lift open** and connected to a **piste**? Is there a **Parking** building, and are it and the **Base Lodge** connected by road and path? Is it the right season (a ski-only resort gets few visitors in July)? Is the day pass far too dear (see [Money](page:money))? Ranger Rudi's Advice list usually names the problem.
 
 ## A building says “Not connected” or “Closed”
 
