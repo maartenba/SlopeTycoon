@@ -251,3 +251,51 @@ export class Names {
 
 /** Pure helper for call sites without a Names instance (tests / fallbacks). */
 export function describeLocation(names: Names, x: number, y: number): Place { return names.describeLocation(x, y); }
+
+// ---------------------------------------------------------------- regions and peaks (Task 27; flavour only)
+// Pure functions of the seed: they own a private hash stream and never touch the sim RNG, so names cannot change stateHash.
+
+const REGION_PREFIX = ['Silver', 'Ember', 'Frost', 'Larch', 'Marmot', 'Edelweiss', 'Granite', 'Cedar', 'Raven', 'Hollow', 'Amber', 'Juniper', 'Cloud', 'Wolf', 'Pine', 'Glacier', 'Chamois', 'Misty', 'Golden', 'Quiet'] as const;
+const REGION_SUFFIX = ['Valley', 'Basin', 'Hollow', 'Range', 'Highlands', 'Massif', 'Dale', 'Reach', 'Heights', 'Fells', 'Glen', 'Alps'] as const;
+const PEAK_FIRST = ['Mount', 'Piz', 'Mont', 'Monte', 'Mount', 'Mount'] as const;
+const PEAK_NAME = ['Aldric', 'Bernina', 'Corvo', 'Dornach', 'Eiger-Ost', 'Falkner', 'Gamsberg', 'Hohenwart', 'Ibex', 'Jochberg', 'Kessel', 'Lindor', 'Murmel', 'Nebelhorn', 'Ortler', 'Pilatus-Nord', 'Quarz', 'Rotspitz', 'Sulden', 'Tannenkopf', 'Ulmer', 'Vallon', 'Weissfluh', 'Zinal', 'Brandt', 'Elmar', 'Hirsch', 'Sonnblick', 'Wetter', 'Stillhorn'] as const;
+const PEAK_QUIRK = ['the Patient', 'the Grumpy', 'the Reliable'] as const;
+
+/** Mulberry32 over a salted seed: private to names. */
+function nameStream(seed: number, salt: number): () => number {
+  let a = (Math.imul(seed | 0, 0x9e3779b1) ^ salt) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Region name from the seed ('Silver Basin'). Deterministic; same seed, same name. */
+export function regionNameOf(seed: number): string {
+  const r = nameStream(seed, 0x52454749);
+  const p = REGION_PREFIX[Math.floor(r() * REGION_PREFIX.length)]!;
+  const s = REGION_SUFFIX[Math.floor(r() * REGION_SUFFIX.length)]!;
+  return `${p} ${s}`;
+}
+
+/**
+ * Names for the map's peaks, highest first (`peaks` = a count or the peak list; capped at 6). Distinct within a seed;
+ * the highest peak occasionally gets a mild epithet (humour sparingly: about 1 in 8 seeds).
+ */
+export function peakNamesOf(seed: number, peaks: number | readonly unknown[]): string[] {
+  const n = Math.max(0, Math.min(6, Math.floor(typeof peaks === 'number' ? peaks : peaks.length)));
+  const r = nameStream(seed, 0x5045414b);
+  const pool = [...PEAK_NAME];
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const base = pool.splice(Math.floor(r() * pool.length), 1)[0]!;
+    const first = PEAK_FIRST[Math.floor(r() * PEAK_FIRST.length)]!;
+    out.push(`${first} ${base}`);
+  }
+  const q = r();
+  if (out.length > 0 && q < 0.125) out[0] = `${out[0]} ${PEAK_QUIRK[Math.floor(r() * PEAK_QUIRK.length)]!}`;
+  return out;
+}

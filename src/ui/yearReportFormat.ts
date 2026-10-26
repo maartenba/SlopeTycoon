@@ -49,7 +49,7 @@ export function highlightLines(r: YearReport): string[] {
 }
 
 export const yearTitle = (r: YearReport): string => `Year ${r.year} report`;
-export const yearSubtitle = (r: YearReport): string => `${r.name} · ${r.partial ? `${r.days} days recorded (first year)` : 'a full year on the mountain'}`;
+export const yearSubtitle = (r: YearReport, region = ''): string => `${r.name}${region ? ` · ${region}` : ''} · ${r.partial ? `${r.days} days recorded (first year)` : 'a full year on the mountain'}`;
 
 // ---------------------------------------------------------------- charts (SVG strings; numbers only, nothing user-typed)
 const f1 = (n: number): string => (Math.round(n * 10) / 10).toString();

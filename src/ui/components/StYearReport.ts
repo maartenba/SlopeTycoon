@@ -34,6 +34,8 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
 export class StYearReport extends StElement {
   private readonly dlg: Modal;
   private api: YearReportApi | null = null;
+  /** Region name shown after the resort name in the subtitle (flavour; set by the host, not stored in the report). */
+  region = '';
   private report: YearReport | null = null;
   private done: ((how: YearReportClose) => void) | null = null;
   private how: YearReportClose = 'later';
@@ -114,7 +116,7 @@ ul.hl li{break-inside:avoid;padding:1px 0}
     const cover = el('div', 'cover');
     if (r.cover && r.cover.startsWith('data:image/')) cover.style.backgroundImage = `url("${r.cover}")`; else cover.append(el('span', 'mtn', '▲'));
     const txt = el('div', 'txt');
-    txt.append(el('h3', '', r.headline.title), el('p', '', yearSubtitle(r)));
+    txt.append(el('h3', '', r.headline.title), el('p', '', yearSubtitle(r, this.region)));
     cover.append(el('div', 'shade'), txt);
 
     const tiles = el('div', 'tiles');

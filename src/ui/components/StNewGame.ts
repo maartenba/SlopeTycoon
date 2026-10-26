@@ -1,4 +1,7 @@
 import { DIFFICULTY, DIFFICULTY_IDS, START_MONEY_RANGE, WALKING_RADIUS_RANGE, WALKING_RADIUS_TILES, type DifficultyId } from '../../config/balance';
+import { regionNameOf, peakNamesOf } from '../../sim/Names';
+import { Grid } from '../../world/Grid';
+import { generateTerrain } from '../../world/TerrainGen';
 import { DEFAULT_CONFIG, MAP_SIZES, START_SEASONS, normalizeConfig, randomSeed, seedFromText, seedName, startingMoney, type GameConfig } from '../../game/difficulty';
 import { GAME_MODES, MODE_INFO } from '../../config/progression';
 import { PRESET_IDS, TERRAIN_PRESETS } from '../../world/TerrainPresets';
@@ -109,6 +112,35 @@ export class StNewGame extends StElement {
     return w;
   }
 
+  /** Region name + a small height-map thumbnail of the CURRENT seed (a throwaway 64 grid; never touches sim state). */
+  private preview(c: GameConfig): HTMLElement {
+    const box = document.createElement('div'); box.className = 'regionbox'; box.dataset.region = '';
+    box.style.cssText = 'display:flex;gap:10px;align-items:center';
+    const info = document.createElement('div');
+    const nm = document.createElement('b'); nm.textContent = regionNameOf(c.seed); nm.dataset.regionName = '';
+    const pk = document.createElement('div'); pk.className = 'hint'; pk.dataset.peaks = '';
+    box.append(info); info.append(nm, pk);
+    try {
+      const grid = new Grid(64); generateTerrain(grid, c.seed, c.preset);
+      const n = grid.size; let lo = Infinity, hi = -Infinity;
+      for (let i = 0; i < n * n; i++) { const h = grid.heights[(Math.floor(i / n) * grid.vsize) + (i % n)] ?? 0; if (h < lo) lo = h; if (h > hi) hi = h; }
+      const cv = document.createElement('canvas'); cv.width = cv.height = 64; cv.style.cssText = 'width:96px;height:96px;border-radius:6px;image-rendering:auto;border:1px solid #34465e'; cv.setAttribute('aria-label', 'Map thumbnail');
+      const g = cv.getContext?.('2d');
+      if (g) {
+        const img = g.createImageData(64, 64);
+        for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+          const h = grid.heights[y * grid.vsize + x] ?? 0, t = hi > lo ? (h - lo) / (hi - lo) : 0, o = (y * 64 + x) * 4;
+          const shade = (y > 0 ? (grid.heights[(y - 1) * grid.vsize + x] ?? h) - h : 0) * 6;
+          img.data[o] = Math.max(0, Math.min(255, 60 + t * 190 + shade)); img.data[o + 1] = Math.max(0, Math.min(255, 90 + t * 150 + shade)); img.data[o + 2] = Math.max(0, Math.min(255, 70 + t * 170 + shade)); img.data[o + 3] = 255;
+        }
+        g.putImageData(img, 0, 0);
+      }
+      box.prepend(cv);
+    } catch { /* thumbnail is optional flavour */ }
+    pk.textContent = 'Peaks: ' + peakNamesOf(c.seed, 3).slice(0, 2).join(', ');
+    return box;
+  }
+
   private render(): void {
     const c = this.cfg;
     this.sizeHint.className = 'hint'; this.sizeHint.textContent = SIZE_HINTS[c.size]!;
@@ -156,7 +188,7 @@ export class StNewGame extends StElement {
       tabs,
       this.row('Game mode', modes), this.modeHint,
       this.row('Map size', this.seg(MAP_SIZES.map((s) => ({ v: s as number, text: String(s) })), c.size, (v) => this.set({ size: v as GameConfig['size'] }), 'size')), this.sizeHint,
-      this.row('Seed', this.seedInput, dice), this.seedLabel,
+      this.row('Seed', this.seedInput, dice), this.seedLabel, this.preview(c),
       this.row('Terrain', preset, presetHint),
       this.row('Start season', season),
       this.row('Difficulty', diff, diffHint),
