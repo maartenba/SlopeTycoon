@@ -147,6 +147,13 @@ export function seasonHint(tag: SeasonTag, season: SeasonId | undefined): string
   return u ? `Not usable until ${u} (you can still build it in advance)` : null;
 }
 
+/** One-line note for the Pistes & Trails drawer: trails and pistes can always be built (plan ahead); they are only used in their season. null = nothing to say. */
+export function trailSeasonNote(season: SeasonId | undefined): string | null {
+  if (season === 'winter') return 'Trails can be built now; bikers and hikers use them once the snow is gone.';
+  if (season === 'summer') return 'Ski pistes can be built now; skiers use them once there is snow.';
+  return null;
+}
+
 export interface BuildingInfoCtx {
   /** Lock reasons from Dependencies.canPlace (empty = unlocked). */
   locked(type: string): string[];

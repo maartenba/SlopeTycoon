@@ -160,6 +160,8 @@ export class Water {
   private readonly normalMap: THREE.CanvasTexture;
   private readonly material: THREE.ShaderMaterial;
   private mesh: THREE.Mesh | null = null;
+  private readonly grid: Grid;
+  private readonly streams: Stream[];
   private clock = 0;
   private lastT: number | null = null;
 
@@ -183,7 +185,14 @@ export class Water {
         uSkyColor: { value: new THREE.Color(0.46, 0.54, 0.68) },
       },
     });
-    const d = buildWaterData(grid, lakes, streams);
+    this.grid = grid; this.streams = streams;
+    this.setLakes(lakes);
+  }
+
+  /** (Re)build the water mesh: natural lakes + ponds the player dug (+ streams). Called again whenever a pond is dug / filled in / undone. */
+  setLakes(lakes: Lake[]): void {
+    if (this.mesh) { this.group.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh = null; }
+    const d = buildWaterData(this.grid, lakes, this.streams);
     if (d.vertexCount === 0) return;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));

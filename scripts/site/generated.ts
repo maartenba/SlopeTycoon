@@ -1,7 +1,7 @@
 /** Guide blocks generated from the game's own config at build time, so they cannot drift (tests/site/generated.test.ts). Return Markdown/HTML. */
 import { KEY_BINDINGS, type KeyBinding, type KeyContext } from '../../src/ui/shortcuts';
 import { LEVELS } from '../../src/config/progression';
-import { UNLOCKS } from '../../src/config/unlocks';
+import { UNLOCKS, unlockName } from '../../src/config/unlocks';
 import { BUILDINGS } from '../../src/config/buildings';
 import { LIFTS, LIFT_KIND_IDS } from '../../src/config/lifts';
 import { CAMPAIGNS } from '../../src/config/marketing';
@@ -15,15 +15,15 @@ const money = (n: number): string => `$${n.toLocaleString('en-US')}`;
 const cell = (s: string): string => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 const table = (head: string[], rows: string[][]): string => [`| ${head.join(' | ')} |`, `|${head.map(() => '---').join('|')}|`, ...rows.map((r) => `| ${r.map(cell).join(' | ')} |`)].join('\n');
 
-const KEY_NAMES: Record<string, string> = { ' ': 'Space', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', '1-9': '1–9' };
+const KEY_NAMES: Record<string, string> = { ' ': 'Space', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', '1-9': '1–9', '1-6': '1–6' };
 export const keyLabel = (k: string): string => KEY_NAMES[k] ?? (k.length === 1 ? k.toUpperCase() : k);
 const kbd = (k: string): string => k.split('+').map((p) => `<kbd>${keyLabel(p)}</kbd>`).join('+');
 
 export const CONTEXT_TITLES: Record<KeyContext, string> = {
-  global: 'Anywhere', drawer: 'Buildings drawer open', terraform: 'Terrain drawer: terraform tools', plant: 'Terrain drawer: tree tools', build: 'Placing a building',
+  global: 'Anywhere', drawer: 'Buildings drawer open', terraform: 'Terrain drawer: terraform tools', plant: 'Terrain drawer: tree tools', landscape: 'Landscape drawer: ponds, boulders, decor', build: 'Placing a building',
   lift: 'Placing a lift', path: 'Drawing paths, roads, rail and pistes', ride: 'Ride-along', photo: 'Photo mode', walk: 'Walk mode',
 };
-const CONTEXT_ORDER: KeyContext[] = ['global', 'drawer', 'build', 'lift', 'path', 'terraform', 'plant', 'ride', 'walk', 'photo'];
+const CONTEXT_ORDER: KeyContext[] = ['global', 'drawer', 'build', 'lift', 'path', 'terraform', 'plant', 'landscape', 'ride', 'walk', 'photo'];
 
 /** One table per context, rows merged by action (W / ↑ = pan up). Every KEY_BINDINGS key appears at least once. */
 export function shortcuts(bindings: readonly KeyBinding[] = KEY_BINDINGS): string {
@@ -42,7 +42,7 @@ export function levels(): string {
     LEVELS.map((l) => [String(l.level), l.name, l.stars ? `${l.stars}★` : '–', l.guests ? l.guests.toLocaleString('en-US') : '–', l.peakDay ? String(l.peakDay) : '–', l.profitMonths ? String(l.profitMonths) : '–', l.chapters ? `${l.chapters} of 4` : '–', Number.isFinite(l.annualProfit) ? money(l.annualProfit) : '–']));
 }
 export function unlocks(): string {
-  const nameOf = (u: (typeof UNLOCKS)[number]): string => u.kind === 'lift' ? `${LIFTS[u.id as keyof typeof LIFTS]?.name ?? u.id} (lift)` : u.kind === 'building' ? `${BUILDINGS[u.id]?.name ?? u.id} (building)` : `${CAMPAIGNS.find((c) => c.id === u.id)?.name ?? u.id} (marketing campaign)`;
+  const nameOf = (u: (typeof UNLOCKS)[number]): string => u.kind === 'lift' ? `${LIFTS[u.id as keyof typeof LIFTS]?.name ?? u.id} (lift)` : u.kind === 'building' ? `${BUILDINGS[u.id]?.name ?? u.id} (building)` : u.kind === 'landscape' ? `${unlockName(u.kind, u.id)} (landscaping)` : `${CAMPAIGNS.find((c) => c.id === u.id)?.name ?? u.id} (marketing campaign)`;
   return table(['Level', 'Unlocks'], LEVELS.filter((l) => l.level > 1).map((l) => [`${l.level}: ${l.name}`, UNLOCKS.filter((u) => u.level === l.level).map(nameOf).join(', ') || 'Nothing new']));
 }
 export function lifts(): string {

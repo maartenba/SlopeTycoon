@@ -35,6 +35,7 @@
     "test:all": "npm test && npm run test:perf",
     "shot": "vite-node scripts/shot.ts",
     "flicker": "vite-node scripts/flicker-test.ts",
+    "flicker:building": "vite-node scripts/flicker-building.ts",
     "shot:suite": "vite-node scripts/shot-suite.ts",
     "perf:ground": "vite-node scripts/perf-ground.ts",
     "recap:shot": "vite-node scripts/recap-shot.ts",

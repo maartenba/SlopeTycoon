@@ -50,6 +50,9 @@ svg.fade{animation:starfade .7s ease-out}@keyframes starfade{from{opacity:.35}to
     this.root.append(this.label, this.panel);
   }
 
+  /** 'Show me' for rating advice: open the breakdown panel (and keep it open). */
+  open(): void { this.panel.hidden = false; this.refresh(); }
+
   bind(get: () => { breakdown: RatingBreakdown; happiness: number; market?: MarketInfo | null }): void {
     this.get = get; this.refresh();
     window.clearInterval(this.timer);

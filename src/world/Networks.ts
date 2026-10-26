@@ -322,6 +322,7 @@ export class Networks {
     const tt = this.grid.tileType[i];
     // Lakes block every layer; streams block ski pistes (no snow on water: documented rule, no snow bridges) but trails bridge them.
     if (tt === TileType.Water || (tt === TileType.Stream && layer === Layer.Ski)) return { ok: false, reason: PISTE_WATER_MSG };
+    if (this.grid.occupancy.flags[i]! & OccFlag.Decor) return { ok: false, reason: 'Garden decor in the way' };
     if (this.grid.occupancy.flags[i]! & OccFlag.Building) {
       // Only buildings that may stand on a piste (pisteRule 'allow': carpet, cannon, sign, stunt park) can be painted over.
       const t = this.host.at(x, y)?.type;

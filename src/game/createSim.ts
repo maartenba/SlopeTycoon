@@ -84,6 +84,8 @@ import { ScenarioRunner, type ScenarioWorld } from '../sim/scenario/ScenarioRunn
 import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
 import { DAYS_PER_YEAR } from '../config/balance';
+import { Landscape, type LandscapeEnv } from '../sim/landscape/Landscape';
+import { Layer } from '../world/Networks';
 import { key as unlockKey, isGated } from '../config/unlocks';
 import type { TerrainPresetId } from '../world/TerrainPresets';
 import type { DifficultyId } from '../config/balance';
@@ -229,6 +231,26 @@ export function createSim(opts: SimOptions) {
   const networkProvider: NetworkProvider = networkProviderFrom(networks);
   const lifts = new LiftStore(grid.occupancy);
   buildings.liftClearance = (c) => liftClearanceViolations(grid, lifts, c);
+
+  // ---- Landscaping (Landscape drawer): player ponds, boulders, garden decor. Ponds count as lake tiles (beach / boat rental / wildlife). ----
+  const naturalLakeTiles = buildings.lakeTiles;
+  const landscape = new Landscape(grid);
+  landscape.onChange(() => { buildings.lakeTiles = naturalLakeTiles.concat(landscape.pondTiles().map((i) => ({ x: i % size, y: Math.floor(i / size) }))); buildings.reevaluate(); });
+  const landscapeEnv = (): LandscapeEnv => ({
+    grid, props, seed, gate,
+    netAt: (i) => (networks.layers[i] ?? 0) | (networks.kind[i] ?? 0),
+    isPiste: (i) => ((networks.layers[i] ?? 0) & Layer.Ski) !== 0,
+    liftClearanceViolations: (c) => liftClearanceViolations(grid, lifts, c),
+    waterDependent: (tiles) => {
+      const set = new Set(tiles);
+      for (const b of buildings.all()) {
+        if (b.type !== 'beach' && b.type !== 'boatRental') continue;
+        for (let y = b.y - 1; y <= b.y + b.h; y++) for (let x = b.x - 1; x <= b.x + b.w; x++) if (set.has(y * size + x)) return BUILDINGS[b.type]?.name ?? b.type;
+      }
+      return null;
+    },
+    multiplier: () => economy.constructionMultiplier(),
+  });
 
   // ---- Sim-driven season (weather + per-tile snow, altitude-dependent snowline) ----
   const worldScale = worldScaleFor(size);
@@ -886,7 +908,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    achievements, rivals, sustain,
+    achievements, rivals, sustain, landscape, landscapeEnv,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,

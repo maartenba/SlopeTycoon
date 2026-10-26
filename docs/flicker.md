@@ -54,3 +54,15 @@ Reading: **LOD flips under zoom jitter 23-115 -> 0**, tree-LOD pop events 2 -> 0
 ## Tests (default suite, no WebGL)
 
 `tests/render/lodSelect.test.ts` (hysteresis stable under jitter, switches on real change, fade weight continuous / monotonic, per-instance masks complementary and once-only, hash independent of the camera, build order) and `tests/render/flickerLod.test.ts` (guest impostor hysteresis; terrain swap covers every macro area exactly once per frame while zooming in / out; macro LOD stable under jitter; tree layer: no fade under jitter, fade keeps the old level drawn, never an empty frame, masks off at the end).
+
+## Building snow / coplanar faces (user report: "still flickering on the snow patches underneath a building", winter)
+
+Quick check: `npm run flicker:building -- [--season winter] [--zooms 2,3.5,6] [--yaws 8] [--rw 300 --rh 220] [--off terrain,trees,...,lodge,lodge:<layer>] [--out name]` (~35 s; `scripts/flicker-building.ts`): winter lodge, windows of 5 frames 0.1 deg apart at several yaws / zooms, oscillating pixels (as above) counted only in the centre region, heatmap `.weave/shots/flicker-building-<out>-z<i>.png`. `--off lodge:list|flat|coplanar|tris`, `lodge:<child>:x<a>-<b>` bisect the lodge mesh down to triangles.
+
+Root causes:
+1. **Roof snow tint used `floor()`-quantised hashes** (1/3 and 1/7 tile cells, also moving the snow threshold): hard blocky squares on every roof, static AND crawling when the camera moved. Now smooth world-space value noise (`snowRoofNoise`, 0.6 cells / tile), low contrast (0.93-0.98), threshold no longer jittered.
+2. **Coplanar faces of different boxes** inside one building (the Base Lodge's wing-bay end walls are flush with the hall's end walls, doorway / frame trims, ...): same depth, so which one wins flips every frame = the large flickering parallelograms. `PartBuilder.box` now grows every box by a tiny strictly increasing amount (`boxGrow`: 0.04 mm-units per box, cap 0.008) so the later part always wins. Test: `tests/render/snowFlicker.test.ts` (no coplanar overlapping visible faces in any building).
+3. Plinth flagstone tops sat exactly at the (flat) terrain height: 0.01 higher now.
+Checked, not the cause: ground mask (already LINEAR sampled), terrace slab, snow shader on roofs (osc unchanged with snow off), shadow maps (disabled).
+
+Numbers (lodge, 64-winter seed 61, T 8): small region 300x220 at zoom 2 / 3.5 / 6: 358.6 / 162.1 / 9.1 -> 257.2 / 78.3 / 9.1 osc px per window (sum 529.8 -> ~296); whole frame at zoom 4: 3485 -> 2956 (the rest is terrain texture shimmer on the dark cliff skirt at the bottom of the frame, not the building).

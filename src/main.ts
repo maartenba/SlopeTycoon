@@ -33,6 +33,9 @@ import { SmokeView, type SmokeSource } from '@/render/Smoke';
 import { SnowSprayView } from '@/render/SnowSpray';
 import { modalPause } from '@/ui/modalPauseGate';
 import { PlantTool } from '@/build/PlantTool';
+import { LandscapeTool } from '@/build/LandscapeTool';
+import { applyDecor, applyPond, applyRocks, planDecor, planPond, planRocks, pondRectAround } from '@/sim/landscape/Landscape';
+import { LandscapeDecorView } from '@/render/LandscapeDecor';
 import { PLANT_GROUPS, PLANT_GROUP_IDS, type PlantGroup } from '@/sim/nature/Planting';
 import { DAYS_PER_YEAR, SPEED_MULTIPLIERS, TICKS_PER_SECOND, TILE_METRES, oldDays } from '@/config/balance';
 import { AchievementAnnouncer } from '@/ui/achievementToasts';
@@ -95,6 +98,7 @@ import { canPlace } from '@/sim/Dependencies';
 import { autoFlattenDefault } from '@/sim/PlacementRules';
 import { pickHeightfield } from '@/render/Picking';
 import type { StDock } from '@/ui/components/StDock';
+import type { PanelRef } from '@/sim/goals/Goals';
 import { Thumbnails } from '@/render/thumbnails/Thumbnails';
 import { LIFTS } from '@/config/lifts';
 import type { StInspector } from '@/ui/components/StInspector';
@@ -486,6 +490,7 @@ let toastRef: StToast | null = null;
 let profileRef: { show(v: ProfileView | null): void } | null = null;
 const snowlineNow = (): number => altitudeMetres(sim.weather.current.snowline);
 let dockRef: StDock | null = null;
+let hudRef: { showRating(): void } | null = null;
 let inspectorRef: StInspector | null = null;
 let schoolInfoRef: ((id: number, type: string) => NonNullable<import('@/ui/components/StInspector').InspectorTarget['school']> | undefined) | null = null;
 let selectedId: number | null = null;
@@ -552,7 +557,7 @@ const terraform = new TerraformTool({
   constructionMultiplier: () => economy.constructionMultiplier(),
   liftClearanceViolations: (changed) => (liftToolsRef ? liftClearanceViolations(grid, liftToolsRef.lifts, changed) : 0),
   onModeChange: (st) => dockRef?.syncTerraform(st),
-  onApplied: (r) => { if (r.touchedChunks.length) refreshProps(r.touchedChunks); covOverlay.invalidateHeights(); },
+  onApplied: (r) => { if (r.touchedChunks.length) refreshProps(r.touchedChunks); covOverlay.invalidateHeights(); landscapeDecor?.invalidate(); },
 });
 
 const plantTool = new PlantTool({
@@ -568,6 +573,36 @@ const plantTool = new PlantTool({
 });
 sim.nature.onPropChunks = (c) => refreshProps(c);
 
+// ---- Landscaping (Landscape drawer): ponds / boulders / garden decor. Water goes through the natural-lake Water mesh; decor through a second VillageDecor (3 draw calls). ----
+const landscapeDecor = new LandscapeDecorView(sim.landscape, (x, z) => surfaceHeight(grid, x, z));
+renderer.scene.add(landscapeDecor.group);
+let landscapeSeen = -1;
+/** Per frame: rebuild the water mesh / decor meshes when the Landscape changed (dig, fill, place, undo, redo, load). Cheap: one integer compare. */
+const updateLandscapeView = (): void => {
+  landscapeDecor.setNight(lighting.nightUniform.value);
+  if (landscapeSeen === sim.landscape.version) return;
+  landscapeSeen = sim.landscape.version;
+  water.setLakes([...terrainInfo.lakes, ...sim.landscape.ponds]);
+  landscapeDecor.sync();
+  covOverlay.invalidateHeights();
+};
+let landscapeWalkItems: readonly import('@/render/VillageDecor').DecorItem[] = [], landscapeWalkKey: readonly unknown[] = [];
+/** Walk mode collides with the village decor AND the player's decor (stable array identity while neither changes: the walk world caches on it). */
+const allDecorItems = (): readonly import('@/render/VillageDecor').DecorItem[] => {
+  if (landscapeWalkKey[0] !== villageDecor.items || landscapeWalkKey[1] !== landscapeDecor.items) { landscapeWalkKey = [villageDecor.items, landscapeDecor.items]; landscapeWalkItems = [...villageDecor.items, ...landscapeDecor.items]; }
+  return landscapeWalkItems;
+};
+const landscapeTool = new LandscapeTool({
+  grid, props, ls: sim.landscape, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays,
+  env: () => sim.landscapeEnv(),
+  now: () => game.date.year * DAYS_PER_YEAR + game.date.day,
+  charge: (cost) => economy.charge(cost),
+  beginStroke: (label) => undo.landscapeStroke(label),
+  onApplied: (chunks) => { if (chunks.length) { refreshProps(chunks); sim.nature.growth.track(chunks); } sim.nature.cover.dirty = true; covOverlay.invalidateHeights(); landscapeDecor.invalidate(); },
+  onState: () => dockRef?.syncLandscape(),
+  onRefused: (reason) => toast(reason, 'warn', 'landscape'),
+});
+
 // Chimney smoke + animals per frame (camera-relative LOD/culling inside the views).
 const smoke = new SmokeView(lighting.nightUniform);
 renderer.scene.add(smoke.group);
@@ -582,6 +617,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   const st = seasonYear(game.date);
   { const dw = Math.abs(st - 0.875); natureView.setWinter(Math.max(0, 1 - Math.min(dw, 1 - dw) * 6)); }
   updateVillageDecor(dt);
+  updateLandscapeView();
   updateFestival(dt);
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
   { // snowmaking cannon spray (1 draw call; only running cannons near the view centre)
@@ -669,6 +705,7 @@ let bulldozing = false;
 tools.register({ id: 'select', label: 'Select', enable: () => {}, disable: () => {} });
 tools.register({ id: 'terraform', label: 'Terraform', enable: () => terraform.enable(), disable: () => terraform.disable() });
 tools.register({ id: 'plant', label: 'Plant trees', enable: () => plantTool.enable(), disable: () => plantTool.disable() });
+tools.register({ id: 'landscape', label: 'Landscape', enable: () => landscapeTool.enable(), disable: () => landscapeTool.disable() });
 tools.register({
   id: 'bulldoze', label: 'Bulldoze',
   enable: () => { bulldozing = true; },
@@ -694,7 +731,7 @@ const applyUndoReport = (r: ReturnType<Undo['undo']>, msg: (r: ReturnType<Undo['
   if (a.touchedChunks.length) refreshProps(a.touchedChunks);
   if (a.kind === 'building') { buildingsView.sync(); if (selectedId !== null && !buildings.get(selectedId)) selectedId = null; refreshCoverage(undefined, true); announceChanged(a.changed); }
   else if (a.kind === 'lift') { liftToolsRef?.syncView(); refreshCoverage(undefined, true); }
-  else if (a.kind === 'terrain') { sim.nature.growth.track(a.touchedChunks); sim.nature.cover.dirty = true; netTools?.refreshChunks(a.touchedChunks); }
+  else if (a.kind === 'terrain') { sim.nature.growth.track(a.touchedChunks); sim.nature.cover.dirty = true; netTools?.refreshChunks(a.touchedChunks); landscapeDecor.invalidate(); covOverlay.invalidateHeights(); }
   else { netTools?.refresh(); }
   covOverlay.invalidateHeights();
   inspectorRef?.offerUndo(null);
@@ -1462,7 +1499,7 @@ window.addEventListener('keydown', (e) => {
 // ---- Walk mode (Task 12): first-person on foot. READS the sim only (grid, networks, props, buildings, lifts, guests, animals); the walker is not a sim guest and is never saved ----
 const WALK_STORAGE = (() => { try { return window.localStorage; } catch { return null; } })();
 let walkSettings: WalkSettings = loadWalkSettings(WALK_STORAGE);
-const walkWorld = buildWalkWorld(grid, networks, props, (x, z) => surfaceHeightAt(grid, x, z), () => villageDecor.items);
+const walkWorld = buildWalkWorld(grid, networks, props, (x, z) => surfaceHeightAt(grid, x, z), allDecorItems);
 const walkPaths = new Map<number, { nodes: unknown; path: CablePath }>();
 let walkRng = 0x9e3779b9; // render-only RNG (footstep pitch jitter): never touches the sim RNG
 const walkRand = (): number => { walkRng = (Math.imul(walkRng, 1664525) + 1013904223) >>> 0; return walkRng / 4294967296; };
@@ -1805,6 +1842,12 @@ const viewApi = {
 const pingMarker = new TutorialMarker((x, y) => heightAt(grid, x, y));
 renderer.scene.add(pingMarker.mesh);
 let pingUntil = 0;
+/** 'Show me' for things that live in a panel, not on the map: open the drawer / HUD panel and highlight the item. */
+const showPanel = (p: PanelRef | null | undefined): void => {
+  if (!p) { toast(ADVISOR_UI.noTarget, 'info'); return; }
+  if (p.drawer === 'rating') { hudRef?.showRating(); return; }
+  dockRef?.showPanel(p.drawer, p.item);
+};
 const goTo = (f: FocusTarget): void => {
   renderer.controls.focusOn(f.x + 0.5, f.y + 0.5);
   if (f.entityKind === 'building' && f.entityId !== undefined && buildings.get(f.entityId)) select(f.entityId);
@@ -2129,7 +2172,7 @@ if (ui && !DEMO) {
   const toastEl = el('st-toast');
   const profileEl = el('st-profile');
   profileRef = profileEl;
-  dockRef = dock; inspectorRef = inspector; toastRef = toastEl; globalToast = toastEl;
+  hudRef = hud as unknown as { showRating(): void }; dockRef = dock; inspectorRef = inspector; toastRef = toastEl; globalToast = toastEl;
   const thumbs = new Thumbnails(buildingMeshes);
   const setFlatten = (v: boolean): void => { placement.setAutoFlatten(v); if (liftToolsRef) liftToolsRef.tool.setAutoFlatten(v); };
   const getFlatten = (): boolean => (tools.current === 'lift' && liftToolsRef ? liftToolsRef.tool.autoFlatten : placement.autoFlatten);
@@ -2193,7 +2236,7 @@ if (ui && !DEMO) {
     season: () => seasonOf(game.date),
     finance: { panels: () => [finPanel, loanPanel], refresh: () => { finPanel.requestRefresh(); loanPanel.requestRefresh(); } },
     operations: { panels: () => [opsPanel], refresh: () => opsPanel.requestRefresh() },
-    marketing: { panels: () => [mktPanel, evPanel], refresh: () => { mktPanel.requestRefresh(); evPanel.requestRefresh(); } },
+    marketing: { panels: () => [mktPanel, evPanel], refresh: () => { mktPanel.requestRefresh(); evPanel.requestRefresh(); }, highlight: (id) => (mktPanel as unknown as { highlight(id: string | null): void }).highlight(id) },
     pricing: { panels: () => [pricePanel], refresh: () => pricePanel.requestRefresh() },
     buildings: {
       locked: (t) => buildingLocks(t),
@@ -2224,6 +2267,12 @@ if (ui && !DEMO) {
       setMode: (m) => terraform.setMode(m), setTarget: (t) => terraform.setTarget(t), setBrush: (n) => terraform.setBrush(n),
       setMaxEdgeDelta: (d) => terraform.setMaxEdgeDelta(d),
       state: () => ({ mode: terraform.mode, brush: terraform.brush, target: terraform.target, maxEdgeDelta: terraform.maxEdgeDelta }),
+    },
+    landscape: {
+      activate: (m) => { tools.activate('landscape'); if (m) landscapeTool.setMode(m); dockRef?.syncLandscape(); },
+      setMode: (m) => { tools.activate('landscape'); landscapeTool.setMode(m); }, setDecor: (k) => { tools.activate('landscape'); landscapeTool.setDecor(k); },
+      setBrush: (n) => landscapeTool.setBrush(n), setRot: (r) => landscapeTool.setRot(r), state: () => landscapeTool.state(),
+      pondLocked: () => sim.gate.locked('landscape', 'pond'), multiplier: () => economy.constructionMultiplier(),
     },
     nature: {
       setMode: (m) => { tools.activate('plant'); plantTool.setMode(m); }, setGroup: (g) => plantTool.setGroup(g as PlantGroup),
@@ -2347,7 +2396,7 @@ if (ui && !DEMO) {
   });
   // Resort goals card (M5.1): right column under the HUD; hidden + paused while the tutorial runs.
   const goalsEl = el('st-goals');
-  goalsEl.bind(bus, { view: () => sim.goals.view(), progress: () => sim.progression.view(), show: (id) => { const p = sim.goals.focusOf(id); if (p) goTo({ x: p.x, y: p.y }); else toast('Nothing to look at yet: build it first (see the goal tip).', 'info'); } });
+  goalsEl.bind(bus, { view: () => sim.goals.view(), progress: () => sim.progression.view(), show: (id) => { const p = sim.goals.focusOf(id); if (p) goTo({ x: p.x, y: p.y }); else showPanel(sim.goals.panelOf(id)); } });
   const setGoalsHidden = (on: boolean): void => { sim.goals.paused = on; goalsEl.suppress(on); };
   // ---- Scenario (M5.3 Task 15): the scenario card REPLACES the goal card; win / lose dialog; results go to the local profile (IndexedDB `slope-profile`) ----
   const scen = sim.scenario;
@@ -2550,7 +2599,7 @@ if (ui && !DEMO) {
     spotlight.bind({ resolve: (chain) => resolveChain(chain) });
     // Ranger Rudi's advice (M5.1): the advisor is paused while the tutorial runs (tutorial has priority); "Show me" reuses the ping marker + camera focus.
     assistant.bindAdvice({
-      show: (id) => { const adv = sim.advisor.ranked().find((a) => a.id === id), tg = adv?.target; const st = adv?.action?.site, def = adv?.action ? BUILDINGS[adv.action.building] : undefined; if (tg) goTo({ x: tg.x, y: tg.y, ...(st && def ? { rect: { x: st.x, y: st.y, w: st.rot % 2 ? def.h : def.w, h: st.rot % 2 ? def.w : def.h } } : {}), ...(tg.kind === 'building' && tg.id !== undefined ? { entityKind: 'building' as const, entityId: tg.id } : {}) }); else toast(ADVISOR_UI.noTarget, 'info'); },
+      show: (id) => { const adv = sim.advisor.ranked().find((a) => a.id === id), tg = adv?.target; const st = adv?.action?.site, def = adv?.action ? BUILDINGS[adv.action.building] : undefined; if (tg) goTo({ x: tg.x, y: tg.y, ...(st && def ? { rect: { x: st.x, y: st.y, w: st.rot % 2 ? def.h : def.w, h: st.rot % 2 ? def.w : def.h } } : {}), ...(tg.kind === 'building' && tg.id !== undefined ? { entityKind: 'building' as const, entityId: tg.id } : {}) }); else if (adv?.panel) showPanel(adv.panel); else toast(ADVISOR_UI.noTarget, 'info'); },
       dismiss: (id) => sim.advisor.dismiss(id),
     });
     sim.advisor.onChange(() => assistant.renderAdvice({ items: sim.advisor.top().map((a) => ({ id: a.id, severity: a.severity, title: a.title, why: a.why, ...(a.friendly ? { friendly: a.friendly } : {}) })), count: sim.advisor.count() }));
@@ -2616,7 +2665,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { select, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { select, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 hideSplash();
 
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {

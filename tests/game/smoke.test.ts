@@ -36,6 +36,10 @@ describe('starter resort', () => {
       const inactive = sim.buildings.all().filter((b) => !b.active).map((b) => `${b.type}: ${b.reason}`);
       expect(inactive).toEqual([]);
       expect(sim.lifts.all().every((l) => l.open)).toBe(true);
+      // the parking sits on a road that is connected to the road entry
+      const parking = sim.buildings.all().filter((b) => b.type === 'parking');
+      expect(parking.length).toBeGreaterThan(0);
+      for (const p of parking) { expect(p.active, `parking ${p.reason}`).toBe(true); expect(sim.networks.serves('road', p), 'parking road').toBe(true); }
     });
   }
 });

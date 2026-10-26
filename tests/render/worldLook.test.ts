@@ -40,7 +40,7 @@ describe('village layout', () => {
   it('is deterministic, avoids blocked tiles and stays near the lodge', () => {
     const a = layoutVillage(lodge, { size: 64, blocked: () => false }), b = layoutVillage(lodge, { size: 64, blocked: () => false });
     expect(a).toEqual(b); expect(a.length).toBeGreaterThan(20);
-    expect(a.some((i) => i.kind === 'lamp') && a.some((i) => i.kind === 'bench') && a.some((i) => i.kind === 'planter') && a.some((i) => i.kind === 'stall')).toBe(true);
+    expect(a.some((i) => i.kind === 'lamp') && a.some((i) => i.kind === 'bench') && a.some((i) => i.kind === 'planter') && a.some((i) => i.kind === 'fountain')).toBe(true);
     const blockedRow = layoutVillage(lodge, { size: 64, blocked: (i) => Math.floor(i / 64) === 54 });
     expect(blockedRow.every((i) => Math.floor(i.z) !== 54)).toBe(true);
     for (const i of a) expect(Math.hypot(i.x - 32, i.z - 51.5)).toBeLessThan(9);

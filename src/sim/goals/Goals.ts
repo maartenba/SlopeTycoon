@@ -9,6 +9,8 @@
 import type { GameBus } from '../../core/events';
 import { CHAPTERS, GOALS, type ChapterDef, type GoalDef } from '../../config/goals';
 
+/** A place in the UI (not on the map) that 'Show me' opens: a dock drawer (+ optional item to point at) or the HUD rating panel. */
+export interface PanelRef { drawer: 'buildings' | 'lifts' | 'pistes' | 'paths' | 'finance' | 'ops' | 'marketing' | 'pricing' | 'rating'; item?: string }
 export interface Pt { x: number; y: number }
 
 /** Read-only view of the world used by goal checks (built from the real sim in createSim, from fixtures in tests). */
@@ -152,6 +154,9 @@ export class Goals {
     const g = this.goals.find((x) => x.id === id);
     return g?.focus ? g.focus(this.world()) : null;
   }
+
+  /** The drawer / panel 'Show me' opens when a goal has nothing to look at on the map yet. */
+  panelOf(id: string): PanelRef | null { return this.goals.find((x) => x.id === id)?.panel ?? null; }
 
   /** Mark every already-satisfied goal as done without reward or events (old saves, pre-built resorts). */
   silentSync(): void { this.evaluate(true); }

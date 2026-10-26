@@ -15,7 +15,7 @@ import { bulldoze, type BulldozeResult } from './Bulldoze';
 import { UndoStack, type UndoApplied, type UndoCommand, type UndoReport } from './UndoStack';
 
 /** The slice of the sim that undo needs (headless-friendly: no DOM, no three). */
-export type UndoEnv = Pick<Sim, 'grid' | 'props' | 'buildings' | 'lifts' | 'networks' | 'economy' | 'names' | 'attractions' | 'guestSim' | 'game'> & { gate?: Sim['gate'] };
+export type UndoEnv = Pick<Sim, 'grid' | 'props' | 'buildings' | 'lifts' | 'networks' | 'economy' | 'names' | 'attractions' | 'guestSim' | 'game'> & { gate?: Sim['gate']; landscape?: Sim['landscape'] };
 
 interface Rect { x0: number; y0: number; x1: number; y1: number }
 const MARGIN = 10; // auto-flatten reaches ~10 tiles beyond the footprint (FlattenPlanner margin)
@@ -437,6 +437,77 @@ export class Undo {
     };
   }
 
+  /**
+   * One undo step for a landscaping drag (pond / fill / boulders / decor). Like `terrainStroke`, but it also snapshots what ponds and decor change
+   * besides heights and props: tile types, occupancy bits and the Landscape lists (ponds, decor). `rect` is in TILES (inclusive); `run` does charge + commit.
+   */
+  landscapeStroke(label: string): { stamp(rect: Rect, run: () => { ok: boolean; flow: number }): boolean } {
+    const { grid, props, networks, economy, landscape } = this.env;
+    if (!landscape) throw new Error('Undo.landscapeStroke needs env.landscape');
+    const ls = landscape;
+    type Tile = { tt: number; f: number; id: number; sn: number };
+    const preTiles = new Map<number, Tile>();
+    const snap = (i: number): Tile => ({ tt: grid.tileType[i]!, f: grid.occupancy.flags[i]!, id: grid.occupancy.entityId[i]!, sn: grid.snowDepth[i]! });
+    const same = (a: Tile, b: Tile): boolean => a.tt === b.tt && a.f === b.f && a.id === b.id;
+    const pre = JSON.stringify(ls.serialize()), preCount = { felled: props.treesFelled, planted: props.treesPlanted };
+    let postCount = preCount;
+    let post = pre, postTiles = new Map<number, Tile>();
+    let delta: TerrainDelta | null = null, cmd: UndoCommand | null = null, flow = 0;
+    const restoreTiles = (m: Map<number, Tile>): number[] => {
+      const touched = new Set<number>();
+      for (const [i, t] of m) {
+        grid.tileType[i] = t.tt; grid.occupancy.flags[i] = t.f; grid.occupancy.entityId[i] = t.id; grid.snowDepth[i] = t.sn;
+        const x = i % grid.size, y = (i / grid.size) | 0;
+        grid.markDirty(x, y);
+        touched.add(Math.floor(y / CHUNK_SIZE) * grid.chunksPerRow + Math.floor(x / CHUNK_SIZE));
+      }
+      return [...touched];
+    };
+    const tilesMatch = (m: Map<number, Tile>): boolean => { for (const [i, t] of m) if (!same(snap(i), t)) return false; return true; };
+    return {
+      stamp: (rect, run) => {
+        const r = clampRect(grid, { x0: rect.x0 - 3, y0: rect.y0 - 3, x1: rect.x1 + 3, y1: rect.y1 + 3 });
+        if (!delta) delta = TerrainDelta.capture(grid, props, networks, [r], r); else delta.grow([r], r);
+        for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) { const i = y * grid.size + x; if (!preTiles.has(i)) preTiles.set(i, snap(i)); }
+        const res = run();
+        if (!res.ok) return false;
+        delta.seal();
+        flow += res.flow;
+        post = JSON.stringify(ls.serialize());
+        postCount = { felled: props.treesFelled, planted: props.treesPlanted };
+        postTiles = new Map<number, Tile>();
+        for (const i of preTiles.keys()) postTiles.set(i, snap(i));
+        if (!cmd) {
+          const d = delta;
+          cmd = {
+            label, verb: 'landscaped', day: this.day(), cost: flow,
+            do: () => true,
+            check: () => d.stale() ?? (post !== JSON.stringify(ls.serialize()) || !tilesMatch(postTiles) ? 'The landscape has changed since' : null),
+            undo: () => {
+              const t = new Set(d.revert());
+              for (const c of restoreTiles(preTiles)) t.add(c);
+              ls.load(JSON.parse(pre));
+              props.treesFelled = preCount.felled; props.treesPlanted = preCount.planted; // sustainability counters follow the trees
+              if (cmd!.cost >= 0) economy.refund(cmd!.cost); else economy.charge(-cmd!.cost);
+              return { touchedChunks: [...t], changed: [], kind: 'terrain' };
+            },
+            checkRedo: () => d.preMatches() ?? (pre !== JSON.stringify(ls.serialize()) || !tilesMatch(preTiles) ? 'The landscape has changed since' : null),
+            redo: () => {
+              if (cmd!.cost >= 0) economy.charge(cmd!.cost); else economy.refund(-cmd!.cost);
+              const t = new Set(d.reapply());
+              for (const c of restoreTiles(postTiles)) t.add(c);
+              ls.load(JSON.parse(post));
+              props.treesFelled = postCount.felled; props.treesPlanted = postCount.planted;
+              return { touchedChunks: [...t], changed: [], kind: 'terrain' };
+            },
+          };
+          this.record(cmd);
+        } else cmd.cost = flow;
+        return true;
+      },
+    };
+  }
+
   private record(c: UndoCommand): void { this.stack.push(c); }
 
   // ---------- undo ----------
@@ -460,7 +531,7 @@ export class Undo {
 }
 
 /** Toast text for a report: 'Undid: placing Café' style, sentence-case. */
-const VERB_ING: Record<UndoCommand['verb'], string> = { placed: 'placing', bulldozed: 'bulldozing', painted: 'drawing', terraformed: 'terraforming', planted: 'planting' };
+const VERB_ING: Record<UndoCommand['verb'], string> = { placed: 'placing', bulldozed: 'bulldozing', painted: 'drawing', terraformed: 'terraforming', planted: 'planting', landscaped: 'landscaping' };
 export const verbIng = (v: UndoCommand['verb']): string => VERB_ING[v];
 export function undoMessage(r: UndoReport): string {
   if (r.ok) return `${r.redo ? 'Redid' : 'Undid'}: ${verbIng(r.verb)} ${r.label}`;

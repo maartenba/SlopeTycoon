@@ -24,7 +24,7 @@ export interface UndoCommand {
   /** Display name of the thing, e.g. 'Café', 'Chairlift', 'Footpath'. */
   label: string;
   /** What happened: undoing says 'Undid: <verb> <label>'. */
-  verb: 'placed' | 'bulldozed' | 'painted' | 'terraformed' | 'planted';
+  verb: 'placed' | 'bulldozed' | 'painted' | 'terraformed' | 'planted' | 'landscaped';
   /** Absolute in-game day the action happened on. */
   day: number;
   /** Signed money flow of the undo (see above). */

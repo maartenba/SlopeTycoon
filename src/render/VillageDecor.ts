@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { MIN_PART_THICKNESS } from './props/Trees';
 
 /** Static village dressing around the base lodge: stone path, lamp posts (glow at night), benches, planters + flower beds, hedges/shrubs,
- * a little parking lot with painted stalls. Pure data + 3 merged meshes (wood, plants+paint, lamp glass) = 3 draw calls. Deterministic. */
+ * (no parking lot: that is a real building). Pure data + 3 merged meshes (wood, plants+paint, lamp glass) = 3 draw calls. Deterministic. */
 export interface DecorItem { kind: 'path' | 'lamp' | 'bench' | 'planter' | 'shrub' | 'stall' | 'lot' | 'fountain' | 'cobble' | 'awning' | 'tree' | 'bed' | 'fence' | 'hedge' | 'wall'; x: number; z: number; ry: number; w?: number; d?: number }
 export interface DecorEnv { blocked: (tileIndex: number) => boolean; /** Optional: tiles that are really solid (buildings, water), ignoring paths: a fountain may stand on a plaza path tile. */ solid?: (tileIndex: number) => boolean; size: number; isWater?: (tileIndex: number) => boolean }
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -92,14 +92,7 @@ export function layoutVillage(lodge: Rect, env: DecorEnv, homes: readonly Rect[]
     if (side < 2) { if (rowFree(lateral, h.y + 0.02, lateral, h.y + h.h - 0.02)) out.push({ kind: asWall ? 'wall' : 'hedge', x: lateral, z: h.y + h.h / 2, ry: Math.PI / 2, w: h.h }); }
     else if (rowFree(h.x + 0.02, lateral, h.x + h.w - 0.02, lateral)) out.push({ kind: asWall ? 'wall' : 'hedge', x: h.x + h.w / 2, z: lateral, ry: 0, w: h.w });
   }
-  // parking lot: east of the lodge, two rows of stalls with painted lines
-  const px = lodge.x + lodge.w + 1.8, pz = front - 0.2;
-  let ok = true;
-  for (let i = 0; i < 4 && ok; i++) for (let j = 0; j < 2; j++) if (!free(px + i * 0.8, pz + j * 1.7)) ok = false;
-  if (ok) {
-    out.push({ kind: 'lot', x: px + 1.2, z: pz + 0.85, ry: 0, w: 3.5, d: 3.6 });
-    for (let i = 0; i <= 4; i++) for (let j = 0; j < 2; j++) out.push({ kind: 'stall', x: px - 0.4 + i * 0.8, z: pz + j * 1.7 + 0.5, ry: 0 });
-  }
+  // No decorative parking lot: a grey pad with no road looked like a broken, unconnected Parking building. The real Parking is a building the player (or the tutorial) places on a road.
   return out;
 }
 
@@ -178,6 +171,15 @@ export class VillageDecor {
     const wood: THREE.BufferGeometry[] = [], plants: THREE.BufferGeometry[] = [], glass: THREE.BufferGeometry[] = [];
     const items = layoutVillage(lodge, env, this.homes);
     this.items = items;
+    this.emit(items, wood, plants, glass);
+    const flags = this.flags.length ? this.flags : this.festival ? FESTIVAL_FLAGS : [];
+    if (flags.length) this.bunting(items, wood, plants, flags);
+    const set = (m: THREE.Mesh, parts: THREE.BufferGeometry[]): void => { m.geometry.dispose(); m.geometry = parts.length ? mergeGeometries(parts, false)! : new THREE.BufferGeometry(); m.visible = parts.length > 0; };
+    set(this.wood, wood); set(this.plants, plants); set(this.glass, glass);
+  }
+
+  /** Meshes for a list of decor items (shared by the village layout and the player's Landscape decor). */
+  emit(items: readonly DecorItem[], wood: THREE.BufferGeometry[], plants: THREE.BufferGeometry[], glass: THREE.BufferGeometry[]): void {
     let n = 0;
     for (const it of items) {
       n++;
@@ -231,10 +233,15 @@ export class VillageDecor {
           else { wood.push(col(new THREE.CylinderGeometry(0.03, 0.04, 0.35, 5), 0x6b4a2a, it.x, y + 0.18, it.z)); plants.push(col(new THREE.IcosahedronGeometry(0.28, 0), 0x5b8f45, it.x, y + 0.55, it.z)); for (let k = 0; k < 3; k++) plants.push(col(new THREE.IcosahedronGeometry(0.035, 0), 0xd9453a, it.x + (k - 1) * 0.15, y + 0.5 + (k % 2) * 0.12, it.z + 0.2)); }
           break;
         }
-        case 'bed':
-          wood.push(col(bx(it.w!, 0.07, 0.3), 0x6b4a2a, it.x, y + 0.035, it.z, it.ry));
-          for (let k = 0; k < 6; k++) { const t = (k + 0.5) / 6 - 0.5, c = Math.cos(it.ry), sn = Math.sin(it.ry); plants.push(col(new THREE.IcosahedronGeometry(0.07, 0), FLOWERS[(n + k) % FLOWERS.length]!, it.x + c * t * it.w!, y + 0.12, it.z - sn * t * it.w!)); }
+        case 'bed': {
+          const dd = it.d ?? 0.3, c = Math.cos(it.ry), sn = Math.sin(it.ry);
+          wood.push(col(bx(it.w!, 0.07, dd), 0x6b4a2a, it.x, y + 0.035, it.z, it.ry));
+          if (it.d) { // a full tile: soil with three rows of flowers (Landscape flower bed)
+            plants.push(col(bx(it.w! - 0.08, 0.02, dd - 0.08), 0x4a3524, it.x, y + 0.075, it.z, it.ry));
+            for (let k = 0; k < 9; k++) { const t = ((k % 3) - 1) * (it.w! / 3.4), u = (Math.floor(k / 3) - 1) * (dd / 3.4); plants.push(col(new THREE.IcosahedronGeometry(0.075, 0), FLOWERS[(n + k * 2) % FLOWERS.length]!, it.x + c * t + sn * u, y + 0.13 + (k % 2) * 0.02, it.z - sn * t + c * u)); }
+          } else for (let k = 0; k < 6; k++) { const t = (k + 0.5) / 6 - 0.5; plants.push(col(new THREE.IcosahedronGeometry(0.07, 0), FLOWERS[(n + k) % FLOWERS.length]!, it.x + c * t * it.w!, y + 0.12, it.z - sn * t * it.w!)); }
           break;
+        }
         case 'hedge': {
           const L = it.w!, c = Math.cos(it.ry), sn = Math.sin(it.ry), k = Math.max(3, Math.round(L / 0.34));
           plants.push(col(bx(L, 0.2, 0.2), 0x2f6b2f, it.x, y + 0.1, it.z, it.ry));
@@ -256,8 +263,13 @@ export class VillageDecor {
         }
       }
     }
-    const flags = this.flags.length ? this.flags : this.festival ? FESTIVAL_FLAGS : [];
-    if (flags.length) this.bunting(items, wood, plants, flags);
+  }
+
+  /** Build meshes straight from an item list (player-placed decor: no village layout, no bunting). Stable `items` reference until the next call. */
+  buildFrom(items: readonly DecorItem[]): void {
+    this.items = [...items];
+    const wood: THREE.BufferGeometry[] = [], plants: THREE.BufferGeometry[] = [], glass: THREE.BufferGeometry[] = [];
+    this.emit(items, wood, plants, glass);
     const set = (m: THREE.Mesh, parts: THREE.BufferGeometry[]): void => { m.geometry.dispose(); m.geometry = parts.length ? mergeGeometries(parts, false)! : new THREE.BufferGeometry(); m.visible = parts.length > 0; };
     set(this.wood, wood); set(this.plants, plants); set(this.glass, glass);
   }

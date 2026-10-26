@@ -68,6 +68,14 @@ describe('advisor rules', () => {
       c.trigger(s);
       expect(eval1(s, !c.cheap)).toContain(c.id);
     });
+    it(`${c.id}: 'Show me' lands somewhere (map target, or a drawer / panel to open)`, () => {
+      const s = fresh();
+      c.trigger(s);
+      eval1(s, !c.cheap);
+      const adv = s.advisor.ranked().find((x) => x.id === c.id)!;
+      expect(adv.target || adv.panel).toBeTruthy();
+      if (adv.panel?.drawer === 'marketing') expect(s.marketing.list().some((d) => d.id === adv.panel!.item)).toBe(true);
+    });
     it(`${c.id}: stays quiet when its condition is absent`, () => {
       const s = fresh();
       c.calm?.(s);

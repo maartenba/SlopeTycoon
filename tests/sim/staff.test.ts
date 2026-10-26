@@ -70,7 +70,7 @@ const GOLDEN_BOT: Record<string, string> = {
   'stats': 'ada6bb32',
   'yearReports': '9c1f1197',
   'advisor': 'ca063e92',
-  'progression': 'c45853ed',
+  'progression': '95d25f9b', // re-recorded: the landscape:pond unlock joins the level snapshot
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT_MONEY = 192146.17;

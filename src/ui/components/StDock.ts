@@ -9,7 +9,7 @@ import type { TerraformMode, TerraformTarget } from '@/build/TerraformTool';
 import { PISTE_COST_PER_TILE } from '@/world/Networks';
 import { formatMoney } from '../format';
 import {
-  AUTO_FLATTEN_TIP, BUILDING_ICONS, BUILDING_TABS, LIFT_ICONS, NETWORK_ITEMS, buildingInfo, buildingsInTab, liftInfo, liftSeason, networkInfo, networkSeason,
+  AUTO_FLATTEN_TIP, BUILDING_ICONS, BUILDING_TABS, LIFT_ICONS, NETWORK_ITEMS, buildingInfo, buildingsInTab, liftInfo, liftSeason, trailSeasonNote, networkInfo, networkSeason,
   type BuildingTab, type InfoModel, type NetworkItem,
 } from '../buildInfo';
 import { DRAWERS, FLATTEN_DRAWERS, digitSelectsItem, drawerReduce, type DrawerId, type DrawerState } from '../drawerState';
@@ -17,6 +17,8 @@ import { ChangeGate } from '../keyedDiff';
 import { edgeState, popoverLeft, scrollIntoViewLeft, wheelToHorizontal } from '../drawerScroll';
 import { icon } from '../icons';
 import { relevance, seasonBadge, seasonSort, type SeasonMode, type SeasonTag } from '../seasonOrder';
+import type { LandscapeMode, LandscapeState } from '@/build/LandscapeTool';
+import { DECOR, DECOR_IDS, LANDSCAPE, type DecorKind } from '@/config/landscape';
 import { StElement } from './StElement';
 
 export interface DockApi {
@@ -36,6 +38,17 @@ export interface DockApi {
     setMode(m: 'plant' | 'clear'): void; setGroup(g: string): void; setBrush(n: number): void; setDensity(d: number): void;
     state(): { mode: 'plant' | 'clear'; group: string; brush: number; density: number };
     groups: ReadonlyArray<{ id: string; label: string }>;
+  };
+  /** Landscape drawer (ponds, boulders, garden decor); terrain + trees reuse `terraform` / `nature`. */
+  landscape?: {
+    /** Make the landscape tool the active one. */
+    activate(mode?: LandscapeMode): void;
+    setMode(m: LandscapeMode): void; setDecor(k: DecorKind): void; setBrush(n: number): void; setRot(r: 0 | 1): void;
+    state(): LandscapeState;
+    /** Career lock reason for digging ponds, or null. */
+    pondLocked(): string | null;
+    /** Multiplier applied to every landscaping price (summer discount). */
+    multiplier(): number;
   };
   setBulldoze(on: boolean): void;
   /** Shared placement / bulldoze undo (Ctrl+Z): `next()` names what Undo would revert (null = nothing). */
@@ -57,7 +70,7 @@ export interface DockApi {
   /** Operations drawer (lift schedule): same shape as finance. */
   operations?: { panels(): HTMLElement[]; refresh(): void };
   /** Marketing / Pricing drawers (Task 32): same shape as finance. */
-  marketing?: { panels(): HTMLElement[]; refresh(): void };
+  marketing?: { panels(): HTMLElement[]; refresh(): void; highlight?(id: string | null): void };
   pricing?: { panels(): HTMLElement[]; refresh(): void };
   /** Known flatten cost for the current ghost, if any. */
   flattenCost?(): number | null;
@@ -69,7 +82,7 @@ interface Rail { rail: HTMLElement; grid: HTMLElement }
 interface Card { id: string; el: HTMLButtonElement; price: HTMLElement; lock: HTMLElement; num: HTMLElement | null; badge: HTMLElement; tag: SeasonTag; /** Catalog index (the 'All' order). */ base: number; gate: ChangeGate<string | boolean> }
 type TerraEls = { modes: Map<string, HTMLButtonElement>; targets: Map<string, HTMLButtonElement>; slope: { value: string }; brush: HTMLElement };
 /** DOM built once per drawer/tab and re-attached afterwards (no re-creation, images keep decoded state, scroll survives). */
-interface Built { drawer: DrawerId; nodes: HTMLElement[]; cards: Card[]; terraEls: TerraEls | null; rail: Rail | null; overlayBtns: Map<string, HTMLButtonElement>; thumbs: Array<{ img: HTMLElement; kind: 'building' | 'lift'; id: string; size: number; icon: string }> }
+interface Built { drawer: DrawerId; sync?: () => void; nodes: HTMLElement[]; cards: Card[]; terraEls: TerraEls | null; rail: Rail | null; overlayBtns: Map<string, HTMLButtonElement>; thumbs: Array<{ img: HTMLElement; kind: 'building' | 'lift'; id: string; size: number; icon: string }> }
 
 const css = `
 :host{position:absolute;left:0;right:0;bottom:8px;display:block;pointer-events:none;--dl:352px;--dr:252px}
@@ -102,7 +115,7 @@ const css = `
 .card.active{background:#e0a030;border-color:#ffd070;color:#111;box-shadow:0 0 0 2px #ffd070}
 .card.active .pr{color:#222}
 .card.poor{opacity:.55}
-.card.offseason{opacity:.5}
+.card.offseason{opacity:.72}
 .card.offseason.active{opacity:1}
 .card .sb{position:absolute;bottom:2px;right:3px;display:inline-flex;align-items:center;gap:2px;padding:0 4px;height:14px;border-radius:7px;background:rgba(20,28,40,.85);border:1px solid #5a7090;color:#cfe0ff;font-size:calc(9px * var(--ui-scale, 1));line-height:12px;pointer-events:none}
 .card .sb[hidden]{display:none}
@@ -110,6 +123,7 @@ const css = `
 .chip{display:inline-flex;gap:4px;align-items:center;white-space:nowrap}
 .chip .k{opacity:.75}
 .card.locked{opacity:.4;filter:grayscale(.8)}
+.sec button.locked{opacity:.6}
 .card.locked.lvl{opacity:.62;filter:grayscale(.35)}
 .card .lk.lv{display:inline-flex;align-items:center;gap:1px;padding:0 4px;height:14px;border-radius:7px;background:rgba(20,28,40,.9);border:1px solid #d9a441;color:#ffd070;font-size:calc(9px * var(--ui-scale, 1));font-weight:700;line-height:12px}
 .card .lk{position:absolute;top:2px;right:4px;font-size:calc(12px * var(--ui-scale, 1))}
@@ -132,11 +146,12 @@ const css = `
 .sec{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .pane{flex:1;display:flex;flex-direction:column;gap:6px;padding:2px;overflow:auto;max-height:134px}
 .pane.cols{flex-direction:row;flex-wrap:wrap;align-content:flex-start}
-.pc{flex:none;width:280px;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start;overflow:auto;max-height:128px}
+.pc{flex:none;width:280px;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start;overflow:auto;max-height:150px}
 .pc select,.pc button{min-width:0;width:100%;box-sizing:border-box}
 .drawer.tall{max-height:min(46vh,380px)}
 .drawer.tall .pane{max-height:calc(min(46vh,380px) - 48px)}
 .pc .small{grid-column:1/-1}
+.pc .trailnote{grid-column:1/-1;font-size:11px;line-height:1.3;color:#cfe3f3;opacity:.9}.pc .trailnote[hidden]{display:none}
 .dock{display:flex;gap:3px;padding:5px 6px}
 .dock button{display:flex;flex-direction:column;align-items:center;min-width:64px;padding:4px 4px;font-size:calc(11px * var(--ui-scale, 1));position:relative}
 .dock button .ic{font-size:20px;line-height:1}
@@ -152,11 +167,16 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
   return e;
 };
 
+type LandTab = 'water' | 'terrain' | 'nature' | 'decor';
+const LAND_TABS: ReadonlyArray<{ id: LandTab; label: string; icon: string }> = [{ id: 'water', label: 'Water', icon: '💧' }, { id: 'terrain', label: 'Terrain', icon: '⛰️' }, { id: 'nature', label: 'Nature', icon: '🌲' }, { id: 'decor', label: 'Decor', icon: '🪴' }];
+
 /** Bottom tool dock: category buttons; ONE drawer slides up above it. Absorbs the former toolbar/network/lift/build/overlay panels. */
 export class StDock extends StElement {
   private api: DockApi | null = null;
   private state: DrawerState = { open: null };
   private tab: BuildingTab = 'services';
+  private landTab: LandTab = 'water';
+  private landSync: (() => void) | null = null;
   /** Season ordering of the item drawers: 'now' = in-season first, off-season dimmed last; 'all' = catalog order. */
   private seasonMode: SeasonMode = 'now';
   private chip: HTMLButtonElement | null = null;
@@ -235,9 +255,22 @@ export class StDock extends StElement {
     this.dispatch(id === null ? { type: 'close' } : { type: 'toggle', id });
   }
 
+  /** 'Show me' for advice / goals that live in a panel rather than on the map: open the drawer and point at the item. */
+  showPanel(drawer: DrawerId, item?: string): void {
+    if (drawer === 'buildings' && item) { this.showItem('building', item); return; }
+    if (drawer === 'lifts' && item) { this.showItem('lift', item); return; }
+    if (this.state.open !== drawer) this.show(drawer);
+    if (drawer === 'marketing') { this.api?.marketing?.highlight?.(item ?? null); return; }
+    if (item && (drawer === 'pistes' || drawer === 'paths')) {
+      const c = this.cards.find((k) => k.id === item);
+      if (c) { this.scrollCardIntoView(item); this.hover = item; this.popAnchor = c.el; this.renderInfo(); }
+    }
+  }
+
   /** 'Show me' on the level-up card: open the drawer (and tab) that holds the item and point at its card (hover popover). */
-  showItem(kind: 'building' | 'lift' | 'campaign', id: string): void {
+  showItem(kind: 'building' | 'lift' | 'campaign' | 'landscape', id: string): void {
     if (kind === 'campaign') { this.show('marketing'); return; }
+    if (kind === 'landscape') { this.landTab = 'water'; this.show('landscape'); return; }
     if (kind === 'building') { const t = BUILDING_TABS.find((x) => buildingsInTab(x.id).some((d) => d.id === id)); if (t) this.tab = t.id; }
     const wasOpen = this.state.open === (kind === 'lift' ? 'lifts' : 'buildings');
     if (wasOpen) this.renderDrawer(); else this.show(kind === 'lift' ? 'lifts' : 'buildings');
@@ -256,6 +289,7 @@ export class StDock extends StElement {
     if (prev !== null && this.state.open !== 'bulldoze' && this.tool !== 'select' && this.tool !== 'bulldoze') this.api?.resetTool();
     if (this.state.open === 'bulldoze' && this.tool !== 'bulldoze') this.api?.setBulldoze(true);
     if (this.state.open === 'terrain' && this.tool !== 'terraform') this.api?.activateTerraform();
+    if (this.state.open === 'landscape') this.activateLandTab();
     this.renderDrawer();
   }
 
@@ -275,9 +309,10 @@ export class StDock extends StElement {
   syncTool(id: string): void {
     this.tool = id;
     this.natSync?.();
+    this.landSync?.();
     if (id === 'bulldoze' && this.state.open !== 'bulldoze') { this.state = { open: 'bulldoze' }; this.renderDrawer(); }
     else if (id !== 'bulldoze' && this.state.open === 'bulldoze') { this.state = { open: null }; this.renderDrawer(); }
-    else if (id === 'select' && this.state.open === 'terrain') { this.state = { open: null }; this.renderDrawer(); }
+    else if (id === 'select' && (this.state.open === 'terrain' || this.state.open === 'landscape')) { this.state = { open: null }; this.renderDrawer(); }
     this.updateLive();
   }
   setActive(drawer: DrawerId | null, id: string | null): void {
@@ -287,7 +322,9 @@ export class StDock extends StElement {
     this.renderInfo();
   }
   /** Called by main when the plant tool state or active tool changes. */
-  syncNature(): void { this.natSync?.(); }
+  syncNature(): void { this.natSync?.(); this.landSync?.(); }
+  /** Called by main when the landscape tool state changes. */
+  syncLandscape(): void { this.landSync?.(); }
   syncTerraform(s: { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 }): void {
     const t = this.terraEls;
     if (!t) return;
@@ -325,6 +362,7 @@ export class StDock extends StElement {
 
   private applyOrderAll(): void {
     for (const b of this.built.values()) this.orderCards(b);
+    for (const n of Array.from(this.root.querySelectorAll<HTMLElement>('[data-trail-note]'))) { const t = trailSeasonNote(this.season()); n.textContent = t ?? ''; n.hidden = !t; }
     this.syncChip();
     this.infoSig = '';
     this.updateCards();
@@ -412,7 +450,17 @@ export class StDock extends StElement {
       }
       this.head.appendChild(tabs);
     }
-    if (open !== 'buildings') this.head.appendChild(el('span', 'grow'));
+    if (open === 'landscape') {
+      const tabs = el('div', 'tabs');
+      for (const t of LAND_TABS) {
+        const b = el('button', t.id === this.landTab ? 'active' : '', `${t.icon} ${t.label}`);
+        b.dataset.tab = t.id;
+        b.addEventListener('click', () => { this.landTab = t.id; this.activateLandTab(); this.renderDrawer(); });
+        tabs.appendChild(b);
+      }
+      this.head.appendChild(tabs);
+    }
+    if (open !== 'buildings' && open !== 'landscape') this.head.appendChild(el('span', 'grow'));
     this.chip = null;
     if (open === 'buildings' || open === 'lifts' || open === 'pistes') {
       const c = el('button', 'chip');
@@ -440,7 +488,7 @@ export class StDock extends StElement {
     x.addEventListener('click', () => this.dispatch({ type: 'close' }));
     this.head.appendChild(x);
 
-    const key = open === 'buildings' ? `buildings:${this.tab}` : open;
+    const key = open === 'buildings' ? `buildings:${this.tab}` : open === 'landscape' ? `landscape:${this.landTab}` : open;
     let b = this.built.get(key);
     if (!b) { b = this.buildDrawer(open); this.built.set(key, b); }
     this.cur = b;
@@ -449,8 +497,10 @@ export class StDock extends StElement {
     this.terraEls = b.terraEls;
     this.overlayBtns = b.overlayBtns;
     this.rail = b.rail;
+    this.landSync = open === 'landscape' ? b.sync ?? null : null;
     this.body.replaceChildren(...b.nodes);
     if (b.terraEls) this.syncTerraform(this.api.terraform.state());
+    this.landSync?.();
     if (open === 'view') this.syncOverlay(this.api.view.overlay());
     this.infoSig = '';
     this.updateCards();
@@ -470,6 +520,7 @@ export class StDock extends StElement {
       case 'paths': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'paths').map((i) => i.key), 'paths'); break;
       case 'pistes': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'pistes').map((i) => i.key), 'pistes'); this.pisteControls(); break;
       case 'terrain': this.terrainPane(); break;
+      case 'landscape': b.sync = this.landscapePane(this.landTab); break;
       case 'bulldoze': {
         const p = this.textPane('Click a building, lift, path, road or piste to demolish it (50% refund). Right-click or Esc to stop.');
         const u = this.api?.undoAction;
@@ -505,8 +556,8 @@ export class StDock extends StElement {
   private itemMeta(drawer: DrawerId, id: string): { name: string; icon: string; kind: 'building' | 'lift' | null } {
     if (drawer === 'buildings') return { name: BUILDINGS[id]?.name ?? id, icon: BUILDING_ICONS[id] ?? (BUILDINGS[id]?.name.charAt(0) ?? '?'), kind: 'building' };
     if (drawer === 'lifts') return { name: LIFTS[id as LiftKind].name, icon: LIFT_ICONS[id as LiftKind], kind: 'lift' };
-    const n = NETWORK_ITEMS.find((i) => i.key === id)!;
-    return { name: n.name, icon: n.icon, kind: null };
+    const n = NETWORK_ITEMS.find((i) => i.key === id);
+    return { name: n?.name ?? id, icon: n?.icon ?? '?', kind: null };
   }
 
   private buildGrid(ids: string[], drawer: DrawerId): void {
@@ -623,14 +674,16 @@ export class StDock extends StElement {
     const api = this.api!;
     if (drawer === 'buildings') return { text: formatMoney(api.buildings.cost(id)), cost: api.buildings.cost(id), lock: api.buildings.locked(id) };
     if (drawer === 'lifts') { const c = api.lifts.costPer100m(id as LiftKind); return { text: `${formatMoney(c)}/100m`, cost: c, lock: api.lifts.locked?.(id as LiftKind) ?? [] }; }
-    const n = NETWORK_ITEMS.find((i) => i.key === id)!;
-    const c = n.costPerTile || PISTE_COST_PER_TILE;
+    const n = NETWORK_ITEMS.find((i) => i.key === id);
+    const c = n?.costPerTile || PISTE_COST_PER_TILE;
     return { text: `${formatMoney(c)}/tile`, cost: c, lock: [] };
   }
 
   private updateCards(): void {
     const api = this.api, open = this.state.open;
     if (!api || !open) return;
+    // dispatch() resets the tool (-> setActive -> here) BEFORE renderDrawer swaps the cards: never price the old drawer's cards as the new one.
+    if (this.cur?.drawer !== open) return;
     for (const c of this.cards) {
       const p = this.priceOf(open, c.id);
       const poor = open === 'buildings' && p.cost > api.funds();
@@ -729,7 +782,12 @@ export class StDock extends StElement {
     const prune = this.btn('Clear isolated', 'Remove unattached piste fragments', () => { api.network.pruneOrphans?.(1); });
     const suggest = this.btn('Suggest a run', 'Highlight a run that follows the fall line, matches the chosen difficulty and keeps snow at today\'s snowline (nothing is built or charged)', () => { const v = (sel as unknown as { value?: string }).value; api.network.suggest?.(v === undefined || v === 'auto' ? null : Number(v)); });
     suggest.dataset.suggest = '';
-    side.append(sel, brush, suggest, erase, undo, redo, prune);
+    const note = el('div', 'trailnote');
+    note.dataset.trailNote = '';
+    const t = trailSeasonNote(this.api?.season?.());
+    note.textContent = t ?? '';
+    note.hidden = !t;
+    side.append(sel, brush, suggest, erase, undo, redo, prune, note);
     side.title = 'Drag to paint (interpolated, no gaps). Shift-drag erases. Trails must start at a path/building.';
     this.body.appendChild(side);
   }
@@ -775,6 +833,79 @@ export class StDock extends StElement {
     this.body.appendChild(p);
     this.terraEls = { modes, targets, slope, brush };
     this.syncTerraform(api.state());
+  }
+
+  /** Start the tool that belongs to the open Landscape tab. */
+  private activateLandTab(): void {
+    const api = this.api;
+    if (!api) return;
+    switch (this.landTab) {
+      case 'water': api.landscape?.activate(api.landscape.state().mode === 'fill' ? 'fill' : 'pond'); break;
+      case 'terrain': api.activateTerraform(); break;
+      case 'nature': { const m = api.landscape?.state().mode; if (m === 'rock' || m === 'rockClear') api.landscape?.activate(m); else api.nature?.setMode(api.nature.state().mode); break; }
+      case 'decor': { const m = api.landscape?.state().mode; api.landscape?.activate(m === 'decorClear' ? 'decorClear' : 'decor'); break; }
+    }
+  }
+
+  /** One tab of the Landscape drawer. Returns the function that re-marks the active buttons (called when the tool / its state changes). */
+  private landscapePane(tab: LandTab): () => void {
+    const api = this.api!, ls = api.landscape;
+    const p = el('div', 'pane cols');
+    const marks: Array<() => void> = [];
+    const mark = (b: HTMLButtonElement, on: () => boolean): HTMLButtonElement => { marks.push(() => b.classList.toggle('active', on())); return b; };
+    const size = el('span', 'small');
+    const sizeBtns = (cur: () => string, minus: () => void, plus: () => void): HTMLElement[] => {
+      marks.push(() => { size.textContent = cur(); });
+      return [this.btn('−', 'smaller ([)', () => { minus(); }), size, this.btn('+', 'bigger (])', () => { plus(); })];
+    };
+    const modeBtn = (m: LandscapeMode, label: string, title: string): HTMLButtonElement =>
+      mark(this.btn(label, title, () => { ls?.activate(m); }), () => this.tool === 'landscape' && ls?.state().mode === m);
+    if (!ls) { p.appendChild(el('div', 'small', 'Landscaping is not available here.')); this.body.appendChild(p); return () => {}; }
+    if (tab === 'water') {
+      const lock = ls.pondLocked();
+      const r1 = el('div', 'sec');
+      const pb = modeBtn('pond', `${lock ? '🔒 ' : ''}💧 Dig pond (1)`, lock ?? 'Drag a rectangle (3-11 tiles) on flat ground to dig a pond (1). Click for the default size');
+      if (lock) { pb.classList.add('locked'); marks.push(() => { pb.title = ls.pondLocked() ?? pb.title; }); }
+      r1.append(pb, modeBtn('fill', '🪣 Fill in (2)', 'Click a pond you dug to fill it back in to ground level (2)'));
+      r1.append(...sizeBtns(() => `${ls.state().pondSize}×${ls.state().pondSize}`, () => ls.setBrush(ls.state().pondSize - 1), () => ls.setBrush(ls.state().pondSize + 1)));
+      p.append(r1);
+      p.appendChild(el('div', 'small', `Drag to size a pond (3–11 tiles), or click for the default size ([ ] changes it). Needs nearly level ground, ${LANDSCAPE.pond.waterGap}+ tiles from other water, buildings, pistes and lifts. About $${LANDSCAPE.pond.costPerTile} per tile plus earthworks; filling in $${LANDSCAPE.pond.fillCostPerTile}/tile. Ponds freeze over in winter and count as lakes for beaches and boat rentals. Streams: not available yet.`));
+    } else if (tab === 'terrain') {
+      const t = api.terraform, r1 = el('div', 'sec');
+      for (const [m, k, ic] of [['raise', '1', '⬆️'], ['lower', '2', '⬇️'], ['flatten', '3', '➖'], ['smooth', '4', '〰️']] as const) {
+        r1.appendChild(mark(this.btn(`${ic} ${m} (${k})`, `${m} terrain (${k})`, () => { if (this.tool !== 'terraform') api.activateTerraform(); t.setMode(m); this.landSync?.(); }), () => this.tool === 'terraform' && t.state().mode === m));
+      }
+      r1.append(...sizeBtns(() => `brush ${t.state().brush}/${TERRAFORM_BRUSH_MAX}`, () => t.setBrush(t.state().brush - 1), () => t.setBrush(t.state().brush + 1)));
+      p.append(r1, el('div', 'small', 'Smooth relaxes bumps, Flatten levels a rectangle (drag). Keys 1–4 mode, [ ] brush, C tile / corner. Same tool as the Terrain drawer, which has the slope setting.'));
+    } else if (tab === 'nature') {
+      const nat = api.nature, r1 = el('div', 'sec');
+      if (nat) {
+        for (const [m, ic] of [['plant', '🌲 Plant trees'], ['clear', '🪓 Clear trees']] as const) r1.appendChild(mark(this.btn(ic, `${m} trees with the brush`, () => { nat.setMode(m); this.landSync?.(); }), () => this.tool === 'plant' && nat.state().mode === m));
+        const sp = makeSelect(nat.groups.map((g) => ({ value: g.id, label: g.label })), nat.state().group, 'Species group', (v) => { nat.setGroup(v); this.landSync?.(); });
+        sp.title = 'Species group';
+        marks.push(() => { sp.value = nat.state().group; });
+        r1.appendChild(sp);
+      }
+      const r2 = el('div', 'sec');
+      r2.append(modeBtn('rock', `🪨 Boulders (3) · $${Math.round(LANDSCAPE.rock.cost * ls.multiplier())}`, 'Paint boulders on dry ground (3)'), modeBtn('rockClear', '⛏️ Remove boulders (4)', 'Remove boulders under the brush (4)'));
+      r2.append(...sizeBtns(() => `brush ${this.tool === 'plant' && nat ? nat.state().brush : ls.state().brush}`, () => { if (this.tool === 'plant' && nat) nat.setBrush(nat.state().brush - 1); else ls.setBrush(ls.state().brush - 1); }, () => { if (this.tool === 'plant' && nat) nat.setBrush(nat.state().brush + 1); else ls.setBrush(ls.state().brush + 1); }));
+      p.append(r1, r2, el('div', 'small', 'Trees: 1 plant / 2 clear, G species, [ ] brush. Boulders: drag to scatter; never on water, steep cliffs, paths, pistes or buildings.'));
+    } else {
+      const r1 = el('div', 'sec');
+      for (const id of DECOR_IDS) {
+        const d = DECOR[id];
+        const b = this.btn(`${d.icon} ${d.label} · $${Math.round(d.cost * ls.multiplier())}`, `${d.blurb}${d.oriented ? ' Drag to draw a row; R turns it.' : ''}`, () => { ls.setDecor(id); this.landSync?.(); });
+        r1.appendChild(mark(b, () => this.tool === 'landscape' && ls.state().mode === 'decor' && ls.state().decor === id));
+      }
+      const r2 = el('div', 'sec');
+      r2.append(modeBtn('decorClear', '🧹 Remove decor (6)', 'Remove decor under the cursor, free (6)'));
+      r2.appendChild(this.btn('⟳ Turn (R)', 'Turn the piece (R): benches, hedges, fences and walls run along x or y', () => { ls.setRot(ls.state().rot ? 0 : 1); }));
+      p.append(r1, r2, el('div', 'small', 'Click to place, drag to draw a row: hedges, fences and walls follow the drag, so one stroke edges a path. Decor needs dry ground without trees or rocks, blocks building there, has no upkeep, and the solid pieces stop you in walk mode.'));
+    }
+    this.body.appendChild(p);
+    const sync = (): void => { for (const m of marks) m(); };
+    sync();
+    return sync;
   }
 
   private viewPane(): void {

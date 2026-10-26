@@ -16,6 +16,7 @@ import { seasonProgress } from '../Clock';
 import { Q } from '../ops/PisteQuality';
 import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/suggest';
 import { POSITIVE_HINTS } from '../Rating';
+import type { PanelRef } from '../goals/Goals';
 import { TEXT, FRIENDLY } from './strings';
 
 export interface Pt { x: number; y: number }
@@ -27,6 +28,8 @@ export interface Advice {
   /** A short friendly line (positive notes only). */
   friendly?: string;
   target?: AdviceTarget; action?: AdviceAction;
+  /** Where 'Show me' goes when the advice is not about a map spot (a drawer / panel to open and an item to highlight). */
+  panel?: PanelRef;
 }
 
 export interface PisteFacts { tiles: number; icy: number; noGroom: Pt[]; noAid: Pt[] }
@@ -137,7 +140,7 @@ export const RULES: readonly Rule[] = [
     if (p.tiles < 30 || !has(c.sim, 'groomerGarage', 'snowcatOutpost')) return null; // no grooming at all: grooming.none is the root cause
     const share = p.icy / p.tiles;
     if (share < (c.shown ? 0.12 : 0.2)) return null;
-    return { id: 'piste.icy', severity: 'warn', ...TEXT.icy(pct(share)) };
+    return { id: 'piste.icy', severity: 'warn', ...TEXT.icy(pct(share)), panel: { drawer: 'ops' } };
   }),
   // ---- safety ----
   rule('patrol.none', 3, (c) => {
@@ -189,26 +192,26 @@ export const RULES: readonly Rule[] = [
     return { id: 'arrival.parking', severity: 'warn', ...TEXT.parking(), action: build('parking', s), target: siteTarget(s) };
   }, false, true),
   // ---- money ----
-  rule('cash.debt', 3, (c) => (c.sim.finance.inDebt && c.sim.game.money < 0 ? { id: 'cash.debt', severity: 'urgent', ...TEXT.debt(`$${Math.abs(Math.round(c.sim.game.money)).toLocaleString('en-US')}`, c.sim.loans.supportOpen) } as Advice : null), true, true),
+  rule('cash.debt', 3, (c) => (c.sim.finance.inDebt && c.sim.game.money < 0 ? { id: 'cash.debt', severity: 'urgent', ...TEXT.debt(`$${Math.abs(Math.round(c.sim.game.money)).toLocaleString('en-US')}`, c.sim.loans.supportOpen), panel: { drawer: 'finance' } } as Advice : null), true, true),
   rule('cash.runway', 2, (c) => {
     const money = c.sim.game.money, up = estimatedUpkeep(c.sim);
     if (money < 0 || up <= 0) return null; // (the finance status only flips at midnight: cash itself is the live truth)
     const days = money / up;
     if (days >= (c.shown ? 8 : 5)) return null;
-    return { id: 'cash.runway', severity: 'warn', ...TEXT.runway(Math.max(0, Math.floor(days))) };
+    return { id: 'cash.runway', severity: 'warn', ...TEXT.runway(Math.max(0, Math.floor(days))), panel: { drawer: 'finance' } };
   }, true, true),
   rule('price.fair', 2, (c) => {
     if (c.sim.guestSim.store.count < 10) return null;
     const r = c.sim.pricing.ratioOf('dayPass');
-    if (r > (c.shown ? 1.3 : 1.4)) return { id: 'price.fair', severity: 'warn', ...TEXT.priceHigh(pct(r - 1)) };
-    if (r < (c.shown ? 0.7 : 0.6)) return { id: 'price.fair', severity: 'info', ...TEXT.priceLow(pct(1 - r)) };
+    if (r > (c.shown ? 1.3 : 1.4)) return { id: 'price.fair', severity: 'warn', ...TEXT.priceHigh(pct(r - 1)), panel: { drawer: 'pricing' } };
+    if (r < (c.shown ? 0.7 : 0.6)) return { id: 'price.fair', severity: 'info', ...TEXT.priceLow(pct(1 - r)), panel: { drawer: 'pricing' } };
     return null;
   }, true, true),
   rule('marketing.ready', 1, (c) => {
     const m = c.sim.marketing;
     if (m.records().length > 0 || m.running().length > 0 || c.sim.rating.stars < 2 || c.sim.game.money < 20000) return null;
     const def = m.list().find((d) => m.blocker(d.id) === null);
-    return def ? { id: 'marketing.ready', severity: 'info', ...TEXT.marketing(def.name) } : null;
+    return def ? { id: 'marketing.ready', severity: 'info', ...TEXT.marketing(def.name), panel: { drawer: 'marketing', item: def.id } } : null;
   }),
   // ---- season lookahead ----
   rule('season.winter', 2, (c) => {
@@ -245,7 +248,7 @@ export const RULES: readonly Rule[] = [
     if (sp.next !== 'summer' || sp.daysLeft > 30) return null;
     const a = c.sim.networks.layers;
     for (let i = 0; i < a.length; i++) if (a[i]! & (Layer.Hike | Layer.Mtb)) return null;
-    return { id: 'season.summer', severity: 'info', ...TEXT.summerComing(sp.daysLeft) };
+    return { id: 'season.summer', severity: 'info', ...TEXT.summerComing(sp.daysLeft), panel: { drawer: 'pistes', item: 'mtb' } };
   }),
   rule('cash.summerBuffer', 2, (c) => {
     const sp = seasonProgress(c.sim.game.date);
@@ -255,7 +258,7 @@ export const RULES: readonly Rule[] = [
     const need = Math.ceil((30 * up) / 1000) * 1000;
     if (money >= need * (c.shown ? 0.9 : 1)) return null;
     const fmt = (n: number): string => `$${Math.round(n).toLocaleString('en-US')}`;
-    return { id: 'cash.summerBuffer', severity: 'info', ...TEXT.summerBuffer(sp.daysLeft, fmt(need), fmt(money), Math.floor(money / up)) };
+    return { id: 'cash.summerBuffer', severity: 'info', ...TEXT.summerBuffer(sp.daysLeft, fmt(need), fmt(money), Math.floor(money / up)), panel: { drawer: 'finance' } };
   }),
   // ---- structure / maintenance ----
   rule('piste.disconnected', 2, (c) => {
@@ -289,7 +292,7 @@ export const RULES: readonly Rule[] = [
       && !(ROOT[x.id] ?? []).some((r) => firing(c, r)));
     if (!comps.length) return null;
     const w = comps.sort((a, b) => (100 - b.score) * b.weight - (100 - a.score) * a.weight || (a.id < b.id ? -1 : 1))[0]!;
-    return { id: 'rating.lowest', severity: 'info', ...TEXT.rating(w.label, w.hint, w.score) };
+    return { id: 'rating.lowest', severity: 'info', ...TEXT.rating(w.label, w.hint, w.score), panel: { drawer: 'rating' } };
   }),
   rule('goal.next', 1, (c) => {
     if (c.sim.goals.paused) return null;
@@ -298,9 +301,9 @@ export const RULES: readonly Rule[] = [
     // The goal asks for the very building another advice already names: one root cause, one piece of advice.
     const SAME: Record<string, string> = { patrol: 'patrol.none', skiSchool: 'school.none', groomed: 'grooming.none', ranger: 'bear.threat' };
     if (SAME[g.id] && firing(c, SAME[g.id]!)) return null;
-    const p = c.sim.goals.focusOf(g.id);
+    const p = c.sim.goals.focusOf(g.id), gp = c.sim.goals.panelOf(g.id);
     const close = g.progress >= 0.75;
-    return { id: 'goal.next', severity: 'info', ...(close ? TEXT.goalClose(g.title) : TEXT.goal(g.title, g.todo)), ...(close ? { friendly: FRIENDLY[2]! } : {}), ...(p ? { target: { x: p.x, y: p.y, kind: 'goal' as const } } : {}) };
+    return { id: 'goal.next', severity: 'info', ...(close ? TEXT.goalClose(g.title) : TEXT.goal(g.title, g.todo)), ...(close ? { friendly: FRIENDLY[2]! } : {}), ...(p ? { target: { x: p.x, y: p.y, kind: 'goal' as const } } : {}), ...(!p && gp ? { panel: gp } : {}) };
   }),
 ];
 

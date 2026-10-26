@@ -327,6 +327,22 @@
   "h": 1000,
   "alpha": false
  },
+ "landscape-pond-summer.webp": {
+  "file": "landscape-pond-summer.webp",
+  "from": 1023169,
+  "to": 87408,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "landscape-pond-winter.webp": {
+  "file": "landscape-pond-winter.webp",
+  "from": 1166791,
+  "to": 105698,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
  "lod-chair-cable.webp": {
   "file": "lod-chair-cable.webp",
   "from": 928577,

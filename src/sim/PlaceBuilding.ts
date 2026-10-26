@@ -156,6 +156,7 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
     if (fl & OccFlag.Building) { bad('Tile occupied'); hard = true; }
     if (fl & (OccFlag.Road | OccFlag.Path)) { bad('Cannot build on a road, path or rail'); hard = true; }
     if (fl & OccFlag.Lift) { bad('Blocked by a lift line'); hard = true; }
+    if (fl & OccFlag.Decor) { bad('Garden decor in the way: remove it first (Landscape drawer)'); hard = true; }
     if (tt === TileType.Stream) { bad('Cannot build on a stream'); hard = true; }
     else if (isWaterType(tt) || (fl & OccFlag.Water)) {
       if (site.onWater !== 'shallow') { bad('Cannot build on water'); hard = true; }

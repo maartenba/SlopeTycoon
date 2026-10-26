@@ -1,10 +1,11 @@
-export type DrawerId = 'buildings' | 'lifts' | 'paths' | 'pistes' | 'terrain' | 'bulldoze' | 'view' | 'finance' | 'ops' | 'marketing' | 'pricing';
+export type DrawerId = 'buildings' | 'lifts' | 'paths' | 'pistes' | 'terrain' | 'landscape' | 'bulldoze' | 'view' | 'finance' | 'ops' | 'marketing' | 'pricing';
 export const DRAWERS: ReadonlyArray<{ id: DrawerId; label: string; icon: string; key?: string }> = [
   { id: 'buildings', label: 'Buildings', icon: '🏠' },
   { id: 'lifts', label: 'Lifts', icon: '🚡' },
   { id: 'paths', label: 'Paths & Roads', icon: '🛣️' },
   { id: 'pistes', label: 'Pistes & Trails', icon: '⛷️' },
   { id: 'terrain', label: 'Terrain', icon: '⛰️' },
+  { id: 'landscape', label: 'Landscape', icon: '🌳' },
   { id: 'bulldoze', label: 'Bulldoze', icon: '🧨', key: 'X' },
   { id: 'view', label: 'View', icon: '👁️' },
   { id: 'finance', label: 'Finance', icon: '💰' },

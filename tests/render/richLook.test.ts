@@ -57,6 +57,11 @@ describe('village layout: plaza + gardens', () => {
     const kinds = new Set(a.map((i) => i.kind));
     for (const k of ['fountain', 'cobble', 'awning', 'tree', 'bed', 'fence', 'shrub']) expect(kinds.has(k as never)).toBe(true);
   });
+  it('never draws a decorative parking lot (a grey pad with no road read as a broken, unconnected Parking building)', () => {
+    const kinds = new Set(layoutVillage(lodge, free, homes).map((i) => i.kind as string));
+    expect(kinds.has('lot')).toBe(false);
+    expect(kinds.has('stall')).toBe(false);
+  });
   it('respects occupancy: nothing is placed on blocked tiles (single-point items)', () => {
     const blocked = (i: number): boolean => i % 64 >= 36;
     for (const it of layoutVillage(lodge, { size: 64, blocked }, homes)) {

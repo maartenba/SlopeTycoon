@@ -237,3 +237,8 @@ export function smoothRect(grid: Grid, rect: VRect, opts: TerraformOptions = {})
   }
   return finish(grid, applyTargets(grid, targets, edgeOf(opts)), opts);
 }
+
+/** Move arbitrary corners (vertex index -> target half-steps) with the same edge-delta propagation, occupancy / water / lift guards and props clearing as the brushes (ponds). */
+export function setCorners(grid: Grid, targets: Map<number, number>, opts: TerraformOptions = {}): TerraformResult {
+  return finish(grid, applyTargets(grid, targets, edgeOf(opts)), opts);
+}

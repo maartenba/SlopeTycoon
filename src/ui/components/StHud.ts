@@ -75,6 +75,7 @@ export class StHud extends StElement {
   }
 
   /** Rating stars + happiness smiley with a breakdown tooltip / panel (Task 27). */
+  showRating(): void { this.ratingEl.open(); }
   bindRating(get: () => { breakdown: RatingBreakdown; happiness: number; market?: { share: number; rank: number; of: number } | null }): void { this.ratingEl.bind(get); }
 
   /** The date/time lives in st-speed-control. */

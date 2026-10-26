@@ -7,6 +7,7 @@ import { buildTowerGeometry } from '@/render/meshes/lifts/Tower';
 import { buildCarrierGeometry } from '@/render/meshes/lifts';
 import { geometryHash } from '@/render/meshes/lifts/geo';
 import { chairWidth } from '@/render/meshes/lifts/Chair';
+import { BOX_GROW_MAX } from '@/render/meshes/common';
 
 const tris = (g: THREE.BufferGeometry): number => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
 const bbox = (g: THREE.BufferGeometry): THREE.Box3 => { g.computeBoundingBox(); return g.boundingBox!.clone(); };
@@ -30,7 +31,7 @@ describe('lift models', () => {
     for (const k of LIFT_KIND_IDS) for (const top of [false, true]) {
       const p = buildStationParts(k, top);
       const box = bbox(p.geometry);
-      const half = LIFT_STATION_SIZE / 2 + 0.3;
+      const half = LIFT_STATION_SIZE / 2 + 0.3 + BOX_GROW_MAX; // + the anti z-fight box growth
       expect(box.min.x, k).toBeGreaterThanOrEqual(-half); expect(box.max.x, k).toBeLessThanOrEqual(half);
       expect(box.min.z, k).toBeGreaterThanOrEqual(-half); expect(box.max.z, k).toBeLessThanOrEqual(half);
       expect(box.min.y, k).toBeGreaterThanOrEqual(-0.35);

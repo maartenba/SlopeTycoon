@@ -14,6 +14,9 @@ const css = `
 .wrap{display:flex;flex-direction:column;gap:6px;max-height:min(34vh,340px);overflow:auto}
 .cards{display:flex;flex-wrap:wrap;gap:6px}
 .card{background:rgba(255,255,255,0.07);border-radius:6px;padding:6px 8px;width:210px;display:flex;flex-direction:column;gap:3px;font-size:11px}
+.card.hl{outline:2px solid #ffd070;box-shadow:0 0 10px rgba(255,208,112,.7);animation:hlpulse 1.2s ease-in-out 4}
+@keyframes hlpulse{50%{box-shadow:0 0 2px rgba(255,208,112,.2)}}
+@media (prefers-reduced-motion:reduce){.card.hl{animation:none}}
 .card.locked{opacity:.6;outline:1px dashed rgba(255,208,112,.45)}
 .card h5{margin:0;font-size:12px;color:#ffd070}
 .warn{color:#ffb070}.ok{color:#8fd88f}.dim{opacity:.45}.req{display:flex;flex-direction:column;gap:1px}.bad{color:#ff9a8a}.muted{color:#aab}
@@ -33,6 +36,15 @@ export class StMarketing extends StElement {
   private wrap = el('div', 'wrap');
   private msg = '';
   private pending = false;
+  private hlId: string | null = null;
+  private hlTimer = 0;
+  /** Pulse + scroll to a campaign card (advice 'Show me'); fades after ~8 s. */
+  highlight(id: string | null): void {
+    this.hlId = id;
+    window.clearTimeout(this.hlTimer);
+    this.refresh();
+    if (id) { this.hlTimer = window.setTimeout(() => { this.hlId = null; this.refresh(); }, 8000); this.wrap.querySelector('.card.hl')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); }
+  }
 
   protected css(): string { return css; }
   constructor() { super(); this.root.appendChild(this.wrap); }
@@ -69,6 +81,8 @@ export class StMarketing extends StElement {
         el('div', '', `Effectiveness ${c.prereqsOk ? effLabel(p.effectiveness.value) : '—'}${c.prereqsOk && p.targetBoostPct > 0 ? ` · +${p.targetBoostPct}% ${tgt} arrivals` : ''}`),
         el('div', 'muted', c.prereqsOk ? `Est. extra guests ${rangeText(p.extraGuests)} · revenue ${rangeText(p.extraRevenue, true)} · ${costPerGuestText(p.costPerGuest)}` : 'Est. extra guests — · revenue — (requirements not met)'),
       );
+      card.dataset.id = c.def.id;
+      if (c.def.id === this.hlId) card.classList.add('hl');
       card.append(
         el('h5', '', `${c.locked ? '🔒 ' : ''}${c.def.icon} ${c.def.name}`),
         el('div', 'muted', c.def.blurb),

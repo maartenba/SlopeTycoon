@@ -7,6 +7,8 @@ export const OccFlag = {
   Road: 16,
   /** Lake or stream tile: never buildable / terraformable. */
   Water: 32,
+  /** Player-placed garden decor (Landscape drawer): bench, lamp, hedge, fence, wall, flower bed, fountain. Blocks buildings / paths / lifts like any other occupant. */
+  Decor: 64,
 } as const;
 
 export class Occupancy {

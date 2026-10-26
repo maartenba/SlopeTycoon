@@ -49,9 +49,15 @@ export interface BuiltParts {
   wood?: THREE.BufferGeometry; stone?: THREE.BufferGeometry; roof?: THREE.BufferGeometry; /** Translucent pane layer (lift carriers only). */ glass?: THREE.BufferGeometry; sign?: SignSpec;
 }
 
+/** Per-box growth (model units) that breaks ties between coplanar faces of different boxes: strictly increasing with the box index, then capped. */
+export const BOX_GROW_STEP = 0.00004;
+export const BOX_GROW_MAX = 0.008;
+export function boxGrow(index: number): number { return Math.min(BOX_GROW_MAX, BOX_GROW_STEP * index); }
+
 /** Collects coloured primitives per layer; origin is the footprint centre at ground level (x: width, z: depth). */
 export class PartBuilder {
   private parts: Record<Layer, THREE.BufferGeometry[]> = { wood: [], stone: [], roof: [], sign: [], glass: [] };
+  private boxCount = 0;
   private signText: { text: string; bg: string; fg: string } | null = null;
   constructor(readonly w: number, readonly h: number) {}
 
@@ -75,11 +81,14 @@ export class PartBuilder {
   }
 
   /** Box with its bottom-centre at (cx, y0, cz). */
-  box(cx: number, y0: number, cz: number, sx: number, sy: number, sz: number, color: number, layer: Layer = 'wood', o: PartOpts = {}): this {
+  box(cx: number, y0: number, cz: number, sx0: number, sy0: number, sz0: number, color: number, layer: Layer = 'wood', o: PartOpts = {}): this {
+    // Anti z-fight: every box grows by a tiny, strictly increasing amount (later parts protrude 0.04 mm-units more than earlier ones, capped at BOX_GROW_MAX).
+    // Coplanar faces of overlapping boxes (e.g. a wing bay's end wall flush with the hall's end wall) then resolve to the later part in every view instead of shimmering under camera motion.
+    const e = boxGrow(this.boxCount++), sx = sx0 + 2 * e, sy = sy0 + 2 * e, sz = sz0 + 2 * e;
     const m = Math.min(sx, sy, sz);
     // big solid blocks (walls, bodies, bases) get a small chamfer so silhouettes catch the light; thin slabs / trim stay plain
     const geo = m >= 0.2 && sx * sy * sz >= 0.02 ? chamferBox(sx, sy, sz, Math.min(0.05, m * 0.14)) : new THREE.BoxGeometry(sx, sy, sz);
-    return this.add(geo, layer, color, cx, y0 + sy / 2, cz, o);
+    return this.add(geo, layer, color, cx, y0 + sy0 / 2, cz, o);
   }
   /** Square-section beam between two points (lattice members, braces, cables). */
   beam(ax: number, ay: number, az: number, bx: number, by: number, bz: number, t: number, color: number, layer: Layer = 'stone'): this {
@@ -388,6 +397,6 @@ export function flagstoneFoundation(b: PartBuilder, w: number, h: number, depth:
   const nx = Math.max(1, Math.round(pw / 0.9)), nz = Math.max(1, Math.round(ph / 0.9));
   const shades = [0xa7adb3, 0x9aa1a8, 0xb3b8bd, 0xa2a6a0, 0xaeb2b8];
   for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
-    b.box(-pw / 2 + (pw / nx) * (i + 0.5), -0.03, -ph / 2 + (ph / nz) * (j + 0.5), pw / nx - 0.015, 0.03, ph / nz - 0.015, shades[Math.floor(hash01(i * 31 + j, w * 7 + h) * shades.length)]!, 'stone');
+    b.box(-pw / 2 + (pw / nx) * (i + 0.5), -0.03, -ph / 2 + (ph / nz) * (j + 0.5), pw / nx - 0.015, 0.04, ph / nz - 0.015, shades[Math.floor(hash01(i * 31 + j, w * 7 + h) * shades.length)]!, 'stone');
   }
 }

@@ -87,3 +87,18 @@ describe('format helpers', () => {
     expect(todayLine(p)).toMatch(/Today/);
   });
 });
+
+describe('st-marketing highlight', () => {
+  it('outlines the advised campaign card and clears it', () => {
+    const { m } = mk();
+    const p = el('st-marketing'); document.body.append(p);
+    p.bind({ view: () => buildMarketingView(m, 50000), start: (id) => m.start(id) });
+    const id = m.list()[1]!.id;
+    (p as unknown as { highlight(i: string | null): void }).highlight(id);
+    const hl = root(p).querySelectorAll('.card.hl');
+    expect(hl.length).toBe(1);
+    expect((hl[0] as HTMLElement).dataset.id).toBe(id);
+    (p as unknown as { highlight(i: string | null): void }).highlight(null);
+    expect(root(p).querySelectorAll('.card.hl').length).toBe(0);
+  });
+});

@@ -72,6 +72,15 @@ export interface SnowUniform { value: number }
 /** Window glass colour as stored in the vertex colours (linear working space). Pixels with this vertex colour glow warm at night. */
 const GLASS = new THREE.Color(C.glass);
 
+/** Roof snow tint noise: SMOOTH value noise (bilinear, smoothstep weights) in world space, 0..1, low frequency (~1 cell per 1.6 tiles).
+ * The old version used `floor()`-quantised hashes (hard 1/3 and 1/7 tile squares: blocky mottling that crawled under camera motion). Mirrored on the CPU in snowNoise.ts for tests. */
+export const SNOW_NOISE_GLSL = `
+float snHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float snowRoofNoise(vec2 p) {
+  vec2 q = p * 0.6, i = floor(q), f = q - i; f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(snHash(i), snHash(i + vec2(1.0, 0.0)), f.x), mix(snHash(i + vec2(0.0, 1.0)), snHash(i + vec2(1.0, 1.0)), f.x), f.y);
+}`;
+
 function patchSnow(mat: THREE.MeshLambertMaterial, snow: SnowUniform, key: string, night: SnowUniform, nearHide?: { value: THREE.Vector4 }): void {
   mat.onBeforeCompile = (sh): void => {
     sh.uniforms.uSnow = snow;
@@ -82,10 +91,10 @@ function patchSnow(mat: THREE.MeshLambertMaterial, snow: SnowUniform, key: strin
       .replace('#include <common>', '#include <common>\nvarying float vUp;\nvarying float vLY;\nvarying vec3 vSnP;' + (nearHide ? '\nvarying vec3 vNHW;' : ''))
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLY = transformed.y;\nvUp = normalize(mat3(modelMatrix) * objectNormal).y;\nvSnP = (modelMatrix * vec4(transformed, 1.0)).xyz;' + (nearHide ? '\nvNHW = (modelMatrix * vec4(transformed, 1.0)).xyz;' : ''));
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uSnow;\nuniform float uNight;\nuniform vec3 uGlass;\nfloat gGlass;\nvarying float vUp;\nvarying float vLY;\nvarying vec3 vSnP;' + (nearHide ? '\nvarying vec3 vNHW;\nuniform vec4 uNearHide;' : ''))
+      .replace('#include <common>', '#include <common>\nuniform float uSnow;\nuniform float uNight;\nuniform vec3 uGlass;\nfloat gGlass;\nvarying float vUp;\nvarying float vLY;\nvarying vec3 vSnP;' + SNOW_NOISE_GLSL + (nearHide ? '\nvarying vec3 vNHW;\nuniform vec4 uNearHide;' : ''))
       .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>' + (nearHide ? NEAR_HIDE_GLSL : ''))
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n#ifdef USE_COLOR\ntotalEmissiveRadiance += vec3(1.0, 0.56, 0.18) * gGlass * smoothstep(0.04, 0.55, uNight) * 1.25;\n#endif')
-      .replace('#include <color_fragment>', '#include <color_fragment>\ngGlass = 0.0;\n#ifdef USE_COLOR\ngGlass = 1.0 - step(0.05, length(vColor.rgb - uGlass));\n#endif\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.38, 0.26, 0.16), gGlass * smoothstep(0.04, 0.5, uNight));\ndiffuseColor.rgb *= mix(0.8, 1.0, smoothstep(0.0, 0.32, vLY)) * mix(0.93, 1.0, smoothstep(0.0, 1.2, vLY)); // soft ambient-occlusion gradient at the wall base (no extra draw calls)\nfloat snN = fract(sin(dot(floor(vSnP.xz * 3.0), vec2(127.1, 311.7))) * 43758.5453) + 0.5 * fract(sin(dot(floor(vSnP.xz * 7.0), vec2(269.5, 183.3))) * 43758.5453);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.98, 1.0) * (0.86 + 0.09 * snN), smoothstep(0.55, 0.8, vUp + (snN - 0.75) * 0.1) * uSnow);');
+      .replace('#include <color_fragment>', '#include <color_fragment>\ngGlass = 0.0;\n#ifdef USE_COLOR\ngGlass = 1.0 - step(0.05, length(vColor.rgb - uGlass));\n#endif\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.38, 0.26, 0.16), gGlass * smoothstep(0.04, 0.5, uNight));\ndiffuseColor.rgb *= mix(0.8, 1.0, smoothstep(0.0, 0.32, vLY)) * mix(0.93, 1.0, smoothstep(0.0, 1.2, vLY)); // soft ambient-occlusion gradient at the wall base (no extra draw calls)\nfloat snN = snowRoofNoise(vSnP.xz);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.98, 1.0) * (0.93 + 0.05 * snN), smoothstep(0.55, 0.8, vUp) * uSnow);');
   };
   mat.customProgramCacheKey = (): string => key;
 }
