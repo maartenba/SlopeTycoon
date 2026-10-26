@@ -5,7 +5,7 @@ Answer to *"Should it be possible to create water, like we can plant trees? Some
 | Tab | What it does | Reuses |
 |---|---|---|
 | **Water** | *Dig pond* (drag a rectangle 3-11 tiles, or click for the default size; `[ ]` changes it), *Fill in* (click a pond you dug) | new `LandscapeTool` |
-| **Nature** | Plant / Clear trees + species (existing), **Boulders** (paint) and **Remove boulders** | `PlantTool` + `LandscapeTool` |
+| **Nature** | Plant / Clear trees + species, density, brush (the only place for trees: the Terrain drawer is terraform only), **Boulders** (paint) and **Remove boulders** | `PlantTool` + `LandscapeTool` |
 | **Decor** | Bench, Lamp post, Flower bed, Hedge, Picket fence, Stone wall, Fountain; eraser; turn | `LandscapeTool` |
 
 Code: `src/config/landscape.ts` (costs / limits / decor catalogue), `src/sim/landscape/Landscape.ts` (pure rules, `Landscape` state, save form), `src/build/LandscapeTool.ts` (pointer tool), `Undo.landscapeStroke` in `src/build/UndoActions.ts`, `src/render/LandscapeDecor.ts` (+ `VillageDecor.buildFrom`), `Water.setLakes` in `src/render/Water.ts`, drawer tabs in `src/ui/components/StDock.ts` (`landItems` = card data, `landControls` = side selects; the cards are the shared `buildGrid` cards of Buildings / Pistes), wiring in `src/main.ts` (`landscapeTool`, `updateLandscapeView`, `__slope.landscapeDebug` for the harness), `createSim` (`sim.landscape`, `sim.landscapeEnv()`), save module `landscape` in `src/game/saveState.ts`. Tests: `tests/sim/landscape.test.ts`, `tests/build/landscapeUndo.test.ts`, `tests/game/landscapeSave.test.ts`, `tests/render/landscapeRender.test.ts`, `tests/ui-dom/landscapeDrawer.test.ts`.

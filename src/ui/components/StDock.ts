@@ -33,7 +33,7 @@ export interface DockApi {
     setMode(m: TerraformMode): void; setTarget(t: TerraformTarget): void; setBrush(n: number): void; setMaxEdgeDelta(d: 1 | 2): void;
     state(): { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 };
   };
-  /** Tree planting / clearing brush (Terrain drawer). */
+  /** Tree planting / clearing brush (Landscape drawer, Nature tab). */
   nature?: {
     setMode(m: 'plant' | 'clear'): void; setGroup(g: string): void; setBrush(n: number): void; setDensity(d: number): void;
     state(): { mode: 'plant' | 'clear'; group: string; brush: number; density: number };
@@ -819,27 +819,7 @@ export class StDock extends StElement {
     slope.title = 'Max slope between adjacent corners';
     r2.appendChild(slope);
     p.append(r1, r2);
-    const nat = this.api!.nature;
-    if (nat) {
-      const r3 = el('div', 'sec');
-      const mb = new Map<string, HTMLButtonElement>();
-      for (const [m, ic] of [['plant', '🌲 Plant trees'], ['clear', '🪓 Clear trees']] as const) { const b = this.btn(ic, `${m} trees with the brush (${m === 'plant' ? 1 : 2} while planting)`, () => { nat.setMode(m); sync(); }); mb.set(m, b); r3.appendChild(b); }
-      const sp = makeSelect(nat.groups.map((g) => ({ value: g.id, label: g.label })), nat.groups[0]?.id ?? '', 'Species group (G cycles)', (v) => { nat.setGroup(v); sync(); });
-      sp.title = 'Species group (G cycles)';
-      const dn = makeSelect([[0.3, 'Density: sparse'], [0.6, 'Density: normal'], [1, 'Density: dense']].map(([v, l]) => ({ value: String(v), label: String(l) })), '0.6', 'Planting density', (v) => { nat.setDensity(Number(v)); sync(); });
-      dn.title = 'Planting density';
-      const nb = el('span', 'small');
-      const sync = (): void => {
-        const s = nat.state();
-        for (const [m, b] of mb) b.classList.toggle('active', this.tool === 'plant' && s.mode === m);
-        sp.value = s.group; dn.value = String(s.density); nb.textContent = `brush ${s.brush}`;
-      };
-      this.natSync = sync;
-      r3.append(sp, dn, this.btn('−', 'smaller brush ([)', () => { nat.setBrush(nat.state().brush - 1); sync(); }), nb, this.btn('+', 'bigger brush (])', () => { nat.setBrush(nat.state().brush + 1); sync(); }));
-      p.appendChild(r3);
-      sync();
-    }
-    p.appendChild(el('div', 'small', 'Click/drag on the map to edit terrain (active only while this drawer is open). Keys: 1–4 mode, [ ] brush, C target. Trees: pick Plant/Clear (then 1 plant / 2 clear, G species, [ ] brush); not on pistes, paths, buildings, water or steep rock.'));
+    p.appendChild(el('div', 'small', 'Click/drag on the map to edit terrain (active only while this drawer is open). Keys: 1–4 mode, [ ] brush, C target. Trees and boulders live in the Landscape drawer (Nature tab).'));
     this.body.appendChild(p);
     this.terraEls = { modes, targets, slope, brush };
     this.syncTerraform(api.state());

@@ -84,6 +84,15 @@ describe('Landscape drawer', () => {
     dock.remove();
   });
 
+  it('Terrain drawer has no tree controls (trees only in Landscape > Nature)', () => {
+    const { dock } = mount();
+    dock.show('terrain');
+    const t = root(dock).textContent ?? '';
+    expect(t).not.toMatch(/Plant trees|Clear trees|Species|Density/);
+    expect(t).toMatch(/raise/i);
+    dock.remove();
+  });
+
   it('uses the shared card grid and controls of the other drawers (no one-off layout)', () => {
     const { dock } = mount();
     dock.show('landscape');

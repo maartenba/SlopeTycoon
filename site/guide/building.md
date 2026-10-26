@@ -34,7 +34,7 @@ A building can always be *placed*, but it only *works* when it is reachable. Dep
 
 ## Terrain and trees
 
-Open **Terrain** to raise, lower, flatten or smooth the ground (keys <kbd>1</kbd>–<kbd>4</kbd> while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> for brush size). Slopes can't be steeper than the maximum edge step you set. The **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water. Felling forest and planting it back also feeds the *sustainability* bar of your rating (see [Events & the region](page:events)).
+Open **Terrain** to raise, lower, flatten or smooth the ground (keys <kbd>1</kbd>–<kbd>4</kbd> while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> for brush size). Slopes can't be steeper than the maximum edge step you set. Trees are in the **Landscape** drawer, **Nature** tab: the **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water. Felling forest and planting it back also feeds the *sustainability* bar of your rating (see [Events & the region](page:events)).
 
 {{fig:ui-lifts-drawer}}
 

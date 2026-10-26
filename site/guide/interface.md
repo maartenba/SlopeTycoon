@@ -31,8 +31,8 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 | Lifts | The eleven lift types |
 | Paths & Roads | Footpaths, roads and rail |
 | Pistes & Trails | Ski pistes by difficulty, plus hiking and biking trails |
-| Terrain | Raise, lower, flatten, smooth the ground; plant or clear trees |
-| Landscape | Dig ponds, shape terrain, boulders and trees, garden decor (see [Building](page:building)) |
+| Terrain | Raise, lower, flatten, smooth the ground |
+| Landscape | Dig ponds, boulders, plant or clear trees, garden decor (see [Building](page:building)) |
 | Bulldoze | Remove buildings, lifts, paths and pistes |
 | View | Map overlays, grid, camera and photo/walk shortcuts |
 | Finance | Money overview, loans, reports |
