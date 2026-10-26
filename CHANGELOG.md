@@ -4,6 +4,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Statistics
+- **Statistics dialog** (`I`, top bar chart button, pause menu; `docs/stats.md`): charts of guests, cash, rating with the sustainability facet and revenue by category over 30 days, a year, two years or all time (older days are kept as monthly summaries). Colour-blind-safe palette, keyboard / hover readout and a numbers table. The history is observer-only and adds well under 50 KB to a save after five years.
+
 ### Landscape drawer and bug round
 - **Build in any season**: every building, lift, path, road, piste, trail and landscape item can be placed in any season (it always could in the rules; the season badges, dimming and "not usable until" wording read like a lock and are now plain hints). Releasing a piste stroke over the slope-profile card now still ends the stroke. The Landscape drawer now uses the same cards, hover cards, key badges and select controls as the other drawers.
 - **Landscape drawer** (`docs/landscaping.md`): dig and fill ponds (unlock at resort level 2), boulders and trees, and garden decor (bench, lamp, flower bed, hedge, fence, wall, fountain). Undoable, saved, ponds freeze in winter.

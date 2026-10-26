@@ -7,7 +7,7 @@
 const NS = 'http://www.w3.org/2000/svg';
 
 export type IconName =
-  | 'moon' | 'guests' | 'sun' | 'cloud' | 'snow' | 'rain' | 'storm' | 'mountain' | 'pause' | 'news' | 'lock' | 'bulb' | 'smile' | 'meh' | 'frown' | 'mute' | 'eye' | 'exit' | 'next' | 'camera' | 'walk' | 'flake' | 'bike' | 'trophy' | 'star' | 'lift' | 'cross' | 'coin' | 'paw' | 'medal';
+  | 'moon' | 'guests' | 'sun' | 'cloud' | 'snow' | 'rain' | 'storm' | 'mountain' | 'pause' | 'news' | 'lock' | 'bulb' | 'smile' | 'meh' | 'frown' | 'mute' | 'eye' | 'exit' | 'next' | 'camera' | 'walk' | 'flake' | 'bike' | 'trophy' | 'star' | 'lift' | 'cross' | 'coin' | 'paw' | 'medal' | 'chart';
 
 const PATHS: Record<IconName, string> = {
   moon: '<path d="M11.5 10.2A5.2 5.2 0 0 1 5.8 2.5a5.5 5.5 0 1 0 7.7 7.7 5 5 0 0 1-2 0z" fill="currentColor"/>',
@@ -29,6 +29,7 @@ const PATHS: Record<IconName, string> = {
   walk: '<circle cx="9" cy="2.800" r="1.500" fill="currentColor"/><path d="M9 5 7 8l-2.500 1M9 5l1.500 3 2 1M7 8l1 3-1.500 3.500M8 11l2.500 3.500" fill="none" stroke="currentColor" stroke-width="1.400" stroke-linecap="round" stroke-linejoin="round"/>',
   flake: '<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 1.5v13M2.4 4.8l11.2 6.4M13.6 4.8 2.4 11.2"/><path d="M6.2 2.8 8 4.4l1.8-1.6M6.2 13.2 8 11.6l1.8 1.6" fill="none" stroke-width="1.1"/></g>',
   bike: '<g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="3.800" cy="10.800" r="2.600"/><circle cx="12.200" cy="10.800" r="2.600"/><path d="M3.800 10.800 6.800 5.500h3.700l1.700 5.300M6.800 5.500l2 5.300h3.400M5.600 4h2.400M9.800 3.800h1.800"/></g>',
+  chart: '<path d="M2 2v11.500h12" fill="none" stroke="currentColor" stroke-width="1.400" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.500 10.500 7 7.200l2.200 2L13 4.300" fill="none" stroke="currentColor" stroke-width="1.600" stroke-linecap="round" stroke-linejoin="round"/>',
   camera: '<path d="M1.500 5.200A1.200 1.200 0 0 1 2.700 4h2l.9-1.600h4.800L11.300 4h2a1.200 1.200 0 0 1 1.200 1.200v6.600A1.200 1.200 0 0 1 13.300 13H2.700a1.200 1.200 0 0 1-1.200-1.200z" fill="none" stroke="currentColor" stroke-width="1.400" stroke-linejoin="round"/><circle cx="8" cy="8.300" r="2.400" fill="currentColor"/>',
   trophy: '<path d="M4.500 2h7v4.200a3.500 3.500 0 0 1-7 0zM4.500 3.200H2.200c0 2.300.9 3.700 2.700 4M11.500 3.200h2.300c0 2.300-.9 3.700-2.700 4M8 9.700V12M5.200 14h5.600M6 12h4" fill="currentColor" stroke="currentColor" stroke-width="1.300" stroke-linecap="round" stroke-linejoin="round"/>',
   star: '<path d="M8 1.500l1.900 4 4.400.5-3.200 3 .9 4.300L8 11.100l-4 2.200.9-4.300-3.200-3 4.400-.5z" fill="currentColor" stroke="currentColor" stroke-width=".8" stroke-linejoin="round"/>',

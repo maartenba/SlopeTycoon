@@ -36,7 +36,6 @@ const GOLDEN_STARTER: Record<string, string> = {
   'openStatus': 'f48290d9',
   'sessionMeta': '77074ba4',
   'goals': '91ed146f',
-  'stats': '5ab5a81e',
   'yearReports': 'e696b440',
   'advisor': 'ca063e92',
   'progression': 'b8977d94',
@@ -67,7 +66,6 @@ const GOLDEN_BOT: Record<string, string> = {
   'openStatus': 'f48290d9',
   'sessionMeta': '3c0227d7',
   'goals': 'ff5d73e1',
-  'stats': 'ada6bb32',
   'yearReports': '9c1f1197',
   'advisor': 'ca063e92',
   'progression': '95d25f9b', // re-recorded: the landscape:pond unlock joins the level snapshot

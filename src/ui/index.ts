@@ -36,6 +36,7 @@ import { StPhoto } from './components/StPhoto';
 import { StYearReport } from './components/StYearReport';
 import { StScenarios } from './components/StScenarios';
 import { StTrophies } from './components/StTrophies';
+import { StStats } from './components/StStats';
 import { StScenarioCard } from './components/StScenarioCard';
 import { StScenarioResult } from './components/StScenarioResult';
 
@@ -80,6 +81,7 @@ export const COMPONENTS = {
   'st-scenarios': StScenarios,
   'st-trophies': StTrophies,
   'st-scenario-card': StScenarioCard,
+  'st-stats': StStats,
   'st-scenario-result': StScenarioResult,
 } as const;
 

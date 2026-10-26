@@ -13,6 +13,8 @@ export interface TopBarApi {
   menu?(): void;
   /** Camera button: enter / exit photo mode (P). */
   photo?(): void;
+  /** Statistics button: opens the charts dialog (I). */
+  stats?(): void;
   /** Walk button (click without moving): opens 'Choose start' drop mode (Shift+V). V enters at the default path spot. */
   walk?(): void;
   /** Walk button dragged onto the map (Street-View style): begin (a pointer moved past the threshold), move (client px), end (released at client px: the host drops in when the point is over the map), cancel (Esc / pointer cancelled). */
@@ -97,6 +99,7 @@ export class StTopBar extends StElement {
         return b;
       })()] : []),
       ...(api.photo ? [(() => { const b = btn('', 'Photo mode (P)', () => api.photo?.(), 'topbar:photo'); b.append(icon('camera', 15)); b.classList.add('icon'); return b; })()] : []),
+      ...(api.stats ? [(() => { const b = btn('', 'Statistics (I)', () => api.stats?.(), 'topbar:stats'); b.append(icon('chart', 15)); b.classList.add('icon'); return b; })()] : []),
       ...(api.quality ? [gfx, sep()] : []),
       ...(api.saveLoad ? [(this.saveBtn = btn('💾 Save', 'Save game (Ctrl+S)', () => api.saveLoad?.(), 'topbar:save'))] : []),
       ...(api.continueLast ? [(this.contBtn = Object.assign(btn('▶ Continue', 'Load your most recent save', () => api.continueLast?.()), { hidden: true }))] : []),

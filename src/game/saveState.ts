@@ -138,7 +138,7 @@ export const SAVE_MODULES: SaveModule[] = [
   // Resort goal chain. Keep LAST: reset() (old saves without it) silently completes goals the restored world already satisfies.
   { key: 'goals', version: 1, serialize: (sim) => sim.goals.serialize(), load: (sim, d) => sim.goals.load(d), reset: (sim) => sim.goals.reset() },
   // Daily stats ring + Resort of the Year reports (M5.3). Additive: old saves have none -> empty history / no reports.
-  { key: 'stats', version: 1, serialize: (sim) => sim.stats.serialize(), load: (sim, d) => sim.stats.load(d), reset: (sim) => sim.stats.reset() },
+  { key: 'stats', version: 1, observer: true, serialize: (sim) => sim.stats.serialize(), load: (sim, d) => sim.stats.load(d), reset: (sim) => sim.stats.reset() },
   { key: 'yearReports', version: 1, serialize: (sim) => sim.yearReports.serialize(), load: (sim, d) => sim.yearReports.load(d), reset: (sim) => sim.yearReports.reset() },
   // Advisor snooze timers (Ranger Rudi). Additive: old saves have none -> nothing snoozed.
   { key: 'advisor', version: 1, serialize: (sim) => sim.advisor.serialize(), load: (sim, d) => sim.advisor.load(d), reset: (sim) => sim.advisor.reset() },

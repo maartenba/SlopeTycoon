@@ -1,7 +1,7 @@
 import { Modal } from '../modal';
 import { StElement } from './StElement';
 
-export interface PauseMenuApi { resume?(): void; save(): void; load(): void; settings(): void; help(): void; mainMenu(): void; trophies?(): void }
+export interface PauseMenuApi { resume?(): void; save(): void; load(): void; settings(): void; help(): void; mainMenu(): void; trophies?(): void; stats?(): void }
 
 /** Esc pause menu (shared dialog frame, sm). Save / Load / Settings / Help open ABOVE it (it stays underneath); Esc closes the top dialog only. */
 export class StPauseMenu extends StElement {
@@ -29,7 +29,7 @@ export class StPauseMenu extends StElement {
     menu.append(
       mk('▶', 'Resume', () => api.resume?.(), true, 'primary'), document.createElement('hr'),
       mk('💾', 'Save game', () => api.save(), false), mk('📂', 'Load game', () => api.load(), false),
-      ...(api.trophies ? [mk('🏆', 'Trophies', () => api.trophies!(), false)] : []), mk('⚙', 'Settings', () => api.settings(), false), mk('❓', 'Help & keys', () => api.help(), false), document.createElement('hr'),
+      ...(api.stats ? [mk('📈', 'Statistics', () => api.stats!(), false)] : []), ...(api.trophies ? [mk('🏆', 'Trophies', () => api.trophies!(), false)] : []), mk('⚙', 'Settings', () => api.settings(), false), mk('❓', 'Help & keys', () => api.help(), false), document.createElement('hr'),
       mk('⌂', 'Main menu', () => api.mainMenu(), true),
     );
     this.dlg.body.replaceChildren(menu);

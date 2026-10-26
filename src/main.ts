@@ -493,6 +493,7 @@ let dockRef: StDock | null = null;
 let hudRef: { showRating(): void } | null = null;
 let inspectorRef: StInspector | null = null;
 let schoolInfoRef: ((id: number, type: string) => NonNullable<import('@/ui/components/StInspector').InspectorTarget['school']> | undefined) | null = null;
+let statsRef: import('@/ui/components/StStats').StStats | null = null; // Statistics dialog (Task 30), set once the game UI is built
 let selectedId: number | null = null;
 let selectedPiste: { x: number; y: number } | null = null;
 let pisteHighlightOn = false;
@@ -2117,6 +2118,7 @@ if (ui && !DEMO) {
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
     season: SEASON_LABELS[seasonOf(game.date)], kind: weather.current.kind, tempC: weather.valleyTempAt(hourOfDay(game.date)),
+    stats: () => { if (!DEMO) statsRef?.toggle(); },
     snowlineM: altitudeMetres(weather.current.snowline), summerDiscount: isSummer(game.date),
     daylight: ((t) => `Sunrise ${fmtClock(t.sunrise)} · sunset ${fmtClock(t.sunset)} (${(t.sunset - t.sunrise).toFixed(1)} h of daylight)`)(sunTimes(game.date.day)),
     progress: formatSeasonProgress(((p) => ({ ...p, season: SEASON_LABELS[p.season], next: SEASON_LABELS[p.next] }))(seasonProgress(game.date))),
@@ -2492,6 +2494,8 @@ if (ui && !DEMO) {
       profile: { cosmetics: achCosmetics, reset: async () => { ach.resetProfile(); await profileStore().resetProfile(); } },
       quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
       fastNights: { get: fastNightsApi.get, set: fastNightsApi.set },
+  const statsEl = el('st-stats');
+  statsRef = statsEl; statsEl.bind({ history: () => sim.stats });
       rideSlowMo: rideSlowMoApi,
       walk: { get: () => ({ ...walkSettings }), set: (p) => { applyWalkSettings(p); } },
       feedback: { get: () => fx.intensity, set: (v) => fx.setIntensity(v as FeedbackIntensity), options: FEEDBACK_INTENSITIES },
@@ -2518,13 +2522,13 @@ if (ui && !DEMO) {
     photoEl = pe;
     ui.append(pe);
   }
-  ui.append(topbar, debug, recapEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, viewHud);
+  ui.append(topbar, debug, recapEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, statsEl, viewHud);
   {
     const pause = el('st-pause-menu');
     pauseRef = pause;
     pause.bind({
       save: () => saveLoadRef?.open('save'), load: () => saveLoadRef?.open('load'), settings: () => settingsRef?.open(), help: () => helpRef?.open(),
-      mainMenu: () => { void goToMenu(); }, trophies: () => trophiesEl.open(),
+      mainMenu: () => { void goToMenu(); }, trophies: () => trophiesEl.open(), stats: () => statsEl.open(),
     });
     ui.append(pause);
   }
@@ -2673,6 +2677,7 @@ Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slop
   /** Debug / QA: `achievements.unlock('first-lift')` (forced, toasts like a real unlock), `.engine`, `.announcer`, `.trophies()` opens the shelf. */
   achievements: { engine: ach, announcer: achAnnouncer, unlock: (id: string) => ach.unlock(id, true), select: (k: 'palette' | 'flags' | 'frame' | 'chair', id: string) => ach.select(k, id), trophies: () => { const t = document.querySelector('st-trophies') as (HTMLElement & { open(): void }) | null; t?.open(); return !!t; } },
   populateDemo, populateTown, findBear: findBearDebug, spawnBear: spawnBearDebug, findAnimal: findAnimalDebug, spawnGuests: (n: number, mix: 'mixed' | 'skiers' | 'hikers' = 'mixed') => spawnGuests(sim, n, mix, ++debugSpawnCount),
+  if ((e.key === 'i' || e.key === 'I') && !e.ctrlKey && !e.metaKey && !e.altKey && !drop.active && renderer.viewMode.mode === 'iso' && !DEMO && (!modalStack.size || statsRef?.isOpen)) statsRef?.toggle(); // statistics (Esc closes it through the modal stack)
   demoReport, jumpSimToDay,
   /** Debug only (screenshots / QA): `setLevel(n)` raises the Career level as if earned (fires the normal level-up: confetti, news, card). */
   progression: { setLevel: (n: number) => sim.progression.setLevel(n), view: () => sim.progression.view(), mode: () => sim.progression.mode, unlockAll: (on: boolean) => { sim.progression.unlockAll = on; } },

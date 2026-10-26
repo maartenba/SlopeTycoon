@@ -835,6 +835,7 @@ export function createSim(opts: SimOptions) {
   const stats = new StatsHistory({
     guests: () => ({ count: guestSim.store.count, happiness: avgHappiness() }),
     stars: () => rating.stars,
+    cash: () => game.money, sustain: () => sustain.last()?.score ?? 0,
     today: () => game.date.year * 180 + game.date.day,
     day: () => economy.dayBuckets(),
     incidents: () => { const x = safety.incidents.stats(); return { created: x.created, resolved: x.resolved, hospitalised: x.hospitalised }; },

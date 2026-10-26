@@ -38,6 +38,7 @@ export const PANELS: readonly PanelAnchor[] = [
   { tag: 'st-profile', zone: 'top-card', alwaysVisible: false, note: 'slope profile chart (320 px, M5.4) while a piste or lift ghost is being placed; position:fixed, pointer-events none, same footprint as the transient recap card' },
   { tag: 'st-goals', zone: 'right-goals', alwaysVisible: true, note: 'resort goal chain card (collapsible, 3 goals); a level chip in its header swaps the body for the level progress (same footprint); hidden while the tutorial runs' },
   { tag: 'st-scenario-card', zone: 'right-goals', alwaysVisible: false, note: 'scenario games only: REPLACES st-goals in the same zone (objective list scrolls inside the 260x140 footprint); hidden after "Continue playing (sandbox mode)"' },
+  { tag: 'st-stats', zone: 'modal', alwaysVisible: false, note: 'statistics dialog (shared modal frame, lg): canvas charts of guests, cash, rating + sustainability, revenue by category' },
   { tag: 'st-trophies', zone: 'modal', alwaysVisible: false, note: 'trophy shelf dialog (shared modal frame, lg): achievements, tiers, scenario medals' },
   { tag: 'st-scenarios', zone: 'modal', alwaysVisible: false, note: 'scenario picker dialog (shared modal frame)' },
   { tag: 'st-scenario-result', zone: 'modal', alwaysVisible: false, note: 'win / lose dialog (shared modal frame), the game is paused while it is open' },

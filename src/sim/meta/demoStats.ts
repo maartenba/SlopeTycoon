@@ -19,6 +19,8 @@ export function fillDemoStats(h: StatsHistory, endYear: number, seed = 7): void 
   const weather = u('weather'), temp = f('temp'), queue = f('queue'), wild = u('wildlife'), attacks = u('attacks');
   const inc = Object.fromEntries(LEDGER_CATEGORIES.map((c) => [c, f(`inc:${c}`)])), exp = Object.fromEntries(EXPENSE_CATEGORIES.map((c) => [c, f(`exp:${c}`)]));
   const share: Record<string, number> = { lifts: 0.34, passes: 0.1, lodging: 0.22, shops: 0.05, restaurants: 0.13, bars: 0.04, recreation: 0.07, rental: 0.03, lessons: 0.02, other: 0 };
+  const cash = f('cash'), sustain = f('sustain');
+  let bank = 40_000;
   for (let abs = first; abs <= lastAbs; abs++) {
     const i = abs % STATS_DAYS, doy = abs % DAYS_PER_YEAR, month = Math.floor(doy / DAYS_PER_MONTH), season = seasonOfMonth(month), yearIx = abs >= first + DAYS_PER_YEAR ? 1 : 0;
     const winter = season === 'winter', summer = season === 'summer';
@@ -35,6 +37,7 @@ export function fillDemoStats(h: StatsHistory, endYear: number, seed = 7): void 
     snow[i] = winter ? 0.7 + 0.5 * rnd() : summer ? 0 : 0.2 * rnd(); skiable[i] = winter ? 0.8 + 0.2 * rnd() : 0.1 * rnd(); quality[i] = 0.55 + 0.3 * rnd();
     weather[i] = winter ? (rnd() < 0.35 ? 2 : rnd() < 0.5 ? 0 : 1) : summer ? (rnd() < 0.2 ? 4 : 0) : 1;
     temp[i] = winter ? -6 + 4 * rnd() : summer ? 14 + 8 * rnd() : 3 + 5 * rnd(); queue[i] = 1 + 5 * rnd(); wild[i] = rnd() < 0.03 ? 1 : 0; attacks[i] = 0;
+    bank += income[i]! - expense[i]!; cash[i] = bank; sustain[i] = 58 + 14 * Math.sin(abs / 70) + 0.04 * (abs - first); // no rnd(): reports stay byte-identical
   }
   h.load({ lastAbs, len: STATS_DAYS, acc: {}, cum: {}, cumInit: false, series });
 }
