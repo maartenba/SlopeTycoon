@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { onPalette, paletteData } from '@/config/palette';
 import { FOG_FRAG, FOG_PARS_FRAG, FOG_PARS_VERT, fogUniforms, fogVert } from './Fog';
 import type { Grid } from '@/world/Grid';
 import { CHUNK_SIZE } from '@/world/Grid';
@@ -42,6 +43,7 @@ const FRAG = /* glsl */ `
 uniform sampler2D tGrass, tMeadow, tBlossom, tDirt, tSnow, tRock, tGround;
 uniform float uGroundN; // map size in tiles (0 = no ground mask)
 uniform float uSnowline, uSpringBloom, uAutumn, uGrid;
+uniform vec3 uEdge0, uEdge1, uEdge2, uEdge3; // piste edge-rope colours by difficulty (Settings > Colour palette)
 uniform float uDetailFade; // ground cameras: 1 = micro-detail on (fades out with distance, 0 in iso so iso is unchanged)
 uniform vec3 uLodTint; // debug: multiplies the final colour (1,1,1 = off)
 uniform vec3 uSunDir, uSunColor, uSkyColor, uGroundColor, uHazeColor;
@@ -218,7 +220,7 @@ void main() {
   { // difficulty edge line: thin coloured rope along both sides of a ski run (full-tile colours live in the 'Piste difficulty' overlay)
     float ew = clamp(fwW * 1.6, 0.10, 0.34); // edge half-width grows with the pixel footprint: never thinner than ~1.5 px (no hairline shimmer), still a thin rope up close
     float edge = (1.0 - smoothstep(0.0, ew, abs(pisteRaw - 0.5))) * step(0.02, pisteRaw);
-    vec3 dc = pDiff < 0.5 ? vec3(0.18, 0.72, 0.25) : pDiff < 1.5 ? vec3(0.16, 0.42, 0.86) : pDiff < 2.5 ? vec3(0.88, 0.20, 0.16) : vec3(0.10, 0.10, 0.12);
+    vec3 dc = pDiff < 0.5 ? uEdge0 : pDiff < 1.5 ? uEdge1 : pDiff < 2.5 ? uEdge2 : uEdge3;
     col = mix(col, dc, edge * 0.8);
   }
   // close-range micro-detail (ground cameras only): tiling procedural albedo grain + normal ripple, faded by distance (full < ~25 m, gone by ~45 m)
@@ -343,6 +345,7 @@ export class TerrainMesh {
         uAutumn: { value: 0 },
         uGrid: { value: 0 },
         uDetailFade: { value: 0 },
+        uEdge0: { value: new THREE.Vector3() }, uEdge1: { value: new THREE.Vector3() }, uEdge2: { value: new THREE.Vector3() }, uEdge3: { value: new THREE.Vector3() },
         uLodTint: { value: new THREE.Vector3(1, 1, 1) },
         uSunDir: { value: sunDir },
         uSunColor: { value: new THREE.Color(0.85, 0.76, 0.58) },
@@ -352,6 +355,8 @@ export class TerrainMesh {
         uHazeColor: { value: new THREE.Color().setRGB(0.663, 0.831, 0.961, THREE.SRGBColorSpace) },
       },
     });
+    this.applyPalette();
+    this.unPalette = onPalette(() => this.applyPalette());
     for (let i = 0; i < this.cpr * this.cpr; i++) this.chunks.push(this.makeSlot());
     if (this.macroCapable) {
       for (let i = 0; i < this.mpr * this.mpr; i++) { this.macros.push(this.makeSlot()); this.macroChunkIds.push([]); }
@@ -379,6 +384,9 @@ export class TerrainMesh {
    * Only matters on macro-capable maps (far LOD); cheap to call every frame (recomputed when the chunk cell changes).
    */
   /** Ground cameras (perspective): 1 enables the close-range micro-detail; 0 (iso) leaves the shader output identical to before. */
+  private unPalette: (() => void) | null = null;
+  /** Piste edge colours (Settings > Colour palette): called at start and whenever the palette changes. */
+  applyPalette(): void { const e = paletteData().edge, u = this.material.uniforms; for (let i = 0; i < 4; i++) (u[`uEdge${i}`]!.value as THREE.Vector3).set(e[i]![0], e[i]![1], e[i]![2]); }
   setDetailFade(v: number): void { this.material.uniforms.uDetailFade!.value = v; }
 
   /** Soft piste / trail / contact-shadow data (see groundMask.ts); null detaches. */
@@ -582,6 +590,7 @@ export class TerrainMesh {
   }
 
   dispose(): void {
+    this.unPalette?.(); this.unPalette = null;
     for (const s of [...this.chunks, ...this.macros]) s.mesh.geometry.dispose();
     this.material.dispose();
     for (const t of Object.values(this.textures)) t.dispose();

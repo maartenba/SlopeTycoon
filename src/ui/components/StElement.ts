@@ -1,10 +1,11 @@
 import type { EventBus } from '@/core/EventBus';
 import { scaledFontsCss, tokensCss } from '../tokens';
+import { motionSheet } from '../motionSheet';
 
 /** Shared UI kit (docs/ui-kit.md): buttons, fields, checkbox/toggle, range, tabs, scrollbars, tooltips, focus rings and the dialog frame. Every st-* shadow root gets it. */
 export const KIT_CSS = `
 button, select, input, textarea { font: inherit; }
-button { background: linear-gradient(#3b4f69, #31435b); color: #fff; border: 1px solid #4f6684; border-radius: var(--r-sm); padding: 3px var(--sp-3); cursor: pointer; font-weight: 600; transition: background .12s, border-color .12s, transform .05s; }
+button { min-height: var(--touch-min, 0px); background: linear-gradient(#3b4f69, #31435b); color: #fff; border: 1px solid #4f6684; border-radius: var(--r-sm); padding: 3px var(--sp-3); cursor: pointer; font-weight: 600; transition: background .12s, border-color .12s, transform .05s; }
 button:hover:not(:disabled) { background: linear-gradient(#4a6483, #3c5472); border-color: #6f8bb0; }
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .45; cursor: default; }
@@ -15,7 +16,7 @@ button.danger { background: linear-gradient(#d0534a, #b13d34); border-color: #e8
 button.danger:hover:not(:disabled) { background: linear-gradient(#e0665c, #c24a40); }
 button.ghost { background: transparent; border-color: transparent; color: var(--c-muted); }
 button.ghost:hover:not(:disabled) { background: rgba(255,255,255,.08); border-color: transparent; color: #fff; }
-button.icon { padding: 2px 7px; min-width: 26px; }
+button.icon { padding: 2px 7px; min-width: max(26px, var(--touch-min, 0px)); }
 :focus-visible { outline: 2px solid var(--c-accent-text); outline-offset: 1px; }
 input[type=text], input[type=number], input[type=search], input:not([type]), textarea, select { background: var(--c-field); color: #fff; border: 1px solid var(--c-field-border); border-radius: var(--r-sm); padding: 3px 7px; box-sizing: border-box; }
 input[type=text]:hover, input[type=number]:hover, select:hover { border-color: #5f7798; }
@@ -23,7 +24,7 @@ input::placeholder { color: #7d8fa6; }
 input[type=number] { font-variant-numeric: tabular-nums; }
 select { appearance: none; -webkit-appearance: none; padding-right: 22px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b9c6d8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 7px center; }
 select option { background: #141c28; color: #fff; }
-input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; margin: 0; flex: none; vertical-align: middle; background: var(--c-field); border: 1px solid #5f7798; border-radius: 4px; cursor: pointer; display: inline-grid; place-content: center; }
+input[type=checkbox] { appearance: none; -webkit-appearance: none; width: max(16px, calc(var(--touch-min, 0px) * .55)); height: max(16px, calc(var(--touch-min, 0px) * .55)); margin: 0; flex: none; vertical-align: middle; background: var(--c-field); border: 1px solid #5f7798; border-radius: 4px; cursor: pointer; display: inline-grid; place-content: center; }
 input[type=checkbox]::after { content: ""; width: 9px; height: 5px; border-left: 2.5px solid #1a1208; border-bottom: 2.5px solid #1a1208; transform: rotate(-45deg) scale(0); margin-top: -2px; transition: transform .1s; }
 input[type=checkbox]:checked { background: var(--c-accent); border-color: var(--c-accent-text); }
 input[type=checkbox]:checked::after { transform: rotate(-45deg) scale(1); }
@@ -31,7 +32,7 @@ input[type=checkbox].toggle { width: 34px; height: 18px; border-radius: 9px; bac
 input[type=checkbox].toggle::after { content: ""; position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; margin: 0; border: 0; border-radius: 50%; background: #b9c6d8; transform: none; transition: left .12s, background .12s; }
 input[type=checkbox].toggle:checked { background: #b9811f; border-color: var(--c-accent-text); }
 input[type=checkbox].toggle:checked::after { left: 18px; background: #fff; transform: none; }
-input[type=range] { appearance: none; -webkit-appearance: none; background: transparent; height: 18px; margin: 0; cursor: pointer; accent-color: var(--c-accent); }
+input[type=range] { appearance: none; -webkit-appearance: none; background: transparent; height: max(18px, var(--touch-min, 0px)); margin: 0; cursor: pointer; accent-color: var(--c-accent); }
 input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(#1d2a3b, #2b3d54); border: 1px solid #40536d; }
 input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: #2b3d54; border: 1px solid #40536d; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe29a, #e0a030); border: 1px solid #fff3; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
@@ -90,7 +91,8 @@ export abstract class StElement extends HTMLElement {
       try {
         const sheet = new CSSStyleSheet();
         sheet.replaceSync(css);
-        this.root.adoptedStyleSheets = [sheet];
+        const rm = motionSheet();
+        this.root.adoptedStyleSheets = rm ? [sheet, rm] : [sheet];
         return;
       } catch { /* fall through to <style> */ }
     }

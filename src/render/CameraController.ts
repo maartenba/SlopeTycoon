@@ -122,6 +122,20 @@ export class CameraController {
     this.clampTarget();
   }
 
+  /** Touch: pan so the world follows a finger that moved (dx, dy) CSS px (same maths as the mouse drag). */
+  panPixels(dx: number, dy: number): void {
+    if (!this.active) return;
+    const wpp = this.viewHeight / this.zoom / Math.max(1, this.dom.clientHeight);
+    this.pan(-dx * wpp, dy * wpp / Math.sin(CAMERA_PITCH));
+  }
+
+  /** Touch twist: turn the view freely by `radians` (positive = the fingers turned clockwise on screen; the world follows them). */
+  rotateBy(radians: number): void {
+    if (!this.active) return;
+    this.tweenT = 1;
+    this.yaw += radians;
+  }
+
   clampTarget(): void {
     this.target.x = clamp(this.target.x, 0, this.mapSize);
     this.target.z = clamp(this.target.z, 0, this.mapSize);

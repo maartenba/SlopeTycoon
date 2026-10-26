@@ -39,6 +39,7 @@ import { StTrophies } from './components/StTrophies';
 import { StStats } from './components/StStats';
 import { StScenarioCard } from './components/StScenarioCard';
 import { StScenarioResult } from './components/StScenarioResult';
+import { StTouchControls } from './components/StTouchControls';
 
 /** Every custom element: tag -> constructor. The single source of truth (registerComponents, typed helpers, DOM tests). */
 export const COMPONENTS = {
@@ -80,9 +81,10 @@ export const COMPONENTS = {
   'st-year-report': StYearReport,
   'st-scenarios': StScenarios,
   'st-trophies': StTrophies,
-  'st-scenario-card': StScenarioCard,
   'st-stats': StStats,
+  'st-scenario-card': StScenarioCard,
   'st-scenario-result': StScenarioResult,
+  'st-touch-controls': StTouchControls,
 } as const;
 
 export type StTagMap = { [K in keyof typeof COMPONENTS]: InstanceType<(typeof COMPONENTS)[K]> };

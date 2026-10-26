@@ -60,6 +60,8 @@ export class StSettings extends StElement {
   private nightsBox: HTMLInputElement | null = null;
   private slowBox: HTMLInputElement | null = null;
   private fxSel: StSelect | null = null;
+  private touchSel: StSelect | null = null;
+  private paletteSel: StSelect | null = null;
   private hintsBox: HTMLInputElement | null = null;
   private motionBox = document.createElement('input');
   private scaleRange = document.createElement('input');
@@ -135,6 +137,12 @@ export class StSettings extends StElement {
     sr.addEventListener('input', () => a11y.set({ uiScale: Number(sr.value) }));
     scaleRow.append(scaleLabel, sr, this.scaleVal);
     access.push(scaleRow);
+    // Touch controls (Auto follows `(pointer: coarse)`) and the colour-blind-safe palette (Okabe-Ito based): both in the shared accessibility store.
+    const selRow = (key: string, label: string, sel: StSelect, tip: string): HTMLElement => { const r = document.createElement('div'); r.className = 'row'; r.dataset.row = key; const l = document.createElement('label'); l.textContent = label; sel.title = tip; r.append(l, sel); return r; };
+    this.touchSel = makeSelect([{ value: 'auto', label: 'Auto' }, { value: 'on', label: 'On' }, { value: 'off', label: 'Off' }], a11y.get().touch, 'Touch controls', (v) => a11y.set({ touch: v === 'on' || v === 'off' ? v : 'auto' }));
+    access.push(selRow('touch', 'Touch controls', this.touchSel, 'On-screen controls, bigger targets, one-finger pan / pinch zoom / twist rotate. Auto = on for touch screens.'));
+    this.paletteSel = makeSelect([{ value: 'default', label: 'Default' }, { value: 'cbsafe', label: 'Colour-blind safe' }], a11y.get().palette, 'Colour palette', (v) => a11y.set({ palette: v === 'cbsafe' ? 'cbsafe' : 'default' }));
+    access.push(selRow('palette', 'Colour palette', this.paletteSel, 'Piste difficulty, overlays and status colours from the Okabe-Ito colour-blind-safe set.'));
     this.track(a11y.subscribe(() => this.sync()));
     const audioSec = this.section('Audio', ...audio), gfx = this.section('Graphics', this.gfxSec), gp = this.section('Gameplay', this.gameSec, this.linksBox), acc = this.section('Accessibility', ...access);
     this.cosSec.className = 'cos';
@@ -268,6 +276,8 @@ export class StSettings extends StElement {
   private sync(): void {
     const a = accessibility().get();
     this.motionBox.checked = a.reducedMotion; this.scaleRange.value = String(a.uiScale); this.scaleVal.textContent = `${a.uiScale}%`;
+    if (this.touchSel) this.touchSel.value = a.touch;
+    if (this.paletteSel) this.paletteSel.value = a.palette;
     const s = this.settings?.get();
     if (!s) return;
     for (const k of VOLUME_KEYS) {

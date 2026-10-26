@@ -190,13 +190,23 @@ export class PlacementTool {
   private onDown(e: PointerEvent): void {
     if (!this.type || e.button !== 0 || e.target !== this.o.dom) return;
     this.pick = this.doPick(e);
-    const chk = this.refresh(e);
+    this.commit(this.refresh(e), e.shiftKey, e);
+  }
+
+  /** Touch: place at the ghost's current spot (the Confirm button of the two-step placement; docs/touch.md). False when there is no valid ghost. */
+  confirm(): boolean {
+    if (!this.type || !this.ghost?.visible || !this.lastChk) return false;
+    this.commit(this.lastChk, false, this.lastPtr ?? undefined);
+    return true;
+  }
+
+  private commit(chk: PlacementCheck | null, several: boolean, e?: { clientX: number; clientY: number }): void {
     if (!chk || !this.type) return;
     const type = this.type;
     const out = this.o.place ? this.o.place(type, this.lastAt.x, this.lastAt.y, this.rot, this.autoFlatten) : placeBuilding(this.o.env, this.o.props, type, this.lastAt.x, this.lastAt.y, this.rot, this.autoFlatten);
     if (!out.ok) { this.o.onError(out.reasons.join(', ')); return; }
     this.o.onPlaced(out);
-    if (e.shiftKey) this.refresh(e);
+    if (several) this.refresh(e);
     else this.cancel();
   }
 

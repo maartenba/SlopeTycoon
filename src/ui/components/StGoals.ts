@@ -78,7 +78,9 @@ button.chip.sb{border-color:#5a7090;color:#cfe0ff}
 
   bind(bus: GameBus, api: GoalsApi): void {
     this.api = api;
-    try { this.collapsed = window.localStorage.getItem(COLLAPSE_KEY) === '1'; this.levelView = window.localStorage.getItem(VIEW_KEY) === 'level'; } catch { this.collapsed = false; }
+    // phones / short landscape: start collapsed (header only) unless the player chose; the card would cover half the map
+    const compact = typeof matchMedia === 'function' && matchMedia('(max-width: 760px), (max-height: 520px)').matches;
+    try { const stored = window.localStorage.getItem(COLLAPSE_KEY); this.collapsed = stored === null ? compact : stored === '1'; this.levelView = window.localStorage.getItem(VIEW_KEY) === 'level'; } catch { this.collapsed = false; }
     this.listen(bus, 'time:hour', () => this.refresh());
     this.listen(bus, 'milestone', () => this.refresh());
     this.refresh();

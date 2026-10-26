@@ -1,8 +1,11 @@
 import type { SlopeProfile } from '@/sim/PisteStats';
 import { StElement } from './StElement';
+import { getPalette, difficultyList } from '@/config/palette';
 
 /** Segment colours by difficulty (0 green .. 3 black). Black is drawn light so it reads on the dark panel. */
 export const PROFILE_COLORS = ['#3fb950', '#3b82f6', '#e5484d', '#aab4c4'] as const;
+/** Segment colour of a difficulty 0..3 in the active palette (black stays light on the dark panel). */
+export const profileColor = (d: number): string => (getPalette() === 'default' ? PROFILE_COLORS[d]! : d === 3 ? '#aab4c4' : difficultyList()[d]!);
 export const PROFILE_NAMES = ['Green', 'Blue', 'Red', 'Black'] as const;
 
 export interface ProfileView {
@@ -48,7 +51,7 @@ export class StProfile extends StElement {
   constructor() {
     super();
     this.card.className = 'card'; this.head.className = 'head'; this.stats.className = 'stats'; this.noteEl.className = 'note'; this.legend.className = 'legend';
-    for (let d = 0; d < 4; d++) { const s = document.createElement('span'); const i = document.createElement('i'); i.style.background = PROFILE_COLORS[d]!; s.append(i, PROFILE_NAMES[d]!); this.legend.appendChild(s); }
+    for (let d = 0; d < 4; d++) { const s = document.createElement('span'); const i = document.createElement('i'); i.style.background = profileColor(d); s.append(i, PROFILE_NAMES[d]!); this.legend.appendChild(s); }
     this.card.append(this.head, this.svg, this.stats, this.noteEl, this.legend);
     this.root.appendChild(this.card);
     this.card.hidden = true; // (the host must not get attributes in its constructor)
@@ -87,7 +90,7 @@ export class StProfile extends StElement {
       const d = Math.max(0, Math.min(3, b.difficulty));
       this.svg.appendChild(sv('polygon', {
         points: `${x(a.distM)},${y(a.altM)} ${x(b.distM)},${y(b.altM)} ${x(b.distM)},${base} ${x(a.distM)},${base}`,
-        fill: PROFILE_COLORS[d]!, 'fill-opacity': 0.78, 'data-diff': d,
+        fill: profileColor(d), 'fill-opacity': 0.78, 'data-diff': d,
       }));
     }
     const line = s.map((q) => `${x(q.distM).toFixed(1)},${y(q.altM).toFixed(1)}`).join(' ');

@@ -23,3 +23,29 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 
 /* Accessibility: 'Reduced motion' (Settings) sets data-reduced-motion on <html> (src/ui/accessibility.ts). Decorative transitions / animations stop. */
 html[data-reduced-motion] *, html[data-reduced-motion] *::before, html[data-reduced-motion] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+
+/* Touch (docs/touch.md): never scroll / zoom / pull-to-refresh the page; the canvas owns its gestures; no accidental text selection or long-press menus on controls. */
+html, body { overscroll-behavior: none; touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+#app canvas { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+#ui { -webkit-tap-highlight-color: transparent; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); box-sizing: border-box; }
+html[data-touch] #ui { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Compact layout: phones (portrait <= 760 px) and short landscape (<= 520 px high). The top bar scrolls sideways, the right column hugs the right edge
+   with a narrower card stack, and the corner widgets move out of the dock's way. Components own their inner responsiveness (StDock / StNews / StPhoto...). */
+@media (max-width: 760px), (max-height: 520px) {
+  #ui > st-topbar { max-width: calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; left: calc(8px + env(safe-area-inset-left, 0px)); top: calc(8px + env(safe-area-inset-top, 0px)); }
+  #ui > st-topbar::-webkit-scrollbar { display: none; }
+  #right-col { top: calc(72px + env(safe-area-inset-top, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); width: min(230px, calc(100vw - 16px)); gap: 4px; }
+  #right-col > st-hud, #right-col > st-speed-control { max-width: 100%; }
+  #ui > st-help { display: none; } /* the top bar has its own ? button */
+  #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0px)); }
+  #ui > st-debug { display: none; }
+  #ui > st-assistant, #ui > st-news { z-index: 1; }
+  #ui > st-dock { z-index: 3; }
+}
+@media (max-height: 520px) {
+  #right-col { width: min(260px, 44vw); top: calc(70px + env(safe-area-inset-top, 0px)); }
+  #right-col > #tool-status { display: none; }
+  #ui > st-news { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); right: auto; left: calc(100px + env(safe-area-inset-left, 0px)); }
+}
+html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0px)); }

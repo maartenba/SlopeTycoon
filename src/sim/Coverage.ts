@@ -1,4 +1,5 @@
 import { BUILDINGS } from '../config/buildings';
+import { paletteData } from '../config/palette';
 
 /** Sim-side service coverage (no rendering imports). */
 export type CoverageKind = 'firstAid' | 'patrol' | 'grooming' | 'snowmaking' | 'warning' | 'heli' | 'wildlife';
@@ -152,12 +153,13 @@ const COVER_RGBA: Record<CoverageKind, [number, number, number]> = {
   firstAid: [230, 60, 60], patrol: [240, 140, 40], grooming: [160, 100, 230], snowmaking: [70, 200, 255],
   warning: [240, 220, 40], heli: [60, 220, 120], wildlife: [90, 190, 70],
 };
-const PISTE_RGBA: Array<[number, number, number]> = [[0, 0, 0], [60, 200, 80], [60, 120, 240], [230, 60, 60], [30, 30, 30]];
 
 /** Piste quality overlay colours by quality id (see sim/ops/PisteQuality Q): powder, groomed, packed, icy, bumpy, slush. */
 export const QUALITY_RGB: Array<[number, number, number]> = [
   [0, 0, 0], [225, 238, 255], [130, 225, 120], [150, 150, 155], [60, 220, 235], [190, 110, 40], [120, 150, 170],
 ];
+/** Quality colours of the active palette (Settings > Colour palette): same as QUALITY_RGB in the default palette. */
+export const qualityRgb = (): Array<[number, number, number]> => paletteData().quality;
 
 /** Snow data for the 'snow' overlay (depth in metres, skiOpen from TileConditions). */
 export interface SnowView { depth: Float32Array; skiOpen: Uint8Array }
@@ -174,7 +176,7 @@ export function paintOverlay(
   if (mode === 'off') return;
   if (mode === 'quality') {
     if (!quality) return;
-    for (let i = 0; i < size * size; i++) { const q = quality[i]!; if (q > 0 && q < QUALITY_RGB.length) put(i, QUALITY_RGB[q]!, 170); }
+    for (let i = 0; i < size * size; i++) { const q = quality[i]!; if (q > 0 && q < QUALITY_RGB.length) put(i, qualityRgb()[q]!, 170); }
     return;
   }
   if (mode === 'traffic') {
@@ -214,7 +216,7 @@ export function paintOverlay(
   if (mode === 'piste') {
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
       const d = net.getPisteDifficultyAt(x, y);
-      if (d) put(y * size + x, PISTE_RGBA[d]!, 150);
+      if (d) put(y * size + x, paletteData().pisteRgb[d]!, 150);
     }
   } else if (mode === 'connectivity') {
     for (const b of buildings) {

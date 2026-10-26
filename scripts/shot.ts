@@ -1,5 +1,5 @@
 /* Visual QA harness CLI (see docs/visual-qa.md).
- * npm run shot -- --size 64 --seed 61 --start summer --hour 12 --zoom 1 --target lodge --out name [--yaw 0.5] [--w 1600 --h 1000] [--extra "k=v&k=v"] [--eval "js"] [--pre "js before ticks"] [--view ride|lift|photo|walk --walk-at lodge|station|x,y --walk-yaw deg --walk-script "w:2;d:1;look:30,-5;e" --walk-start default|choose:x,y --walk-drop x,y --guest auto --vticks N] [--photo-filter warm --photo-hour 17.5 --photo-aspect 16:9 --photo-frame polaroid --photo-vignette 40 --photo-hero 1 --photo-save 1 --photo-from ride]
+ * npm run shot -- --size 64 --seed 61 --start summer --hour 12 --zoom 1 --target lodge --out name [--yaw 0.5] [--w 1600 --h 1000] [--extra "k=v&k=v"] [--eval "js"] [--pre "js before ticks"] [--touch 1 (touch emulation; steps tap:x,y tdrag:x1,y1,x2,y2 pinch:cx,cy,d1,d2 hold:x,y,ms)] [--view ride|lift|photo|walk --walk-at lodge|station|x,y --walk-yaw deg --walk-script "w:2;d:1;look:30,-5;e" --walk-start default|choose:x,y --walk-drop x,y --guest auto --vticks N] [--photo-filter warm --photo-hour 17.5 --photo-aspect 16:9 --photo-frame polaroid --photo-vignette 40 --photo-hero 1 --photo-save 1 --photo-from ride]
  * Prints every console message / page error / failed request. Exit code 2 when a shader/WebGL error was seen. */
 import { launch, shot, startServer } from './lib/harness';
 
@@ -17,7 +17,7 @@ function parseArgs(): Record<string, string> {
     const r = await shot(br, srv.url, {
       size: a.size ? Number(a.size) : undefined, seed: a.seed ? Number(a.seed) : undefined, start: a.start, hour: a.hour ? Number(a.hour) : undefined,
       zoom: a.zoom ? Number(a.zoom) : undefined, target: a.target, out: a.out, yaw: a.yaw ? Number(a.yaw) : undefined, w: a.w ? Number(a.w) : undefined, h: a.h ? Number(a.h) : undefined,
-      extra: a.extra, evalJs: a.eval, ticks: a.ticks ? Number(a.ticks) : undefined, steps: a.steps, overlap: !!a.overlap, bare: !!a.bare, viewport: a.viewport,
+      extra: a.extra, evalJs: a.eval, ticks: a.ticks ? Number(a.ticks) : undefined, steps: a.steps, overlap: !!a.overlap, bare: !!a.bare, viewport: a.viewport, touch: !!a.touch,
       photoFilter: a['photo-filter'], photoFrame: a['photo-frame'], photoAspect: a['photo-aspect'], photoHour: a['photo-hour'] ? Number(a['photo-hour']) : undefined, photoVignette: a['photo-vignette'] ? Number(a['photo-vignette']) : undefined, photoHero: !!a['photo-hero'], photoFov: a['photo-fov'] ? Number(a['photo-fov']) : undefined, photoScale: a['photo-scale'] ? Number(a['photo-scale']) : undefined, photoOrbit: a['photo-orbit'], photoSave: !!a['photo-save'], photoFrom: a['photo-from'],
       walkAt: a['walk-at'], walkYaw: a['walk-yaw'] !== undefined ? Number(a['walk-yaw']) : undefined, walkPitch: a['walk-pitch'] !== undefined ? Number(a['walk-pitch']) : undefined, walkScript: a['walk-script'], walkStart: a['walk-start'], walkDrop: a['walk-drop'],
       pre: a.pre, view: a.view, guest: a.guest, vticks: a.vticks ? Number(a.vticks) : undefined, freeze: !!a.freeze, vjs: a.vjs,

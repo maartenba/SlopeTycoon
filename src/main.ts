@@ -1,3 +1,4 @@
+import { regionNameOf } from './sim/Names';
 import { GhostTip } from './ui/GhostTip';
 import { STAFF_POOLS, POOL_INFO } from '@/config/staff';
 import { UPGRADE_BY_ID } from '@/config/staffUpgrades';
@@ -106,6 +107,8 @@ import { registerSW, watchOnline, watchInstall } from '@/pwa/registerSW';
 import type { StToast } from '@/ui/components/StToast';
 import { EventBus } from '@/core/EventBus';
 import { registerComponents, el } from '@/ui';
+import { wireTouch } from '@/ui/touchWire';
+import { onPalette } from '@/config/palette';
 import { createAudio, type AudioApi } from '@/audio';
 import { countTrunks, hashCount } from '@/audio/worldProbe';
 import { AMB } from '@/audio/Ambience';
@@ -319,6 +322,13 @@ void (async () => {
 
 function boot(renderer: Renderer): void {
 const demoBag = new DisposeBag(); // everything the title-screen demo owns (timers, sim, GL resources): disposed when a game starts
+// Touch input (docs/touch.md): registered FIRST so its window-capture listeners see touch pointers before any tool; tools/placement are only read lazily.
+const touchWire = wireTouch({
+  dom: renderer.webgl.domElement, camera: renderer.controls, toolId: () => tools.current, cancelTool: () => tools.reset(),
+  confirmPlacement: () => placement.confirm(), rotateGhost: (d) => placement.rotate(d),
+  ghostText: () => { const g = placement.ghostInfo(); return !g ? 'Not on the map: tap the ground' : g.valid ? `$${Math.round(g.totalCost).toLocaleString('en-US')} · tap again to place` : `\u2716 ${g.reasons[0] ?? 'cannot build here'}`; },
+  undo: () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })),
+});
 
 const sim = createSim({
   size: MAP_SIZE, seed: SEED, startSeason: TUTORIAL_MODE && !bootSave ? TUTORIAL_SCENARIO.startSeason : START_SEASON,
@@ -457,6 +467,7 @@ const covOverlay = new CoverageOverlay(grid, coverage, () => buildings.all(), ()
 let trafficMix: Uint16Array | null = null;
 let gainMix: Float32Array | null = null;
 renderer.scene.add(covOverlay.group);
+onPalette(() => covOverlay.invalidate()); // Settings > Colour palette: repaint the overlay texture
 const opsRef: Ops | null = ops;
 const safetyRef: Safety | null = safety;
 const openStatusRef: OpenStatus | null = openStatus;
@@ -484,6 +495,7 @@ overlays.onRect = (r) => {
 };
 let liftToolsRef: LiftTools | null = null;
 let helpRef: StHelp | null = null;
+let statsRef: import('@/ui/components/StStats').StStats | null = null; // Statistics dialog (Task 30), set once the game UI is built
 let tutorialRef: TutorialSetup | null = null;
 let toastRef: StToast | null = null;
 /** Slope profile chart (piste / lift ghosts); created with the UI. */
@@ -493,7 +505,6 @@ let dockRef: StDock | null = null;
 let hudRef: { showRating(): void } | null = null;
 let inspectorRef: StInspector | null = null;
 let schoolInfoRef: ((id: number, type: string) => NonNullable<import('@/ui/components/StInspector').InspectorTarget['school']> | undefined) | null = null;
-let statsRef: import('@/ui/components/StStats').StStats | null = null; // Statistics dialog (Task 30), set once the game UI is built
 let selectedId: number | null = null;
 let selectedPiste: { x: number; y: number } | null = null;
 let pisteHighlightOn = false;
@@ -715,6 +726,8 @@ tools.register({
 tools.register({ id: 'placement', label: 'Build', enable: () => {}, disable: () => placement.cancel() });
 tools.register({ id: 'lift', label: 'Lift', enable: () => {}, disable: () => liftToolsRef?.tool.cancel() });
 tools.register({ id: 'network', label: 'Paths & pistes', enable: () => {}, disable: () => netTools?.cancel() });
+renderer.webgl.domElement.setAttribute('role', 'application'); renderer.webgl.domElement.setAttribute('aria-label', 'Ski resort map. Drag to pan, scroll or pinch to zoom, Q and E or a two-finger twist to rotate.');
+tools.onChange(() => touchWire.toolChanged());
 if (!tools.start()) { console.error('[startup] default tool failed to start'); startupErrors.push('Default (select) tool failed to start'); }
 const setBulldoze = (v: boolean): void => { tools.activate(v ? 'bulldoze' : 'select'); };
 activeTool = () => tools.current;
@@ -1208,7 +1221,7 @@ let rideFactor = 1; // live ride slow-mo factor (rideTimeFactor, eased)
 let rideHudAt = 0, rideHorizon = -1;
 {
   const st = document.createElement('style');
-  st.textContent = 'body.view-ride #ui > :not(st-view-hud):not(st-toast){display:none !important}body.view-ride st-toast{transform:scale(.8);transform-origin:top center;opacity:.92}body.view-ride #app canvas{cursor:grab}';
+  st.textContent = 'body.view-ride #ui > :not(st-view-hud):not(st-toast):not(st-touch-controls){display:none !important}body.view-ride st-toast{transform:scale(.8);transform-origin:top center;opacity:.92}body.view-ride #app canvas{cursor:grab}';
   document.head.appendChild(st);
 }
 lighting.onHorizon = (c) => renderer.fog.setColor(c);
@@ -1383,7 +1396,7 @@ const photoPrev = { from: 'iso' as 'iso' | 'ride' | 'walk', overlay: 'off' as Ov
 const canvasBox = (): HTMLElement | null => renderer.webgl.domElement.parentElement;
 {
   const st = document.createElement('style');
-  st.textContent = 'body.view-photo #ui > :not(st-photo):not(st-toast){display:none !important}body.view-photo st-toast{transform:scale(.8);transform-origin:top center;opacity:.92}body.view-photo #app canvas{cursor:grab}';
+  st.textContent = 'body.view-photo #ui > :not(st-photo):not(st-toast):not(st-touch-controls){display:none !important}body.view-photo st-toast{transform:scale(.8);transform-origin:top center;opacity:.92}body.view-photo #app canvas{cursor:grab}';
   document.head.appendChild(st);
 }
 /** Pushes the current photo settings into the render-only state: hour override, precipitation visibility, live filter, optional pause. */
@@ -1564,7 +1577,7 @@ applyWalkSettings({});
 const walkSaved = { overlay: 'off' as OverlayMode, grid: false };
 {
   const st = document.createElement('style');
-  st.textContent = 'body.view-walk #ui > :not(st-view-hud):not(st-toast){display:none !important}body.view-walk st-toast{transform:scale(.8);transform-origin:top center;opacity:.92}body.view-walk #app canvas{cursor:grab}body.view-walk.walk-dragging #app canvas{cursor:none}body.walk-drop #app canvas{cursor:none}';
+  st.textContent = 'body.view-walk #ui > :not(st-view-hud):not(st-toast):not(st-touch-controls){display:none !important}body.view-walk st-toast{transform:scale(.8);transform-origin:top center;opacity:.92}body.view-walk #app canvas{cursor:grab}body.view-walk.walk-dragging #app canvas{cursor:none}body.walk-drop #app canvas{cursor:none}';
   document.head.appendChild(st);
 }
 /** Where the iso camera looks (horizontal unit vector, world x/z): the walker faces the same way after entering. */
@@ -1724,7 +1737,7 @@ const walkFrame = (dt: number): void => {
       location: walk.location || 'On foot', altitude: altitudeMetres(walk.eyeHeightY), compass: compassPoint(pose.yaw), prompt: walk.prompt, card: walk.card,
       riding: walk.riding ? { name: walk.rideName, progress: walk.rideProgress } : undefined,
       speed: loop.paused ? 'Paused' : `${SPEED_MULTIPLIERS[loop.speed]}x`,
-      hint: `E interact · Shift run · Space jump · T teleport · P photo · Esc exit · ${mouseHint(walkSettings.mouseLook)}`,
+      hint: touchWire.enabled() ? 'Left stick: walk · drag the view: look · E: interact' : `E interact · Shift run · Space jump · T teleport · P photo · Esc exit · ${mouseHint(walkSettings.mouseLook)}`,
     });
   }
 };
@@ -2108,17 +2121,17 @@ if (ui && !DEMO) {
     ...(saves ? { saveLoad: () => saveLoadRef?.open('save'), continueLast: () => { void saves.continueLast(); } } : {}),
     menu: () => { openGameMenu(); },
     photo: () => { if (photo.active) exitPhoto(); else enterPhoto(); },
+    stats: () => { if (!DEMO) statsRef?.toggle(); },
     walk: () => { if (renderer.viewMode.mode === 'walk') exitWalk(); else startDrop(); },
     walkDrag: dropDrag,
     quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
   });
   hud.bind(bus, () => game.money);
   hud.bindRating(() => ({ breakdown: rating.breakdown(), happiness: (() => { const st = guestSim.store; let n = 0, h = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; h += st.happiness[i]!; } return n ? h / n : 0.5; })(), market: { share: sim.rivals.share, rank: sim.rivals.rank, of: sim.rivals.rivals.length + 1 } }));
-  hud.bindLevel(bus, () => { const v = sim.progression.view(); return v.mode === 'sandbox' ? `${MODE_INFO.sandbox.label}: everything is unlocked` : `${MODE_INFO.career.label} \u00B7 Level ${v.level} \u00B7 ${v.name}`; });
+  hud.bindLevel(bus, () => { const v = sim.progression.view(); return v.mode === 'sandbox' ? `${MODE_INFO.sandbox.label}: everything is unlocked \u00B7 ${regionNameOf(SEED)}` : `${MODE_INFO.career.label} \u00B7 Level ${v.level} \u00B7 ${v.name} \u00B7 ${regionNameOf(SEED)}`; });
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
     season: SEASON_LABELS[seasonOf(game.date)], kind: weather.current.kind, tempC: weather.valleyTempAt(hourOfDay(game.date)),
-    stats: () => { if (!DEMO) statsRef?.toggle(); },
     snowlineM: altitudeMetres(weather.current.snowline), summerDiscount: isSummer(game.date),
     daylight: ((t) => `Sunrise ${fmtClock(t.sunrise)} · sunset ${fmtClock(t.sunset)} (${(t.sunset - t.sunrise).toFixed(1)} h of daylight)`)(sunTimes(game.date.day)),
     progress: formatSeasonProgress(((p) => ({ ...p, season: SEASON_LABELS[p.season], next: SEASON_LABELS[p.next] }))(seasonProgress(game.date))),
@@ -2182,6 +2195,7 @@ if (ui && !DEMO) {
   if (liftToolsRef) liftToolsRef.tool.setAutoFlatten(true); // lifts default ON; buildings take their per-type default on pick
   const seenYears = new Set<number>(sim.yearReports.all().map((r) => r.year)); // reports from a loaded save were seen before
   const yearEl = el('st-year-report');
+  (yearEl as unknown as { region: string }).region = regionNameOf(SEED);
   const finPanel = el('st-finance');
   const loanPanel = el('st-loans');
   finPanel.bind({
@@ -2483,6 +2497,8 @@ if (ui && !DEMO) {
     dbg.stats = { history: sim.stats, demoYear: (endYear = Math.max(2, game.date.year - 1)) => { fillDemoStats(sim.stats, endYear); sim.yearReports.reset(); for (const y of [endYear - 1, endYear]) { quietYears.add(y); sim.yearReports.generate(y); } finPanel.requestRefresh(); return sim.yearReports.latest(); } };
   }, 0);
   rightCol.append(hud, speedEl, status, goalsEl, ...(scen ? [scenCard] : []), inspector, pisteInspector, guestInsp);
+  const statsEl = el('st-stats');
+  statsRef = statsEl; statsEl.bind({ history: () => sim.stats });
   const trophiesEl = el('st-trophies');
   trophiesEl.bind(trophiesApiFromProfile(profileStore(), { run: () => ach.serializeRun(), runKind: () => (sim.scenario && !sim.scenario.sandbox ? 'scenario' : sim.progression.mode) }));
   // Dialogs that pause the game (Settings, Help, Save & load, Trophies, About, confirms): see ui/modalPauseGate.ts
@@ -2494,8 +2510,6 @@ if (ui && !DEMO) {
       profile: { cosmetics: achCosmetics, reset: async () => { ach.resetProfile(); await profileStore().resetProfile(); } },
       quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
       fastNights: { get: fastNightsApi.get, set: fastNightsApi.set },
-  const statsEl = el('st-stats');
-  statsRef = statsEl; statsEl.bind({ history: () => sim.stats });
       rideSlowMo: rideSlowMoApi,
       walk: { get: () => ({ ...walkSettings }), set: (p) => { applyWalkSettings(p); } },
       feedback: { get: () => fx.intensity, set: (v) => fx.setIntensity(v as FeedbackIntensity), options: FEEDBACK_INTENSITIES },
@@ -2523,6 +2537,7 @@ if (ui && !DEMO) {
     ui.append(pe);
   }
   ui.append(topbar, debug, recapEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, statsEl, viewHud);
+  { const touchBar = el('st-touch-controls'); touchWire.bindBar(touchBar); ui.append(touchBar); }
   {
     const pause = el('st-pause-menu');
     pauseRef = pause;
@@ -2666,6 +2681,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'b' || e.key === 'B') toggleGallery(); // debug: building gallery
   if ((e.key === 'v' || e.key === 'V') && !e.ctrlKey && !e.metaKey && !e.altKey && !modalStack.size && !drop.active) { if (e.shiftKey) startDrop(); else enterWalk(); } // walk mode: V = default path spot, Shift+V = choose start (while walking the walk key handler takes V first)
   if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey && !modalStack.size) enterPhoto(); // photo mode (from a ride-along the capture handler above takes P)
+  if ((e.key === 'i' || e.key === 'I') && !e.ctrlKey && !e.metaKey && !e.altKey && !drop.active && renderer.viewMode.mode === 'iso' && !DEMO && (!modalStack.size || statsRef?.isOpen)) statsRef?.toggle(); // statistics (Esc closes it through the modal stack)
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
@@ -2677,7 +2693,6 @@ Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slop
   /** Debug / QA: `achievements.unlock('first-lift')` (forced, toasts like a real unlock), `.engine`, `.announcer`, `.trophies()` opens the shelf. */
   achievements: { engine: ach, announcer: achAnnouncer, unlock: (id: string) => ach.unlock(id, true), select: (k: 'palette' | 'flags' | 'frame' | 'chair', id: string) => ach.select(k, id), trophies: () => { const t = document.querySelector('st-trophies') as (HTMLElement & { open(): void }) | null; t?.open(); return !!t; } },
   populateDemo, populateTown, findBear: findBearDebug, spawnBear: spawnBearDebug, findAnimal: findAnimalDebug, spawnGuests: (n: number, mix: 'mixed' | 'skiers' | 'hikers' = 'mixed') => spawnGuests(sim, n, mix, ++debugSpawnCount),
-  if ((e.key === 'i' || e.key === 'I') && !e.ctrlKey && !e.metaKey && !e.altKey && !drop.active && renderer.viewMode.mode === 'iso' && !DEMO && (!modalStack.size || statsRef?.isOpen)) statsRef?.toggle(); // statistics (Esc closes it through the modal stack)
   demoReport, jumpSimToDay,
   /** Debug only (screenshots / QA): `setLevel(n)` raises the Career level as if earned (fires the normal level-up: confetti, news, card). */
   progression: { setLevel: (n: number) => sim.progression.setLevel(n), view: () => sim.progression.view(), mode: () => sim.progression.mode, unlockAll: (on: boolean) => { sim.progression.unlockAll = on; } },
@@ -2771,7 +2786,7 @@ if (DEMO) {
       requestAnimationFrame(() => { fade.style.opacity = '1'; });
       window.setTimeout(() => { demoBag.dispose(); window.location.search = ''; if (!window.location.search) window.location.reload(); }, 280);
     };
-    const cap = mountTownCaption(document, townCaption(DEMO_TOWN), shuffle);
+    const cap = mountTownCaption(document, `${townCaption(DEMO_TOWN)} \u00B7 ${regionNameOf(DEMO_TOWN.seed)}`, shuffle);
     demoBag.add(() => cap.dispose());
   }
   demoBag.add(() => { scene.dispose(); });

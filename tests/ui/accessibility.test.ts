@@ -15,7 +15,7 @@ describe('accessibility settings', () => {
   it('reduced motion defaults to the OS preference until the player chooses; the choice persists', () => {
     const st = new Mem();
     const a = new Accessibility(st, () => true);
-    expect(a.get()).toEqual({ reducedMotion: true, uiScale: 100 });
+    expect(a.get()).toEqual({ reducedMotion: true, uiScale: 100, touch: 'auto', palette: 'default' });
     expect(a.followsSystem).toBe(true);
     a.set({ reducedMotion: false });
     expect(a.followsSystem).toBe(false);
@@ -26,7 +26,7 @@ describe('accessibility settings', () => {
   });
   it('malformed storage and blocked storage fall back to defaults', () => {
     const bad = new Mem(); bad.setItem(A11Y_STORAGE_KEY, '{nope');
-    expect(new Accessibility(bad).get()).toEqual({ reducedMotion: false, uiScale: 100 });
+    expect(new Accessibility(bad).get()).toEqual({ reducedMotion: false, uiScale: 100, touch: 'auto', palette: 'default' });
     const throwing = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
     const a = new Accessibility(throwing);
     expect(() => a.set({ uiScale: 120 })).not.toThrow();

@@ -1,4 +1,5 @@
 import { StElement } from './StElement';
+import { mapDifficultyCss } from '@/config/palette';
 
 export interface PisteInspectorInfo {
   id: number; name: string; autoName: string;
@@ -39,7 +40,7 @@ export class StPisteInspector extends StElement {
     const a = this.api;
     const line = (t: string, cls = ''): HTMLElement => el('div', { textContent: t, className: cls });
     const dot = el('span', { className: 'dot', title: i.difficultyLabel });
-    dot.style.background = i.difficultyColor;
+    dot.style.background = mapDifficultyCss(i.difficultyColor);
     const input = el('input', { type: 'text', value: i.name, maxLength: PISTE_NAME_MAX, title: 'Rename (Enter to save, empty = automatic name)' });
     input.style.cssText = 'font-weight:700;min-width:0;flex:1';
     let committed = i.name;

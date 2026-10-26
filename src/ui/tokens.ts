@@ -36,6 +36,8 @@ export function tokensCss(): string {
     ...Object.entries(TOKENS).map(([k, v]) => `--${k.replace(/([A-Z0-9])/g, (m) => `-${m.toLowerCase()}`)}:${px(v)}`),
     `--font-ui:${FONTS.ui}`, `--font-display:${FONTS.display}`,
     ...Object.entries(MODAL_WIDTHS).map(([k, v]) => `--modal-${k}:${v}px`),
-    ...Object.entries(COLORS).map(([k, v]) => `--c-${k.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`)}:${v}`),
+    // good / bad / info follow the colour palette (Settings > Colour palette sets --pal-* on <html>, accessibility.ts)
+    ...Object.entries(COLORS).map(([k, v]) => `--c-${k.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`)}:${k === 'good' || k === 'bad' || k === 'info' ? `var(--pal-${k},${v})` : v}`),
+    '--touch-min:var(--touch-min-root,0px)',
   ].join(';');
 }

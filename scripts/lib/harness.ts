@@ -10,7 +10,9 @@ import puppeteer, { type Browser } from 'puppeteer-core';
 export interface ShotOpts {
   size?: number; seed?: number; start?: string; hour?: number; zoom?: number; target?: string; out?: string; yaw?: number;
   w?: number; h?: number; extra?: string; ticks?: number; evalJs?: string; days?: number;
-  /** Steps run after boot, ';'-separated: `key:F3`, `type:text` (keyboard), `mouse:x,y` (click), `move:x,y` (hover), `wheel:dy`, `click:<text of a button or css>`, `wait:ms`. Clicks pierce shadow roots (innermost match by css, or button whose text/title/aria-label contains the text). */
+  /** Steps run after boot, ';'-separated: `key:F3`, `type:text` (keyboard), `mouse:x,y` (click), `move:x,y` (hover), `wheel:dy`, `click:<text of a button or css>`, `wait:ms`, `eval:js` (result logged). Clicks pierce shadow roots (innermost match by css, or button whose text/title/aria-label contains the text). */
+  /** Touch emulation (hasTouch + isMobile + `?touch=1`): steps `tap:x,y`, `tdrag:x1,y1,x2,y2`, `pinch:cx,cy,d1,d2` (two fingers, distances in px), `hold:x,y,ms` (long press). */
+  touch?: boolean;
   steps?: string; viewport?: string; overlap?: boolean; bare?: boolean;
   /** JS run in the page BEFORE `ticks` (e.g. `__slope.populateDemo('Medium'); __slope.spawnGuests(150,'skiers')`). */
   pre?: string;
@@ -63,8 +65,9 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
   const q = new URLSearchParams({ size: String(o.size ?? 64), seed: String(o.seed ?? 61), start: o.start ?? 'winter', hints: '0' });
   if (o.bare) for (const k of Array.from(q.keys())) q.delete(k);
   if (o.extra) for (const [k, v] of new URLSearchParams(o.extra)) q.set(k, v);
+  if (o.touch) q.set('touch', '1');
   const page = await browser.newPage();
-  await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
+  await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, ...(o.touch ? { hasTouch: true, isMobile: true } : {}) });
   const errors: string[] = [], logs: string[] = [];
   page.on('console', (m) => { const t = `[${m.type()}] ${m.text()}`; logs.push(t); if (m.type() === 'error' || /shader|webgl|THREE\./i.test(m.text()) && m.type() !== 'log') errors.push(t); });
   page.on('pageerror', (e) => errors.push(`[pageerror] ${String(e)}`));
@@ -73,7 +76,10 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
   const gl = await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'));
   if (!gl) errors.push('[harness] WebGL2 context could not be created');
   if (o.bare) await new Promise((r) => setTimeout(r, 6000));
-  else await page.waitForFunction(() => !!(window as unknown as { __slope?: unknown }).__slope, { timeout: 90000 });
+  else {
+    try { await page.waitForFunction(() => !!(window as unknown as { __slope?: unknown }).__slope, { timeout: 90000 }); }
+    catch (e) { console.log([...errors, ...logs.slice(-12)].join('\n')); await page.close(); throw e; } // show why the game never booted
+  }
   if (!o.bare) await page.evaluate((a) => {
     const s = (window as unknown as { __slope: Record<string, any> }).__slope;
     const c = s.renderer.controls;
@@ -177,6 +183,11 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
     else if (kind === 'wheel') { await page.mouse.wheel({ deltaY: Number(arg) }); }
     else if (kind === 'mouse') { const [mx, my] = arg.split(',').map(Number); await page.mouse.click(mx!, my!); }
     else if (kind === 'drag') { const [x1, y1, x2, y2] = arg.split(',').map(Number); await page.mouse.move(x1!, y1!); await page.mouse.down(); for (let k = 1; k <= 12; k++) { await page.mouse.move(x1! + (x2! - x1!) * k / 12, y1! + (y2! - y1!) * k / 12); await new Promise((r) => setTimeout(r, 30)); } await page.mouse.up(); }
+    else if (kind === 'eval') logs.push(`[eval] ${JSON.stringify(await page.evaluate(arg))}`);
+    else if (kind === 'tap') { const [tx, ty] = arg.split(',').map(Number); await page.touchscreen.tap(tx!, ty!); }
+    else if (kind === 'hold') { const [tx, ty, ms] = arg.split(',').map(Number); const t = await page.touchscreen.touchStart(tx!, ty!); await new Promise((r) => setTimeout(r, ms ?? 600)); await t.end(); }
+    else if (kind === 'tdrag') { const [x1, y1, x2, y2] = arg.split(',').map(Number); const t = await page.touchscreen.touchStart(x1!, y1!); for (let k = 1; k <= 10; k++) { await t.move(x1! + (x2! - x1!) * k / 10, y1! + (y2! - y1!) * k / 10); await new Promise((r) => setTimeout(r, 20)); } await t.end(); }
+    else if (kind === 'pinch') { const [cx, cy, d1, d2] = arg.split(',').map(Number); const a = await page.touchscreen.touchStart(cx! - d1! / 2, cy!), b = await page.touchscreen.touchStart(cx! + d1! / 2, cy!); for (let k = 1; k <= 10; k++) { const d = d1! + (d2! - d1!) * k / 10; await a.move(cx! - d / 2, cy!); await b.move(cx! + d / 2, cy!); await new Promise((r) => setTimeout(r, 20)); } await a.end(); await b.end(); }
     else if (kind === 'wait') await new Promise((r) => setTimeout(r, Number(arg)));
     else if (kind === 'click') {
       const ok = await page.evaluate(clickByText, arg);

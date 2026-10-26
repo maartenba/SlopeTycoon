@@ -4,8 +4,15 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Touch and accessibility
+- **Touch support** for tablets and phones (`docs/touch.md`): one-finger pan, pinch zoom, two-finger twist rotate, tap to select or aim, a two-step building placement (ghost first, then tap again or press Place), long press to cancel, a pan / paint toggle for drag tools, a two-finger tap for undo, on-screen controls (and a joystick) for walk, ride-along and photo mode, 44 px targets, a compact layout for narrow and short screens, safe-area insets and no page zoom / scroll / pull-to-refresh. Settings > Accessibility > Touch controls: Auto / On / Off (Auto follows `(pointer: coarse)`). Desktop behaviour is unchanged.
+- **Colour-blind-safe palette** (Settings > Accessibility > Colour palette): Okabe-Ito based piste difficulty, overlay and status colours; reduced motion now also stills the animations inside the UI panels.
+
 ### Statistics
 - **Statistics dialog** (`I`, top bar chart button, pause menu; `docs/stats.md`): charts of guests, cash, rating with the sustainability facet and revenue by category over 30 days, a year, two years or all time (older days are kept as monthly summaries). Colour-blind-safe palette, keyboard / hover readout and a numbers table. The history is observer-only and adds well under 50 KB to a save after five years.
+
+### Named mountains
+- **Region and peak names**: every seed now has a region name (e.g. "Ember Range") and peak names, shown in New Game (with a map thumbnail), the HUD card tooltip, the title caption and the year report. Flavour only; deterministic and independent of the simulation.
 
 ### Landscape drawer and bug round
 - **Build in any season**: every building, lift, path, road, piste, trail and landscape item can be placed in any season (it always could in the rules; the season badges, dimming and "not usable until" wording read like a lock and are now plain hints). Releasing a piste stroke over the slope-profile card now still ends the stroke. The Landscape drawer now uses the same cards, hover cards, key badges and select controls as the other drawers.

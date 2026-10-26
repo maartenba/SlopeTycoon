@@ -155,7 +155,17 @@ const css = `
 .dock button .ic{font-size:20px;line-height:1}
 .dock button.live::after{content:"";position:absolute;top:3px;right:4px;width:7px;height:7px;border-radius:50%;background:#7fe07f}
 .small{font-size:calc(11px * var(--ui-scale, 1));opacity:.85}
-@media (max-width:1099px){.dock{gap:2px;padding:5px 4px}.dock button{min-width:0;padding:4px 3px;font-size:calc(10px * var(--ui-scale, 1))}}
+@media (max-width:1099px){.dock{gap:2px;padding:5px 4px}.dock button{min-width:0;padding:4px 3px;font-size:calc(11px * var(--ui-scale, 1))}}
+/* Phones / short landscape (docs/touch.md): the dock row scrolls sideways, the drawer spans the screen */
+@media (max-width:760px),(max-height:520px){
+:host{--dl:8px;--dr:8px;left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+.drawer{min-width:0;width:calc(100% - 16px);margin-left:0;max-height:min(54vh,300px)}
+.wrap{align-items:stretch;padding:0 8px;box-sizing:border-box}
+.dock{max-width:100%;box-sizing:border-box;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x;justify-content:flex-start}
+.dock::-webkit-scrollbar{display:none}
+:host(.peek) .drawer{display:none} /* touch: while a building ghost is being aimed the open drawer steps aside (main/touchWire toggles the class) */
+.dock button{flex:0 0 auto;min-width:58px;min-height:var(--touch-min,0px)}
+}
 `;
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''): HTMLElementTagNameMap[K] => {
