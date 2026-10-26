@@ -42,6 +42,12 @@ export interface NetworkToolsCtx {
   onToolActive: (active: boolean) => void;
   /** Records tile-level bulldozes of paths/roads/rail/pistes for the shared undo stack (strokes keep their own StrokeHistory). */
   undo?: Undo;
+  /** Runs the shared Ctrl+Z / Ctrl+Y (host applies refreshes + toast); returns false when nothing happened. Given together with `undo`. */
+  performUndo?: () => boolean;
+  performRedo?: () => boolean;
+  /** Slope profile chart for the piste stroke being dragged + the snowline marker. */
+  onProfile?: (v: import('../ui/components/StProfile').ProfileView | null) => void;
+  snowlineM?: () => number | undefined;
 }
 
 export interface NetworkTools {
@@ -61,6 +67,8 @@ export interface NetworkTools {
   setErase(on: boolean): void;
   /** Undo the latest stroke (of the active tool's group, else any); false if nothing to undo. */
   undo(): boolean;
+  /** Redo the latest undone action (shared stack); false if nothing to redo. */
+  redo(): boolean;
   /** Re-evaluate buildings / refresh overlays after the shared undo stack changed network tiles. */
   refresh(): void;
   /** Remove unattached piste/trail fragments of a layer; returns tiles removed. */
@@ -108,9 +116,12 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     },
     onError: (m) => ctx.toast(m, 'error'),
     history, refund: (n) => economy.refund(n), onInfo: (m) => ctx.toast(m, 'info'),
+    record: ctx.undo ? (group, diff, cost, erase) => ctx.undo!.recordNetwork(group === 'piste' ? 'Piste' : group === 'road' ? 'Road' : group === 'rail' ? 'Rail' : 'Footpath', erase ? 'bulldozed' : 'painted', diff, cost) : undefined,
+    onProfile: ctx.onProfile,
     onDone: () => { ctx.onToolActive(false); setActive(null); },
   };
   const path = new PathTool(opts), road = new RoadTool(opts), rail = new RailTool(opts), piste = new PisteTool(opts);
+  piste.snowlineM = ctx.snowlineM;
 
   // Palette
   const buttons = new Map<string, HTMLButtonElement>();
@@ -130,6 +141,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
   };
   let eraseOn = false;
   const undo = (): boolean => {
+    if (ctx.undo && ctx.performUndo) return ctx.performUndo();
     const group = activeKey === null ? undefined : activeKey === 'ski' || activeKey === 'mtb' || activeKey === 'hike' ? 'piste' : activeKey;
     const e = history.pop(group);
     if (!e) { ctx.toast('Nothing to undo', 'info'); return false; }
@@ -217,6 +229,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     setBrush: (n) => { piste.brush = n; },
     setErase: (on) => { eraseOn = on; piste.setErase(on); },
     undo,
+    redo: () => ctx.performRedo?.() ?? false,
     refresh: afterChange,
     pruneOrphans: (layer) => { const n = networks.pruneOrphans(layer); if (n) { afterChange(); ctx.toast(`Removed ${n} stray tiles`, 'info'); } return n; },
   };

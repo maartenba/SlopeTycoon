@@ -27,6 +27,8 @@ export interface PlantToolOptions {
   /** Chunk indices whose props changed (refreshChunks hook). */
   onApplied: (chunks: number[], info: { planted: number; cleared: number }) => void;
   onState?: (s: PlantState) => void;
+  /** Shared undo: begin one undo step per drag (see TerraformTool). */
+  beginStroke?: () => import('./TerraformTool').TerrainStroke;
 }
 
 /** Terrain-drawer tool 'plant': paint saplings (species group, brush, density) or clear trees. Keys: 1 plant, 2 clear, [ ] brush, G cycle species. */
@@ -37,6 +39,7 @@ export class PlantTool {
   density = 0.6;
   enabled = false;
   private painting = false;
+  private stroke: import('./TerraformTool').TerrainStroke | null = null;
   private lastKey = '';
   private readonly ray = new THREE.Raycaster();
   private readonly disposers: Array<() => void> = [];
@@ -48,7 +51,7 @@ export class PlantTool {
     };
     on(o.dom, 'pointermove', (e: PointerEvent) => this.onMove(e));
     on(o.dom, 'pointerdown', (e: PointerEvent) => this.onDown(e));
-    on(window, 'pointerup', () => { this.painting = false; this.lastKey = ''; });
+    on(window, 'pointerup', () => { this.painting = false; this.lastKey = ''; this.stroke = null; });
     on(o.dom, 'pointerleave', () => { if (!this.painting) this.o.overlays.hide(); });
     on(window, 'keydown', (e: KeyboardEvent) => this.onKey(e));
   }
@@ -110,7 +113,7 @@ export class PlantTool {
     if (this.skip(e) || e.button !== 0 || e.altKey) return;
     const p = this.pickAt(e);
     if (!p) return;
-    this.painting = true; this.lastKey = `${p.tileX},${p.tileY}`;
+    this.painting = true; this.lastKey = `${p.tileX},${p.tileY}`; this.stroke = this.o.beginStroke?.() ?? null;
     this.apply(p);
   }
 
@@ -130,18 +133,28 @@ export class PlantTool {
 
   private apply(p: PickResult): void {
     const now = this.o.now();
+    const r = Math.max(1, this.brush);
+    const rect = { x0: p.tileX - r, y0: p.tileY - r, x1: p.tileX + r, y1: p.tileY + r };
+    const run = (doIt: () => { ok: boolean; flow: number }): void => { if (this.stroke) this.stroke.stamp(null, rect, doIt); else doIt(); };
     if (this.mode === 'plant') {
       const plan = planPlanting(this.o.env(), p.tileX, p.tileY, this.brush, this.group, this.density, now);
       if (!plan.trees.length) return;
-      if (!this.o.charge(Math.round(plan.cost * this.mult()))) return;
-      this.o.onApplied(applyPlanting(this.o.props, plan, now), { planted: plan.trees.length, cleared: 0 });
+      const cost = Math.round(plan.cost * this.mult());
+      run(() => {
+        if (!this.o.charge(cost)) return { ok: false, flow: 0 };
+        this.o.onApplied(applyPlanting(this.o.props, plan, now), { planted: plan.trees.length, cleared: 0 });
+        return { ok: true, flow: cost };
+      });
     } else {
       const c = planClearing(this.o.props, p.tileX, p.tileY, this.brush, now);
       if (!c.count) return;
-      if (!this.o.charge(Math.round(c.cost * this.mult()))) return;
-      if (c.revenue) this.o.earn?.(c.revenue);
-      this.o.onApplied(applyClearing(this.o.props, p.tileX, p.tileY, this.brush), { planted: 0, cleared: c.count });
+      const cost = Math.round(c.cost * this.mult());
+      run(() => {
+        if (!this.o.charge(cost)) return { ok: false, flow: 0 };
+        if (c.revenue) this.o.earn?.(c.revenue);
+        this.o.onApplied(applyClearing(this.o.props, p.tileX, p.tileY, this.brush), { planted: 0, cleared: c.count });
+        return { ok: true, flow: cost - c.revenue };
+      });
     }
   }
 }
-

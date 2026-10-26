@@ -376,6 +376,8 @@ export class Networks {
   private snap(i: number): TileSnap {
     return { i, kind: this.kind[i]!, bridge: this.bridge[i]!, layers: this.layers[i]!, difficulty: this.difficulty[i]!, quality: this.quality[i]! };
   }
+  /** Snapshots of the CURRENT state of the given tiles (redo of a stroke replays the post-state). */
+  snapshotTiles(idx: ReadonlyArray<number>): TileSnap[] { return idx.map((i) => this.snap(i)); }
   private note(i: number): void { if (this.journal && !this.journal.has(i)) this.journal.set(i, this.snap(i)); }
   /** Start recording the pre-change state of every tile mutated until `endJournal`. */
   beginJournal(): void { this.journal = new Map(); }

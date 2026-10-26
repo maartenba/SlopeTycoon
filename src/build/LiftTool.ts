@@ -1,3 +1,5 @@
+import type { ProfileView } from '../ui/components/StProfile';
+import { liftProfile } from '../sim/PisteStats';
 import * as THREE from 'three';
 import { LIFTS, type LiftKind } from '../config/lifts';
 import { LIFT_STATION_SIZE } from '../config/balance';
@@ -22,6 +24,10 @@ export interface LiftToolOptions {
   onPlaced(out: LiftPlaceOutcome): void;
   onError(msg: string): void;
   onCancel(): void;
+  /** Ground profile under the ghost lift line (null = hide). */
+  onProfile?(v: ProfileView | null): void;
+  /** Current snowline altitude (m) for the chart marker. */
+  snowlineM?(): number | undefined;
 }
 
 /** Two-click lift tool: bottom station, then top station (ghost cable + towers while moving). Esc/right-click cancels. */
@@ -78,6 +84,7 @@ export class LiftTool {
   dispose(): void { this.clearPreview(); for (const d of this.disposers) d(); }
 
   private clearPreview(): void {
+    this.o.onProfile?.(null);
     if (this.preview) { this.o.scene.remove(this.preview.group); this.preview.dispose(); this.preview = null; }
   }
 
@@ -121,6 +128,10 @@ export class LiftTool {
     if (chk.data) {
       this.preview = this.o.view.createPreview({ ...chk.data, id: -1 }, chk.ok);
       this.o.scene.add(this.preview.group);
+      if (this.o.onProfile && this.bottom) {
+        const h = LIFT_STATION_SIZE / 2, b = chk.data.bottom, t = chk.data.top;
+        this.o.onProfile({ kind: 'lift', title: `${LIFTS[kind].name} line (ground profile)`, profile: liftProfile(this.o.env.grid, { x: b.x + h, y: b.y + h }, { x: t.x + h, y: t.y + h }), snowlineM: this.o.snowlineM?.(), note: chk.ok ? undefined : 'Not valid as drawn' });
+      }
     }
     ov.setVertexRect(top.x, top.y, top.x + LIFT_STATION_SIZE, top.y + LIFT_STATION_SIZE);
     // green = valid as hovered; amber = valid after nudging the top station / has warnings; red = invalid.

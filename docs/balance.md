@@ -156,3 +156,18 @@ Why the profit went up: a bot at 4 - 4.5★ against neighbours at 3.0 - 4.4★ h
 Re-recorded on purpose (every reason is the same: the rating changed, so every rating-driven arrival changed): the `tests/sim/staff.test.ts` golden hashes (staff Auto equivalence is still pinned by the per-pool tests), the `tests/sim/meta/yearReport.test.ts` snapshot (ten awards now; guests 2 620 -> 2 804 in year 2; Family, Safest Slopes, Snow-Sure and Wildlife Friendly moved one tier because rating-driven arrivals and the neighbour-scaled benchmarks changed; headline unchanged: bronze, silver), `tests/game/summer.test.ts` (an empty resort now starts with $2.5 k instead of $500: it bled 70 $/day and the old test only passed because of a lucky trickle of arrivals) and `tests/game/daylightSchedules.test.ts` (family-controlled guests finish their lesson / regroup under the family system after the leave hour; the check already exempted evening guests).
 
 Sweep after Task 23 (`npm run test:balance`, bot incl. the green rules, annual net in k$, mean displayed stars of year 2 in brackets; the older table above is the pre-M5 sweep): 64/61 y2 +116 (4.2★) y3 +119; 64/7 +147 (4.3★) / +137; 128/61 +162 (4.2★) / +176; 128/7 +190 (4.3★) / +156; 256/61 with starter loan +192 (4.1★) / +127; 256/7 with starter loan +97 (3.3★) / +49. Difficulty (64/61, year-2 net): Relaxed +178 k, Normal +116 k, Challenging +100 k. Career with unlock gating: levels 2 / 3 in year 1 and 4 at y2/d1 - d32 on all three tested maps. Grants stay 5.7 - 8.1 % of year-1 revenue.
+
+## Closing sweep with everything on (M5.4 Task 26)
+
+`npm run test:balance` is now 33 cases (27 + 6 new `[balance] everything on` cases in `tests/game/balance.test.ts`): the bot runs 3 years with `autoEvents` (festival / critic / powder / New Year / Almabtrieb), `stories`, rivals, sustainability, the green rules and **all six staff upgrades** (`staffUpgrades: true`). Annual net in $ (y1 / y2 / y3), mean displayed stars of year 2, rival share at the end:
+
+| map / seed | y1 | y2 | y3 | y2 stars | share |
+|---|---|---|---|---|---|
+| 64 / 61 | -13.3 k | +89.3 k | +106.1 k | 4.25 | 42 % |
+| 64 / 7 | -27.7 k | +136.8 k | +132.5 k | 4.25 | 36 % |
+| 128 / 61 | -0.4 k | +139.6 k | +168.9 k | 4.17 | 54 % |
+| 128 / 7 | -15.6 k | +150.9 k | +148.3 k | 4.33 | 36 % |
+| 256 / 61 (starter loan) | -81.6 k | +181.2 k | +127.1 k | 4.17 | 42 % |
+| 256 / 7 (starter loan) | -103.4 k | +97.1 k | +57.8 k | 3.42 | 18 % |
+
+Versus the Task 23 sweep (same bot, no upgrades, events / stories off): year 2 is -23 / -7 / -14 / -21 / -6 / 0 % (the upgrades cost ~$43 k plus ~$94 a day), year 3 is within +-15 % except 128/61 (+169 k vs +176 k) and 64/61 (+106 k vs +119 k). Every case stays profitable in years 2 and 3, never bankrupt, stars 3.4 - 4.3. The rest of the sweep (plain, difficulty ordering 178 k / 116 k / 100 k, grants 5.7 - 8.1 %, Career levels) re-ran unchanged. No constant was retuned. Perf (`npm run test:perf`, alone): 35 / 35, guests at the cap 0.48 / 0.90 / 1.67 ms per tick (64 / 128 / 256). Summary and playtest checklist: `docs/depth.md`.

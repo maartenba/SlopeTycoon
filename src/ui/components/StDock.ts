@@ -26,7 +26,7 @@ export interface DockApi {
   buildings: { locked(id: string): string[]; cost(id: string): number; multiplier(): number; select(id: string): void };
   lifts: { select(kind: LiftKind): void; costPer100m(kind: LiftKind): number; /** Career lock reasons ('Unlocks at level 2: ...'); empty = available. */ locked?(kind: LiftKind): string[] };
   /** Toggle semantics: starting the already-active key stops it. */
-  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; undo?(): boolean; pruneOrphans?(layer: 1 | 2 | 4): number };
+  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4): number };
   terraform: {
     setMode(m: TerraformMode): void; setTarget(t: TerraformTarget): void; setBrush(n: number): void; setMaxEdgeDelta(d: 1 | 2): void;
     state(): { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 };
@@ -39,7 +39,7 @@ export interface DockApi {
   };
   setBulldoze(on: boolean): void;
   /** Shared placement / bulldoze undo (Ctrl+Z): `next()` names what Undo would revert (null = nothing). */
-  undoAction?: { run(): void; next(): string | null };
+  undoAction?: { run(): void; next(): string | null; redo?(): void; nextRedo?(): string | null };
   /** Make the terraform tool the active one (Terrain drawer). */
   activateTerraform(): void;
   /** Return to the default (select) tool. */
@@ -477,6 +477,7 @@ export class StDock extends StElement {
           const b = this.btn('Undo', 'Undo the last placement or bulldoze, same day only (Ctrl+Z)', () => u.run());
           b.dataset.undo = ''; b.style.alignSelf = 'flex-start'; const n = u.next(); if (n) b.title = `Undo: ${n} (Ctrl+Z)`;
           p.append(b);
+          if (u.redo) { const r = this.btn('Redo', 'Redo the last undone action (Ctrl+Shift+Z or Ctrl+Y)', () => u.redo!()); r.dataset.redo = ''; r.style.alignSelf = 'flex-start'; p.append(r); }
         }
         this.body.appendChild(p); break;
       }
@@ -723,9 +724,12 @@ export class StDock extends StElement {
     sel.title = 'Override piste difficulty';
     const brush = makeSelect([1, 2, 3].map((n) => ({ value: String(n), label: `Brush size ${n}` })), '1', 'Brush size', (v) => api.network.setBrush(Number(v)));
     const erase = this.btn('Erase', 'Erase piste/trail tiles (or Shift-drag)', () => { this.erasing = !this.erasing; api.network.setErase?.(this.erasing); erase.classList.toggle('active', this.erasing); });
-    const undo = this.btn('Undo stroke', 'Undo last stroke (Ctrl+Z); Esc cancels the stroke in progress', () => { api.network.undo?.(); });
+    const undo = this.btn('Undo', 'Undo the last action, same day only (Ctrl+Z); Esc cancels the stroke in progress', () => { api.network.undo?.(); });
+    const redo = this.btn('Redo', 'Redo the last undone action (Ctrl+Shift+Z or Ctrl+Y)', () => { api.network.redo?.(); });
     const prune = this.btn('Clear isolated', 'Remove unattached piste fragments', () => { api.network.pruneOrphans?.(1); });
-    side.append(sel, brush, erase, undo, prune);
+    const suggest = this.btn('Suggest a run', 'Highlight a run that follows the fall line, matches the chosen difficulty and keeps snow at today\'s snowline (nothing is built or charged)', () => { const v = (sel as unknown as { value?: string }).value; api.network.suggest?.(v === undefined || v === 'auto' ? null : Number(v)); });
+    suggest.dataset.suggest = '';
+    side.append(sel, brush, suggest, erase, undo, redo, prune);
     side.title = 'Drag to paint (interpolated, no gaps). Shift-drag erases. Trails must start at a path/building.';
     this.body.appendChild(side);
   }

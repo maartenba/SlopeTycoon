@@ -1,3 +1,4 @@
+import type { ProfileView } from '../ui/components/StProfile';
 import * as THREE from 'three';
 import { heightAt, pickHeightfield } from '../render/Picking';
 import { lineTiles, NetKind, type NetKindId, type Networks } from '../world/Networks';
@@ -21,9 +22,13 @@ export interface DragToolOptions {
   onDone?: () => void;
   /** Shared stroke history for undo. */
   history?: StrokeHistory;
+  /** Shared undo/redo stack hook: when given, strokes are recorded here (Ctrl+Z / Ctrl+Y are global) instead of `history`. */
+  record?: (group: string, diff: import('../world/Networks').TileSnap[], cost: number, erase: boolean) => void;
   refund?: (n: number) => void;
   /** Non-error info toast (e.g. 'Removed N stray tiles'). */
   onInfo?: (msg: string) => void;
+  /** Slope profile of the piste stroke being dragged (null = hide). */
+  onProfile?: (v: ProfileView | null) => void;
 }
 
 export interface Evaluation { ok: boolean; cost: number; text: string }
@@ -66,7 +71,7 @@ export abstract class DragTool {
     const key = (e: KeyboardEvent): void => {
       if (!this.active) return;
       if (e.key === 'Escape') { if (this.start) this.cancelStroke(); else this.stop(); }
-      else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); this.undoLast(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !this.o.record) { e.preventDefault(); this.undoLast(); }
       else if (e.key === 'r' || e.key === 'R') { this.vFirst = !this.vFirst; this.refresh(); }
     };
     window.addEventListener('keydown', key);
@@ -85,6 +90,7 @@ export abstract class DragTool {
 
   /** Abort the stroke in progress without committing (Esc). */
   cancelStroke(): void {
+    this.strokeEnded();
     this.start = null; this.cur = null; this.erasing = false;
     this.preview.visible = false;
     if (this.tip) this.tip.style.display = 'none';
@@ -101,7 +107,10 @@ export abstract class DragTool {
   }
 
   begin_(): void { this.active = true; }
+  /** The drag ended (committed, rejected or cancelled): subclasses hide their ghost extras. */
+  protected strokeEnded(): void {}
   stop(): void {
+    this.strokeEnded();
     const was = this.active;
     this.active = false; this.start = null; this.cur = null;
     this.preview.visible = false;
@@ -155,6 +164,7 @@ export abstract class DragTool {
     if (!this.active || !this.start || e.button !== 0) return;
     const t = this.tiles();
     this.start = null;
+    this.strokeEnded();
     this.preview.visible = false;
     if (this.tip) this.tip.style.display = 'none';
     if (!t.length) return;
@@ -164,7 +174,7 @@ export abstract class DragTool {
     this.o.networks.beginJournal();
     this.commit(t);
     const diff = this.o.networks.endJournal();
-    if (diff.length) this.o.history?.push({ group: this.group, diff, cost: ev.cost });
+    if (diff.length) { if (this.o.record) this.o.record(this.group, diff, ev.cost, this.erasing); else this.o.history?.push({ group: this.group, diff, cost: ev.cost }); }
     this.o.onStroke?.(this.group, t.length, this.erasing, this.strokeLayer());
     this.erasing = false;
     this.o.onChanged();

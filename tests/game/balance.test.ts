@@ -180,3 +180,21 @@ describe.skipIf(!FULL)('[balance] Career with respectUnlocks (M5.3): the gating 
     }, 600_000);
   }
 });
+
+describe.skipIf(!FULL)('[balance] everything on (M5.4 closing sweep): automatic events, story guests, rivals, six staff upgrades, green bot', () => {
+  const cases: Array<[64 | 128 | 256, number, boolean]> = [[64, 61, false], [64, 7, false], [128, 61, false], [128, 7, false], [256, 61, true], [256, 7, true]];
+  for (const [size, seed, loan] of cases) {
+    it(`${size} seed ${seed}: profit by year 2 and 3 holds with every depth system active`, () => {
+      const sim = createSim({ size, seed, now: () => 0, autoEvents: true, stories: true });
+      const bot = new Bot(sim, { starterLoan: loan, staffUpgrades: true });
+      runBot(sim, bot, 3 * DAYS_PER_YEAR);
+      const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);
+      const stars = sum(year(bot.rows, 2), (r) => r.rating) / 12;
+      console.log(`[balance] all-on ${size}/${seed}${loan ? ' (starter loan)' : ''}: y1 ${Math.round(net(1))} y2 ${Math.round(net(2))} y3 ${Math.round(net(3))} ($), y2 stars ${stars.toFixed(2)}, rivals share ${(100 * sim.rivals.share).toFixed(0)} %, upgrades ${sim.staffUpgrades.has('rangers') ? 'trained' : 'partial'}`);
+      expect(sim.finance.ended).toBe(false);
+      expect(net(2)).toBeGreaterThan(0);
+      expect(net(3)).toBeGreaterThan(0);
+      expect(stars).toBeGreaterThanOrEqual(3); expect(stars).toBeLessThanOrEqual(4.6);
+    }, 900_000);
+  }
+});

@@ -15,6 +15,9 @@ import type { LiftOps } from '../sim/ops/LiftOps';
 import type { Undo } from './UndoActions';
 
 export interface LiftToolsDeps {
+  /** Ground profile chart under the ghost lift line + snowline marker. */
+  onProfile?(v: import('../ui/components/StProfile').ProfileView | null): void;
+  snowlineM?(): number | undefined;
   grid: Grid;
   props?: PropStore;
   /** Buildings under the cable (roof clearance). */
@@ -127,6 +130,7 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
       d.toast(`${LIFTS[out.lift!.kind].name} built (-$${Math.round(out.cost)})`);
       d.onChanged?.();
     },
+    onProfile: d.onProfile, snowlineM: d.snowlineM,
     onError: (m) => d.toast(m, 'error'),
     onCancel: () => { d.onActiveChange?.(null); if (!d.isBulldozing()) d.resumeOthers(); },
   });

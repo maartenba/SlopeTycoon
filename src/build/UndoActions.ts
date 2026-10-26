@@ -40,24 +40,72 @@ class TerrainDelta {
   private netSig = '';
   private constructor(private readonly g: Grid, private readonly props: PropStore | undefined, private readonly net: UndoEnv['networks'],
     private readonly preH: Map<number, number>, private readonly preChunks: Map<number, PropChunk>) {}
-
-  static capture(g: Grid, props: PropStore | undefined, net: UndoEnv['networks'], heightRects: Rect[], propRect: Rect): TerrainDelta {
-    const preH = new Map<number, number>();
-    for (const r0 of heightRects) {
-      const r = clampRect(g, r0);
-      for (let vy = r.y0; vy <= r.y1 + 1; vy++) for (let vx = r.x0; vx <= r.x1 + 1; vx++) { const i = vy * g.vsize + vx; preH.set(i, g.heights[i]!); }
-    }
-    const preChunks = new Map<number, PropChunk>();
-    if (props) for (const ci of chunksOf(g, clampRect(g, propRect))) preChunks.set(ci, cloneChunk(props.chunks[ci]!));
-    return new TerrainDelta(g, props, net, preH, preChunks);
+  /** Tiles (extra to the ones around moved vertices) whose occupancy must not change while the command is undoable (planting / clearing). */
+  private watch = new Set<number>();
+  private watchSig = '';
+  watchRect(r: Rect): void {
+    const g = this.g, c = clampRect(g, r);
+    for (let y = c.y0; y <= c.y1; y++) for (let x = c.x0; x <= c.x1; x++) this.watch.add(y * g.size + x);
+  }
+  private watchNow(): string {
+    const parts: string[] = [];
+    for (const t of this.watch) parts.push(`${this.g.occupancy.flags[t]}:${this.g.occupancy.entityId[t]}:${this.net.kind[t]}:${this.net.layers[t]}`);
+    return parts.join(',');
   }
 
-  /** Call right after the action: records what changed. */
+  static capture(g: Grid, props: PropStore | undefined, net: UndoEnv['networks'], heightRects: Rect[], propRect: Rect): TerrainDelta {
+    const d = new TerrainDelta(g, props, net, new Map(), new Map());
+    d.grow(heightRects, propRect);
+    return d;
+  }
+
+  /** Remember the CURRENT heights / prop chunks of a region not seen yet (call BEFORE each further stamp of a drag; the first value wins). */
+  grow(heightRects: Rect[], propRect: Rect | null): void {
+    const g = this.g;
+    for (const r0 of heightRects) {
+      const r = clampRect(g, r0);
+      for (let vy = r.y0; vy <= r.y1 + 1; vy++) for (let vx = r.x0; vx <= r.x1 + 1; vx++) { const i = vy * g.vsize + vx; if (!this.preH.has(i)) this.preH.set(i, g.heights[i]!); }
+    }
+    if (this.props && propRect) for (const ci of chunksOf(g, clampRect(g, propRect))) if (!this.preChunks.has(ci)) this.preChunks.set(ci, cloneChunk(this.props.chunks[ci]!));
+  }
+
+  /** Call right after the action (and again after each further stamp): records what changed compared with the first capture. */
   seal(): void {
+    this.verts = []; this.chunks = [];
     for (const [i, from] of this.preH) { const to = this.g.heights[i]!; if (to !== from) this.verts.push({ i, from, to }); }
     for (const [ci, pre] of this.preChunks) { const post = this.props!.chunks[ci]!; if (!sameChunk(pre, post)) this.chunks.push({ ci, pre, post: cloneChunk(post) }); }
     this.netSig = this.netSigNow();
-    this.preH.clear(); this.preChunks.clear();
+    this.watchSig = this.watchNow();
+  }
+
+  /** Redo guard: the ground and props are exactly as they were before the action (i.e. right after undo). */
+  preMatches(): string | null {
+    for (const v of this.verts) if (this.g.heights[v.i] !== v.from) return 'The terrain has changed since';
+    for (const c of this.chunks) if (!sameChunk(this.props!.chunks[c.ci]!, c.pre)) return 'The terrain has changed since (trees or rocks moved)';
+    return null;
+  }
+
+  /** Put the heights and props back AFTER the action (redo). Returns the touched chunk indices. */
+  reapply(): number[] {
+    const touched = new Set<number>();
+    for (const v of this.verts) {
+      const vx = v.i % this.g.vsize, vy = (v.i / this.g.vsize) | 0;
+      this.g.setCornerUnchecked(vx, vy, v.to);
+      for (const [tx, ty] of [[vx - 1, vy - 1], [vx, vy - 1], [vx - 1, vy], [vx, vy]] as const) if (this.g.inBounds(tx, ty)) touched.add(Math.floor(ty / CHUNK_SIZE) * this.g.chunksPerRow + Math.floor(tx / CHUNK_SIZE));
+    }
+    for (const c of this.chunks) { this.props!.chunks[c.ci] = cloneChunk(c.post); this.props!.chunkVersion[c.ci]!++; touched.add(c.ci); }
+    return [...touched];
+  }
+
+  /** Chunk indices the action touched (heights + props), without changing anything. */
+  touchedNow(): number[] {
+    const touched = new Set<number>();
+    for (const v of this.verts) {
+      const vx = v.i % this.g.vsize, vy = (v.i / this.g.vsize) | 0;
+      for (const [tx, ty] of [[vx - 1, vy - 1], [vx, vy - 1], [vx - 1, vy], [vx, vy]] as const) if (this.g.inBounds(tx, ty)) touched.add(Math.floor(ty / CHUNK_SIZE) * this.g.chunksPerRow + Math.floor(tx / CHUNK_SIZE));
+    }
+    for (const c of this.chunks) touched.add(c.ci);
+    return [...touched];
   }
 
   /** Network state on the tiles around moved vertices (a road laid on the levelled pad since would be re-sloped by the revert). */
@@ -70,7 +118,7 @@ class TerrainDelta {
         const t = ty * this.g.size + tx;
         if (seen.has(t)) continue;
         seen.add(t);
-        if (this.net.kind[t] || this.net.layers[t]) out.push(`${t}:${this.net.kind[t]}:${this.net.layers[t]}`);
+        if (this.net.kind[t] || this.net.layers[t] || this.g.occupancy.flags[t]) out.push(`${t}:${this.net.kind[t]}:${this.net.layers[t]}:${this.g.occupancy.flags[t]}:${this.g.occupancy.entityId[t]}`);
       }
     }
     return out.join(',');
@@ -82,6 +130,7 @@ class TerrainDelta {
     for (const v of this.verts) if (this.g.heights[v.i] !== v.to) return 'The terrain has changed since';
     for (const c of this.chunks) if (!sameChunk(this.props!.chunks[c.ci]!, c.post)) return 'The terrain has changed since (trees or rocks moved)';
     if (this.netSigNow() !== this.netSig) return 'A path, road or piste was built on the levelled ground since';
+    if (this.watchNow() !== this.watchSig) return 'Something was built there since';
     return null;
   }
 
@@ -163,11 +212,17 @@ export class Undo {
         economy.refund(out.cost);
         return { touchedChunks: delta.revert(), changed: rem?.changed ?? [], kind: 'building' } satisfies UndoApplied;
       },
+      checkRedo: () => delta.preMatches(),
+      redo: () => {
+        if (!cmd.do()) return { fail: out.reasons[0] ?? 'It cannot be placed any more' };
+        delta.seal();
+        return { touchedChunks: delta.touchedNow(), changed: out.changed, kind: 'building' } satisfies UndoApplied;
+      },
     };
     if (!cmd.do()) return out;
     delta.seal();
     cmd.cost = out.cost;
-    this.stack.push(cmd);
+    this.record(cmd);
     return out;
   }
 
@@ -188,7 +243,7 @@ export class Undo {
     if (!res.ok) return res;
     const after = sig();
     const refund = res.refund;
-    this.stack.push({
+    this.record({
       label, verb: 'bulldozed', day: this.day(), cost: -refund,
       do: () => true,
       check: () => {
@@ -203,6 +258,17 @@ export class Undo {
         if (inst) attractions.restoreInstance(id, inst);
         if (school) guestSim.families.school(id).load(school as Parameters<ReturnType<typeof guestSim.families.school>['load']>[0]);
         if (custom && !names.serialize().custom.some(([k]) => k === nameKey)) names.rename('building', id, custom);
+        return { touchedChunks: [], changed: r.changed, kind: 'building' };
+      },
+      checkRedo: () => {
+        const b = buildings.get(id);
+        if (!b || b.x !== rec.x || b.y !== rec.y) return 'The building is gone or was changed';
+        return this.guestsAtBuilding(id) > 0 ? `Guests are inside the ${label}` : null;
+      },
+      redo: () => {
+        const r = buildings.remove(id);
+        if (!r) return { fail: 'The building is gone' };
+        economy.refund(refund);
         return { touchedChunks: [], changed: r.changed, kind: 'building' };
       },
     });
@@ -249,11 +315,17 @@ export class Undo {
         economy.refund(out.cost);
         return { touchedChunks: delta.revert(), changed: [], kind: 'lift' };
       },
+      checkRedo: () => delta.preMatches(),
+      redo: () => {
+        if (!cmd.do()) return { fail: out.reasons[0] ?? 'It cannot be placed any more' };
+        delta.seal();
+        return { touchedChunks: delta.touchedNow(), changed: [], kind: 'lift' };
+      },
     };
     if (!cmd.do()) return out;
     delta.seal();
     cmd.cost = out.cost;
-    this.stack.push(cmd);
+    this.record(cmd);
     return out;
   }
 
@@ -272,7 +344,7 @@ export class Undo {
     lifts.remove(id);
     economy.refund(refund);
     const after = tilesSig();
-    this.stack.push({
+    this.record({
       label, verb: 'bulldozed', day: this.day(), cost: -refund,
       do: () => true,
       check: () => (lifts.get(id) ? 'The tile is occupied again' : tilesSig() !== after ? 'The tile is occupied or the terrain has changed since' : null),
@@ -282,6 +354,8 @@ export class Undo {
         if (custom && !names.serialize().custom.some(([k]) => k === nameKey)) names.rename('lift', id, custom);
         return { touchedChunks: [], changed: [], kind: 'lift' };
       },
+      checkRedo: () => (!lifts.get(id) ? 'The lift is gone' : this.guestsAtLift(id) > 0 ? `Guests are queueing for or riding the ${label}` : null),
+      redo: () => { lifts.remove(id); economy.refund(refund); return { touchedChunks: [], changed: [], kind: 'lift' }; },
     });
     return { ok: true, refund };
   }
@@ -290,17 +364,80 @@ export class Undo {
 
   /** Record a tile-level bulldoze that already happened: `diff` = pre-change snapshots (Networks journal), `refund` = money given back. */
   recordNetworkBulldoze(label: string, diff: TileSnap[], refund: number): void {
+    this.recordNetwork(label, 'bulldozed', diff, -refund);
+  }
+
+  /**
+   * Record a path / road / rail / piste edit that already happened (`diff` = pre-change snapshots from the Networks journal).
+   * `undoFlow` = signed money flow of the undo: +charged for a stroke (refunded), -refund for a bulldoze.
+   */
+  recordNetwork(label: string, verb: UndoCommand['verb'], diff: TileSnap[], undoFlow: number): void {
     const { networks, economy } = this.env;
     if (!diff.length) return;
+    const idx = diff.map((s) => s.i);
     const sig = (): string => diff.map((s) => `${s.i}:${networks.kind[s.i]}:${networks.bridge[s.i]}:${networks.layers[s.i]}:${networks.difficulty[s.i]}:${this.env.grid.occupancy.flags[s.i]}`).join(',');
+    const post = networks.snapshotTiles(idx);
     const after = sig();
-    this.stack.push({
-      label, verb: 'bulldozed', day: this.day(), cost: -refund,
+    let before = '';
+    this.record({
+      label, verb, day: this.day(), cost: undoFlow,
       do: () => true,
       check: () => (sig() !== after ? 'The tile has changed since' : null),
-      undo: () => { economy.charge(refund); networks.restore(diff); return { touchedChunks: [], changed: [], kind: 'network' }; },
+      undo: () => {
+        if (undoFlow >= 0) economy.refund(undoFlow); else economy.charge(-undoFlow);
+        networks.restore(diff); before = sig();
+        return { touchedChunks: [], changed: [], kind: 'network' };
+      },
+      checkRedo: () => (sig() !== before ? 'The tile has changed since' : null),
+      redo: () => {
+        if (undoFlow >= 0) economy.charge(undoFlow); else economy.refund(-undoFlow);
+        networks.restore(post);
+        return { touchedChunks: [], changed: [], kind: 'network' };
+      },
     });
   }
+
+  // ---------- terrain strokes (terraform / planting) ----------
+
+  /**
+   * Start recording one drag of a terrain tool as a SINGLE undo step. Each `stamp(rect, run)` captures the ground first, runs the edit
+   * (`run` returns `{ ok, flow }`: `flow` = money the stamp cost, net of timber revenue), and extends the one command. `heightRect` is in
+   * vertex space (inclusive corners), `propRect` in tile space.
+   */
+  terrainStroke(label: string, verb: 'terraformed' | 'planted'): { stamp(heightRect: Rect | null, propRect: Rect, run: () => { ok: boolean; flow: number }): boolean } {
+    const { grid, props, networks, economy } = this.env;
+    let delta: TerrainDelta | null = null;
+    let cmd: UndoCommand | null = null;
+    let flow = 0;
+    return {
+      stamp: (heightRect, propRect, run) => {
+        // capture BEFORE the edit; vertex rect corners (x1,y1 inclusive) -> capture() adds +1 itself, so shrink by one
+        const hr: Rect[] = heightRect ? [{ x0: heightRect.x0, y0: heightRect.y0, x1: heightRect.x1 - 1, y1: heightRect.y1 - 1 }] : [];
+        const pr: Rect = { x0: propRect.x0 - 1, y0: propRect.y0 - 1, x1: propRect.x1 + 1, y1: propRect.y1 + 1 };
+        if (!delta) delta = TerrainDelta.capture(grid, props, networks, hr, pr); else delta.grow(hr, pr);
+        const res = run();
+        if (!res.ok) return false;
+        delta.watchRect(pr);
+        delta.seal();
+        flow += res.flow;
+        if (!cmd) {
+          const d = delta;
+          cmd = {
+            label, verb, day: this.day(), cost: flow,
+            do: () => true,
+            check: () => d.stale(),
+            undo: () => { const t = d.revert(); if (cmd!.cost >= 0) economy.refund(cmd!.cost); else economy.charge(-cmd!.cost); return { touchedChunks: t, changed: [], kind: 'terrain' }; },
+            checkRedo: () => d.preMatches(),
+            redo: () => { if (cmd!.cost >= 0) economy.charge(cmd!.cost); else economy.refund(-cmd!.cost); return { touchedChunks: d.reapply(), changed: [], kind: 'terrain' }; },
+          };
+          this.record(cmd);
+        } else cmd.cost = flow;
+        return true;
+      },
+    };
+  }
+
+  private record(c: UndoCommand): void { this.stack.push(c); }
 
   // ---------- undo ----------
 
@@ -309,13 +446,28 @@ export class Undo {
     return this.stack.undo({ day: this.day(), canAfford: (n) => economy.canAfford(n) });
   }
 
+  redo(): UndoReport {
+    const { economy } = this.env;
+    return this.stack.redo({ day: this.day(), canAfford: (n) => economy.canAfford(n) });
+  }
+
+  /** Short description of what the next redo would replay. */
+  nextRedo(): { label: string; verb: UndoCommand['verb'] } | null { const c = this.stack.peekRedo(); return c ? { label: c.label, verb: c.verb } : null; }
+
   /** Short description of what the next undo would revert ('Café' / null). */
   next(): { label: string; verb: UndoCommand['verb'] } | null { const c = this.stack.peek(); return c ? { label: c.label, verb: c.verb } : null; }
   get size(): number { return this.stack.size; }
 }
 
 /** Toast text for a report: 'Undid: placing Café' style, sentence-case. */
+const VERB_ING: Record<UndoCommand['verb'], string> = { placed: 'placing', bulldozed: 'bulldozing', painted: 'drawing', terraformed: 'terraforming', planted: 'planting' };
+export const verbIng = (v: UndoCommand['verb']): string => VERB_ING[v];
 export function undoMessage(r: UndoReport): string {
-  if (r.ok) return `Undid: ${r.verb === 'placed' ? 'placing' : 'bulldozing'} ${r.label}`;
+  if (r.ok) return `${r.redo ? 'Redid' : 'Undid'}: ${verbIng(r.verb)} ${r.label}`;
   return r.label ? `Can't undo ${r.label}: ${r.reason}` : r.reason;
+}
+/** Same for a failed REDO (the message says redo, not undo). */
+export function redoMessage(r: UndoReport): string {
+  if (r.ok) return undoMessage(r);
+  return r.label ? `Can't redo ${r.label}: ${r.reason}` : r.reason;
 }

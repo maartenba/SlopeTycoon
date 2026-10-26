@@ -232,7 +232,7 @@ describe('undo: stack', () => {
   it('keeps only the last 10 commands (oldest dropped)', () => {
     const s = new UndoStack();
     let undone = 0;
-    const cmd = (i: number): UndoCommand => ({ label: `c${i}`, verb: 'placed', day: 1, cost: 0, do: () => true, check: () => null, undo: () => { undone++; return { touchedChunks: [], changed: [], kind: 'building' }; } });
+    const cmd = (i: number): UndoCommand => ({ label: `c${i}`, verb: 'placed', day: 1, cost: 0, do: () => true, check: () => null, undo: () => { undone++; return { touchedChunks: [], changed: [], kind: 'building' }; }, checkRedo: () => null, redo: () => ({ touchedChunks: [], changed: [], kind: 'building' }) });
     for (let i = 0; i < 12; i++) expect(s.execute(cmd(i))).toBe(true);
     expect(s.size).toBe(UNDO_LIMIT);
     const labels: string[] = [];

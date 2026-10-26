@@ -83,7 +83,10 @@ import { TerraformTool } from '@/build/TerraformTool';
 import { PlacementTool, type PlaceOutcome } from '@/build/PlacementTool';
 import { rotateBuilding } from '@/sim/PlaceBuilding';
 import { refundValue } from '@/build/Bulldoze';
-import { Undo, undoMessage } from '@/build/UndoActions';
+import { suggestPiste } from '@/tutorial/suggest';
+import { slopeProfile } from '@/sim/PisteStats';
+import type { ProfileView } from '@/ui/components/StProfile';
+import { Undo, undoMessage, redoMessage, verbIng } from '@/build/UndoActions';
 import { creditScore, creditLetter, debtCap } from '@/sim/Loans';
 import { formatSigned } from '@/ui/financeFormat';
 import { buildMarketingView } from '@/ui/marketingFormat';
@@ -479,6 +482,9 @@ let liftToolsRef: LiftTools | null = null;
 let helpRef: StHelp | null = null;
 let tutorialRef: TutorialSetup | null = null;
 let toastRef: StToast | null = null;
+/** Slope profile chart (piste / lift ghosts); created with the UI. */
+let profileRef: { show(v: ProfileView | null): void } | null = null;
+const snowlineNow = (): number => altitudeMetres(sim.weather.current.snowline);
 let dockRef: StDock | null = null;
 let inspectorRef: StInspector | null = null;
 let schoolInfoRef: ((id: number, type: string) => NonNullable<import('@/ui/components/StInspector').InspectorTarget['school']> | undefined) | null = null;
@@ -540,6 +546,7 @@ let debugRef: StDebug | null = null;
 let activeTool = (): string => 'select';
 
 const terraform = new TerraformTool({
+  beginStroke: () => undo.terrainStroke('Terrain', 'terraformed'),
   grid, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays, props,
   charge: (cost) => economy.charge(cost),
   constructionMultiplier: () => economy.constructionMultiplier(),
@@ -549,6 +556,7 @@ const terraform = new TerraformTool({
 });
 
 const plantTool = new PlantTool({
+  beginStroke: () => undo.terrainStroke('Trees', 'planted'),
   grid, props, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays,
   env: () => ({ grid, props, seed: SEED, blocked: (i) => grid.occupancy.flags[i] !== 0 || (networks.layers[i] ?? 0) !== 0 || (networks.kind[i] ?? 0) !== 0, liftBlocks: liftPlantBlocker(lifts, grid) }),
   now: () => game.date.year * DAYS_PER_YEAR + game.date.day,
@@ -680,19 +688,36 @@ const offerUndo = (label: string, refund?: number): void => {
   inspectorRef?.offerUndo(text, () => performUndo());
 };
 /** Ctrl/Cmd+Z, the Undo buttons and the toast action: revert the newest recorded placement / bulldoze (see build/UndoStack). */
-const performUndo = (): void => {
-  const r = undo.undo();
-  if (!r.ok) { toast(undoMessage(r), 'warn'); return; }
+const applyUndoReport = (r: ReturnType<Undo['undo']>, msg: (r: ReturnType<Undo['undo']>) => string): boolean => {
+  if (!r.ok) { toast(msg(r), 'warn'); return false; }
   const a = r.applied;
   if (a.touchedChunks.length) refreshProps(a.touchedChunks);
   if (a.kind === 'building') { buildingsView.sync(); if (selectedId !== null && !buildings.get(selectedId)) selectedId = null; refreshCoverage(undefined, true); announceChanged(a.changed); }
   else if (a.kind === 'lift') { liftToolsRef?.syncView(); refreshCoverage(undefined, true); }
+  else if (a.kind === 'terrain') { sim.nature.growth.track(a.touchedChunks); sim.nature.cover.dirty = true; netTools?.refreshChunks(a.touchedChunks); }
   else { netTools?.refresh(); }
   covOverlay.invalidateHeights();
   inspectorRef?.offerUndo(null);
   toast(undoMessage(r));
   refreshUi();
+  return true;
 };
+/** 'Suggest a run': highlight + profile + advice for a snow-safe line on the fall line (nothing is built). Fades after 12 s. */
+let suggestTimer = 0;
+const suggestRun = (want: number | null): void => {
+  const s = suggestPiste(grid, netTools?.networks ?? networks, weather.current.snowline, want === null ? {} : { want });
+  if (!s) { toast('No suitable run found on this map', 'warn'); return; }
+  const idx = s.line.map((t) => t.y * grid.size + t.x);
+  pisteHl.set(grid, idx);
+  profileRef?.show({ kind: 'piste', title: 'Suggested run', profile: slopeProfile(grid, s.line, [...(netTools?.networks ?? networks).autoDifficulty(s.line).values()]), snowlineM: snowlineNow(), note: s.message });
+  renderer.controls.focusOn(s.line[0]!.x + 0.5, s.line[0]!.y + 0.5);
+  toast(s.message, s.snowReliable ? 'info' : 'warn');
+  window.clearTimeout(suggestTimer);
+  suggestTimer = window.setTimeout(() => { if (!selectedPiste) pisteHl.clear(); profileRef?.show(null); }, 12000);
+};
+const performUndo = (): boolean => applyUndoReport(undo.undo(), undoMessage);
+/** Ctrl+Shift+Z / Ctrl+Y: replay the newest undone action (same day only). */
+const performRedo = (): boolean => applyUndoReport(undo.redo(), redoMessage);
 const demolish = (id: number): void => {
   const r = undo.bulldozeBuilding(id);
   if (!r.ok || !r.removed) return;
@@ -863,7 +888,7 @@ netTools = safely('Paths/roads/pistes', () => registerNetworkTools({ networks,
   onActiveChange: (k) => dockRef?.setActive(k ? (k === 'path' || k === 'road' || k === 'rail' ? 'paths' : 'pistes') : null, k),
   onToolActive: (a) => { if (a) tools.activate('network'); else tools.release('network'); },
   onNetworkChanged: () => refreshCoverage(undefined, true),
-  undo,
+  undo, performUndo, performRedo, onProfile: (v) => profileRef?.show(v), snowlineM: snowlineNow,
 }), (m) => startupErrors.push(m));
 covOverlay.invalidate();
 
@@ -886,7 +911,7 @@ if (!bootSave?.env.meta.camera) {
 const liftTools = liftToolsRef = safely('Lifts', () => registerLiftTools({ lifts,
   grid, props, economy, scene: renderer.scene, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays, ui, frame: renderer,
   access: netTools?.networks.access, gate: sim.gate, buildings,
-  toast, isBulldozing: () => bulldozing, refreshProps, onPropsCleared: () => { sim.nature.cover.dirty = true; }, bus, liftOps: sim.liftOps, undo, onDemolished: (label, refund) => offerUndo(label, refund),
+  toast, isBulldozing: () => bulldozing, refreshProps, onPropsCleared: () => { sim.nature.cover.dirty = true; }, bus, liftOps: sim.liftOps, undo, onProfile: (v) => profileRef?.show(v), snowlineM: snowlineNow, onDemolished: (label, refund) => offerUndo(label, refund),
   liftName: (id) => sim.names.liftName(id), renameLift: (id, n) => sim.names.rename('lift', id, n),
   suspendOthers: () => { tools.activate('lift'); },
   resumeOthers: () => tools.release('lift'),
@@ -2102,6 +2127,8 @@ if (ui && !DEMO) {
     highlight: (on) => { pisteHighlightOn = on; showPisteInspector(); },
   });
   const toastEl = el('st-toast');
+  const profileEl = el('st-profile');
+  profileRef = profileEl;
   dockRef = dock; inspectorRef = inspector; toastRef = toastEl; globalToast = toastEl;
   const thumbs = new Thumbnails(buildingMeshes);
   const setFlatten = (v: boolean): void => { placement.setAutoFlatten(v); if (liftToolsRef) liftToolsRef.tool.setAutoFlatten(v); };
@@ -2179,13 +2206,18 @@ if (ui && !DEMO) {
       locked: (k) => { const l = sim.progression.locked('lift', k); return l ? [l] : []; },
       costPer100m: (k) => LIFTS[k].costPerMetre * 100 * economy.constructionMultiplier(),
     },
-    undoAction: { run: () => performUndo(), next: () => { const n = undo.next(); return n ? `${n.verb === 'placed' ? 'placing' : 'bulldozing'} ${n.label}` : null; } },
+    undoAction: {
+      run: () => { performUndo(); }, next: () => { const n = undo.next(); return n ? `${verbIng(n.verb)} ${n.label}` : null; },
+      redo: () => { performRedo(); }, nextRedo: () => { const n = undo.nextRedo(); return n ? `${verbIng(n.verb)} ${n.label}` : null; },
+    },
     network: {
       start: (k) => netTools?.startTool(k),
       setOverride: (d) => netTools?.setOverride(d),
       setBrush: (n) => netTools?.setBrush(n),
       setErase: (on) => netTools?.setErase(on),
       undo: () => netTools?.undo() ?? false,
+      redo: () => netTools?.redo() ?? false,
+      suggest: (w) => suggestRun(w),
       pruneOrphans: (l) => netTools?.pruneOrphans(l) ?? 0,
     },
     terraform: {
@@ -2437,7 +2469,7 @@ if (ui && !DEMO) {
     photoEl = pe;
     ui.append(pe);
   }
-  ui.append(topbar, debug, recapEl, dock, toastEl, help, news, settingsEl, trophiesEl, viewHud);
+  ui.append(topbar, debug, recapEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, viewHud);
   {
     const pause = el('st-pause-menu');
     pauseRef = pause;
@@ -2566,8 +2598,9 @@ window.addEventListener('keydown', (e) => {
   const t = e.target as HTMLElement | null;
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
   if (saves && (e.key === 'F5' || e.key === 'F9') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); if (e.key === 'F5') void saves.quickSave().catch(() => {}); else void saves.quickLoad(); return; }
-  // Ctrl/Cmd+Z: while a path / road / rail / piste tool is active its own stroke history answers (PathTool); otherwise the shared placement / bulldoze stack.
-  if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) { e.preventDefault(); if (tools.current !== 'network') performUndo(); return; }
+  // Ctrl/Cmd+Z undoes, Ctrl+Shift+Z / Ctrl+Y redoes: ONE shared stack for every build action (placements, lifts, strokes, terraform, planting, bulldozes).
+  if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !e.altKey) { e.preventDefault(); if (e.shiftKey) performRedo(); else performUndo(); return; }
+  if ((e.key === 'y' || e.key === 'Y') && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) { e.preventDefault(); performRedo(); return; }
   if ((e.key === 's' || e.key === 'S') && (e.ctrlKey || e.metaKey) && !e.altKey) { e.preventDefault(); if (saves && !sim.finance.ended) saveLoadRef?.open('save'); return; }
   if ((e.key === 'k' || e.key === 'K') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !modalStack.size) { e.preventDefault(); startFf('month'); return; } // Skip to next month
   const speedAct = speedKeyAction(e);

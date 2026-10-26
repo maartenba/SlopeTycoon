@@ -9,6 +9,8 @@ import {
 } from '@/world/Terraform';
 import { TERRAFORM_BRUSH_MAX, TERRAFORM_DEFAULT_BRUSH, TERRAFORM_DEFAULT_MAX_EDGE_DELTA } from '@/config/balance';
 
+export interface TerrainStroke { stamp(heightRect: { x0: number; y0: number; x1: number; y1: number } | null, propRect: { x0: number; y0: number; x1: number; y1: number }, run: () => { ok: boolean; flow: number }): boolean }
+
 export type TerraformMode = 'raise' | 'lower' | 'flatten' | 'smooth';
 export type TerraformTarget = 'tile' | 'corner';
 
@@ -25,6 +27,8 @@ export interface TerraformToolOptions {
   liftClearanceViolations?: (changed: CornerChange[]) => number;
   /** Called after a successful edit (e.g. to refresh prop layers for touched chunks). */
   onApplied?: (result: TerraformResult) => void;
+  /** Shared undo: begin one undo step for a drag. `stamp` wraps each edit (vertex rect + tile rect of the preview, `run` does charge + commit). */
+  beginStroke?: () => TerrainStroke;
   onModeChange?: (state: { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta: 1 | 2 }) => void;
 }
 
@@ -37,6 +41,7 @@ export class TerraformTool {
   private pick: PickResult | null = null;
   private lastKey = '';
   private painting = false;
+  private stroke: TerrainStroke | null = null;
   private flatStart: { tx: number; ty: number; h: number } | null = null;
   private readonly ray = new THREE.Raycaster();
   private readonly disposers: Array<() => void> = [];
@@ -62,7 +67,7 @@ export class TerraformTool {
     this.brush = Math.max(1, Math.min(TERRAFORM_BRUSH_MAX, Math.round(n)));
     this.emitState();
   }
-  cancel(): void { this.painting = false; this.flatStart = null; this.lastKey = ''; }
+  cancel(): void { this.painting = false; this.stroke = null; this.flatStart = null; this.lastKey = ''; }
   dispose(): void { for (const d of this.disposers) d(); }
 
   private emitState(): void {
@@ -143,6 +148,7 @@ export class TerraformTool {
     if (!p) return;
     this.pick = p;
     this.painting = true;
+    this.stroke = this.o.beginStroke?.() ?? null;
     if (this.mode === 'flatten') {
       this.flatStart = { tx: p.tileX, ty: p.tileY, h: this.o.grid.getCorner(p.vx, p.vy) };
       this.updateHover(p, e);
@@ -180,8 +186,17 @@ export class TerraformTool {
   private apply(p: PickResult): void {
     const preview = this.run(p, false).res;
     if (!preview.ok) return;
-    if (this.o.charge && !this.o.charge(preview.cost)) return;
-    const out = this.run(p, true).res;
-    if (out.ok) this.o.onApplied?.(out);
+    const doIt = (): { ok: boolean; flow: number } => {
+      if (this.o.charge && !this.o.charge(preview.cost)) return { ok: false, flow: 0 };
+      const out = this.run(p, true).res;
+      if (out.ok) this.o.onApplied?.(out);
+      return { ok: out.ok, flow: out.ok ? preview.cost : 0 };
+    };
+    if (!this.stroke) { doIt(); return; }
+    // vertex bbox of what the edit will move (the preview already includes the edge-delta ripple), props are cleared one tile beyond
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const c of preview.changed) { x0 = Math.min(x0, c.vx); y0 = Math.min(y0, c.vy); x1 = Math.max(x1, c.vx); y1 = Math.max(y1, c.vy); }
+    const g = this.o.grid;
+    this.stroke.stamp({ x0, y0, x1, y1 }, { x0: Math.max(0, x0 - 1), y0: Math.max(0, y0 - 1), x1: Math.min(g.size - 1, x1), y1: Math.min(g.size - 1, y1) }, doIt);
   }
 }

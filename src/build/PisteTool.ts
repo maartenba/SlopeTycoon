@@ -1,5 +1,6 @@
 import { Difficulty, PISTE_WATER_MSG, interpolateStroke, Layer, PISTE_COST_PER_TILE, sweepBrush, type LayerBit } from '../world/Networks';
 import type { Pt } from '../sim/Dependencies';
+import { slopeProfile } from '../sim/PisteStats';
 import { DragTool, type DragToolOptions, type Evaluation } from './PathTool';
 
 export const DIFFICULTY_NAMES = ['green', 'blue', 'red', 'black'] as const;
@@ -67,9 +68,24 @@ export class PisteTool extends DragTool {
     if (this.layer !== Layer.Ski && !net.strokeAnchored(tiles, this.layer)) return { ok: false, cost: 0, text: TRAIL_ORPHAN_MSG };
     const auto = net.autoDifficulty(tiles);
     const d = this.override ?? [...auto.values()][0] ?? 0;
+    this.emitProfile();
     const cost = tiles.length * PISTE_COST_PER_TILE * this.o.multiplier();
     return { ok: true, cost, text: `${DIFFICULTY_NAMES[d]}${this.override === null ? ' (auto)' : ''} — ${tiles.length} tiles, $${Math.round(cost)}` };
   }
+
+  /** Slope profile of the centre-line being dragged (coloured by the difficulty each tile will get). */
+  private emitProfile(): void {
+    if (!this.o.onProfile) return;
+    if (!this.start || this.erasing || this.samples.length < 1) { this.o.onProfile(null); return; }
+    const line = this.strokeLine();
+    if (line.length < 2) { this.o.onProfile(null); return; }
+    const auto = this.override !== null ? this.override : [...this.o.networks.autoDifficulty(line).values()];
+    const label = this.layer === Layer.Ski ? 'Ski piste' : this.layer === Layer.Mtb ? 'MTB trail' : 'Hiking trail';
+    this.o.onProfile({ kind: 'piste', title: `${label} profile${this.override === null ? ' (auto grade)' : ''}`, profile: slopeProfile(this.o.grid, line, auto), snowlineM: this.snowlineM?.() });
+  }
+  /** Current snowline altitude (m); set by the host. */
+  snowlineM?: () => number | undefined;
+  protected override strokeEnded(): void { this.o.onProfile?.(null); }
 
   protected override strokeLayer(): number { return this.layer; }
 

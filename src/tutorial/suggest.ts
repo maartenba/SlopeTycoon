@@ -1,8 +1,12 @@
 import { BUILDINGS } from '../config/buildings';
 import { LIFTS, type LiftKind } from '../config/lifts';
-import { TileType } from '../world/Grid';
+import { TileType, type Grid } from '../world/Grid';
+import { HEIGHT_UNIT } from '../config/balance';
+import { SKIABLE_MAX, SKIABLE_MIN } from '../world/Skiable';
+import { VALLEY_BASE } from '../world/TerrainGen';
+import { slopeProfile } from '../sim/PisteStats';
 import { OccFlag } from '../world/Occupancy';
-import { Layer, NET_COST, NetKind, PISTE_COST_PER_TILE, interpolateStroke, sweepBrush } from '../world/Networks';
+import { Layer, type Networks, NET_COST, NetKind, PISTE_COST_PER_TILE, interpolateStroke, sweepBrush } from '../world/Networks';
 import { placeBuilding, validatePlacement } from '../sim/PlaceBuilding';
 import { autoFlattenDefault } from '../sim/PlacementRules';
 import { placeLift, validateLift, type LiftData, type LiftEnv, type StationSite } from '../sim/Lift';
@@ -376,3 +380,109 @@ export function planTrail(sim: Sim): { stroke: Pt[]; cost: number } | null {
 /** Rough price of a building (with the construction multiplier). */
 export const priceOf = (sim: Sim, type: string): number => (BUILDINGS[type]?.cost ?? 0) * sim.economy.constructionMultiplier();
 export const liftKindName = (k: LiftKind): string => LIFTS[k].name;
+
+// ---------------------------------------------------------------- snowline-aware piste suggestion (M5.4 Task 24)
+
+export interface PisteSuggestion {
+  /** 4-connected centre-line, top to bottom. */
+  line: Pt[];
+  lengthM: number;
+  startAltM: number;
+  endAltM: number;
+  /** Auto grade the run would get (0 green .. 3 black). */
+  difficulty: number;
+  /** Share of the line (0..1) at or above the snowline right now. */
+  snowFraction: number;
+  /** False when the whole run lies below the snowline (summer, or a warm spell): it would be closed for lack of snow. */
+  snowReliable: boolean;
+  /** One-line advice for the player. */
+  message: string;
+}
+
+export interface SuggestOpts {
+  /** Wanted grade 0 green .. 3 black (default blue). */
+  want?: number;
+  /** Longest run, tiles (default 70). */
+  maxTiles?: number;
+}
+
+const TARGET_STEEP = [0.55, 1.0, 1.5, 1.9] as const;
+
+/**
+ * Suggest a ski run: starts at a skiable tile on the high ground, follows the fall line down on tiles whose steepness matches the wanted grade
+ * (`SKIABLE_MIN..SKIABLE_MAX`, never rock / water / buildings), and prefers runs whose upper part is ABOVE the current snowline (`snowlineY`,
+ * world units) so the piste keeps snow. Pure: reads the grid + networks, never edits them. Null when no run of 6+ tiles exists.
+ */
+export function suggestPiste(grid: Grid, networks: Networks, snowlineY: number, opts: SuggestOpts = {}): PisteSuggestion | null {
+  const N = grid.size, want = Math.max(0, Math.min(3, opts.want ?? 1)), target = TARGET_STEEP[want]!, maxTiles = opts.maxTiles ?? 70;
+  const H = (x: number, y: number): number => { const c = grid.getCorners(x, y); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; };
+  const hs = new Float32Array(N * N);
+  const ok = new Uint8Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const i = y * N + x;
+    hs[i] = H(x, y);
+    const tt = grid.tileType[i];
+    if (tt === TileType.Water || tt === TileType.Stream || tt === TileType.Rock) continue;
+    if (grid.occupancy.flags[i]! & (OccFlag.Building | OccFlag.Lift | OccFlag.Water)) continue;
+    const s = grid.steepness(x, y);
+    if (s < SKIABLE_MIN || s > SKIABLE_MAX) continue;
+    ok[i] = 1;
+  }
+  const valley = VALLEY_BASE * HEIGHT_UNIT + 2 * HEIGHT_UNIT;
+  const nearNet = (x: number, y: number): boolean => {
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < N && yy < N) { const j = yy * N + xx; if (networks.kind[j] || (networks.layers[j]! & Layer.Ski)) return true; } }
+    return false;
+  };
+  // start candidates: highest skiable tiles, above the snowline when any exist
+  const all: number[] = [];
+  for (let i = 0; i < N * N; i++) if (ok[i] && hs[i]! > valley) all.push(i);
+  if (!all.length) return null;
+  const above = all.filter((i) => hs[i]! >= snowlineY);
+  const pool = (above.length ? above : all).sort((a, b) => hs[b]! - hs[a]!);
+  const stride = Math.max(1, Math.floor(pool.length / 60));
+  let best: { line: Pt[]; score: number } | null = null;
+  for (let k = 0; k < pool.length; k += stride) {
+    const s0 = pool[k]!;
+    let x = s0 % N, y = (s0 / N) | 0, px = 0, py = 0;
+    const line: Pt[] = [{ x, y }];
+    while (line.length < maxTiles) {
+      let bx = -1, by = -1, bs = Infinity;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= N || yy >= N) continue;
+        const j = yy * N + xx;
+        if (!ok[j] || hs[j]! >= hs[y * N + x]! - 1e-6) continue;
+        const turn = line.length > 1 ? (dx === px && dy === py ? 0 : Math.abs(dx - px) + Math.abs(dy - py) > 2 ? 0.5 : 0.15) : 0;
+        const sc = Math.abs(grid.steepness(xx, yy) - target) + turn + (dx && dy ? 0.05 : 0);
+        if (sc < bs) { bs = sc; bx = xx; by = yy; }
+      }
+      if (bx < 0) break;
+      px = bx - x; py = by - y; x = bx; y = by;
+      line.push({ x, y });
+      if (hs[y * N + x]! <= valley) break;
+    }
+    if (line.length < 6) continue;
+    const top = hs[line[0]!.y * N + line[0]!.x]!, end = hs[line[line.length - 1]!.y * N + line[line.length - 1]!.x]!;
+    const snowDrop = Math.max(0, top - Math.max(end, snowlineY));
+    const dev = line.reduce((a, t) => a + Math.abs(grid.steepness(t.x, t.y) - target), 0) / line.length;
+    const score = snowDrop * 3 + (top - end) * 1 + line.length * 0.05 - dev * 4 + (nearNet(line[line.length - 1]!.x, line[line.length - 1]!.y) ? 2 : 0);
+    if (!best || score > best.score) best = { line, score };
+  }
+  if (!best) return null;
+  const line = interpolateStroke(best.line);
+  const prof = slopeProfile(grid, line, [...networks.autoDifficulty(line).values()]);
+  const snowTiles = line.filter((t) => hs[t.y * N + t.x]! >= snowlineY).length;
+  const snowFraction = snowTiles / line.length;
+  const counts = [0, 0, 0, 0];
+  for (const s of prof.samples) counts[s.difficulty]!++;
+  const difficulty = counts.indexOf(Math.max(...counts));
+  const snowReliable = snowTiles > 0;
+  const name = ['green', 'blue', 'red', 'black'][difficulty]!;
+  const message = !snowReliable
+    ? `No snow on this run right now (the snowline is above it): it would stay closed until the snowline drops. A ${name} run of ${Math.round(prof.lengthM)} m is suggested anyway.`
+    : snowFraction < 0.6
+      ? `${Math.round(snowFraction * 100)}% of this ${name} run is above today's snowline: the lower part may be bare in warm weather.`
+      : `A ${name} run of ${Math.round(prof.lengthM)} m, dropping ${Math.round(prof.dropM)} m, mostly above the snowline.`;
+  return { line, lengthM: prof.lengthM, startAltM: prof.startAltM, endAltM: prof.endAltM, difficulty, snowFraction, snowReliable, message };
+}
