@@ -20,6 +20,8 @@ export interface SkiSchoolHooks {
   onStarted?: (schoolId: number, kids: number[], instructors: number) => void;
   /** Lesson finished: the runtime grants skill/happiness to the kids through this callback. */
   onFinished?: (schoolId: number, g: LessonGroup, fee: number) => void;
+  /** Staff pool fill x instructor-training modifier (1 = untouched; Task 19 / 20). */
+  capacityFactor?: () => number;
 }
 
 export class SkiSchool {
@@ -33,7 +35,7 @@ export class SkiSchool {
   constructor(readonly id: number, private hooks: SkiSchoolHooks = {}) {}
 
   setInstructors(n: number): void { this.instructors = Math.max(0, Math.min(SKI_SCHOOL.maxInstructors, Math.floor(n))); }
-  get capacity(): number { return this.instructors * SKI_SCHOOL.kidsPerInstructor; }
+  get capacity(): number { return Math.floor(this.instructors * SKI_SCHOOL.kidsPerInstructor * (this.hooks.capacityFactor?.() ?? 1)); }
   get activeKids(): number { return this.active.reduce((a, g) => a + g.kids.length, 0); }
   get queuedKids(): number { return this.queue.reduce((a, g) => a + g.kids.length, 0); }
   /** 0..1: how well the instructors cover the demand (instructor ratio), used as school quality. */

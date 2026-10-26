@@ -19,11 +19,14 @@ export function ratingChipText(delta: number): string | null {
   return `${delta > 0 ? '+' : '\u2212'}${Math.abs(delta).toFixed(1)}\u2605`;
 }
 
+/** Regional market share (Task 23): your share 0..1, rank (1 = leader) among `of` resorts. */
+export interface MarketInfo { share: number; rank: number; of: number }
+
 /** HUD rating widget: stars + smiley with a breakdown tooltip; click toggles a bar panel with hints. */
 export class StRating extends StElement {
   private label = document.createElement('span');
   private panel = document.createElement('div');
-  private get: (() => { breakdown: RatingBreakdown; happiness: number }) | null = null;
+  private get: (() => { breakdown: RatingBreakdown; happiness: number; market?: MarketInfo | null }) | null = null;
   private timer = 0;
   private chip = document.createElement('span');
   private baseScore: number | null = null;
@@ -31,7 +34,7 @@ export class StRating extends StElement {
   private chipTimer = 0;
 
   protected css(): string {
-    return `:host{position:relative}span.l{cursor:pointer;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}.pop{position:absolute;top:26px;right:0;width:260px;z-index:5;flex-direction:column;align-items:stretch;gap:3px}
+    return `:host{position:relative}span.l{cursor:pointer;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}.pop{position:absolute;top:26px;right:0;width:260px;z-index:5;background:rgba(22,32,46,.98);border:1px solid #34465e;border-radius:8px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.45);flex-direction:column;align-items:stretch;gap:3px}
 .row{display:grid;grid-template-columns:100px 1fr 28px;gap:6px;align-items:center;font-size:11px}.t{height:7px;background:#233044;border-radius:4px;overflow:hidden}.f{height:100%;background:#4caf50}.tip{color:#ffd070;font-size:11px}
 .chip[hidden]{display:none}.chip{font-size:10px;font-weight:700;padding:0 4px;border-radius:7px;background:rgba(28,42,56,.7);margin-left:2px;opacity:0;transition:opacity .6s ease}.chip.up{color:#a8dca0}.chip.down{color:#e6a39a}.chip.on{opacity:.95}
 svg.fade{animation:starfade .7s ease-out}@keyframes starfade{from{opacity:.35}to{opacity:1}}
@@ -47,7 +50,7 @@ svg.fade{animation:starfade .7s ease-out}@keyframes starfade{from{opacity:.35}to
     this.root.append(this.label, this.panel);
   }
 
-  bind(get: () => { breakdown: RatingBreakdown; happiness: number }): void {
+  bind(get: () => { breakdown: RatingBreakdown; happiness: number; market?: MarketInfo | null }): void {
     this.get = get; this.refresh();
     window.clearInterval(this.timer);
     this.timer = window.setInterval(() => this.refresh(), 1000);
@@ -68,9 +71,18 @@ svg.fade{animation:starfade .7s ease-out}@keyframes starfade{from{opacity:.35}to
     this.chipTimer = window.setTimeout(() => { this.chip.classList.remove('on'); this.chipTimer = window.setTimeout(() => { this.chip.hidden = true; }, 650); }, CHIP_MS);
   }
 
+  /** The details panel is fixed to the viewport under the stars: the HUD box clips (overflow:hidden) anything that is merely absolutely positioned inside it. */
+  private place(): void {
+    const r = this.label.getBoundingClientRect();
+    this.panel.style.position = 'fixed';
+    this.panel.style.top = `${Math.round(r.bottom + 6)}px`;
+    this.panel.style.left = 'auto';
+    this.panel.style.right = `${Math.max(8, Math.round(window.innerWidth - r.right))}px`;
+  }
+
   refresh(): void {
     if (!this.get) return;
-    const { breakdown: b, happiness } = this.get();
+    const { breakdown: b, happiness, market } = this.get();
     const stars = starRow(b.stars, 12);
     if (this.baseStars >= 0 && b.stars !== this.baseStars) stars.classList.add('fade'); // gentle crossfade, no bounce
     this.baseStars = b.stars;
@@ -79,6 +91,7 @@ svg.fade{animation:starfade .7s ease-out}@keyframes starfade{from{opacity:.35}to
     this.label.setAttribute('role', 'button'); this.label.setAttribute('aria-label', `Resort rating ${b.stars} of 5 stars. Click for details`); this.label.tabIndex = 0;
     this.label.title = ratingTooltip(b);
     if (this.panel.hidden) return;
+    this.place();
     const rows = b.components.map((c) => {
       const r = document.createElement('div'); r.className = 'row';
       const n = document.createElement('span'); n.textContent = c.label; n.title = c.hint;
@@ -87,6 +100,8 @@ svg.fade{animation:starfade .7s ease-out}@keyframes starfade{from{opacity:.35}to
       r.append(n, t, v); return r;
     });
     const tips = b.hints.slice(0, 3).map((h) => { const d = document.createElement('div'); d.className = 'tip'; d.append(icon('bulb', 12), ` ${h}`); return d; });
-    this.panel.replaceChildren(...rows, ...tips);
+    const m = market ? document.createElement('div') : null;
+    if (m && market) { m.className = 'tip mkt'; m.style.color = '#9fb4cc'; m.textContent = `Market share ${Math.round(market.share * 100)}% (#${market.rank} of ${market.of} nearby resorts)`; m.title = 'Your share of the region\u2019s guests, from your rating and day-pass price compared with your neighbours.'; }
+    this.panel.replaceChildren(...rows, ...(m ? [m] : []), ...tips);
   }
 }

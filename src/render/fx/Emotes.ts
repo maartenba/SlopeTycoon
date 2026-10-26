@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GState, type GuestStore } from '@/sim/guests/Guest';
-import { clusterKey, clusterRepresentatives, EMOTES, pickEmote, type EmoteCandidate, type EmoteKind, type EmoteMemo, type EmoteNeeds } from './emotePick';
+import { clusterKey, clusterRepresentatives, EMOTES, pickEmote, wildlifeAllowed, type EmoteCandidate, type EmoteKind, type EmoteMemo, type EmoteNeeds } from './emotePick';
 import type { FeedbackPolicy } from './feedbackPolicy';
 import { renderRng } from './Particles';
 
@@ -13,14 +13,14 @@ export const EMOTE_PX = 24;
 export const EMOTE_OPACITY = 0.9;
 /** Queue-cluster cell (world tiles). */
 export const EMOTE_CELL = 5;
-const CELL_PX = 64, COLS = 3, ROWS = 2;
+const CELL_PX = 64, COLS = 4, ROWS = 2;
 
 const rr = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void => { c.beginPath(); c.roundRect(x, y, w, h, r); };
-/** Draw the six vector glyphs into an atlas canvas (3 x 2 cells of 64 px). No emoji / font dependency. */
+/** Draw the seven vector glyphs into an atlas canvas (4 x 2 cells of 64 px). No emoji / font dependency. */
 export function drawEmoteAtlas(ctx: CanvasRenderingContext2D): void {
   ctx.clearRect(0, 0, CELL_PX * COLS, CELL_PX * ROWS);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const colours: Record<EmoteKind, string> = { hungry: '#f0b45a', cold: '#8fd0f5', tired: '#b9a8e8', happy: '#ffd36b', angry: '#ff7a6a', scared: '#e8e2b8' };
+  const colours: Record<EmoteKind, string> = { hungry: '#f0b45a', cold: '#8fd0f5', tired: '#b9a8e8', happy: '#ffd36b', angry: '#ff7a6a', scared: '#e8e2b8', wildlife: '#9fd89a' };
   EMOTES.forEach((k, i) => {
     const ox = (i % COLS) * CELL_PX, oy = Math.floor(i / COLS) * CELL_PX, cx = ox + 32, cy = oy + 32;
     ctx.fillStyle = 'rgba(24,36,50,0.86)'; ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI * 2); ctx.fill();
@@ -33,6 +33,10 @@ export function drawEmoteAtlas(ctx: CanvasRenderingContext2D): void {
       case 'tired': ctx.moveTo(cx - 12, cy - 10); ctx.lineTo(cx + 8, cy - 10); ctx.lineTo(cx - 12, cy + 12); ctx.lineTo(cx + 8, cy + 12); ctx.stroke(); break;
       case 'happy': ctx.arc(cx, cy + 1, 15, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx - 8, cy - 8, 3.2, 0, 7); ctx.arc(cx + 8, cy - 8, 3.2, 0, 7); ctx.fill(); break;
       case 'angry': ctx.moveTo(cx, cy - 15); ctx.lineTo(cx, cy + 3); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy + 13, 3.4, 0, 7); ctx.fill(); break;
+      case 'wildlife': // paw print: pad + four toes
+        ctx.ellipse(cx, cy + 7, 10, 8, 0, 0, 7); ctx.fill(); ctx.beginPath();
+        for (const [dx, dy, r] of [[-12, -4, 4.2], [-4.5, -12, 4.4], [4.5, -12, 4.4], [12, -4, 4.2]] as const) { ctx.moveTo(cx + dx + r, cy + dy); ctx.arc(cx + dx, cy + dy, r, 0, 7); }
+        ctx.fill(); break;
       case 'scared': ctx.arc(cx - 8, cy - 5, 5, 0, 7); ctx.arc(cx + 8, cy - 5, 5, 0, 7); ctx.lineWidth = 3.5; ctx.stroke(); ctx.beginPath(); rr(ctx, cx - 6, cy + 6, 12, 10, 5); ctx.stroke(); break;
     }
   });
@@ -55,6 +59,8 @@ export interface EmoteDeps {
   cold: () => number;
   /** First sight of wildlife for this guest (optional). */
   sighting?: (slot: number) => boolean;
+  /** A bear / deer is within sight of this guest (see `WildlifeSight`). */
+  wildlife?: (slot: number) => boolean;
   /** Where the emote floats: x, y (up), z. Return false when the guest isn't drawn. */
   anchor: (slot: number, out: THREE.Vector3) => boolean;
   rng?: () => number;
@@ -73,6 +79,7 @@ export class Emotes {
   private prev: EmoteNeeds[];
   private prevRuns: Int32Array; private prevId: Int32Array; private memoDay: Int32Array; private memoCount: Uint8Array;
   private lastTick = -1;
+  private lastWildlifeTick = -1e9;
   private cellAttr: THREE.InstancedBufferAttribute; private alphaAttr: THREE.InstancedBufferAttribute;
   private rng: () => number;
   private v = new THREE.Vector3(); private m = new THREE.Matrix4(); private q = new THREE.Quaternion(); private sc = new THREE.Vector3();
@@ -170,16 +177,18 @@ export class Emotes {
       const old: EmoteNeeds = tmpPrev;
       if (this.prevId[i] !== id) { // new guest in this slot: no crossing on the first look
         this.prevId[i] = id; this.prevRuns[i] = s.runs[i]!; this.memoDay[i] = -1; this.memoCount[i] = 0;
-        fill(now, day, s, i, cold, 0, false, false); continue;
+        fill(now, day, s, i, cold, 0, false, false, false); continue;
       }
       Object.assign(old, now);
-      fill(now, day, s, i, cold, st === GState.Queueing ? (tick - s.actTick[i]!) * 0.25 : 0, s.runs[i]! > this.prevRuns[i]!, this.d.sighting?.(i) ?? false);
+      fill(now, day, s, i, cold, st === GState.Queueing ? (tick - s.actTick[i]!) * 0.25 : 0, s.runs[i]! > this.prevRuns[i]!, this.d.sighting?.(i) ?? false, this.d.wildlife?.(i) ?? false);
       this.prevRuns[i] = s.runs[i]!;
       if (far || st === GState.Sleeping || st === GState.Leaving) continue;
       this.v.set(s.x[i]!, s.z[i]! + 0.3, s.y[i]!).project(camera);
       if (Math.abs(this.v.x) > 1 || Math.abs(this.v.y) > 1) continue; // only guests on screen
       memo.day = this.memoDay[i]!; memo.count = this.memoCount[i]!;
       const kind = pickEmote(now, old, memo, p);
+      // wildlife paw: rare + quiet (one global cooldown, one dice roll per first sighting); other kinds are not affected
+      if (kind === 'wildlife' && !wildlifeAllowed(tick, this.lastWildlifeTick, this.rng())) continue;
       if (kind) cands.push({ slot: i, x: s.x[i]!, z: s.y[i]!, kind });
     }
     if (!cands.length) return;
@@ -193,6 +202,7 @@ export class Emotes {
       this.memoCount[i]!++;
       this.live.push({ slot: i, id: s.id[i]!, kind: EMOTES.indexOf(c.kind), age: 0, key: clusterKey(c.x, c.z, EMOTE_CELL), ox: (this.rng() - 0.5) * 0.3 });
       this.stats.spawned++;
+      if (c.kind === 'wildlife') this.lastWildlifeTick = tick;
     }
   }
   private keyOf(slot: number): number { return clusterKey(this.store.x[slot]!, this.store.y[slot]!, EMOTE_CELL); }
@@ -200,11 +210,11 @@ export class Emotes {
   dispose(): void { this.mesh.geometry.dispose(); (this.mesh.material as THREE.ShaderMaterial).uniforms.uAtlas!.value.dispose(); (this.mesh.material as THREE.Material).dispose(); }
 }
 
-const blank = (): EmoteNeeds => ({ day: 0, hunger: 0, fatigue: 0, happiness: 0, queueMin: 0, cold: 0, runDone: false, sighting: false });
+const blank = (): EmoteNeeds => ({ day: 0, hunger: 0, fatigue: 0, happiness: 0, queueMin: 0, cold: 0, runDone: false, sighting: false, wildlife: false });
 const tmpPrev = blank();
 const memo: EmoteMemo = { day: -1, count: 0 };
-function fill(o: EmoteNeeds, day: number, s: GuestStore, i: number, cold: number, queueMin: number, runDone: boolean, sighting: boolean): void {
-  o.day = day; o.hunger = s.hunger[i]!; o.fatigue = s.fatigue[i]!; o.happiness = s.happiness[i]!; o.queueMin = queueMin; o.cold = cold; o.runDone = runDone; o.sighting = sighting;
+function fill(o: EmoteNeeds, day: number, s: GuestStore, i: number, cold: number, queueMin: number, runDone: boolean, sighting: boolean, wildlife = false): void {
+  o.day = day; o.hunger = s.hunger[i]!; o.fatigue = s.fatigue[i]!; o.happiness = s.happiness[i]!; o.queueMin = queueMin; o.cold = cold; o.runDone = runDone; o.sighting = sighting; o.wildlife = wildlife;
 }
 function makeAtlas(): THREE.Texture {
   const tex = new THREE.CanvasTexture(typeof document !== 'undefined' ? document.createElement('canvas') : (undefined as unknown as HTMLCanvasElement));

@@ -34,7 +34,9 @@ describe('L-shaped road', () => {
   });
   it('corner mesh reaches both connected tile edges and fills the centre, no gap', () => {
     const { net } = mk();
-    net.buildSegment(NetKind.Path, lineTiles({ x: 10, y: 10 }, { x: 13, y: 13 }));
+    // an isolated W|S corner (neighbours are dead ends, so every edge tangent stays axis-aligned)
+    net.buildSegment(NetKind.Path, lineTiles({ x: 12, y: 10 }, { x: 13, y: 10 }));
+    net.buildSegment(NetKind.Path, lineTiles({ x: 13, y: 10 }, { x: 13, y: 11 }));
     const d = geo();
     tileNetwork(d, (net as unknown as { grid: Grid }).grid, net, 13, 10); // W|S corner
     const b = bounds(d);

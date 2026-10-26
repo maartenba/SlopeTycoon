@@ -47,7 +47,7 @@ Ratio `r` = your value / benchmark (or benchmark / value when fewer is better), 
 
 * Change a benchmark in `REGIONAL_BASELINES`; check with `tests/sim/meta/yearReport.test.ts` (snapshot of the starter + bot run on the 64 map: first year partial, second a full year, Silver with 14/27 points) and update the snapshot deliberately.
 * Change the tier or headline cuts in `TIER_RATIO` / `HEADLINE_SHARE`. The bot (a "reasonable, not clever" player) should land around Silver, a careless resort at nothing, only an excellent one at Gold.
-* Rivals (Task 23): implement `BaselineProvider { baseline(metric, {mapSize, year}) }` and assign it to `sim.yearReports.baselines`.
+* Rivals (Task 23, done): `sim.rivals` implements `BaselineProvider` and is assigned to `sim.yearReports.baselines` (the static table scaled by the neighbours' stars, see docs/rivals.md). The report carries `rivals` (your share, rank and the neighbours) and there are ten awards (new: **Green Resort**, the year-mean sustainability facet).
 
 ## Report contents
 

@@ -25,6 +25,8 @@ export class Patrol implements Responder {
   agents: PatrolAgent[] = [];
   private staff = new Map<number, number>();
   private nextId = 1;
+  /** Staff pool fill x patrol training (Task 19 / 20); 1 = untouched. */
+  speedFactor: () => number = () => 1;
 
   constructor(private d: PatrolDeps) {}
 
@@ -38,6 +40,8 @@ export class Patrol implements Responder {
 
   staffOf(hubId: number): number { return this.staff.get(hubId) ?? BUILDINGS.patrolHub?.staff ?? 2; }
   setStaff(hubId: number, n: number): void { this.staff.set(hubId, Math.max(0, Math.min(PATROL.maxStaff, Math.round(n)))); }
+  /** Auto headcount for the staff pool: configured sleds of every active hub. */
+  staffNeed(): number { let n = 0; for (const h of this.d.coverage.sources('patrol')) n += this.staffOf(h.id); return n; }
   sledsOf(hubId: number): number { return this.agents.filter((a) => a.kind === 'sled' && a.homeId === hubId).length; }
 
   /** Reconcile agents with the active patrol hubs / first-aid huts (call when coverage changes or periodically). */
@@ -71,7 +75,7 @@ export class Patrol implements Responder {
 
   private speed(a: PatrolAgent, x: number, y: number): number {
     const base = a.kind === 'sled' ? PATROL.sledSpeed : PATROL.walkerSpeed;
-    return base * (this.d.isPiste?.(x, y) === false ? PATROL.offPisteFactor : 1);
+    return base * (this.d.isPiste?.(x, y) === false ? PATROL.offPisteFactor : 1) * this.speedFactor();
   }
 
   private radius(a: PatrolAgent): number {

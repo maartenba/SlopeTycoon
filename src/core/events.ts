@@ -14,6 +14,8 @@ export interface GameEvents {
   'guest:left': { id: number; reason: 'satisfied' | 'bored' | 'broke' | 'injured' | 'closing' };
   /** A departing guest left a short review (~5% of departures, <= 6 per day). Not a toast and not a main news row: shown in the News 'Reviews' tab. `x`/`y` (tile) only when a place is known. */
   'guest:review': { guestId: number; stars: number; text: string; tone: 'plain' | 'light'; driver: string; x?: number; y?: number };
+  /** A story guest's wish resolved (M5.4 Task 22). `text` is the plain-voice news line; a failure also emits a mild `guest:review`. `x`/`y` = where the guest was last seen (tiles). */
+  'story:resolved': { guestId: number; name: string; wish: string; outcome: 'granted' | 'failed'; text: string; tone: 'plain' | 'light'; tip: number; x: number; y: number };
   /** A building was placed. */
   'building:placed': { id: number; type: string; x: number; y: number };
   /** A building was removed (bulldozed). */
@@ -126,7 +128,7 @@ export const GAME_EVENT_NAMES = [
   'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened',
   'piste:opened', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'incident:avalanche', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated',
   'incident:injury', 'incident:created', 'incident:resolved', 'incident:escalated', 'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'lift:broken', 'lift:repaired', 'incident:stranded', 'ops:schedule', 'finance:monthClosed', 'rating:changed', 'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'lift:closed', 'weather:changed', 'attraction:opened', 'attraction:closed',
-  'ops:grooming', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished',
+  'ops:grooming', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished', 'story:resolved',
 ] as const satisfies readonly GameEventName[];
 
 type Missing = Exclude<GameEventName, (typeof GAME_EVENT_NAMES)[number]>;

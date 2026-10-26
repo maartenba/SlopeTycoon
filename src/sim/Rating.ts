@@ -27,16 +27,28 @@ export interface RatingInput {
   scenery?: number;
   /** 0..1 debt severity (0 = solvent); optional. */
   debt?: number;
+  /** Sustainability facet (Task 23): score 0..100 + the hint of its weakest part. Absent (older tests, headless snapshots) = the facet is left out and the other weights are renormalised. */
+  sustainability?: { score: number; hint: string };
 }
 
 /** Component hints that are good news, not advice (the advisor never shows them as a to-do). */
-export const POSITIVE_HINTS: ReadonlySet<string> = new Set(['Guests are happy', 'Safe resort', 'Great variety', 'Pistes in good shape', 'Short queues', 'Comfortable', 'Fair prices']);
+export const POSITIVE_HINTS: ReadonlySet<string> = new Set(['Guests are happy', 'Safe resort', 'Great variety', 'Pistes in good shape', 'Short queues', 'Comfortable', 'Fair prices', 'Gentle on the mountain']);
 
 export interface RatingComponent { id: string; label: string; score: number; weight: number; hint: string }
 export interface RatingBreakdown { score: number; stars: number; components: RatingComponent[]; bonus: number; bonusHints: string[]; hints: string[] }
 
 const clamp = (v: number, lo = 0, hi = 1): number => Math.min(hi, Math.max(lo, v));
-export const WEIGHTS = { happiness: 0.25, safety: 0.2, variety: 0.15, pisteQuality: 0.12, queues: 0.12, crowding: 0.04, value: 0.12 } as const;
+/**
+ * Component weights (sum 1). Task 23 added `sustainability` (8 %) and renormalised the rest: old x 0.92 rounded to hundredths
+ * (happiness .25 -> .23, safety .20 -> .18, variety .15 -> .14, pisteQuality .12 -> .11, queues .12 -> .11, crowding .04, value .12 -> .11). See docs/rating.md.
+ */
+export const WEIGHTS = { happiness: 0.23, safety: 0.18, variety: 0.14, pisteQuality: 0.11, queues: 0.11, crowding: 0.04, value: 0.11, sustainability: 0.08 } as const;
+/** Weighted sum of component scores, renormalised over the components that are present (all 8 normally; 7 when the facet is not measured). */
+export function weightedSum(comps: ReadonlyArray<{ score: number; weight: number }>): number {
+  let s = 0, w = 0;
+  for (const c of comps) { s += c.score * c.weight; w += c.weight; }
+  return w > 0 ? s / w : 0;
+}
 /** Pistes: tiles per difficulty that count as a full offering. */
 export const FULL_PISTE_TILES = 30;
 export const starsOf = (score: number): number => Math.round(clamp(score, 0, 100) / 10) / 2;
@@ -93,7 +105,9 @@ export function scoreInput(i: RatingInput): RatingBreakdown {
   // value
   add('value', 'Value for money', 100 * clamp(i.value), i.value < 0.4 ? 'Prices are high for the quality' : 'Fair prices');
 
-  let score = out.reduce((a, c) => a + c.score * c.weight, 0);
+  if (i.sustainability) add('sustainability', 'Sustainability', i.sustainability.score, i.sustainability.hint);
+
+  let score = weightedSum(out);
 
   // bonuses
   const bonusHints: string[] = [];
@@ -164,8 +178,8 @@ export class Rating {
     });
     this.smoothBonus += (raw.bonus - this.smoothBonus) * a;
     // recombine from smoothed parts, re-applying the incident multipliers through the raw/unsmoothed ratio
-    const base = comps.reduce((x, c) => x + c.score * c.weight, 0) + this.smoothBonus;
-    const rawBase = raw.components.reduce((x, c) => x + c.score * c.weight, 0) + raw.bonus;
+    const base = weightedSum(comps) + this.smoothBonus;
+    const rawBase = weightedSum(raw.components) + raw.bonus;
     const mult = rawBase > 0 ? raw.score / rawBase : 1; // < 1 only while incidents are open
     const score = clamp(base * Math.min(1, mult), 0, 100);
     this.last = { ...raw, components: comps, score: Math.round(score * 10) / 10, stars: starsOf(score), bonus: Math.round(this.smoothBonus * 10) / 10 };

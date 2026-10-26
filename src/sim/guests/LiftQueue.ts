@@ -71,7 +71,9 @@ export class LiftQueues {
   }
 
   /** Riders that can board per tick. */
-  ratePerTick(l: LiftData): number { return (this.stats(l).throughputPerHour / 3600) * LIFT_SECONDS_PER_TICK; }
+  /** Lift-operator pool fill (Task 19); 1 = untouched. */
+  crewFactor: () => number = () => 1;
+  ratePerTick(l: LiftData): number { return (this.stats(l).throughputPerHour / 3600) * LIFT_SECONDS_PER_TICK * this.crewFactor(); }
   rideTicks(l: LiftData): number { return Math.max(2, Math.ceil((this.stats(l).rideTimeS + LIFTS[l.kind].loadTimeS) / LIFT_SECONDS_PER_TICK)); }
 
   /** Guests currently on the cable of a lift (both directions). */

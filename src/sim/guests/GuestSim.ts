@@ -71,6 +71,8 @@ export class GuestSim {
   pisteSpeedFactor: ((tile: number) => number) | null = null;
   /** Safety hook (Task 26): called when a run ends in injury; returns true when the incident system took the guest over (frozen as Injured). */
   injuryHook: ((guestId: number, x: number, y: number, f: { over: number; offPiste: boolean; quality: number }) => boolean) | null = null;
+  /** Observer hook run at the end of every guest tick (story guests poll the store here; it must never change guest behaviour). */
+  afterUpdate: ((tick: number) => void) | null = null;
   private tick = 0;
   /** Guest reviews (M5.1): own RNG, never touches the sim RNG or the saved state. `reviewPlace` names the spot (Names.describeLocation). */
   readonly reviews = new ReviewDirector();
@@ -424,6 +426,7 @@ export class GuestSim {
       this.decide(i, rng);
     }
     this.families.sync();
+    this.afterUpdate?.(tick);
   }
 
   /** Hikers and bikers do not linger after a stop (the excursion model makes a trail goal worth the day). */

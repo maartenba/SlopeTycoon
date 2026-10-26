@@ -47,11 +47,18 @@ import { networkProviderFrom } from '../build/NetworkAdapter';
 import { heightAt } from '../render/Picking';
 import { Nature } from '../sim/nature/Nature';
 import { Marketing } from '../sim/Marketing';
-import { EVENING_VENUES } from '../sim/guests/Decision';
+import { EVENING_VENUES, FOOD } from '../sim/guests/Decision';
 import { accepts as elasticAccepts, affordShare, demandMultiplier, mixVolume } from '../sim/Elasticity';
 import { TYPE_MIX, offSeasonNoLiftFactor } from '../sim/guests/Spawner';
 import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, type DayClass, type ScheduleProfile } from '../config/marketing';
 import { PRICE_TABLE } from '../config/prices';
+import { Staff } from '../sim/staff/Staff';
+import { StaffUpgrades } from '../sim/staff/Upgrades';
+import { EventCalendar } from '../sim/events/EventCalendar';
+import { Stories } from '../sim/guests/Stories';
+import { STAFF } from '../config/staff';
+import { SKI_SCHOOL } from '../sim/attractions/SkiSchool';
+import { lockedReason } from '../config/unlocks';
 import { applySave, type SaveModules } from './saveState';
 import { Goals, type GoalWorld } from '../sim/goals/Goals';
 import { Achievements } from '../sim/meta/Achievements';
@@ -69,6 +76,10 @@ import { WEATHER_CODES } from '../sim/meta/StatsHistory';
 import { Layer as StatLayer } from '../world/Networks';
 import { DEFAULT_CONFIG, difficultyDef, normalizeConfig, startingMoney, walkingRadius, type GameConfig } from './difficulty';
 import { buildStarterResort } from './starterResort';
+import { Sustainability, sustainHint } from '../sim/meta/Sustainability';
+import { Rivals } from '../sim/meta/Rivals';
+import { SUSTAIN } from '../config/rivals';
+import { TREE_KINDS } from '../world/Props';
 import { ScenarioRunner, type ScenarioWorld } from '../sim/scenario/ScenarioRunner';
 import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
@@ -88,6 +99,12 @@ export interface SimOptions {
   size: MapSize;
   seed: number;
   hooks?: SimHooks;
+  /** Automatic events of the Events calendar (Almabtrieb, New Year, critic visits, powder days). The game turns them on; headless sims / tests default to off. Booked festivals always work. */
+  autoEvents?: boolean;
+  /** Rival market share scales arrivals (default true). The guided tutorial passes false: exactly neutral. Scenarios are always neutral. */
+  rivalMarket?: boolean;
+  /** Story guests (named guests with one wish; sim/guests/Stories.ts). The game turns them on; headless sims / tests default to off. */
+  stories?: boolean;
   /** Starting money override (tests). */
   money?: number;
   /** Place the free starting Base Lodge (default true). */
@@ -125,6 +142,9 @@ export interface SimOptions {
 }
 
 /** Expected registry order after createSim (guarded by tests/game/createSim.test.ts). */
+/** Ledger categories the hospitality training lifts (Task 20): food, drinks, shop. */
+const HOSPITALITY_CATS: ReadonlySet<string> = new Set(['restaurants', 'bars', 'shops']);
+
 export const EXPECTED_SYSTEM_IDS = ['clock', 'season', 'weather', 'spawner', 'guests', 'attractions', 'ops', 'economy', 'rating'] as const;
 
 /** Terrain surface height at a tile position (world units). */
@@ -381,7 +401,7 @@ export function createSim(opts: SimOptions) {
     store: guestSim.store,
     hash: guestSim.hash,
     status: (id) => openStatus.buildingStatus(id),
-    earn: (c, a) => { economy.earn(c, a); const fb = c === 'restaurants' ? natureRef?.farmBonus() ?? 0 : 0; if (fb > 0) economy.earn(c, Math.round(a * fb * 100) / 100); }, // Alpine Farm dairy bonus
+    earn: (c0, a0) => { const c = c0, a = HOSPITALITY_CATS.has(c) ? a0 * staffUpgrades.mod('hospitalitySpend') : a0; economy.earn(c, a); const fb = c === 'restaurants' ? natureRef?.farmBonus() ?? 0 : 0; if (fb > 0) economy.earn(c, Math.round(a * fb * 100) / 100); }, // Alpine Farm dairy bonus; hospitality training (Task 20)
     bus,
     groundAt: (x, y) => groundHeight(grid, x, y),
     lakeFrozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0,
@@ -418,6 +438,27 @@ export function createSim(opts: SimOptions) {
 
   // ---- Resort rating: daily aggregate of sim stats; drives guest arrivals ----
   const leavers = new LeaverTracker(); leavers.attach(bus);
+  // Sustainability facet (Task 23): energy per guest, trees felled vs planted, wildlife-habitat overlap (reduced by the rangers upgrade). Read-only measurements.
+  let habitatTiles: Int32Array | null = null; // forest-habitat tiles of the ORIGINAL terrain (static), built lazily
+  const treeSet = new Set<number>(TREE_KINDS);
+  const sustain = new Sustainability({
+    energyToday: () => { const e = economy.dayBuckets().expense; return (e.energy ?? 0) + (e.snowmaking ?? 0); },
+    trees: () => { let live = 0; const byKind = props.countByKind(); for (const k of treeSet) live += byKind[k] ?? 0; return { felled: props.treesFelled, planted: props.treesPlanted, live }; },
+    habitat: () => {
+      if (!habitatTiles) {
+        const fd = terrainInfo.forestDensity, list: number[] = [];
+        for (let i = 0; i < fd.length; i++) if (fd[i]! >= SUSTAIN.habitat.forestMin && grid.snowDepth[i] !== undefined && (grid.occupancy.flags[i]! & 32) === 0) list.push(i);
+        habitatTiles = Int32Array.from(list);
+      }
+      let built = 0;
+      for (let k = 0; k < habitatTiles.length; k++) { const i = habitatTiles[k]!; if ((networks.layers[i] ?? 0) !== 0 || (networks.kind[i] ?? 0) !== 0 || grid.occupancy.flags[i] !== 0) built++; }
+      return habitatTiles.length ? built / habitatTiles.length : 0;
+    },
+    protection: () => staffUpgrades.wildlifeProtection(),
+  });
+  bus.on('guest:arrived', () => sustain.noteArrival());
+  bus.on('time:hour', (e) => { if (e?.hour === 12) sustain.noteNoon(guestSim.store.count); });
+  economy.onDayClosed(() => sustain.closeDay());
   const rating: Rating = new Rating({
     bus,
     inputs: () => ({ ...gatherRatingInput({
@@ -444,10 +485,19 @@ export function createSim(opts: SimOptions) {
       qualityLike: (skill, q) => 0.5 + 0.5 * qualityPreference(skill, q),
       debt: () => finance.debtSeverity(),
       value: () => pricing.valueScore(),
-    }), scenery: nature.scenery() }),
+    }), scenery: nature.scenery(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
   });
   registry.replace(createRatingSystem(rating));
-  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor());
+  // Rivals + market share (Task 23): scales arrivals by a small bounded factor (exactly 1 in the grace period, in scenarios / the tutorial).
+  const rivals = new Rivals({
+    seed, today: () => game.date.year * DAYS_PER_YEAR + game.date.day,
+    stars: () => rating.stars, priceRatio: () => pricing.ratioOf('dayPass'), sustainability: () => sustain.last()?.score ?? null,
+    affectsArrivals: () => !sdef && opts.rivalMarket !== false,
+    news: (title, id) => bus.emit('milestone', { id, title, major: false }),
+  });
+  bus.on('day:changed', () => rivals.newDay());
+  let eventsRef: EventCalendar | null = null; // Events calendar (festival / critic / powder arrival effects), built further down
+  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (eventsRef?.arrivalMult() ?? 1) * rivals.arrivalMult());
   pricing.bind({
     date: () => game.date,
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
@@ -538,6 +588,80 @@ export function createSim(opts: SimOptions) {
     const rs = economy.reports();
     return { resortValue: resortValue(), rating: rating.stars, annualRevenue: rs.slice(-12).reduce((a, r) => a + r.incomeTotal, 0), monthlyNet: rs.length ? rs[rs.length - 1]!.net : 0 };
   };
+  // ---- Staff (Task 19, AUTO by default = pre-staff behaviour) + six staff upgrades (Task 20): hooks into the systems below ----
+  const staff = new Staff({
+    wageScale: () => diff.wages * (mods.costMultipliers?.wages ?? 1),
+    needs: () => ({
+      instructors: buildings.all().reduce((a, b) => a + (b.type === 'skiSchoolHQ' && b.active ? guestSim.families.schools.get(b.id)?.instructors ?? SKI_SCHOOL.defaultInstructors : 0), 0),
+      patrol: safety.patrol.staffNeed(),
+      groomers: ops.grooming.fleetNeed(),
+      liftOps: lifts.all().reduce((a, l) => a + (STAFF.liftCrew[LIFTS[l.kind]?.family ?? 'chair'] ?? 1), 0),
+    }),
+  });
+  const staffUpgrades = new StaffUpgrades({
+    funds: () => game.money,
+    pay: (a) => { economy.spend('staff', a); return true; },
+    gate: (lvl) => (progression.open || progression.level >= lvl ? null : lockedReason(lvl)),
+    onDone: (def) => bus.emit('milestone', { id: `staff:${def.id}`, title: `Training complete: ${def.name}`, major: false }),
+  });
+  bus.on('day:changed', () => { staff.newDay(); staffUpgrades.newDay(); });
+
+  // ---- Events calendar (Task 21): booked festivals + automatic Almabtrieb / New Year / critic / powder day. Neutral (x1) when nothing is on ----
+  const absDay = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
+  let blackCache = { day: -1, v: false };
+  const events = new EventCalendar({
+    today: absDay, funds: () => game.money, pay: (a) => { economy.spend('marketing', a); return true; }, refund: (a) => { economy.refund(a, 'marketing'); },
+    stars: () => rating.stars,
+    gate: (lvl) => (progression.open || progression.level >= lvl ? null : lockedReason(lvl)),
+    hasLodge: () => buildings.all().some((b) => b.type === 'baseLodge'),
+    hasBlackPiste: () => {
+      if (blackCache.day === absDay()) return blackCache.v;
+      let v = false; const lay = networks.layers, kd = networks.kind, df = networks.difficulty;
+      for (let i = 0; i < lay.length; i++) if ((lay[i]! & NetLayer.Ski) && kd[i] === 0 && df[i] === 3) { v = true; break; }
+      blackCache = { day: absDay(), v };
+      return v;
+    },
+    powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
+    hasHerd: () => nature.livestock.animals.length > 0,
+    critic: () => { const x = safety.incidents.stats(); return { stars: rating.stars, happiness: avgHappiness(), openShare: openStatus.pisteStatuses().length ? openStatus.pisteStatuses().filter((p) => p.open).length / openStatus.pisteStatuses().length : 0, incidents: x.penalty > 0 ? 1 : 0 }; },
+    cheer: (amt) => { const st = guestSim.store; for (let i = 0; i < st.limit; i++) if (st.alive[i]) st.happiness[i] = Math.min(1, st.happiness[i]! + amt); },
+    news: (m) => toast(m, 'info', 'building'),
+    seed, auto: opts.autoEvents === true,
+  });
+  eventsRef = events;
+  // Story guests (M5.4 Task 22): observer module polled at the end of every guest tick; own RNG; off unless `stories: true`.
+  const storyCache = { day: -1, black: false, trail: false };
+  const storyHas = (need: 'black' | 'meal' | 'apres' | 'school' | 'trail'): boolean => {
+    if (need === 'meal') return buildings.all().some((b) => b.active && FOOD.has(b.type));
+    if (need === 'apres') return buildings.all().some((b) => b.active && b.type === 'apresBar');
+    if (need === 'school') return buildings.all().some((b) => b.active && b.type === 'skiSchoolHQ');
+    if (storyCache.day !== absDay()) {
+      storyCache.day = absDay(); storyCache.black = false; storyCache.trail = guestSim.decider.hikeTiles.length > 0;
+      const lay = networks.layers, kd = networks.kind, df = networks.difficulty;
+      for (let i = 0; i < lay.length; i++) if ((lay[i]! & NetLayer.Ski) && kd[i] === 0 && df[i] === 3) { storyCache.black = true; break; }
+    }
+    return need === 'black' ? storyCache.black : storyCache.trail;
+  };
+  const stories = new Stories({
+    store: guestSim.store, bus, seed, today: absDay, has: storyHas,
+    buildingType: (id) => buildings.get(id)?.type ?? null,
+    isKid: (slot) => guestSim.families.isKid(slot),
+    tip: (amount) => economy.earn('other', amount),
+  });
+  stories.enabled = opts.stories === true;
+  guestSim.afterUpdate = (tick) => { if (stories.enabled) stories.update(tick); };
+  bus.on('guest:arrived', (e) => stories.onArrived(e.id));
+  bus.on('lesson:started', (e) => stories.onLesson(e.kids));
+  bus.on('guest:left', (e) => stories.onLeft(e.id));
+  bus.on('day:changed', () => events.newDay());
+  bus.on('time:hour', () => events.newHour());
+  guestSim.families.capacityFactor = () => staff.fill('instructors') * staffUpgrades.mod('instructorCapacity');
+  guestSim.queues.crewFactor = () => staff.fill('liftOps');
+  safety.patrol.speedFactor = () => staff.fill('patrol') * staffUpgrades.mod('patrolSpeed');
+  safety.wildlife.scareMod = () => staffUpgrades.mod('wildlifeScare');
+  ops.grooming.crewLimit = () => staff.groomerLimit();
+  ops.grooming.capacityMod = () => staffUpgrades.mod('groomCapacity');
+  ops.grooming.fuelMod = () => staffUpgrades.mod('groomFuel');
   // ---- Lift operations: schedules, energy, wear, inspections, breakdowns, stranded guests (ticked by the economy system) ----
   const liftOps = new LiftOps({
     lifts: () => lifts.all(), bus, seed,
@@ -547,6 +671,8 @@ export function createSim(opts: SimOptions) {
     queues: { ridersOn: (id) => guestSim.queues.ridersOn(id), queueLength: (id) => guestSim.queues.queueLength(id, 0) },
     incidents: safety.incidents,
     spend: (a) => { economy.spend('maintenance', a); },
+    breakdownFactor: () => staff.breakdownFactor() * staffUpgrades.mod('liftBreakdown'),
+    repairFactor: () => staffUpgrades.mod('liftRepairTime'),
   });
   /** Off-season relief bookkeeping (derived, not saved): consecutive idle days per venue + dollars saved this game session. */
   const closedDays = new Map<number, { sig: number; idle: number }>();
@@ -576,14 +702,14 @@ export function createSim(opts: SimOptions) {
         if (days >= OFFSEASON_RELIEF.furloughAfterDays && wage > 0) { st += wage * OFFSEASON_RELIEF.furloughWageShare; relief.furlough += wage * (1 - OFFSEASON_RELIEF.furloughWageShare); } else st += wage;
       }
       for (const id of [...closedDays.keys()]) if (!seen.has(id)) closedDays.delete(id);
-      return { buildings: b, lifts: l, staff: st, energy: lo.energy };
+      return { buildings: b, lifts: l, staff: (st + staff.extraWagesPerDay()) * staff.wageMult() + staffUpgrades.upkeepPerDay(), energy: lo.energy };
     },
     guests: () => ({ count: guestSim.store.count, happiness: avgHappiness() }),
     credit: creditCtx,
   });
   const economySystem: SimSystem = {
     id: 'economy',
-    update: (s, t) => { if (finance.ended) return; liftOps.update(s, t); finance.update(s); },
+    update: (s, t) => { if (finance.ended) return; staff.update(t); liftOps.update(s, t); finance.update(s); },
     serialize: () => ({ ...(finance.serialize() as object), liftOps: liftOps.serialize(), marketing: marketing.serialize(), pricing: pricing.serialize(), relief: { ...relief }, idle: [...closedDays] }),
     load: (d) => {
       finance.load(d); const o = d as { liftOps?: unknown; marketing?: unknown; pricing?: Parameters<Pricing['load']>[0]; relief?: typeof relief; idle?: Array<[number, { sig: number; idle: number }]> };
@@ -634,7 +760,18 @@ export function createSim(opts: SimOptions) {
   const goalWorld = (): GoalWorld => ({
     buildings: () => buildings.all(),
     lifts: () => lifts.all().map((l) => ({ kind: l.kind, open: liftOpenForBusiness(l), x: l.bottom.x, y: l.bottom.y })),
-    pistes: () => pisteIndex().list.filter((p) => !p.comp.disconnected && p.comp.count >= 4).map((p) => ({ difficulty: p.difficulty, tiles: p.comp.count, x: p.tiles[0]! % size, y: (p.tiles[0]! / size) | 0 })),
+    // One entry per (connected piste, difficulty 1 green .. 4 black) with that difficulty's tile count: a goal like 'paint a green run' must not depend on which
+    // difficulty happens to be the majority of a big connected network (the stored code is 0..3, hence the + 1).
+    pistes: () => {
+      const out: Array<{ difficulty: number; tiles: number; x: number; y: number }> = [];
+      for (const p of pisteIndex().list) {
+        if (p.comp.disconnected || p.comp.count < 4) continue;
+        const per = [0, 0, 0, 0], first = [-1, -1, -1, -1];
+        for (const t of p.tiles) { const d = Math.max(0, Math.min(3, networks.difficulty[t] ?? 0)); per[d]!++; if (first[d]! < 0) first[d] = t; }
+        for (let d = 0; d < 4; d++) if (per[d]! > 0) out.push({ difficulty: d + 1, tiles: per[d]!, x: first[d]! % size, y: (first[d]! / size) | 0 });
+      }
+      return out;
+    },
     trailTiles: () => { let n = 0; const a = networks.layers; for (let i = 0; i < a.length; i++) if (a[i]! & (NetLayer.Hike | NetLayer.Mtb)) n++; return n; },
     stars: () => rating.stars, money: () => game.money, debt: () => loans.totalDebt(),
     grant: (amount) => economy.earn('grant', amount),
@@ -703,9 +840,11 @@ export function createSim(opts: SimOptions) {
     mapSize: size, name: () => 'Your resort',
     level: () => levelHost?.progression?.level ?? null,
     goalsTotal: () => goals.view().completed,
+    rivals: (y) => rivals.section(y),
     venues: () => attractions.all().filter((a) => a.stats.revenue > 0).map((a) => ({ id: a.b.id, name: names.buildingName(a.b.id), revenue: a.stats.revenue })),
     ready: (r) => bus.emit('year:report', { year: r.year }),
   });
+  yearReports.baselines = rivals; // awards compare against the neighbours (Task 23)
 
   // ---- Scenario runner (M5.3 Task 15): daily objective evaluation off the bus; read-only world adapter ----
   if (sdef) {
@@ -747,13 +886,13 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    achievements,
+    achievements, rivals, sustain,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,
-    names, nature, leavers, rating, goals, progression, gate, advisor, session, stats, yearReports, loans, ticketing: ticketingRef, finance, liftOps, creditCtx, lodgeTouched, relief, closedDays,
+    staff, staffUpgrades, events, stories, names, nature, leavers, rating, goals, progression, gate, advisor, session, stats, yearReports, loans, ticketing: ticketingRef, finance, liftOps, creditCtx, lodgeTouched, relief, closedDays,
     /** The validated new-game options this game was created with (stored in the save, 'config' module). */
     config: cfg, difficulty: diff,
     /** Run `n` fixed ticks synchronously (tests/bench). */

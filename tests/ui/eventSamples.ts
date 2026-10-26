@@ -26,5 +26,6 @@ export const EVENT_SAMPLES: { [K in GameEventName]: GameEvents[K] } = {
   'marketing:cancelled': { id: 'families', name: 'Families', reason: 'requires: Ski School HQ' },
   'milestone': { id: 'chapter1', title: 'Chapter 1 complete', major: true },
   'scenario:objective': { id: 'guests', title: 'Welcome 500 guests', met: true },
+  'story:resolved': { guestId: 7, name: 'Anna from Linz', wish: 'black', outcome: 'granted', text: 'Anna from Linz skied a black run.', tone: 'plain', tip: 80, x: 12, y: 14 },
   'scenario:finished': { id: 'first-tracks', result: 'won', medal: 'silver', score: 120, reason: 'All objectives met.' },
 };

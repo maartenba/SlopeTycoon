@@ -12,6 +12,8 @@ export interface GuestInspectorModel {
   queue: string | null;
   family: string | null;
   thoughts: string[];
+  /** Story guest (sim/guests/Stories.ts): name, wish line, optional progress counter. */
+  story: { name: string; goal: string; progress: string | null; pinned: boolean; following: boolean } | null;
   x: number; y: number;
 }
 
@@ -19,7 +21,7 @@ const ACT: Record<number, string> = { [Act.None]: 'Deciding what to do', [Act.To
 export const BUDGET_BAR_MAX = 500;
 
 /** Pure model for the guest inspector (null if the slot is dead). `familyText` comes from Families.describe. */
-export function guestInspectorModel(s: GuestStore, slot: number, extra: { familyText?: string | null; ctx?: ThoughtCtx; queueLift?: string | null; excursionText?: string | null } = {}): GuestInspectorModel | null {
+export function guestInspectorModel(s: GuestStore, slot: number, extra: { story?: GuestInspectorModel['story']; familyText?: string | null; ctx?: ThoughtCtx; queueLift?: string | null; excursionText?: string | null } = {}): GuestInspectorModel | null {
   if (slot < 0 || !s.alive[slot]) return null;
   const pct = (v: number): string => `${Math.round(v * 100)}%`;
   const st = s.state[slot]!;
@@ -31,7 +33,7 @@ export function guestInspectorModel(s: GuestStore, slot: number, extra: { family
   const ctx: ThoughtCtx = { queueTicks: 0, ...extra.ctx };
   const th = [...contextThoughts(ctx), ...thoughts(s, slot)];
   return {
-    id: s.id[slot]!, title: `Guest #${s.id[slot]}`,
+    id: s.id[slot]!, title: extra.story ? extra.story.name : `Guest #${s.id[slot]}`, story: extra.story ?? null,
     type: GUEST_TYPE_NAMES[s.type[slot]!] ?? 'guest', skill: SKILL_NAMES[s.skill[slot]!] ?? 'beginner',
     bars: [
       { id: 'hunger', label: 'Hunger', value: s.hunger[slot]!, text: pct(s.hunger[slot]!), good: 'low' },

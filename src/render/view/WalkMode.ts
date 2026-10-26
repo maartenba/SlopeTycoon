@@ -35,7 +35,7 @@ export const PROP_RADIUS: Record<number, number> = {
   [PropKind.Conifer]: 0.1, [PropKind.Deciduous]: 0.1, [PropKind.Pine]: 0.09, [PropKind.Larch]: 0.08, [PropKind.Birch]: 0.08, [PropKind.Oak]: 0.12, [PropKind.Shrub]: 0.1, [PropKind.Snag]: 0.08, [PropKind.Rock]: 0.27,
 };
 
-/** Pure: collision circles [x, z, r] of the village decor (lamp posts, benches, planters, hedge shrubs). Parking lines / path stones / lot are flat and walkable. */
+/** Pure: collision circles [x, z, r] of the village decor (lamp posts, benches, planters, hedge shrubs, hedge rows, stone walls). Parking lines / path stones / lot are flat and walkable. */
 export function decorCircles(items: readonly DecorItem[]): number[][] {
   const out: number[][] = [];
   for (const it of items) {
@@ -46,6 +46,11 @@ export function decorCircles(items: readonly DecorItem[]): number[][] {
       case 'shrub': out.push([it.x, it.z, (0.2 + ((it.ry * 37) % 5) * 0.03) * 0.85]); break;
       case 'fountain': for (const k of [-0.25, 0, 0.25]) out.push([it.x + k, it.z, 0.3]); break;
       case 'tree': out.push([it.x, it.z, 0.1]); break;
+      case 'hedge': case 'wall': { // a continuous row of overlapping circles along the bar (local x -> (cos ry, -sin ry)); the wall is 0.19 high: more than the 0.17 step-up
+        const L = it.w ?? 1, c = Math.cos(it.ry), sn = Math.sin(it.ry), r = it.kind === 'hedge' ? 0.13 : 0.11, n = Math.max(2, Math.ceil(L / (r * 1.5)));
+        for (let k = 0; k < n; k++) { const t = ((k + 0.5) / n - 0.5) * L; out.push([it.x + c * t, it.z - sn * t, r]); }
+        break;
+      }
       case 'awning': for (const k of [-0.25, 0, 0.25]) out.push([it.x + Math.cos(it.ry) * k, it.z - Math.sin(it.ry) * k, 0.14]); break;
       default: break; // cobble / bed / fence are low and walkable (picket fences are not collision)
     }

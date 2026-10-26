@@ -16,6 +16,12 @@ export function layoutVillage(lodge: Rect, env: DecorEnv, homes: readonly Rect[]
     const i = tz * env.size + tx;
     return !env.blocked(i) && !(env.isWater?.(i) ?? false);
   };
+  /** Every sample along a hedge / wall row (every 0.4 tiles) must be free: a row never crosses a path or road tile (it is solid in walk mode). */
+  const rowFree = (x0: number, z0: number, x1: number, z1: number): boolean => {
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 0.4));
+    for (let k = 0; k <= n; k++) if (!free(x0 + (x1 - x0) * (k / n), z0 + (z1 - z0) * (k / n))) return false;
+    return true;
+  };
   const out: DecorItem[] = [];
   const add = (it: DecorItem): void => { if (free(it.x, it.z)) out.push(it); };
   const cx = lodge.x + lodge.w / 2, front = lodge.y + lodge.h, back = lodge.y;
@@ -83,8 +89,8 @@ export function layoutVillage(lodge: Rect, env: DecorEnv, homes: readonly Rect[]
     // a hedge row (or a low stone wall, seeded) on the other axis: non-blocking decor, only where both ends are free
     const hv = r(21), asWall = r(22) > 0.5;
     const lateral = side < 2 ? (hv < 0.5 ? h.x - 0.55 : h.x + h.w + 0.55) : (hv < 0.5 ? h.y - 0.55 : h.y + h.h + 0.55);
-    if (side < 2) { if (free(lateral, h.y + 0.3) && free(lateral, h.y + h.h - 0.3)) out.push({ kind: asWall ? 'wall' : 'hedge', x: lateral, z: h.y + h.h / 2, ry: Math.PI / 2, w: h.h }); }
-    else if (free(h.x + 0.3, lateral) && free(h.x + h.w - 0.3, lateral)) out.push({ kind: asWall ? 'wall' : 'hedge', x: h.x + h.w / 2, z: lateral, ry: 0, w: h.w });
+    if (side < 2) { if (rowFree(lateral, h.y + 0.02, lateral, h.y + h.h - 0.02)) out.push({ kind: asWall ? 'wall' : 'hedge', x: lateral, z: h.y + h.h / 2, ry: Math.PI / 2, w: h.h }); }
+    else if (rowFree(h.x + 0.02, lateral, h.x + h.w - 0.02, lateral)) out.push({ kind: asWall ? 'wall' : 'hedge', x: h.x + h.w / 2, z: lateral, ry: 0, w: h.w });
   }
   // parking lot: east of the lodge, two rows of stalls with painted lines
   const px = lodge.x + lodge.w + 1.8, pz = front - 0.2;
@@ -97,7 +103,7 @@ export function layoutVillage(lodge: Rect, env: DecorEnv, homes: readonly Rect[]
   return out;
 }
 
-const col = (g: THREE.BufferGeometry, hex: number, x: number, y: number, z: number, ry = 0): THREE.BufferGeometry => {
+export const col = (g: THREE.BufferGeometry, hex: number, x: number, y: number, z: number, ry = 0): THREE.BufferGeometry => {
   const geo = g.index ? g.toNonIndexed() : g;
   geo.deleteAttribute('uv');
   geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(1, 1, 1)));
@@ -107,7 +113,7 @@ const col = (g: THREE.BufferGeometry, hex: number, x: number, y: number, z: numb
   return geo;
 };
 /** One bunting pennant hanging from (x, y, z), the flag plane along the string direction (dx, dz); both faces. */
-function pennant(x: number, y: number, z: number, dx: number, dz: number, hex: number): THREE.BufferGeometry {
+export function pennant(x: number, y: number, z: number, dx: number, dz: number, hex: number): THREE.BufferGeometry {
   const hw = 0.05, h = 0.13, c = new THREE.Color(hex);
   const pos = [x - dx * hw, y, z - dz * hw, x + dx * hw, y, z + dz * hw, x, y - h, z,  x + dx * hw, y, z + dz * hw, x - dx * hw, y, z - dz * hw, x, y - h, z];
   const g = new THREE.BufferGeometry();
@@ -117,7 +123,7 @@ function pennant(x: number, y: number, z: number, dx: number, dz: number, hex: n
   return g;
 }
 /** A thin cord between two points. */
-function cord(a: THREE.Vector3, b: THREE.Vector3): THREE.BufferGeometry {
+export function cord(a: THREE.Vector3, b: THREE.Vector3): THREE.BufferGeometry {
   const d = b.clone().sub(a), len = d.length(), g = new THREE.BoxGeometry(len, MIN_PART_THICKNESS, MIN_PART_THICKNESS).toNonIndexed();
   g.deleteAttribute('uv');
   const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), d.clone().normalize());

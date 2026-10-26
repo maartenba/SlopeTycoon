@@ -279,7 +279,9 @@ export class Wildlife {
     return (t / 255) * (0.55 + 0.45 * this.scareLevel()) * calm;
   }
   /** 0..1 recent-scare level (decays over days); feeds the rating and arrival rate. */
-  scareLevel(): number { return 1 - Math.exp(-this.recent / WILD.scare.levelScale); }
+  /** Ranger training (Task 20): multiplier on the scare level (1 = untouched). */
+  scareMod: () => number = () => 1;
+  scareLevel(): number { return (1 - Math.exp(-this.recent / WILD.scare.levelScale)) * this.scareMod(); }
   /** Multiplier on guest arrivals (1 = no effect). */
   arrivalFactor(): number { return 1 - WILD.scare.arrivalLoss * this.scareLevel(); }
   /** Rating safety malus in points (0..ratingLoss). */

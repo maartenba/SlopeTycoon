@@ -6,7 +6,7 @@ export function renderRng(seed = 0x9e3779b9): () => number {
   return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-export interface Burst { x: number; y: number; z: number; count: number; kind: 'puff' | 'confetti'; /** puff colour (snow / dust) */ color?: number; scale?: number; /** Test/QA only: stretch the lifetime. */ lifeScale?: number }
+export interface Burst { x: number; y: number; z: number; count: number; kind: 'puff' | 'confetti' | 'spark'; /** puff colour (snow / dust) */ color?: number; scale?: number; /** Test/QA only: stretch the lifetime. */ lifeScale?: number }
 
 /**
  * Pooled instanced quads: ONE draw call for every puff and confetti piece. Billboarded towards the camera, fixed pool (no allocation per
@@ -17,7 +17,7 @@ export class Particles {
   private readonly n: number;
   private px: Float32Array; private py: Float32Array; private pz: Float32Array;
   private vx: Float32Array; private vy: Float32Array; private vz: Float32Array;
-  private age: Float32Array; private life: Float32Array; private size: Float32Array; private grav: Float32Array; private alive: Uint8Array;
+  private age: Float32Array; private life: Float32Array; private size: Float32Array; private grav: Float32Array; private alive: Uint8Array; private isSpark: Uint8Array;
   private head = 0;
   private m = new THREE.Matrix4(); private q = new THREE.Quaternion(); private pos = new THREE.Vector3(); private sc = new THREE.Vector3();
   private col = new THREE.Color();
@@ -30,7 +30,7 @@ export class Particles {
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     const f = (): Float32Array => new Float32Array(capacity);
     this.px = f(); this.py = f(); this.pz = f(); this.vx = f(); this.vy = f(); this.vz = f(); this.age = f(); this.life = f(); this.size = f(); this.grav = f();
-    this.alive = new Uint8Array(capacity);
+    this.alive = new Uint8Array(capacity); this.isSpark = new Uint8Array(capacity);
     this.mesh.setColorAt(0, this.col.set(0xffffff));
   }
   /** Live particle count. */
@@ -40,9 +40,15 @@ export class Particles {
     const r = this.rng, conf = b.kind === 'confetti', sc = b.scale ?? 1;
     for (let k = 0; k < b.count; k++) {
       const i = this.head; this.head = (this.head + 1) % this.n;
-      this.alive[i] = 1; this.age[i] = 0;
+      this.alive[i] = 1; this.age[i] = 0; this.isSpark[i] = b.kind === 'spark' ? 1 : 0;
       const a = r() * Math.PI * 2;
-      if (conf) {
+      if (b.kind === 'spark') { // firework spark: even burst over a sphere, short life, falls gently
+        const u = r() * 2 - 1, ring = Math.sqrt(1 - u * u), sp = (2.4 + r() * 1.2) * sc;
+        this.px[i] = b.x; this.py[i] = b.y; this.pz[i] = b.z;
+        this.vx[i] = Math.cos(a) * ring * sp; this.vz[i] = Math.sin(a) * ring * sp; this.vy[i] = u * sp;
+        this.life[i] = (1.7 + r() * 0.6) * (b.lifeScale ?? 1); this.size[i] = 0.24 + r() * 0.08; this.grav[i] = 1.2;
+        this.mesh.setColorAt(i, this.col.set(b.color ?? 0xffd070));
+      } else if (conf) {
         const sp = 1.2 + r() * 2.2;
         this.px[i] = b.x; this.py[i] = b.y; this.pz[i] = b.z;
         this.vx[i] = Math.cos(a) * sp; this.vz[i] = Math.sin(a) * sp; this.vy[i] = 3 + r() * 2.5;
@@ -68,8 +74,8 @@ export class Particles {
       if (a >= L) { this.alive[i] = 0; this.sc.set(0, 0, 0); this.m.compose(this.pos.set(0, -999, 0), this.q, this.sc); this.mesh.setMatrixAt(i, this.m); continue; }
       this.vy[i] = this.vy[i]! - this.grav[i]! * dt;
       this.px[i] = this.px[i]! + this.vx[i]! * dt; this.py[i] = Math.max(0, this.py[i]! + this.vy[i]! * dt); this.pz[i] = this.pz[i]! + this.vz[i]! * dt;
-      const t = a / L, conf = this.grav[i]! > 1;
-      const s = conf ? this.size[i]! * (1 - t * 0.4) : this.size[i]! * (0.6 + t * 0.9) * (1 - t * t * 0.3);
+      const t = a / L, conf = this.grav[i]! > 1 && !this.isSpark[i];
+      const s = this.isSpark[i] ? this.size[i]! * (1 - t * t) : conf ? this.size[i]! * (1 - t * 0.4) : this.size[i]! * (0.6 + t * 0.9) * (1 - t * t * 0.3);
       this.sc.set(s, s * (conf ? 0.6 : 1), 1);
       this.pos.set(this.px[i]!, this.py[i]!, this.pz[i]!);
       this.m.compose(this.pos, this.q, this.sc);

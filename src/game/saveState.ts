@@ -116,6 +116,20 @@ export const SAVE_MODULES: SaveModule[] = [
   ...(['clock', 'season', 'weather', 'spawner', 'guests', 'attractions', 'ops', 'economy', 'rating'] as const).map(sysModule),
   { key: 'families', version: 1, serialize: (sim) => sim.guestSim.families.serialize(), load: (sim, d) => sim.guestSim.families.load(d) },
   { key: 'openStatus', version: 1, serialize: (sim) => sim.openStatus.serialize(), load: (sim, d) => sim.openStatus.load(d) },
+  // Staff pools (Auto / override / wage level / morale) and the six staff upgrades (M5.4 Tasks 19-20). Additive: old saves have none -> Auto, nothing trained.
+  { key: 'staff', version: 1, serialize: (sim) => sim.staff.serialize(), load: (sim, d) => sim.staff.load(d), reset: (sim) => sim.staff.reset() },
+  { key: 'staffUpgrades', version: 1, serialize: (sim) => sim.staffUpgrades.serialize(), load: (sim, d) => sim.staffUpgrades.load(d), reset: (sim) => sim.staffUpgrades.reset() },
+  // Events calendar: booked festivals, critic schedule / review effect, powder day (M5.4 Task 21). Additive: old saves have none -> nothing booked.
+  { key: 'events', version: 1, serialize: (sim) => sim.events.serialize(), load: (sim, d) => sim.events.load(d), reset: (sim) => sim.events.reset() },
+  // Story guests: active wishes, counters, own RNG, pin (M5.4 Task 22). Additive: old saves have none -> no stories yet.
+  { key: 'stories', version: 1, serialize: (sim) => sim.stories.serialize(), load: (sim, d) => sim.stories.load(d), reset: (sim) => sim.stories.reset() },
+  // Rival resorts + yearly accumulators + sustainability tracker + tree counters (M5.4 Task 23). Additive: old saves have none -> fresh rivals from the seed, counters 0.
+  {
+    key: 'rivals', version: 1,
+    serialize: (sim) => ({ rivals: sim.rivals.serialize(), sustain: sim.sustain.serialize(), felled: sim.props.treesFelled, planted: sim.props.treesPlanted }),
+    load: (sim, d) => { const o = d as { rivals?: unknown; sustain?: unknown; felled?: number; planted?: number }; sim.rivals.load(o.rivals); sim.sustain.load(o.sustain); sim.props.treesFelled = o.felled ?? 0; sim.props.treesPlanted = o.planted ?? 0; },
+    reset: (sim) => { sim.rivals.reset(); sim.sustain.reset(); sim.props.treesFelled = 0; sim.props.treesPlanted = 0; },
+  },
   // Welcome-back recap data (M5.1). Additive: old saves have none -> reduced recap.
   { key: 'sessionMeta', version: 1, serialize: (sim) => sim.session.serialize(), load: (sim, d) => sim.session.load(d), reset: (sim) => sim.session.reset() },
   // Resort goal chain. Keep LAST: reset() (old saves without it) silently completes goals the restored world already satisfies.

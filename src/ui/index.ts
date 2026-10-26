@@ -28,6 +28,7 @@ import { StPauseMenu } from './components/StPauseMenu';
 import { StSelect } from './components/StSelect';
 import { StModal } from './components/StModal';
 import { StGoals } from './components/StGoals';
+import { StEvents } from './components/StEvents';
 import { StRecap } from './components/StRecap';
 import { StViewHud } from './components/StViewHud';
 import { StPhoto } from './components/StPhoto';
@@ -58,6 +59,7 @@ export const COMPONENTS = {
   'st-operations': StOperations,
   'st-piste-inspector': StPisteInspector,
   'st-marketing': StMarketing,
+  'st-events': StEvents,
   'st-pricing': StPricing,
   'st-settings': StSettings,
   'st-save-load': StSaveLoad,

@@ -8,7 +8,7 @@ export const IGNORED_EVENTS = [
   'guest:arrived', 'guest:left', 'guest:review', 'lift:closed', 'attraction:opened', 'attraction:closed', 'weather:changed', 'piste:opened',
   'ops:grooming', 'ops:schedule', 'incident:injury', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated', 'incident:stranded', 'finance:monthClosed',
   'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished',
-  'incident:resolved', 'finance:bankrupt', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'scenario:objective',
+  'incident:resolved', 'finance:bankrupt', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'scenario:objective', 'story:resolved',
   // money:changed: the ka-ching is tied to the significant +$ popups (FX layer, throttled to 1 per 3 s), not to every sale.
   'money:changed',
 ] as const satisfies readonly GameEventName[];

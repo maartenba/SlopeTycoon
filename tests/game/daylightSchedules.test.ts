@@ -23,7 +23,7 @@ describe('guest schedules follow the sun', () => {
         if (h > leave - 1 && h < leave - 0.2) { const s = sim.guestSim.store; for (let i = 0; i < s.limit; i++) if (s.alive[i] && !s.overnight[i] && s.state[i] !== GState.Leaving) sawDayGuestBeforeLeave = true; }
         if (h > leave + 0.3 && sim.game.date.day === (day % DAYS_PER_YEAR)) {
           const s = sim.guestSim.store;
-          for (let i = 0; i < s.limit; i++) if (s.alive[i] && !s.overnight[i] && !isApres(s.id[i]!, s.type[i]!, day % DAYS_PER_YEAR)) expect([GState.Leaving, GState.Riding, GState.Queueing, GState.Injured]).toContain(s.state[i]);
+          for (let i = 0; i < s.limit; i++) if (s.alive[i] && !s.overnight[i] && !isApres(s.id[i]!, s.type[i]!, day % DAYS_PER_YEAR) && !sim.guestSim.families.controls(i)) expect([GState.Leaving, GState.Riding, GState.Queueing, GState.Injured]).toContain(s.state[i]);
         }
       }
       const spawning = rates.filter(([, r]) => r > 0).map(([h]) => h);

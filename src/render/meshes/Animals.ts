@@ -181,3 +181,38 @@ export const NATURE_GEOMETRY: Record<NatureSpecies, () => THREE.BufferGeometry> 
   cow: createCowGeometry, sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,
   chamois: createChamoisGeometry, marmot: createMarmotGeometry, fox: createFoxGeometry, eagle: createEagleGeometry,
 };
+
+/** Almabtrieb cow (M5.4 Task 21): the plain cow with a flower headdress (wreath + bouquet + ribbons) and a bell on a red strap. Not a nature species: only the festival procession uses it. */
+export function createDecoratedCowGeometry(): THREE.BufferGeometry {
+  const flowers = [0xd9453a, 0xf2c14e, 0xfafafa, 0xf06292, 0x8e5bd0];
+  const parts: THREE.BufferGeometry[] = [createCowGeometry(),
+    box(0.2, 0.035, 0.2, 0x3f7d33, 0, 0.49, 0.3), // leaf base on the head
+    box(0.1, 0.12, 0.1, 0xf2c14e, 0, 0.52, 0.3), box(0.06, 0.1, 0.06, 0xd9453a, 0, 0.64, 0.3), // bouquet
+    box(0.04, 0.2, 0.03, 0xd9453a, 0.11, 0.3, 0.3), box(0.04, 0.2, 0.03, 0x4f86a8, -0.11, 0.3, 0.3), // ribbons
+    box(0.14, 0.04, 0.06, 0xa83a30, 0, 0.3, 0.34), box(0.07, 0.08, 0.06, 0xe8b830, 0, 0.2, 0.36), // strap + bell
+  ];
+  flowers.forEach((c, i) => { const a = (i / flowers.length) * Math.PI * 2; parts.push(box(0.05, 0.05, 0.05, c, Math.cos(a) * 0.11, 0.5, 0.3 + Math.sin(a) * 0.11)); });
+  return finish(parts);
+}
+
+/** Carnival reveller (about 0.5 tiles tall): harlequin costume, ruff and a tall pointed hat (forward = +z). */
+export function createCostumeFigureGeometry(): THREE.BufferGeometry {
+  return finish([
+    box(0.07, 0.22, 0.07, 0xd9453a, -0.04, 0, 0), box(0.07, 0.22, 0.07, 0xf2c14e, 0.04, 0, 0), // legs, one of each colour
+    box(0.2, 0.22, 0.12, 0x8e5bd0, 0, 0.22, 0), box(0.1, 0.22, 0.12, 0x2ba6a0, 0.05, 0.22, 0.0), // torso (half teal)
+    box(0.06, 0.18, 0.06, 0xf2c14e, -0.13, 0.24, 0), box(0.06, 0.18, 0.06, 0xd9453a, 0.13, 0.24, 0), // arms
+    box(0.22, 0.04, 0.14, 0xf4efe2, 0, 0.44, 0), // ruff
+    box(0.12, 0.12, 0.12, 0xf0c8a0, 0, 0.47, 0), // head
+    box(0.15, 0.04, 0.15, 0xd9453a, 0, 0.58, 0), box(0.09, 0.09, 0.09, 0xf2c14e, 0, 0.62, 0), box(0.04, 0.05, 0.04, 0x8e5bd0, 0, 0.7, 0), // pointed hat
+  ]);
+}
+
+/** World Cup racer in a tuck (forward = +z): coloured suit, helmet, two skis and poles. */
+export function createRacerGeometry(): THREE.BufferGeometry {
+  return finish([
+    box(0.07, 0.02, 0.5, 0x1b1b1b, -0.06, 0, 0), box(0.07, 0.02, 0.5, 0x1b1b1b, 0.06, 0, 0), // skis
+    box(0.16, 0.14, 0.12, 0x2a5fb0, 0, 0.04, -0.02), box(0.14, 0.14, 0.14, 0xe8453c, 0, 0.16, 0.03), // legs + tucked torso
+    box(0.09, 0.09, 0.09, 0xf4efe2, 0, 0.27, 0.12), box(0.06, 0.03, 0.04, 0x1b1b1b, 0, 0.29, 0.18), // helmet + goggles
+    box(0.02, 0.02, 0.3, 0x888888, -0.1, 0.12, 0.2), box(0.02, 0.02, 0.3, 0x888888, 0.1, 0.12, 0.2), // poles
+  ]);
+}

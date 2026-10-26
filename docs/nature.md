@@ -89,3 +89,8 @@ Not done: a dedicated 'running away' guest pose (scared guests abort their activ
 ## Hiking interplay
 
 Excursionists respect the bear threat field: a guest whose current route tile has `avoidance > 0.35` turns back along the same route (or ends in place on the return leg), and `scare` turns an excursion back instead of aborting it. Trekkers sleeping in a Mountain Hut are indoors (not rendered, not scareable). See `docs/hiking.md`.
+
+
+## Wildlife sightings (guest emote)
+
+Guests occasionally react to wildlife with a small green **paw** bubble (`emote 'wildlife'`, `docs/models.md` Rich-look pass 3): an awake bear within 7 tiles or a deer within 3.5 tiles of a guest on screen, once per guest per day at most, with a 35 % chance and a 160-tick global cooldown. Render-only (`WildlifeSight`), never changes sim state, hidden with feedback Off.

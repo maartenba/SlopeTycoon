@@ -2,7 +2,7 @@
  * Resort of the Year awards (M5.3 Task 17): data-driven definitions, tier thresholds and the static regional baselines.
  * Every award has a ratio r = (your value) / (the benchmark): r >= 1 means "as good as the region's average resort".
  * Tiers are cut on r (see `tierOf`); the headline is cut on the share of the possible award points (`headlineOf`).
- * Rivals (Task 23) replace the static table by implementing {@link BaselineProvider}. How to tune: docs/year-report.md.
+ * Rivals (Task 23, `sim/meta/Rivals.ts`) scale the static table by implementing {@link BaselineProvider}. How to tune: docs/year-report.md.
  */
 export type AwardTier = 0 | 1 | 2 | 3; // none | bronze | silver | gold
 export const TIER_NAMES = ['none', 'bronze', 'silver', 'gold'] as const;
@@ -32,7 +32,7 @@ export const HEADLINE_TEXT: Record<HeadlineTier, string> = {
 /** Benchmarks the awards compare against. `kind` says how the value is scaled by map size. */
 export type BaselineMetric =
   | 'familyHappiness' | 'incidentsPer1000' | 'pisteQuality' | 'winterSkiable' | 'restaurantPerGuest'
-  | 'summerIncome' | 'profitMargin' | 'wildlifeSightings' | 'guestGrowth';
+  | 'summerIncome' | 'profitMargin' | 'wildlifeSightings' | 'guestGrowth' | 'sustainability';
 export interface BaselineContext { mapSize: number; /** the year being judged */ year: number }
 /** Source of the benchmark values. The default is the static table below; rivals take over in Task 23. */
 export interface BaselineProvider { baseline(metric: BaselineMetric, ctx: BaselineContext): number }
@@ -48,6 +48,7 @@ export const REGIONAL_BASELINES: Record<BaselineMetric, { value: number; scale: 
   profitMargin: { value: 0.28, scale: 'none' },       // profit / income
   wildlifeSightings: { value: 6, scale: 'none' },     // sightings that did not turn into attacks
   guestGrowth: { value: 1.08, scale: 'none' },        // arrivals this year / last year
+  sustainability: { value: 55, scale: 'none' },       // mean daily sustainability facet 0..100 (Task 23)
 };
 
 /** Static provider: the table above; 'area' values scale with (mapSize / 128)^0.5 (clamped 0.5..2). */
@@ -64,6 +65,8 @@ export interface YearMetrics {
   guests: number; familyShare: number; happiness: number; incidents: number; incidentsPer1000: number; pisteQuality: number | null;
   winterSkiable: number | null; restaurantRevenue: number; restaurantPerGuest: number; summerIncome: number; income: number; profit: number; margin: number;
   attacks: number; wildlifeSightings: number; guestGrowth: number | null;
+  /** Mean daily sustainability facet over the year (0..100); null when it was not measured long enough. */
+  sustainability: number | null;
 }
 
 export interface AwardDef {
@@ -105,4 +108,7 @@ export const AWARDS: readonly AwardDef[] = [
   { id: 'rising', name: 'Rising Star', metric: 'guestGrowth', how: 'Guest arrivals compared with the year before.',
     ratio: (m, b) => (m.guestGrowth === null ? null : cap(1 + (m.guestGrowth - b) * 2.5)),
     blurb: ['More guests than last year.', 'Word is getting around.', 'The car park is a talking point.'] },
+  { id: 'green', name: 'Green Resort', metric: 'sustainability', how: 'Average sustainability score: energy per guest, trees felled vs planted, wildlife habitat left alone.',
+    ratio: (m, b) => (m.sustainability === null ? null : cap(m.sustainability / b)),
+    blurb: ['Gentle on the mountain.', 'The forest grew back faster than it shrank.', 'Even the marmots recycle.'] },
 ];

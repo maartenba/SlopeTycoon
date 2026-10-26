@@ -26,7 +26,7 @@ One instanced mesh, six vector glyphs (hungry, cold, tired, happy, angry, scared
 * Edge-triggered: an emote fires when a need **crosses** a strong threshold (queue >= 12 min, coldness >= .75 (-4 to -14 C), hunger >= .85, fatigue >= .85, a finished run with happiness >= .85).
 * Priority scared > angry > cold > hungry > tired > happy. Per-guest per-day cap from the policy; one representative per ~queue-cluster cell; only on-screen guests; none when guests are drawn as far impostors.
 * Scan once per sim tick, per-frame cost is only matrix updates. The HUD rating shows a small star-delta chip (e.g. +0.7★) when the rating moves by at least 0.1★.
-* Known gap: the *scared* emote for a bear/deer sighting is implemented but not wired to a sighting source.
+* Wildlife: a green paw glyph (cell 7 of the 4x2 atlas) for a bear within 7 tiles / deer within 3.5 tiles (`WildlifeSight`, wired in main.ts); extra gate: 35 % chance + 160-tick global cooldown (`wildlifeAllowed`). The *scared* emote is still not wired to a source (the paw is the calm sighting reaction).
 Tune: `EMOTE_T` (thresholds), `EMOTE_LIFE_S`, `EMOTE_CELL`, the policy caps.
 
 ## Goals chain and grants (`docs/goals.md`)

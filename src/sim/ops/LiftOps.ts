@@ -34,6 +34,10 @@ export interface LiftOpsDeps {
   };
   /** Immediate maintenance spend (ledger 'maintenance'). */
   spend?: (amount: number) => void;
+  /** Crew morale x lift-mechanics training on the breakdown rate (1 = untouched; Task 19 / 20). */
+  breakdownFactor?: () => number;
+  /** Lift-mechanics training on repair duration (1 = untouched). */
+  repairFactor?: () => number;
 }
 
 export interface LiftOpsStatus {
@@ -103,7 +107,7 @@ export class LiftOps {
     const wk = this.weatherKey(l);
     const insp = o.inspection === 'none' ? 1 : this.inspectionFresh(o) ? LIFT_OPS.inspectionRisk[o.inspection] : 1;
     const wear = 1 + (100 - o.condition) / 25;
-    return LIFT_OPS.breakdownPerHour * wear * wear * (1 + o.ageDays / 720) * (wk ? LIFT_OPS.breakdownWeather[wk] : 1) * insp * def.wearRate;
+    return LIFT_OPS.breakdownPerHour * wear * wear * (1 + o.ageDays / 720) * (wk ? LIFT_OPS.breakdownWeather[wk] : 1) * insp * def.wearRate * (this.d.breakdownFactor?.() ?? 1);
   }
 
   private inspectionFresh(o: LiftOpsData): boolean {
@@ -117,7 +121,7 @@ export class LiftOps {
     let hours = (R.baseHours + R.hoursPerPoint * missing) * (w ? LIFT_OPS.workshopTimeFactor : LIFT_OPS.contractor.timeFactor);
     if (!w && !planned) hours += LIFT_OPS.contractor.callOutHours;
     const cost = (R.baseCost + R.costPerPoint * missing) * (w ? 1 : LIFT_OPS.contractor.costFactor);
-    return { hours: Math.max(1.5, hours), cost };
+    return { hours: Math.max(1.5, hours * (this.d.repairFactor?.() ?? 1)), cost };
   }
 
   /** Inspection cost ($) and duration (hours) for a lift. */

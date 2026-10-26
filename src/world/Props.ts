@@ -18,6 +18,8 @@ export const TREE_KINDS: readonly number[] = [
   PropKind.Conifer, PropKind.Deciduous, PropKind.Pine, PropKind.Larch, PropKind.Birch, PropKind.Oak,
 ];
 
+const TREE_KIND_SET: ReadonlySet<number> = new Set(TREE_KINDS);
+
 /** Placement tuning. */
 export const TREES_PER_TILE_MAX = 4.5; // at density 255
 export const TREE_MAX_STEEPNESS = 2.2; // half-steps per tile gradient
@@ -78,6 +80,9 @@ export class PropStore {
   readonly chunkVersion: Uint32Array;
   /** Current absolute game day (set by the sim); renderers scale growing props with growthFactor(born, now). */
   now = 0;
+  /** Running totals of real trees (TREE_KINDS) removed / planted since this store was created (sustainability, Task 23). Saved by the `rivals` module. */
+  treesFelled = 0;
+  treesPlanted = 0;
 
   constructor(readonly grid: Grid) {
     this.chunksPerRow = grid.chunksPerRow;
@@ -107,6 +112,7 @@ export class PropStore {
     c.kind.push(kind); c.tx.push(tx); c.ty.push(ty); c.ox.push(ox); c.oy.push(oy);
     c.scale.push(scale); c.rot.push(rot); c.seed.push(seed); c.born.push(born);
     this.chunkVersion[ci]!++;
+    if (born >= 0 && TREE_KIND_SET.has(kind)) this.treesPlanted++;
   }
 
   /** Number of props on tiles x0..x1, y0..y1 (inclusive); optional kind filter. */
@@ -139,7 +145,7 @@ export class PropStore {
         const keep = emptyChunk();
         for (let i = 0; i < c.kind.length; i++) {
           const inside = c.tx[i]! >= lx && c.tx[i]! <= hx && c.ty[i]! >= ly && c.ty[i]! <= hy && (!filter || filter(c.kind[i]!));
-          if (inside) { removed++; continue; }
+          if (inside) { removed++; if (TREE_KIND_SET.has(c.kind[i]!)) this.treesFelled++; continue; }
           keep.kind.push(c.kind[i]!); keep.tx.push(c.tx[i]!); keep.ty.push(c.ty[i]!);
           keep.ox.push(c.ox[i]!); keep.oy.push(c.oy[i]!); keep.scale.push(c.scale[i]!);
           keep.rot.push(c.rot[i]!); keep.seed.push(c.seed[i]!); keep.born.push(c.born[i]!);

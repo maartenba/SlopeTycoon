@@ -17,7 +17,11 @@ import { buildStarterResort, type StarterOptions, type StarterReport } from './s
 import { monthIndex, seasonOf } from '../sim/Clock';
 import { DAYS_PER_MONTH } from '../config/balance';
 import type { Sim } from './createSim';
+import { BOT_UPGRADE_ORDER, STAFF_UPGRADES } from '../config/staffUpgrades';
 import { policyFor, type BotPolicy, type Wish } from './botPolicies';
+import { applyPlanting, planPlanting } from '../sim/nature/Planting';
+import { liftPlantBlocker } from '../sim/Lift';
+import { SUSTAIN } from '../config/rivals';
 
 export interface BotOptions {
   /** Take the Starter loan before building (tutorial-style opening). */
@@ -35,6 +39,10 @@ export interface BotOptions {
   respectUnlocks?: boolean;
   /** Scenario policy (family priorities, snowmaking first, summer attractions first, ...). Default: the policy of `sim.config.scenario`, if any. */
   policy?: BotPolicy | null;
+  /** Train the six staff upgrades in the fixed order `BOT_UPGRADE_ORDER` (one at a time, when cash allows). Default false. */
+  staffUpgrades?: boolean;
+  /** Green play (Task 23, default true): builds on open ground rather than inside forest habitat, replants the trees the build-out felled, and trains the rangers when buildings and pistes overlap the habitat. */
+  green?: boolean;
   /** Apply a price strategy once (exploit tests). */
   prices?: (sim: Sim) => void;
 }
@@ -127,10 +135,13 @@ export class Bot {
     const { env, props, networks, buildings } = sim;
     const lodge = buildings.all().find((b) => b.type === 'baseLodge');
     if (!lodge) return false;
-    for (let r = 4; r <= Math.min(34, sim.size * 0.3); r++) {
+    const fd = sim.terrainInfo.forestDensity, N = sim.size;
+    const inHabitat = (x: number, y: number): boolean => { for (let yy = y; yy < y + def.h; yy++) for (let xx = x; xx < x + def.w; xx++) if (xx >= 0 && yy >= 0 && xx < N && yy < N && fd[yy * N + xx]! >= SUSTAIN.habitat.forestMin) return true; return false; };
+    for (let pass = this.opt.green === false ? 1 : 0; pass < 2; pass++) for (let r = 4; r <= Math.min(34, sim.size * 0.3); r++) {
       for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
         const x = Math.round(c.x) - (def.w >> 1) + dx, y = Math.round(c.y) - (def.h >> 1) + dy;
+        if (pass === 0 && inHabitat(x, y)) continue; // green: open ground first, habitat only when nothing else fits
         const out = this.opt.respectUnlocks ? placeBuilding(env, props, type, x, y, 0, autoFlattenDefault(type), false) : sim.progression.withBypass(() => placeBuilding(env, props, type, x, y, 0, autoFlattenDefault(type), false));
         if (out.ok && out.building) {
           const b = out.building;
@@ -173,6 +184,8 @@ export class Bot {
       const order = summer ? (this.hasSummerAttraction() ? ['summer'] : []) : this.policy?.marketing ?? ['budget', 'families', 'brand'];
       for (const id of order) if (!sim.marketing.blocker(id) && cash() > reserve + 12_000) { sim.marketing.start(id); break; }
     }
+    if (this.opt.staffUpgrades) this.trainStaff();
+    if (this.opt.green !== false) { this.replant(); this.trainRangers(); }
     if (this.opt.expand === false) return;
     const si = sim.size >= 256 ? 2 : sim.size >= 128 ? 1 : 0;
     for (const [type, max] of this.policy?.wishes ?? WISHES) {
@@ -183,6 +196,48 @@ export class Bot {
       if (!this.build(type)) continue;
       break; // one building per month: a steady, human pace
     }
+  }
+
+  /** Replant what was felled: a few conifer stamps a month around the lodge until planted >= felled (cheap: $12 a tree). */
+  private replant(): void {
+    const sim = this.sim, c = this.edges(), reserve = this.opt.reserve ?? 25_000;
+    if (!c || sim.props.treesPlanted >= sim.props.treesFelled || sim.game.money < reserve + 3_000) return;
+    const env = { grid: sim.grid, props: sim.props, seed: sim.seed, blocked: (i: number) => sim.grid.occupancy.flags[i] !== 0 || (sim.networks.layers[i] ?? 0) !== 0 || (sim.networks.kind[i] ?? 0) !== 0, liftBlocks: liftPlantBlocker(sim.lifts, sim.grid) };
+    const now = sim.game.date.year * 180 + sim.game.date.day;
+    let stamps = 0;
+    for (let r = 8; r <= 30 && stamps < 8 && sim.props.treesPlanted < sim.props.treesFelled; r += 3) {
+      for (let k = 0; k < 8 && stamps < 8 && sim.props.treesPlanted < sim.props.treesFelled; k++) {
+        const a = (k / 8) * Math.PI * 2 + r, x = Math.round(c.x + Math.cos(a) * r), y = Math.round(c.y + Math.sin(a) * r);
+        if (x < 2 || y < 2 || x >= sim.size - 2 || y >= sim.size - 2) continue;
+        const plan = planPlanting(env, x, y, 3, 'conifer', 0.7, now);
+        if (plan.trees.length < 4) continue;
+        const cost = Math.round(plan.cost * sim.economy.constructionMultiplier());
+        if (!sim.economy.charge(cost)) return;
+        const chunks = applyPlanting(sim.props, plan, now);
+        sim.nature.growth.track(chunks); sim.nature.cover.dirty = true; stamps++;
+      }
+    }
+  }
+
+  /** Rangers (the habitat protection input of the sustainability facet): only when the buildings and pistes really overlap forest habitat. */
+  private trainRangers(): void {
+    const sim = this.sim, reserve = this.opt.reserve ?? 25_000;
+    if (this.opt.staffUpgrades || sim.staffUpgrades.has('rangers') || sim.staffUpgrades.training) return;
+    if ((sim.sustain.last()?.raw.habitatOverlap ?? 0) <= SUSTAIN.habitat.free) return;
+    if (sim.game.money < STAFF_UPGRADES.find((u) => u.id === 'rangers')!.cost * 1.5 + reserve) return;
+    if (this.opt.respectUnlocks) sim.staffUpgrades.start('rangers'); else sim.progression.withBypass(() => sim.staffUpgrades.start('rangers'));
+  }
+
+  /** Fixed purchase order, one course at a time; only when the cost plus the reserve is in the till (an upgrade never starves the resort). */
+  private trainStaff(): void {
+    const sim = this.sim, reserve = this.opt.reserve ?? 25_000;
+    if (sim.staffUpgrades.training) return;
+    const next = BOT_UPGRADE_ORDER.find((id) => !sim.staffUpgrades.has(id));
+    if (!next) return;
+    const cost = STAFF_UPGRADES.find((u) => u.id === next)!.cost;
+    if (sim.game.money < cost * 1.5 + reserve) return;
+    if (this.opt.respectUnlocks) sim.staffUpgrades.start(next);
+    else sim.progression.withBypass(() => sim.staffUpgrades.start(next));
   }
 
   /** Close the month's books into `rows` (call from the harness on `finance:monthClosed`). */

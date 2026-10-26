@@ -1,10 +1,27 @@
 import { makeSelect } from './StSelect';
 import { formatMoney } from '../format';
 import { StElement } from './StElement';
+import type { StaffPoolId, WageLevel } from '../../config/staff';
 
 export type OpsProfile = 'winter' | 'shoulder' | 'summer';
 export interface OpsRow { id: number; name: string; kind: string; mode: 'auto' | 'open' | 'closed'; daylight?: boolean; from: number; to: number; eco: boolean; seasons: Record<OpsProfile, boolean>; energyPerDay: number; carriesBikes: boolean; condition: number; status: string }
+export interface StaffPoolRow { id: StaffPoolId; label: string; icon: string; auto: boolean; count: number; need: number; fill: number; slows: string }
+export interface StaffUpgradeRow { id: string; name: string; icon: string; effect: string; cost: number; days: number; upkeep: number; state: 'done' | 'training' | 'available' | 'locked' | 'busy' | 'poor'; daysLeft: number; reason: string | null }
+/** Staff tab (M5.4 Tasks 19-20): four auto-managed pools with an Auto toggle each, wage level + morale, and the six upgrades. */
+export interface StaffApi {
+  pools(): StaffPoolRow[];
+  setAuto(id: StaffPoolId, auto: boolean): void;
+  setCount(id: StaffPoolId, n: number): void;
+  wage(): WageLevel;
+  setWage(w: WageLevel): void;
+  morale(): { value: number; label: string; breakdownFactor: number };
+  /** Daily staff bill incl. upgrade upkeep ($). */
+  billPerDay(): number;
+  upgrades(): StaffUpgradeRow[];
+  train(id: string): string | null;
+}
 export interface OperationsApi {
+  staff?: StaffApi;
   rows(): OpsRow[];
   setMode(id: number, mode: 'auto' | 'open' | 'closed'): void;
   setHours(id: number, from: number, to: number): void;
@@ -25,7 +42,24 @@ table{border-collapse:collapse;width:100%;font-size:11px}
 th,td{padding:2px 6px;text-align:center;border-bottom:1px solid #3a4a60}
 th:first-child,td:first-child{text-align:left}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.small{font-size:11px;opacity:.85}.save{color:#8fe08f}.warn{color:#ff9a8a}
+.small{font-size:11px;opacity:.85}
+.wrap.staff{max-height:none;overflow:visible}
+.tabs{margin-bottom:2px}
+.cols2{display:grid;grid-template-columns:minmax(250px,.85fr) minmax(320px,1.15fr);gap:12px;align-items:start}
+.cols2 h4{margin:0 0 4px;font-size:12px;color:var(--c-accent-text);letter-spacing:.3px}
+.cols2 table td,.cols2 table th{padding:3px 5px}
+.cols2 td.l{text-align:left}
+.pool .nm{white-space:nowrap}
+.pool input[type=number]{width:46px;text-align:center}
+.bar{display:inline-block;width:60px;height:8px;border-radius:4px;background:#1d2a3b;border:1px solid #40536d;vertical-align:middle;overflow:hidden}
+.bar>i{display:block;height:100%;background:#e0a030}
+.bar.warn>i{background:#d0534a}.bar.good>i{background:#6fcf7f}
+.ups{display:flex;flex-direction:column;gap:3px}
+.u{display:grid;grid-template-columns:1fr auto 64px;gap:8px;align-items:center;padding:2px 6px;border-bottom:1px solid #3a4a60}
+.u.locked{opacity:.55}
+.u .nm{font-weight:700;font-size:12px;white-space:nowrap}.u .meta{white-space:nowrap;text-align:right}
+.u button{padding:2px 8px;font-size:11px;width:100%}.u>span{text-align:center;font-size:11px;white-space:nowrap}
+.done{color:#8fe08f}.busy{color:#ffd070}.save{color:#8fe08f}.warn{color:#ff9a8a}
 select,input[type=number]{width:auto}
 `;
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''): HTMLElementTagNameMap[K] => {
@@ -43,6 +77,7 @@ export class StOperations extends StElement {
   private api: OperationsApi | null = null;
   private wrap = el('div', 'wrap');
   private pending = false;
+  private tab: 'lifts' | 'staff' = 'lifts';
   protected css(): string { return css; }
   constructor() { super(); this.root.appendChild(this.wrap); }
   bind(api: OperationsApi): void { this.api = api; this.refresh(); }
@@ -55,8 +90,80 @@ export class StOperations extends StElement {
   refresh(): void {
     const a = this.api;
     if (!a) return;
+    const body = this.tab === 'staff' && a.staff ? this.staffView(a.staff) : this.liftsView(a);
+    this.wrap.classList.toggle('staff', this.tab === 'staff' && !!a.staff);
+    if (!a.staff) { this.wrap.replaceChildren(...body); return; }
+    const tabs = el('div', 'tabs');
+    for (const [id, label] of [['lifts', 'Lifts'], ['staff', 'Staff']] as const) {
+      const b = el('button', `tab${this.tab === id ? ' active' : ''}`, label);
+      b.dataset.tab = id;
+      b.addEventListener('click', () => { this.tab = id; this.refresh(); });
+      tabs.append(b);
+    }
+    this.wrap.replaceChildren(tabs, ...body);
+  }
+
+  private staffView(s: StaffApi): HTMLElement[] {
+    const td = (cls: string, ...n: Array<HTMLElement | string>): HTMLElement => { const t = el('td', cls); t.append(...n); return t; };
+    // ---- left: wage + morale + pools ----
+    const left = el('div');
+    left.append(el('h4', '', 'Crew (auto-managed by default)'));
+    const m = s.morale(), top = el('div', 'row');
+    const wageSel = makeSelect([{ value: 'low', label: 'Low wages' }, { value: 'normal', label: 'Normal wages' }, { value: 'high', label: 'High wages' }], s.wage(), 'Wage level', (v) => { s.setWage(v as WageLevel); this.refresh(); });
+    const bar = el('span', `bar ${m.value < 0.5 ? 'warn' : m.value > 0.85 ? 'good' : ''}`); const fillEl = el('i'); fillEl.style.width = `${Math.round(m.value * 100)}%`; bar.append(fillEl);
+    const mt = el('span', 'small', `Morale ${m.label}`);
+    mt.title = m.breakdownFactor === 1 ? 'Normal: lift breakdowns unaffected' : `Lift breakdowns x${m.breakdownFactor.toFixed(2)}`;
+    top.append(wageSel, bar, mt, el('span', 'small', `Bill ${formatMoney(s.billPerDay())}/day`));
+    left.append(top);
+    const t = el('table', 'pool'), h = el('tr');
+    for (const x of ['Pool', 'Auto', 'Heads', 'Fill']) h.append(el('th', '', x));
+    t.append(h);
+    for (const p of s.pools()) {
+      const tr = el('tr');
+      tr.title = `A shortage slows ${p.slows}. Extra heads cost wages but never speed anything up.`;
+      const chk = el('input'); chk.type = 'checkbox'; chk.checked = p.auto; chk.setAttribute('aria-label', `${p.label}: auto`); chk.dataset.pool = p.id;
+      chk.addEventListener('change', () => { s.setAuto(p.id, chk.checked); this.refresh(); });
+      const num = el('input'); num.type = 'number'; num.min = '0'; num.max = '40'; num.value = String(p.count); num.disabled = p.auto; num.setAttribute('aria-label', `${p.label} headcount`); num.title = `Auto would staff ${p.need}`;
+      num.addEventListener('change', () => { s.setCount(p.id, Number(num.value)); this.refresh(); });
+      const fillTxt = p.fill >= 1 ? '100%' : `${Math.round(p.fill * 100)}%`;
+      tr.append(td('l nm', `${p.icon} ${p.label}`), td('', chk), td('', num), td(p.fill < 1 ? 'warn' : '', fillTxt));
+      t.append(tr);
+    }
+    left.append(t, el('div', 'small', 'Untick Auto to set the headcount. A shortage slows that system; low wages and overwork sink morale.'));
+    // ---- right: six upgrades (two-line rows: name + effect | cost, days, upkeep | action) ----
+    const right = el('div');
+    right.append(el('h4', '', 'Training (one course at a time)'));
+    const list = el('div', 'ups');
+    for (const r of s.upgrades()) {
+      const row = el('div', 'u');
+      let act: HTMLElement;
+      const lv = r.state === 'locked' ? /level (\d+)/.exec(r.reason ?? '') : null;
+      if (lv) { act = el('span', 'muted', `Level ${lv[1]}`); act.title = r.reason ?? ''; }
+      else if (r.state === 'done') act = el('span', 'done', 'Trained ✓');
+      else if (r.state === 'training') act = el('span', 'busy', `${r.daysLeft} d left`);
+      else {
+        const b = el('button', r.state === 'available' ? 'primary' : '', 'Train'); b.dataset.upgrade = r.id;
+        b.disabled = r.state !== 'available'; if (r.reason) b.title = r.reason;
+        b.addEventListener('click', () => { s.train(r.id); this.refresh(); });
+        act = b;
+      }
+      const info = el('div', 'info'), nm = el('div', 'nm', `${r.icon} ${r.name}`), ef = el('div', 'small', r.effect);
+      info.append(nm, ef);
+      if (r.state === 'locked' && r.reason) row.title = r.reason;
+      const meta = el('div', 'meta small', `${formatMoney(r.cost)} · ${r.days} d · ${formatMoney(r.upkeep)}/d`);
+      meta.title = 'Cost · training days · upkeep per day once trained';
+      row.append(info, meta, act);
+      if (r.state === 'locked') row.classList.add('locked');
+      list.append(row);
+    }
+    right.append(list);
+    const wrapEl = el('div', 'cols2'); wrapEl.append(left, right);
+    return [wrapEl];
+  }
+
+  private liftsView(a: OperationsApi): HTMLElement[] {
     const rows = a.rows();
-    if (!rows.length) { this.wrap.replaceChildren(el('div', 'small', 'No lifts yet. Build a lift to schedule it here.')); return; }
+    if (!rows.length) return [el('div', 'small', 'No lifts yet. Build a lift to schedule it here.')];
     const tbl = el('table'), head = el('tr');
     for (const h of ['Lift', 'Mode', 'Open', 'Close', 'Winter', 'Shoulder', 'Summer', 'Eco', 'Energy/day', 'Cond.']) head.append(el('th', '', h));
     tbl.append(head);
@@ -97,6 +204,6 @@ export class StOperations extends StElement {
     sum.append(`Projected energy/day — winter ${formatMoney(win)}, shoulder ${formatMoney(a.projected('shoulder'))}, summer ${formatMoney(a.projected('summer'))}`);
     const saved = win - a.projected('summer');
     if (saved > 0) sum.append(el('span', 'save', `  · summer schedule saves ${formatMoney(saved)}/day vs winter`));
-    this.wrap.replaceChildren(quick, tbl, sum);
+    return [quick, tbl, sum];
   }
 }

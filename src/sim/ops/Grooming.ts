@@ -61,6 +61,10 @@ export class Grooming {
   private nightTiles = 0;
   /** Bumped when cats are (re)planned or removed (renderer rebuild hint). */
   planVersion = 0;
+  /** Staff hooks (Task 19 / 20): crew cap (null = none), per-cat tile capacity and fuel multipliers (1 = untouched). */
+  crewLimit: () => number | null = () => null;
+  capacityMod: () => number = () => 1;
+  fuelMod: () => number = () => 1;
 
   constructor(private env: GroomingEnv) {}
 
@@ -87,7 +91,16 @@ export class Grooming {
       const vehicles = this.vehiclesOf(b.id, b.type);
       if (vehicles > 0) out.push({ id: b.id, x: b.x + b.w / 2, y: b.y + b.h / 2, r, vehicles });
     }
-    return out.sort((a, b) => a.id - b.id);
+    out.sort((a, b) => a.id - b.id);
+    let cap = this.crewLimit();
+    if (cap !== null) for (const s of out) { const v = Math.min(s.vehicles, cap); s.vehicles = v; cap -= v; }
+    return cap === null ? out : out.filter((s) => s.vehicles > 0);
+  }
+
+  /** Auto headcount for the staff pool: configured snowcats of every active station (ignores the crew cap). */
+  fleetNeed(): number {
+    const cap = this.crewLimit; this.crewLimit = () => null;
+    try { return this.stations().reduce((a, s) => a + s.vehicles, 0); } finally { this.crewLimit = cap; }
   }
 
   /** Advance one tick at the given absolute day / hour. */
@@ -124,11 +137,12 @@ export class Grooming {
     const catStation = this.cats.map((c) => stations.find((s) => s.id === c.station)!);
     cands.sort((a, b) => b.p - a.p || a.i - b.i);
     const load = new Array<number>(this.cats.length).fill(0);
+    const capacity = GROOM.capacity * this.capacityMod();
     for (const c of cands) {
       const tx = (c.i % N) + 0.5, ty = ((c.i / N) | 0) + 0.5;
       let best = -1;
       for (let v = 0; v < this.cats.length; v++) {
-        if (load[v]! >= GROOM.capacity) continue;
+        if (load[v]! >= capacity) continue;
         const st = catStation[v]!;
         if (Math.hypot(tx - st.x, ty - st.y) > st.r) continue;
         if (best < 0 || load[v]! < load[best]!) best = v;
@@ -174,7 +188,7 @@ export class Grooming {
     for (const c of this.cats) this.lastByStation.set(c.station, (this.lastByStation.get(c.station) ?? 0) + c.groomed);
     const r = { vehicles: this.cats.length, tiles: this.nightTiles };
     this.last = r;
-    this.env.onCost?.('fuel', Math.round(r.tiles * GROOM.fuelPerTile));
+    this.env.onCost?.('fuel', Math.round(r.tiles * GROOM.fuelPerTile * this.fuelMod()));
     this.cats.length = 0;
     this.planVersion++;
     this.env.onNight?.(r);

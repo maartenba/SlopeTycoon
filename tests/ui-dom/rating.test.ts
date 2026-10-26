@@ -31,4 +31,22 @@ describe('st-rating', () => {
     expect(chip().textContent).toBe('\u22120.2\u2605');
     e.remove();
   });
+
+  it('the details panel lists the sustainability facet and the market share, fixed to the viewport (not clipped by the HUD box)', () => {
+    const e = document.createElement('st-rating') as StRating;
+    document.body.append(e);
+    const b: RatingBreakdown = { ...bd(80), components: [
+      { id: 'happiness', label: 'Guest happiness', score: 90, weight: 0.23, hint: 'Guests are happy' },
+      { id: 'sustainability', label: 'Sustainability', score: 61, weight: 0.08, hint: 'Plant trees to make up for the forest you cleared' }] };
+    e.bind(() => ({ breakdown: b, happiness: 0.7, market: { share: 0.41, rank: 2, of: 3 } }));
+    (e.shadowRoot!.querySelector('span.l') as HTMLElement).click();
+    const panel = e.shadowRoot!.querySelector('.pop') as HTMLElement;
+    expect(panel.hidden).toBe(false);
+    expect(panel.style.position).toBe('fixed');
+    const rows = Array.from(panel.querySelectorAll('.row')).map((r) => r.textContent);
+    expect(rows.some((t) => /Sustainability/.test(t ?? '') && /61/.test(t ?? ''))).toBe(true);
+    expect(panel.querySelector('.mkt')!.textContent).toBe('Market share 41% (#2 of 3 nearby resorts)');
+    expect(e.shadowRoot!.querySelector('span.l')!.getAttribute('title')).toContain('Sustainability: 61');
+    e.remove();
+  });
 });

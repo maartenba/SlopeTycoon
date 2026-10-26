@@ -2,6 +2,7 @@ import type { YearReport } from '@/sim/meta/YearReport';
 import { Modal } from '../modal';
 import { MONTH_NAMES } from '../financeFormat';
 import { barChartSvg, columnChartSvg, highlightLines, lineChartSvg, medalSvg, statTiles, tierName, yearSubtitle, yearTitle } from '../yearReportFormat';
+import { buildRegion } from '../yearRegion';
 import { StElement } from './StElement';
 
 export interface YearReportApi {
@@ -59,6 +60,12 @@ h4{margin:2px 0 0;font-size:11px;letter-spacing:.6px;text-transform:uppercase;co
 .aw .m{flex:0 0 32px;height:32px}
 .aw .n{min-width:0}.aw .n b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .aw .n span{display:block;font-size:11.5px;color:#9fb4cc;line-height:1.25}
+.region{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+.rg{background:#1c2838;border:1px solid #2c3b50;border-radius:var(--r-md);padding:5px 8px;min-width:0}
+.rg.you{border-color:#5f8f5a;background:#1f3328}
+.rg b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rg span{font-size:11.5px;color:#9fb4cc}
+.rg .bar{height:5px;background:#2a3a50;border-radius:3px;overflow:hidden;margin-top:3px}.rg .bar i{display:block;height:100%;background:#7fb0e0}.rg.you .bar i{background:#7fd68a}
 .charts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .chart{background:#1c2838;border:1px solid #2c3b50;border-radius:var(--r-md);padding:6px 8px 4px;min-width:0}
 .chart .cap{font-size:11.5px;color:#9fb4cc;margin-bottom:2px}
@@ -126,6 +133,8 @@ ul.hl li{break-inside:avoid;padding:1px 0}
       d.append(m, n); awards.append(d);
     }
 
+    const region = buildRegion(r); // the neighbours (Task 23)
+
     const live = r.months.filter((m) => m.days > 0);
     const chart = (cap: string, svg: string): HTMLElement => {
       const c = el('div', 'chart'); c.append(el('div', 'cap', cap));
@@ -144,7 +153,7 @@ ul.hl li{break-inside:avoid;padding:1px 0}
     for (const line of highlightLines(r)) hl.append(el('li', '', line));
     const out: HTMLElement[] = [cover];
     if (r.partial) out.push(el('div', 'partial', `Your first year was only ${r.days} days long, so the awards are a first look.`));
-    out.push(tiles, el('h4', '', 'Awards'), awards, el('h4', '', 'The year in charts'), charts, el('h4', '', 'Highlights'), hl);
+    out.push(tiles, el('h4', '', 'Awards'), awards, ...(region ? [el('h4', '', `The region: you ranked ${r.rivals!.rank} of ${r.rivals!.of}`), region] : []), el('h4', '', 'The year in charts'), charts, el('h4', '', 'Highlights'), hl);
     return out;
   }
 }

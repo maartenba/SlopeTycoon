@@ -51,7 +51,7 @@ type Stopper<K extends GameEventName> = (p: GameEvents[K]) => string | null;
 const never = (): null => null;
 const always = (why: string) => (): string => why;
 export const EVENT_STOPS: { [K in GameEventName]: Stopper<K> } = {
-  'guest:arrived': never, 'guest:left': never, 'guest:review': never, 'building:placed': never, 'building:removed': never, 'path:drawn': never, 'piste:painted': never,
+  'guest:arrived': never, 'guest:left': never, 'guest:review': never, 'story:resolved': never, 'building:placed': never, 'building:removed': never, 'path:drawn': never, 'piste:painted': never,
   'lift:built': never, 'lift:opened': never, 'lift:closed': never, 'attraction:opened': never, 'attraction:closed': never, 'weather:changed': never, 'piste:opened': never,
   'money:changed': never, 'loan:taken': never, 'speed:changed': never, 'season:changed': never,
   'incident:avalanche': (p) => (p.buried && p.buried > 0 && !p.controlled ? 'an avalanche caught guests' : null),

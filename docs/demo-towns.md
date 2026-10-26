@@ -64,6 +64,6 @@ F3 > *Debug tools (cheats)*: **Town** select (`Random nice town` + the ten), **S
 ## Known limits
 
 * Prerequisites are real: playgrounds need a ski school, first-aid / heli pads a patrol hub (the lists add them first); the altiport needs a long flat strip and is missing on many seeds (vetted seeds have it).
-* Footpaths in demo towns branch off the nearest existing path (`Networks.routeFrom`, `StarterOptions.curvedPaths`) with gentle diagonal steps, so Big Mountain no longer shows parallel "barcode" strips. Roads use the same multi-source router but stay straight (`'straight'` style). The bot / tests keep the old BFS stubs (identical economy).
+* Footpaths in demo towns branch off the nearest existing path (`Networks.routeFrom`, `StarterOptions.curvedPaths`) with gentle diagonal steps, so Big Mountain no longer shows parallel "barcode" strips. Roads use the same multi-source router but stay straight (`'straight'` style); at the end of `buildTown` `pruneRoads` unbuilds road spurs / loops that serve no building (BFS tree from the road entry; Luxury seed 22's long U is a forced detour around steep tiles, not an orphan). Rendering turns plain 2-arm path / road tiles into smooth ribbons (`docs/models.md`, Rich-look pass 3). The bot / tests keep the old BFS stubs (identical economy).
 * Debug builds are cheats: money is restored, but achievements can still fire (there is no cheat flag in the save meta yet).
 * Decor beyond buildings (bunting / market stalls) does not exist as a mechanism: the festival feel comes from bar / terraces / cafes / shops.

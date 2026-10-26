@@ -1,7 +1,7 @@
 import type { FeedbackPolicy } from './feedbackPolicy';
 
 /** Emote glyphs (index = atlas cell). */
-export const EMOTES = ['hungry', 'cold', 'tired', 'happy', 'angry', 'scared'] as const;
+export const EMOTES = ['hungry', 'cold', 'tired', 'happy', 'angry', 'scared', 'wildlife'] as const;
 export type EmoteKind = (typeof EMOTES)[number];
 
 /** Strong-crossing thresholds. Deliberately high: an emote must be a rare, readable moment. */
@@ -14,7 +14,18 @@ export const EMOTE_T = {
   fatigue: 0.85,
   /** Happiness needed after a completed run to count as delight. */
   delight: 0.85,
+  /** Wildlife: a bear is 'seen' within 7 tiles, a deer within 3.5 (a closer deer would already flee: `fleeOffset` 6). */
+  bearRange: 7,
+  deerRange: 3.5,
+  /** Chance a first sighting shows the paw, and the minimum sim ticks between two paws anywhere (~ one a day at most per 4 ticks/min). */
+  wildlifeChance: 0.35,
+  wildlifeGapTicks: 160,
 } as const;
+
+/** Pure gate for the wildlife paw: rare (chance) and quiet (global cooldown in sim ticks). */
+export function wildlifeAllowed(tick: number, lastTick: number, roll: number): boolean {
+  return tick - lastTick >= EMOTE_T.wildlifeGapTicks && roll < EMOTE_T.wildlifeChance;
+}
 
 /** What the picker looks at: a plain snapshot of one guest (read from the sim, never written back). */
 export interface EmoteNeeds {
@@ -28,6 +39,8 @@ export interface EmoteNeeds {
   runDone: boolean;
   /** First sight of wildlife (a bear / deer came close). */
   sighting: boolean;
+  /** A bear / deer is within sight range (edge-triggered like everything else; see `wildlifeAllowed`). */
+  wildlife?: boolean;
 }
 export interface EmoteMemo { day: number; count: number }
 
@@ -36,7 +49,7 @@ export const coldness = (tempC: number): number => Math.min(1, Math.max(0, (-4 -
 
 /**
  * Which emote (if any) should this guest show now? Fires only when a need crosses a strong threshold between `prev` and `needs`
- * (edge, not level), at most `policy.emotePerGuestPerDay` times per in-game day. Priority: scared > angry > cold > hungry > tired > happy.
+ * (edge, not level), at most `policy.emotePerGuestPerDay` times per in-game day. Priority: scared > angry > cold > hungry > tired > happy > wildlife.
  */
 export function pickEmote(needs: EmoteNeeds, prev: EmoteNeeds, last: EmoteMemo, policy: FeedbackPolicy): EmoteKind | null {
   if (policy.maxEmotes <= 0 || policy.emotePerGuestPerDay <= 0) return null;
@@ -47,6 +60,7 @@ export function pickEmote(needs: EmoteNeeds, prev: EmoteNeeds, last: EmoteMemo, 
   if (needs.hunger >= EMOTE_T.hunger && prev.hunger < EMOTE_T.hunger) return 'hungry';
   if (needs.fatigue >= EMOTE_T.fatigue && prev.fatigue < EMOTE_T.fatigue) return 'tired';
   if (needs.runDone && needs.happiness >= EMOTE_T.delight) return 'happy';
+  if (needs.wildlife && !prev.wildlife) return 'wildlife';
   return null;
 }
 

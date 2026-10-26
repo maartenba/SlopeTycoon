@@ -1,3 +1,4 @@
+import type { ModKey } from './staffUpgrades';
 export const CAMERA_PITCH = Math.atan(1 / Math.SQRT2);
 export const CAMERA_YAW_OFFSET = Math.PI / 4;
 export const CAMERA_MIN_ZOOM = 0.5;
@@ -358,3 +359,10 @@ export const DIFFICULTY: Record<DifficultyId, DifficultyDef> = {
 export const START_MONEY_RANGE = { min: 50_000, max: 1_000_000, step: 10_000 } as const;
 /** Allowed walking-radius override (tiles); default WALKING_RADIUS_TILES. */
 export const WALKING_RADIUS_RANGE = { min: 6, max: 30 } as const;
+
+// ---- Staff upgrade modifiers (M5.4 Task 20) ----
+export type { ModKey } from './staffUpgrades';
+/** Anything that carries the staff-upgrade state (the Sim). */
+export interface ModSource { staffUpgrades: { mod(key: ModKey): number } }
+/** Multiplier of a balance knob from trained staff upgrades (1 = untouched). The ONLY way upgrade effects reach the systems. */
+export const mod = (sim: ModSource, key: ModKey): number => sim.staffUpgrades.mod(key);

@@ -1,8 +1,11 @@
 import { GhostTip } from './ui/GhostTip';
+import { STAFF_POOLS, POOL_INFO } from '@/config/staff';
+import { UPGRADE_BY_ID } from '@/config/staffUpgrades';
+import { STAFF_WAGE_PER_DAY } from '@/config/prices';
 import '@/ui/fonts.css';
 import '@/ui/styles.css';
 import { accessibility, getReducedMotion } from '@/ui/accessibility';
-import { Emotes, coldness, Feedback, FloatText, Particles, renderRng, FEEDBACK_INTENSITIES, type FeedbackIntensity } from '@/render/fx';
+import { Emotes, WildlifeSight, coldness, Feedback, FloatText, Particles, renderRng, FEEDBACK_INTENSITIES, type FeedbackIntensity } from '@/render/fx';
 accessibility(); // applies the saved UI scale / reduced-motion choice to <html> before anything is built
 import { Renderer } from '@/render/Renderer';
 import { panBasis, snapYaw } from '@/render/CameraController';
@@ -19,6 +22,12 @@ import { collectProtectedChunks } from '@/render/ProtectedChunks';
 import { Precipitation } from '@/render/Precipitation';
 import { NatureView } from '@/render/NatureView';
 import { VillageDecor } from '@/render/VillageDecor';
+import { buildEventsView } from '@/ui/eventsFormat';
+import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
+import { FestivalDressing } from '@/render/festival/FestivalDressing';
+import type { DressingWorld } from '@/render/festival/placeDressing';
+import { dressingWorldOf } from '@/render/festival/dressingWorld';
+import { Fireworks, fireworksAllowed } from '@/render/fx/Fireworks';
 import { isWaterType } from '@/world/Grid';
 import { SmokeView, type SmokeSource } from '@/render/Smoke';
 import { SnowSprayView } from '@/render/SnowSpray';
@@ -315,6 +324,9 @@ const sim = createSim({
   },
   fromSave: bootSave?.env.modules,
   ...(DEMO ? { hints: false, preset: townOf(DEMO_TOWN.id)!.preset, startSeason: DEMO_TOWN.season } : {}),
+  stories: !DEMO, // Story guests (M5.4 Task 22): about 1.5% of arrivals get a name and one wish; never in the title demo
+  rivalMarket: !TUTORIAL_MODE, // rival market share scales arrivals; the guided tutorial resort stays exactly neutral (Task 23)
+  autoEvents: !DEMO, // Events calendar: Almabtrieb / New Year / critic / powder day run by themselves in a real game (not in the title demo)
   deferAchievements: true, // armed below, once the local profile has loaded (never in the title demo)
   gameId: `g${Date.now().toString(36)}${(globalThis.crypto?.getRandomValues(new Uint32Array(1))[0] ?? 0).toString(36)}`,
 });
@@ -364,6 +376,20 @@ const updateVillageDecor = (dt: number): void => {
 // Nature: livestock + wild fauna (instanced per species) and chimney smoke (1 draw call). Both are driven by sim state.
 const natureView = new NatureView((x, y) => surfaceHeight(grid, x, y));
 renderer.scene.add(natureView.group);
+
+// Festival set dressing (M5.4 Task 21): bunting, flags, banners, stalls, grandstand + a procession for the running events. View only (no Occupancy / pathing); 3 draw calls in total.
+const festivalWorld = (): DressingWorld => dressingWorldOf(sim);
+const festivalDressing = new FestivalDressing((x, z) => surfaceHeight(grid, x, z), festivalWorld, SEED);
+renderer.scene.add(festivalDressing.group);
+let festivalCheck = 0;
+const updateFestival = (dt: number): void => {
+  festivalCheck -= dt;
+  if (festivalCheck <= 0) {
+    festivalCheck = 0.5;
+    festivalDressing.setEvents(sim.events.active().map((e) => ({ id: e.id, start: e.start })), `${buildings.all().length}:${sim.lifts.all().length}`);
+  }
+  festivalDressing.update(dt, currentHour());
+};
 
 // Building meshes: shared registry; roof snow follows the season (same cold mapping as the terrain snowline).
 const buildingMeshes = new BuildingMeshes();
@@ -548,6 +574,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   const st = seasonYear(game.date);
   { const dw = Math.abs(st - 0.875); natureView.setWinter(Math.max(0, 1 - Math.min(dw, 1 - dw) * 6)); }
   updateVillageDecor(dt);
+  updateFestival(dt);
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
   { // snowmaking cannon spray (1 draw call; only running cannons near the view centre)
     const run = new Set(opsRef?.snowmaking.runningIds() ?? []);
@@ -966,17 +993,44 @@ fx.floatText.project = (x, y, z) => {
 };
 renderer.scene.add(fx.particles.mesh);
 // Emotes (M5.1): occasional guest bubbles, one draw call, render-only (reads the guest store).
+const wildSight = new WildlifeSight();
+let wildSightTick = -1;
+const wildSightFor = (tick: number): WildlifeSight => {
+  if (tick === wildSightTick) return wildSight;
+  wildSightTick = tick;
+  const list: Array<{ x: number; y: number; kind: 'bear' | 'deer' }> = [];
+  for (const a of sim.nature.fauna.animals) if (a.species === 'deer' && !a.hidden) list.push({ x: a.x, y: a.y, kind: 'deer' });
+  for (const a of sim.safety.wildlife.animals) if (a.kind === 'bear' && !a.asleep) list.push({ x: a.x, y: a.y, kind: 'bear' });
+  wildSight.set(list);
+  return wildSight;
+};
 const emotes = new Emotes(guestSim.store, {
+  wildlife: (slot) => wildSightFor(loop.tickCount).near(guestSim.store.x[slot]!, guestSim.store.y[slot]!),
   policy: () => fx.policy(), reducedMotion: () => getReducedMotion(), day: () => game.date.year * DAYS_PER_YEAR + game.date.day,
   cold: () => coldness(weather.valleyTempAt(hourOfDay(game.date))), anchor: (slot, out) => guestRenderer.anchor(slot, out, loop.paused || loop.isHidden ? 1 : loop.alpha),
 });
 renderer.scene.add(emotes.mesh);
+// Fireworks (M5.4 Task 21): restrained, New Year + festival finales, night only, never with Feedback = Off / reduced motion. Sparks use the shared particle pool.
+const fireworks = new Fireworks(fx.particles);
+let showKey: string | null = null, showCheck = 0, showAt = { x: 0, y: 0, z: 0 };
+const updateFireworks = (dt: number): void => {
+  showCheck -= dt;
+  if (showCheck <= 0) {
+    showCheck = 0.5;
+    const e = sim.events.fireworksToday();
+    showKey = e ? `${e.id}@${e.start}:${Math.floor(game.date.day)}` : null;
+    const w = festivalDressing.layouts[0], a = w?.anchor ?? { x: terrainInfo.villageAnchor.x, y: terrainInfo.villageAnchor.y };
+    showAt = { x: a.x, y: surfaceHeight(grid, a.x, a.y), z: a.y };
+  }
+  fireworks.update(dt, { show: showKey, hour: currentHour(), dark: lighting.nightUniform.value, allowed: fireworksAllowed(fx.policy(), getReducedMotion()), origin: showAt });
+};
 const fxApi = { emotes, demo: () => fx.demo(), policy: () => fx.policy(), setIntensity: (v: FeedbackIntensity) => fx.setIntensity(v), get intensity() { return fx.intensity; }, stats: fx.stats };
 {
   const prev = renderer.onFrame;
   renderer.onFrame = (dt): void => {
     prev?.(dt);
     if (!renderer.viewMode.isIso) { fx.particles.mesh.visible = false; emotes.mesh.visible = false; return; } // popups / puffs / emotes are iso-view effects
+    updateFireworks(Math.min(dt, 0.1));
     fx.update(Math.min(dt, 0.1), renderer.camera);
     const ecam = renderer.camera;
     emotes.update(Math.min(dt, 0.1), ecam, loop.tickCount, guestRenderer.far, lodHeightFor(ecam), renderer.webgl.domElement.clientHeight);
@@ -1021,15 +1075,21 @@ const excursionText = (slot: number): string | null => {
   const n = MAP_SIZE, eta = Math.round(p.etaHours * 60), tk = guestSim.trek.get(guestSim.store.id[slot]!);
   return `On excursion: ${tk ? 'overnight trek to the hut' : p.kind === 1 ? 'mountain bike descent' : p.phase === 2 ? 'heading back down' : `trail goal (${(p.goal % n)},${Math.floor(p.goal / n)})`} (${Math.round(p.pct * 100)}% · ETA ${Math.floor(eta / 60)}h${String(eta % 60).padStart(2, '0')})`;
 };
+let guestFollow = false; // inspector 'Follow': keep the camera on the selected guest (stops when the guest leaves or the card closes)
 const refreshGuestInfo = (): void => {
-  const slot = guestSelId ? guestSim.store.slotOf(guestSelId) : -1;
-  if (slot < 0) { guestSelId = 0; selRing.visible = false; guestInspEl?.show(null); return; }
+  if (!guestSelId && sim.stories.pinned) guestSelId = sim.stories.pinned; // a pinned story guest comes back after the selection ends
+  let slot = guestSelId ? guestSim.store.slotOf(guestSelId) : -1;
+  if (slot < 0 && sim.stories.pinned && sim.stories.pinned !== guestSelId) { guestSelId = sim.stories.pinned; slot = guestSim.store.slotOf(guestSelId); }
+  if (slot < 0) { guestSelId = 0; guestFollow = false; selRing.visible = false; guestInspEl?.show(null); return; }
   const st = guestSim.store;
   const l = st.state[slot] === GState.Queueing ? liftToolsRef?.lifts.all().find((x) => x.id === st.liftId[slot]) : undefined;
   const queueTicks = st.state[slot] === GState.Queueing ? game.date.tick - st.actTick[slot]! : 0;
   const t = (Math.floor(st.y[slot]!) * MAP_SIZE) + Math.floor(st.x[slot]!);
   const fam = guestSim.families.describe(slot);
+  if (guestFollow) renderer.controls.focusOn(st.x[slot]!, st.y[slot]!, { duration: 0.5 });
+  const story = sim.stories.info(guestSelId);
   guestInspEl?.show(guestInspectorModel(st, slot, {
+    story: story ? { ...story, following: guestFollow } : null,
     familyText: fam, excursionText: excursionText(slot), queueLift: l ? `${LIFTS[l.kind]?.name ?? l.kind} ${l.id}` : null,
     ctx: { queueTicks, onIcyPiste: st.act[slot] === Act.SkiDown && opsRef?.quality.at(t) === 4, noKidsVenue: !!fam && fam.includes('no school'), crowded: guestSim.hash.countAt(st.x[slot]!, st.y[slot]!) > 30, sawBear: !!safetyRef?.wildlife.sawBear(st.id[slot]!) },
   }));
@@ -1984,7 +2044,7 @@ if (ui && !DEMO) {
     quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
   });
   hud.bind(bus, () => game.money);
-  hud.bindRating(() => ({ breakdown: rating.breakdown(), happiness: (() => { const st = guestSim.store; let n = 0, h = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; h += st.happiness[i]!; } return n ? h / n : 0.5; })() }));
+  hud.bindRating(() => ({ breakdown: rating.breakdown(), happiness: (() => { const st = guestSim.store; let n = 0, h = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; h += st.happiness[i]!; } return n ? h / n : 0.5; })(), market: { share: sim.rivals.share, rank: sim.rivals.rank, of: sim.rivals.rivals.length + 1 } }));
   hud.bindLevel(bus, () => { const v = sim.progression.view(); return v.mode === 'sandbox' ? `${MODE_INFO.sandbox.label}: everything is unlocked` : `${MODE_INFO.career.label} \u00B7 Level ${v.level} \u00B7 ${v.name}`; });
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
@@ -2062,6 +2122,12 @@ if (ui && !DEMO) {
     },
   });
   const mktPanel = el('st-marketing');
+  const evPanel = el('st-events');
+  evPanel.bind({
+    view: () => buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money),
+    book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
+    cancel: (id, start) => { if (!sim.events.cancel(id as FestivalId, start)) return 'Cannot cancel'; refreshUi(); return null; },
+  });
   mktPanel.bind({ view: () => buildMarketingView(sim.marketing, game.money), start: (id) => sim.marketing.start(id) });
   const pricePanel = el('st-pricing');
   pricePanel.bind({ pricing: sim.pricing, ...sim.priceApi });
@@ -2076,6 +2142,15 @@ if (ui && !DEMO) {
     setSeason: (id, p, v) => sim.liftOps.setSeason(id, p, v),
     keepOnly: (p, ids) => sim.liftOps.keepOnly(p, new Set(ids)),
     projected: (p) => sim.liftOps.projectedDailyEnergy(p),
+    staff: {
+      pools: () => { const n = sim.staff.needs(true); return STAFF_POOLS.map((id) => ({ id, label: POOL_INFO[id].label, icon: POOL_INFO[id].icon, auto: sim.staff.isAuto(id), count: sim.staff.headcount(id), need: n[id], fill: sim.staff.fill(id), slows: POOL_INFO[id].slows })); },
+      setAuto: (id, v) => sim.staff.setAuto(id, v), setCount: (id, n) => sim.staff.setCount(id, n),
+      wage: () => sim.staff.wage, setWage: (w) => sim.staff.setWage(w),
+      morale: () => ({ value: sim.staff.morale, label: sim.staff.moraleLabel(), breakdownFactor: sim.staff.breakdownFactor() }),
+      billPerDay: () => (sim.attractions.all().reduce((t, x) => t + x.staff, 0) * STAFF_WAGE_PER_DAY * sim.difficulty.wages + sim.staff.extraWagesPerDay()) * sim.staff.wageMult() + sim.staffUpgrades.upkeepPerDay(),
+      upgrades: () => sim.staffUpgrades.views().map((v) => ({ id: v.def.id, name: v.def.name, icon: v.def.icon, effect: v.def.effect, cost: v.def.cost, days: v.def.days, upkeep: v.def.upkeep, state: v.state, daysLeft: v.daysLeft, reason: v.reason })),
+      train: (id) => { const why = sim.staffUpgrades.blocker(id); if (why) { toast(why, 'error'); return why; } sim.staffUpgrades.start(id); toast(`Training started: ${UPGRADE_BY_ID[id]?.name ?? id}`); refreshUi(); return null; },
+    },
   });
   loanPanel.bind({
     offers: () => loans.offers(creditCtx()),
@@ -2091,7 +2166,7 @@ if (ui && !DEMO) {
     season: () => seasonOf(game.date),
     finance: { panels: () => [finPanel, loanPanel], refresh: () => { finPanel.requestRefresh(); loanPanel.requestRefresh(); } },
     operations: { panels: () => [opsPanel], refresh: () => opsPanel.requestRefresh() },
-    marketing: { panels: () => [mktPanel], refresh: () => mktPanel.requestRefresh() },
+    marketing: { panels: () => [mktPanel, evPanel], refresh: () => { mktPanel.requestRefresh(); evPanel.requestRefresh(); } },
     pricing: { panels: () => [pricePanel], refresh: () => pricePanel.requestRefresh() },
     buildings: {
       locked: (t) => buildingLocks(t),
@@ -2217,7 +2292,10 @@ if (ui && !DEMO) {
   const help = el('st-help');
   helpRef = help;
   const guestInsp = el('st-guest-inspector');
-  guestInsp.bind(() => { guestSelId = 0; refreshGuestInfo(); }, (id) => { startRide(id); });
+  guestInsp.bind(() => { if (sim.stories.pinned === guestSelId) sim.stories.pin(0); guestSelId = 0; guestFollow = false; refreshGuestInfo(); }, (id) => { startRide(id); }, {
+    pin: () => { sim.stories.pin(sim.stories.pinned === guestSelId ? 0 : guestSelId); refreshGuestInfo(); },
+    follow: () => { guestFollow = !guestFollow; refreshGuestInfo(); },
+  });
   guestInspEl = guestInsp;
   const news = el('st-news');
   // Review text names the spot. Wired here (not in createSim): Names assigns 'Blue Run N' numbers on first mention, which is saved state.
@@ -2505,7 +2583,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { select, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { select, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 hideSplash();
 
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {

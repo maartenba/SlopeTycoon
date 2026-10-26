@@ -69,6 +69,7 @@ export const NEWS_FORMATTERS: Table = {
   'guest:arrived': (): NewsItem => ({ text: 'Guest arrived', severity: 'info', tier: 'trivial', icon: '🎿', key: 'guest:arrived', category: 'milestone', counter: 'arrived' }), // rows only via MilestoneTracker
   'guest:left': () => ({ text: 'Guest left', severity: 'info', tier: 'trivial', icon: '🚶', key: 'guest:left', category: 'milestone', counter: 'left' }),
   'guest:review': 'ignored', // shown in the News 'Reviews' tab (StNews), not in the main feed
+  'story:resolved': (e) => ({ text: e.text, severity: e.outcome === 'granted' ? 'good' : 'info', tier: 'info', icon: '🎿', key: `story:${e.guestId}`, category: 'milestone', focus: xy(e.x, e.y) }),
   'building:placed': 'ignored', 'building:removed': 'ignored', 'path:drawn': 'ignored', 'piste:painted': 'ignored', 'lift:built': 'ignored',
   'lift:opened': 'ignored', // see formatLiftOpened
   'lift:closed': (e, c) => ({ text: `${liftLabel(c, e.id)} closed. ${reasonText(e.reason)}`, severity: 'warn', tier: 'important', icon: '🚡', key: `lift:closed:${e.id}`, category: 'closure', focus: at(c, 'lift', e.id) }),

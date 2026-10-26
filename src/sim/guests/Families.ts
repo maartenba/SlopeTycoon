@@ -98,6 +98,8 @@ export class Families {
   private ctrl: Uint8Array;
   private tick = 0; private hour = 12;
   private hooks: SkiSchoolHooks;
+  /** Staff pool fill x instructor training (Task 19 / 20); 1 = untouched. */
+  capacityFactor: () => number = () => 1;
   /** Counters for tests / diagnostics. */
   dropoffs = 0; regroups = 0;
 
@@ -107,6 +109,7 @@ export class Families {
       earn: (c, a) => earn?.(c, a),
       onStarted: (schoolId, kids, instructors) => this.bus?.emit('lesson:started', { schoolId, kids: kids.map((k) => k), instructors }),
       onFinished: (schoolId, g, fee) => this.lessonFinished(schoolId, g, fee),
+      capacityFactor: () => this.capacityFactor(),
     };
   }
 

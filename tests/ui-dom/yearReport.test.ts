@@ -51,6 +51,19 @@ describe('st-year-report', () => {
     e.close(); e.remove();
   });
 
+  it('shows "The region" (rival comparison) only when the report has one, with your card first', () => {
+    const e = el('st-year-report'); document.body.append(e);
+    e.show(y3);
+    expect(q(e, '.rg').length).toBe(0);
+    const withRivals = { ...y3, rivals: { share: 0.44, fair: 0.33, rank: 1, of: 3, sustainability: 72, entries: [
+      { name: 'Your resort', stars: 4.2, share: 0.44, you: true }, { name: 'Silberhorn Peaks', stars: 3.6, share: 0.31, you: false }, { name: 'Gletscher Lifts', stars: 3.4, share: 0.25, you: false }] } };
+    e.show(withRivals);
+    expect(q(e, '.rg').map((d) => d.dataset.rival)).toEqual(['you', 'Silberhorn Peaks', 'Gletscher Lifts']);
+    expect(q(e, '.rg.you')[0]!.textContent).toContain('44% of guests');
+    expect(q(e, 'h4').some((h) => /ranked 1 of 3/.test(h.textContent ?? ''))).toBe(true);
+    e.close(); e.remove();
+  });
+
   it('footer has exactly Remind me later / Save image / Continue and no sharing controls; Continue vs Esc/later report the close reason', () => {
     const e = el('st-year-report'); document.body.append(e);
     const saved: number[] = [];

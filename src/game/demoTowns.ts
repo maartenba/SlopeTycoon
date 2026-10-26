@@ -298,8 +298,47 @@ function run(sim: Sim, t: TownArchetype, seed: number, out: TownReport): void {
     out.failures.push(`${b.type}: removed (${b.reason ?? 'not connected'})`);
     swept = true;
   }
-  if (swept) { sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); }
+  const pruned = pruneRoads(sim);
+  if (pruned) log(`pruned ${pruned} road tiles (spurs / loops that serve nothing)`);
+  if (swept || pruned) { sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); }
   // lifts requested but not built are visible in the failure list already ('no lift line N')
+}
+
+/**
+ * Roads are laid per building while the town is built, and a candidate site that is later rejected (or a second building next to an old road) leaves
+ * its road behind: a long spur or an extra U-shaped loop that serves nothing. Keep only the BFS tree paths (from the road entry) to road tiles that
+ * touch a building; everything else of the entry's road network is taken back. Deterministic (fixed neighbour order); reverts itself when any
+ * building would lose its road service. Returns the number of removed tiles.
+ */
+export function pruneRoads(sim: Sim): number {
+  const net = sim.networks, n = net.size, e = net.roadEntry;
+  if (!e) return 0;
+  const isRoad = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < n && y < n && net.kind[y * n + x] === NetKind.Road;
+  const start = e.y * n + e.x;
+  if (!isRoad(e.x, e.y)) return 0;
+  const parent = new Int32Array(n * n).fill(-2);
+  parent[start] = -1;
+  const q = [start];
+  const DXY: ReadonlyArray<readonly [number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  for (let h = 0; h < q.length; h++) {
+    const i = q[h]!, x = i % n, y = (i / n) | 0;
+    for (const [dx, dy] of DXY) { const nx = x + dx, ny = y + dy; if (!isRoad(nx, ny)) continue; const j = ny * n + nx; if (parent[j] !== -2) continue; parent[j] = i; q.push(j); }
+  }
+  const keep = new Uint8Array(n * n);
+  const need = (x: number, y: number): void => { if (!isRoad(x, y)) return; for (let k = y * n + x; k >= 0 && !keep[k] && parent[k] !== -2; k = parent[k]!) keep[k] = 1; };
+  keep[start] = 1;
+  const bs = sim.buildings.all();
+  for (const b of bs) {
+    for (let x = b.x; x < b.x + b.w; x++) { need(x, b.y - 1); need(x, b.y + b.h); }
+    for (let y = b.y; y < b.y + b.h; y++) { need(b.x - 1, y); need(b.x + b.w, y); }
+  }
+  const served = (): number[] => bs.filter((b) => net.isRoadServed(b.id)).map((b) => b.id);
+  const before = served(), drop: number[] = [];
+  for (const i of q) if (!keep[i]) drop.push(i);
+  if (!drop.length) return 0;
+  for (const i of drop) net.unbuild(i % n, (i / n) | 0);
+  if (served().length < before.length) { for (const i of drop) net.build(NetKind.Road, i % n, (i / n) | 0); return 0; }
+  return drop.length;
 }
 
 /** Mean corner-height spread over a footprint-sized window (lower = flatter). */

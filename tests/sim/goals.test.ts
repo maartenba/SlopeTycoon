@@ -96,7 +96,7 @@ describe('each goal check (fixtures)', () => {
     const w = new Fixture(), f = emptyFacts();
     f.bestDay = 15; expect(GOALS.find((g) => g.id === 'guests30')!.check({ w, f })).toBeCloseTo(0.5);
     w.l.push({ kind: 'chair2', open: false, x: 0, y: 0 }); expect(GOALS.find((g) => g.id === 'firstLift')!.check({ w, f })).toBe(0.5);
-    w.p.push(piste(1), piste(2, 4)); expect(GOALS.find((g) => g.id === 'mixedRuns')!.check({ w, f })).toBeCloseTo((1 + 0.5 + 0) / 3);
+    w.p.push(piste(1), piste(2, 4)); expect(GOALS.find((g) => g.id === 'mixedRuns')!.check({ w, f })).toBeCloseTo((1 + 0.8 + 0) / 3);
     w.debtV = 1000; w.cash = 25_000; expect(GOALS.find((g) => g.id === 'debtFree')!.check({ w, f })).toBeCloseTo(0.25);
     w.b.push(bld('groomerGarage')); expect(GOALS.find((g) => g.id === 'groomed')!.check({ w, f })).toBe(0.5);
   });

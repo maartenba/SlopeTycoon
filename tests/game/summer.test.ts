@@ -60,7 +60,7 @@ describe('Tourism Board off-season support loan', () => {
     return sim;
   };
   it('is offered once at the first negative-cash moment in summer or autumn: free, 12 months, <= $40k, ignores the debt cap', () => {
-    const sim = inSeason('summer', 500);
+    const sim = inSeason('summer', 2_500); // 2.5k: an empty resort bleeds ~70/day of upkeep, so 20 days must not reach 0 whatever the (seeded) trickle of arrivals brings in (was 500 and relied on that trickle)
     expect(sim.loans.supportState).toBe('none');
     expect(sim.loans.offers(sim.creditCtx()).some((o) => o.id === 'support')).toBe(false);
     sim.game.money = -3_000; sim.tick(240 * 3);

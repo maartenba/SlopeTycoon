@@ -74,7 +74,8 @@ export function networkRects(x: number, y: number, hw: number, m: number): Array
 // Procedural line geometry (paths + rail): centre-lines per tile, strips draped on the surface.
 // ---------------------------------------------------------------------------------------------------------------
 export type P2 = [number, number];
-export interface TileLine { pts: P2[]; role: 'through' | 'branch' | 'end'; bumper?: boolean }
+/** `tans` (optional): explicit unit tangent per point (smooth Hermite lines); then the strip is NOT resampled and end cross-sections follow the shared tangent. */
+export interface TileLine { pts: P2[]; role: 'through' | 'branch' | 'end'; bumper?: boolean; tans?: P2[] }
 
 const DIRS: ReadonlyArray<readonly [number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // N E S W
 const BIT_LIST = [Conn.N, Conn.E, Conn.S, Conn.W];
@@ -90,7 +91,7 @@ const ARC_STEPS = 6;
  * `size` (map size) lets dead ends on the map boundary run out to the edge; `deadExt` is how far a dead end
  * continues past the centre otherwise.
  */
-export function tileLines(x: number, y: number, m: number, size: number, deadExt: number): TileLine[] {
+export function tileLines(x: number, y: number, m: number, size: number, deadExt: number, edgeTan?: EdgeTan): TileLine[] {
   const cx = x + 0.5, cz = y + 0.5;
   const arms: number[] = [];
   for (let d = 0; d < 4; d++) if (m & BIT_LIST[d]!) arms.push(d);
@@ -106,6 +107,10 @@ export function tileLines(x: number, y: number, m: number, size: number, deadExt
     return out;
   }
   const has = (d: number): boolean => arms.includes(d);
+  if (arms.length === 2 && edgeTan) {
+    const sm = smoothLine(cx, cz, arms[0]!, arms[1]!, edgeTan);
+    if (sm) { out.push(sm); return out; }
+  }
   if (arms.length === 2 && !(has(0) && has(2)) && !(has(1) && has(3))) {
     const [d1, d2] = arms as [number, number];
     const corner: P2 = [cx + 0.5 * (DIRS[d1]![0] + DIRS[d2]![0]), cz + 0.5 * (DIRS[d1]![1] + DIRS[d2]![1])];
@@ -126,6 +131,64 @@ export function tileLines(x: number, y: number, m: number, size: number, deadExt
   for (const d of [0, 1]) if (has(d) && has(d + 2)) { out.push({ pts: d === 0 ? [edge(0), edge(2)] : [edge(3), edge(1)], role: 'through' }); used.add(d); used.add(d + 2); }
   for (const d of arms) if (!used.has(d)) out.push({ pts: [edge(d), [cx, cz]], role: 'branch' });
   return out;
+}
+
+/** Unit tangent of the network at the edge of this tile towards direction d, pointing OUT of the tile (null = axis default). */
+export type EdgeTan = (d: number) => P2 | null;
+const HERMITE_STEPS = 8;
+/** 0..1: how far road edge tangents lean towards the Catmull-Rom direction (1 = full; roads are wide, so less). */
+export const ROAD_SMOOTH = 0.3;
+/** Hermite curve through a degree-2 tile from the d1 edge midpoint to the d2 edge midpoint with the shared edge tangents; null when both are axis-default. */
+function smoothLine(cx: number, cz: number, d1: number, d2: number, edgeTan: EdgeTan): TileLine | null {
+  const a = edgeTan(d1), b = edgeTan(d2);
+  if (!a && !b) return null;
+  const p0: P2 = [cx + DIRS[d1]![0] * 0.5, cz + DIRS[d1]![1] * 0.5], p1: P2 = [cx + DIRS[d2]![0] * 0.5, cz + DIRS[d2]![1] * 0.5];
+  // travel direction: into the tile at d1 (reverse of the outward tangent), out of it at d2
+  const t0: P2 = a ? [-a[0], -a[1]] : [-DIRS[d1]![0], -DIRS[d1]![1]];
+  const t1: P2 = b ?? [DIRS[d2]![0], DIRS[d2]![1]];
+  const chord = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), k = 1.17 * chord;
+  const pts: P2[] = [], tans: P2[] = [];
+  for (let i = 0; i <= HERMITE_STEPS; i++) {
+    const t = i / HERMITE_STEPS, t2 = t * t, t3 = t2 * t;
+    const h00 = 2 * t3 - 3 * t2 + 1, h10 = t3 - 2 * t2 + t, h01 = -2 * t3 + 3 * t2, h11 = t3 - t2;
+    const d00 = 6 * t2 - 6 * t, d10 = 3 * t2 - 4 * t + 1, d01 = -6 * t2 + 6 * t, d11 = 3 * t2 - 2 * t;
+    const px = h00 * p0[0] + h10 * k * t0[0] + h01 * p1[0] + h11 * k * t1[0], pz = h00 * p0[1] + h10 * k * t0[1] + h01 * p1[1] + h11 * k * t1[1];
+    const dx = d00 * p0[0] + d10 * k * t0[0] + d01 * p1[0] + d11 * k * t1[0], dz = d00 * p0[1] + d10 * k * t0[1] + d01 * p1[1] + d11 * k * t1[1];
+    const l = Math.hypot(dx, dz) || 1;
+    pts.push(i === 0 ? p0 : i === HERMITE_STEPS ? p1 : [px, pz]);
+    tans.push(i === 0 ? t0 : i === HERMITE_STEPS ? t1 : [dx / l, dz / l]);
+  }
+  return { pts, tans, role: 'through' };
+}
+
+/**
+ * Edge-tangent provider for a path / road tile: where the tile AND its neighbour across the edge are both plain 2-arm tiles of the same kind (no bridge),
+ * the tangent is the Catmull-Rom direction (next centre - previous centre) - both tiles compute the same vector, so ribbons join with matching
+ * direction and width. Everywhere else (junctions, dead ends, bridges, map edge) it stays axis-aligned (null). Pure; logical grid untouched.
+ */
+export function networkEdgeTan(net: Pick<Networks, 'kind' | 'conn' | 'bridge' | 'size'>, x: number, y: number): EdgeTan {
+  const size = net.size, i = y * size + x, kind = net.kind[i]!;
+  const arms2 = (m: number): number[] | null => { const r: number[] = []; for (let d = 0; d < 4; d++) if (m & BIT_LIST[d]!) r.push(d); return r.length === 2 ? r : null; };
+  const mine = arms2(net.conn[i]!);
+  return (d: number): P2 | null => {
+    if (!mine || kind === 0 || kind === 3 || net.bridge[i] === 1) return null;
+    const nx = x + DIRS[d]![0], ny = y + DIRS[d]![1];
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size) return null;
+    const j = ny * size + nx;
+    if (net.kind[j] !== kind || net.bridge[j] === 1) return null;
+    const theirs = arms2(net.conn[j]!), back = (d + 2) % 4;
+    if (!theirs || !theirs.includes(back)) return null;
+    const oa = mine[0] === d ? mine[1]! : mine[0]!, ob = theirs[0] === back ? theirs[1]! : theirs[0]!;
+    // next centre - previous centre = (B - A) + DIR[ob] - DIR[oa]
+    const tx = DIRS[d]![0] + DIRS[ob]![0] - DIRS[oa]![0], tz = DIRS[d]![1] + DIRS[ob]![1] - DIRS[oa]![1];
+    const l = Math.hypot(tx, tz);
+    if (l < 1e-6) return null;
+    // wide ribbons (roads, half width 0.36) would fold their inner edge on a tight bend: blend the Catmull-Rom direction towards the axis
+    const mix = kind === 2 ? ROAD_SMOOTH : 1;
+    const bx = DIRS[d]![0] + (tx / l - DIRS[d]![0]) * mix, bz = DIRS[d]![1] + (tz / l - DIRS[d]![1]) * mix, bl = Math.hypot(bx, bz);
+    const ux = bx / bl, uz = bz / bl;
+    return Math.abs(ux - DIRS[d]![0]) + Math.abs(uz - DIRS[d]![1]) < 1e-6 ? null : [ux, uz];
+  };
 }
 
 const segLen = (a: P2, b: P2): number => Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -173,7 +236,7 @@ export function sleepers(pts: ReadonlyArray<P2>): Array<{ p: P2; t: P2 }> {
 interface Sec { off: number; lift: number; rgb: number; u?: number }
 
 /** Strip along a (resampled) polyline with a lateral cross-section, every vertex draped via surfaceHeightAt. */
-function pushStrip(d: GeoData, grid: Grid, line: ReadonlyArray<P2>, secs: ReadonlyArray<Sec>, cell: number, o: { lift: number; mixTo?: number; fadeEnd?: number; flatY?: number; vScale?: number } ): void {
+function pushStrip(d: GeoData, grid: Grid, line: ReadonlyArray<P2>, secs: ReadonlyArray<Sec>, cell: number, o: { tans?: ReadonlyArray<P2>; lift: number; mixTo?: number; fadeEnd?: number; flatY?: number; vScale?: number } ): void {
   const base = d.positions.length / 3, S = secs.length;
   const total = lineLength(line), mix = new THREE.Color(o.mixTo ?? 0xffffff);
   let acc = 0;
@@ -182,6 +245,7 @@ function pushStrip(d: GeoData, grid: Grid, line: ReadonlyArray<P2>, secs: Readon
     const a = line[Math.max(0, i - 1)]!, b = line[Math.min(line.length - 1, i + 1)]!;
     const l = segLen(a, b) || 1;
     let tx = (b[0] - a[0]) / l, tz = (b[1] - a[1]) / l;
+    if (o.tans) { tx = o.tans[i]![0]; tz = o.tans[i]![1]; } else
     if (i === 0 || i === line.length - 1) { // arc end tangents are exactly axis-aligned: keeps edge cross-sections perpendicular
       if (Math.abs(tz) < 0.26) { tx = Math.sign(tx) || 1; tz = 0; } else if (Math.abs(tx) < 0.26) { tz = Math.sign(tz) || 1; tx = 0; }
     }
@@ -263,17 +327,32 @@ function railTile(d: GeoData, grid: Grid, x: number, y: number, m: number, size:
 }
 
 /** Footpath tile: gravel strip (textured) with darker tidy edges, quarter-arc corners; junctions blend branch edges. */
-function pathTile(d: GeoData, grid: Grid, x: number, y: number, m: number, size: number, hw: number, cell: number, lift: number, rgb: number, flatY?: number): boolean {
-  const lines = tileLines(x, y, m, size, hw);
+function pathTile(d: GeoData, grid: Grid, x: number, y: number, m: number, size: number, hw: number, cell: number, lift: number, rgb: number, flatY?: number, edgeTan?: EdgeTan): boolean {
+  const lines = tileLines(x, y, m, size, hw, edgeTan);
   if (!lines.length) return false;
   const dark = new THREE.Color(rgb).multiplyScalar(0.72).getHex();
   lines.forEach((ln, li) => {
     // dead-end caps on the interior side get a rounded look via the extension; branches fade their edge shading at the merge.
-    pushStrip(d, grid, resample(ln.pts, 0.125), [
+    pushStrip(d, grid, ln.tans ? ln.pts : resample(ln.pts, 0.125), [
       { off: -hw, lift: -0.01, rgb: dark, u: 0 }, { off: -hw + 0.04, lift: 0, rgb, u: 0.15 },
       { off: hw - 0.04, lift: 0, rgb, u: 0.85 }, { off: hw, lift: -0.01, rgb: dark, u: 1 },
-    ], cell, { lift: lift + li * 0.004, mixTo: rgb, fadeEnd: ln.role === 'branch' ? 0.2 : undefined, flatY, vScale: 0.5 });
+    ], cell, { tans: ln.tans, lift: lift + li * 0.004, mixTo: rgb, fadeEnd: ln.role === 'branch' ? 0.2 : undefined, flatY, vScale: 0.5 });
   });
+  return true;
+}
+
+/**
+ * Road tile that is a plain 2-arm piece that is a corner or has a smooth edge: a draped asphalt ribbon along the Hermite centre-line plus
+ * a thin centre marking, width-consistent with the straight rect arms of junction / end tiles. Everything else keeps the rect layout (returns false).
+ */
+function roadTile(d: GeoData, grid: Grid, net: Networks, x: number, y: number, m: number, hw: number, cell: number, lift: number): boolean {
+  const tan = networkEdgeTan(net, x, y);
+  const lines = tileLines(x, y, m, net.size, hw, tan);
+  if (lines.length !== 1 || (!lines[0]!.tans && lines[0]!.pts.length <= 2)) return false; // straight axis tiles stay rects
+  const ln = lines[0]!, pts = ln.tans ? ln.pts : resample(ln.pts, 0.125);
+  pushStrip(d, grid, pts, [{ off: -hw, lift: 0, rgb: 0xffffff, u: 0.1 }, { off: 0, lift: 0, rgb: 0xffffff, u: 0.5 }, { off: hw, lift: 0, rgb: 0xffffff, u: 0.9 }], cell, { tans: ln.tans, lift, vScale: 1 });
+  const lw = 0.025;
+  pushStrip(d, grid, pts, [{ off: -lw, lift: 0, rgb: 0xf2c14e, u: 0.5 }, { off: lw, lift: 0, rgb: 0xf2c14e, u: 0.5 }], MARK_CELL, { tans: ln.tans, lift: lift + (MARK_LIFT - NET_LIFT), vScale: 1 });
   return true;
 }
 
@@ -290,7 +369,8 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
   const rgb = bridge ? 0xc9a37a : 0xffffff;
   const cx = x + 0.5, cz = y + 0.5;
   if (k === 3) { railTile(d, grid, x, y, m, net.size); return; }
-  if (k === 1 && m !== 0 && pathTile(d, grid, x, y, m, net.size, hw, cell, lift, rgb, flatY)) return;
+  if (k === 1 && m !== 0 && pathTile(d, grid, x, y, m, net.size, hw, cell, lift, rgb, flatY, networkEdgeTan(net, x, y))) return;
+  if (k === 2 && !bridge && roadTile(d, grid, net, x, y, m, hw, cell, lift)) return;
   const vertical = (m & (Conn.N | Conn.S)) !== 0 && (m & (Conn.E | Conn.W)) === 0;
   // Centre square: UVs follow the straight direction; arms keep their own axis so texture runs along them.
   const [c0, ...arms] = networkRects(x, y, hw, m);

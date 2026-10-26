@@ -38,8 +38,8 @@ export function layoutYearImage(r: YearReport, hasCover: boolean, w = YEAR_IMAGE
   });
   // medals
   const my = ty + 92 + 52, earned = r.awards.filter((a) => a.tier > 0);
-  const slot = (w - 96) / Math.max(1, Math.min(9, r.awards.length));
-  r.awards.slice(0, 9).forEach((a, i) => {
+  const slot = (w - 96) / Math.max(1, Math.min(10, r.awards.length));
+  r.awards.slice(0, 10).forEach((a, i) => {
     const cx = 48 + slot * i + slot / 2, c = MEDAL_COLORS[a.tier];
     ops.push({ t: 'circle', x: cx, y: my, r: 22, fill: c.fill, stroke: c.rim });
     ops.push({ t: 'text', x: cx, y: my + 52, text: a.name, font: '600 14px sans-serif', fill: a.tier > 0 ? '#e6edf6' : '#6f8099', align: 'center', maxW: slot - 8 });

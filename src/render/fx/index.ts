@@ -10,7 +10,8 @@ export { FloatText } from './FloatText';
 export { MoneyAggregator, type Popup } from './MoneyAggregator';
 export { Particles, renderRng } from './Particles';
 export { Emotes, EMOTE_LIFE_S } from './Emotes';
-export { pickEmote, coldness, clusterRepresentatives, EMOTES, EMOTE_T, type EmoteKind, type EmoteNeeds } from './emotePick';
+export { WildlifeSight, type SightAnimal } from './wildlifeSight';
+export { pickEmote, coldness, clusterRepresentatives, EMOTES, EMOTE_T, wildlifeAllowed, type EmoteKind, type EmoteNeeds } from './emotePick';
 
 /** Where a sale shows up: a stable per-building key + world position (x, ground height, z). */
 export interface MoneySource { key: number; x: number; y: number; z: number }

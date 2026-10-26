@@ -95,3 +95,39 @@ describe('Rating smoothing + events', () => {
     void createGameState;
   });
 });
+
+describe('sustainability facet (Task 23)', () => {
+  const OLD = { happiness: 0.25, safety: 0.2, variety: 0.15, pisteQuality: 0.12, queues: 0.12, crowding: 0.04, value: 0.12 } as const;
+  it('weights are renormalised to exactly 1 with sustainability at 8 %', async () => {
+    const { WEIGHTS } = await import('../../src/sim/Rating');
+    expect(Object.values(WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 10);
+    expect(WEIGHTS.sustainability).toBe(0.08);
+  });
+  it('without the facet (older inputs) the other weights are renormalised: the score moves < 1 point from the old formula', () => {
+    const b = scoreInput(good());
+    const oldBase = b.components.reduce((a, c) => a + c.score * OLD[c.id as keyof typeof OLD], 0) + b.bonus;
+    expect(b.components.some((c) => c.id === 'sustainability')).toBe(false);
+    expect(Math.abs(b.score - oldBase)).toBeLessThan(1);
+  });
+  it('a facet equal to the weighted mean of the others is neutral; a poor one lowers the score, a great one raises it', () => {
+    const base = scoreInput(good()), others = base.components.reduce((a, c) => a + c.score * c.weight, 0) / base.components.reduce((a, c) => a + c.weight, 0);
+    const at = (s: number): number => scoreInput({ ...good(), sustainability: { score: s, hint: 'x' } }).score;
+    expect(Math.abs(at(others) - base.score)).toBeLessThan(0.15);
+    expect(at(20)).toBeLessThan(base.score - 3); expect(at(100)).toBeGreaterThan(base.score - 0.01);
+    const b = scoreInput({ ...good(), sustainability: { score: 20, hint: 'Plant trees to make up for the forest you cleared' } });
+    expect(b.components.find((c) => c.id === 'sustainability')!.label).toBe('Sustainability');
+    expect(b.hints).toContain('Plant trees to make up for the forest you cleared');
+    expect(scoreInput({ ...good(), sustainability: { score: 90, hint: 'Gentle on the mountain' } }).hints).not.toContain('Gentle on the mountain');
+  });
+  it('smoothing keeps working with 8 components and an old save (without the facet in its smooth map) loads', () => {
+    let inp: RatingInput = { ...good(), sustainability: { score: 80, hint: '' } };
+    const r = new Rating({ inputs: () => inp });
+    r.evaluate(0); const s0 = r.score;
+    inp = { ...good(), sustainability: { score: 10, hint: 'x' } };
+    for (let d = 1; d < 15; d++) r.evaluate(d);
+    expect(r.score).toBeLessThan(s0 - 3);
+    const old = r.serialize() as { s: Array<[string, number]> }; old.s = old.s.filter(([k]) => k !== 'sustainability');
+    const q = new Rating({ inputs: () => inp }); q.load(old); q.evaluate(20);
+    expect(q.breakdown().components.find((c) => c.id === 'sustainability')!.score).toBe(10);
+  });
+});

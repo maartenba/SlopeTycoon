@@ -10,7 +10,7 @@ export class StGuestInspector extends StElement {
   protected css(): string {
     return `.panel{flex-direction:column;align-items:stretch;gap:4px}h4{margin:0;font-size:13px;color:#ffd070;display:flex;justify-content:space-between}
 .bar{display:grid;grid-template-columns:70px 1fr 44px;gap:6px;align-items:center}.track{height:8px;background:#233044;border-radius:4px;overflow:hidden}.fill{height:100%}
-ul{margin:0;padding-left:16px}.muted{color:#9fb0c8}`;
+ul{margin:0;padding-left:16px}.wish{color:#ffd070}.story-actions{display:flex;gap:6px}.muted{color:#9fb0c8}`;
   }
 
   constructor() {
@@ -26,7 +26,9 @@ ul{margin:0;padding-left:16px}.muted{color:#9fb0c8}`;
 
   private onRide: ((guestId: number) => void) | null = null;
 
-  bind(onClose: () => void, onRide?: (guestId: number) => void): void { this.onClose = onClose; this.onRide = onRide ?? null; }
+  private story: { pin: () => void; follow: () => void } | null = null;
+
+  bind(onClose: () => void, onRide?: (guestId: number) => void, story?: { pin: () => void; follow: () => void }): void { this.onClose = onClose; this.onRide = onRide ?? null; this.story = story ?? null; }
 
   show(m: GuestInspectorModel | null): void {
     if (!m) { this.shown = false; this.hidden = true; return; }
@@ -45,6 +47,17 @@ ul{margin:0;padding-left:16px}.muted{color:#9fb0c8}`;
       tr.append(f);
       const v = document.createElement('span'); v.textContent = b.text;
       r.append(l, tr, v); els.push(r);
+    }
+    if (m.story) {
+      const w = document.createElement('div'); w.className = 'wish'; w.textContent = m.story.goal + (m.story.progress ? ` (${m.story.progress})` : ''); els.push(w);
+      if (this.story) {
+        const row = document.createElement('div'); row.className = 'story-actions';
+        const pin = document.createElement('button'); pin.className = 'pin'; pin.textContent = m.story.pinned ? 'Unpin' : 'Pin'; pin.title = 'Keep this guest in the card until the wish is resolved';
+        pin.setAttribute('aria-pressed', String(m.story.pinned)); pin.addEventListener('click', () => this.story?.pin());
+        const fol = document.createElement('button'); fol.className = 'follow'; fol.textContent = m.story.following ? 'Stop following' : 'Follow'; fol.title = 'Keep the camera on this guest';
+        fol.setAttribute('aria-pressed', String(m.story.following)); fol.addEventListener('click', () => this.story?.follow());
+        row.append(pin, fol); els.push(row);
+      }
     }
     const act = document.createElement('div'); act.textContent = `Doing: ${m.activity}${m.queue ? ` (${m.queue})` : ''}`; els.push(act);
     if (m.family) { const f = document.createElement('div'); f.className = 'muted'; f.textContent = m.family; els.push(f); }

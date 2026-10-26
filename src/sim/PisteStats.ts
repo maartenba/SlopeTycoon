@@ -38,10 +38,14 @@ export interface PisteReportDeps {
   runsAt?(tiles: readonly number[]): number;
 }
 
-/** Majority difficulty (1..4) over the component's tiles. */
+/**
+ * Majority difficulty over the component's tiles, as 1..4 (1 green .. 4 black). `difficulty` is the Networks array, stored 0..3 (`Difficulty.Green`
+ * .. `Black`), so the stored value is shifted by one. (Before 0.1.0-m5.4 this clamped the stored value straight into 1..4, so a Black piste read as
+ * Red, Red as Blue and Blue as Green; Black (4) was unreachable.)
+ */
 export function pisteDifficulty(tiles: readonly number[], difficulty: ArrayLike<number>): number {
   const n = [0, 0, 0, 0, 0];
-  for (const t of tiles) { const d = Math.max(1, Math.min(4, difficulty[t] || 1)); n[d]!++; }
+  for (const t of tiles) { const d = Math.max(1, Math.min(4, (difficulty[t] ?? 0) + 1)); n[d]!++; }
   let best = 1;
   for (let d = 2; d <= 4; d++) if (n[d]! > n[best]!) best = d;
   return best;
