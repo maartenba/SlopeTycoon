@@ -11,6 +11,7 @@ import { feedbackPolicy } from '../../src/render/fx/feedbackPolicy';
 import { createDecoratedCowGeometry, createCowGeometry } from '../../src/render/meshes/Animals';
 import { FESTIVALS, FESTIVAL_BY_ID } from '../../src/config/festivals';
 import { isWaterType } from '../../src/world/Grid';
+import { OccFlag } from '../../src/world/Occupancy';
 
 /** Synthetic world: a 40x40 map, a straight road along y=20 (x 5..35), a lake, a building. */
 function synth(over: Partial<DressingWorld> = {}): DressingWorld {
@@ -199,9 +200,18 @@ describe('dressing a real starter resort (headless sim)', () => {
       expect(propCount(l)).toBeGreaterThan(8);
       const first = l!.chain[0]!;
       expect(Math.hypot(first.x - w.station!.x, first.y - w.station!.y)).toBeLessThanOrEqual(DRESSING.anchorRadius + 6);
-      for (const p of [...l!.poles, ...l!.stalls]) { const i = Math.floor(p.z) * w.size + Math.floor(p.x); expect(isWaterType(sim.grid.tileType[i]!) || (sim.grid.occupancy.flags[i] ?? 0) !== 0).toBe(false); }
+      for (const p of [...l!.poles, ...l!.stalls]) { const i = Math.floor(p.z) * w.size + Math.floor(p.x); expect(isWaterType(sim.grid.tileType[i]!) || ((sim.grid.occupancy.flags[i] ?? 0) & (OccFlag.Building | OccFlag.Lift)) !== 0).toBe(false); }
     }
     expect(Array.from(sim.grid.occupancy.flags)).toEqual(Array.from(flagsBefore));
     expect(sim.navWorld.terrainVersion).toBe(nav);
+  });
+
+  it('still dresses when roads / paths carry occupancy flags (as they do in the real game)', () => {
+    const { sim } = makeResort(64, 61, { startDay: 167 });
+    const n = sim.grid.size;
+    for (let i = 0; i < n * n; i++) { const k = sim.networks.kind[i] ?? 0; if (k === 2) sim.grid.occupancy.flags[i]! |= OccFlag.Road; else if (k === 1) sim.grid.occupancy.flags[i]! |= OccFlag.Path; }
+    const l = placeDressing(dressingWorldOf(sim), 'christmasMarket', 5);
+    expect(l).not.toBeNull();
+    expect(l!.chain.length).toBeGreaterThanOrEqual(3);
   });
 });

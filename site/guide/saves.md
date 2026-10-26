@@ -1,6 +1,6 @@
 ---
 title: "Saves, offline & install"
-order: 12
+order: 13
 summary: "Quick save, slots, autosave, exporting .slope files, and playing offline as an installed app."
 screenshots: [ui-saveload]
 ---

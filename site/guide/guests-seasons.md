@@ -18,7 +18,7 @@ The **News** panel shows guest reviews in their own words: quiet slopes, long go
 
 ### Click a guest
 
-Click any guest to open the **guest inspector**: type, mood, what they are doing and a short bio. From there you can **Ride along** (see [Ride, Walk & Photo](page:modes)).
+Click any guest to open the **guest inspector**: type, mood, what they are doing and a short bio. From there you can **Ride along** (see [Ride, Walk & Photo](page:modes)). A few guests carry a name and a wish; see [Events, stories & the region](page:events).
 
 ## The year
 

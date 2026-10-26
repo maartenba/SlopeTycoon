@@ -8,7 +8,7 @@ screenshots: [ui-hud, ui-help, ui-pause]
 
 ## Top left: menu and tools
 
-- **Undo / redo arrows**: step back the last placement or bulldoze (also <kbd>Ctrl</kbd>+<kbd>Z</kbd>).
+- **Undo / redo arrows**: step back and forward through your last ten build actions (also <kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>).
 - **Menu** returns to the main menu (it autosaves first).
 - **Walk** (the little person) and **Camera** start [walk mode and photo mode](page:modes).
 - **Graphics** switches the quality level, useful on a modest laptop.
@@ -35,7 +35,7 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 | Bulldoze | Remove buildings, lifts, paths and pistes |
 | View | Map overlays, grid, camera and photo/walk shortcuts |
 | Finance | Money overview, loans, reports |
-| Operations | Staff, grooming, snowmaking and safety coverage |
+| Operations | Lifts and the **Staff** tab (crews, wages, six training courses), grooming, snowmaking and safety coverage |
 | Marketing | Campaigns |
 | Pricing | Ticket, season-pass and food prices |
 

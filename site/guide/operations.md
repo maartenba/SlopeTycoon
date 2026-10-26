@@ -1,8 +1,8 @@
 ---
 title: "Operations & safety"
 order: 6
-summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers and lift maintenance."
-screenshots: [ui-ops, ops-bear]
+summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, crews and training courses."
+screenshots: [ui-ops, ui-staff, ops-bear]
 ---
 {{fig:ui-ops}}
 
@@ -23,6 +23,22 @@ Guests can get injured, stuck or buried, or meet a bear. An incident progresses 
 
 Use the **coverage overlay** (<kbd>O</kbd> cycles overlays) to see which pistes are outside patrol and first-aid reach.
 
+## Staff and training
+
+{{fig:ui-staff}}
+
+The **Staff** tab (next to *Lifts* in the Operations drawer) keeps four crews: **instructors** (ski-school capacity), **patrol** (how fast the rescue sleds go), **groomers** (the night shift) and **lift operators** (loading speed). By default everything is on **Auto**: crews match what your buildings need, nothing changes and nothing extra is paid.
+
+Untick Auto to set a headcount yourself. Fewer people than needed slows that job down (never below 30 %), extra people cost wages and bring nothing. The **wage level** (low, normal, high) scales the bill and sets the crew's **morale**: tired, underpaid crews break more lifts, happy ones fewer.
+
+### Six training courses
+
+Staff can also take one **course** at a time. Each costs a one-off sum, takes some days and adds a small daily upkeep once trained. Some need a higher resort level in Career.
+
+{{gen:staffUpgrades}}
+
+> [!TIP] Courses are convenience and safety investments, not profit engines. Train *Lift mechanics* if lifts keep breaking, *Rangers & wildlife* if animals scare guests or your forest score is low.
+
 ## Avalanches
 
 Avalanches are rare and dramatic. They need steep ground (roughly 30–45°), plenty of snow and fresh snowfall, and cold air. Forests protect slopes; patrol cover and **night control blasting** make slides less likely. A slide can bury guests and closes pistes for several hours. Most are small and harmless.
@@ -33,7 +49,7 @@ Bears sleep through winter, get hungry in autumn and roam the remote forest in t
 
 {{fig:ops-bear}}
 
-Build a **Ranger Station** (it unlocks a goal early on) to keep guests and animals apart. Rangers can stock bear-proof bins.
+Build a **Ranger Station** (it unlocks a goal early on) to keep guests and animals apart. Rangers can stock bear-proof bins. The **Rangers & wildlife** course scares guests less often and halves the habitat penalty in your [sustainability](page:events) score.
 
 ## Lifts: maintenance and breakdowns
 

@@ -1,16 +1,20 @@
 ---
 title: "Glossary"
-order: 14
+order: 15
 summary: "Short definitions of the words the game and this guide use."
 screenshots: []
 ---
 **Advice** The suggestions from Ranger Rudi at the bottom left. See [Career & scenarios](page:career).
+
+**Almabtrieb** The autumn descent of the decorated cows from the alpine pastures; a festival you can watch.
 
 **Auto-flatten** Automatic levelling of the ground under a building when you place it (<kbd>F</kbd> toggles).
 
 **Career** The default game mode where your resort levels up and unlocks big items. Opposite of *Sandbox*.
 
 **Clearance** Free air under a lift cable above trees, roofs and other lifts.
+
+**Crew** One of the four staff groups: instructors, patrol, groomers and lift operators.
 
 **Dock** The row of buttons along the bottom of the screen.
 
@@ -19,6 +23,8 @@ screenshots: []
 **Fair price** The price the game considers reasonable for a ticket at your star rating.
 
 **Fast nights** An option that makes nights pass faster.
+
+**Green Resort** A year-report award for a resort that is gentle on forest, wildlife and energy.
 
 **Grooming** Overnight smoothing of piste snow by groomers.
 
@@ -36,6 +42,8 @@ screenshots: []
 
 **Profile** Your local trophies, cosmetics and medals, separate from saves.
 
+**Profile card** The small side view of altitude and difficulty shown while you draw a piste or lift.
+
 **Ranger Rudi** The friendly adviser at the bottom left.
 
 **Sandbox** Everything unlocked from day one.
@@ -47,5 +55,7 @@ screenshots: []
 **Snowmaking** Cannons fed from a reservoir that make artificial snow in the cold.
 
 **Spring skiing** Skiing on high pistes in spring while the valley is already green.
+
+**Story guest** A guest with a name and one wish.
 
 **Tile** One square of the map (about 10 m).

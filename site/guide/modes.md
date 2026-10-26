@@ -1,6 +1,6 @@
 ---
 title: "Ride, Walk & Photo"
-order: 10
+order: 11
 summary: "Get close to the action: ride along with a guest, walk in first person, and take photos."
 screenshots: [ride-ski, ride-lift, walk-lodge, photo-mode]
 ---

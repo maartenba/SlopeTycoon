@@ -44,7 +44,7 @@ Headings `##` / `###` get anchors and the right-hand table of contents. Every pa
 
 ### Generated blocks (cannot drift from the game)
 
-`{{gen:shortcuts}}` (from `KEY_BINDINGS` in `src/ui/shortcuts.ts`), `levels`, `unlocks` (`config/progression.ts`, `config/unlocks.ts`), `lifts`, `campaigns`, `scenarios` (`config/scenarios`), `achievements`, `cosmetics`. `tests/site/generated.test.ts` fails when a key binding, level, unlock, scenario or trophy is not in the output. After changing game rules, re-read the prose pages that mention numbers (time model, difficulty, goals); the tables update themselves.
+`{{gen:shortcuts}}` (from `KEY_BINDINGS` in `src/ui/shortcuts.ts`), `levels`, `unlocks` (`config/progression.ts`, `config/unlocks.ts`), `lifts`, `campaigns`, `scenarios` (`config/scenarios`), `achievements`, `cosmetics`, `festivals` (`config/festivals.ts`), `staffUpgrades` (`config/staffUpgrades.ts`). `tests/site/generated.test.ts` fails when a key binding, level, unlock, scenario or trophy is not in the output. After changing game rules, re-read the prose pages that mention numbers (time model, difficulty, goals); the tables update themselves.
 
 ## Screenshots
 

@@ -7,6 +7,8 @@ import { LIFTS, LIFT_KIND_IDS } from '../../src/config/lifts';
 import { CAMPAIGNS } from '../../src/config/marketing';
 import { SCENARIOS } from '../../src/config/scenarios';
 import { ACHIEVEMENTS, TIER_NAME, TIER_POINTS } from '../../src/config/achievements';
+import { FESTIVALS } from '../../src/config/festivals';
+import { STAFF_UPGRADES } from '../../src/config/staffUpgrades';
 import { COSMETICS, COSMETIC_KIND_LABEL } from '../../src/config/cosmetics';
 
 const money = (n: number): string => `$${n.toLocaleString('en-US')}`;
@@ -67,6 +69,17 @@ export function cosmetics(): string {
   return table(['Kind', 'Name', 'Unlocked by'], COSMETICS.map((c) => [COSMETIC_KIND_LABEL[c.kind], c.name, c.default ? 'Always yours' : ach(c.id)]));
 }
 
+export function festivals(): string {
+  const need = (n: string): string => n === 'lodge' ? 'Base Lodge' : n === 'blackPiste' ? 'a black piste' : n;
+  const when = (f: (typeof FESTIVALS)[number]): string => f.kind === 'auto' ? 'Happens by itself' : `Book it (${f.seasons.join(' / ')}), ${f.leadDays} days notice`;
+  return table(['Event', 'What it is', 'When', 'Runs for', 'Cost', 'Extra guests', 'Needs'],
+    FESTIVALS.map((f) => [f.name, f.blurb, when(f), f.days > 1 ? `${f.days} days` : f.days === 1 ? '1 day' : 'a while', f.cost ? money(f.cost) : '–', f.arrivalMult > 1 ? `+${Math.round((f.arrivalMult - 1) * 100)}%` : '–', f.kind === 'auto' ? '–' : [`${f.minStars}★`, ...f.needs.map(need), `level ${f.minLevel}`].join(', ')]));
+}
+export function staffUpgrades(): string {
+  return table(['Course', 'What it does', 'Cost', 'Training', 'Upkeep', 'Level'],
+    STAFF_UPGRADES.map((u) => [u.name, u.effect, money(u.cost), `${u.days} days`, `${money(u.upkeep)} / day`, String(u.minLevel)]));
+}
+
 export function allGenerated(): Record<string, string> {
-  return { shortcuts: shortcuts(), levels: levels(), unlocks: unlocks(), lifts: lifts(), campaigns: campaigns(), scenarios: scenarios(), achievements: achievements(), cosmetics: cosmetics() };
+  return { shortcuts: shortcuts(), levels: levels(), unlocks: unlocks(), lifts: lifts(), campaigns: campaigns(), scenarios: scenarios(), achievements: achievements(), cosmetics: cosmetics(), festivals: festivals(), staffUpgrades: staffUpgrades() };
 }

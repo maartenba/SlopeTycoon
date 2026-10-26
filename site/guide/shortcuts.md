@@ -1,6 +1,6 @@
 ---
 title: "Keyboard shortcuts"
-order: 15
+order: 16
 summary: "Every key the game uses, grouped by what you are doing. Generated from the game itself."
 screenshots: [ui-help]
 ---

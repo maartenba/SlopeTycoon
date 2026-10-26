@@ -1,6 +1,6 @@
 ---
 title: "Career & scenarios"
-order: 8
+order: 9
 summary: "Career levels and what they unlock, the goal chapters, the six scenarios and the Resort of the Year report."
 screenshots: [ui-level-panel, ui-levelup, ui-scenarios, ui-year-report]
 ---
@@ -26,7 +26,7 @@ Everything not listed is available from the start (including the starter chain o
 
 ## Goals
 
-The goals card walks you through **four chapters and twenty goals**: *Season 1: Open for business*, *Local favourite*, *Regional name* and *Alpine destination*. Three goals are active at a time; finishing a chapter opens the next. Each goal pays a small grant. Click **Show me** to jump the camera to the relevant spot, and the card can be collapsed.
+The goals card walks you through **four chapters and twenty goals** (for example *Paint an easy run*, *Green, blue and red runs*, *Open a black run*): *Season 1: Open for business*, *Local favourite*, *Regional name* and *Alpine destination*. Three goals are active at a time; finishing a chapter opens the next. Each goal pays a small grant. Click **Show me** to jump the camera to the relevant spot, and the card can be collapsed.
 
 ## Ranger Rudi's advice
 

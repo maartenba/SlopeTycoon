@@ -1,12 +1,12 @@
 ---
 title: "Settings & accessibility"
-order: 11
+order: 12
 summary: "Sound, feedback intensity, text size, reduced motion, month and year reports, ride and walk options."
 screenshots: [ui-settings]
 ---
 {{fig:ui-settings}}
 
-Open **Settings** with the gear icon in the top bar.
+Open **Settings** with the gear icon in the top bar. The game pauses while Settings (and Help, Save & load, Trophies or About) is open.
 
 ## Sound
 
@@ -17,7 +17,7 @@ Open **Settings** with the gear icon in the top bar.
 ## Look and feel
 
 - **Quality**: lower it on a modest laptop (also in the top bar as *Graphics*).
-- **Feedback intensity**: *Off*, *Subtle* or *Lively* controls popups, puffs and confetti when things happen.
+- **Feedback intensity**: *Off*, *Subtle* or *Lively* controls popups, puffs, confetti and festival fireworks when things happen.
 - **Show hints** and **Replay tutorial**.
 
 ## Accessibility

@@ -1,6 +1,6 @@
 ---
 title: "Achievements & cosmetics"
-order: 9
+order: 10
 summary: "The trophy shelf, how tiers work and which cosmetic rewards you can unlock."
 screenshots: [ui-trophies]
 ---

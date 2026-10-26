@@ -1,7 +1,7 @@
 ---
 title: "Building"
 order: 3
-summary: "Placing buildings, access rules, auto-flatten, rotating, undoing and bulldozing."
+summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, terrain and trees."
 screenshots: [ui-buildings-drawer, ui-lifts-drawer]
 ---
 {{fig:ui-buildings-drawer}}
@@ -24,16 +24,17 @@ Most buildings need level ground. With auto-flatten on, the game plans a tidy cu
 
 ## Access: “Not connected”
 
-A building can always be *placed*, but it only *works* when it is reachable. Depending on the building it needs a footpath, a road, both a rail line and a path, or to sit beside a piste. If it isn't, the inspector says **Not connected: needs …** and, for roads, points at the nearest road end. Ranger Rudi will also nag about it.
+A building can always be *placed*, but it only *works* when it is reachable. Depending on the building it needs a footpath, a road, both a rail line and a path, or to sit beside a piste (a hut, for instance, wants *a footpath, road or piste next to it*). If it isn't, the inspector says **Not connected: needs …** and, for roads, points at the nearest road end. Ranger Rudi will also nag about it.
 
 ## Undo and bulldoze
 
-- <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes your last placement or bulldoze (buildings, lifts, paths; the last 10, same day only). It refuses while guests are inside, if the money isn't there or if the ground changed. While a path, road, rail or piste tool is active it undoes the last stroke instead.
+- <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> (or <kbd>Ctrl</kbd>+<kbd>Y</kbd>) redoes. **Everything you build is covered**: buildings, lifts, path / road / rail / piste strokes, bulldozing and even a whole terraform or tree-planting drag (one drag is one step). The last 10 actions are kept, and only on the same in-game day.
+- Undo refuses, and tells you why, if guests are inside or riding, if the money isn't there or if the ground around it has changed. A new action clears the redo list.
 - <kbd>X</kbd> or the **Bulldoze** button removes buildings, lifts, paths and pistes.
 
 ## Terrain and trees
 
-Open **Terrain** to raise, lower, flatten or smooth the ground (keys <kbd>1</kbd>–<kbd>4</kbd> while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> for brush size). Slopes can't be steeper than the maximum edge step you set. The **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water.
+Open **Terrain** to raise, lower, flatten or smooth the ground (keys <kbd>1</kbd>–<kbd>4</kbd> while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> for brush size). Slopes can't be steeper than the maximum edge step you set. The **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water. Felling forest and planting it back also feeds the *sustainability* bar of your rating (see [Events & the region](page:events)).
 
 {{fig:ui-lifts-drawer}}
 

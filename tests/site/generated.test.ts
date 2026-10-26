@@ -1,3 +1,5 @@
+import { FESTIVALS } from '../../src/config/festivals';
+import { STAFF_UPGRADES } from '../../src/config/staffUpgrades';
 import { describe, expect, it } from 'vitest';
 import { KEY_BINDINGS } from '../../src/ui/shortcuts';
 import { LEVELS } from '../../src/config/progression';
@@ -38,5 +40,9 @@ describe('generated guide blocks', () => {
   });
   it('lifts and campaigns tables cover every kind', () => {
     expect(rowsOf(g.lifts!)).toHaveLength(LIFT_KIND_IDS.length); expect(rowsOf(g.campaigns!)).toHaveLength(CAMPAIGNS.length);
+  });
+  it('festivals and staff upgrades tables cover every entry', () => {
+    expect(rowsOf(g.festivals!)).toHaveLength(FESTIVALS.length); for (const f of FESTIVALS) expect(g.festivals).toContain(f.name);
+    expect(rowsOf(g.staffUpgrades!)).toHaveLength(STAFF_UPGRADES.length); for (const u of STAFF_UPGRADES) expect(g.staffUpgrades).toContain(u.name);
   });
 });

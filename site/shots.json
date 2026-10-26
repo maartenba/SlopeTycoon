@@ -15,11 +15,11 @@
     "size": 128,
     "seed": 61,
     "hour": 12,
-    "zoom": 5.5,
-    "target": "lodge",
+    "zoom": 6,
+    "target": "56,104",
     "extra": "starter=1",
     "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-    "ticks": 900,
+    "ticks": 2400,
     "w": 1600,
     "h": 1000,
     "start": "winter",
@@ -600,6 +600,202 @@
    "kind": "copy",
    "caption": "Ten demo towns, all generated from a seed.",
    "source": "docs/img/towns-sheet.webp"
+  },
+  {
+   "id": "festival-market",
+   "alt": "The village road decked out for the Christmas Market: bunting, a banner and striped market stalls beside the lift station.",
+   "pages": [
+    "events",
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Christmas Market: bunting, banner and stalls along the road.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 14,
+    "zoom": 6,
+    "target": "54,106",
+    "extra": "starter=1&hints=0",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+    "ticks": 300,
+    "w": 1600,
+    "h": 1000,
+    "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'christmasMarket',start:t,end:t+8});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+    "steps": "wait:5000"
+   }
+  },
+  {
+   "id": "festival-carnival",
+   "alt": "A costumed carnival procession walking along a road hung with bunting, banners and flags.",
+   "pages": [
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Winter Carnival: banners, stalls and a costumed procession.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 12,
+    "zoom": 6,
+    "target": "54,106",
+    "extra": "starter=1&hints=0",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+    "ticks": 300,
+    "w": 1600,
+    "h": 1000,
+    "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'carnival',start:t,end:t+5});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+    "steps": "wait:5000"
+   }
+  },
+  {
+   "id": "almabtrieb",
+   "alt": "Decorated cows with flower headdresses walking down the village road for the Almabtrieb.",
+   "pages": [
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Almabtrieb: the decorated herd comes down in autumn.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "autumn",
+    "hour": 12,
+    "zoom": 6,
+    "target": "54,106",
+    "extra": "starter=1&hints=0",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+    "ticks": 300,
+    "w": 1600,
+    "h": 1000,
+    "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'almabtrieb',start:t,end:t+10});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+    "steps": "wait:5000"
+   }
+  },
+  {
+   "id": "events-calendar",
+   "alt": "The Marketing drawer with the Events calendar: festival cards with cost, length and requirements.",
+   "pages": [
+    "events"
+   ],
+   "kind": "harness",
+   "caption": "The Events calendar sits under the campaigns in the Marketing drawer.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x1000",
+    "steps": "click:button[data-drawer=marketing];wait:800",
+    "evalJs": "__slope.progression.setLevel(4)"
+   }
+  },
+  {
+   "id": "ui-staff",
+   "alt": "The Staff tab of the Operations drawer: four crews, wage level and the six training courses.",
+   "pages": [
+    "operations"
+   ],
+   "kind": "harness",
+   "caption": "Staff: four crews on Auto and six training courses.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "steps": "click:button[data-drawer=ops];wait:400;click:Staff;wait:800",
+    "evalJs": "__slope.progression.setLevel(4)"
+   }
+  },
+  {
+   "id": "story-inspector",
+   "alt": "The guest inspector for a named guest, Marta from Graz, with her wish, progress and Pin and Follow buttons.",
+   "pages": [
+    "events"
+   ],
+   "kind": "harness",
+   "caption": "A story guest: a name, one wish, and Pin and Follow buttons.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "winter",
+    "hour": 11,
+    "zoom": 3,
+    "target": "lodge",
+    "extra": "starter=1&hints=0",
+    "viewport": "1280x800",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(150,'skiers')",
+    "ticks": 400,
+    "evalJs": "(()=>{const g=__slope.guestSim,st=g.store,sim=__slope.sim;let id=0,sl=-1;for(let s=0;s<st.capacity;s++){const i=st.id[s];if(i&&st.slotOf(i)===s&&st.act[s]===5){id=i;sl=s;break;}}if(!id){for(let s=0;s<st.capacity;s++){const i=st.id[s];if(i&&st.slotOf(i)===s){id=i;sl=s;break;}}}\nsim.stories.enabled=true;sim.stories.active.push({id,name:'Marta from Graz',kind:'runs',n:5,day:0,runs:2,runMax:0,queueMax:0,visited:[],lesson:false,excursion:false,head:'',lastVisits:0,x:st.x[sl],y:st.y[sl],happiness:0.8,leaving:false});sim.stories.pin(id);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),1500)",
+    "steps": "wait:3000"
+   }
+  },
+  {
+   "id": "ui-rating",
+   "alt": "The rating panel open under the stars: bars for each part of the score including sustainability and a market line against nearby resorts.",
+   "pages": [
+    "events"
+   ],
+   "kind": "harness",
+   "caption": "The rating panel: one bar per facet, now with sustainability, and where you stand in the region.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "winter",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&hints=0",
+    "viewport": "1280x800",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+    "ticks": 400,
+    "steps": "click:.l;wait:800",
+    "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),1500)"
+   }
+  },
+  {
+   "id": "ui-year-region",
+   "alt": "The year report scrolled to The region: bars for each neighbouring resort and the Green Resort award among the awards.",
+   "pages": [
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "The year report compares you with the neighbours and can award a Green Resort.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1",
+    "viewport": "1280x1500",
+    "evalJs": "(()=>{const r=__slope.sim.rivals;const sec=(y)=>({share:0.41,fair:1/3,rank:1,of:3,sustainability:72,entries:[{name:'Your resort',stars:3.8,share:0.41,you:true},{name:'Silberhorn Ski Area',stars:3.6,share:0.33,you:false},{name:'Edelweiss Peaks',stars:3.3,share:0.26,you:false}]});r.section=sec;__slope.stats.demoYear();__slope.yearReport.show(undefined,false)})()",
+    "steps": "wait:1500"
+   }
+  },
+  {
+   "id": "ui-profile",
+   "alt": "A slope profile card showing altitude over distance coloured by difficulty with a dashed snowline, next to a highlighted suggested run.",
+   "pages": [
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "Slope profile and Suggest a run: see the gradient and the snowline before you build.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 12,
+    "zoom": 3,
+    "target": "lodge",
+    "extra": "starter=1&hints=0",
+    "viewport": "1280x800",
+    "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500"
+   }
   }
  ]
 }

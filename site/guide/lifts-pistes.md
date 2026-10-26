@@ -2,7 +2,7 @@
 title: "Lifts & pistes"
 order: 4
 summary: "The eleven lift types, towers and clearance, piste difficulty, connection, grooming and snowmaking."
-screenshots: [ui-lifts-drawer, ui-pistes-drawer, ride-lift]
+screenshots: [ui-lifts-drawer, ui-pistes-drawer, ride-lift, ui-profile]
 ---
 ## Lifts
 
@@ -41,7 +41,15 @@ Paint pistes by **difficulty**: green (easy), blue, red and black. The game colo
 
 - **Connection**: a piste only counts if it reaches a lift station, and runs that don't connect to anything are flagged. Guests need a way up *and* a way down.
 - **Steepness**: a piste's real slope decides how hard it feels. A “green” painted on a cliff is still a cliff.
-- **Variety**: a good resort offers all difficulties; many goals ask for green, blue, red and black.
+- **Variety**: a good resort offers all difficulties; a goal asks for runs of green, blue and red, and another for a black run.
+
+### Slope profile and *Suggest a run*
+
+While you drag a piste or place a lift a small **profile card** shows the ground as a side view: altitude over distance, coloured by difficulty tile by tile, with today's **snowline** as a dashed line, plus length, drop and the average and steepest gradient. It tells you before you pay whether a "green" run is really green and whether the bottom will be bare in warm weather.
+
+**Suggest a run** (in the Pistes pane) highlights a line down the fall line that matches the difficulty chosen in the dock and keeps most of its length above the current snowline, with advice if the lower part may be bare. It only highlights: nothing is built or charged.
+
+{{fig:ui-profile}}
 
 ### Grooming and snow quality
 

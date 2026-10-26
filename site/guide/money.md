@@ -1,6 +1,6 @@
 ---
 title: "Money"
-order: 7
+order: 8
 summary: "Prices, passes, seasonal pricing, marketing campaigns and their prerequisites, loans, debt and difficulty."
 screenshots: [ui-finance, ui-pricing, ui-marketing]
 ---
@@ -28,10 +28,13 @@ Campaigns raise arrivals of certain guests for a while. Each has **prerequisites
 
 {{gen:campaigns}}
 
+Festivals have their own cards just below the campaigns: see [Events, stories & the region](page:events).
+
 ## Loans, debt and support
 
 - Take **loans** from the Finance drawer (up to five at once, with a monthly interest rate that depends on difficulty).
 - You may go **into debt**: cash can go negative. Interest is charged, the rating suffers a bit, and construction is refused until you are back above zero.
+- Staff wages are part of the bill: with the default *Auto* crews there is nothing extra to pay, courses add a small upkeep (see [Operations & safety](page:operations)).
 - The first time your cash dips below zero in summer or autumn, the **Tourism Board** offers a one-off interest-free **support loan** for a year.
 - On Relaxed and Normal difficulty the bank never forecloses; you decide when to declare bankruptcy. On Challenging, two straight in-game years deep in the red ends the game.
 

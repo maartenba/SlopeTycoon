@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting & FAQ"
-order: 13
+order: 14
 summary: "Fixes for the common problems: a black screen, slow frame rate, guests not arriving, closed buildings and lost saves."
 screenshots: []
 ---
