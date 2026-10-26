@@ -1,0 +1,103 @@
+{
+  "id": "powder-dreams",
+  "name": "Powder Dreams",
+  "tagline": "The forecast says snow. The forecast is optimistic.",
+  "blurb": "A warm, dry winter. Natural snow is scarce, so cannons, a reservoir and night grooming decide whether the lifts keep turning.",
+  "stars": 3,
+  "mapSize": 128,
+  "seed": 153,
+  "preset": "peaks",
+  "startSeason": "winter",
+  "startMoney": null,
+  "startLoan": false,
+  "unlocks": "all",
+  "starter": "empty",
+  "modifiers": {
+    "snowMultiplier": 0.3
+  },
+  "objectives": [
+    {
+      "id": "open",
+      "title": "Keep the lifts open for 45 days",
+      "fact": "openDays",
+      "op": ">=",
+      "target": 45,
+      "weight": 40,
+      "mandatory": true
+    },
+    {
+      "id": "cannons",
+      "title": "Build 6 snow cannons",
+      "fact": "buildings",
+      "arg": "snowCannon",
+      "op": ">=",
+      "target": 6,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "guests",
+      "title": "Welcome 1,200 guests",
+      "fact": "lifetimeGuests",
+      "op": ">=",
+      "target": 1200,
+      "weight": 30,
+      "mandatory": true
+    },
+    {
+      "id": "groom",
+      "title": "Groom 15 nights",
+      "fact": "groomedNights",
+      "op": ">=",
+      "target": 15,
+      "weight": 20
+    },
+    {
+      "id": "stars",
+      "title": "Reach a 3.5-star rating",
+      "fact": "stars",
+      "op": ">=",
+      "target": 3.5,
+      "weight": 30
+    },
+    {
+      "id": "open100",
+      "title": "Keep the lifts open for 100 days",
+      "fact": "openDays",
+      "op": ">=",
+      "target": 100,
+      "weight": 30
+    },
+    {
+      "id": "guests4k",
+      "title": "Welcome 4,000 guests",
+      "fact": "lifetimeGuests",
+      "op": ">=",
+      "target": 4000,
+      "weight": 30
+    }
+  ],
+  "deadline": {
+    "years": 1
+  },
+  "medals": {
+    "bronze": {},
+    "silver": {
+      "minScore": 150
+    },
+    "gold": {
+      "objectives": [
+        "open100",
+        "guests4k"
+      ],
+      "minScore": 190
+    }
+  },
+  "failure": {
+    "bankrupt": true
+  },
+  "score": {
+    "speedBonus": 30,
+    "marginBonus": 0
+  }
+}

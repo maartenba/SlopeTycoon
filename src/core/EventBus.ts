@@ -1,0 +1,25 @@
+export type Handler<T> = (payload: T) => void;
+
+export class EventBus<E extends { [K in keyof E]: unknown }> {
+  private handlers = new Map<keyof E, Set<Handler<never>>>();
+
+  on<K extends keyof E>(type: K, handler: Handler<E[K]>): () => void {
+    let set = this.handlers.get(type);
+    if (!set) {
+      set = new Set();
+      this.handlers.set(type, set);
+    }
+    set.add(handler as Handler<never>);
+    return () => this.off(type, handler);
+  }
+
+  off<K extends keyof E>(type: K, handler: Handler<E[K]>): void {
+    this.handlers.get(type)?.delete(handler as Handler<never>);
+  }
+
+  emit<K extends keyof E>(type: K, payload: E[K]): void {
+    const set = this.handlers.get(type);
+    if (!set) return;
+    for (const h of [...set]) (h as Handler<E[K]>)(payload);
+  }
+}

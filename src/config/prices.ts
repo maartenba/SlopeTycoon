@@ -1,0 +1,86 @@
+import { CAL } from './balance';
+/** Default price table for attractions & commercial buildings (Task 32 adds menus to edit these per building). */
+export type LedgerCategory = 'lifts' | 'passes' | 'lodging' | 'shops' | 'restaurants' | 'bars' | 'recreation' | 'rental' | 'lessons' | 'grant' | 'other';
+export const LEDGER_CATEGORIES: readonly LedgerCategory[] = ['lifts', 'passes', 'lodging', 'shops', 'restaurants', 'bars', 'recreation', 'rental', 'lessons', 'grant', 'other'];
+/** Expense ledger categories (loan principal repayment is NOT an expense; only its interest is). */
+export type ExpenseCategory = 'construction' | 'upkeep' | 'staff' | 'energy' | 'snowmaking' | 'interest' | 'marketing' | 'insurance' | 'rescue' | 'maintenance' | 'other';
+export const EXPENSE_CATEGORIES: readonly ExpenseCategory[] = ['construction', 'upkeep', 'staff', 'energy', 'snowmaking', 'interest', 'marketing', 'insurance', 'rescue', 'maintenance', 'other'];
+
+/** perUse: flat per visit; perHour: price x service hours (10 ticks = 1 in-game hour); perNight: per guest per night. */
+export type BillingMode = 'perUse' | 'perHour' | 'perNight';
+
+export interface PriceEntry { price: number; max: number; billing: BillingMode; category: LedgerCategory }
+
+export const PRICE_TABLE: Record<string, PriceEntry> = {
+  baseLodge: { price: 14, max: 40, billing: 'perUse', category: 'restaurants' },
+  lodge: { price: 12, max: 40, billing: 'perUse', category: 'restaurants' },
+  cafe: { price: 6, max: 25, billing: 'perUse', category: 'restaurants' },
+  mountainHut: { price: 9, max: 30, billing: 'perUse', category: 'restaurants' },
+  heatedTerrace: { price: 8, max: 30, billing: 'perUse', category: 'restaurants' },
+  /** Drinks round + snack at the Après-Ski Bar (own 'bars' ledger line). */
+  apresBar: { price: 10, max: 35, billing: 'perUse', category: 'bars' },
+  shop: { price: 15, max: 60, billing: 'perUse', category: 'shops' },
+  rental: { price: 20, max: 80, billing: 'perUse', category: 'rental' },
+  chalet: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
+  apartment: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
+  iceRink: { price: 6, max: 25, billing: 'perHour', category: 'recreation' },
+  stuntPark: { price: 10, max: 40, billing: 'perUse', category: 'recreation' },
+  adventurePark: { price: 18, max: 60, billing: 'perUse', category: 'recreation' },
+  playground: { price: 3, max: 15, billing: 'perUse', category: 'recreation' },
+  alpineFarm: { price: 7, max: 25, billing: 'perUse', category: 'shops' },
+  beach: { price: 4, max: 20, billing: 'perUse', category: 'recreation' },
+  boatRental: { price: 12, max: 40, billing: 'perHour', category: 'rental' },
+  magicCarpet: { price: 2, max: 10, billing: 'perUse', category: 'recreation' },
+  kidsGround: { price: 5, max: 20, billing: 'perUse', category: 'recreation' },
+  mtbTrail: { price: 3, max: 15, billing: 'perUse', category: 'recreation' },
+  hiking: { price: 0, max: 10, billing: 'perUse', category: 'recreation' },
+};
+
+/** Nightly rate per guest, by lodging type. */
+export const NIGHTLY_RATE: Record<string, { price: number; max: number }> = {
+  baseLodge: { price: 50, max: 150 },
+  chalet: { price: 40, max: 150 },
+  apartment: { price: 30, max: 120 },
+  /** Mountain Hut bed + half-board for trekkers. */
+  mountainHut: { price: 45, max: 120 },
+};
+
+/** Share (0..100) of guests that arrive with their own ski/board and bike gear. */
+export const GEAR_OWNERS = { ski: 82, bike: 60 } as const;
+/** Extra wage per day for each staff member above/below the catalog requirement. */
+export const STAFF_WAGE_PER_DAY = 8;
+
+/** Lift pass prices (Task 24). Read through `Pricing.get('dayPass' | 'seasonPass')` so Task 32 menus can override. */
+export const PASS_PRICES = {
+  dayPass: { price: 45, max: 120 },
+  /** Season pass: upfront sale, roughly 7 day passes (14 before the 180-day calendar: the season holds half the days). */
+  seasonPass: { price: 600 * CAL, max: 1500 * CAL },
+  /** Foot-passenger lift ticket for hikers/bikers riding a summer lift (one per day, cheaper than the ski day pass). */
+  hikerPass: { price: 15, max: 60 },
+} as const;
+/** Season-pass holder tuning (stub; Task 35 tunes). */
+export const PASS_TUNING = { holderMaxSharePct: 40, holderSpendFactor: 0.7, holderHalfSaturation: 200, returnVisitsPerPass: 0.35 } as const;
+/** Staff / insurance cost tuning. */
+export const INSURANCE_PER_DAY_PER_1000_VALUE = 1;
+
+export interface LoanOfferDef { id: 'starter' | 'small' | 'medium' | 'large' | 'restructure' | 'support'; name: string; baseAmount: number; baseRatePct: number; termMonths: number }
+/** Bank offers. Amounts scale with resort value/rating, rates (annual %) move with credit rating. */
+export const LOAN_OFFERS: readonly LoanOfferDef[] = [
+  { id: 'starter', name: 'Starter loan', baseAmount: 50000, baseRatePct: 5, termMonths: 24 },
+  { id: 'small', name: 'Small loan', baseAmount: 25000, baseRatePct: 6, termMonths: 12 },
+  { id: 'medium', name: 'Medium loan', baseAmount: 100000, baseRatePct: 8, termMonths: 36 },
+  { id: 'large', name: 'Large loan', baseAmount: 400000, baseRatePct: 11, termMonths: 60 },
+];
+/**
+ * One-time Tourism Board "Off-season support loan" (docs/balance.md "Gentler summer"): offered automatically at the first moment cash goes
+ * negative in summer or autumn (when winter-focused resorts have no snow income); interest-free, 12 months (= one game year), at most
+ * maxAmount. It ignores the debt cap; the offer lapses when winter starts; it is only ever offered once per game.
+ */
+export const SUPPORT_LOAN = { name: 'Off-season support loan', maxAmount: 40000, minAmount: 15000, buffer: 15000, ratePct: 0, termMonths: 12, seasons: ['summer', 'autumn'] as readonly string[] } as const;
+export const LOAN_RULES = { minRatePct: 5, maxRatePct: 12, fixedDebtCap: 150000, revenueMultiple: 3, hardCap: 2000000, maxLoans: 5, bankruptcyGraceDays: Math.round(30 * CAL) } as const;
+/**
+ * Debt model: cash may go negative (the player decides when to give up).
+ * autoBankruptcyDays: continuous days below -autoBankruptcyFloor before the bank forecloses automatically (0 = never).
+ * overdraftRateMonthly: interest on a negative balance, charged at month end. ratingPenaltyMax: max rating multiplier loss while deep in debt.
+ */
+export const DEBT = { autoBankruptcyDays: Math.round(720 * CAL), autoBankruptcyFloor: 150000, overdraftRateMonthly: 0.015 * CAL, ratingPenaltyMax: 0.1, ratingPenaltyDays: Math.round(90 * CAL), warnEveryDays: Math.round(30 * CAL), restructureRatePct: 12, restructureTermMonths: 36 } as const;

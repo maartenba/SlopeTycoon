@@ -1,0 +1,51 @@
+/**
+ * Career unlocks (M5.3, Task 14): the SHORT list of items gated by resort level (D2 = selective). Everything not listed here is ALWAYS available:
+ * the starter chain (road, footpath, piste, T-bar, chair2/chair4/chair4d, lodge, ticket office, parking, ski school, Ski Patrol Hub, First-Aid Hut,
+ * first restaurant), terraforming and tree planting, and the Ranger Station (a goal needs it before level 3). Rationale per item: docs/progression.md.
+ * Sandbox ignores this table. The tutorial runs with `unlockAll`.
+ */
+import { BUILDINGS } from './buildings';
+import { LIFTS, type LiftKind } from './lifts';
+import { CAMPAIGNS } from './marketing';
+import { levelName } from './progression';
+
+export type UnlockKind = 'building' | 'lift' | 'campaign';
+export interface UnlockDef { kind: UnlockKind; id: string; level: number }
+
+export const UNLOCKS: readonly UnlockDef[] = [
+  // Level 2 (Local favourite): bigger detachable lifts.
+  { kind: 'lift', id: 'chair6', level: 2 },
+  { kind: 'lift', id: 'gondola6', level: 2 },
+  // Level 3 (Regional name): the heavy transport.
+  { kind: 'lift', id: 'funicular', level: 3 },
+  // Level 4 (Alpine destination): rescue by air and the biggest cabins / chairs.
+  { kind: 'building', id: 'helipad', level: 4 },
+  { kind: 'lift', id: 'gondola10', level: 4 },
+  { kind: 'lift', id: 'chair8b', level: 4 },
+  // Level 5 (International resort): the glamorous end.
+  { kind: 'lift', id: 'cablecar', level: 5 },
+  { kind: 'building', id: 'altiport', level: 5 },
+  { kind: 'campaign', id: 'vip', level: 5 },
+];
+
+export const key = (kind: UnlockKind, id: string): string => `${kind}:${id}`;
+const BY_KEY = new Map(UNLOCKS.map((u) => [key(u.kind, u.id), u.level]));
+
+/** Level at which an item unlocks (1 = always available). */
+export const unlockLevel = (kind: UnlockKind, id: string): number => BY_KEY.get(key(kind, id)) ?? 1;
+export const isGated = (kind: UnlockKind, id: string): boolean => unlockLevel(kind, id) > 1;
+/** Items that unlock exactly at `level`. */
+export const unlocksAt = (level: number): UnlockDef[] => UNLOCKS.filter((u) => u.level === level);
+
+export function unlockName(kind: UnlockKind, id: string): string {
+  if (kind === 'building') return BUILDINGS[id]?.name ?? id;
+  if (kind === 'lift') return LIFTS[id as LiftKind]?.name ?? id;
+  return CAMPAIGNS.find((c) => c.id === id)?.name ?? id;
+}
+export const unlockIcon = (kind: UnlockKind, id: string): string => (kind === 'campaign' ? CAMPAIGNS.find((c) => c.id === id)?.icon ?? '📣' : kind === 'lift' ? '🚡' : '🏗️');
+
+/** Text shown in tooltips / ghost tips / disabled buttons: 'Unlocks at level 3: Regional name'. */
+export const lockedReason = (level: number): string => `Unlocks at level ${level}: ${levelName(level)}`;
+
+/** The check the validators use (placement, lifts, marketing). `null` = available. Implemented by `sim/progression/Progression`. */
+export interface UnlockGate { locked(kind: UnlockKind, id: string): string | null }

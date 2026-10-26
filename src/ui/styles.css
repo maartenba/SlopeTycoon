@@ -1,0 +1,25 @@
+/* Font tokens (same stacks as FONTS in tokens.ts; @font-face lives in fonts.css and must be in the DOCUMENT, shadow roots inherit family from their hosts). */
+:root { --font-ui: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji'; --font-display: 'Lilita One', 'Nunito', system-ui, sans-serif; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #cfe3f1; font-family: var(--font-ui); }
+#app { position: fixed; inset: 0; }
+#app canvas { display: block; width: 100%; height: 100%; }
+/* z-index 22: above the title-demo vignette / blur (z 20, src/render/DemoScene.ts), below its fade-to-black (z 25). Tooltips that must overlay panels use z >= 30. */
+#ui { position: fixed; inset: 0; pointer-events: none; z-index: 22; }
+/* NB: never give a full-screen/inset:0 child pointer-events:auto: outer rules beat shadow :host rules. */
+#ui > * { pointer-events: auto; }
+#ui > st-toast { pointer-events: none; }
+/* Tutorial overlays: the host boxes never take input (only the assistant's bubble / badge buttons do, via their own rules). */
+#ui > st-spotlight, #ui > st-assistant { pointer-events: none; }
+/* #ui is click-through; only the absolutely-positioned st-* components (shrink-wrapped) take pointer events. */
+
+/* Layout: top-left bar; right column (HUD, tool status, inspectors); bottom-centre tool dock + drawer;
+   debug bottom-left (collapsed); help button bottom-right. Only the st-* panels take pointer events. */
+#right-col { position: absolute; display: flex; flex-direction: column; gap: 6px; pointer-events: none; right: 8px; top: 8px; width: 260px; align-items: stretch; }
+#right-col > * { position: static; pointer-events: auto; }
+#tool-status { background: rgba(20,28,40,0.78); color: #fff; border-radius: 6px; padding: 4px 8px; font: calc(12px * var(--ui-scale, 1)) var(--font-ui); }
+#tool-status b { color: #ffd070; }
+#right-col > st-goals { order: 1; }
+#right-col > st-hud { order: 0; } #right-col > st-speed-control { order: 0; } #right-col > #tool-status { order: 1; } #right-col > st-inspector, #right-col > st-lift-inspector, #right-col > st-guest-inspector { order: 2; }
+
+/* Accessibility: 'Reduced motion' (Settings) sets data-reduced-motion on <html> (src/ui/accessibility.ts). Decorative transitions / animations stop. */
+html[data-reduced-motion] *, html[data-reduced-motion] *::before, html[data-reduced-motion] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

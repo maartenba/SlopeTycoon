@@ -1,0 +1,101 @@
+{
+  "id": "summer-escape",
+  "name": "Summer Escape",
+  "tagline": "Sandals optional, boots recommended.",
+  "blurb": "It is summer and the mountain is green. Cut hiking and biking trails, reach the high meadows and show the farm to the visitors.",
+  "stars": 3,
+  "mapSize": 128,
+  "seed": 80,
+  "preset": "lakeland",
+  "startSeason": "summer",
+  "startMoney": null,
+  "startLoan": false,
+  "unlocks": "all",
+  "starter": "empty",
+  "modifiers": {},
+  "objectives": [
+    {
+      "id": "trails",
+      "title": "Open 25 tiles of hiking and biking trails",
+      "fact": "trailTiles",
+      "op": ">=",
+      "target": 25,
+      "weight": 30,
+      "mandatory": true
+    },
+    {
+      "id": "farm",
+      "title": "Open an Alpine Farm",
+      "fact": "buildings",
+      "arg": "alpineFarm",
+      "op": ">=",
+      "target": 1,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "guests",
+      "title": "Welcome 400 guests in summer",
+      "fact": "summerGuests",
+      "op": ">=",
+      "target": 400,
+      "weight": 30,
+      "mandatory": true
+    },
+    {
+      "id": "mtb",
+      "title": "Open 20 tiles of mountain-bike trail",
+      "fact": "mtbTiles",
+      "op": ">=",
+      "target": 20,
+      "weight": 15
+    },
+    {
+      "id": "stars",
+      "title": "Reach a 4-star rating",
+      "fact": "stars",
+      "op": ">=",
+      "target": 4,
+      "weight": 20
+    },
+    {
+      "id": "high",
+      "title": "Reach the high meadows: 20 trail tiles in the top third",
+      "fact": "highTrailTiles",
+      "op": ">=",
+      "target": 20,
+      "weight": 25
+    },
+    {
+      "id": "guests800",
+      "title": "Welcome 800 guests in summer",
+      "fact": "summerGuests",
+      "op": ">=",
+      "target": 800,
+      "weight": 30
+    }
+  ],
+  "deadline": {
+    "months": 6
+  },
+  "medals": {
+    "bronze": {},
+    "silver": {
+      "minScore": 125
+    },
+    "gold": {
+      "objectives": [
+        "high",
+        "guests800"
+      ],
+      "minScore": 160
+    }
+  },
+  "failure": {
+    "bankrupt": true
+  },
+  "score": {
+    "speedBonus": 30,
+    "marginBonus": 0
+  }
+}

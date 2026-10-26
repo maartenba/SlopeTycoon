@@ -1,0 +1,92 @@
+{
+  "id": "first-tracks",
+  "name": "First Tracks",
+  "tagline": "A small valley, a big first impression.",
+  "blurb": "A quiet little valley with room for one lift and plenty of enthusiasm. Welcome your first 500 guests and earn a three-star rating within a year.",
+  "stars": 1,
+  "mapSize": 64,
+  "seed": 54,
+  "preset": "gentle",
+  "startSeason": "winter",
+  "startMoney": null,
+  "startLoan": false,
+  "unlocks": "all",
+  "starter": "empty",
+  "modifiers": {},
+  "objectives": [
+    {
+      "id": "guests",
+      "title": "Welcome 500 guests",
+      "fact": "lifetimeGuests",
+      "op": ">=",
+      "target": 500,
+      "weight": 40,
+      "mandatory": true
+    },
+    {
+      "id": "stars",
+      "title": "Reach a 3-star rating",
+      "fact": "stars",
+      "op": ">=",
+      "target": 3,
+      "weight": 30,
+      "mandatory": true
+    },
+    {
+      "id": "school",
+      "title": "Open a ski school",
+      "fact": "buildings",
+      "arg": "skiSchoolHQ",
+      "op": ">=",
+      "target": 1,
+      "weight": 10
+    },
+    {
+      "id": "profit",
+      "title": "Close a month with $20,000 profit",
+      "fact": "monthlyProfit",
+      "op": ">=",
+      "target": 20000,
+      "weight": 20
+    },
+    {
+      "id": "guests3k",
+      "title": "Welcome 3,000 guests",
+      "fact": "lifetimeGuests",
+      "op": ">=",
+      "target": 3000,
+      "weight": 30
+    },
+    {
+      "id": "profit30",
+      "title": "Close a month with $30,000 profit",
+      "fact": "monthlyProfit",
+      "op": ">=",
+      "target": 30000,
+      "weight": 30
+    }
+  ],
+  "deadline": {
+    "years": 1
+  },
+  "medals": {
+    "bronze": {},
+    "silver": {
+      "minScore": 140
+    },
+    "gold": {
+      "objectives": [
+        "guests3k",
+        "profit30"
+      ],
+      "minScore": 150
+    }
+  },
+  "failure": {
+    "bankrupt": true
+  },
+  "score": {
+    "speedBonus": 30,
+    "marginBonus": 0
+  }
+}

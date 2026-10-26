@@ -1,0 +1,930 @@
+{
+ "achievements-cosmetics.webp": {
+  "file": "achievements-cosmetics.webp",
+  "from": 312469,
+  "to": 51466,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "achievements-palette.webp": {
+  "file": "achievements-palette.webp",
+  "from": 612577,
+  "to": 83256,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "achievements-shelf-1080.webp": {
+  "file": "achievements-shelf-1080.webp",
+  "from": 784112,
+  "to": 121072,
+  "w": 1920,
+  "h": 1080,
+  "alpha": false
+ },
+ "achievements-shelf.webp": {
+  "file": "achievements-shelf.webp",
+  "from": 322124,
+  "to": 66870,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "achievements-toast.webp": {
+  "file": "achievements-toast.webp",
+  "from": 767118,
+  "to": 91996,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "bear-meadow.webp": {
+  "file": "bear-meadow.webp",
+  "from": 569128,
+  "to": 55888,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "bear-ranger-station.webp": {
+  "file": "bear-ranger-station.webp",
+  "from": 843604,
+  "to": 127670,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "bear-threat-overlay.webp": {
+  "file": "bear-threat-overlay.webp",
+  "from": 1166076,
+  "to": 124256,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "boot-lodge-summer.webp": {
+  "file": "boot-lodge-summer.webp",
+  "from": 906288,
+  "to": 157626,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "daylight-summer-2020b.webp": {
+  "file": "daylight-summer-2020b.webp",
+  "from": 1156924,
+  "to": 127930,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "daylight-summer-dawn.webp": {
+  "file": "daylight-summer-dawn.webp",
+  "from": 1055732,
+  "to": 117290,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "daylight-traffic-overlay.webp": {
+  "file": "daylight-traffic-overlay.webp",
+  "from": 1206254,
+  "to": 181886,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "daylight-winter-1640.webp": {
+  "file": "daylight-winter-1640.webp",
+  "from": 1292096,
+  "to": 186796,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-gondola-station.webp": {
+  "file": "demo-gondola-station.webp",
+  "from": 1729601,
+  "to": 194646,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-lake-winter.webp": {
+  "file": "demo-lake-winter.webp",
+  "from": 1462170,
+  "to": 114382,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-menu.webp": {
+  "file": "demo-menu.webp",
+  "from": 1513797,
+  "to": 96656,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-night-glow.webp": {
+  "file": "demo-night-glow.webp",
+  "from": 1337421,
+  "to": 116722,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-summer.webp": {
+  "file": "demo-summer.webp",
+  "from": 1643759,
+  "to": 147810,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-sunset.webp": {
+  "file": "demo-sunset.webp",
+  "from": 1506895,
+  "to": 154246,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-village-day.webp": {
+  "file": "demo-village-day.webp",
+  "from": 1530186,
+  "to": 163398,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "demo-wide-winter.webp": {
+  "file": "demo-wide-winter.webp",
+  "from": 1537977,
+  "to": 173628,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "drawer-all-panels-1280.webp": {
+  "file": "drawer-all-panels-1280.webp",
+  "from": 792272,
+  "to": 134842,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "drawer-buildings-1000.webp": {
+  "file": "drawer-buildings-1000.webp",
+  "from": 567296,
+  "to": 97862,
+  "w": 1000,
+  "h": 700,
+  "alpha": false
+ },
+ "drawer-lifts-1920.webp": {
+  "file": "drawer-lifts-1920.webp",
+  "from": 1470243,
+  "to": 192988,
+  "w": 1920,
+  "h": 1080,
+  "alpha": false
+ },
+ "farm-closeup.webp": {
+  "file": "farm-closeup.webp",
+  "from": 1093925,
+  "to": 162362,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "farm-demo-summer.webp": {
+  "file": "farm-demo-summer.webp",
+  "from": 1327243,
+  "to": 154822,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "farm-summer-meadow.webp": {
+  "file": "farm-summer-meadow.webp",
+  "from": 1449569,
+  "to": 196518,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "flicker-heat-64-winter-rot.webp": {
+  "file": "flicker-heat-64-winter-rot.webp",
+  "from": 482777,
+  "to": 94966,
+  "w": 960,
+  "h": 600,
+  "alpha": true
+ },
+ "flicker-sheet-after.webp": {
+  "file": "flicker-sheet-after.webp",
+  "from": 278638,
+  "to": 89112,
+  "w": 1920,
+  "h": 400,
+  "alpha": true
+ },
+ "flicker-sheet-before.webp": {
+  "file": "flicker-sheet-before.webp",
+  "from": 254276,
+  "to": 83090,
+  "w": 1920,
+  "h": 400,
+  "alpha": true
+ },
+ "glitch-farm-slope-summer.webp": {
+  "file": "glitch-farm-slope-summer.webp",
+  "from": 494309,
+  "to": 68636,
+  "w": 900,
+  "h": 600,
+  "alpha": false
+ },
+ "glitch-firstaid-plinth.webp": {
+  "file": "glitch-firstaid-plinth.webp",
+  "from": 388463,
+  "to": 42696,
+  "w": 900,
+  "h": 600,
+  "alpha": false
+ },
+ "glitch-night-after.webp": {
+  "file": "glitch-night-after.webp",
+  "from": 492718,
+  "to": 56684,
+  "w": 1000,
+  "h": 650,
+  "alpha": false
+ },
+ "glitch-night-before.webp": {
+  "file": "glitch-night-before.webp",
+  "from": 532560,
+  "to": 61208,
+  "w": 1000,
+  "h": 650,
+  "alpha": false
+ },
+ "graphics-far-winter.webp": {
+  "file": "graphics-far-winter.webp",
+  "from": 1185134,
+  "to": 171866,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "graphics-gear-summer.webp": {
+  "file": "graphics-gear-summer.webp",
+  "from": 654342,
+  "to": 96758,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "graphics-gear-winter.webp": {
+  "file": "graphics-gear-winter.webp",
+  "from": 830634,
+  "to": 104784,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "graphics-parking-summer.webp": {
+  "file": "graphics-parking-summer.webp",
+  "from": 1229406,
+  "to": 149350,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "graphics-slope-winter.webp": {
+  "file": "graphics-slope-winter.webp",
+  "from": 1027890,
+  "to": 171506,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "graphics-vehicles-day.webp": {
+  "file": "graphics-vehicles-day.webp",
+  "from": 771648,
+  "to": 84314,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "graphics-vehicles-night.webp": {
+  "file": "graphics-vehicles-night.webp",
+  "from": 616815,
+  "to": 64024,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "lod-chair-cable.webp": {
+  "file": "lod-chair-cable.webp",
+  "from": 928577,
+  "to": 171702,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "lod-station-chair.webp": {
+  "file": "lod-station-chair.webp",
+  "from": 702463,
+  "to": 108444,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "lod-trees-rocks.webp": {
+  "file": "lod-trees-rocks.webp",
+  "from": 496478,
+  "to": 56226,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "lod-village-terrain.webp": {
+  "file": "lod-village-terrain.webp",
+  "from": 462403,
+  "to": 69196,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "logo-a-full-light.webp": {
+  "file": "logo-a-full-light.webp",
+  "from": 58178,
+  "to": 13260,
+  "w": 640,
+  "h": 520,
+  "alpha": false
+ },
+ "logo-a-full.webp": {
+  "file": "logo-a-full.webp",
+  "from": 153759,
+  "to": 13482,
+  "w": 640,
+  "h": 520,
+  "alpha": false
+ },
+ "logo-b-badge.webp": {
+  "file": "logo-b-badge.webp",
+  "from": 115430,
+  "to": 15216,
+  "w": 640,
+  "h": 520,
+  "alpha": false
+ },
+ "logo-c-wordmark.webp": {
+  "file": "logo-c-wordmark.webp",
+  "from": 127343,
+  "to": 8702,
+  "w": 640,
+  "h": 520,
+  "alpha": false
+ },
+ "logo-mark.webp": {
+  "file": "logo-mark.webp",
+  "from": 93284,
+  "to": 6684,
+  "w": 640,
+  "h": 520,
+  "alpha": false
+ },
+ "photo-dusk-film.webp": {
+  "file": "photo-dusk-film.webp",
+  "from": 1624640,
+  "to": 112784,
+  "w": 1536,
+  "h": 864,
+  "alpha": true
+ },
+ "photo-panel.webp": {
+  "file": "photo-panel.webp",
+  "from": 1346373,
+  "to": 166702,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "place-1-forest-before.webp": {
+  "file": "place-1-forest-before.webp",
+  "from": 732931,
+  "to": 104566,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "place-2-ghost-levelling.webp": {
+  "file": "place-2-ghost-levelling.webp",
+  "from": 782509,
+  "to": 118560,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "place-3-apartment-after.webp": {
+  "file": "place-3-apartment-after.webp",
+  "from": 758697,
+  "to": 115970,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "place-4-pad-ghost-closeup.webp": {
+  "file": "place-4-pad-ghost-closeup.webp",
+  "from": 663940,
+  "to": 63674,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "place-5-blocked-ghost.webp": {
+  "file": "place-5-blocked-ghost.webp",
+  "from": 756087,
+  "to": 112756,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "progression-dock-locks.webp": {
+  "file": "progression-dock-locks.webp",
+  "from": 923301,
+  "to": 151674,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "progression-goals-level.webp": {
+  "file": "progression-goals-level.webp",
+  "from": 947086,
+  "to": 148364,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "progression-levelup.webp": {
+  "file": "progression-levelup.webp",
+  "from": 943873,
+  "to": 147382,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "progression-lifts-locked.webp": {
+  "file": "progression-lifts-locked.webp",
+  "from": 893807,
+  "to": 151196,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "progression-newgame.webp": {
+  "file": "progression-newgame.webp",
+  "from": 544032,
+  "to": 42040,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ride-lift-1.webp": {
+  "file": "ride-lift-1.webp",
+  "from": 559106,
+  "to": 114632,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "ride-ski-1.webp": {
+  "file": "ride-ski-1.webp",
+  "from": 721370,
+  "to": 117446,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "rudi-badge.webp": {
+  "file": "rudi-badge.webp",
+  "from": 1109737,
+  "to": 164746,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "rudi-sheet.webp": {
+  "file": "rudi-sheet.webp",
+  "from": 73472,
+  "to": 66356,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "scenarios-card.webp": {
+  "file": "scenarios-card.webp",
+  "from": 772760,
+  "to": 107170,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "scenarios-lose.webp": {
+  "file": "scenarios-lose.webp",
+  "from": 407116,
+  "to": 46730,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "scenarios-picker.webp": {
+  "file": "scenarios-picker.webp",
+  "from": 395138,
+  "to": 78364,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "scenarios-win.webp": {
+  "file": "scenarios-win.webp",
+  "from": 410079,
+  "to": 50240,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "soft-before-after.webp": {
+  "file": "soft-before-after.webp",
+  "from": 3082549,
+  "to": 427000,
+  "w": 1600,
+  "h": 2000,
+  "alpha": false
+ },
+ "soft-forest-summer.webp": {
+  "file": "soft-forest-summer.webp",
+  "from": 851727,
+  "to": 96074,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "soft-forest-winter.webp": {
+  "file": "soft-forest-winter.webp",
+  "from": 1053322,
+  "to": 138198,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "soft-gallery.webp": {
+  "file": "soft-gallery.webp",
+  "from": 1421605,
+  "to": 167976,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "soft-lifts.webp": {
+  "file": "soft-lifts.webp",
+  "from": 1314439,
+  "to": 171870,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "soft-slope-guests.webp": {
+  "file": "soft-slope-guests.webp",
+  "from": 1265155,
+  "to": 178876,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "soft-village-winter.webp": {
+  "file": "soft-village-winter.webp",
+  "from": 1095786,
+  "to": 107074,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "starter-resort-winter.webp": {
+  "file": "starter-resort-winter.webp",
+  "from": 676882,
+  "to": 142778,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "towns-alpine-summer.webp": {
+  "file": "towns-alpine-summer.webp",
+  "from": 1493295,
+  "to": 104820,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "towns-sheet-night.webp": {
+  "file": "towns-sheet-night.webp",
+  "from": 2566197,
+  "to": 182106,
+  "w": 1284,
+  "h": 2016,
+  "alpha": false
+ },
+ "towns-sheet.webp": {
+  "file": "towns-sheet.webp",
+  "from": 3208288,
+  "to": 306536,
+  "w": 1284,
+  "h": 2016,
+  "alpha": false
+ },
+ "ui-all-panels-1280.webp": {
+  "file": "ui-all-panels-1280.webp",
+  "from": 753608,
+  "to": 127342,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui-boot-1920.webp": {
+  "file": "ui-boot-1920.webp",
+  "from": 1570212,
+  "to": 207392,
+  "w": 1920,
+  "h": 1080,
+  "alpha": false
+ },
+ "ui-finance.webp": {
+  "file": "ui-finance.webp",
+  "from": 841272,
+  "to": 116096,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui-inspector-assistant.webp": {
+  "file": "ui-inspector-assistant.webp",
+  "from": 878092,
+  "to": 115282,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui-lifts-drawer.webp": {
+  "file": "ui-lifts-drawer.webp",
+  "from": 763663,
+  "to": 111674,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui-narrow-1000.webp": {
+  "file": "ui-narrow-1000.webp",
+  "from": 644383,
+  "to": 96700,
+  "w": 1000,
+  "h": 700,
+  "alpha": false
+ },
+ "ui-new-game.webp": {
+  "file": "ui-new-game.webp",
+  "from": 424846,
+  "to": 29794,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui-tutorial-spotlight.webp": {
+  "file": "ui-tutorial-spotlight.webp",
+  "from": 877052,
+  "to": 130094,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-confirm.webp": {
+  "file": "ui2-confirm.webp",
+  "from": 335036,
+  "to": 28512,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-game-menu.webp": {
+  "file": "ui2-game-menu.webp",
+  "from": 550128,
+  "to": 57140,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-kit.webp": {
+  "file": "ui2-kit.webp",
+  "from": 161759,
+  "to": 50780,
+  "w": 1280,
+  "h": 1000,
+  "alpha": false
+ },
+ "ui2-load.webp": {
+  "file": "ui2-load.webp",
+  "from": 467844,
+  "to": 50746,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-menu.webp": {
+  "file": "ui2-menu.webp",
+  "from": 986058,
+  "to": 66746,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-newgame-dropdown.webp": {
+  "file": "ui2-newgame-dropdown.webp",
+  "from": 535371,
+  "to": 35828,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-save.webp": {
+  "file": "ui2-save.webp",
+  "from": 305211,
+  "to": 29228,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-settings.webp": {
+  "file": "ui2-settings.webp",
+  "from": 460666,
+  "to": 51794,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "ui2-topbar-dropdown.webp": {
+  "file": "ui2-topbar-dropdown.webp",
+  "from": 885935,
+  "to": 117230,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "walk-lake.webp": {
+  "file": "walk-lake.webp",
+  "from": 373149,
+  "to": 48734,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk-lift-board.webp": {
+  "file": "walk-lift-board.webp",
+  "from": 743656,
+  "to": 142910,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk-lodge.webp": {
+  "file": "walk-lodge.webp",
+  "from": 463649,
+  "to": 106922,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk2-drop-marker-red.webp": {
+  "file": "walk2-drop-marker-red.webp",
+  "from": 929742,
+  "to": 100102,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk2-drop-marker.webp": {
+  "file": "walk2-drop-marker.webp",
+  "from": 929172,
+  "to": 99272,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk2-night.webp": {
+  "file": "walk2-night.webp",
+  "from": 538167,
+  "to": 80006,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk2-start-path.webp": {
+  "file": "walk2-start-path.webp",
+  "from": 634796,
+  "to": 96818,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "walk2-stream.webp": {
+  "file": "walk2-stream.webp",
+  "from": 415845,
+  "to": 43754,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-deer-meadow.webp": {
+  "file": "world-deer-meadow.webp",
+  "from": 896790,
+  "to": 160664,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-far-128.webp": {
+  "file": "world-far-128.webp",
+  "from": 1573233,
+  "to": 222698,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-forest-summer.webp": {
+  "file": "world-forest-summer.webp",
+  "from": 690269,
+  "to": 96402,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-gallery.webp": {
+  "file": "world-gallery.webp",
+  "from": 1303597,
+  "to": 164610,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-lifts.webp": {
+  "file": "world-lifts.webp",
+  "from": 1197915,
+  "to": 163176,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-lodge-close.webp": {
+  "file": "world-lodge-close.webp",
+  "from": 662053,
+  "to": 89736,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-night.webp": {
+  "file": "world-night.webp",
+  "from": 825861,
+  "to": 88496,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-village-summer.webp": {
+  "file": "world-village-summer.webp",
+  "from": 930125,
+  "to": 96914,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-village-winter.webp": {
+  "file": "world-village-winter.webp",
+  "from": 1023944,
+  "to": 106672,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ },
+ "world-winter-forest.webp": {
+  "file": "world-winter-forest.webp",
+  "from": 1591331,
+  "to": 253016,
+  "w": 1600,
+  "h": 1000,
+  "alpha": false
+ }
+}

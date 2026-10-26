@@ -1,0 +1,126 @@
+{
+  "id": "safe-slopes",
+  "name": "Safe Slopes",
+  "tagline": "Everyone goes home. That is the whole brief.",
+  "blurb": "Storms, slab avalanches and curious bears. Keep guests safe with patrols, first aid and rangers, and finish the winter with nobody in hospital.",
+  "stars": 4,
+  "mapSize": 128,
+  "seed": 97,
+  "preset": "peaks",
+  "startSeason": "winter",
+  "startMoney": null,
+  "startLoan": false,
+  "unlocks": "all",
+  "starter": "empty",
+  "modifiers": {
+    "weatherHarsh": 1.5,
+    "eventBias": {
+      "incidents": 2.5,
+      "avalanche": 3
+    },
+    "bearsMax": 4
+  },
+  "objectives": [
+    {
+      "id": "patrol",
+      "title": "Staff a Ski Patrol Hub",
+      "fact": "buildings",
+      "arg": "patrolHub",
+      "op": ">=",
+      "target": 1,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "aid",
+      "title": "Build 2 First-Aid Huts",
+      "fact": "buildings",
+      "arg": "firstAid",
+      "op": ">=",
+      "target": 2,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "ranger",
+      "title": "Station a ranger team",
+      "fact": "buildings",
+      "arg": "rangerStation",
+      "op": ">=",
+      "target": 1,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "guests",
+      "title": "Welcome 1,000 guests",
+      "fact": "lifetimeGuests",
+      "op": ">=",
+      "target": 1000,
+      "weight": 30,
+      "mandatory": true
+    },
+    {
+      "id": "cap",
+      "title": "Keep incidents under 60",
+      "fact": "incidents",
+      "arg": "created",
+      "op": "<=",
+      "target": 60,
+      "weight": 20,
+      "mandatory": true
+    },
+    {
+      "id": "hosp2",
+      "title": "Fewer than 3 guests in hospital",
+      "fact": "incidents",
+      "arg": "hospitalised",
+      "op": "<=",
+      "target": 2,
+      "weight": 20
+    },
+    {
+      "id": "nohosp",
+      "title": "Nobody in hospital",
+      "fact": "incidents",
+      "arg": "hospitalised",
+      "op": "<=",
+      "target": 0,
+      "weight": 40
+    },
+    {
+      "id": "stars",
+      "title": "Reach a 3.5-star rating",
+      "fact": "stars",
+      "op": ">=",
+      "target": 3.5,
+      "weight": 20
+    }
+  ],
+  "deadline": {
+    "years": 1
+  },
+  "medals": {
+    "bronze": {},
+    "silver": {
+      "objectives": [
+        "hosp2"
+      ],
+      "minScore": 120
+    },
+    "gold": {
+      "objectives": [
+        "nohosp",
+        "stars"
+      ],
+      "minScore": 150
+    }
+  },
+  "failure": {
+    "bankrupt": true
+  },
+  "score": {
+    "speedBonus": 30,
+    "marginBonus": 0
+  }
+}

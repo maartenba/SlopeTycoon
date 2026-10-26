@@ -1,0 +1,128 @@
+{
+  "id": "family-valley",
+  "name": "Family Valley",
+  "tagline": "Snowsuits, hot chocolate and a lot of mittens.",
+  "blurb": "Families are coming in numbers. Give the little ones a ski school, a kids' area and a playground, and keep the grown-ups smiling too.",
+  "stars": 2,
+  "mapSize": 128,
+  "seed": 90,
+  "preset": "gentle",
+  "startSeason": "winter",
+  "startMoney": null,
+  "startLoan": false,
+  "unlocks": "all",
+  "starter": "empty",
+  "modifiers": {
+    "guestMix": {
+      "family": 2.5,
+      "solo": 0.6,
+      "adventure": 0.6
+    }
+  },
+  "objectives": [
+    {
+      "id": "families",
+      "title": "Welcome 1,500 family guests",
+      "fact": "familyGuests",
+      "op": ">=",
+      "target": 1500,
+      "weight": 30,
+      "mandatory": true
+    },
+    {
+      "id": "school",
+      "title": "Open a ski school",
+      "fact": "buildings",
+      "arg": "skiSchoolHQ",
+      "op": ">=",
+      "target": 1,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "kids",
+      "title": "Build a kids' ground",
+      "fact": "buildings",
+      "arg": "kidsGround",
+      "op": ">=",
+      "target": 1,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "play",
+      "title": "Build a playground",
+      "fact": "buildings",
+      "arg": "playground",
+      "op": ">=",
+      "target": 1,
+      "weight": 10,
+      "mandatory": true
+    },
+    {
+      "id": "stars",
+      "title": "Reach a 3.5-star rating",
+      "fact": "stars",
+      "op": ">=",
+      "target": 3.5,
+      "weight": 20,
+      "mandatory": true
+    },
+    {
+      "id": "stars4",
+      "title": "Reach 4 stars",
+      "fact": "stars",
+      "op": ">=",
+      "target": 4,
+      "weight": 20
+    },
+    {
+      "id": "happy",
+      "title": "Keep family happiness at 85% for a month",
+      "fact": "familyHappiness",
+      "op": ">=",
+      "target": 85,
+      "weight": 20,
+      "hold": 15
+    },
+    {
+      "id": "families6k",
+      "title": "Welcome 6,000 family guests",
+      "fact": "familyGuests",
+      "op": ">=",
+      "target": 6000,
+      "weight": 30
+    },
+    {
+      "id": "profit",
+      "title": "Earn $120,000 over 12 months",
+      "fact": "annualProfit",
+      "op": ">=",
+      "target": 120000,
+      "weight": 30
+    }
+  ],
+  "deadline": {
+    "years": 2
+  },
+  "medals": {
+    "bronze": {},
+    "silver": {
+      "minScore": 140
+    },
+    "gold": {
+      "objectives": [
+        "families6k",
+        "profit"
+      ],
+      "minScore": 180
+    }
+  },
+  "failure": {
+    "bankrupt": true
+  },
+  "score": {
+    "speedBonus": 20,
+    "marginBonus": 0
+  }
+}

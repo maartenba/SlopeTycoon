@@ -1,0 +1,30 @@
+import type { GameEventName, GameEvents } from '@/core/events';
+
+/** One realistic payload per event (raw ids / lowercase names on purpose: the formatters must humanise them). */
+export const EVENT_SAMPLES: { [K in GameEventName]: GameEvents[K] } = {
+  'guest:arrived': { id: 1 }, 'guest:left': { id: 1, reason: 'satisfied' }, 'guest:review': { guestId: 1, stars: 4, text: 'Great runs on Blue Run 3.', tone: 'plain', driver: 'piste', x: 10, y: 12 },
+  'building:placed': { id: 3, type: 'mountainHut', x: 10, y: 12 }, 'building:removed': { id: 3, type: 'mountainHut' },
+  'path:drawn': { kind: 'path', tiles: 4, erase: false }, 'piste:painted': { layer: 'ski', tiles: 4, erase: false },
+  'lift:built': { id: 2, kind: 'chair4d' }, 'lift:opened': { id: 2, open: true }, 'lift:closed': { id: 2, reason: 'Closed: no snow at the top station (1,450 m)' },
+  'attraction:opened': { id: 3, type: 'cafe' }, 'attraction:closed': { id: 3, type: 'mountainHut', reason: 'Closed: no snow at 1,450 m' },
+  'weather:changed': { kind: 'storm', previous: 'clear', temperature: -3, snowline: 10, precipitation: 'snow' },
+  'piste:opened': { id: 5, open: false }, 'money:changed': { money: 100, delta: 5 },
+  'loan:taken': { amount: 5000, total: 5000, rate: 5, termMonths: 12 }, 'speed:changed': { speed: 1, previous: 0 }, 'season:changed': { season: 'winter', previous: 'autumn' },
+  'incident:avalanche': { x: 12, y: 20, severity: 2, buried: 2 }, 'incident:wildlife': { x: 8, y: 9, kind: 'bear', animal: 'bear', outcome: 'sighting' },
+  'wildlife:scare': { animal: 'bear', id: 1, x: 8, y: 9, tile: 100, guests: 5, areaName: 'the northern upper bowl' },
+  'wildlife:hazed': { animal: 'bear', id: 1, x: 8, y: 9, station: 4 }, 'wildlife:relocated': { animal: 'bear', id: 1, x: 8, y: 9, toX: 2, toY: 3, station: 4, cost: 500 },
+  'ops:grooming': { vehicles: 2, tiles: 40 }, 'incident:injury': { guestId: 7, x: 14, y: 15 },
+  'incident:created': { id: 1, kind: 'injury', severity: 2, x: 14, y: 15, guestId: 7 }, 'incident:resolved': { id: 1, responder: 'patrol', responseTicks: 4, outcome: 'hospitalised', severe: true },
+  'incident:escalated': { id: 1, to: 'heli' }, 'finance:bankruptcyWarning': { money: -500, daysLeft: 5 }, 'finance:bankrupt': { money: -9000, day: 3 },
+  'finance:debtWarning': { money: -900, negDays: 8, level: 2 }, 'finance:declaredBankrupt': { money: -900, day: 4, reason: 'auto' },
+  'lift:broken': { id: 2, kind: 'chair4d', stranded: 3 }, 'lift:repaired': { id: 2, hours: 5 }, 'incident:stranded': { liftId: 2, guests: 3, x: 16, y: 17 },
+  'ops:schedule': { profile: 'winter', operating: 2, total: 3 }, 'finance:monthClosed': { year: 0, month: 2, net: 1200, income: 3000, expense: 1800 },
+  'rating:changed': { stars: 3, previous: 4, reason: 'queues are too long' }, 'day:changed': { year: 0, day: 3 }, 'month:changed': { year: 0, month: 1 }, 'year:changed': { year: 1 }, 'year:report': { year: 1 }, 'time:hour': { hour: 9 },
+  'family:dropoff': { group: 1, venueId: 3, venue: 'kidsGround', kids: 2, parents: 2 }, 'family:regroup': { group: 1, reason: 'lunch', venueId: 3 },
+  'lesson:started': { schoolId: 3, kids: [1], instructors: 1 }, 'lesson:finished': { schoolId: 3, kids: [1], fee: 20 },
+  'marketing:started': { id: 'families', name: 'Families', cost: 6000, days: 14, effectiveness: 0.8 }, 'marketing:ended': { id: 'families', name: 'Families', arrivals: 50, uplift: 10, upliftPct: 5 },
+  'marketing:cancelled': { id: 'families', name: 'Families', reason: 'requires: Ski School HQ' },
+  'milestone': { id: 'chapter1', title: 'Chapter 1 complete', major: true },
+  'scenario:objective': { id: 'guests', title: 'Welcome 500 guests', met: true },
+  'scenario:finished': { id: 'first-tracks', result: 'won', medal: 'silver', score: 120, reason: 'All objectives met.' },
+};

@@ -1,0 +1,605 @@
+{
+ "_comment": "Screenshot manifest for the website and guide. kind=harness: 'shot' = ShotOpts for scripts/lib/harness.ts shot(); kind=copy: copies 'source'. Run `npm run site:shots -- --only id1,id2|--missing`, then `npm run site:build`.",
+ "width": 1280,
+ "shots": [
+  {
+   "id": "hero-winter",
+   "alt": "A busy ski village in winter sunshine, lifts climbing the slopes behind the lodge.",
+   "pages": [
+    "landing",
+    "getting-started"
+   ],
+   "kind": "harness",
+   "caption": "Winter: lifts, pistes and a village that is getting busy.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 12,
+    "zoom": 5.5,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+    "ticks": 900,
+    "w": 1600,
+    "h": 1000,
+    "start": "winter",
+    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+   }
+  },
+  {
+   "id": "season-spring",
+   "alt": "The same valley in spring: blossom in the meadows, thin snow on the high slopes.",
+   "pages": [
+    "landing",
+    "guests-seasons"
+   ],
+   "kind": "harness",
+   "caption": "Spring: skiing up high, hiking down low.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 12,
+    "zoom": 5.5,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+    "ticks": 900,
+    "w": 1600,
+    "h": 1000,
+    "start": "spring",
+    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+   }
+  },
+  {
+   "id": "season-summer",
+   "alt": "A green summer valley with the village, hiking trails and meadows.",
+   "pages": [
+    "landing",
+    "guests-seasons"
+   ],
+   "kind": "harness",
+   "caption": "Summer: the snow is gone, the hikers and bikers arrive.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 12,
+    "zoom": 5.5,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'hikers')",
+    "ticks": 900,
+    "w": 1600,
+    "h": 1000,
+    "start": "summer",
+    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+   }
+  },
+  {
+   "id": "season-autumn",
+   "alt": "Autumn colours on the larger trees around the village.",
+   "pages": [
+    "landing",
+    "guests-seasons"
+   ],
+   "kind": "harness",
+   "caption": "Autumn: golden trees and a quiet breath before the snow.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 12,
+    "zoom": 5.5,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+    "ticks": 900,
+    "w": 1600,
+    "h": 1000,
+    "start": "autumn",
+    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+   }
+  },
+  {
+   "id": "night-village",
+   "alt": "The village at night with warm lit windows and lamp posts.",
+   "pages": [
+    "landing",
+    "guests-seasons"
+   ],
+   "kind": "harness",
+   "caption": "After dark the windows light up.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 21.5,
+    "zoom": 5.5,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+    "ticks": 900,
+    "w": 1600,
+    "h": 1000,
+    "start": "winter",
+    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+   }
+  },
+  {
+   "id": "slope-guests",
+   "alt": "Skiers and snowboarders in colourful jackets streaming down a groomed slope.",
+   "pages": [
+    "landing",
+    "guests-seasons"
+   ],
+   "kind": "harness",
+   "caption": "Guests come in all shapes: skiers, boarders, families, hikers.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 12,
+    "zoom": 6,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+    "ticks": 1500,
+    "w": 1600,
+    "h": 1000,
+    "start": "winter",
+    "evalJs": "(()=>{const s=window.__slope;const l=s.sim.lifts.all()[0];const c=s.renderer.controls;const x=(l.bottom.x+l.top.x)/2,z=(l.bottom.y+l.top.y)/2;c.target.set(x,s.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+   }
+  },
+  {
+   "id": "ride-ski",
+   "alt": "First-person view from a skier going down the slope, other guests ahead.",
+   "pages": [
+    "landing",
+    "modes"
+   ],
+   "kind": "harness",
+   "caption": "Ride along with any guest, from the lift to the bottom of the run.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 11,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+    "ticks": 1500,
+    "view": "ride",
+    "guest": "auto",
+    "vticks": 30,
+    "freeze": true,
+    "w": 1600,
+    "h": 1000
+   }
+  },
+  {
+   "id": "ride-lift",
+   "alt": "Looking out from a chairlift seat over the valley and the cable.",
+   "pages": [
+    "landing",
+    "modes",
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "Chairlift POV.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 11,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+    "ticks": 300,
+    "view": "lift",
+    "freeze": true,
+    "w": 1600,
+    "h": 1000
+   }
+  },
+  {
+   "id": "walk-lodge",
+   "alt": "First-person walk in front of the base lodge.",
+   "pages": [
+    "landing",
+    "modes"
+   ],
+   "kind": "harness",
+   "caption": "Walk mode: stroll through your own resort.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "hour": 12,
+    "zoom": null,
+    "target": "lodge",
+    "extra": "starter=1",
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+    "ticks": 900,
+    "w": 1600,
+    "h": 1000,
+    "view": "walk",
+    "walkAt": "lodge",
+    "walkYaw": 20,
+    "freeze": true,
+    "start": "winter"
+   }
+  },
+  {
+   "id": "photo-mode",
+   "alt": "Photo mode with a warm filter and a decorative frame around a dusk scene.",
+   "pages": [
+    "landing",
+    "modes"
+   ],
+   "kind": "harness",
+   "caption": "Photo mode: filters, frames and golden hour, saved locally as a PNG.",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 11,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+    "ticks": 600,
+    "view": "photo",
+    "photoHero": true,
+    "photoFilter": "vivid",
+    "photoFrame": "film",
+    "photoHour": 17.4,
+    "freeze": true,
+    "w": 1600,
+    "h": 1000
+   }
+  },
+  {
+   "id": "ui-hud",
+   "alt": "The main screen: top bar with money, rating and time; goals card on the right; the dock at the bottom.",
+   "pages": [
+    "interface",
+    "getting-started"
+   ],
+   "kind": "harness",
+   "caption": "The whole screen: top bar, goals card, dock.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800"
+   }
+  },
+  {
+   "id": "ui-buildings-drawer",
+   "alt": "The Buildings drawer open with category tabs and building cards with prices.",
+   "pages": [
+    "building",
+    "interface"
+   ],
+   "kind": "harness",
+   "caption": "The Buildings drawer: tabs, prices and a season tag on each card.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=buildings]"
+   }
+  },
+  {
+   "id": "ui-lifts-drawer",
+   "alt": "The Lifts drawer showing the lift types, some locked in Career mode.",
+   "pages": [
+    "lifts-pistes",
+    "building"
+   ],
+   "kind": "harness",
+   "caption": "Lifts: eleven types, from T-bar to funicular.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=lifts]"
+   }
+  },
+  {
+   "id": "ui-pistes-drawer",
+   "alt": "The Pistes drawer with difficulty colours and grooming tools.",
+   "pages": [
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "Paint pistes by colour; the game checks that they connect.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=pistes]"
+   }
+  },
+  {
+   "id": "ui-finance",
+   "alt": "The Finance drawer with the money overview and tabs.",
+   "pages": [
+    "money"
+   ],
+   "kind": "harness",
+   "caption": "Finance: income, expenses, loans and reports.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=finance]"
+   }
+  },
+  {
+   "id": "ui-pricing",
+   "alt": "The Pricing drawer with day pass and food price sliders.",
+   "pages": [
+    "money"
+   ],
+   "kind": "harness",
+   "caption": "Pricing: the game tells you if a price is cheap or expensive.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=pricing]"
+   }
+  },
+  {
+   "id": "ui-marketing",
+   "alt": "The Marketing drawer listing campaigns and their requirements.",
+   "pages": [
+    "money"
+   ],
+   "kind": "harness",
+   "caption": "Marketing campaigns and what each one needs.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=marketing]"
+   }
+  },
+  {
+   "id": "ui-ops",
+   "alt": "The Operations drawer with staff and safety coverage.",
+   "pages": [
+    "operations"
+   ],
+   "kind": "harness",
+   "caption": "Operations: staff, coverage and the safety picture.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=ops]"
+   }
+  },
+  {
+   "id": "ui-level-panel",
+   "alt": "The Career HUD: top bar, a level badge on the goals card and the dock along the bottom.",
+   "pages": [
+    "career"
+   ],
+   "kind": "harness",
+   "caption": "Career: the goals card carries your level badge; click it for the next level's requirements.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:Level;wait:400"
+   }
+  },
+  {
+   "id": "ui-levelup",
+   "alt": "A level-up celebration banner over the resort.",
+   "pages": [
+    "career"
+   ],
+   "kind": "harness",
+   "caption": "Levelling up unlocks bigger lifts and buildings.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "evalJs": "setTimeout(()=>window.__slope.progression.setLevel(4),200)",
+    "steps": "wait:1500"
+   }
+  },
+  {
+   "id": "ui-scenarios",
+   "alt": "The scenario picker with six scenario cards and star difficulty.",
+   "pages": [
+    "career",
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Six scenarios, from a gentle valley to the Alpine Giant.",
+   "shot": {
+    "bare": true,
+    "viewport": "1280x800",
+    "steps": "click:Scenarios;wait:700"
+   }
+  },
+  {
+   "id": "ui-newgame",
+   "alt": "The New Game dialog with Career and Sandbox, map size and season.",
+   "pages": [
+    "getting-started",
+    "career"
+   ],
+   "kind": "harness",
+   "caption": "New game: Career or Sandbox, map size, season, difficulty.",
+   "shot": {
+    "bare": true,
+    "viewport": "1280x800",
+    "steps": "click:New game;wait:800"
+   }
+  },
+  {
+   "id": "ui-year-report",
+   "alt": "The Resort of the Year report with charts and awards.",
+   "pages": [
+    "career",
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Every in-game year ends with a report card (shown with demo numbers here).",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1",
+    "viewport": "1280x800",
+    "evalJs": "window.__slope.stats.demoYear(); window.__slope.yearReport.show(undefined,false)",
+    "steps": "wait:1200"
+   }
+  },
+  {
+   "id": "ui-trophies",
+   "alt": "The trophy shelf with achievements and cosmetic rewards.",
+   "pages": [
+    "achievements",
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "The trophy shelf.",
+   "shot": {
+    "bare": true,
+    "viewport": "1280x800",
+    "steps": "click:Trophies;wait:700"
+   }
+  },
+  {
+   "id": "ui-settings",
+   "alt": "The settings dialog with sound, feedback intensity, text size and reduced motion.",
+   "pages": [
+    "settings",
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Settings: sound, feedback, text size, reduced motion and more.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:Sound & settings;wait:500"
+   }
+  },
+  {
+   "id": "ui-help",
+   "alt": "The help dialog listing keyboard shortcuts.",
+   "pages": [
+    "interface"
+   ],
+   "kind": "harness",
+   "caption": "Press ? or H anywhere for the shortcut list.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:Keyboard shortcuts"
+   }
+  },
+  {
+   "id": "ui-saveload",
+   "alt": "The Save and Load dialog with slots and export buttons.",
+   "pages": [
+    "saves"
+   ],
+   "kind": "harness",
+   "caption": "Save / Load: slots, quicksave and .slope export.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "click:Save game (Ctrl;wait:500"
+   }
+  },
+  {
+   "id": "ui-pause",
+   "alt": "The pause menu with Resume, Save, Load, Settings, Help.",
+   "pages": [
+    "interface"
+   ],
+   "kind": "harness",
+   "caption": "Esc opens the pause menu when nothing else is open.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1280x800",
+    "steps": "key:Escape;wait:400"
+   }
+  },
+  {
+   "id": "ui-menu",
+   "alt": "The main menu with Continue, New game, Scenarios, Trophies and a live village behind it.",
+   "pages": [
+    "getting-started"
+   ],
+   "kind": "harness",
+   "caption": "The title screen, with a live demo village behind the menu.",
+   "shot": {
+    "bare": true,
+    "viewport": "1280x800"
+   }
+  },
+  {
+   "id": "ops-bear",
+   "alt": "A brown bear on a meadow path with an orange threat overlay glowing around it, close to the village.",
+   "pages": [
+    "operations",
+    "landing"
+   ],
+   "kind": "copy",
+   "caption": "A bear in the woods. Rangers keep guests and bears apart.",
+   "source": "docs/img/bear-threat-overlay.webp"
+  },
+  {
+   "id": "towns-sheet",
+   "alt": "A contact sheet of ten different generated resort towns.",
+   "pages": [
+    "landing"
+   ],
+   "kind": "copy",
+   "caption": "Ten demo towns, all generated from a seed.",
+   "source": "docs/img/towns-sheet.webp"
+  }
+ ]
+}

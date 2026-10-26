@@ -1,0 +1,32 @@
+name: Regenerate site screenshots
+
+# Manual: re-shoots every screenshot in site/shots.json with headless Chrome (software WebGL) and uploads the optimised WebP files as an artifact.
+# Download the artifact, copy `assets/shots/*` over site/assets/shots/, review, commit. The Pages workflow never runs this.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Comma-separated screenshot ids (empty = all)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Re-shoot (Chrome is preinstalled on ubuntu-latest; the harness finds /usr/bin/google-chrome)
+        run: npm run site:shots -- ${{ inputs.only != '' && format('--only {0}', inputs.only) || '' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-shots
+          path: site/assets/shots/

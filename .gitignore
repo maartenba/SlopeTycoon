@@ -1,0 +1,27 @@
+node_modules
+dist
+.DS_Store
+*.log
+coverage
+.vite
+test-results
+.env
+.env.*
+# transient agent artefacts (plans + learnings stay tracked)
+.weave/shots/
+.weave/guestshots/
+# website (site/README.md): raw screenshots are regenerated; optimised WebP in site/assets/shots/ is committed
+site/shots-raw/
+dist-site/
+# large transient outputs (screenshot harness, site builds, scratch files)
+.weave/shots/
+.weave/*.log
+.weave/*.pid
+.weave/*.cjs
+.weave/*.js
+.weave/*.txt
+dist-site/
+site/shots-raw/
+*.tsbuildinfo
+# raw/unoptimised captures never go in docs/img (policy: docs/visual-qa.md "docs/img policy"); keepers are WebP via npm run docs:img
+docs/img/raw/

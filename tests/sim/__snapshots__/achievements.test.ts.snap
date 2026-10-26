@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`headless integration > a bot year on the starter map unlocks a sensible, deterministic set; stateHash is unchanged by the trackers 1`] = `
+[
+  "black-month",
+  "boom",
+  "first-groom",
+  "first-guest",
+  "first-lift",
+  "first-marketing",
+  "first-rescue",
+  "four-stars",
+  "guests-1000",
+  "level-4",
+  "quiet-mountain",
+  "snow-cannon",
+]
+`;
