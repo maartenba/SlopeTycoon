@@ -32,7 +32,9 @@ function mount(opts: { locked?: string | null } = {}) {
   return { dock, log };
 }
 const root = (d: StDock) => d.shadowRoot!;
-const buttons = (d: StDock) => Array.from(root(d).querySelectorAll<HTMLButtonElement>('.body button, .pane button'));
+const buttons = (d: StDock) => Array.from(root(d).querySelectorAll<HTMLButtonElement>('.body button'));
+const cards = (d: StDock) => Array.from(root(d).querySelectorAll<HTMLButtonElement>('.body .card'));
+const card = (d: StDock, name: string) => cards(d).find((c) => c.querySelector('.nm')?.textContent === name)!;
 const tab = (d: StDock, id: string) => root(d).querySelector<HTMLButtonElement>(`.tabs button[data-tab="${id}"]`)!;
 
 describe('Landscape drawer', () => {
@@ -47,7 +49,11 @@ describe('Landscape drawer', () => {
     expect(dock.openDrawer).toBe('landscape');
     expect(log).toContain('landscape:pond');
     const text = root(dock).textContent ?? '';
-    expect(text).toContain('Dig pond'); expect(text).toContain('Fill in'); expect(text).toMatch(/freeze/i);
+    expect(text).toContain('Dig pond'); expect(text).toContain('Fill in');
+    expect(cards(dock).map((c) => c.querySelector('.nm')?.textContent)).toEqual(['Dig pond', 'Fill in']);
+    expect(card(dock, 'Dig pond').classList.contains('active')).toBe(true); // selected state = the shared card state
+    expect(card(dock, 'Dig pond').querySelector('.num')?.textContent).toBe('1'); // key badge
+    expect(card(dock, 'Dig pond').querySelector('.pr')?.textContent).toMatch(/\$\d+\/tile/);
     expect(Array.from(root(dock).querySelectorAll('.tabs button')).map((b) => b.getAttribute('data-tab'))).toEqual(['water', 'terrain', 'nature', 'decor']);
     dock.remove();
   });
@@ -55,7 +61,7 @@ describe('Landscape drawer', () => {
   it('shows the career lock on the pond button', () => {
     const { dock } = mount({ locked: 'Unlocks at level 2: Local favourite' });
     dock.show('landscape');
-    const b = buttons(dock).find((x) => x.textContent?.includes('Dig pond'))!;
+    const b = card(dock, 'Dig pond');
     expect(b.textContent).toContain('🔒'); expect(b.title).toMatch(/level 2/); expect(b.classList.contains('locked')).toBe(true);
     dock.remove();
   });
@@ -65,19 +71,32 @@ describe('Landscape drawer', () => {
     dock.show('landscape');
     tab(dock, 'terrain').click();
     expect(log).toContain('activateTerraform');
-    buttons(dock).find((b) => b.textContent?.includes('smooth'))!.click();
+    card(dock, 'Smooth').click();
     expect(log).toContain('terraform:smooth');
     tab(dock, 'nature').click();
     const nat = (root(dock).textContent ?? '');
     expect(nat).toContain('Plant trees'); expect(nat).toContain('Boulders');
-    buttons(dock).find((b) => b.textContent?.includes('Boulders'))!.click();
+    card(dock, 'Boulders').click();
     expect(log).toContain('landscape:rock');
     tab(dock, 'decor').click();
-    const names = buttons(dock).map((b) => b.textContent ?? '');
-    for (const id of DECOR_IDS) expect(names.some((n) => n.includes('$')), id).toBe(true);
+    const names = cards(dock).map((b) => b.textContent ?? '');
     expect(names.filter((n) => /\$\d+/.test(n))).toHaveLength(DECOR_IDS.length);
-    buttons(dock).find((b) => b.textContent?.includes('Fountain'))!.click();
+    card(dock, 'Fountain').click();
     expect(log).toContain('decor:fountain');
+    dock.remove();
+  });
+
+  it('uses the shared card grid and controls of the other drawers (no one-off layout)', () => {
+    const { dock } = mount();
+    dock.show('landscape');
+    for (const t of ['water', 'terrain', 'nature', 'decor']) {
+      tab(dock, t).click();
+      expect(root(dock).querySelector('.body .rail .grid')).not.toBeNull();
+      expect(cards(dock).length).toBeGreaterThan(1);
+      expect(root(dock).querySelector('.body .pane')).toBeNull();
+      expect(root(dock).querySelector('.body .pc')).not.toBeNull();
+    }
+    expect(buttons(dock).filter((b) => !b.classList.contains('card') && !b.closest('.pc') && !b.closest('.fade')).length).toBe(0);
     dock.remove();
   });
 

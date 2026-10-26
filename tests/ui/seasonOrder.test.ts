@@ -56,6 +56,6 @@ describe('relevance / seasonSort (pure)', () => {
     expect(seasonBadge('summer', 'winter')).toBe('Summer'); expect(seasonBadge('winter', 'summer')).toBe('Winter');
     expect(seasonBadge('all', 'winter')).toBeNull(); expect(seasonBadge('winter', 'winter')).toBeNull(); expect(seasonBadge('winter', 'autumn')).toBeNull();
     expect(usableFrom('summer', 'winter')).toBe('summer'); expect(usableFrom('shoulder', 'winter')).toBe('spring'); expect(usableFrom('winter', 'summer')).toBe('winter');
-    expect(seasonHint('summer', 'winter')).toMatch(/Not usable until summer/); expect(seasonHint('summer', 'summer')).toBeNull(); expect(seasonHint('summer', undefined)).toBeNull();
+    expect(seasonHint('summer', 'winter')).toMatch(/Mostly used from summer on; you can build it any time/); expect(seasonHint('summer', 'summer')).toBeNull(); expect(seasonHint('summer', undefined)).toBeNull();
   });
 });

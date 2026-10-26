@@ -80,7 +80,7 @@ describe('season-ordered build drawer (DOM)', () => {
     const { dock } = mount();
     dock.show('buildings'); tab(dock, 'recreation');
     q(dock, '.card[data-id="beach"]')!.dispatchEvent(new MouseEvent('mouseenter'));
-    expect(q(dock, '.info')!.textContent).toMatch(/Not usable until summer/);
+    expect(q(dock, '.info')!.textContent).toMatch(/Mostly used from summer on/);
     q(dock, '.card[data-id="beach"]')!.dispatchEvent(new MouseEvent('mouseleave'));
     dock.remove();
   });

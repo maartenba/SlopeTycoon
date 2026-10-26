@@ -60,13 +60,13 @@ export abstract class DragTool {
       this.tip.style.cssText = 'position:fixed;pointer-events:none;padding:2px 6px;border-radius:4px;background:#000a;color:#fff;font:12px sans-serif;display:none;z-index:30';
       document.body.appendChild(this.tip);
     }
-    const on = <K extends keyof HTMLElementEventMap>(el: HTMLElement, t: K, f: (e: HTMLElementEventMap[K]) => void): void => {
+    const on = <K extends keyof HTMLElementEventMap>(el: HTMLElement | Window, t: K, f: (e: HTMLElementEventMap[K]) => void): void => {
       el.addEventListener(t, f as EventListener);
       this.disposers.push(() => el.removeEventListener(t, f as EventListener));
     };
     on(o.dom, 'pointerdown', (e) => this.onDown(e));
     on(o.dom, 'pointermove', (e) => this.onMove(e));
-    on(o.dom, 'pointerup', (e) => this.onUp(e));
+    on(window, 'pointerup', (e) => this.onUp(e)); // window: releasing over a HUD panel (profile card) must still end the stroke
     on(o.dom, 'contextmenu', (e) => { if (this.active) { e.preventDefault(); if (this.start) this.cancelStroke(); else this.stop(); } });
     const key = (e: KeyboardEvent): void => {
       if (!this.active) return;

@@ -3,7 +3,7 @@ import { BUILDINGS } from '@/config/buildings';
 import { LIFTS, type LiftKind } from '@/config/lifts';
 import { OVERLAY_LABELS, OVERLAY_MODES, type OverlayMode } from '@/sim/Coverage';
 import { SEASON_CENTERS } from '@/render/Season';
-import { TERRAFORM_BRUSH_MAX } from '@/config/balance';
+import { TERRAFORM_BRUSH_MAX, TERRAFORM_COST_PER_HALF_STEP } from '@/config/balance';
 import type { SeasonId } from '@/core/events';
 import type { TerraformMode, TerraformTarget } from '@/build/TerraformTool';
 import { PISTE_COST_PER_TILE } from '@/world/Networks';
@@ -115,8 +115,6 @@ const css = `
 .card.active{background:#e0a030;border-color:#ffd070;color:#111;box-shadow:0 0 0 2px #ffd070}
 .card.active .pr{color:#222}
 .card.poor{opacity:.55}
-.card.offseason{opacity:.72}
-.card.offseason.active{opacity:1}
 .card .sb{position:absolute;bottom:2px;right:3px;display:inline-flex;align-items:center;gap:2px;padding:0 4px;height:14px;border-radius:7px;background:rgba(20,28,40,.85);border:1px solid #5a7090;color:#cfe0ff;font-size:calc(9px * var(--ui-scale, 1));line-height:12px;pointer-events:none}
 .card .sb[hidden]{display:none}
 .card .sb.bk{left:3px;right:auto;color:#9fe0a0;border-color:#4f8a58}
@@ -167,6 +165,7 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
   return e;
 };
 
+interface LandItem { id: string; name: string; icon: string; price: string; key?: string; desc: string; stats: ReadonlyArray<readonly string[]>; rules: string[]; lock?: () => string | null; run(): void; on(): boolean }
 type LandTab = 'water' | 'terrain' | 'nature' | 'decor';
 const LAND_TABS: ReadonlyArray<{ id: LandTab; label: string; icon: string }> = [{ id: 'water', label: 'Water', icon: '💧' }, { id: 'terrain', label: 'Terrain', icon: '⛰️' }, { id: 'nature', label: 'Nature', icon: '🌲' }, { id: 'decor', label: 'Decor', icon: '🪴' }];
 
@@ -384,13 +383,13 @@ export class StDock extends StElement {
     const grid = b.rail?.grid;
     sorted.forEach((c, i) => {
       if (grid && grid.children[i] !== c.el) grid.insertBefore(c.el, grid.children[i] ?? null);
-      if (c.num) { const t = i < 9 ? String(i + 1) : ''; if (c.num.textContent !== t) c.num.textContent = t; c.num.hidden = i >= 9; }
+      if (c.num && b.drawer === 'buildings') { const t = i < 9 ? String(i + 1) : ''; if (c.num.textContent !== t) c.num.textContent = t; c.num.hidden = i >= 9; }
       const off = relevance(c.tag, season) === 'off', label = seasonBadge(c.tag, season);
       if (c.gate.set('off', off)) c.el.classList.toggle('offseason', off);
       if (c.gate.set('badge', label ?? '')) {
         c.badge.hidden = !label;
         c.badge.replaceChildren(...(label ? [icon(label === 'Winter' ? 'flake' : 'sun', 9), document.createTextNode(label)] : []));
-        c.badge.title = label ? `Not usable until ${label.toLowerCase()}` : '';
+        c.badge.title = label ? `Mostly used in ${label.toLowerCase()}; build it any time` : '';
       }
     });
   }
@@ -556,6 +555,7 @@ export class StDock extends StElement {
   private itemMeta(drawer: DrawerId, id: string): { name: string; icon: string; kind: 'building' | 'lift' | null } {
     if (drawer === 'buildings') return { name: BUILDINGS[id]?.name ?? id, icon: BUILDING_ICONS[id] ?? (BUILDINGS[id]?.name.charAt(0) ?? '?'), kind: 'building' };
     if (drawer === 'lifts') return { name: LIFTS[id as LiftKind].name, icon: LIFT_ICONS[id as LiftKind], kind: 'lift' };
+    if (drawer === 'landscape') { const l = this.landItem(id); return { name: l?.name ?? id, icon: l?.icon ?? '?', kind: null }; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     return { name: n?.name ?? id, icon: n?.icon ?? '?', kind: null };
   }
@@ -569,8 +569,9 @@ export class StDock extends StElement {
       b.dataset.id = id;
       const lock = el('span', 'lk');
       const price = el('span', 'pr');
-      const num = drawer === 'buildings' ? el('span', 'num', i < 9 ? String(i + 1) : '') : null;
-      if (num) { num.hidden = i >= 9; b.appendChild(num); }
+      const lkey = drawer === 'landscape' ? this.landItem(id)?.key : undefined;
+      const num = drawer === 'buildings' ? el('span', 'num', i < 9 ? String(i + 1) : '') : lkey ? el('span', 'num', lkey) : null;
+      if (num) { num.hidden = drawer === 'buildings' ? i >= 9 : false; b.appendChild(num); }
       const badge = el('span', 'sb'); badge.hidden = true;
       const bike = drawer === 'lifts' && LIFTS[id as LiftKind].carriesBikes ? el('span', 'sb bk') : null;
       if (bike) { bike.append(icon('bike', 11)); bike.title = 'Carries mountain bikes in summer'; }
@@ -668,12 +669,18 @@ export class StDock extends StElement {
       this.hideInfo(); api.lifts.select(id as LiftKind);
     }
     else if (open === 'paths' || open === 'pistes') { this.hideInfo(); api.network.start(id as NetworkItem['key']); }
+    else if (open === 'landscape') {
+      const it = this.landItem(id), c = this.cards.find((k) => k.id === id);
+      if (c?.el.classList.contains('locked')) { this.hover = id; this.popAnchor = c.el; this.renderInfo(); return; }
+      this.hideInfo(); it?.run();
+    }
   }
 
   private priceOf(drawer: DrawerId, id: string): { text: string; cost: number; lock: string[] } {
     const api = this.api!;
     if (drawer === 'buildings') return { text: formatMoney(api.buildings.cost(id)), cost: api.buildings.cost(id), lock: api.buildings.locked(id) };
     if (drawer === 'lifts') { const c = api.lifts.costPer100m(id as LiftKind); return { text: `${formatMoney(c)}/100m`, cost: c, lock: api.lifts.locked?.(id as LiftKind) ?? [] }; }
+    if (drawer === 'landscape') { const l = this.landItem(id), k = l?.lock?.(); return { text: l?.price ?? '', cost: 0, lock: k ? [k] : [] }; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     const c = n?.costPerTile || PISTE_COST_PER_TILE;
     return { text: `${formatMoney(c)}/tile`, cost: c, lock: [] };
@@ -687,7 +694,7 @@ export class StDock extends StElement {
     for (const c of this.cards) {
       const p = this.priceOf(open, c.id);
       const poor = open === 'buildings' && p.cost > api.funds();
-      const locked = p.lock.length > 0, isPoor = poor && !locked, act = this.active?.drawer === open && this.active.id === c.id;
+      const locked = p.lock.length > 0, isPoor = poor && !locked, act = open === 'landscape' ? !!this.landItem(c.id)?.on() : this.active?.drawer === open && this.active.id === c.id;
       const lvl = p.lock.map((r) => LEVEL_LOCK.exec(r)?.[1]).find((n) => n !== undefined);
       const title = lvl ? p.lock.join('\n') : locked ? `Locked: ${p.lock.join(', ')}` : poor ? 'Not enough funds' : '';
       if (c.gate.set('price', p.text)) c.price.textContent = p.text;
@@ -705,6 +712,7 @@ export class StDock extends StElement {
     const api = this.api!;
     if (drawer === 'buildings') return buildingInfo(id, { locked: api.buildings.locked, cost: api.buildings.cost, multiplier: api.buildings.multiplier, season: this.season() });
     if (drawer === 'lifts') return liftInfo(id as LiftKind, api.lifts.costPer100m(id as LiftKind), this.season(), api.lifts.locked?.(id as LiftKind) ?? []);
+    if (drawer === 'landscape') { const l = this.landItem(id), k = l?.lock?.(); return l ? { id, title: l.name, desc: l.desc, icon: l.icon, stats: l.stats.map((x): [string, string] => [x[0] ?? '', x[1] ?? '']), reqs: [], rules: l.rules, note: k && LEVEL_LOCK.test(k) ? k : undefined } : null; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     return n ? networkInfo(n, PISTE_COST_PER_TILE, this.season()) : null;
   }
@@ -847,65 +855,105 @@ export class StDock extends StElement {
     }
   }
 
-  /** One tab of the Landscape drawer. Returns the function that re-marks the active buttons (called when the tool / its state changes). */
-  private landscapePane(tab: LandTab): () => void {
+  /** Cards of one Landscape tab: same shape as a Buildings / Pistes card (icon, name, price, key badge, hover card, active state). */
+  private landItems(tab: LandTab): LandItem[] {
     const api = this.api!, ls = api.landscape;
-    const p = el('div', 'pane cols');
-    const marks: Array<() => void> = [];
-    const mark = (b: HTMLButtonElement, on: () => boolean): HTMLButtonElement => { marks.push(() => b.classList.toggle('active', on())); return b; };
-    const size = el('span', 'small');
-    const sizeBtns = (cur: () => string, minus: () => void, plus: () => void): HTMLElement[] => {
-      marks.push(() => { size.textContent = cur(); });
-      return [this.btn('−', 'smaller ([)', () => { minus(); }), size, this.btn('+', 'bigger (])', () => { plus(); })];
-    };
-    const modeBtn = (m: LandscapeMode, label: string, title: string): HTMLButtonElement =>
-      mark(this.btn(label, title, () => { ls?.activate(m); }), () => this.tool === 'landscape' && ls?.state().mode === m);
-    if (!ls) { p.appendChild(el('div', 'small', 'Landscaping is not available here.')); this.body.appendChild(p); return () => {}; }
-    if (tab === 'water') {
-      const lock = ls.pondLocked();
-      const r1 = el('div', 'sec');
-      const pb = modeBtn('pond', `${lock ? '🔒 ' : ''}💧 Dig pond (1)`, lock ?? 'Drag a rectangle (3-11 tiles) on flat ground to dig a pond (1). Click for the default size');
-      if (lock) { pb.classList.add('locked'); marks.push(() => { pb.title = ls.pondLocked() ?? pb.title; }); }
-      r1.append(pb, modeBtn('fill', '🪣 Fill in (2)', 'Click a pond you dug to fill it back in to ground level (2)'));
-      r1.append(...sizeBtns(() => `${ls.state().pondSize}×${ls.state().pondSize}`, () => ls.setBrush(ls.state().pondSize - 1), () => ls.setBrush(ls.state().pondSize + 1)));
-      p.append(r1);
-      p.appendChild(el('div', 'small', `Drag to size a pond (3–11 tiles), or click for the default size ([ ] changes it). Needs nearly level ground, ${LANDSCAPE.pond.waterGap}+ tiles from other water, buildings, pistes and lifts. About $${LANDSCAPE.pond.costPerTile} per tile plus earthworks; filling in $${LANDSCAPE.pond.fillCostPerTile}/tile. Ponds freeze over in winter and count as lakes for beaches and boat rentals. Streams: not available yet.`));
-    } else if (tab === 'terrain') {
-      const t = api.terraform, r1 = el('div', 'sec');
-      for (const [m, k, ic] of [['raise', '1', '⬆️'], ['lower', '2', '⬇️'], ['flatten', '3', '➖'], ['smooth', '4', '〰️']] as const) {
-        r1.appendChild(mark(this.btn(`${ic} ${m} (${k})`, `${m} terrain (${k})`, () => { if (this.tool !== 'terraform') api.activateTerraform(); t.setMode(m); this.landSync?.(); }), () => this.tool === 'terraform' && t.state().mode === m));
-      }
-      r1.append(...sizeBtns(() => `brush ${t.state().brush}/${TERRAFORM_BRUSH_MAX}`, () => t.setBrush(t.state().brush - 1), () => t.setBrush(t.state().brush + 1)));
-      p.append(r1, el('div', 'small', 'Smooth relaxes bumps, Flatten levels a rectangle (drag). Keys 1–4 mode, [ ] brush, C tile / corner. Same tool as the Terrain drawer, which has the slope setting.'));
-    } else if (tab === 'nature') {
-      const nat = api.nature, r1 = el('div', 'sec');
-      if (nat) {
-        for (const [m, ic] of [['plant', '🌲 Plant trees'], ['clear', '🪓 Clear trees']] as const) r1.appendChild(mark(this.btn(ic, `${m} trees with the brush`, () => { nat.setMode(m); this.landSync?.(); }), () => this.tool === 'plant' && nat.state().mode === m));
-        const sp = makeSelect(nat.groups.map((g) => ({ value: g.id, label: g.label })), nat.state().group, 'Species group', (v) => { nat.setGroup(v); this.landSync?.(); });
-        sp.title = 'Species group';
-        marks.push(() => { sp.value = nat.state().group; });
-        r1.appendChild(sp);
-      }
-      const r2 = el('div', 'sec');
-      r2.append(modeBtn('rock', `🪨 Boulders (3) · $${Math.round(LANDSCAPE.rock.cost * ls.multiplier())}`, 'Paint boulders on dry ground (3)'), modeBtn('rockClear', '⛏️ Remove boulders (4)', 'Remove boulders under the brush (4)'));
-      r2.append(...sizeBtns(() => `brush ${this.tool === 'plant' && nat ? nat.state().brush : ls.state().brush}`, () => { if (this.tool === 'plant' && nat) nat.setBrush(nat.state().brush - 1); else ls.setBrush(ls.state().brush - 1); }, () => { if (this.tool === 'plant' && nat) nat.setBrush(nat.state().brush + 1); else ls.setBrush(ls.state().brush + 1); }));
-      p.append(r1, r2, el('div', 'small', 'Trees: 1 plant / 2 clear, G species, [ ] brush. Boulders: drag to scatter; never on water, steep cliffs, paths, pistes or buildings.'));
-    } else {
-      const r1 = el('div', 'sec');
-      for (const id of DECOR_IDS) {
-        const d = DECOR[id];
-        const b = this.btn(`${d.icon} ${d.label} · $${Math.round(d.cost * ls.multiplier())}`, `${d.blurb}${d.oriented ? ' Drag to draw a row; R turns it.' : ''}`, () => { ls.setDecor(id); this.landSync?.(); });
-        r1.appendChild(mark(b, () => this.tool === 'landscape' && ls.state().mode === 'decor' && ls.state().decor === id));
-      }
-      const r2 = el('div', 'sec');
-      r2.append(modeBtn('decorClear', '🧹 Remove decor (6)', 'Remove decor under the cursor, free (6)'));
-      r2.appendChild(this.btn('⟳ Turn (R)', 'Turn the piece (R): benches, hedges, fences and walls run along x or y', () => { ls.setRot(ls.state().rot ? 0 : 1); }));
-      p.append(r1, r2, el('div', 'small', 'Click to place, drag to draw a row: hedges, fences and walls follow the drag, so one stroke edges a path. Decor needs dry ground without trees or rocks, blocks building there, has no upkeep, and the solid pieces stop you in walk mode.'));
+    if (!ls) return [];
+    const m = ls.multiplier(), usd = (n: number): string => `$${Math.round(n * m)}`;
+    const onLand = (mode: LandscapeMode): boolean => this.tool === 'landscape' && ls.state().mode === mode;
+    const t = api.terraform, nat = api.nature;
+    switch (tab) {
+      case 'water': return [
+        { id: 'pond', name: 'Dig pond', icon: '💧', price: `${usd(LANDSCAPE.pond.costPerTile)}/tile`, key: '1', desc: 'Dig a pond: drag a rectangle (3–11 tiles) or click for the default size.', stats: [['Cost', `${usd(LANDSCAPE.pond.costPerTile)}/tile + earthworks`], ['Size', '3–11 tiles']],
+          rules: [`Nearly level ground, ${LANDSCAPE.pond.waterGap}+ tiles from other water, buildings, pistes and lifts`, 'Freezes over in winter; counts as a lake for beaches and boat rentals'], lock: () => ls.pondLocked(), run: () => ls.activate('pond'), on: () => onLand('pond') && !ls.pondLocked() },
+        { id: 'fill', name: 'Fill in', icon: '🪣', price: `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`, key: '2', desc: 'Fill a pond you dug back in to ground level.', stats: [['Cost', `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`]], rules: ['Click a pond you dug', 'Natural lakes cannot be filled'], run: () => ls.activate('fill'), on: () => onLand('fill') },
+      ];
+      case 'terrain': return (['raise', 'lower', 'flatten', 'smooth'] as const).map((md, i) => ({
+        id: md, name: md[0]!.toUpperCase() + md.slice(1), icon: (['⬆️', '⬇️', '➖', '〰️'] as const)[i]!, price: `${usd(TERRAFORM_COST_PER_HALF_STEP)}/step`, key: String(i + 1),
+        desc: ({ raise: 'Raise the ground under the brush.', lower: 'Lower the ground under the brush.', flatten: 'Level a rectangle (drag).', smooth: 'Relax bumps and sharp edges.' } as const)[md],
+        stats: [['Cost', `${usd(TERRAFORM_COST_PER_HALF_STEP)} per half-step`]], rules: ['Same tool as the Terrain drawer', 'C: tile / corner target'],
+        run: () => { if (this.tool !== 'terraform') api.activateTerraform(); t.setMode(md); this.landSync?.(); }, on: () => this.tool === 'terraform' && t.state().mode === md,
+      }));
+      case 'nature': return [
+        ...(nat ? (['plant', 'clear'] as const).map((md, i) => ({
+          id: md, name: md === 'plant' ? 'Plant trees' : 'Clear trees', icon: md === 'plant' ? '🌲' : '🪓', price: 'by area', key: String(i + 1),
+          desc: md === 'plant' ? 'Paint trees with the brush; pick the species group on the right.' : 'Cut trees under the brush (timber pays a little).', stats: [['Brush', '1–5']],
+          rules: md === 'plant' ? ['Not on pistes, paths, buildings, water or steep rock', 'G cycles the species group'] : ['Trees only; boulders stay'],
+          run: () => { nat.setMode(md); this.landSync?.(); }, on: () => this.tool === 'plant' && nat.state().mode === md,
+        })) : []),
+        { id: 'rock', name: 'Boulders', icon: '🪨', price: `${usd(LANDSCAPE.rock.cost)}/rock`, key: '3', desc: 'Scatter boulders with the brush.', stats: [['Cost', `${usd(LANDSCAPE.rock.cost)} each`], ['Brush', `1–${LANDSCAPE.rock.maxBrush}`]], rules: ['Dry ground only: never on water, steep cliffs, paths, pistes or buildings'], run: () => ls.activate('rock'), on: () => onLand('rock') },
+        { id: 'rockClear', name: 'Remove boulders', icon: '⛏️', price: `${usd(LANDSCAPE.rock.removeCost)}/rock`, key: '4', desc: 'Remove boulders under the brush.', stats: [['Cost', `${usd(LANDSCAPE.rock.removeCost)} each`]], rules: ['Drag across the boulders'], run: () => ls.activate('rockClear'), on: () => onLand('rockClear') },
+      ];
+      default: return [
+        ...DECOR_IDS.map((id): LandItem => {
+          const d = DECOR[id];
+          return { id, name: d.label, icon: d.icon, price: usd(d.cost), desc: d.blurb, stats: [['Cost', usd(d.cost)], ['Walk mode', d.solid ? 'blocks' : 'walkable']],
+            rules: [...(d.oriented ? ['Drag to draw a row; R turns it'] : []), 'Dry ground without trees or rocks', 'No upkeep'], run: () => { ls.setDecor(id); this.landSync?.(); }, on: () => onLand('decor') && ls.state().decor === id };
+        }),
+        { id: 'decorClear', name: 'Remove decor', icon: '🧹', price: 'free', key: '6', desc: 'Remove decor under the cursor.', stats: [['Cost', 'free']], rules: ['Click the piece'], run: () => ls.activate('decorClear'), on: () => onLand('decorClear') },
+      ];
     }
-    this.body.appendChild(p);
-    const sync = (): void => { for (const m of marks) m(); };
-    sync();
-    return sync;
+  }
+  private landItem(id: string): LandItem | undefined {
+    for (const t of LAND_TABS) { const i = this.landItems(t.id).find((x) => x.id === id); if (i) return i; }
+    return undefined;
+  }
+
+  /** Side controls of a Landscape tab: the same kind of controls the Pistes drawer has (selects, buttons), never a custom layout. */
+  private landControls(tab: LandTab): { node: HTMLElement; sync: () => void } {
+    const api = this.api!, ls = api.landscape!, t = api.terraform, nat = api.nature;
+    const side = el('div', 'pc'), marks: Array<() => void> = [];
+    const range = (lo: number, hi: number, label: string): Array<{ value: string; label: string }> => Array.from({ length: hi - lo + 1 }, (_, i) => ({ value: String(lo + i), label: `${label} ${lo + i}` }));
+    const brushSel = (lo: number, hi: number, label: string, get: () => number, set: (n: number) => void): void => {
+      const s = makeSelect(range(lo, hi, label), String(get()), label, (v) => { set(Number(v)); this.landSync?.(); });
+      s.title = `${label} ([ ] changes it)`;
+      marks.push(() => { s.value = String(get()); });
+      side.appendChild(s);
+    };
+    if (tab === 'water') {
+      const lo = LANDSCAPE.pond.minExtent, hi = LANDSCAPE.pond.maxExtent;
+      brushSel(lo, hi, 'Pond size', () => ls.state().pondSize, (n) => { if (ls.state().mode !== 'pond') ls.activate('pond'); ls.setBrush(n); });
+    } else if (tab === 'terrain') {
+      brushSel(1, TERRAFORM_BRUSH_MAX, 'Brush size', () => t.state().brush, (n) => t.setBrush(n));
+      const tg = makeSelect([{ value: 'tile', label: 'Target: tile' }, { value: 'corner', label: 'Target: corner' }], t.state().target, 'Tile or corner target (C toggles)', (v) => { t.setTarget(v as TerraformTarget); this.landSync?.(); });
+      marks.push(() => { tg.value = t.state().target; });
+      const sl = makeSelect([{ value: '1', label: 'Slope: gentle' }, { value: '2', label: 'Slope: steep' }], String(t.state().maxEdgeDelta ?? 1), 'Max slope between adjacent corners', (v) => t.setMaxEdgeDelta(Number(v) as 1 | 2));
+      sl.title = 'Max slope between adjacent corners';
+      side.append(tg, sl);
+    } else if (tab === 'nature') {
+      if (nat) {
+        const sp = makeSelect(nat.groups.map((g) => ({ value: g.id, label: g.label })), nat.state().group, 'Species group (G cycles)', (v) => { nat.setGroup(v); this.landSync?.(); });
+        sp.title = 'Species group (G cycles)';
+        marks.push(() => { sp.value = nat.state().group; });
+        const dn = makeSelect([[0.3, 'Density: sparse'], [0.6, 'Density: normal'], [1, 'Density: dense']].map(([v, l]) => ({ value: String(v), label: String(l) })), String(nat.state().density), 'Planting density', (v) => nat.setDensity(Number(v)));
+        dn.title = 'Planting density';
+        marks.push(() => { dn.value = String(nat.state().density); });
+        side.append(sp, dn);
+      }
+      const rocks = (): boolean => this.tool === 'landscape';
+      brushSel(1, LANDSCAPE.rock.maxBrush, 'Brush size', () => (rocks() || !nat ? ls.state().brush : nat.state().brush), (n) => { if (rocks() || !nat) ls.setBrush(n); else nat.setBrush(n); });
+    } else {
+      const turn = this.btn('⟳ Turn (R)', 'Turn the piece (R): benches, hedges, fences and walls run along x or y', () => { ls.setRot(ls.state().rot ? 0 : 1); });
+      side.appendChild(turn);
+    }
+    const hint = el('div', 'trailnote');
+    hint.textContent = ({
+      water: 'Drag a rectangle on level ground; [ ] changes the default size. Streams: not available yet.',
+      terrain: 'Same tool as the Terrain drawer. Keys 1–4 mode, [ ] brush, C tile / corner.',
+      nature: 'Trees: 1 plant / 2 clear, G species. Boulders: 3 / 4, drag to scatter. [ ] brush.',
+      decor: 'Click to place, drag to draw a row; hedges, fences and walls follow the drag. R turns a piece.',
+    } as const)[tab];
+    side.appendChild(hint);
+    return { node: side, sync: () => { for (const m of marks) m(); } };
+  }
+
+  /** One tab of the Landscape drawer: a card rail (shared with Buildings) + side controls. Returns the function that re-marks active cards / controls. */
+  private landscapePane(tab: LandTab): () => void {
+    if (!this.api?.landscape) { this.body.appendChild(this.textPane('Landscaping is not available here.')); return () => {}; }
+    this.buildGrid(this.landItems(tab).map((i) => i.id), 'landscape');
+    const ctl = this.landControls(tab);
+    this.body.appendChild(ctl.node);
+    return () => { ctl.sync(); this.updateCards(); this.renderInfo(); };
   }
 
   private viewPane(): void {

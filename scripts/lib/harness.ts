@@ -176,6 +176,7 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
     else if (kind === 'move') { const [mx, my] = arg.split(',').map(Number); await page.mouse.move(mx!, my!); }
     else if (kind === 'wheel') { await page.mouse.wheel({ deltaY: Number(arg) }); }
     else if (kind === 'mouse') { const [mx, my] = arg.split(',').map(Number); await page.mouse.click(mx!, my!); }
+    else if (kind === 'drag') { const [x1, y1, x2, y2] = arg.split(',').map(Number); await page.mouse.move(x1!, y1!); await page.mouse.down(); for (let k = 1; k <= 12; k++) { await page.mouse.move(x1! + (x2! - x1!) * k / 12, y1! + (y2! - y1!) * k / 12); await new Promise((r) => setTimeout(r, 30)); } await page.mouse.up(); }
     else if (kind === 'wait') await new Promise((r) => setTimeout(r, Number(arg)));
     else if (kind === 'click') {
       const ok = await page.evaluate(clickByText, arg);

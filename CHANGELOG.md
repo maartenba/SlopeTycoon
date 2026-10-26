@@ -5,6 +5,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 ## [Unreleased]
 
 ### Landscape drawer and bug round
+- **Build in any season**: every building, lift, path, road, piste, trail and landscape item can be placed in any season (it always could in the rules; the season badges, dimming and "not usable until" wording read like a lock and are now plain hints). Releasing a piste stroke over the slope-profile card now still ends the stroke. The Landscape drawer now uses the same cards, hover cards, key badges and select controls as the other drawers.
 - **Landscape drawer** (`docs/landscaping.md`): dig and fill ponds (unlock at resort level 2), terrain, boulders and trees, and garden decor (bench, lamp, flower bed, hedge, fence, wall, fountain). Undoable, saved, ponds freeze in winter.
 - **Fixes**: *Show me* on the level-up card and goals always lands on the right drawer card with a highlight; hiking and biking trails can be painted in winter; the starter resort no longer has a decorative parking pad (a real Parking building instead); dock crash, roof snow and coplanar flicker fixes.
 - **Website and guide**: Landscape section in *Building*, new screenshots (`ui-landscape`, `landscape-pond`), re-shot Almabtrieb and Staff pictures, regenerated unlock tables.

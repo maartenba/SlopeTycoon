@@ -81,7 +81,10 @@ export class PisteTool extends DragTool {
     if (line.length < 2) { this.o.onProfile(null); return; }
     const auto = this.override !== null ? this.override : [...this.o.networks.autoDifficulty(line).values()];
     const label = this.layer === Layer.Ski ? 'Ski piste' : this.layer === Layer.Mtb ? 'MTB trail' : 'Hiking trail';
-    this.o.onProfile({ kind: 'piste', title: `${label} profile${this.override === null ? ' (auto grade)' : ''}`, profile: slopeProfile(this.o.grid, line, auto), snowlineM: this.snowlineM?.() });
+    const profile = slopeProfile(this.o.grid, line, auto), snowline = this.snowlineM?.();
+    // Building is never season-bound; only opening is. Say so when this line currently lies below the snowline (bare ground).
+    const bare = this.layer === Layer.Ski && snowline !== undefined && Math.max(profile.startAltM, profile.endAltM) < snowline;
+    this.o.onProfile({ kind: 'piste', title: `${label} profile${this.override === null ? ' (auto grade)' : ''}`, profile, snowlineM: snowline, note: bare ? 'No snow here right now: you can build it, but skiers only use it once snow covers it.' : undefined });
   }
   /** Current snowline altitude (m); set by the host. */
   snowlineM?: () => number | undefined;

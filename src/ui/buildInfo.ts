@@ -141,16 +141,16 @@ const money = (n: number): string => '$' + Math.round(n).toLocaleString('en-US')
 /** Season relevance of lifts (winter-only drag lifts vs bike-capable chairs/gondolas) and network tools (pistes winter, MTB/hiking summer). */
 export const liftSeason = (k: LiftKind): SeasonTag => (LIFTS[k].carriesBikes ? 'all' : 'winter');
 export const networkSeason = (key: NetworkItem['key']): SeasonTag => (key === 'ski' ? 'winter' : key === 'mtb' || key === 'hike' ? 'summer' : 'all');
-/** 'Not usable until summer' hint line for an off-season item; null when usable now. */
+/** 'Mostly used from summer on' hint line for an off-season item; null when usable now. */
 export function seasonHint(tag: SeasonTag, season: SeasonId | undefined): string | null {
   const u = season ? usableFrom(tag, season) : null;
-  return u ? `Not usable until ${u} (you can still build it in advance)` : null;
+  return u ? `Mostly used from ${u} on; you can build it any time` : null;
 }
 
 /** One-line note for the Pistes & Trails drawer: trails and pistes can always be built (plan ahead); they are only used in their season. null = nothing to say. */
 export function trailSeasonNote(season: SeasonId | undefined): string | null {
-  if (season === 'winter') return 'Trails can be built now; bikers and hikers use them once the snow is gone.';
-  if (season === 'summer') return 'Ski pistes can be built now; skiers use them once there is snow.';
+  if (season === 'winter') return 'Trails can be built any time; bikers and hikers use them once the snow is gone.';
+  if (season === 'summer') return 'Ski pistes can be painted any time, even on bare ground; they open for skiers once there is snow.';
   return null;
 }
 

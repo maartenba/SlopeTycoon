@@ -8,7 +8,7 @@ screenshots: [ui-buildings-drawer, ui-lifts-drawer, ui-landscape, landscape-pond
 
 ## The Buildings drawer
 
-Buildings are grouped in tabs: **Core**, **Services** (restaurants, shops, parking…), **Lodging**, **Kids**, **Safety**, **Operations**, **Snow**, **Water**, **Recreation** and **Transport**. Each card shows the price and a small **season tag**: some buildings only earn their keep in winter (ski school, Après-Ski Bar, snowmaking cannons), some in summer (Adventure Park, beach, boat rental) and some all year. Hover a card for cost, upkeep, footprint and requirements.
+Buildings are grouped in tabs: **Core**, **Services** (restaurants, shops, parking…), **Lodging**, **Kids**, **Safety**, **Operations**, **Snow**, **Water**, **Recreation** and **Transport**. Each card shows the price and a small **season tag** (a hint only: you can build anything in any season): some buildings only earn their keep in winter (ski school, Après-Ski Bar, snowmaking cannons), some in summer (Adventure Park, beach, boat rental) and some all year. Hover a card for cost, upkeep, footprint and requirements.
 
 > [!TIP] Press <kbd>1</kbd>–<kbd>9</kbd> to pick the Nth card while the Buildings drawer is open.
 

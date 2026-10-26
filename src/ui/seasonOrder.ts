@@ -30,7 +30,7 @@ export function seasonSort<T>(items: readonly T[], tagOf: (t: T) => SeasonTag, s
   return items.map((t, i) => ({ t, i, r: RANK[relevance(tagOf(t), season)] })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.t);
 }
 
-/** Season a tag next becomes usable in (summer items: summer; snow-free 'shoulder' items: spring), for 'Not usable until summer' hints; null when usable now. */
+/** Season a tag next becomes usable in (summer items: summer; snow-free 'shoulder' items: spring), for 'Mostly used from summer on' hints; null when usable now. */
 export function usableFrom(tag: SeasonTag, season: SeasonId): string | null {
   if (relevance(tag, season) !== 'off') return null;
   return tag === 'winter' ? 'winter' : tag === 'shoulder' ? 'spring' : 'summer';
