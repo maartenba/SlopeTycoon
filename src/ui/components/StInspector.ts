@@ -132,7 +132,7 @@ export class StInspector extends StElement {
       opsRows.push(line(`Water: ${Math.round(t.ops.level)} / ${Math.round(t.ops.capacity)} (${Math.round((100 * t.ops.level) / Math.max(1, t.ops.capacity))}%)`, t.ops.level < 1 ? 'bad' : ''));
       if (t.ops.cannons !== undefined) opsRows.push(line(`Feeds ${t.ops.cannons} cannon${t.ops.cannons === 1 ? '' : 's'} within pipe range`, t.ops.cannons === 0 ? 'bad' : ''));
     } else if (t.ops?.kind === 'cannon') {
-      const c = t.ops.info, head = line(c.headline, c.status === 'running' ? 'good' : c.status === 'full' ? '' : 'bad');
+      const c = t.ops.info, head = line(c.headline, c.status === 'running' ? 'good' : c.status === 'full' || c.status === 'off' || c.status === 'paused' ? '' : 'bad');
       head.dataset.role = 'cannon-status';
       const tog = document.createElement('button'), globalOff = c.mode === 'off';
       tog.dataset.role = 'cannon-toggle'; tog.textContent = c.switchedOff || globalOff ? 'Turn this cannon on' : 'Turn this cannon off'; tog.disabled = globalOff;

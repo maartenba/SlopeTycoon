@@ -711,10 +711,10 @@ export function createSim(opts: SimOptions) {
         const def = BUILDINGS[x.type], full = (def?.upkeep ?? 0) * diff.upkeep * (mods.costMultipliers?.upkeep ?? 1);
         let share = x.active && openStatus.buildingStatus(x.id)?.open === false ? CLOSED_BUILDING_UPKEEP_SHARE : 1;
         if (offSeason && def?.season === 'winter' && OFFSEASON_RELIEF.winterOnlyUpkeepShare < share) { relief.mothball += full * (share - OFFSEASON_RELIEF.winterOnlyUpkeepShare); share = OFFSEASON_RELIEF.winterOnlyUpkeepShare; }
+        if (x.type === 'snowCannon' && ops.snowmaking.isMothballed(x.id) && SNOWMAKING.mothballUpkeepShare < share) { relief.mothball += full * (share - SNOWMAKING.mothballUpkeepShare); share = SNOWMAKING.mothballUpkeepShare; } // switched off by the player: 15 % upkeep
         b += full * share;
       }
       const lo = liftOps.settleDay(); // closed lifts only cost base maintenance; running lifts cost energy
-        if (x.type === 'snowCannon' && ops.snowmaking.isMothballed(x.id) && SNOWMAKING.mothballUpkeepShare < share) { relief.mothball += full * (share - SNOWMAKING.mothballUpkeepShare); share = SNOWMAKING.mothballUpkeepShare; } // switched off by the player: 15 % upkeep
       l = lo.upkeep * diff.upkeep * (mods.costMultipliers?.upkeep ?? 1);
       const seen = new Set<number>();
       for (const a of attractions.all()) {

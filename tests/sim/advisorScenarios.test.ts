@@ -210,14 +210,6 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
-    id: 'price.fair',
-    setup: (s) => { guests(s, 20); s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 3); },
-    fixes: [
-      { name: 'reset the price', apply: (s) => { s.pricing.set('dayPass', s.pricing.defaultOf('dayPass')); } },
-      { name: 'lower it a little', apply: (s) => { s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 1.1); } },
-      { name: 'guests leave (too few to judge)', apply: (s) => { guests(s, 3); } },
-    ],
-  {
     id: 'snow.mode',
     setup: (s) => { s.weather.current.snowline = 1e6; },
     fixes: [
@@ -225,6 +217,14 @@ const SCENARIOS: Scenario[] = [
       { name: 'turn the cannons off', apply: (s) => { s.ops.snowmaking.setMode('off'); } },
     ],
   },
+  {
+    id: 'price.fair',
+    setup: (s) => { guests(s, 20); s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 3); },
+    fixes: [
+      { name: 'reset the price', apply: (s) => { s.pricing.set('dayPass', s.pricing.defaultOf('dayPass')); } },
+      { name: 'lower it a little', apply: (s) => { s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 1.1); } },
+      { name: 'guests leave (too few to judge)', apply: (s) => { guests(s, 3); } },
+    ],
   },
   {
     id: 'marketing.ready',
@@ -240,6 +240,14 @@ const SCENARIOS: Scenario[] = [
     fixes: [
       { name: 'cannon at the suggested site', apply: (s, a) => { const st = a.action!.site; if (a.action!.building === 'reservoir' || !st) { buildAt(s, 'reservoir', lodge(s), { rmax: 20 }); buildAt(s, 'snowCannon', pisteMid(s), { connect: false, rmax: 6 }); return; } const d = BUILDINGS.snowCannon!; expect(placeSite(s, { type: 'snowCannon', x: st.x, y: st.y, rot: st.rot, autoFlatten: true, cost: 0, rect: { x: st.x, y: st.y, w: d.w, h: d.h } }).ok).toBe(true); } },
       { name: 'a cannon anywhere along the piste', apply: (s) => { const c = findAlongPiste(s, 'snowCannon', 6, [0.8, 0.2]); if (!c) { buildAt(s, 'reservoir', lodge(s), { rmax: 20 }); } buildAt(s, 'snowCannon', pisteMid(s), { connect: false, rmax: 8 }); } },
+    ],
+  },
+  {
+    id: 'farm.almabtrieb', daily: true,
+    setup: (s) => { s.events.setAuto(true); removeTypes(s, 'alpineFarm'); s.game.date.day = seasonStartDay('summer') + 5; },
+    fixes: [
+      { name: 'an Alpine Farm is built', apply: (s) => { buildAt(s, 'alpineFarm', lodge(s), { rmax: 14 }); } },
+      { name: 'winter arrives', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 2; } },
     ],
   },
   {
@@ -268,6 +276,13 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'lift.service',
+    setup: (s) => { s.game.date.day = seasonStartDay('winter') - 10; for (const l of s.lifts.all()) l.ops!.maint = { last: -400, count: 0 }; },
+    fixes: [
+      { name: 'serviced', apply: (s) => { for (const l of s.lifts.all()) l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } },
+    ],
+  },
+  {
     id: 'lift.worn',
     setup: (s) => { removeTypes(s, 'liftWorkshop'); s.lifts.all()[0]!.ops!.condition = 20; },
     fixes: [
@@ -283,13 +298,6 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
-  {
-    id: 'lift.service',
-    setup: (s) => { s.game.date.day = seasonStartDay('winter') - 10; for (const l of s.lifts.all()) l.ops!.maint = { last: -400, count: 0 }; },
-    fixes: [
-      { name: 'serviced', apply: (s) => { for (const l of s.lifts.all()) l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } },
-    ],
-  },
     id: 'goal.next', daily: true,
     setup: () => { /* active goals exist */ },
     fixes: [

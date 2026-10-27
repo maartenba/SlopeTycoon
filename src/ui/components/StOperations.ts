@@ -49,6 +49,7 @@ export interface MaintApi {
 export interface OperationsApi {
   maint?: MaintApi;
   staff?: StaffApi;
+  snow?: SnowApi;
   rows(): OpsRow[];
   setMode(id: number, mode: 'auto' | 'open' | 'closed'): void;
   setHours(id: number, from: number, to: number): void;
@@ -188,7 +189,6 @@ export class StOperations extends StElement {
     return [wrapEl];
   }
 
-  private liftsView(a: OperationsApi): HTMLElement[] {
   /** Snowmaking: mode buttons, bulk on/off and a status line (only when the resort has cannons). */
   private snowRow(a: OperationsApi): HTMLElement[] {
     const s = a.snow?.summary();
@@ -249,8 +249,9 @@ export class StOperations extends StElement {
     return [top, tbl, sum];
   }
 
+  private liftsView(a: OperationsApi): HTMLElement[] {
     const rows = a.rows();
-    if (!rows.length) return [el('div', 'small', 'No lifts yet. Build a lift to schedule it here.')];
+    if (!rows.length) return [...this.snowRow(a), el('div', 'small', 'No lifts yet. Build a lift to schedule it here.')];
     const tbl = el('table'), head = el('tr');
     for (const h of ['Lift', 'Mode', 'Open', 'Close', 'Winter', 'Shoulder', 'Summer', 'Eco', 'Energy/day', 'Cond.']) head.append(el('th', '', h));
     tbl.append(head);
@@ -291,6 +292,6 @@ export class StOperations extends StElement {
     sum.append(`Projected energy/day — winter ${formatMoney(win)}, shoulder ${formatMoney(a.projected('shoulder'))}, summer ${formatMoney(a.projected('summer'))}`);
     const saved = win - a.projected('summer');
     if (saved > 0) sum.append(el('span', 'save', `  · summer schedule saves ${formatMoney(saved)}/day vs winter`));
-    return [quick, tbl, sum];
+    return [...this.snowRow(a), quick, tbl, sum];
   }
 }

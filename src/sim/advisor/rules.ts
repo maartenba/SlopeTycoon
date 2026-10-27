@@ -13,10 +13,11 @@ import { isAccessReason } from '../PlacementRules';
 import { liftOpenForBusiness } from '../ops/LiftOps';
 import { GuestType } from '../guests/Guest';
 import { seasonProgress } from '../Clock';
+import { almabtriebWindow } from '../events/EventCalendar';
 import { Q } from '../ops/PisteQuality';
-import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/suggest';
 import { SNOWMAKING } from '../ops/Snowmaking';
 import { altitudeMetres } from '../Season';
+import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/suggest';
 import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { TEXT, FRIENDLY } from './strings';
@@ -171,7 +172,6 @@ export const RULES: readonly Rule[] = [
     const s = near(c, 'bear.threat', 'rangerStation', anchors(c.sim).lodge, 20);
     return { id: 'bear.threat', severity: 'warn', ...TEXT.bear(), action: build('rangerStation', s), target: { x: Math.round(bear.x), y: Math.round(bear.y), kind: 'animal' } };
   }),
-  rule('storm.signs', 1, (c) => (c.sim.weather.current.kind === 'storm' && c.sim.guestSim.store.count >= 10 && !has(c.sim, 'warningSign') ? (() => {
   // Hikers leave starving (decaying share of recent hiker / biker departures with hunger > 0.75): suggest a hut / cafe beside the trails
   rule('hikers.hungry', 2, (c) => {
     const h = c.sim.guestSim.hikerLeaves;
@@ -187,6 +187,7 @@ export const RULES: readonly Rule[] = [
     const s = c.site('hikers.hungry', type, () => findSite(c.sim, type, mid, { rmax: 6 }));
     return { id: 'hikers.hungry', severity: 'warn', ...TEXT.hikersHungry(pct(share)), action: build(type, s), target: siteTarget(s, mid) };
   }, false, true),
+  rule('storm.signs', 1, (c) => (c.sim.weather.current.kind === 'storm' && c.sim.guestSim.store.count >= 10 && !has(c.sim, 'warningSign') ? (() => {
     const s = near(c, 'storm.signs', 'warningSign', anchors(c.sim).lodge);
     return { id: 'storm.signs', severity: 'info', ...TEXT.storm(), action: build('warningSign', s), target: siteTarget(s) } as Advice;
   })() : null), true, true),
@@ -231,6 +232,24 @@ export const RULES: readonly Rule[] = [
     return def ? { id: 'marketing.ready', severity: 'info', ...TEXT.marketing(def.name), panel: { drawer: 'marketing', item: def.id } } : null;
   }),
   // ---- season lookahead ----
+  // Almabtrieb (autumn cattle descent): no farm -> suggest one (spring..early autumn); farm + herd -> 'Almabtrieb in N days' / 'is on', Show me goes to the dressed road near the base station
+  rule('farm.almabtrieb', 1, (c) => {
+    const sim = c.sim;
+    if (!sim.events.auto) return null; // automatic events are off in headless sims / the title demo
+    const w = almabtriebWindow(), doy = sim.game.date.day;
+    const farm = sim.buildings.all().some((b) => b.type === 'alpineFarm');
+    if (!farm) {
+      if (!has(sim, 'baseLodge') || seasonProgress(sim.game.date).season === 'winter' || doy > w.last || !sim.progression.isUnlocked('building', 'alpineFarm')) return null;
+      const s = near(c, 'farm.almabtrieb', 'alpineFarm', anchors(sim).lodge, 18);
+      return { id: 'farm.almabtrieb', severity: 'info', ...TEXT.almabtriebFarm(), action: build('alpineFarm', s), target: siteTarget(s) };
+    }
+    const n = w.first - doy;
+    if (!(doy >= w.first - 5 && doy <= w.last) || sim.nature.livestock.animals.length === 0) return null;
+    let base: Pt | null = null, lowest = Infinity;
+    for (const l of sim.lifts.all()) if (l.bottom.ground < lowest) { lowest = l.bottom.ground; base = { x: l.bottom.x + 0.5, y: l.bottom.y + 0.5 }; }
+    const lodge = anchors(sim).lodge;
+    return { id: 'farm.almabtrieb', severity: 'info', ...TEXT.almabtriebSoon(n), target: base ?? lodge };
+  }, false, true),
   rule('season.winter', 2, (c) => {
     const sp = seasonProgress(c.sim.game.date);
     if (sp.next !== 'winter' || sp.daysLeft > 30 || c.pistes().tiles < 30) return null;
@@ -259,6 +278,23 @@ export const RULES: readonly Rule[] = [
     const at = nearest(gaps, centroid(gaps));
     const site = c.site('snow.gaps', 'snowCannon', () => findSite(c.sim, 'snowCannon', at, { rmax: 5 }));
     return { id: 'snow.gaps', severity: 'info', ...TEXT.snowGaps(gaps.length), action: build('snowCannon', site), target: siteTarget(site, at) };
+  }),
+  // Snowmaking switch: wasting money above the snowline / a cold snap with the cannons off (the player decides; default mode On never changes by itself)
+  rule('snow.mode', 2, (c) => {
+    const sm = c.sim.ops.snowmaking, cannons = c.sim.buildings.all().filter((b) => b.active && b.type === 'snowCannon');
+    if (!cannons.length) return null;
+    const N = c.sim.size, q = c.sim.ops.quality, cond = c.sim.cond;
+    let top = -Infinity, n = 0;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (q.isPiste(y * N + x)) { n++; top = Math.max(top, cond.altitude(x, y)); }
+    if (n < 30) return null;
+    const w = c.sim.weather, high = w.temperatureAt(top, 15), line = w.current.snowline;
+    const anyOn = sm.mode !== 'off' && cannons.some((b) => !sm.isSwitchedOff(b.id));
+    const slack = c.shown ? 1 : 0;
+    if (sm.mode === 'on' && anyOn && (line > top || high > SNOWMAKING.autoMaxHigh + slack))
+      return { id: 'snow.mode', severity: 'info', ...TEXT.snowWaste(Math.round(altitudeMetres(line))), panel: { drawer: 'ops' } };
+    if (!anyOn && line <= top && high <= -slack)
+      return { id: 'snow.mode', severity: 'info', ...TEXT.snowCold(), panel: { drawer: 'ops' } };
+    return null;
   }),
   rule('season.summer', 2, (c) => {
     const sp = seasonProgress(c.sim.game.date);
@@ -294,23 +330,14 @@ export const RULES: readonly Rule[] = [
     const b = c.sim.buildings.all().filter((x) => !x.active && !covered(x)).sort((a, z) => a.id - z.id)[0];
     if (!b) return null;
     return { id: 'building.inactive', severity: 'warn', ...TEXT.buildingInactive(c.sim.names.buildingName(b.id), b.reason ?? 'It is missing a requirement. Select it to see which.'), target: { x: b.x + b.w / 2 - 0.5, y: b.y + b.h / 2 - 0.5, kind: 'building', id: b.id } };
-  // Snowmaking switch: wasting money above the snowline / a cold snap with the cannons off (the player decides; default mode On never changes by itself)
-  rule('snow.mode', 2, (c) => {
-    const sm = c.sim.ops.snowmaking, cannons = c.sim.buildings.all().filter((b) => b.active && b.type === 'snowCannon');
-    if (!cannons.length) return null;
-    const N = c.sim.size, q = c.sim.ops.quality, cond = c.sim.cond;
-    let top = -Infinity, n = 0;
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (q.isPiste(y * N + x)) { n++; top = Math.max(top, cond.altitude(x, y)); }
-    if (n < 30) return null;
-    const w = c.sim.weather, high = w.temperatureAt(top, 15), line = w.current.snowline;
-    const anyOn = sm.mode !== 'off' && cannons.some((b) => !sm.isSwitchedOff(b.id));
-    const slack = c.shown ? 1 : 0;
-    if (sm.mode === 'on' && anyOn && (line > top || high > SNOWMAKING.autoMaxHigh + slack))
-      return { id: 'snow.mode', severity: 'info', ...TEXT.snowWaste(Math.round(altitudeMetres(line))), panel: { drawer: 'ops' } };
-    if (!anyOn && line <= top && high <= -slack)
-      return { id: 'snow.mode', severity: 'info', ...TEXT.snowCold(), panel: { drawer: 'ops' } };
-    return null;
   }),
+  rule('lift.service', 2, (c) => {
+    const sp = seasonProgress(c.sim.game.date);
+    if (sp.season !== 'autumn' || sp.daysLeft > (c.shown ? 24 : 20)) return null; // the last weeks before winter
+    const late = c.sim.lifts.all().filter((l) => { const s = c.sim.liftOps.serviceStatus(l); return s.state === 'overdue' || s.state === 'critical'; }).sort((a, b) => a.id - b.id);
+    if (!late.length) return null;
+    const plan = c.sim.liftOps.servicePlan(late[0]!), total = late.reduce((t, l) => t + c.sim.liftOps.servicePlan(l).cost, 0);
+    return { id: 'lift.service', severity: 'warn', ...TEXT.liftService(late.length, c.sim.names.liftName(late[0]!.id), plan.days, `$${Math.round(total).toLocaleString('en-US')}`), target: liftTarget(late[0]!), panel: { drawer: 'ops' } };
   }),
   rule('lift.worn', 2, (c) => {
     const l = c.sim.lifts.all().filter((x) => (x.ops?.condition ?? 100) < (c.shown ? 55 : 45)).sort((a, b) => (a.ops!.condition - b.ops!.condition) || a.id - b.id)[0];
@@ -346,13 +373,6 @@ export function computePisteFacts(sim: Sim): PisteFacts {
   const out: PisteFacts = { tiles: 0, icy: 0, noGroom: [], noAid: [] };
   const n = sim.size, q = sim.ops.quality, cov = sim.coverage;
   for (let i = 0; i < n * n; i++) {
-  rule('lift.service', 2, (c) => {
-    const sp = seasonProgress(c.sim.game.date);
-    if (sp.season !== 'autumn' || sp.daysLeft > (c.shown ? 24 : 20)) return null; // the last weeks before winter
-    const late = c.sim.lifts.all().filter((l) => { const s = c.sim.liftOps.serviceStatus(l); return s.state === 'overdue' || s.state === 'critical'; }).sort((a, b) => a.id - b.id);
-    if (!late.length) return null;
-    const plan = c.sim.liftOps.servicePlan(late[0]!), total = late.reduce((t, l) => t + c.sim.liftOps.servicePlan(l).cost, 0);
-    return { id: 'lift.service', severity: 'warn', ...TEXT.liftService(late.length, c.sim.names.liftName(late[0]!.id), plan.days, `$${Math.round(total).toLocaleString('en-US')}`), target: liftTarget(late[0]!), panel: { drawer: 'ops' } };
     if (!q.isPiste(i)) continue;
     out.tiles++;
     const x = i % n, y = (i / n) | 0;

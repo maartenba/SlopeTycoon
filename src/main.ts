@@ -29,6 +29,7 @@ import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import type { DressingWorld } from '@/render/festival/placeDressing';
 import { dressingWorldOf } from '@/render/festival/dressingWorld';
+import { almabtriebWindow } from '@/sim/events/EventCalendar';
 import { Fireworks, fireworksAllowed } from '@/render/fx/Fireworks';
 import { isWaterType } from '@/world/Grid';
 import { SmokeView, type SmokeSource } from '@/render/Smoke';
@@ -2276,7 +2277,6 @@ if (ui && !DEMO) {
     setSeason: (id, p, v) => sim.liftOps.setSeason(id, p, v),
     keepOnly: (p, ids) => sim.liftOps.keepOnly(p, new Set(ids)),
     projected: (p) => sim.liftOps.projectedDailyEnergy(p),
-    staff: {
     maint: {
       policy: () => sim.liftOps.getPolicy(), setPolicy: (p) => { sim.liftOps.setPolicy(p); refreshUi(); },
       rows: () => lifts.all().slice().sort((a, b) => a.id - b.id).map((l) => {
@@ -2298,6 +2298,7 @@ if (ui && !DEMO) {
       },
       setAll: (on) => { sim.ops.snowmaking.setAll(buildings.all().filter((b) => b.type === 'snowCannon').map((b) => b.id), on); covOverlay.invalidate(); refreshUi(); },
     },
+    staff: {
       pools: () => { const n = sim.staff.needs(true); return STAFF_POOLS.map((id) => ({ id, label: POOL_INFO[id].label, icon: POOL_INFO[id].icon, auto: sim.staff.isAuto(id), count: sim.staff.headcount(id), need: n[id], fill: sim.staff.fill(id), slows: POOL_INFO[id].slows })); },
       setAuto: (id, v) => sim.staff.setAuto(id, v), setCount: (id, n) => sim.staff.setCount(id, n),
       wage: () => sim.staff.wage, setWage: (w) => sim.staff.setWage(w),
@@ -2402,6 +2403,7 @@ if (ui && !DEMO) {
   inspector.bindRename((id, name) => { sim.names.rename('building', id, name); refreshUi(); });
   inspector.bind(demolish, (id, d) => { const sc = guestSim.families.school(id); sc.setInstructors(sc.instructors + d); refreshUi(); });
   inspector.bindOps((id, d) => { const b = buildings.get(id); if (b && safetyRef && b.type === 'rangerStation') { safetyRef.wildlife.setStaff(id, safetyRef.wildlife.staffOf(id) + d); refreshUi(); return; } if (b && safetyRef && b.type === 'patrolHub') { safetyRef.patrol.setStaff(id, safetyRef.patrol.staffOf(id) + d); safetyRef.resync(); refreshUi(); return; } if (b && opsRef) { opsRef.grooming.setVehicles(id, opsRef.grooming.vehiclesOf(id, b.type) + d); refreshUi(); } });
+  inspector.bindCannon((id, on) => { sim.ops.snowmaking.setCannon(id, on); covOverlay.invalidate(); refreshUi(); });
   inspector.bindBins((id) => { if (safetyRef) { safetyRef.wildlife.setBins(id, !safetyRef.wildlife.binsOf(id)); refreshUi(); } });
   inspector.bindAttraction({
     setPrice: (id, p) => { sim.priceApi.setForBuilding(id, p); refreshUi(); },
@@ -2766,6 +2768,12 @@ window.addEventListener('keydown', (e) => {
 bootStage('frame');
 hideSplash();
 
+/** Debug / QA (docs/festivals.md): `__slope.events.start('almabtrieb')` runs an event from today (news + dressing); `.jump()` jumps the date to 3 days before the Almabtrieb (announcement), `.jump(0)` to its first day. */
+(window as unknown as { __slope: Record<string, unknown> }).__slope.events = {
+  start: (id: string, days?: number) => { const ok = sim.events.debugStart(id as FestivalId, days); festivalCheck = 0; return ok; },
+  jump: (before = 3) => { jumpSimToDay(almabtriebWindow().first - before, 9); sim.tick(2); festivalCheck = 0; return sim.events.active().map((e) => e.id); },
+  active: () => sim.events.active().map((e) => e.id), upcoming: () => sim.events.upcoming().map((u) => `${u.id}+${u.daysAway}`),
+};
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {
   fx: fxApi, view: viewApi, ff, startFf,
   /** QA (touch e2e): the ToolManager and the touch wire (controller / gestures state). */

@@ -40,15 +40,17 @@ const CASES: Case[] = [
   { id: 'cash.runway', cheap: true, trigger: (s) => { s.game.money = 300; } },
   { id: 'price.fair', trigger: (s) => { guests(s, 20); s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 3); } },
   { id: 'marketing.ready', trigger: () => { /* the starter resort already qualifies */ }, calm: (s) => { s.game.money = 100; } },
+  { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
   { id: 'season.summer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.networks.layers[100] = (s.networks.layers[100]! | Layer.Hike) as never; } },
   { id: 'cash.summerBuffer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 800; }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 5_000_000; } },
   { id: 'snow.gaps', trigger: (s) => removeTypes(s, 'snowCannon'), calm: (s) => { s.coverage.map('snowmaking').fill(1); } },
+  { id: 'snow.mode', trigger: (s) => { s.weather.current.snowline = 1e6; }, calm: (s) => { s.weather.current.snowline = 1e6; s.ops.snowmaking.setMode('auto'); } },
   { id: 'building.inactive', trigger: (s) => { s.buildings.all().find((b) => !['groomerGarage', 'snowcatOutpost', 'patrolHub', 'skiSchoolHQ', 'parking', 'trainStation', 'shuttleDepot', 'altiport', 'rangerStation'].includes(b.type))!.active = false; } },
+  { id: 'lift.service', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: -400, count: 0 }; } }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } } },
   { id: 'lift.worn', trigger: (s) => { s.lifts.all()[0]!.ops!.condition = 20; }, calm: (s) => { s.lifts.all()[0]!.ops!.condition = 90; } },
   { id: 'rating.lowest', trigger: () => { /* starter resort: variety is weakest */ }, calm: (s) => { s.rating.breakdown = () => ({ score: 90, stars: 4.5, components: [{ id: 'happiness', label: 'Guest happiness', score: 90, weight: 0.25, hint: '' }], bonus: 0, bonusHints: [], hints: [] }); } },
   { id: 'piste.disconnected', trigger: (s) => { let t = 0; for (let i = 0; i < s.size * s.size; i++) if (s.ops.quality.isPiste(i)) { t = i; break; } const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => [...real(), { disconnected: true, count: 9, tiles: [t] }] as never; }, calm: (s) => { const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => real().map((c) => ({ ...c, disconnected: false })) as never; } },
-  { id: 'lift.service', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: -400, count: 0 }; } }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } } },
   { id: 'goal.next', trigger: () => { /* active goals exist */ }, calm: (s) => { s.goals.paused = true; } },
 ];
 
