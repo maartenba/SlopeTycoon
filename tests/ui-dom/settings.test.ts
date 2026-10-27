@@ -107,4 +107,26 @@ describe('st-settings', () => {
     expect(set).toEqual([false]);
     e.remove();
   });
+  it('Music style select: Auto / every track / Off drive the persisted settings; Next track only with a running game', () => {
+    const st = new MemStorage(), s = new AudioSettings(st), e = el('st-settings');
+    document.body.append(e);
+    let next = 0;
+    e.bind(s, null, [], { music: { next: () => { next++; }, now: () => 'Starlight' } });
+    const root = (e as unknown as { root: ShadowRoot }).root;
+    const sel = root.querySelector('[data-row="music-style"] st-select') as unknown as { value: string; setOptions: unknown; options: Array<{ value: string }> } & HTMLElement;
+    expect(sel).toBeTruthy(); expect(sel.value).toBe('auto');
+    expect(sel.options.length).toBe(11); // Auto + 9 tracks + Off
+    s.set({ musicStyle: 'apres' }); expect(sel.value).toBe('apres');
+    sel.value = 'off'; sel.dispatchEvent(new Event('change')); expect(s.get().musicOn).toBe(false);
+    sel.value = 'starlight'; sel.dispatchEvent(new Event('change'));
+    expect(s.get().musicOn).toBe(true); expect(s.get().musicStyle).toBe('starlight');
+    const row = root.querySelector('[data-row="music-next"]') as HTMLElement;
+    expect(row.hidden).toBe(false);
+    (row.querySelector('button') as HTMLButtonElement).click(); expect(next).toBe(1);
+    expect(row.textContent).toContain('Now playing: Starlight');
+    e.remove();
+    const e2 = el('st-settings'); document.body.append(e2); e2.bind(new AudioSettings(new MemStorage()), null, [], null);
+    expect(((e2 as unknown as { root: ShadowRoot }).root.querySelector('[data-row="music-next"]') as HTMLElement).hidden).toBe(true);
+    e2.remove();
+  });
 });

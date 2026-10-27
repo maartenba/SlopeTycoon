@@ -115,6 +115,7 @@ import { onPalette } from '@/config/palette';
 import { createAudio, type AudioApi } from '@/audio';
 import { countTrunks, hashCount } from '@/audio/worldProbe';
 import { AMB } from '@/audio/Ambience';
+import { THEMES } from '@/audio/musicThemes';
 import type { StSettings } from '@/ui/components/StSettings';
 import type { StSaveLoad } from '@/ui/components/StSaveLoad';
 import { createSim } from '@/game/createSim';
@@ -1147,7 +1148,7 @@ try {
       cats: () => (opsRef?.grooming.nightActive ? opsRef.grooming.cats : []),
       helis: () => safetyRef?.heli.helis ?? [],
       trunks: (x, z, r) => countTrunks(props, x, z, r),
-      env: () => ({ season: seasonOf(game.date), weather: weather.current.kind, hour: currentHour(), wind: weather.current.wind, ...sunTimes(game.date.day) }),
+      env: () => ({ season: seasonOf(game.date), weather: weather.current.kind, hour: currentHour(), wind: weather.current.wind, ...sunTimes(game.date.day), guests: guestSim.store.count, festival: sim.events.active().length > 0 }),
     },
   });
 } catch (err) { if (!DEMO) console.warn('[audio] disabled:', err); }
@@ -2533,7 +2534,9 @@ if (ui && !DEMO) {
   const settingsEl = el('st-settings');
   settingsRef = settingsEl;
   if (audioRef) {
+    const audio = audioRef;
     settingsEl.bind(audioRef.settings, audioRef.engine, [{ label: 'Trophies', title: 'Open the trophy shelf', run: () => trophiesEl.open() }], {
+      music: { next: () => audio.music.next(), now: () => { const t = audio.music.currentTrack; return t ? THEMES[t].name : ''; } },
       profile: { cosmetics: achCosmetics, reset: async () => { ach.resetProfile(); await profileStore().resetProfile(); } },
       quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
       fastNights: { get: fastNightsApi.get, set: fastNightsApi.set },

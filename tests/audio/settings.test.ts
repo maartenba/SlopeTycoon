@@ -4,7 +4,7 @@ import { MemStorage } from './fakeBackend';
 
 describe('AudioSettings', () => {
   it('defaults: master .7, music .5, sfx .8, ambience .45, not muted', () => {
-    expect(new AudioSettings(new MemStorage()).get()).toEqual({ master: 0.7, music: 0.5, sfx: 0.8, ambience: 0.45, muted: false, reduceLoud: false, ambienceOnly: false, musicOn: true, pauseMusicAtZero: true, muteMusicInMenus: false });
+    expect(new AudioSettings(new MemStorage()).get()).toEqual({ master: 0.7, music: 0.5, sfx: 0.8, ambience: 0.28, muted: false, reduceLoud: false, ambienceOnly: false, musicOn: true, pauseMusicAtZero: true, musicStyle: 'auto', muteMusicInMenus: false });
   });
   it('persists under slope.audio.v1 and round-trips', () => {
     const st = new MemStorage();
@@ -40,15 +40,25 @@ describe('AudioSettings', () => {
     const d = DEFAULT_AUDIO_SETTINGS;
     expect(busGains({ ...d, muted: true })).toEqual({ master: 0, music: 0, sfx: 0, ambience: 0 });
     const ao = busGains({ ...d, ambienceOnly: true });
-    expect(ao.sfx).toBe(0); expect(ao.music).toBe(0); expect(ao.ambience).toBe(0.45);
+    expect(ao.sfx).toBe(0); expect(ao.music).toBe(0); expect(ao.ambience).toBe(0.28);
     expect(busGains({ ...d, reduceLoud: true }).master).toBeLessThan(busGains(d).master);
   });
 });
 
 describe('legacy ambience default migration', () => {
   it('persisted ambience exactly 0.7 -> new default; other values untouched', () => {
-    expect(parseSettings(JSON.stringify({ ambience: 0.7 })).ambience).toBe(0.45);
+    expect(parseSettings(JSON.stringify({ ambience: 0.7 })).ambience).toBe(0.28);
     expect(parseSettings(JSON.stringify({ ambience: 0.69 })).ambience).toBe(0.69);
     expect(parseSettings(JSON.stringify({ ambience: 0.9 })).ambience).toBe(0.9);
+  });
+});
+
+describe('music style setting', () => {
+  it('defaults to auto, persists, rejects unknown styles', () => {
+    const st = new MemStorage(), a = new AudioSettings(st);
+    expect(a.get().musicStyle).toBe('auto');
+    a.set({ musicStyle: 'apres' }); expect(new AudioSettings(st).get().musicStyle).toBe('apres');
+    a.set({ musicStyle: 'nope' as never }); expect(a.get().musicStyle).toBe('apres');
+    st.setItem(AUDIO_STORAGE_KEY, JSON.stringify({ musicStyle: 'zzz' })); expect(new AudioSettings(st).get().musicStyle).toBe('auto');
   });
 });

@@ -80,9 +80,9 @@ export const RECIPES: Record<SfxName, Recipe> = {
     noiseHit(s, 'white', 'highpass', 6000, 1, 0, 0.05 * o.gain, 0.02, o.pan);
   } },
   clank: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.35, maxPerSec: 3, minGap: 0.2, build: (s, o) => {
-    tone(s, 'square', 210 * o.pitch, 0, 0.16 * o.gain, 0.05, o.pan, 0.001);
-    tone(s, 'sine', 560 * o.pitch, 0, 0.12 * o.gain, 0.18, o.pan, 0.001);
-    noiseHit(s, 'white', 'bandpass', 2500, 3, 0, 0.1 * o.gain, 0.04, o.pan);
+    tone(s, 'triangle', 150 * o.pitch, 0, 0.1 * o.gain, 0.08, o.pan, 0.004);
+    tone(s, 'sine', 360 * o.pitch, 0, 0.04 * o.gain, 0.15, o.pan, 0.004);
+    noiseHit(s, 'pink', 'bandpass', 1400, 0.8, 0, 0.05 * o.gain, 0.05, o.pan);
   } },
   bell: { priority: PRIORITY.action, bus: 'sfx', dur: 1.6, maxPerSec: 2, minGap: 0.3, build: (s, o) => bell(s, 660 * o.pitch, 0, 0.18 * o.gain, 1.2, o.pan) },
   grind: { priority: PRIORITY.alert, bus: 'sfx', dur: 1.1, maxPerSec: 2, minGap: 0.5, loud: true, build: (s, o) => {
@@ -112,28 +112,34 @@ export const RECIPES: Record<SfxName, Recipe> = {
       swellEnv(e.gain, s.t0 + i * 0.12, 0.07 * o.gain, 0.5, 2, 1.1); connectChain(osc, e); toOut(s, e, o.pan, 1);
     }
   } },
-  birdChirp: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.5, maxPerSec: 6, minGap: 0.1, build: (s, o) => {
+  // Soft natural-ish chirps: a pure sine with a short up-then-down pitch glide (and a faint 2nd harmonic), smooth attack, 2-4 syllables. No FM (the old 1.6:600 FM read as metallic beeps).
+  birdChirp: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.7, maxPerSec: 3, minGap: 0.2, build: (s, o) => {
     const n = 2 + Math.floor(o.pitch * 1.7) % 3; // 2-4 syllables
     for (let i = 0; i < n; i++) {
-      const base = (2400 + i * 260) * o.pitch, c = s.fm(base, 1.6, 600), e = s.gain(0);
-      c.frequency.setValueAtTime(base, s.t0 + i * 0.09); c.frequency.exponentialRampToValueAtTime(base * 1.35, s.t0 + i * 0.09 + 0.06);
-      pluckEnv(e.gain, s.t0 + i * 0.09, 0.07 * o.gain, 0.008, 0.07);
-      connectChain(c, e); toOut(s, e, o.pan, 1);
+      const at = s.t0 + i * (0.12 + 0.02 * (i % 2)), base = (2500 + ((i * 37 + Math.floor(o.pitch * 100)) % 5) * 150) * o.pitch, c = s.osc('sine', base), h = s.osc('sine', base * 2), hg = s.gain(0.12), e = s.gain(0);
+      c.frequency.setValueAtTime(base, at); c.frequency.exponentialRampToValueAtTime(base * 1.22, at + 0.04); c.frequency.exponentialRampToValueAtTime(base * 0.92, at + 0.09);
+      h.frequency.setValueAtTime(base * 2, at); h.frequency.exponentialRampToValueAtTime(base * 2.44, at + 0.04); h.frequency.exponentialRampToValueAtTime(base * 1.84, at + 0.09);
+      swellEnv(e.gain, at, 0.035 * o.gain, 0.02, 0.1, 0.06);
+      connectChain(c, e); connectChain(h, hg, e); toOut(s, e, o.pan, 1);
     }
   } },
-  cowbell: { priority: PRIORITY.ambience, bus: 'ambience', dur: 1.2, maxPerSec: 3, minGap: 0.25, build: (s, o) => {
-    tone(s, 'square', 540 * o.pitch, 0, 0.05 * o.gain, 0.5, o.pan, 0.002); tone(s, 'square', 810 * o.pitch, 0, 0.04 * o.gain, 0.4, o.pan, 0.002);
+  // Distant, soft cowbell: two harmonic-ish low sines (3:2), gentle attack. Rare.
+  cowbell: { priority: PRIORITY.ambience, bus: 'ambience', dur: 1.2, maxPerSec: 2, minGap: 0.4, build: (s, o) => {
+    tone(s, 'sine', 400 * o.pitch, 0, 0.03 * o.gain, 0.5, o.pan, 0.012); tone(s, 'sine', 600 * o.pitch, 0, 0.018 * o.gain, 0.35, o.pan, 0.012);
   } },
-  churchBell: { priority: PRIORITY.action, bus: 'ambience', dur: 3, maxPerSec: 4, minGap: 0, build: (s, o) => bell(s, 196 * o.pitch, 0, 0.16 * o.gain, 2.4, o.pan) },
+  // Distant church hour: harmonic partials only (1, 2, 3), soft attack, low level. (The UI 'bell' keeps its inharmonic ring; this is a background sound.)
+  churchBell: { priority: PRIORITY.action, bus: 'ambience', dur: 3, maxPerSec: 4, minGap: 0, build: (s, o) => {
+    for (const [r, a] of [[1, 1], [2, 0.4], [3, 0.15]] as const) tone(s, 'sine', 196 * r * o.pitch, 0, 0.07 * a * o.gain, 2.2 / (0.6 + r * 0.4), o.pan, 0.02);
+  } },
   drip: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.2, maxPerSec: 4, minGap: 0.1, build: (s, o) => {
     const t = s.osc('sine', 900 * o.pitch), e = s.gain(0);
     t.frequency.setValueAtTime(900 * o.pitch, s.t0); t.frequency.exponentialRampToValueAtTime(1800 * o.pitch, s.t0 + 0.05);
-    pluckEnv(e.gain, s.t0, 0.05 * o.gain, 0.003, 0.08); connectChain(t, e); toOut(s, e, o.pan, 1);
+    pluckEnv(e.gain, s.t0, 0.03 * o.gain, 0.006, 0.08); connectChain(t, e); toOut(s, e, o.pan, 1);
   } },
   creak: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.8, maxPerSec: 1, minGap: 1, build: (s, o) => {
-    const t = s.osc('sawtooth', 150 * o.pitch), f = s.filter('bandpass', 400, 6), e = s.gain(0);
-    t.frequency.setValueAtTime(150 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(95 * o.pitch, s.t0 + 0.7);
-    swellEnv(e.gain, s.t0, 0.05 * o.gain, 0.2, 0.7, 0.3); connectChain(t, f, e); toOut(s, e, o.pan, 1);
+    const t = s.osc('triangle', 150 * o.pitch), f = s.filter('bandpass', 400, 1.5), e = s.gain(0);
+    t.frequency.setValueAtTime(150 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(110 * o.pitch, s.t0 + 0.7);
+    swellEnv(e.gain, s.t0, 0.03 * o.gain, 0.25, 0.7, 0.3); connectChain(t, f, e); toOut(s, e, o.pan, 1);
   } },
   /**
    * Walk mode footsteps (Task 12): one short filtered-noise burst per step, peak ~0.05-0.07 (click = 0.18, so ~ -9 to -11 dB under the quietest UI sfx:

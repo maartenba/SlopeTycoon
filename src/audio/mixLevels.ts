@@ -11,8 +11,8 @@ export type MixBus = 'music' | 'sfx' | 'ambience';
 export const NOISE_RMS = 0.25;
 /** Fraction of that RMS surviving each layer's filter chain (estimates). */
 export const SPECTRAL_SHARE: Partial<Record<LayerId, number>> = { wind: 0.5, crowd: 0.5, muffled: 0.3 };
-/** Peak recipe gain (base + LFO depth) of each layer's last gain stage before `out`. Wind: gust 0.5 + LFO 0.25. Crowd: sum 0.8 + 0.25. Muffled: none. */
-export const RECIPE_GAIN: Partial<Record<LayerId, number>> = { wind: 0.75, crowd: 1.05, muffled: 1 };
+/** Peak recipe gain (base + LFO depth) of each layer's last gain stage before `out`. Wind: gust 0.55 + LFOs 0.31. Crowd: sum 0.6 + LFOs 0.32. Muffled: none. */
+export const RECIPE_GAIN: Partial<Record<LayerId, number>> = { wind: 0.86, crowd: 0.92, muffled: 1 };
 /** Reference one-shot: typical sfx recipe peak (click .18, tick .1, scrape .16, kaching arp .12) x RMS factor .7. */
 export const SFX_REF_PEAK = 0.18 * 0.7;
 /** Music nominal level at the music bus input (sum of voices, estimate). */

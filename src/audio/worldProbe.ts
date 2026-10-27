@@ -18,7 +18,7 @@ export interface ProbeDeps {
   /** World height (render units) at a tile. */
   heightAt: (x: number, y: number) => number;
   maxHeight: number;
-  env: () => { season: SeasonId; weather: WeatherKind; hour: number; wind: number; sunrise?: number; sunset?: number };
+  env: () => { season: SeasonId; weather: WeatherKind; hour: number; wind: number; sunrise?: number; sunset?: number; /** Total guests in the resort (music busy-ness) and whether a festival is on. */ guests?: number; festival?: boolean };
 }
 
 const LISTEN_TILES = 28;

@@ -19,6 +19,8 @@ export interface FilterLike extends NodeLike { type: string; frequency: ParamLik
 export interface PannerLike extends NodeLike { pan: ParamLike }
 export interface CompressorLike extends NodeLike { threshold: ParamLike; knee: ParamLike; ratio: ParamLike; attack: ParamLike; release: ParamLike }
 
+export interface DelayLike extends NodeLike { delayTime: ParamLike }
+
 export interface ConvolverLike extends NodeLike { buffer: BufferLike | null; normalize: boolean }
 
 export type BackendState = 'running' | 'suspended' | 'closed';
@@ -39,6 +41,8 @@ export interface AudioBackend {
   createBuffer(length: number, sampleRate: number): BufferLike;
   /** Optional (music reverb); music runs dry without it. */
   createConvolver?(): ConvolverLike;
+  /** Optional (music reverb = feedback delay network); music runs dry without it. */
+  createDelay?(maxSeconds: number): DelayLike;
 }
 
 /** Wraps a real AudioContext (structurally compatible; only `now` and mono `createBuffer` differ). */
@@ -58,6 +62,7 @@ export function wrapContext(ctx: AudioContext): AudioBackend {
     createDynamicsCompressor: () => ctx.createDynamicsCompressor() as unknown as CompressorLike,
     createBuffer: (length, rate) => ctx.createBuffer(1, length, rate),
     createConvolver: () => ctx.createConvolver() as unknown as ConvolverLike,
+    createDelay: (max) => ctx.createDelay(max) as unknown as DelayLike,
   };
 }
 

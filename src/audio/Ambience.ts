@@ -60,9 +60,9 @@ export const AMB = {
   /** Walk mode (Task 12): the listener is the walker, which counts as a very close view (zoom proxy). Crowd / lift / birds / water are then at their near-field levels; the probe radius shrinks to ~8 tiles around the walker. */
   walkZoom: 6,
   /** Max one-shot rates per second at intensity 1. */
-  rates: { birds: 2.2, cowbells: 0.4, clanks: 0.7, drips: 1.2, creaks: 0.15 } as const,
+  rates: { birds: 0.8, cowbells: 0.15, clanks: 0.35, drips: 0.8, creaks: 0.1 } as const,
   /** Per-layer ceiling (linear gain on the ambience bus). */
-  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.25, crickets: 0.12, insects: 0.1, crowd: 0.3, lift: 0.28, water: 0.3, snowcat: 0.3, heli: 0.35, muffled: 0.175 } as Record<LayerId, number>,
+  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.2, snowcat: 0.16, heli: 0.2, muffled: 0.175 } as Record<LayerId, number>,
   /** Layer crossfade time constant (s). */
   fadeTc: 0.9,
 };
@@ -115,23 +115,52 @@ function lfo(s: NodeScope, hz: number, depth: number, param: ParamLike, type = '
   const o = s.osc(type, hz), g = s.gain(depth);
   o.connect(g); g.connect(param as unknown as NodeLike);
 }
+/** Natural-feeling slow drift: several sine LFOs at unrelated rates (no single audible period), summed on `param`. */
+function wander(s: NodeScope, param: ParamLike, parts: ReadonlyArray<readonly [number, number]>): void { for (const [hz, depth] of parts) lfo(s, hz, depth, param); }
 
-/** Layer recipes: built once, then only their out-gain moves. Node counts are tiny (see tests budget). */
+/**
+ * Layer recipes: built once, then only their out-gain moves. Node counts are tiny (see tests budget).
+ * Design rules (see docs/audio.md): noise beds only (no tonal oscillators, no resonant filters: every Q <= 1), every modulation is a slow sine or a sum of
+ * unrelated slow sines (never square / sawtooth gates: they click), two noise reads at unrelated rates so the 9 s loop never shows, nothing narrow above 5 kHz.
+ */
 const LAYER_BUILDERS: Record<LayerId, Builder> = {
-  wind: (s) => { const n = s.noiseSrc('pink'), f = s.filter('bandpass', 420, 0.6), gust = s.gain(0.5); lfo(s, 0.06, 140, f.frequency); lfo(s, 0.11, 0.25, gust.gain); link(n, f, gust, s.out); },
-  rain: (s) => { const n = s.noiseSrc('white'), hp = s.filter('highpass', 1400, 0.7), lp = s.filter('lowpass', 9000, 0.7); link(n, hp, lp, s.out); },
-  leaves: (s) => { const n = s.noiseSrc('white'), f = s.filter('bandpass', 4500, 1), gust = s.gain(0.5); lfo(s, 0.3, 0.4, gust.gain); link(n, f, gust, s.out); },
-  crickets: (s) => { const o = s.osc('sine', 4300), amp = s.gain(0.25), gate = s.gain(0.5); lfo(s, 26, 0.25, amp.gain, 'square'); lfo(s, 2.5, 0.5, gate.gain, 'square'); link(o, amp, gate, s.out); },
-  insects: (s) => { const n = s.noiseSrc('white'), f = s.filter('bandpass', 6200, 9), amp = s.gain(0.5); lfo(s, 38, 0.5, amp.gain); link(n, f, amp, s.out); },
-  crowd: (s) => {
-    const n = s.noiseSrc('pink'), a = s.filter('bandpass', 520, 1.1), b = s.filter('bandpass', 1250, 1.3), sum = s.gain(0.8);
-    lfo(s, 0.17, 0.25, sum.gain); n.connect(a); n.connect(b); link(a, sum); link(b, sum, s.out);
+  wind: (s) => {
+    const a = s.noiseSrc('pink'), b = s.noiseSrc('brown', 0.83), bg = s.gain(0.7), lp = s.filter('lowpass', 620, 0), hp = s.filter('highpass', 60, 0), gust = s.gain(0.55);
+    wander(s, lp.frequency, [[0.043, 110], [0.071, 60]]); wander(s, gust.gain, [[0.037, 0.16], [0.071, 0.1], [0.13, 0.05]]);
+    a.connect(lp); b.connect(bg); bg.connect(lp); link(lp, hp, gust, s.out);
   },
-  lift: (s) => { const o = s.osc('sawtooth', 48), o2 = s.osc('sine', 96), f = s.filter('lowpass', 380, 0.7), n = s.noiseSrc('brown'), nf = s.filter('lowpass', 300, 0.7); const og = s.gain(0.5); o.connect(f); o2.connect(f); link(f, og, s.out); link(n, nf, s.out); },
-  water: (s) => { const n = s.noiseSrc('white'), f = s.filter('bandpass', 1800, 0.8), gust = s.gain(0.7); lfo(s, 0.5, 0.2, gust.gain); lfo(s, 1.37, 0.12, gust.gain); link(n, f, gust, s.out); },
-  snowcat: (s) => { const o = s.osc('sawtooth', 38), o2 = s.osc('square', 76), f = s.filter('lowpass', 240, 0.8), n = s.noiseSrc('brown'); lfo(s, 9, 0.05, s.out.gain); o.connect(f); o2.connect(f); n.connect(f); link(f, s.out); },
-  heli: (s) => { const n = s.noiseSrc('pink'), lp = s.filter('lowpass', 900, 0.7), chop = s.gain(0.5), o = s.osc('sine', 90), og = s.gain(0.3); lfo(s, 11, 0.5, chop.gain); link(n, lp, chop, s.out); link(o, og, s.out); },
-  muffled: (s) => { const n = s.noiseSrc('brown'), f = s.filter('lowpass', 250, 0.7); link(n, f, s.out); },
+  rain: (s) => { const a = s.noiseSrc('pink'), b = s.noiseSrc('pink', 1.37), bg = s.gain(0.8), hp = s.filter('highpass', 700, 0), lp = s.filter('lowpass', 5200, 0), g = s.gain(0.9); wander(s, g.gain, [[0.09, 0.06], [0.17, 0.04]]); a.connect(hp); b.connect(bg); bg.connect(hp); link(hp, lp, g, s.out); },
+  leaves: (s) => { const a = s.noiseSrc('pink'), b = s.noiseSrc('pink', 0.71), bg = s.gain(0.8), hp = s.filter('highpass', 1400, 0), lp = s.filter('lowpass', 4200, 0), gust = s.gain(0.5); wander(s, gust.gain, [[0.13, 0.25], [0.21, 0.15], [0.47, 0.06]]); a.connect(hp); b.connect(bg); bg.connect(hp); link(hp, lp, gust, s.out); },
+  // Crickets: two raspy voices (band-limited noise, not a pure tone: the old 4.3 kHz sine beeped), smooth sine pulse trains (no hard gates = no clicks) in slow phrases; very quiet.
+  crickets: (s) => {
+    for (const [hz, pulse, phrase, rate] of [[3900, 19, 1.1, 1], [4400, 23, 0.8, 0.9]] as const) {
+      const n = s.noiseSrc('pink', rate), bp = s.filter('bandpass', hz, 4), amp = s.gain(0.5), gate = s.gain(0.5), lp = s.filter('lowpass', 5200, 0), mk = s.gain(5);
+      lfo(s, pulse, 0.5, amp.gain); lfo(s, phrase, 0.5, gate.gain); link(n, bp, mk, amp, gate, lp, s.out);
+    }
+  },
+  // Meadow air: the old narrow 6.2 kHz Q 9 whine is gone; a faint, slowly breathing mid-high hush.
+  insects: (s) => { const a = s.noiseSrc('pink'), bp = s.filter('bandpass', 2400, 0.5), lp = s.filter('lowpass', 3800, 0), g = s.gain(0.5); wander(s, g.gain, [[0.11, 0.25], [0.23, 0.15]]); link(a, bp, lp, g, s.out); },
+  // Crowd: formant-shaped murmur (three broad bands), amplitude drifting at syllable-ish rates; low level.
+  crowd: (s) => {
+    const n0 = s.noiseSrc('pink'), n2 = s.noiseSrc('pink', 0.77), ng = s.gain(0.8), n = s.gain(1), sum = s.gain(0.6), lp = s.filter('lowpass', 3000, 0);
+    n0.connect(n); n2.connect(ng); ng.connect(n);
+    wander(s, sum.gain, [[0.4, 0.15], [3.1, 0.1], [4.7, 0.07]]);
+    for (const [f, q, g] of [[350, 1.6, 1], [900, 1.8, 0.8], [2300, 2, 0.3]] as const) { const bp = s.filter('bandpass', f, q), gg = s.gain(g); n.connect(bp); link(bp, gg, sum); }
+    link(sum, lp, s.out);
+  },
+  // Lift: low sheave rumble from filtered noise (the old 48 Hz saw hummed tonally).
+  lift: (s) => { const n = s.noiseSrc('brown'), nf = s.filter('lowpass', 220, 0), hp = s.filter('highpass', 40, 0), m = s.noiseSrc('pink', 0.9), mf = s.filter('bandpass', 650, 0.6), mg = s.gain(0.3), g = s.gain(0.8); wander(s, g.gain, [[0.8, 0.06], [0.31, 0.05]]); link(n, nf, hp, g); link(m, mf, mg, g); g.connect(s.out); },
+  // Water: pink noise in three broad bands, each drifting on its own slow rate (babble without a pitch).
+  water: (s) => {
+    const n0 = s.noiseSrc('pink'), n2 = s.noiseSrc('pink', 1.21), n = s.gain(1), sum = s.gain(0.7), lp = s.filter('lowpass', 4200, 0);
+    n0.connect(n); n2.connect(n);
+    for (const [f, q, g, hz] of [[450, 0.7, 0.8, 0.55], [1300, 0.9, 0.6, 0.93], [3000, 1, 0.25, 1.7]] as const) { const bp = s.filter('bandpass', f, q), gg = s.gain(g); wander(s, gg.gain, [[hz, 0.22], [hz * 0.37, 0.12]]); n.connect(bp); link(bp, gg, sum); }
+    link(sum, lp, s.out);
+  },
+  // Snowcat: engine rumble + a throb, noise only.
+  snowcat: (s) => { const n = s.noiseSrc('brown'), f = s.filter('lowpass', 150, 0), hp = s.filter('highpass', 35, 0), m = s.noiseSrc('pink', 0.8), mf = s.filter('bandpass', 300, 0.7), mg = s.gain(0.3), g = s.gain(0.8); wander(s, g.gain, [[6.5, 0.1], [0.4, 0.05]]); link(n, f, hp, g); link(m, mf, mg, g); g.connect(s.out); },
+  heli: (s) => { const n = s.noiseSrc('pink'), lp = s.filter('lowpass', 450, 0), chop = s.gain(0.55); wander(s, chop.gain, [[8.5, 0.28], [0.3, 0.08]]); link(n, lp, chop, s.out); },
+  muffled: (s) => { const n = s.noiseSrc('brown'), hp = s.filter('highpass', 35, 0), f = s.filter('lowpass', 250, 0); link(n, hp, f, s.out); },
 };
 
 /** Hour-chime strikes for the village church. */

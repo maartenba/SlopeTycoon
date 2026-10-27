@@ -3,17 +3,35 @@ import type { ModeName } from './theory';
 
 export type Layer = 'pad' | 'bass' | 'arp' | 'melody' | 'perc';
 export const LAYERS: readonly Layer[] = ['pad', 'bass', 'arp', 'melody', 'perc'];
-export type InstId = 'bell' | 'glock' | 'pad' | 'pluck' | 'guitar' | 'marimba' | 'handpan' | 'bass' | 'flute' | 'shaker' | 'drone';
+/**
+ * Instruments (all harmonic, soft attacks; the old inharmonic FM 'bell', 'glock', 'marimba' and 'handpan' are gone, see docs/audio.md "Why it sounded weird").
+ * pad / strings = detuned saws through a low-pass; epiano = sine + 2nd partial; pluck / guitar = filtered saw+triangle; harp = sines; flute = triangle+sine with vibrato.
+ */
+export type InstId = 'pad' | 'strings' | 'epiano' | 'pluck' | 'guitar' | 'harp' | 'flute' | 'sub' | 'brush' | 'shaker' | 'drone';
+
+export const TRACK_IDS = ['morningSnow', 'alpineNoon', 'apres', 'starlight', 'summerMeadow', 'autumnGold', 'blizzard', 'title', 'festival'] as const;
+export type TrackId = (typeof TRACK_IDS)[number];
+/** Player setting: pick automatically from the game state, or lock one track. (Off = the Music checkbox / `musicOn`.) */
+export type MusicStyle = 'auto' | TrackId;
+export const MUSIC_STYLES: readonly MusicStyle[] = ['auto', ...TRACK_IDS];
+export const isMusicStyle = (v: unknown): v is MusicStyle => typeof v === 'string' && (MUSIC_STYLES as readonly string[]).includes(v);
 
 export interface Theme {
-  season: SeasonId;
+  id: TrackId;
+  /** Display name (Settings > Audio). */
+  name: string;
+  /** One-line mood. */
+  mood: string;
   /** Tempo at 1x speed, daytime. */
   bpm: number;
   modes: readonly ModeName[];
-  /** Pitch classes (midi root, 48..59) the piece may be in. */
+  /** Pitch classes (midi root, 48..59) the piece may be in (the transposition below is added). */
   roots: readonly number[];
-  /** Chord progressions as scale degrees (0 = I), each degree lasts 2 bars (4 degrees = 8-bar section). */
+  /** Semitones added to every note of the piece (blizzard / title sit lower). */
+  transpose: number;
+  /** Chord progressions as scale degrees (0 = I). Each chord lasts `barsPerChord` bars (slow harmonic rhythm). */
   progressions: ReadonlyArray<readonly number[]>;
+  barsPerChord: 1 | 2 | 4;
   /** Section form, 8 bars each. Upper-case letter = new material, a repeated letter = varied repeat. */
   form: string;
   inst: { pad: InstId; bass: InstId; arp: InstId; melody: InstId; perc: InstId | null };
@@ -24,17 +42,46 @@ export interface Theme {
   bassStyle: 'whole' | 'rootFifth' | 'pulse';
   /** Pad level, melody level (0..1 velocity scales). */
   padVel: number; melodyVel: number;
+  /** Melody uses only the pentatonic subset of the mode (no semitone clashes). */
+  pentatonic: boolean;
+  /** Pad voices are seventh chords (jazzy). */
+  seventh: boolean;
+  /** Baseline weight of the percussion layer; otherwise it only plays when the resort is busy. */
+  percBase: number;
+  /** Per-layer ceiling multipliers (e.g. night track: no percussion). */
+  bias: Record<Layer, number>;
 }
 
-export const THEMES: Record<SeasonId, Theme> = {
-  winter: { season: 'winter', bpm: 70, modes: ['lydian', 'aeolian'], roots: [50, 53, 55, 57], progressions: [[0, 5, 3, 4], [0, 3, 0, 4], [0, 2, 5, 4]], form: 'ABAB',
-    inst: { pad: 'pad', bass: 'bass', arp: 'glock', melody: 'bell', perc: null }, melodyRest: 0.35, arpRest: 0.25, arpStep: 1, arpPatterns: [[0, 1, 2, 1], [2, 1, 0, 1], [0, 2, 1, 2]], bassStyle: 'whole', padVel: 1, melodyVel: 0.8 },
-  spring: { season: 'spring', bpm: 82, modes: ['ionian', 'mixolydian'], roots: [52, 55, 57, 59], progressions: [[0, 4, 5, 3], [1, 4, 0, 0], [0, 3, 4, 3]], form: 'ABAB',
-    inst: { pad: 'pad', bass: 'bass', arp: 'pluck', melody: 'flute', perc: 'shaker' }, melodyRest: 0.25, arpRest: 0.15, arpStep: 0.5, arpPatterns: [[0, 1, 2, 1], [0, 2, 1, 2], [0, 1, 2, 3]], bassStyle: 'rootFifth', padVel: 0.7, melodyVel: 0.9 },
-  summer: { season: 'summer', bpm: 90, modes: ['ionian', 'mixolydian', 'lydian'], roots: [48, 50, 52, 55], progressions: [[0, 5, 3, 4], [0, 3, 4, 4], [1, 4, 0, 5]], form: 'AABA',
-    inst: { pad: 'pad', bass: 'bass', arp: 'guitar', melody: 'marimba', perc: 'shaker' }, melodyRest: 0.2, arpRest: 0.1, arpStep: 0.5, arpPatterns: [[0, 1, 2, 1, 2, 1], [0, 2, 1, 2], [0, 1, 2, 3, 2, 1]], bassStyle: 'pulse', padVel: 0.5, melodyVel: 1 },
-  autumn: { season: 'autumn', bpm: 72, modes: ['dorian', 'aeolian'], roots: [50, 52, 55, 57], progressions: [[0, 3, 4, 0], [0, 5, 1, 4], [5, 3, 0, 4]], form: 'ABAB',
-    inst: { pad: 'pad', bass: 'bass', arp: 'pluck', melody: 'handpan', perc: null }, melodyRest: 0.35, arpRest: 0.2, arpStep: 1, arpPatterns: [[0, 1, 2, 1], [0, 2, 1], [2, 1, 0, 1]], bassStyle: 'rootFifth', padVel: 1, melodyVel: 0.8 },
+const B1: Record<Layer, number> = { pad: 1, bass: 1, arp: 1, melody: 1, perc: 1 };
+
+export const THEMES: Record<TrackId, Theme> = {
+  morningSnow: { id: 'morningSnow', name: 'Morning Snow', mood: 'Bright, clear pentatonic pads and soft plucks', bpm: 76, modes: ['ionian', 'lydian'], roots: [50, 52, 55, 57], transpose: 0,
+    progressions: [[0, 4, 5, 3], [0, 3, 4, 0], [0, 5, 3, 4]], barsPerChord: 2, form: 'ABAB', inst: { pad: 'pad', bass: 'sub', arp: 'harp', melody: 'pluck', perc: null },
+    melodyRest: 0.35, arpRest: 0.3, arpStep: 1, arpPatterns: [[0, 1, 2, 1], [2, 1, 0, 1], [0, 2, 1, 2]], bassStyle: 'whole', padVel: 1, melodyVel: 0.8, pentatonic: true, seventh: false, percBase: 0, bias: B1 },
+  alpineNoon: { id: 'alpineNoon', name: 'Alpine Noon', mood: 'Warm major harmony with light guitar plucks', bpm: 84, modes: ['ionian', 'mixolydian'], roots: [48, 50, 52, 55], transpose: 0,
+    progressions: [[0, 3, 4, 3], [0, 5, 3, 4], [0, 4, 3, 0]], barsPerChord: 2, form: 'ABAB', inst: { pad: 'pad', bass: 'sub', arp: 'guitar', melody: 'pluck', perc: 'brush' },
+    melodyRest: 0.3, arpRest: 0.2, arpStep: 0.5, arpPatterns: [[0, 1, 2, 1], [0, 2, 1, 2], [0, 1, 2, 3]], bassStyle: 'rootFifth', padVel: 0.8, melodyVel: 0.8, pentatonic: true, seventh: false, percBase: 0, bias: B1 },
+  apres: { id: 'apres', name: 'Après', mood: 'Gentle jazzy electric piano and brushes for the evening', bpm: 72, modes: ['dorian', 'mixolydian'], roots: [50, 53, 55, 57], transpose: 0,
+    progressions: [[0, 3, 0, 3], [0, 5, 3, 4], [1, 4, 0, 5]], barsPerChord: 2, form: 'ABAB', inst: { pad: 'epiano', bass: 'sub', arp: 'guitar', melody: 'epiano', perc: 'brush' },
+    melodyRest: 0.3, arpRest: 0.4, arpStep: 1, arpPatterns: [[0, 2, 1, 2], [0, 1, 2, 1], [2, 1, 0, 1]], bassStyle: 'rootFifth', padVel: 0.9, melodyVel: 0.8, pentatonic: true, seventh: true, percBase: 0.55, bias: B1 },
+  starlight: { id: 'starlight', name: 'Starlight', mood: 'Sparse pads and slow harp arpeggios for the night', bpm: 60, modes: ['aeolian', 'dorian', 'lydian'], roots: [48, 50, 52, 55], transpose: 0,
+    progressions: [[0, 5], [0, 3], [5, 3], [0, 4]], barsPerChord: 4, form: 'ABAB', inst: { pad: 'pad', bass: 'sub', arp: 'harp', melody: 'harp', perc: null },
+    melodyRest: 0.5, arpRest: 0.25, arpStep: 2, arpPatterns: [[0, 1, 2], [2, 1, 0], [0, 2, 1]], bassStyle: 'whole', padVel: 1, melodyVel: 0.7, pentatonic: true, seventh: false, percBase: 0, bias: { ...B1, perc: 0 } },
+  summerMeadow: { id: 'summerMeadow', name: 'Summer Meadow', mood: 'Airy flute over soft guitar', bpm: 88, modes: ['ionian', 'lydian', 'mixolydian'], roots: [48, 50, 52, 55], transpose: 0,
+    progressions: [[0, 4, 5, 3], [0, 3, 0, 4], [1, 4, 0, 3]], barsPerChord: 2, form: 'AABA', inst: { pad: 'pad', bass: 'sub', arp: 'guitar', melody: 'flute', perc: 'shaker' },
+    melodyRest: 0.3, arpRest: 0.25, arpStep: 0.5, arpPatterns: [[0, 1, 2, 1, 2, 1], [0, 2, 1, 2], [0, 1, 2, 3, 2, 1]], bassStyle: 'rootFifth', padVel: 0.6, melodyVel: 0.85, pentatonic: true, seventh: false, percBase: 0, bias: B1 },
+  autumnGold: { id: 'autumnGold', name: 'Autumn Gold', mood: 'Warm strings and soft piano in the evening light', bpm: 70, modes: ['dorian', 'aeolian', 'mixolydian'], roots: [50, 52, 55, 57], transpose: 0,
+    progressions: [[0, 3, 4, 0], [0, 5, 1, 4], [5, 3, 0, 4]], barsPerChord: 2, form: 'ABAB', inst: { pad: 'strings', bass: 'sub', arp: 'guitar', melody: 'epiano', perc: null },
+    melodyRest: 0.35, arpRest: 0.3, arpStep: 1, arpPatterns: [[0, 1, 2, 1], [0, 2, 1], [2, 1, 0, 1]], bassStyle: 'rootFifth', padVel: 0.9, melodyVel: 0.8, pentatonic: true, seventh: false, percBase: 0, bias: B1 },
+  blizzard: { id: 'blizzard', name: 'Blizzard', mood: 'Dark drone and low strings while the storm passes', bpm: 52, modes: ['aeolian', 'dorian'], roots: [48, 50, 53, 55], transpose: -12,
+    progressions: [[0, 5], [0, 3], [0, 6]], barsPerChord: 4, form: 'ABAB', inst: { pad: 'strings', bass: 'sub', arp: 'harp', melody: 'strings', perc: null },
+    melodyRest: 0.6, arpRest: 0.7, arpStep: 2, arpPatterns: [[0, 1, 2]], bassStyle: 'whole', padVel: 1, melodyVel: 0.6, pentatonic: true, seventh: false, percBase: 0, bias: { ...B1, perc: 0, arp: 0.5 } },
+  title: { id: 'title', name: 'Title Theme', mood: 'Calm, slightly cinematic alpine opening', bpm: 78, modes: ['lydian', 'ionian'], roots: [50, 53, 55, 57], transpose: -5,
+    progressions: [[0, 4, 5, 3], [0, 3, 5, 4]], barsPerChord: 2, form: 'ABAB', inst: { pad: 'strings', bass: 'sub', arp: 'harp', melody: 'epiano', perc: null },
+    melodyRest: 0.3, arpRest: 0.3, arpStep: 1, arpPatterns: [[0, 1, 2, 1], [2, 1, 0, 1]], bassStyle: 'whole', padVel: 1, melodyVel: 0.85, pentatonic: true, seventh: false, percBase: 0, bias: B1 },
+  festival: { id: 'festival', name: 'Festival', mood: 'A touch livelier: plucks, light brushes, warm pads', bpm: 98, modes: ['ionian', 'mixolydian'], roots: [48, 50, 52, 55], transpose: 0,
+    progressions: [[0, 4, 5, 3], [0, 3, 4, 4], [0, 5, 3, 4]], barsPerChord: 2, form: 'AABAB', inst: { pad: 'pad', bass: 'sub', arp: 'guitar', melody: 'pluck', perc: 'brush' },
+    melodyRest: 0.2, arpRest: 0.1, arpStep: 0.5, arpPatterns: [[0, 1, 2, 1, 2, 1], [0, 2, 1, 2], [0, 1, 2, 3, 2, 1]], bassStyle: 'pulse', padVel: 0.7, melodyVel: 0.9, pentatonic: true, seventh: false, percBase: 0.7, bias: B1 },
 };
 
 /** Layer multipliers + tempo by time of day (blended in musicState for dawn). */
@@ -53,8 +100,14 @@ export const WEATHER_LAYERS: Record<WeatherKind, Record<Layer, number>> = {
 
 /** Tuning constants for the scheduler / structure. */
 export const MUSIC = {
-  maxVoices: 12, lookahead: 0.15, tickMs: 25, crossfadeSec: 8, gapMin: 10, gapMax: 30,
+  maxVoices: 14, lookahead: 0.15, tickMs: 25, crossfadeSec: 8, introFadeSec: 3.5, gapMin: 12, gapMax: 35,
   stepBeats: 0.25, barBeats: 4, barsPerSection: 8,
-  pauseFadeTc: 0.5, resumeFadeTc: 0.8, tensionDecayTc: 25, jingleGap: 8, reverbSeconds: 2.2, reverbWet: 0.35,
+  pauseFadeTc: 0.5, resumeFadeTc: 0.8, tensionDecayTc: 25, jingleGap: 12, reverbWet: 0.3,
+  /** Music bus tone: low-pass cutoff (Hz) keeping everything soft. */
+  toneHz: 5200,
+  /** A playing track must have been on for this long before a context change may swap it, and it must fit worse than `swapBelow`. */
+  previewSec: 25, minPlaySec: 30, swapBelow: 0.12,
   speedMul: { 0: 1, 1: 1, 2: 1.12, 3: 1.25 } as Record<number, number>,
 };
+
+export type { SeasonId };

@@ -1,3 +1,5 @@
+import { isMusicStyle, type MusicStyle } from './musicThemes';
+
 export interface StorageLike { getItem(k: string): string | null; setItem(k: string, v: string): void }
 
 export interface AudioSettingsData {
@@ -11,14 +13,18 @@ export interface AudioSettingsData {
   musicOn: boolean;
   /** Fade the music out while the game is paused (speed 0). */
   pauseMusicAtZero: boolean;
+  /** Which track plays: 'auto' picks from the game state (season, time, weather, busy-ness); or one fixed track. */
+  musicStyle: MusicStyle;
   /** Placeholder: mute music while menus are open (not wired to any menu yet). */
   muteMusicInMenus: boolean;
 }
 
 /** Pre-M5.1 default ambience volume; persisted values exactly equal to it are migrated to the new default (users who never touched the slider). */
 export const LEGACY_AMBIENCE_DEFAULT = 0.7;
+/** The 0.2.0 default (0.45) was too present; untouched sliders move to the new default. */
+export const PREVIOUS_AMBIENCE_DEFAULT = 0.45;
 export const AUDIO_STORAGE_KEY = 'slope.audio.v1';
-export const DEFAULT_AUDIO_SETTINGS: Readonly<AudioSettingsData> = { master: 0.7, music: 0.5, sfx: 0.8, ambience: 0.45, muted: false, reduceLoud: false, ambienceOnly: false, musicOn: true, pauseMusicAtZero: true, muteMusicInMenus: false };
+export const DEFAULT_AUDIO_SETTINGS: Readonly<AudioSettingsData> = { master: 0.7, music: 0.5, sfx: 0.8, ambience: 0.28, muted: false, reduceLoud: false, ambienceOnly: false, musicOn: true, pauseMusicAtZero: true, musicStyle: 'auto', muteMusicInMenus: false };
 export type VolumeKey = 'master' | 'music' | 'sfx' | 'ambience';
 export const VOLUME_KEYS: readonly VolumeKey[] = ['master', 'music', 'sfx', 'ambience'];
 
@@ -32,7 +38,7 @@ export function parseSettings(raw: string | null): AudioSettingsData {
   try {
     const o = JSON.parse(raw) as Partial<Record<keyof AudioSettingsData, unknown>> | null;
     if (!o || typeof o !== 'object') return { ...d };
-    return { master: clamp01(o.master, d.master), music: clamp01(o.music, d.music), sfx: clamp01(o.sfx, d.sfx), ambience: o.ambience === LEGACY_AMBIENCE_DEFAULT ? d.ambience : clamp01(o.ambience, d.ambience), muted: bool(o.muted, d.muted), reduceLoud: bool(o.reduceLoud, d.reduceLoud), ambienceOnly: bool(o.ambienceOnly, d.ambienceOnly), musicOn: bool(o.musicOn, d.musicOn), pauseMusicAtZero: bool(o.pauseMusicAtZero, d.pauseMusicAtZero), muteMusicInMenus: bool(o.muteMusicInMenus, d.muteMusicInMenus) };
+    return { master: clamp01(o.master, d.master), music: clamp01(o.music, d.music), sfx: clamp01(o.sfx, d.sfx), ambience: (o.ambience === LEGACY_AMBIENCE_DEFAULT || o.ambience === PREVIOUS_AMBIENCE_DEFAULT) ? d.ambience : clamp01(o.ambience, d.ambience), muted: bool(o.muted, d.muted), reduceLoud: bool(o.reduceLoud, d.reduceLoud), ambienceOnly: bool(o.ambienceOnly, d.ambienceOnly), musicOn: bool(o.musicOn, d.musicOn), pauseMusicAtZero: bool(o.pauseMusicAtZero, d.pauseMusicAtZero), musicStyle: isMusicStyle(o.musicStyle) ? o.musicStyle : d.musicStyle, muteMusicInMenus: bool(o.muteMusicInMenus, d.muteMusicInMenus) };
   } catch { return { ...d }; }
 }
 
@@ -67,6 +73,7 @@ export class AudioSettings {
     if (p.ambienceOnly !== undefined) n.ambienceOnly = !!p.ambienceOnly;
     if (p.musicOn !== undefined) n.musicOn = !!p.musicOn;
     if (p.pauseMusicAtZero !== undefined) n.pauseMusicAtZero = !!p.pauseMusicAtZero;
+    if (p.musicStyle !== undefined && isMusicStyle(p.musicStyle)) n.musicStyle = p.musicStyle;
     if (p.muteMusicInMenus !== undefined) n.muteMusicInMenus = !!p.muteMusicInMenus;
     if (JSON.stringify(n) === JSON.stringify(this.data)) return;
     this.data = n; this.view = null;
@@ -85,6 +92,6 @@ export function busGains(s: Readonly<AudioSettingsData>): { master: number; musi
   if (s.muted) return { master: 0, music: 0, sfx: 0, ambience: 0 };
   return {
     master: s.master * (s.reduceLoud ? REDUCE_LOUD_FACTOR : 1),
-    music: s.ambienceOnly ? 0 : s.music, sfx: s.ambienceOnly ? 0 : s.sfx, ambience: s.ambience,
+    music: s.ambienceOnly ? 0 : s.music, sfx: s.ambienceOnly ? 0 : s.sfx, ambience: s.ambienceOnly ? Math.max(s.ambience, PREVIOUS_AMBIENCE_DEFAULT) : s.ambience,
   };
 }

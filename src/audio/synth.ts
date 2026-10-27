@@ -28,6 +28,10 @@ export function generateNoise(kind: NoiseKind, length: number, seed = 1, seamles
     const a = (i + 1) / (n + 1);
     out[i] = raw[i]! * Math.sin(a * Math.PI / 2) + raw[length + i]! * Math.cos(a * Math.PI / 2);
   }
+  let mean = 0; // no DC (the brown walk drifts): keeps filters / compressor clean
+  for (let i = 0; i < length; i++) mean += out[i]!;
+  mean /= length;
+  for (let i = 0; i < length; i++) out[i] = out[i]! - mean;
   let peak = 0;
   for (let i = 0; i < length; i++) peak = Math.max(peak, Math.abs(out[i]!));
   const k = peak > 0 ? 0.9 / peak : 1;
@@ -43,7 +47,8 @@ export function reverbImpulse(sampleRate: number, seconds = 2, decay = 3, seed =
 }
 
 /** Seconds of noise per cached buffer. */
-export const NOISE_SECONDS = 3;
+/** Long enough that a looping bed does not read as a repeating swish (was 3 s, audibly periodic); layers also read two buffers at unrelated rates. */
+export const NOISE_SECONDS = 9;
 
 /** One white/pink/brown buffer per backend, generated lazily and reused by every voice and layer. */
 export class NoiseBank {

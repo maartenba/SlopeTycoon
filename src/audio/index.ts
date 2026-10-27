@@ -85,7 +85,7 @@ export function createAudio(d: AudioDeps): AudioApi {
     engine, sfx, ambience, music, settings,
     frame(dt: number): void {
       acc += dt;
-      if (acc >= every) { const e = d.probe.env(); music.setInputs({ season: e.season, weather: e.weather, hour: e.hour, sunrise: e.sunrise, sunset: e.sunset }); }
+      if (acc >= every) { const e = d.probe.env(); music.setInputs({ season: e.season, weather: e.weather, hour: e.hour, sunrise: e.sunrise, sunset: e.sunset, busy: Math.min(1, (e.guests ?? 0) / 300), festival: !!e.festival }); }
       if (acc < every) return;
       const step = acc; acc = 0;
       if (!engine.running) return; // nothing to do (and no sim sampling) while locked / blocked / suspended / unsupported

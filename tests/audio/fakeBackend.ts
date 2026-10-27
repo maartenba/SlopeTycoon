@@ -12,7 +12,7 @@ class FakeParam implements ParamLike {
 export class FakeNode implements NodeLike {
   live = true; connections: unknown[] = [];
   gain = new FakeParam(); frequency = new FakeParam(); Q = new FakeParam(); pan = new FakeParam(); playbackRate = new FakeParam();
-  threshold = new FakeParam(); knee = new FakeParam(); ratio = new FakeParam(); attack = new FakeParam(); release = new FakeParam();
+  delayTime = new FakeParam(); threshold = new FakeParam(); knee = new FakeParam(); ratio = new FakeParam(); attack = new FakeParam(); release = new FakeParam();
   type = ''; buffer: BufferLike | null = null; loop = false; onended: (() => void) | null = null;
   started = false; stopAt = Infinity; normalize = false; startAt = 0; createdAt = 0;
   constructor(public kind: string, private owner: FakeBackend) { owner.nodes.push(this); this.createdAt = owner.t; }
@@ -42,6 +42,7 @@ export class FakeBackend implements AudioBackend {
   createBiquadFilter = (): FakeNode => this.mk('filter');
   createStereoPanner = (): FakeNode => this.mk('pan');
   createConvolver = (): FakeNode => this.mk('convolver');
+  createDelay = (): FakeNode => this.mk('delay');
   createDynamicsCompressor = (): FakeNode => this.mk('comp');
   createBuffer(length: number): BufferLike { this.buffers++; const d = new Float32Array(length); return { getChannelData: () => d }; }
   get live(): number { return this.nodes.filter((n) => n.live).length; }

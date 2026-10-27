@@ -1,5 +1,6 @@
 import { AudioSettings, VOLUME_KEYS, type VolumeKey } from '../../audio/AudioSettings';
 import type { EngineState } from '../../audio/AudioEngine';
+import { THEMES, TRACK_IDS, type MusicStyle } from '../../audio/musicThemes';
 import { icon } from '../icons';
 import { Modal } from '../modal';
 import { StElement } from './StElement';
@@ -12,6 +13,8 @@ export interface SettingsEngine { readonly state: EngineState; readonly needsHin
 export interface SettingsLink { label: string; title?: string; run(): void }
 /** Game-level options shown in the Graphics / Gameplay sections (each optional: missing = row hidden). */
 export interface GameSettingsApi {
+  /** Music preview: skip to another track, and the name of what plays now ('' = silence between pieces). */
+  music?: { next(): void; now(): string };
   quality?: { get(): string; set(q: string): void; options: readonly string[] };
   fastNights?: { get(): boolean; set(on: boolean): void };
   /** Ride-along pacing: slow motion (target-speed: guest <= ~9 tiles/s) on / off. */
@@ -48,6 +51,9 @@ export class StSettings extends StElement {
   private ambBox = document.createElement('input');
   private musicBox = document.createElement('input');
   private pauseBox = document.createElement('input');
+  private styleSel: StSelect | null = null;
+  private nowEl = document.createElement('span');
+  private nextRow: HTMLElement | null = null;
   private linksBox = document.createElement('div');
   private gameSec = document.createElement('div');
   private gfxSec = document.createElement('div');
@@ -125,6 +131,18 @@ export class StSettings extends StElement {
       this.chk(this.musicBox, 'Music', 'Generative background music on / off', (on) => this.settings?.set({ musicOn: on })),
       this.chk(this.pauseBox, 'Pause music at speed 0', 'Fade the music out while the game is paused', (on) => this.settings?.set({ pauseMusicAtZero: on })),
     );
+    {
+      const opts = [{ value: 'auto', label: 'Auto (fits the moment)' }, ...TRACK_IDS.map((id) => ({ value: id, label: THEMES[id].name })), { value: 'off', label: 'Off' }];
+      const sel = this.styleSel = makeSelect(opts, 'auto', 'Music style', (v) => { if (v === 'off') this.settings?.set({ musicOn: false }); else this.settings?.set({ musicOn: true, musicStyle: v as MusicStyle }); });
+      sel.title = 'Auto picks a piece that fits the season, time of day, weather and how busy the resort is. Or lock one style.';
+      const row = document.createElement('div'); row.className = 'row'; row.dataset.row = 'music-style';
+      const l = document.createElement('label'); l.textContent = 'Music style'; row.append(l, sel);
+      const nrow = document.createElement('div'); nrow.className = 'row'; nrow.dataset.row = 'music-next'; nrow.hidden = true;
+      const nb = document.createElement('button'); nb.textContent = 'Next track'; nb.title = 'Skip to another piece (it keeps playing while this window is open so you can preview it)';
+      nb.addEventListener('click', () => { this.game?.music?.next(); window.setTimeout(() => this.syncNow(), 600); });
+      this.nowEl.className = 'hint'; nrow.append(nb, this.nowEl); this.nextRow = nrow;
+      audio.push(row, nrow);
+    }
     this.gfxSec.className = 'section-body'; this.gfxSec.style.cssText = 'display:flex;flex-direction:column;gap:8px';
     this.gameSec.className = 'section-body'; this.gameSec.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:flex-start';
     this.linksBox.className = 'links';
@@ -307,6 +325,8 @@ export class StSettings extends StElement {
       el.value = String(Math.round(s[k] * 100));
       (el.nextElementSibling as HTMLElement).textContent = el.value;
     }
+    if (this.styleSel) this.styleSel.value = !s.musicOn ? 'off' : s.musicStyle;
+    if (this.nextRow) { this.nextRow.hidden = !this.game?.music; this.syncNow(); }
     this.muteBox.checked = s.muted; this.loudBox.checked = s.reduceLoud; this.ambBox.checked = s.ambienceOnly; this.musicBox.checked = s.musicOn; this.pauseBox.checked = s.pauseMusicAtZero;
     if (this.privBox && this.game?.privacy) this.privBox.checked = this.game.privacy.get();
     if (this.nightsBox && this.game?.fastNights) this.nightsBox.checked = this.game.fastNights.get();
@@ -324,6 +344,8 @@ export class StSettings extends StElement {
   setVolume(k: VolumeKey, v01: number): void { const s = this.sliders.get(k)!; s.value = String(Math.round(v01 * 100)); s.dispatchEvent(new Event('input')); }
   get isOpen(): boolean { return this.dlg.isOpen; }
   get hintVisible(): boolean { return !this.hint.hidden; }
+  private syncNow(): void { const n = this.game?.music?.now() ?? ''; this.nowEl.textContent = n ? `Now playing: ${n}` : 'Between pieces (a short silence is normal)'; }
+
   open(): void { this.sync(); this.buildCosmetics(); this.dlg.open(); }
   close(): void { this.dlg.close(); }
   toggle(force?: boolean): void { if (force ?? !this.dlg.isOpen) this.open(); else this.close(); }

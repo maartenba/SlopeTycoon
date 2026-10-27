@@ -58,3 +58,14 @@ export const beatsToSeconds = (beats: number, bpm: number): number => (beats * 6
 export const secondsToBeats = (sec: number, bpm: number): number => (sec * bpm) / 60;
 /** Tempo factor for game speed (notes are re-timed, pitch never changes). 0 (paused) counts as 1x. */
 export function speedTempoMul(speed: number): number { return speed >= 3 ? 1.25 : speed >= 2 ? 1.12 : 1; }
+
+/** Pentatonic subsets of each mode (scale degrees 0..6, no semitone clashes): major-ish modes drop degrees 4 and 7 (idx 3, 6), minor-ish modes drop 2 and 6 (idx 1, 5). */
+export const PENTATONIC_DEGREES: Record<ModeName, readonly number[]> = {
+  ionian: [0, 1, 2, 4, 5], lydian: [0, 1, 2, 4, 5], mixolydian: [0, 1, 2, 4, 5],
+  dorian: [0, 2, 3, 4, 6], aeolian: [0, 2, 3, 4, 6], phrygian: [0, 2, 3, 4, 6],
+};
+/** Nearest scale index (ties go down) whose degree is in `allowed`. */
+export function snapToDegrees(idx: number, allowed: readonly number[]): number {
+  for (let d = 0; d <= 3; d++) { if (allowed.includes(mod(idx - d, N))) return idx - d; if (allowed.includes(mod(idx + d, N))) return idx + d; }
+  return idx;
+}
