@@ -711,8 +711,8 @@
     "target": "lodge",
     "extra": "starter=1&mode=sandbox",
     "viewport": "1280x1000",
-    "steps": "click:button[data-drawer=marketing];wait:800",
-    "evalJs": "__slope.progression.setLevel(4)"
+    "steps": "wait:1500;click:button[data-drawer=marketing];wait:800",
+    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
    }
   },
   {
@@ -1081,12 +1081,12 @@
    "kind": "harness",
    "caption": "Buildings > Energy: solar, wind, hydro, biomass, a nursery and a recycling centre.",
    "shot": {
-    "start": "summer",
+    "start": "winter",
     "hour": 12,
-    "zoom": 2,
+    "zoom": 3,
     "target": "lodge",
     "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
+    "viewport": "1600x900",
     "steps": "wait:1200;click:button[data-drawer=buildings];wait:400;click:Energy;wait:800",
     "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
     "size": 256,

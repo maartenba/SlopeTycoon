@@ -550,12 +550,12 @@
    {
     "w": 640,
     "file": "events-calendar-640.webp",
-    "bytes": 56630
+    "bytes": 53488
    },
    {
     "w": 1280,
     "file": "events-calendar-1280.webp",
-    "bytes": 156292
+    "bytes": 148152
    }
   ]
  },
@@ -865,17 +865,17 @@
  },
  "ui-energy-tab": {
   "w": 1280,
-  "h": 900,
+  "h": 720,
   "files": [
    {
     "w": 640,
     "file": "ui-energy-tab-640.webp",
-    "bytes": 38368
+    "bytes": 36854
    },
    {
     "w": 1280,
     "file": "ui-energy-tab-1280.webp",
-    "bytes": 112474
+    "bytes": 99624
    }
   ]
  },
