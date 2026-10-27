@@ -168,3 +168,10 @@ Buildings, Lifts and Pistes & Trails drawers sort their cards by relevance to th
 
 ## Phase 6: trail access
 `trail` access kind, approved rows (Mountain Hut, Ranger Station, Adventure Park, Alpine Farm + trail; Café and Stunt Park already accepted `pisteEdge`) and the +25% remote-supply upkeep: see [trails-access.md](trails-access.md). Reason text order: footpath, road, hiking trail, piste (`Needs a footpath, road, hiking trail or piste next to it`).
+
+## Access adjacency, exactly (ghost = placed verdict)
+
+- A network tile serves a footprint only if it shares an **edge** with it (the 4-neighbour ring, `Networks.ring`): corner / diagonal contact never counts, a 1-tile gap never counts. Footprint is the rotated `footprintOf(type, rot)` rect in both the ghost and the placed building; model terraces / decks stay inside it.
+- The touching `path` / `road` / `rail` tile must also be in the component **linked to the road / rail entry** (`Networks.comps`). A painted but unlinked footpath does not serve.
+- The ghost (`validatePlacement`) and the placed building (`evaluateStatus`) use the same `accessSatisfied`; both read `Networks.version`-cached components, so they cannot disagree (property test `tests/build/placementPreviewAgrees.test.ts`: random placements, preview warning == `active`/`reason` after placement; same result at HEAD).
+- When access is missing the ghost adds one precise line from `accessHint` (`Networks.diagnose`): *Needs a connected footpath: the one next to it isn't linked to the road entrance* (edge touches an unlinked network), *The footpath touches only the corner: move it one tile (it must share a side)*, *The footpath is one tile away: ...*; otherwise the building's `placeTip` / plain text.

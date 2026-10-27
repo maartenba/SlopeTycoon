@@ -10,7 +10,7 @@ const TREE_SET: ReadonlySet<number> = new Set(TREE_KINDS);
 const isTreeKind = (k: number): boolean => TREE_SET.has(k);
 import { canPlace, evaluateStatus } from './Dependencies';
 import { networkSpreadViolations } from '../world/Networks';
-import { autoFlattenPolicy, checkSlope, isAccessReason, meanHeight } from './PlacementRules';
+import { autoFlattenPolicy, checkSlope, accessHint, isAccessReason, meanHeight } from './PlacementRules';
 import { footprintOf, type Buildings, type PlacedBuilding } from './Buildings';
 import type { Economy } from './Economy';
 import type { UnlockGate } from '../config/unlocks';
@@ -206,7 +206,11 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
   const st = evaluateStatus({ id: -1, type, x, y, w, h, active: true }, env.buildings.depContext());
   if (!st.active && st.reason && !out.reasons.includes(st.reason)) {
     out.warnings.push(st.reason);
-    if (def.placeTip && isAccessReason(st.reason)) out.info.push(def.placeTip);
+    if (isAccessReason(st.reason)) {
+      const hint = accessHint(type, net, { x, y, w, h });
+      if (hint) out.info.push(hint);
+      else if (def.placeTip) out.info.push(def.placeTip);
+    }
   }
 
   if (site.forest && env.props) {

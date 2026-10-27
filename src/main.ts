@@ -381,8 +381,8 @@ const sim = createSim({
   fromSave: bootSave?.env.modules,
   ...(DEMO ? { hints: false, preset: townOf(DEMO_TOWN.id)!.preset, startSeason: DEMO_TOWN.season } : {}),
   remoteSupply: !DEMO, // Phase 6 Task 2: +25% upkeep for sites supplied only on foot (trail / piste edge)
-  stories: !DEMO, // Story guests (M5.4 Task 22): about 1.5% of arrivals get a name and one wish; never in the title demo
   campaignsV2: !DEMO, // Phase 6 Task 50: rail share tracking + the capped train sustainability bonus (Come by Train)
+  stories: !DEMO, // Story guests (M5.4 Task 22): about 1.5% of arrivals get a name and one wish; never in the title demo
   rivalMarket: !TUTORIAL_MODE, // rival market share scales arrivals; the guided tutorial resort stays exactly neutral (Task 23)
   autoEvents: !DEMO, // Events calendar: Almabtrieb / New Year / critic / powder day run by themselves in a real game (not in the title demo)
   deferAchievements: true, // armed below, once the local profile has loaded (never in the title demo)

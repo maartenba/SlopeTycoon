@@ -726,9 +726,25 @@ export class Networks {
     return !!b && !!def && suppliedOnFootOnly(def, this.access, { x: b.x, y: b.y, w: b.w, h: b.h });
   }
 
+  /** Why a network of this kind near the footprint does not serve it: linked-only-by-corner, painted but not linked to the entry, or one tile away. */
+  diagnose(kind: 'road' | 'path' | 'rail', r: Rect): 'unlinked' | 'corner' | 'gap' | null {
+    const want = (x: number, y: number): boolean => {
+      if (!this.inb(x, y)) return false;
+      const k = this.kind[this.idx(x, y)];
+      return kind === 'road' ? k === NetKind.Road : kind === 'path' ? k === NetKind.Road || k === NetKind.Path : k === NetKind.Rail;
+    };
+    if (this.ring(r).some((t) => want(t.x, t.y))) return 'unlinked'; // a side touches it (else it would serve): the network is not linked to the entry
+    const x1 = r.x + r.w, y1 = r.y + r.h;
+    if (want(r.x - 1, r.y - 1) || want(x1, r.y - 1) || want(r.x - 1, y1) || want(x1, y1)) return 'corner';
+    for (let i = r.x; i < x1; i++) if (want(i, r.y - 2) || want(i, y1 + 1)) return 'gap';
+    for (let j = r.y; j < y1; j++) if (want(r.x - 2, j) || want(x1 + 1, j)) return 'gap';
+    return null;
+  }
+
   /** Query facade for Buildings.setNetwork({ access }). */
   readonly access: NetworkAccess = {
     serves: (k, r) => this.serves(k, r),
+    diagnose: (k, r) => this.diagnose(k, r),
     pisteAt: (x, y) => this.pisteAt(x, y),
     kindAt: (x, y) => this.kindAt(x, y),
   };

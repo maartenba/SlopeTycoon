@@ -12,6 +12,8 @@ export interface NetworkAccess {
   pisteAt(x: number, y: number): boolean;
   /** NetKind on tile (0 none, 1 path, 2 road, 3 rail). */
   kindAt(x: number, y: number): number;
+  /** Why a road / path / rail footprint is NOT served although the network exists nearby (precise placement hint). */
+  diagnose?(kind: 'road' | 'path' | 'rail', r: Rect): 'unlinked' | 'corner' | 'gap' | null;
 }
 
 const ACCESS_TEXT: Record<AccessKind, string> = {
@@ -50,6 +52,29 @@ export function accessReason(def: BuildingDef): string {
   nouns.sort((a, b) => rank(a) - rank(b)); // stable: trail then piste last ('a footpath, road, hiking trail or piste')
   const list = nouns.length === 1 ? nouns[0]! : `${nouns.slice(0, -1).join(', ')} or ${nouns[nouns.length - 1]}`;
   return `Needs a ${list} next to it`;
+}
+
+/**
+ * Precise follow-up to accessReason for the ghost: WHY nearby network does not count. Rule: a network tile must share an EDGE with the
+ * footprint (corners / diagonals never count) AND be linked to the road entry (a painted but unlinked footpath does not count).
+ * Null when nothing is close (the plain 'Needs ...' text says it all).
+ */
+export function accessHint(typeId: string, net: NetworkAccess | undefined, r: Rect): string | null {
+  const def = BUILDINGS[typeId];
+  if (!def || !net?.diagnose || accessSatisfied(def, net, r)) return null;
+  const kinds = [def.access, ...(def.altAccess ?? [])];
+  const wants: Array<'road' | 'path' | 'rail'> = [];
+  for (const k of kinds) {
+    if (k === 'road') wants.push('road');
+    else if (k === 'path') wants.push('path');
+    else if (k === 'rail+path') wants.push('rail', 'path');
+  }
+  const noun = (k: 'road' | 'path' | 'rail'): string => (k === 'path' ? 'footpath' : k === 'rail' ? 'rail line' : 'road');
+  const found = wants.map((k) => [k, net.diagnose!(k, r)] as const);
+  for (const [k, d] of found) if (d === 'unlinked') return `Needs a connected ${noun(k)}: the one next to it isn't linked to the road entrance`;
+  for (const [k, d] of found) if (d === 'corner') return `The ${noun(k)} touches only the corner: move it one tile (it must share a side)`;
+  for (const [k, d] of found) if (d === 'gap') return `The ${noun(k)} is one tile away: move the building or extend the ${noun(k)} (it must share a side)`;
+  return null;
 }
 
 /** True for a reason produced by accessReason (missing network access, as opposed to a missing prerequisite building). */

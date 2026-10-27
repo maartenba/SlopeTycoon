@@ -365,12 +365,12 @@ export function createSim(opts: SimOptions) {
   };
   const guestSim = new GuestSim(guestWorld, size, bus);
   guestSim.spawner.rateMult = diff.spawn; guestSim.patienceMult = diff.patience; guestSim.injuryMult = diff.incidents * (mods.eventBias?.incidents ?? 1);
+  guestSim.spawner.typesV2 = opts.guestTypesV2 === true;
+  guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   if (mods.guestMix) guestSim.spawner.mixBias = GUEST_TYPE_NAMES.map((n) => mods.guestMix?.[n] ?? 1);
   registerGuestSystems(registry, guestSim);
 
   // ---- Operations AI: piste quality, nightly grooming, hourly snowmaking ----
-  guestSim.spawner.typesV2 = opts.guestTypesV2 === true;
-  guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   const ops: Ops = createOps({
     grid, cond, weather, snow, coverage, net: networks, buildings: () => buildings.all(), bus, reservoirs,
     onCost: (c, a) => { economy.spend(c === 'energy' ? 'snowmaking' : c === 'wages' ? 'staff' : 'upkeep', a); },
