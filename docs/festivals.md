@@ -10,7 +10,7 @@ Dates use the real calendar of `docs/time-flow.md` "Calendar" (15-day months, si
 
 | Event | Kind | When | Days | Cost | Arrivals | Needs |
 |---|---|---|---|---|---|---|
-| Almabtrieb | automatic (retrofit) | the descent of the herds in early October (`phaseFor` = `descend`, 1-10 Oct), needs an Alpine Farm | ~10 | - | x1 (the old guest cheer stays in `Livestock`) | a farm with cows |
+| Almabtrieb | automatic (retrofit) | the descent of the herds, 1-11 October (`phaseFor` = `descend`; the window is `almabtriebWindow()`, derived from it, so they cannot disagree), needs an Alpine Farm | 11 | - | x1.06 (plus the old guest cheer in `Livestock`) | a farm with cows |
 | Christmas Market | booked | start 1-9 Dec (sim day 120-128) | 8 | $3,000 | x1.18 | Base Lodge, 2 stars, level 2 |
 | Winter Carnival | booked | start 1-11 Feb (sim day 150-160) | 5 | $4,000 | x1.20 | Base Lodge, 2.5 stars, level 3 |
 | Summer Music Festival | booked | start 1 Jun - 11 Aug (sim day 30-70) | 4 | $6,000 | x1.35 | Base Lodge, 3 stars, level 3 |
@@ -24,6 +24,17 @@ A booking needs `leadDays` of notice, the right season and start window, no over
 **Critic score** (`criticScore`): `0.6 x stars + 1.25 x guest mood + 0.75 x open-piste share - 0.5 if incidents are open`, rounded to half steps, clamped 0..5. A score >= 4 gives x1.12 arrivals for 10 days, <= 2 gives x0.92, anything between changes nothing.
 
 **Automatic events are off in headless sims** (`createSim({ autoEvents })`, default `false`; `main.ts` turns them on except in the title demo). Booked festivals work everywhere. This keeps every pre-existing headless test / balance run / golden hash untouched: only the new `events` save module appears (excluded in `tests/sim/staff.test.ts`). With `autoEvents: true`, New Year, critic and powder days do change arrivals slightly.
+
+### Almabtrieb: how to see it
+
+Why it was easy to miss: it only exists with an Alpine Farm, the first autumn of a new game (1 Dec start) is 10 months away, and it used to start silently. Now:
+
+* **Rudi** suggests an Alpine Farm (spring to early autumn, Base Lodge built, farm unlocked; 'Build' places it) with 'Build an Alpine Farm to see the Almabtrieb in autumn'. With a farm he says 'Almabtrieb in N days' (from 5 days ahead) / 'Almabtrieb is on'; 'Show me' goes to the base station, where the dressing stands.
+* **News**: 'Almabtrieb in 3 days: ...' (once a year), 'Almabtrieb begins!' on 1 October, and the existing 'Almabtrieb! The decorated cows are back ...' once 60 % of the herd is home (guest cheer).
+* The **Events panel** lists it under 'Coming up' with its date and on the month strip; while it runs it shows 'day N of 11'.
+* Dressing (bunting, flags, banner 'Almabtrieb', decorated-cow procession 9:00-17:00) on the road / path nearest the base lift station for the 11 days; a x1.06 arrival bonus. All of it needs `autoEvents` (real game, not the title demo) and a farm with cows.
+* **Debug**: `__slope.events.start('almabtrieb')` (any event id, optional days) runs it from today; `__slope.events.jump()` jumps the date to 3 days before (announcement), `jump(0)` to the first day; `.active()` / `.upcoming()` list events. Newly saved calendars keep the notice flags (`almNoticed`, `almBegan`; additive).
+* Fast-forward ('Skip to' next season / month) lands exactly on 1 October and does not hide it; at 10x the 11 days last about 2.7 minutes.
 
 ## Set dressing
 

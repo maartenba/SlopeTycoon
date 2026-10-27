@@ -62,6 +62,13 @@ const seasonOfDoy = (doy: number): SeasonId => {
 export const NEW_YEAR_EVE_DOY = simDayOf(11, DAYS_PER_MONTH);
 const NEW_YEAR_DOY = (NEW_YEAR_EVE_DOY + 1) % DAYS_PER_YEAR;
 
+/** The Almabtrieb window of the year containing `doy` (the `descend` run of `phaseFor`, so the festival and the herds can never disagree): [first, last] day of year. */
+export function almabtriebWindow(): { first: number; last: number } {
+  let first = -1, last = -1;
+  for (let d = 0; d < DAYS_PER_YEAR; d++) if (phaseFor(d) === 'descend') { if (first < 0) first = d; last = d; }
+  return { first, last };
+}
+
 export class EventCalendar {
   booked: Booking[] = [];
   /** Finished events per id (lifetime). */
@@ -77,6 +84,11 @@ export class EventCalendar {
   private powderDay = -1;
   private lastDay = -1;
   private criticDone = -1;
+  /** Absolute start day of the Almabtrieb that was announced / began already (one notice each per year; saved). */
+  private almNoticed = -1;
+  private almBegan = -1;
+  /** Debug / QA: events forced on from today for `days` days (`__slope.events.start`). Not saved. */
+  private forced: Array<{ id: FestivalId; start: number; end: number }> = [];
 
   constructor(private d: CalendarDeps) { this.rng = new Rng((d.seed ^ 0xfe57) >>> 0); }
 
@@ -89,12 +101,13 @@ export class EventCalendar {
   active(day = this.d.today()): ActiveEvent[] {
     const out: ActiveEvent[] = [];
     for (const b of this.booked) if (day >= b.start && day < b.end) out.push(this.mk(b.id, b.start, b.end, day, false));
+    for (const f of this.forced) if (day >= f.start && day < f.end && !out.some((o) => o.id === f.id)) out.push(this.mk(f.id, f.start, f.end, day, true));
     if (this.d.auto) {
       const doy = doyOf(day), base = day - doy;
       // New Year: the last day of December (the eve) and 1 January
       if (doy === NEW_YEAR_EVE_DOY) out.push(this.mk('newYear', day, day + 2, day, true));
       else if (doy === NEW_YEAR_DOY) out.push(this.mk('newYear', day - 1, day + 1, day, true));
-      if (this.d.hasHerd() && phaseFor(doy) === 'descend') {
+      if (this.d.hasHerd() && phaseFor(doy) === 'descend' && !out.some((o) => o.id === 'almabtrieb')) {
         let s = doy; while (s > 0 && phaseFor(s - 1) === 'descend') s--;
         let e = doy; while (e < DAYS_PER_YEAR - 1 && phaseFor(e + 1) === 'descend') e++;
         out.push(this.mk('almabtrieb', base + s, base + e + 1, day, true));
@@ -135,7 +148,23 @@ export class EventCalendar {
       if (ny > t && ny - t <= horizon) out.push({ id: 'newYear', def: FESTIVAL_BY_ID.newYear, start: ny, end: ny + 2, booked: false, daysAway: ny - t });
       if (this.nextCritic !== null && this.nextCritic > t && this.nextCritic - t <= EVENTS.criticAnnounceDays) out.push({ id: 'critic', def: FESTIVAL_BY_ID.critic, start: this.nextCritic, end: this.nextCritic + 1, booked: false, daysAway: this.nextCritic - t });
     }
+    if (this.d.auto && this.d.hasHerd()) {
+      const w = almabtriebWindow(), doy = doyOf(t), base = t - doy;
+      const start = base + w.first + (doy > w.first ? DAYS_PER_YEAR : 0); // the next first day of the descent (not the running one: that is in `active`)
+      if (start > t && start - t <= horizon) out.push({ id: 'almabtrieb', def: FESTIVAL_BY_ID.almabtrieb, start, end: start + (w.last - w.first + 1), booked: false, daysAway: start - t });
+    }
     return out.sort((a, b) => a.start - b.start || a.id.localeCompare(b.id));
+  }
+
+  /** Debug / QA: run an event from today for its normal length (or `days`). Returns false for an unknown id. */
+  debugStart(id: FestivalId, days?: number): boolean {
+    const def = FESTIVAL_BY_ID[id];
+    if (!def) return false;
+    const t = this.d.today();
+    this.forced = this.forced.filter((f) => f.id !== id);
+    this.forced.push({ id, start: t, end: t + Math.max(1, days ?? def.days) });
+    if (id === 'almabtrieb') this.d.news(ALM_BEGIN);
+    return true;
   }
 
   // ---- booking ----------------------------------------------------------------------------------------------------------------------------
@@ -227,7 +256,9 @@ export class EventCalendar {
     // daily cheer
     for (const e of this.active(t)) if (e.def.cheer > 0) this.d.cheer(e.def.cheer);
     if (this.buff && t >= this.buff.until) this.buff = null;
+    this.forced = this.forced.filter((f) => t < f.end);
     if (!this.d.auto) return;
+    this.almabtriebNews(t);
     if (this.active(t).some((e) => e.id === 'newYear' && e.dayIndex === 0)) this.d.news('New Year\'s Eve! A small fireworks show lights up the village tonight.');
     // critic: schedule, announce 3 days ahead, visit
     if (this.nextCritic === null) this.nextCritic = t + this.rng.int(EVENTS.criticFirst[0], EVENTS.criticFirst[1]);
@@ -247,6 +278,20 @@ export class EventCalendar {
     }
   }
 
+  /** Almabtrieb: a notice `EVENTS.almAnnounceDays` days ahead and a news item on its first day (once each per year; only with a herd). */
+  private almabtriebNews(t: number): void {
+    if (!this.d.hasHerd()) return;
+    const w = almabtriebWindow(), doy = doyOf(t), start = t - doy + w.first;
+    if (doy >= w.first - EVENTS.almAnnounceDays && doy < w.first && this.almNoticed !== start) {
+      this.almNoticed = start;
+      const n = w.first - doy;
+      this.d.news(`Almabtrieb in ${n} day${n === 1 ? '' : 's'}: the cows come down from the alpine pasture. Bunting goes up near the base station.`);
+    } else if (doy >= w.first && doy <= w.last && this.almBegan !== start) {
+      this.almBegan = start;
+      this.d.news(ALM_BEGIN);
+    }
+  }
+
   /** Hourly: a snowfall may declare a powder day (once per cooldown). */
   newHour(): void {
     if (!this.d.auto) return;
@@ -263,7 +308,7 @@ export class EventCalendar {
   serialize(): unknown {
     return {
       booked: this.booked.map((b) => ({ ...b })), history: { ...this.history }, rng: this.rng.getState(), nextCritic: this.nextCritic, criticNoticed: this.criticNoticed,
-      buff: this.buff ? { ...this.buff } : null, lastReview: this.lastReview ? { ...this.lastReview } : null, lastPowder: this.lastPowder, powderDay: this.powderDay, criticDone: this.criticDone,
+      buff: this.buff ? { ...this.buff } : null, lastReview: this.lastReview ? { ...this.lastReview } : null, lastPowder: this.lastPowder, powderDay: this.powderDay, criticDone: this.criticDone, almNoticed: this.almNoticed, almBegan: this.almBegan,
     };
   }
   load(d: unknown): void {
@@ -278,11 +323,14 @@ export class EventCalendar {
     this.buff = s.buff ? { ...s.buff } : null; this.lastReview = s.lastReview ? { ...s.lastReview } : null;
     this.lastPowder = typeof s.lastPowder === 'number' ? s.lastPowder : -1e9; this.powderDay = typeof s.powderDay === 'number' ? s.powderDay : -1;
     this.criticDone = typeof s.criticDone === 'number' ? s.criticDone : -1;
+    this.almNoticed = typeof s.almNoticed === 'number' ? s.almNoticed : -1; this.almBegan = typeof s.almBegan === 'number' ? s.almBegan : -1;
   }
   reset(): void {
     this.booked = []; this.history = {}; this.rng = new Rng((this.d.seed ^ 0xfe57) >>> 0); this.nextCritic = null; this.criticNoticed = false; this.buff = null; this.lastReview = null;
-    this.lastPowder = -1e9; this.powderDay = -1; this.criticDone = -1; this.lastDay = -1;
+    this.lastPowder = -1e9; this.powderDay = -1; this.criticDone = -1; this.lastDay = -1; this.almNoticed = -1; this.almBegan = -1; this.forced = [];
   }
 }
+
+const ALM_BEGIN = 'Almabtrieb begins! The decorated cows come down from the alpine pasture. Guests are coming to watch the parade.';
 
 export { FESTIVALS };

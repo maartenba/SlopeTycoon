@@ -62,8 +62,8 @@ const WARM = [0xd9534a, 0xf2c14e, 0x4f86a8, 0xf4efe2, 0x6fae5a] as const;
 
 export const FESTIVALS: readonly FestivalDef[] = [
   {
-    id: 'almabtrieb', name: 'Almabtrieb', icon: '🐄', kind: 'auto', seasons: ['autumn'], days: 10, leadDays: 0, cost: 0, arrivalMult: 1, cheer: 0, minStars: 0, minLevel: 1, needs: [],
-    blurb: 'The decorated cows come down from the alpine pastures. Needs an Alpine Farm; runs by itself in early October.',
+    id: 'almabtrieb', name: 'Almabtrieb', icon: '🐄', kind: 'auto', seasons: ['autumn'], days: 10, leadDays: 0, cost: 0, arrivalMult: 1.06, cheer: 0, minStars: 0, minLevel: 1, needs: [],
+    blurb: 'The decorated cows come down from the alpine pastures. Needs an Alpine Farm; runs by itself on 1-11 October, announced 3 days ahead.',
     dressing: { bunting: [8, 12], flags: [6, 8], banners: [1, 1], stalls: [0, 0], procession: { kind: 'cow', count: [6, 10] }, palette: [0xf4efe2, 0xd9534a, 0x6fae5a, 0xf2c14e] },
     fireworks: 'none',
   },
@@ -114,7 +114,7 @@ export const BOOKABLE_FESTIVALS: readonly FestivalDef[] = FESTIVALS.filter((f) =
 
 export const EVENTS = {
   /** Critic: days announced ahead, first visit window and the gap between visits (days). */
-  criticAnnounceDays: 3, criticFirst: [25, 70] as Range, criticGap: [80, 140] as Range,
+  criticAnnounceDays: 3, almAnnounceDays: 3, criticFirst: [25, 70] as Range, criticGap: [80, 140] as Range,
   /** Review score (0..5, half steps) at or above / at or below which the review changes arrivals, the multiplier and how many days it lasts. */
   goodReview: 4, badReview: 2, goodMult: 1.12, badMult: 0.92, reviewDays: 10,
   /** Powder day: minimum days between two, and the earliest hour of day it can be declared. */
