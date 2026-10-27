@@ -69,6 +69,8 @@
     "docs:img": "vite-node scripts/docs-img-optimize.ts",
     "licenses": "vite-node scripts/licenses.ts",
     "touch:e2e": "vite-node scripts/touch-e2e.ts",
+    "offline:splash": "vite-node scripts/offline-splash.ts",
+    "play:sanity": "vite-node scripts/play-sanity.ts",
     "analytics:e2e": "vite-node scripts/analytics-e2e.ts"
   },
   "dependencies": {
