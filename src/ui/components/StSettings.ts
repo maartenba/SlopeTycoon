@@ -23,6 +23,8 @@ export interface GameSettingsApi {
   monthSummary?: { get(): boolean; set(on: boolean): void };
   /** Year-end report dialog (M5.3): off = the report is still in Finance > Reports. */
   yearReport?: { get(): boolean; set(on: boolean): void };
+  /** Anonymous, opt-in analytics (docs/analytics.md): `get` = consent granted; `url` = the website's privacy page (null = hide the link). */
+  privacy?: { get(): boolean; set(on: boolean): void; url: string | null };
   replayTutorial?(): void;
   unmuteNews?(): void;
   /** Feedback intensity (popups / puffs / confetti): off | subtle | lively. */
@@ -50,6 +52,9 @@ export class StSettings extends StElement {
   private gameSec = document.createElement('div');
   private gfxSec = document.createElement('div');
   private cosSec = document.createElement('div');
+  private privSec = document.createElement('div');
+  private privBox: HTMLInputElement | null = null;
+  private privWrap: HTMLElement | null = null;
   private cosOff: (() => void) | null = null;
   private readonly resetDlg: Modal;
   private cosWrap: HTMLElement | null = null;
@@ -149,6 +154,9 @@ export class StSettings extends StElement {
     const cos = this.section('Cosmetics', this.cosSec); cos.hidden = true; cos.dataset.section = 'cosmetics';
     const right = document.createElement('div'); right.style.cssText = 'display:flex;flex-direction:column;gap:10px'; right.append(gfx, gp, acc);
     this.cosWrap = cos;
+    this.privSec.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    const priv = this.section('Privacy', this.privSec); priv.hidden = true; this.privWrap = priv;
+    right.append(priv);
     const cols = document.createElement('div'); cols.className = 'cols'; cols.append(audioSec, right);
     this.dlg.body.append(cols, cos);
     this.resetDlg = new Modal(this.root, { title: 'Reset profile?', icon: '⚠', size: 'sm', pausesGame: true, label: 'Reset profile' });
@@ -176,6 +184,7 @@ export class StSettings extends StElement {
       this.linksBox.appendChild(b);
     }
     this.buildGame();
+    this.buildPrivacy();
     this.buildCosmetics();
     this.sync();
   }
@@ -211,6 +220,19 @@ export class StSettings extends StElement {
     reset.addEventListener('click', () => this.resetDlg.open());
     row.append(reset); this.cosSec.append(row);
     this.cosOff = p.cosmetics.onChange?.(() => { if (this.dlg.isOpen) this.buildCosmetics(); }) ?? null;
+  }
+
+  /** Privacy section: one toggle (off until granted) + a plain explanation + the website's privacy page. Hidden when the host gives no analytics API. */
+  private buildPrivacy(): void {
+    const p = this.game?.privacy;
+    this.privSec.replaceChildren(); this.privBox = null;
+    if (this.privWrap) this.privWrap.hidden = !p;
+    if (!p) return;
+    const b = this.privBox = document.createElement('input'); b.dataset.opt = 'analytics'; b.checked = p.get();
+    const t = document.createElement('div'); t.className = 'hint';
+    t.textContent = 'Off by default. If you turn it on, a few anonymous gameplay counts (levels reached, goals, game size, session length) go to Google Analytics. Never your saves, names or anything you type, and nothing is sent while you are offline. The game works the same either way.';
+    this.privSec.append(this.chk(b, 'Share anonymous usage statistics', 'Anonymous, opt-in gameplay statistics (Google Analytics). Off until you allow it.', (on) => p.set(on)), t);
+    if (p.url) { const a = document.createElement('a'); a.href = p.url; a.target = '_blank'; a.rel = 'noopener'; a.dataset.privacyLink = ''; a.textContent = 'Privacy note'; a.style.color = '#ffd070'; this.privSec.append(a); }
   }
 
   private buildGame(): void {
@@ -286,6 +308,7 @@ export class StSettings extends StElement {
       (el.nextElementSibling as HTMLElement).textContent = el.value;
     }
     this.muteBox.checked = s.muted; this.loudBox.checked = s.reduceLoud; this.ambBox.checked = s.ambienceOnly; this.musicBox.checked = s.musicOn; this.pauseBox.checked = s.pauseMusicAtZero;
+    if (this.privBox && this.game?.privacy) this.privBox.checked = this.game.privacy.get();
     if (this.nightsBox && this.game?.fastNights) this.nightsBox.checked = this.game.fastNights.get();
     if (this.slowBox && this.game?.rideSlowMo) this.slowBox.checked = this.game.rideSlowMo.get();
     if (this.hintsBox && this.game?.hints) this.hintsBox.checked = this.game.hints.get();

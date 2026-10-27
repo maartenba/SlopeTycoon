@@ -14,7 +14,7 @@ Installable, fully offline: hand-written service worker (no Workbox, no CDN), pr
 ## Behaviour
 - **install**: precache all (`cache: 'reload'`). First ever install activates immediately; an *update* waits (no automatic skipWaiting).
 - **activate**: deletes other `slope-tycoon-*` caches, claims clients.
-- **fetch**: same-origin GET only. Navigations → cached `index.html` (query string ignored, so `?load=3`, `?continue=1`, `?seed=..&size=..&start=..` work offline). Precached assets cache-first; `*.webmanifest` network-first; unknown same-origin GETs network then runtime-cached. Cross-origin and `sw.js` are never touched.
+- **fetch**: same-origin GET only. Navigations → cached `index.html` (query string ignored, so `?load=3`, `?continue=1`, `?seed=..&size=..&start=..` work offline). Precached assets cache-first; `*.webmanifest` network-first; unknown same-origin GETs network then runtime-cached. Cross-origin and `sw.js` are never touched: in particular the opt-in Google Analytics script (`www.googletagmanager.com`) and its beacons are never precached, intercepted or cached by the service worker (`shouldCache` rejects other origins; `tests/repo/analytics.test.ts` also asserts `dist/sw.js` names no analytics host). Offline guarantee for analytics: `docs/analytics.md`.
 - **update**: new SW installed while one controls the page → toast "Update available — reload" (Reload button, stays ~10 min). Click → autosave (`?continue=1` after reload so the game resumes; if autosave is off/fails the update is paused with a warning) → `SKIP_WAITING` → one reload on `controllerchange` (never reloads on first-install claim).
 - **dev**: no SW; stale registrations and `slope-tycoon-*` caches are removed on load.
 - **UI**: top bar shows an *Offline* pill and a *⤓ Install* button (only while `beforeinstallprompt` is available); Help lists iOS "Add to Home Screen".
@@ -23,6 +23,9 @@ Installable, fully offline: hand-written service worker (no Workbox, no CDN), pr
 ## Verification
 - `npm test` → `tests/pwa/*` (plugin on a temp dist, SW handlers against a fake `self`/Cache, register/update decisions, manifest + PNG IHDR).
 - `npm run build && npm run verify:pwa`: serves `dist/` and checks index/manifest/icons/`sw.js`, every precache entry → 200 with the right content-type, relative URLs, no duplicates.
+
+## Analytics and offline
+`npm run build && npm run analytics:e2e` (Chrome, https on the fake host `slope.test`, Google hosts intercepted and never really contacted) checks: no consent / denied / headless / `?analytics=0` => zero Google requests; Allow => one gtag script request; Google blocked => the game boots and the simulation runs; service worker active, origin shut down and `navigator.onLine === false` => the game boots from the cache with no Google request and no page error. Details in `docs/analytics.md`.
 
 ## Manual checklist (not automatable here; **unverified in a real browser**)
 1. `npm run build && npm run preview`, open the printed URL in Chrome.

@@ -104,6 +104,9 @@ import { Thumbnails } from '@/render/thumbnails/Thumbnails';
 import { LIFTS } from '@/config/lifts';
 import type { StInspector } from '@/ui/components/StInspector';
 import { registerSW, watchOnline, watchInstall } from '@/pwa/registerSW';
+import { analytics } from '@/analytics';
+import { consentUi, settingsPrivacy } from '@/analytics/ui';
+import { attachGameplayAnalytics, appStartParams, onceTracker, startHeartbeat } from '@/analytics/gameplay';
 import type { StToast } from '@/ui/components/StToast';
 import { EventBus } from '@/core/EventBus';
 import { registerComponents, el } from '@/ui';
@@ -238,12 +241,21 @@ let bootSave: BootSave | null = null;
 let bootWarnings: string[] = [];
 let globalToast: StToast | null = null;
 installErrorBoundary(window, {
+  onReport: (kind) => { analytics().track('error', { kind }); }, // class only (never the message / stack)
   notify: (text, action) => { if (globalToast) globalToast.show(text, 'error', 12000, { action }); },
   copy: (t) => { void navigator.clipboard?.writeText(t).catch(() => {}); },
 });
 const DEMO_SCENE_PARAM = params.has('demoscene'); // harness: the live title-screen demo even when size/seed are explicit
 const UIKIT_MODE = params.has('uikit'); // dev pages: ?uikit=1 (controls) / ?uikit=logo-full|logo-badge|logo-wordmark|logo-mark|logo-light (single large logo)
 const MENU_MODE = !UIKIT_MODE && (DEMO_SCENE_PARAM || (!CFG_EXPLICIT && !TUTORIAL_MODE && !params.has('load') && !params.has('continue')));
+// Anonymous, opt-in analytics (docs/analytics.md): inert unless consent === 'granted' AND a production build on a real host; never blocks boot.
+if (!UIKIT_MODE) {
+  const a = analytics(); a.init();
+  const page = MENU_MODE ? 'menu' : 'game';
+  const send = (): boolean => a.track('app_start', appStartParams({ version: APP_VERSION, page, standalone: window.matchMedia?.('(display-mode: standalone)').matches === true || (navigator as { standalone?: boolean }).standalone === true, touch: window.matchMedia?.('(pointer: coarse)').matches === true, width: window.innerWidth }));
+  let done = send();
+  a.subscribe((c) => { if (c === 'granted' && !done) done = send(); });
+}
 /** Title-screen demo (live sim + real renderer, no game UI). Set before `boot()` runs. */
 let DEMO = false;
 /** Seed of the title-screen demo map (chosen by scanning seeds: lake + gentle valley + skiable flank + forest) and its size. */
@@ -293,7 +305,7 @@ async function showMainMenu(): Promise<void> {
   if (!ui || params.has('nomenu')) return;
   const saves = saveBackend ? new SaveManager({ backend: saveBackend, getSim: () => null, restore: async (_env, id) => { window.location.search = loadQuery(id); }, toast: () => {}, download: downloadBytes }) : null;
   const h = mountMainMenu({
-    ui, saves, version: APP_VERSION, plainBackground: !preview,
+    ui, saves, version: APP_VERSION, plainBackground: !preview, consent: consentUi(),
     go: (q) => { preview?.dispose(); window.location.search = q; },
     storage: (() => { try { return window.localStorage; } catch { return null; } })(),
   });
@@ -1363,6 +1375,15 @@ const achAnnouncer = new AchievementAnnouncer({
 });
 ach.onUnlock((d) => achAnnouncer.push(d));
 window.setInterval(() => achAnnouncer.pump(), 1000);
+// Anonymous opt-in analytics: one observer-only subscriber (never the title demo). Reads events, writes nothing into the sim (stateHash unchanged).
+if (!DEMO) {
+  const a = analytics(), once = onceTracker(a);
+  a.track(bootSave ? 'game_load' : 'game_start', { mode: sim.progression.mode, size: MAP_SIZE, ...(bootSave ? {} : { scenario: SCEN?.id ?? 'none', difficulty: CFG.difficulty, season: START_SEASON, tutorial: TUTORIAL_MODE ? 'yes' : 'no' }) });
+  attachGameplayAnalytics(bus, a, { stars: () => sim.rating.stars });
+  ach.onUnlock((d) => { a.track('achievement', { id: d.id }); });
+  renderer.viewMode.onChange((to) => { if (to === 'ride' || to === 'walk' || to === 'photo') once('view_mode_used', { mode: to }); });
+  startHeartbeat(a, { visible: () => document.visibilityState === 'visible', setInterval: (f, ms) => window.setInterval(f, ms), clearInterval: (h) => window.clearInterval(h as number) });
+}
 const applyCosmetics = (): void => {
   buildingMeshes.setPalette(COSMETIC_BY_ID[ach.selected('palette')]?.palette ?? null);
   villageDecor.setFlags(COSMETIC_BY_ID[ach.selected('flags')]?.flags?.colors ?? []);
@@ -2212,7 +2233,7 @@ if (ui && !DEMO) {
   const evPanel = el('st-events');
   evPanel.bind({
     view: () => buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money),
-    book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
+    book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
     cancel: (id, start) => { if (!sim.events.cancel(id as FestivalId, start)) return 'Cannot cancel'; refreshUi(); return null; },
   });
   mktPanel.bind({ view: () => buildMarketingView(sim.marketing, game.money), start: (id) => sim.marketing.start(id) });
@@ -2236,7 +2257,7 @@ if (ui && !DEMO) {
       morale: () => ({ value: sim.staff.morale, label: sim.staff.moraleLabel(), breakdownFactor: sim.staff.breakdownFactor() }),
       billPerDay: () => (sim.attractions.all().reduce((t, x) => t + x.staff, 0) * STAFF_WAGE_PER_DAY * sim.difficulty.wages + sim.staff.extraWagesPerDay()) * sim.staff.wageMult() + sim.staffUpgrades.upkeepPerDay(),
       upgrades: () => sim.staffUpgrades.views().map((v) => ({ id: v.def.id, name: v.def.name, icon: v.def.icon, effect: v.def.effect, cost: v.def.cost, days: v.def.days, upkeep: v.def.upkeep, state: v.state, daysLeft: v.daysLeft, reason: v.reason })),
-      train: (id) => { const why = sim.staffUpgrades.blocker(id); if (why) { toast(why, 'error'); return why; } sim.staffUpgrades.start(id); toast(`Training started: ${UPGRADE_BY_ID[id]?.name ?? id}`); refreshUi(); return null; },
+      train: (id) => { const why = sim.staffUpgrades.blocker(id); if (why) { toast(why, 'error'); return why; } sim.staffUpgrades.start(id); analytics().track('staff_upgrade', { id }); toast(`Training started: ${UPGRADE_BY_ID[id]?.name ?? id}`); refreshUi(); return null; },
     },
   });
   loanPanel.bind({
@@ -2504,6 +2525,7 @@ if (ui && !DEMO) {
   rightCol.append(hud, speedEl, status, goalsEl, ...(scen ? [scenCard] : []), inspector, pisteInspector, guestInsp);
   const statsEl = el('st-stats');
   statsRef = statsEl; statsEl.bind({ history: () => sim.stats });
+  { const open = statsEl.open.bind(statsEl); let first = true; statsEl.open = (): void => { open(); if (first) { first = false; analytics().track('feature_first_use', { feature: 'stats' }); } }; }
   const trophiesEl = el('st-trophies');
   trophiesEl.bind(trophiesApiFromProfile(profileStore(), { run: () => ach.serializeRun(), runKind: () => (sim.scenario && !sim.scenario.sandbox ? 'scenario' : sim.progression.mode) }));
   // Dialogs that pause the game (Settings, Help, Save & load, Trophies, About, confirms): see ui/modalPauseGate.ts
@@ -2522,6 +2544,7 @@ if (ui && !DEMO) {
       replayTutorial: () => { window.location.search = TUTORIAL_QUERY; },
       monthSummary: { get: () => monthCardOn, set: (on) => { monthCardOn = on; if (!on && recapEl.currentMode === 'month') recapEl.dismiss(); try { window.localStorage.setItem(MONTH_CARD_KEY, on ? '1' : '0'); } catch { /* private mode */ } } },
       yearReport: { get: () => yearReportOn, set: (on) => { yearReportOn = on; try { window.localStorage.setItem(YEAR_REPORT_KEY, on ? '1' : '0'); } catch { /* private mode */ } } },
+      privacy: settingsPrivacy(),
       unmuteNews: () => { for (const c of [...toastEl.mutedCategories()]) toastEl.setMuted(c, false); },
     });
   }

@@ -15,6 +15,8 @@ export interface BoundaryOptions {
   log?(...a: unknown[]): void;
   /** Max distinct errors reported per session (default 5). */
   max?: number;
+  /** Called once per distinct reported error with its class only (analytics: never the message). */
+  onReport?(kind: 'error' | 'unhandledrejection'): void;
 }
 
 export function describeUnknown(e: unknown): string {
@@ -30,6 +32,7 @@ export function installErrorBoundary(host: BoundaryHost, o: BoundaryOptions): ()
     const key = details.split('\n')[0]!;
     if (seen.has(key) || seen.size >= (o.max ?? 5)) return;
     seen.add(key);
+    try { o.onReport?.(where === 'error' ? 'error' : 'unhandledrejection'); } catch { /* ignore */ }
     log('[Slope Tycoon] unexpected error', details);
     o.notify('Something went wrong, but the game keeps running. You may want to save.', { label: 'Copy details', run: () => o.copy?.(details) });
   };

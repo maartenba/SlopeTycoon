@@ -160,7 +160,7 @@ Honest list; the full one is in `docs/release.md`.
 
 ## Privacy
 
-No ads, no accounts, and saves stay on your device (IndexedDB / localStorage, `.slope` export). The only thing that can be sent is **anonymous, opt-in usage statistics** (Google Analytics, measurement ID `G-NX37ERE0S9`): nothing is loaded or sent until you click "Allow" on the website's consent bar or in the game (Settings > Privacy); never names, saves or free text; never on localhost or in headless browsers; the choice is shared (`localStorage['slope.consent.analytics']`) and can be changed any time. Offline play is unaffected. Details: [`site/pages/privacy.md`](site/pages/privacy.md) (published at `/privacy/`).
+No ads, no accounts, and saves stay on your device (IndexedDB / localStorage, `.slope` export). The only thing that can be sent is **anonymous, opt-in usage statistics** (Google Analytics, measurement ID `G-NX37ERE0S9`): nothing is loaded or sent until you click "Allow" on the website's consent bar or in the game (Settings > Privacy); never names, saves or free text; never on localhost or in headless browsers; the choice is shared (`localStorage['slope.consent.analytics']`) and can be changed any time. In the game the choice is a one-time card on the title screen and a Settings > Privacy toggle; offline play is unaffected (nothing is queued or retried). What is tracked: [`docs/analytics.md`](docs/analytics.md). Website details: [`site/pages/privacy.md`](site/pages/privacy.md) (published at `/privacy/`).
 
 ## Credits & licence
 

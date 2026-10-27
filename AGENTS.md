@@ -18,6 +18,7 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 - `game/` createSim (headless sim factory), starterResort, demoResort, demoTowns, bot, difficulty, save/restore.
 - `config/` data tables (balance, buildings, lifts, prices, goals, achievements, unlocks, scenarios/*.json…).
 - `persist/` Serializer, SaveManager, migrations, IdbStore, ProfileStore (own IDB `slope-profile`), PhotoStore.
+- `analytics/` opt-in Google Analytics for the game (consent first, observer only, whitelisted events; `docs/analytics.md`, `npm run analytics:e2e`). The ONLY code allowed to name Google hosts (`tests/repo/analytics.test.ts`).
 - `audio/` WebAudio synth/music/ambience; `tutorial/`; `pwa/`; `sw/` (service worker), `vite-plugins/`, `scripts/` (tooling), `site/` (marketing site + player guide), `docs/` (developer docs).
 - **Sim vs render separation**: sim never imports render/ui; render/UI read sim state and listen to events. The sim is **deterministic** (seeded Rng, fixed ticks); same seed + inputs ⇒ same `stateHash`. Observer-only modules (`observer: true`, e.g. `achievementsRun`) are skipped by stateHash.
 - **Save format v2** (`SAVE_FORMAT_VERSION` in `src/persist/migrations.ts`): `MIGRATIONS[n]` upgrades n→n+1; bump the version, add a migration and a test in `tests/persist/migrations.test.ts`. Per-module versions (`SaveModule.version`) cover module-local changes; `SAVE_MODULES` order matters (goals, scenario are last; Goals is NOT a registry system).

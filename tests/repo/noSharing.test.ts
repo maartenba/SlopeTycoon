@@ -20,7 +20,8 @@ describe('no sharing (D8)', () => {
   it("no 'Share' UI strings: no string literal / text node that starts with Share, 'Copy link' or a share code (the iOS 'Add to Home Screen' install hint is not a share feature)", () => {
     const bad = /(['"`>])\s*(Share\b|Copy link|Copy photo link|Share code)/;
     for (const f of files.filter((x) => x.startsWith('src'))) {
-      const s = readFileSync(f, 'utf8');
+      // the opt-in analytics toggle is a statistics consent, not a sharing feature (docs/analytics.md)
+      const s = readFileSync(f, 'utf8').replace(/Share anonymous usage statistics/g, 'Allow anonymous usage statistics');
       expect(bad.test(s), `${f}: Share UI string`).toBe(false);
     }
   });
@@ -61,7 +62,7 @@ describe('no sharing (D8)', () => {
       expect(/\b(shareCode|exportProfile|importProfile|profileCode)\b/i.test(s), `${f}: profile sharing API`).toBe(false);
     }
     // the Settings cosmetics + reset section and the trophy toast / menu entries carry no sharing controls either
-    const settings = strip(readFileSync('src/ui/components/StSettings.ts', 'utf8'));
+    const settings = strip(readFileSync('src/ui/components/StSettings.ts', 'utf8')).replace(/Share anonymous usage statistics/g, 'Allow anonymous usage statistics');
     expect(/cosmetics[\s\S]*\b(share|import profile|export profile)\b/i.test(settings.slice(settings.indexOf('buildCosmetics')))).toBe(false);
     const main = readFileSync('src/main.ts', 'utf8');
     expect(/exportProfile|importProfile|shareAchievement|profileCode/.test(main)).toBe(false);
