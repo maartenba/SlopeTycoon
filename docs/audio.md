@@ -24,7 +24,7 @@ Since the audio redesign (below) the music and ambience are **rendered offline a
 Five footstep recipes (`stepSnow / Gravel / Grass / Wood / Road`, `Sfx.ts`): noise bursts peaking 0.04-0.07 (click .18), `PRIORITY.ambience`, max 4/s, `loud` (halved by reduce-loud), pitch jitter per step. Cadence from walked distance (`stepStride`, `walkPhysics.ts`). The listener is the walker with `AMB.walkZoom` = 6 as the zoom proxy (near-field crowd / lift / birds / water). Levels are reasoned estimates, NOT heard (no audio device). See `docs/walk-mode.md`. Forest shelter: >= 10 trunks within 6 tiles of the walker lower the wind bed by up to 30 % (`AmbienceState.shelter`).
 
 ## Tunable constants (where)
-- Defaults: `DEFAULT_AUDIO_SETTINGS` (master .7 / music .5 / sfx .8 / ambience .45; see Mix levels), `REDUCE_LOUD_FACTOR` (.55) – `AudioSettings.ts`.
+- Defaults: `DEFAULT_AUDIO_SETTINGS` (master .7 / music .5 / sfx .8 / ambience .28 since the audio redesign (.45 before, .7 originally); see Mix levels), `REDUCE_LOUD_FACTOR` (.55) – `AudioSettings.ts`.
 - Compressor (threshold −16 dB, ratio 6; −24 dB in reduce-loud), `MAX_VOICES` (24), `PRIORITY` – `AudioEngine.ts`.
 - Per-sfx loudness (`peak` args × `o.gain`), `maxPerSec`, `minGap`, `group`, `loud` – each entry of `RECIPES` in `Sfx.ts`.
 - `AMB.closeZoom/farZoom` (zoom in visible tiles at which the view counts as close/far), `AMB.layerMax` (ceiling per looping layer), `AMB.rates` (one-shots/s), `AMB.fadeTc` (crossfade, s) – `Ambience.ts`.
@@ -87,6 +87,8 @@ Measured on the old layers at ambience 100 % (`tonal` = strongest narrow line vs
 Also: the one-shot `drip` and `creak` (sawtooth through a Q 6 bandpass = squeak) were louder than the beds they decorate.
 
 # Audio redesign (music + ambience)
+
+Current default ambience volume is **0.28**; saved values of exactly .7 or .45 (both former defaults, `LEGACY_AMBIENCE_DEFAULT` / `PREVIOUS_AMBIENCE_DEFAULT`) migrate to it, any other saved value is kept (`DEFAULT_AUDIO_SETTINGS.ambience`); the .45 figures above are the intermediate value.
 
 ## Music engine
 Files: `theory.ts` (modes, chords, voice leading, pentatonic subsets), `musicThemes.ts` (**nine tracks**, `MUSIC` constants, layer tables), `musicSelect.ts` (pure fit scores + seeded no-repeat choice), `musicState.ts` (state -> tempo/layer weights), `musicComposer.ts` (pure `composePiece(seed, track, key)` -> note events), `instruments.ts` (soft oscillator instruments), `Music.ts` (lookahead scheduler, crossfades, reverb).

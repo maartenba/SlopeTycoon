@@ -406,12 +406,12 @@
    {
     "w": 640,
     "file": "ui-settings-640.webp",
-    "bytes": 30786
+    "bytes": 31864
    },
    {
     "w": 1280,
     "file": "ui-settings-1280.webp",
-    "bytes": 80888
+    "bytes": 83906
    }
   ]
  },
@@ -790,12 +790,12 @@
    {
     "w": 640,
     "file": "ui-settings-desktop-640.webp",
-    "bytes": 24866
+    "bytes": 25282
    },
    {
     "w": 1280,
     "file": "ui-settings-desktop-1280.webp",
-    "bytes": 68236
+    "bytes": 70056
    }
   ]
  }

@@ -11,7 +11,7 @@ Status: pre-release (0.2.0) — playtest feedback welcome.
 
 - **Terrain**: seeded procedural valleys (presets, 64 / 128 / 256 map sizes), lakes and streams, forests, rocks; raise / lower / flatten terraforming; a Landscape drawer for ponds, boulders and garden decor; named seeds (`Alpine-Fox-1234`).
 - **Seasons & snow**: full year cycle (15-day months, 180-day year: winter and summer 60 days, spring and autumn 30) with weather, altitude snowline (high-altitude skiing alongside valley hiking in shoulder seasons), snow cover that builds and melts, day/night with optional fast nights, 50 % summer construction cost.
-- **Lifts**: magic carpets, T-bars, chairlifts, gondolas, funicular and more, with variants, auto-placed towers, visible cables and moving carriers, breakdowns, operating hours and energy cost.
+- **Lifts**: magic carpets, T-bars, chairlifts, gondolas, funicular and more, with variants, auto-placed towers (height-capped, more and shorter towers preferred), visible cables and moving carriers, breakdowns, operating hours and energy cost.
 - **Pistes & paths**: paint pistes (difficulty from slope), paths, roads, rail; piste naming and inspector; quality, wear and traffic.
 - **Guests & families**: individual guests with needs and decisions, navigation on lifts / pistes / paths, arrivals by road, rail and altiport, families with ski school and childcare.
 - **Attractions & buildings**: lodging, restaurants, rental, shops, ski school, playgrounds, adventure park, beach, bike lifts and the rest of the winter and summer catalogue, with dependency rules (see `docs/placement-rules.md`).
@@ -21,7 +21,7 @@ Status: pre-release (0.2.0) — playtest feedback welcome.
 - **Staff, festivals and the region**: four automatic crews with an optional Staff tab and six training courses; bookable festivals (Christmas Market, Winter Carnival, Summer Music Festival, World Cup) plus the Almabtrieb, critic visits and powder days that visibly dress the village; story guests with a wish; two or three rival resorts, a sustainability rating facet and the Green Resort award (`docs/staff.md`, `docs/festivals.md`, `docs/stories.md`, `docs/rivals.md`).
 - **Build depth**: undo / redo for every build action, a slope-profile card with snowline while you draw, and *Suggest a run* (`docs/build-depth.md`).
 - **Marketing & pricing**: campaigns (Families, Budget, VIP, Summer Adventure, ...) and price elasticity that guests visibly react to.
-- **Audio**: ambience, sound effects and generative music, all synthesized live with the Web Audio API (no audio files).
+- **Audio**: a quiet ambience, sound effects and nine generative music tracks (picked to fit season, time of day and weather, with a Music style selector and a Next track button), all synthesized live with the Web Audio API (no audio files).
 - **PWA / offline / saves**: installable, plays fully offline after the first load; IndexedDB saves with slots, quick save, rolling autosave, `.slope` export / import.
 - **Fun & feedback**: a quiet feedback layer (Off / Subtle / Lively), guest emotes, a 20-goal career with small grants, advisor Ranger Rudi, guest reviews, welcome-back recap, undo / redo, text size and reduced motion (`docs/fun-feedback.md`).
 - **Ride-along**: follow any guest in first person (skier, boarder, hiker, biker, chairlift / gondola / cable car / funicular rider) with look-around, FOV, slow motion (optional) and a close-up level of detail; Esc returns to the exact iso view. Graphics quality scales the near detail. See `docs/ground-level.md`.

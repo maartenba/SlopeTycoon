@@ -88,5 +88,6 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 
 ## Known gaps / open items
 - Done (0.2.0): touch, colour-blind palette, Statistics (`I`, `docs/stats.md`), named regions, Landscape drawer, redesigned Terrain / View drawers, M5.4 depth, M5.5. Remaining: human playtest STOP of Task 32.
+- Done after 0.2.0 was prepared (CHANGELOG `[Unreleased]`; next version bump is the owner's call): audio rewrite (nine procedural tracks, Music style + Next track, ambience default 0.28; `docs/audio.md`), lift tower height caps + thicker tall towers (`docs/lifts-clearance.md`).
 - Done: M5.1 goals/advisor/audio, M5.2 ride-along + photo + walk mode, M5.3 progression, scenarios, achievements (verify in the learnings file for current state).
 - Unverified by agents: pointer lock (walk mode), real GPU frame rate / draw calls, audio by ear; open bug noted earlier: pistes paintable over streams.

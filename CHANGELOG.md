@@ -4,6 +4,14 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+Changes after 0.2.0 was prepared. The next version bump is the owner's decision (the project stays a pre-release; not 1.0).
+
+### Audio: rewritten music and calmer ambience
+- **Nine procedural tracks** (Morning Snow, Alpine Noon, Après, Starlight, Summer Meadow, Autumn Gold, Blizzard, Title Theme, Festival) with harmonic instruments (pad, harp, guitar, electric piano, flute, strings; the bell sounds are gone), scale-correct voice leading and a pentatonic lead. Tracks are chosen to fit season, time of day, weather and busyness, never repeat back to back, and crossfade.
+- **Settings**: a *Music style* selector (Auto, each track, Off) and a *Next track* button with a "Now playing" line (the music keeps playing for 25 s while the paused Settings dialog is open so you can preview it).
+- **Calmer ambience**: noise beds only (no whistling oscillator tones), slow drifting modulation, quieter birds and crickets, and a lower default ambience volume (**0.28**, was 0.45).
+- Verified offline: a software Web Audio renderer measures every track and layer (peak, DC, clicks, loudness, spectrum) and is cross-checked against Chrome's `OfflineAudioContext` (`npm run audio:render`, `npm run audio:crosscheck`). See `docs/audio.md`.
+
 ### Lifts: towers are no longer crazy tall
 - Hard tower-height caps (head above its foot, 1 unit = 10 m): T-bar 35 m, chairs 50 m, gondolas 60 m, cable car 100 m (were 40 / 60 / 70 / 120), and a tower may not be taller than its longer adjacent span. The solver now prefers **more, shorter towers** (denser spacing, soft heights 22 / 30 / 38 / 70 m) over a few tall ones. Refusals read "Towers would need to be N m tall ...: shorten the span, clear the forest lane or pick another route". Tall towers get thicker poles and masts. Existing lifts are untouched. See `docs/lifts-clearance.md`.
 

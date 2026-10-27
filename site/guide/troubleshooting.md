@@ -23,7 +23,7 @@ Check, in order: is a **lift open** and connected to a **piste**? Is there a **P
 
 ## My lift can't be built
 
-Read the red message: too steep, too long, or the cable would hit a tree, roof or lift tower. See [Lifts & pistes](page:lifts-pistes).
+Read the red message: too steep, too long, or the cable would hit a tree, roof or lift tower, or the towers would need to be taller than allowed (shorten the span or pick another route). See [Lifts & pistes](page:lifts-pistes).
 
 ## The progress bar for a goal does not move
 

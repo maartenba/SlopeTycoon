@@ -11,6 +11,8 @@ screenshots: [ui-lifts-drawer, ui-pistes-drawer, ride-lift, ui-profile]
 
 A lift has a **bottom station** and a **top station**. The game places towers along the line and checks that the cable is neither too steep nor too long for the chosen type.
 
+**Tower height is capped**: a T-bar tower may be at most 35 m tall, chairs 50 m, gondolas 60 m and a cable car 100 m, and a tower may never be taller than the longer of the two spans next to it. The game prefers **more, shorter towers** over a few tall ones, and tall towers get thicker poles. If a line cannot be done within the caps you see *Towers would need to be N m tall (max M m): shorten the span, clear the forest lane or pick another route*: move a station, cut a lane through the trees, or choose a different route.
+
 {{gen:lifts}}
 
 - **Fixed grip** lifts (T-bar, older chairs) are cheap but slow to board. **Detachable** lifts slow down in the station, so they load faster and run faster on the line.
