@@ -14,24 +14,27 @@ export interface RunIndexDeps {
   alt(i: number): number;
   /** Lift station footprint centres (tile coordinates). */
   stations(): ReadonlyArray<Pt>;
+  /** Bumps when terrain heights change (terraforming under a piste changes slope / drop / difficulty). */
+  terrainVersion?(): number;
 }
 
 export class RunIndex {
-  private cache: { v: number; key: string; net: RunNetwork } | null = null;
+  private cache: { v: number; tv: number; key: string; net: RunNetwork } | null = null;
   /** Bumps every rebuild (UI / caches). */
   rebuilds = 0;
   constructor(private d: RunIndexDeps) {}
 
   network(): RunNetwork {
     const n = this.d.networks, st = this.d.stations();
+    const tv = this.d.terrainVersion?.() ?? 0;
     const key = st.map((p) => `${p.x},${p.y}`).join(';');
-    if (this.cache && this.cache.v === n.version && this.cache.key === key) return this.cache.net;
+    if (this.cache && this.cache.v === n.version && this.cache.tv === tv && this.cache.key === key) return this.cache.net;
     const size = n.size, mask = new Uint8Array(size * size);
     for (let i = 0; i < mask.length; i++) if (n.layers[i]! & Layer.Ski) mask[i] = 1;
     const net = buildRuns({ size, mask, alt: (i) => this.d.alt(i), difficulty: n.difficulty, stations: st });
     const dis = n.disconnectedMask();
     for (const r of net.runs) r.disconnected = r.tiles.length > 0 && dis[r.tiles[0]!] === 1;
-    this.cache = { v: n.version, key, net };
+    this.cache = { v: n.version, tv, key, net };
     this.rebuilds++;
     return net;
   }

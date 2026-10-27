@@ -19,6 +19,8 @@ export interface NameSources {
   /** All piste components (same objects `pisteAt` returns) + a version that changes when they do. Enables merge/split identity handling. */
   pistes?(): readonly PisteInfo[];
   pisteVersion?(): number;
+  /** A run split: `childId` is a new identity cut off `parentId` (inherit the closed flag / grooming priority). */
+  onSplit?(parentId: number, childId: number): void;
   lifts(): readonly LiftInfo[];
   buildings(): readonly BuildingInfo[];
   /** 0 = valley floor .. 1 = highest summit. */
@@ -131,11 +133,26 @@ export class Names {
     const kept: PisteEntry[] = [];
     for (const e of this.pistes) if (usedE.has(e)) kept.push(e); else this.custom.delete(`piste:${e.id}`);
     this.pistes = kept;
+    // a part without an identity that still overlaps an existing run was CUT OFF it (split): derived name 'X (2)', inherits closed / groom settings
+    const parentOf = new Map<PisteInfo, PisteEntry>();
+    for (const p of pairs) if (!usedC.has(p.c) && !parentOf.has(p.c) && this.pistes.includes(p.e)) parentOf.set(p.c, p.e);
     for (const c of comps) {
-      const e = this.assigned.get(c) ?? this.newEntry(c);
+      let e = this.assigned.get(c);
+      if (!e) {
+        e = this.newEntry(c);
+        const parent = parentOf.get(c);
+        if (parent) { this.pisteCount[e.diff]!--; e.name = this.splitName(parent); this.src.onSplit?.(parent.id, e.id); }
+      }
       this.assigned.set(c, e);
       this.touch(e, c);
     }
+  }
+
+  /** 'X (2)', 'X (3)'...: the first free suffix on the parent's displayed name (an existing ' (n)' suffix is not stacked). */
+  private splitName(parent: PisteEntry): string {
+    const base = (this.custom.get(`piste:${parent.id}`) ?? parent.name).replace(/ \(\d+\)$/, '');
+    const taken = new Set(this.pistes.map((x) => this.custom.get(`piste:${x.id}`) ?? x.name));
+    for (let k = 2; ; k++) { const nm = `${base} (${k})`.slice(0, MAX_NAME_LENGTH + 4); if (!taken.has(nm)) return nm; }
   }
 
   private newEntry(p: PisteInfo): PisteEntry {

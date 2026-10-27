@@ -49,7 +49,7 @@ describe('piste identity + names', () => {
     expect(small).not.toBe(big);
   });
 
-  it('split keeps the name for the largest part; the other part gets a fresh auto name', () => {
+  it('split keeps the name for the largest part; the other part gets a derived name X (2)', () => {
     const w = world(); const n = new Names(w.src);
     w.set([{ tiles: [...col(30, 10, 30), ...col(31, 10, 16)], difficulty: 3 }]);
     n.renamePiste(w.src.pisteAt(30, 12)!, 'Diablo');
@@ -58,7 +58,7 @@ describe('piste identity + names', () => {
     const a = w.src.pisteAt(30, 12)!, b = w.src.pisteAt(31, 12)!;
     expect(n.pisteName(a)).toBe('Diablo');
     expect(n.pisteId(a)).toBe(id);
-    expect(n.pisteName(b)).toMatch(/^Red Run \d+$/);
+    expect(n.pisteName(b)).toBe('Diablo (2)');
     expect(n.pisteId(b)).not.toBe(id);
   });
 

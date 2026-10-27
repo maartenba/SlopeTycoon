@@ -62,6 +62,8 @@ export class Grid {
   readonly vsize: number;
   readonly chunksPerRow: number;
   readonly heights: Int16Array;
+  /** Bumps on every corner write (terraform, undo, rollback): caches of heights / slopes (runs, nav altitudes) key on it. */
+  terrainVersion = 0;
   readonly tileType: Uint8Array;
   readonly snowDepth: Float32Array;
   readonly flags: Uint8Array;
@@ -139,6 +141,7 @@ export class Grid {
   /** Set a vertex without invariant check (marks dirty). */
   setCornerUnchecked(vx: number, vy: number, h: number): void {
     this.heights[vy * this.vsize + vx] = h;
+    this.terrainVersion++;
     for (let ty = vy - 1; ty <= vy; ty++)
       for (let tx = vx - 1; tx <= vx; tx++) if (this.inBounds(tx, ty)) this.markDirty(tx, ty);
   }

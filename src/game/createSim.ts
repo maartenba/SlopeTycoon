@@ -268,7 +268,7 @@ export function createSim(opts: SimOptions) {
   if (!opts.fromSave) snow.seed(game.date);
   // A "piste" for names / inspector / goals / advisor is a RUN (world/Runs.ts): a stretch between junctions / lift stations / ends, not the whole 8-connected blob.
   const runIndex = new RunIndex({
-    networks,
+    networks, terrainVersion: () => grid.terrainVersion,
     alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
     stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; },
   });
@@ -294,6 +294,7 @@ export function createSim(opts: SimOptions) {
     },
     pistes: () => pisteIndex().list,
     pisteVersion: () => { pisteIndex(); return runIndex.rebuilds; },
+    onSplit: (parentId, childId) => { runSettings.setClosed(childId, runSettings.isClosed(parentId)); runSettings.setGroomMode(childId, runSettings.groomMode(parentId)); },
     lifts: () => lifts.all().map((l) => ({ id: l.id, kindName: LIFTS[l.kind]?.name ?? l.kind, tiles: l.tiles })),
     buildings: () => buildings.all().map((b) => ({ id: b.id, typeName: BUILDINGS[b.type]?.name ?? b.type, x: b.x, y: b.y, w: b.w, h: b.h })),
     altFrac: (x, y) => (cond.altitude(x, y) - worldScale.baseWorld) / worldScale.reliefWorld,
@@ -314,6 +315,7 @@ export function createSim(opts: SimOptions) {
     size, kind: networks.kind, layers: networks.layers, difficulty: networks.difficulty, occ: grid.occupancy.flags, tileType: grid.tileType,
     skiOpen: cond.skiOpen, hikeOk: cond.hikeOk, snow: grid.snowDepth, closed: openStatus.closedMask, bridge: networks.bridge,
     networkVersion: () => networks.version,
+    terrainVersion: () => grid.terrainVersion,
     tileAlt: (x, y) => cond.altitude(x, y),
     isBikeable: (x, y) => cond.isBikeable(x, y),
     lifts: () => lifts.all(),

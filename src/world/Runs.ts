@@ -220,7 +220,10 @@ export function buildRuns(inp: RunInput): RunNetwork {
   }
 
   // ---- 5. prune thinning spurs, dissolve pseudo nodes ----
-  const deg = (ci: number): number => { let d = 0; for (const e of edges) if (!e.dead) { if (e.a === ci) d++; if (e.b === ci) d++; } return d; };
+  // incremental degree table (was an O(edges) scan per query: quadratic on busy networks)
+  const degs = new Int32Array(clusters.length);
+  for (const e of edges) { degs[e.a]!++; degs[e.b]!++; }
+  const deg = (ci: number): number => degs[ci]!;
   const spurLimit = (c: Cluster): number => { let w = 1; for (const t of c.tiles) w = Math.max(w, dt[t]!); return Math.max(RUN_MIN_SPUR, w); };
   for (let again = true; again;) {
     again = false;
@@ -232,19 +235,19 @@ export function buildRuns(inp: RunInput): RunNetwork {
         const od = deg(other);
         if (!(od >= 3 || (oc.forced && od >= 2))) continue;
         if (e.chain > spurLimit(oc)) continue;
-        e.dead = true; lc.dead = true; again = true; break;
+        e.dead = true; lc.dead = true; degs[e.a]!--; degs[e.b]!--; again = true; break;
       }
     }
     // merge pseudo nodes (degree 2, not a station)
     for (const c of clusters) {
-      if (c.dead || c.forced) continue;
+      if (c.dead || c.forced || degs[c.index] !== 2) continue;
       const inc = edges.filter((e) => !e.dead && (e.a === c.index || e.b === c.index));
       const d = inc.reduce((s, e) => s + (e.a === c.index ? 1 : 0) + (e.b === c.index ? 1 : 0), 0);
       if (d !== 2 || inc.length !== 2) continue;
       const [e1, e2] = inc as [Edge, Edge];
       const p1 = e1.b === c.index ? e1 : flip(e1), p2 = e2.a === c.index ? e2 : flip(e2);
       const poly = p1.poly.concat(p2.poly[0] === p1.poly[p1.poly.length - 1] ? p2.poly.slice(1) : p2.poly);
-      e1.dead = true; e2.dead = true; c.dead = true;
+      e1.dead = true; e2.dead = true; c.dead = true; degs[c.index] = 0; // the new edge keeps the far ends' degrees
       edges.push({ a: p1.a, b: p2.b, poly, chain: p1.chain + p2.chain + c.tiles.length, dead: false });
       again = true;
     }
@@ -280,11 +283,9 @@ export function buildRuns(inp: RunInput): RunNetwork {
   const own = (t: number, r: number): void => { if (owner[t]! < 0 && nodeOf[t]! < 0) { owner[t] = r; q.push(t); } };
   pending.forEach((p, r) => { for (const t of p.poly) own(t, r); for (const t of p.extra) own(t, r); });
   // node tiles are flood sources labelled with the run they lead into
-  const nodePref = (ni: number): number => {
-    let best = -1;
-    pending.forEach((p, r) => { if (best < 0 && ((p.a >= 0 && nodeIdx.get(p.a) === ni) || (p.b >= 0 && nodeIdx.get(p.b) === ni))) best = r; });
-    return best;
-  };
+  const prefOf = new Map<number, number>(); // node index -> first run (in run order) that arrives / leaves there
+  pending.forEach((p, r) => { for (const c of [p.a, p.b]) { const ni = c >= 0 ? nodeIdx.get(c) : undefined; if (ni !== undefined && !prefOf.has(ni)) prefOf.set(ni, r); } });
+  const nodePref = (ni: number): number => prefOf.get(ni) ?? -1;
   const srcLabel: Array<[number, number]> = [];
   for (const nd of nodes) { const pr = nodePref(nd.index); if (pr >= 0) for (const t of nd.tiles) srcLabel.push([t, pr]); }
   const order = q.slice().map((t) => [t, owner[t]!] as [number, number]).concat(srcLabel).sort((a, b) => a[0] - b[0]);
