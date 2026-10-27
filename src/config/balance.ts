@@ -193,6 +193,8 @@ export const EXPLORE = {
   noveltyWeight: 0.45, skillBoost: [0.6, 1.3, 1.6, 1.6],
   /** Via-tile scoring: crowd (log of today's passes), personal novelty (distance from the previous via), difficulty fit by skill, noise. */
   crowdWeight: 0.5, farWeight: 0.8, farTiles: 8, noise: 1.2, skillDiff: [-0.25, 0, 0.3, 0.45],
+  /** Run-aware choice (docs/runs.md, phase 3): whole-run crowding (log mean passes), surface quality of the candidate tile (like 0..1, centred 0.5), mood (unhappy guests lean towards the easier run). */
+  runCrowdWeight: 0.35, runQualityWeight: 0.9, moodEase: 0.5,
   /** Candidate pool: corridor around the lift line (>= corridorMin tiles, corridorFrac of its length), pool cap (tiles considered per lift). */
   /** Pause (ticks) after a run before the next decision (was 2-8: with ~6 game-minute ticks that capped a day at ~2 runs). */
   /** Pause (ticks) after visiting a building (was 10-40 = 1-4 game hours standing around). */

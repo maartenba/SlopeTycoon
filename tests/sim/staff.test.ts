@@ -12,71 +12,73 @@ import { makeResort, run } from '../game/harness';
  * (fill 1, no wages, factor 1). New modules (`staff`, `staffUpgrades`, `events`, `stories`, `rivals`) are excluded.
  */
 const GOLDEN_STARTER: Record<string, string> = {
-  'core': '5c9ef6a9',
+  'core': 'db6597a7',
   'config': '0c4169f7',
   'grid': '77f6388d',
   'props': 'f326a89f',
   'networks': '4854bb95',
   'buildings': '82fa8736',
-  'lifts': '2297f137',
+  'lifts': '65b07743',
   'cond': 'ba97dd7b',
-  'names': '4e78cc93',
-  'nature': '95b95716',
-  'leavers': 'ae6bd29b',
+  'names': '323feaff',
+  'nature': '88fed6aa',
+  'leavers': 'a59e4531',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '00f02232',
-  'sys.spawner': '8d770e56',
-  'sys.guests': 'cc3fcb29',
-  'sys.attractions': 'fc802f5a',
+  'sys.spawner': '83acfc03',
+  'sys.guests': '42f9228d',
+  'sys.attractions': 'da5cf315',
+  'sys.economy': 'ed3e209a',
+  'sys.rating': '32668109',
   'sys.ops': 'c298a226',
-  'sys.economy': '23749ffa',
-  'sys.rating': '7372d6fc',
-  'families': '5271fe84',
+  'families': '82b0f36a',
   'openStatus': 'f48290d9',
   'sessionMeta': '77074ba4',
-  'goals': 'e770c0b5',
+  'goals': 'b92c7c9b',
   'yearReports': 'e696b440',
   'advisor': 'ca063e92',
   'progression': 'b8977d94',
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': 'd5198aa7',
+  'core': 'fac6441f',
   'config': 'd9813cdd',
   'grid': '5aa1ad93',
   'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'a84a574b',
-  'lifts': 'f8565548',
+  'lifts': 'b4cee796',
   'cond': 'd91eca6f',
-  'names': '7dbaace9',
-  'nature': 'c49833ec',
-  'leavers': 'ce6127f1',
+  'names': '6d1e675a',
+  'nature': '744dc7b2',
+  'leavers': 'b0622fa6',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '571f0cde',
-  'sys.spawner': 'fbddae0c',
-  'sys.guests': 'd560653f',
-  'sys.attractions': 'a6453283',
-  'sys.ops': '0722578b',
-  'sys.economy': 'bc552549',
-  'sys.rating': '9d33bebc',
-  'families': '15b427e4',
+  'sys.spawner': '0a22cf4d',
+  'sys.guests': 'a9adc722',
+  'sys.attractions': '86a969b5',
+  'sys.economy': '3ad27444',
+  'sys.rating': '9b34670f',
+  'sys.ops': 'd5c2c6b0',
+  'families': '4613b83d',
   'openStatus': 'f48290d9',
-  'sessionMeta': '56cfc140',
-  'goals': 'a2d076ac',
-  'yearReports': '2cb63fb8',
+  'sessionMeta': 'b2d0cc53',
+  'goals': '3175b9e5',
+  'yearReports': '29c830a5',
   'advisor': 'ca063e92',
-  'progression': 'fa20f826',
+  'progression': '628a86b5',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (tower height caps / denser towers change the bot's lift layouts; docs/lifts-clearance.md).
 // RE-RECORDED (calendar fix: daylight solstices 21 Jun / 21 Dec, temperature/snowline curve aligned to the real Alpine year; docs/time-flow.md section 10). Money 193236.89 -> 191943.33; re-recorded once more after the snowmaking-energy / nature-cache save fixes.
 // RE-RECORDED (planned lift maintenance, docs/lift-ops-and-debt.md: every lift now carries `ops.maint`, and the bot's lifts are serviced in April). Taken on a tree that also holds other in-progress 0.2.x items (hiker hunger, snowmaking mode, Almabtrieb).
-const GOLDEN_BOT_MONEY = 180221.69;
+// RE-RECORDED (pistes as runs, docs/runs.md): open / closed is now evaluated PER RUN, so a run without enough snow closes on its own (before, the whole connected network stayed open), and `names` holds run identities. Money 180221.69 -> 183647.28.
+// RE-RECORDED AGAIN (run-aware via choice, docs/runs.md phase 3). Money 183647.28 -> 187143.92.
+const GOLDEN_BOT_MONEY = 187143.92;
 
-const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; return p; };
+const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; return p; };
 
 describe('staff: Auto is bit-identical to the pre-staff game (golden hash)', () => {
   it('starter resort, 64 / seed 1 / mid-winter, 3 days', () => {

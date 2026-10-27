@@ -95,6 +95,7 @@ export function createOps(o: OpsOptions): Ops {
         if (absDay !== lastDay) {
           if (lastDay >= 0) reservoirs.refillDay(seasonOf(d), weather.current);
           snowmaking.flushCosts();
+          quality.onDayRollover?.();
           quality.trafficDay.fill(0);
           lastDay = absDay;
         }

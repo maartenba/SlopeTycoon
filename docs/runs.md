@@ -11,3 +11,17 @@ A *piste* the player sees (name, difficulty, length, grooming, open / closed) is
 - **Identity**: `Names` already keeps persistent piste ids by tile-sample overlap, so it is fed runs instead of components. Ids / auto names ('Blue Run 3', ordinal per difficulty) / custom names persist when runs grow, split or merge; an old component name goes to the largest overlapping run.
 - **Still components**: "not connected to a lift" warnings (`disconnected`), the tutorial's connected-piste counts. A run is disconnected when its component is.
 - Goals count runs (per run, per difficulty tile counts). Inspector shows slope. New **Runs** overlay (`O` cycles, Terrain/View drawer): each run in its own colour, junction / station tiles white, label per run. The *Piste difficulty* overlay is unchanged (tile level).
+
+## Phase 2: independence
+- **Open / closed per run** (`OpenStatus.evalPistes` over runs): a run needs its own connected skiable snow, a lift connection (component level) and no closure. Player toggle (inspector button / Runs tab) = `RunSettings.closed`, reason "Closed by you"; avalanche / wind / control closures act on tiles, so they close exactly the runs they touch. Manually closed runs are also in the navigation closed mask (guests avoid them). A junction / station tile answers with an open incident run when one exists.
+- **Persistent ids**: `RunSettings` is keyed by `Names.pisteId(run)`; ids survive growing / splitting / merging (largest overlap keeps it), settings of runs that vanish are pruned.
+- **Grooming per run**: tile quality stays per tile. `Grooming.tileOrder(tile)`: 0 auto, 1 *Groom first* (+10 priority), 2 *Do not groom* (excluded from the nightly plan). Runs tab / inspector cycle the mode.
+- **Traffic**: passes today = busiest centre-line tile of the run; this week = sum of the last 7 daily peaks (`runStats`, observer). *Groomed ago* = last day a snowcat touched any tile of the run (observer).
+- **Rename** per run (inspector input), advisor `piste.icy` names the worst run ("Black Run 2 is icy") with a map target, **Runs tab** in Operations (name click = camera + highlight, level, length, drop, traffic, surface, groomed, grooming, status).
+- **Saves**: new module `runs` v1 (closed ids, grooming modes; part of `stateHash`) and observer module `runStats`. Old saves have neither: nothing closed, all Auto; the old component names/ids (`names` module) are matched to the largest overlapping run on load. No `SAVE_FORMAT_VERSION` bump (additive modules).
+
+## Phase 3: routing
+At a lift top the skier already picks a *via* tile (`Exploration.pickVia`: top -> via -> bottom). The candidate tiles are now scored through `runChoice(tile, skill)` (createSim): difficulty fit uses the **run's** difficulty, plus whole-run crowding (log of mean passes on the centre line, cached per sim hour), the surface the skier likes on that tile, and mood (unhappy guests lean towards the easier run). Closed runs are skipped; if every candidate is closed `pickVia` returns 0 (cheapest path as before), so nobody gets stuck. Weights: `EXPLORE.runCrowdWeight / runQualityWeight / moodEase`.
+
+## Determinism / goldens
+`tests/sim/staff.test.ts` goldens were re-recorded on purpose (names now hold run identities; open / closed per run changes the bot's 200 days: money 180221.69 -> see the test; see docs/balance.md).

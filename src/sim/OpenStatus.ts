@@ -15,6 +15,9 @@ export interface PisteSource {
   pisteComponents(): PisteComponent[];
 }
 
+/** A piste for status purposes: a run (preferred) or a legacy component. */
+export interface PisteUnitLike { tiles: readonly number[]; count: number; disconnected: boolean }
+
 export interface OpenBuilding { id: number; type: string; x: number; y: number; w: number; h: number }
 
 export interface EntityStatus { open: boolean; reason?: string }
@@ -35,6 +38,13 @@ export interface OpenStatusDeps {
   cond: TileConditions;
   weather: Weather;
   networks: () => PisteSource | null;
+  /** Runs (docs/runs.md): when given, pistes are evaluated per run instead of per 8-connected component. `id` = persistent run id (default: lowest tile). */
+  runs?: () => ReadonlyArray<PisteUnitLike>;
+  runId?: (run: PisteUnitLike) => number;
+  /** Player closed this run by hand. */
+  runClosed?: (id: number) => boolean;
+  /** Junction / station nodes: skeleton tiles + the run indices (into `runs()`) meeting there. A node tile answers with an open run when one exists. */
+  runNodes?: () => ReadonlyArray<{ tiles: readonly number[]; runs: readonly number[] }>;
   lifts: () => Iterable<LiftData>;
   buildings: () => Iterable<OpenBuilding>;
   bus?: Pick<GameBus, 'emit'>;
@@ -143,14 +153,18 @@ export class OpenStatus {
     const next = new Map<number, PisteStatus>();
     this.pisteOfTile.clear();
     const mask = new Set<number>();
+    let unitKeysRef: number[] = [];
     for (const c of this.closures) for (const t of c.tiles) mask.add(t);
     if (net) {
       const N = net.size, c = this.d.cond;
       const mark = new Int32Array(N * N).fill(-1);
       let stamp = 0;
-      for (const comp of net.pisteComponents()) {
-        const key = comp.tiles.reduce((m, t) => (t < m ? t : m), Infinity);
-        const inComp = new Set(comp.tiles);
+      const units: ReadonlyArray<PisteUnitLike> = this.d.runs ? this.d.runs() : net.pisteComponents();
+      const unitKeys: number[] = [];
+      for (const comp of units) {
+        const lowest = comp.tiles.reduce((m, t) => (t < m ? t : m), Infinity);
+        const key = this.d.runId ? this.d.runId(comp) : lowest;
+        const inComp = new Set<number>(comp.tiles);
         let best = 0;
         for (const s of comp.tiles) {
           if (mark[s]! >= 0 || !c.isSkiable(s % N, (s / N) | 0)) continue;
@@ -172,16 +186,25 @@ export class OpenStatus {
         }
         const closure = this.closures.length ? this.closureReason(comp.tiles) : undefined;
         if (closure) for (const t of comp.tiles) mask.add(t);
-        const open = !closure && !comp.disconnected && best >= Math.min(PISTE_MIN_OPEN_TILES, comp.count);
+        const manual = !closure && !!this.d.runClosed?.(key);
+        if (manual) for (const t of comp.tiles) mask.add(t);
+        const open = !closure && !manual && !comp.disconnected && best >= Math.min(PISTE_MIN_OPEN_TILES, comp.count);
         const st: PisteStatus = {
           key, open, totalTiles: comp.count, openTiles: open ? best : 0,
           totalLengthM: comp.count * TILE_METRES, openLengthM: open ? best * TILE_METRES : 0,
-          reason: open ? undefined : closure ? `Closed: ${closure}` : comp.disconnected ? 'Not connected to a lift' : 'Closed: not enough snow',
+          reason: open ? undefined : closure ? `Closed: ${closure}` : manual ? 'Closed by you' : comp.disconnected ? 'Not connected to a lift' : 'Closed: not enough snow',
         };
-        next.set(key, st);
+        next.set(key, st); unitKeys.push(key); unitKeysRef = unitKeys;
         for (const t of comp.tiles) this.pisteOfTile.set(t, key);
         const was = this.pistes.get(key);
         if (!was || was.open !== open) this.d.bus?.emit('piste:opened', { id: key, open });
+      }
+    }
+    if (net && this.d.runs && this.d.runNodes) {
+      for (const nd of this.d.runNodes()) {
+        let pick: number | undefined;
+        for (const r of nd.runs) { const k = unitKeysRef[r]; if (k === undefined) continue; if (pick === undefined) pick = k; if (next.get(k)?.open) { pick = k; break; } }
+        if (pick !== undefined) for (const t of nd.tiles) this.pisteOfTile.set(t, pick);
       }
     }
     for (const [k, was] of this.pistes) if (!next.has(k) && was.open) this.d.bus?.emit('piste:opened', { id: k, open: false });

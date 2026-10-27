@@ -9,11 +9,16 @@ export interface PisteInspectorInfo {
   highlighted: boolean;
   /** Run geometry (the selected piste is one run between junctions / lift stations). */
   avgSlopePct?: number; maxSlopePct?: number; loop?: boolean;
+  closedByPlayer?: boolean; groomMode?: 'auto' | 'first' | 'skip';
+  passesToday?: number; passesWeek?: number; groomedDaysAgo?: number | null;
 }
 export interface PisteInspectorApi {
   /** Commit a name (already trimmed/clamped by the component; empty = reset to the automatic name). */
   rename(name: string): void;
   highlight(on: boolean): void;
+  /** Per-run controls (docs/runs.md). */
+  setClosed?(closed: boolean): void;
+  setGroom?(mode: 'auto' | 'first' | 'skip'): void;
 }
 
 export const PISTE_NAME_MAX = 24;
@@ -64,6 +69,22 @@ export class StPisteInspector extends StElement {
     if (i.avgSlopePct !== undefined) kids.push(line(`Slope avg ${Math.round(i.avgSlopePct)} % · max ${Math.round(i.maxSlopePct ?? 0)} %${i.loop ? ' · loop' : ''}`, 'small'));
     kids.push(line(`Open now: ${i.openLengthM.toLocaleString('en-US')} m`));
     kids.push(line(`Surface: ${i.avgQuality ?? 'n/a'} · busiest tile ${i.skiersToday} passes today · runs today: ${i.runsToday ?? 0}`, 'small'));
+    if (i.passesToday !== undefined) kids.push(line(`Traffic: ${i.passesToday} passes today · ${i.passesWeek ?? 0} this week · groomed ${i.groomedDaysAgo === null || i.groomedDaysAgo === undefined ? 'never' : i.groomedDaysAgo === 0 ? 'today' : `${i.groomedDaysAgo} d ago`}`, 'small'));
+    if (a?.setClosed) {
+      const row = el('div', { className: 'row' });
+      const tog = el('button', { type: 'button', className: 'run-toggle', textContent: i.closedByPlayer ? 'Open this run' : 'Close this run' });
+      tog.style.minHeight = '32px';
+      tog.addEventListener('click', () => a.setClosed?.(!i.closedByPlayer));
+      row.append(tog);
+      if (a.setGroom) {
+        const modes: Array<['auto' | 'first' | 'skip', string]> = [['auto', 'Groom: auto'], ['first', 'Groom first'], ['skip', 'No grooming']];
+        const g = el('button', { type: 'button', className: 'run-groom', textContent: modes.find((m) => m[0] === (i.groomMode ?? 'auto'))![1], title: 'Cycle grooming order for this run' });
+        g.style.minHeight = '32px';
+        g.addEventListener('click', () => a.setGroom?.(modes[(modes.findIndex((m) => m[0] === (i.groomMode ?? 'auto')) + 1) % modes.length]![0]));
+        row.append(g);
+      }
+      kids.push(row);
+    }
     for (const w of i.warnings) kids.push(line(`⚠ ${w}`, 'warn'));
     const hl = el('input', { type: 'checkbox', checked: i.highlighted });
     hl.addEventListener('change', () => a?.highlight(hl.checked));

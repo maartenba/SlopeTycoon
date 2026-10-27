@@ -143,6 +143,16 @@ export const RULES: readonly Rule[] = [
     if (p.tiles < 30 || !has(c.sim, 'groomerGarage', 'snowcatOutpost')) return null; // no grooming at all: grooming.none is the root cause
     const share = p.icy / p.tiles;
     if (share < (c.shown ? 0.12 : 0.2)) return null;
+    // name the worst RUN when one run is clearly icy (docs/runs.md): 'Black Run 2 is icy: groom it'
+    const q = c.sim.ops.quality;
+    let worst: { run: ReturnType<Sim['runList']>[number]; share: number } | null = null;
+    for (const r of c.sim.runList()) {
+      if (!r.open || r.tiles < 6) continue;
+      let icy = 0; for (const t of r.tileIdx) if (q.at(t) === Q.Icy) icy++;
+      const sh = icy / r.tiles;
+      if (sh >= 0.4 && (!worst || sh > worst.share || (sh === worst.share && r.id < worst.run.id))) worst = { run: r, share: sh };
+    }
+    if (worst) return { id: 'piste.icy', severity: 'warn', ...TEXT.icyRun(worst.run.name, pct(worst.share)), target: { x: Math.floor(worst.run.x), y: Math.floor(worst.run.y), kind: 'piste' } };
     return { id: 'piste.icy', severity: 'warn', ...TEXT.icy(pct(share)), panel: { drawer: 'ops' } };
   }),
   // ---- safety ----

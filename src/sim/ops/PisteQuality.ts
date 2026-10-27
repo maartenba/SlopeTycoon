@@ -50,6 +50,8 @@ export class PisteQuality {
   readonly traffic: Uint16Array;
   /** Tile visits accumulated since the day started (reset daily by the ops system); the current hour's `traffic` is added on top for display. */
   readonly trafficDay: Uint16Array;
+  /** Observer hook: called just before `trafficDay` is zeroed at the day boundary (weekly run traffic). */
+  onDayRollover: (() => void) | null = null;
   /** Bumped when any state flips (overlay refresh). */
   version = 0;
   changedLast = 0;
@@ -65,8 +67,11 @@ export class PisteQuality {
   isPiste(i: number): boolean { return (this.net.layers[i]! & Layer.Ski) !== 0 && this.net.kind[i] === 0; }
   at(i: number): number { return this.state[i]!; }
 
+  /** Observer hook (run bookkeeping): called with every groomed tile. */
+  onGroom: ((i: number) => void) | null = null;
   /** Set a tile groomed (called by grooming vehicles). */
   groom(i: number): void {
+    this.onGroom?.(i);
     if (this.state[i] !== Q.Groomed) { this.state[i] = Q.Groomed; this.version++; }
     this.wear[i] = 0;
   }

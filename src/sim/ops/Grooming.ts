@@ -65,6 +65,8 @@ export class Grooming {
   crewLimit: () => number | null = () => null;
   capacityMod: () => number = () => 1;
   fuelMod: () => number = () => 1;
+  /** Per-run orders (docs/runs.md): 0 = auto, 1 = groom this tile first, 2 = never groom it. */
+  tileOrder: (i: number) => 0 | 1 | 2 = () => 0;
 
   constructor(private env: GroomingEnv) {}
 
@@ -128,8 +130,10 @@ export class Grooming {
       const s = q.state[i]!;
       if (!s || s === Q.Groomed || !cov[i]) continue;
       if (e.snowDepth[i]! < GROOM.minDepth) continue;
+      const order = this.tileOrder(i);
+      if (order === 2) continue;
       const need = NEED[s] ?? 0;
-      if (need > 0) cands.push({ i, p: need + Math.min(3, q.wear[i]! / 20) });
+      if (need > 0) cands.push({ i, p: need + Math.min(3, q.wear[i]! / 20) + (order === 1 ? 10 : 0) });
     }
     for (const st of stations) for (let v = 0; v < st.vehicles; v++) {
       this.cats.push({ station: st.id, x: st.x, y: st.y, sx: st.x, sy: st.y, route: [], k: 0, groomed: 0, returning: false, done: false });

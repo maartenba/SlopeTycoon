@@ -15,11 +15,16 @@ import type { LiftData } from '../Lift';
  *  - per-tile "runs today" counters feed the piste inspector (`runsAt`).
  * Pure sim; deterministic (selection uses the sim rng); candidate lists are rebuilt after every nav epoch change (reset on load).
  */
+/** What the routing needs to know about the run a tile belongs to (hook set by createSim; absent = tile-level behaviour as before runs existed). */
+export interface RunChoice { /** 1 green .. 4 black */ diff: number; /** log1p of the run's mean passes today */ crowd: number; /** surface preference of this skier on the tile, 0..1 (0.5 = neutral) */ like: number; /** false = closed run: never chosen */ open: boolean }
+
 interface LiftCands { epoch: number; pool: number[]; ok: Array<number[] | undefined> }
 
 export class Exploration {
   /** Today's pass counter per tile (hook, set by createSim: PisteQuality traffic + trafficDay). */
   usage: (tile: number) => number = () => 0;
+  /** Run-aware scoring (phase 3 of docs/runs.md): at a lift top the guest picks among the RUNS it can reach by difficulty fit, run crowding, surface and mood. */
+  runChoice: ((tile: number, skill: number) => RunChoice | null) | null = null;
   /** Off = the pre-exploration behaviour (A/B in analysis & tests). */
   enabled = true;
   /** Runs through a via tile today, per tile (reset daily; display only - never read by the simulation, so it needs no saving). */
@@ -115,10 +120,17 @@ export class Exploration {
     if (list.length === 0) return 0;
     const n = g.size, skill = s.skill[slot]!, lv = s.via[slot]!, last = lv !== 0 ? Math.abs(lv) - 1 : -1;
     let best = -1, bs = -Infinity;
+    const mood = Math.max(0, Math.min(1, 1 - s.happiness[slot]! / 100));
     for (const t of list) {
-      const diff = g.difficultyAt(t);
+      let diff = g.difficultyAt(t);
       const crowd = Math.log1p(this.usage(t));
+      const rc = this.runChoice?.(t, skill) ?? null;
+      if (rc && !rc.open) continue; // a closed run is never chosen
       let sc = -EXPLORE.crowdWeight * crowd + EXPLORE.noise * rng.next();
+      if (rc) {
+        diff = rc.diff; // the run's own difficulty, not the tile's
+        sc += -EXPLORE.runCrowdWeight * rc.crowd + EXPLORE.runQualityWeight * (rc.like - 0.5) - EXPLORE.moodEase * mood * (diff - 2.5) * 0.5;
+      }
       if (last >= 0) sc += EXPLORE.farWeight * Math.min(1, Math.hypot((t % n) - (last % n), ((t / n) | 0) - ((last / n) | 0)) / EXPLORE.farTiles);
       // difficulty variety: experts/advanced like the harder lines, beginners the easy ones (a piste at their limit is fine)
       sc += EXPLORE.skillDiff[Math.max(0, Math.min(3, skill))]! * (diff - 1.5);

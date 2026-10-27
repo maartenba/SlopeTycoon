@@ -18,6 +18,7 @@ import { Buildings } from '../sim/Buildings';
 import { Names } from '../sim/Names';
 import { pisteReport, type PisteReport } from '../sim/PisteStats';
 import { RunIndex } from '../sim/Runs';
+import { RunSettings, type GroomMode } from '../sim/RunSettings';
 import type { Run, RunNetwork } from '../world/Runs';
 import { Economy } from '../sim/Economy';
 import { Pricing } from '../sim/Pricing';
@@ -263,7 +264,45 @@ export function createSim(opts: SimOptions) {
   if (mods.snowMultiplier !== undefined) snow.snowfallMult = mods.snowMultiplier;
   if (mods.weatherHarsh !== undefined) weather.harsh = mods.weatherHarsh;
   if (!opts.fromSave) snow.seed(game.date);
-  const openStatus = new OpenStatus({ grid, cond, weather, bus, networks: () => networks, lifts: () => lifts.all(), buildings: () => buildings.all() });
+  // A "piste" for names / inspector / goals / advisor is a RUN (world/Runs.ts): a stretch between junctions / lift stations / ends, not the whole 8-connected blob.
+  const runIndex = new RunIndex({
+    networks,
+    alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
+    stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; },
+  });
+  type PisteEntryInfo = Run & { difficulty: number };
+  let pisteIdx: { net: RunNetwork | null; map: Map<number, PisteEntryInfo>; list: PisteEntryInfo[] } = { net: null, map: new Map(), list: [] };
+  const pisteIndex = (): typeof pisteIdx => {
+    const net = runIndex.network();
+    if (pisteIdx.net !== net) {
+      const map = new Map<number, PisteEntryInfo>(), list: PisteEntryInfo[] = net.runs;
+      for (const r of net.runs) for (const t of r.tiles) map.set(t, r);
+      for (const nd of net.nodes) { const r = net.runs[nd.runsOut[0] ?? nd.runsIn[0] ?? -1]; if (r) for (const t of nd.tiles) map.set(t, r); }
+      pisteIdx = { net, map, list };
+      runSettings.prune(new Set(list.map((r) => names.pisteId(r))));
+    }
+    return pisteIdx;
+  };
+  const names = new Names({
+    size,
+    pisteAt: (x, y) => {
+      const i = y * size + x;
+      if (((networks.layers[i] ?? 0) & NetLayer.Ski) === 0) return null;
+      return pisteIndex().map.get(i) ?? null;
+    },
+    pistes: () => pisteIndex().list,
+    pisteVersion: () => { pisteIndex(); return runIndex.rebuilds; },
+    lifts: () => lifts.all().map((l) => ({ id: l.id, kindName: LIFTS[l.kind]?.name ?? l.kind, tiles: l.tiles })),
+    buildings: () => buildings.all().map((b) => ({ id: b.id, typeName: BUILDINGS[b.type]?.name ?? b.type, x: b.x, y: b.y, w: b.w, h: b.h })),
+    altFrac: (x, y) => (cond.altitude(x, y) - worldScale.baseWorld) / worldScale.reliefWorld,
+  });
+  const runSettings = new RunSettings();
+  const openStatus = new OpenStatus({
+    grid, cond, weather, bus, networks: () => networks, lifts: () => lifts.all(), buildings: () => buildings.all(),
+    // pistes are evaluated PER RUN (docs/runs.md): ids are the persistent Names ids, so manual closes survive edits
+    runs: () => pisteIndex().list, runId: (r) => names.pisteId(r as Run), runClosed: (id) => runSettings.isClosed(id),
+    runNodes: () => runIndex.network().nodes.map((n) => ({ tiles: n.tiles, runs: [...n.runsOut, ...n.runsIn] })),
+  });
   const weatherSystem = createWeatherSystem(weather, snow, { bus, onDay: () => { openStatus.evaluate(); hooks.onDay?.(); } });
   registry.replace(weatherSystem);
   openStatus.evaluate();
@@ -336,37 +375,6 @@ export function createSim(opts: SimOptions) {
     return skillScore[Math.max(0, Math.min(3, skill | 0))]!;
   };
   // Human names for places (pistes/lifts/buildings/areas) used by news messages; see sim/Names.ts.
-  // A "piste" for names / inspector / goals / advisor is a RUN (world/Runs.ts): a stretch between junctions / lift stations / ends, not the whole 8-connected blob.
-  const runIndex = new RunIndex({
-    networks,
-    alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
-    stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; },
-  });
-  type PisteEntryInfo = Run & { difficulty: number };
-  let pisteIdx: { net: RunNetwork | null; map: Map<number, PisteEntryInfo>; list: PisteEntryInfo[] } = { net: null, map: new Map(), list: [] };
-  const pisteIndex = (): typeof pisteIdx => {
-    const net = runIndex.network();
-    if (pisteIdx.net !== net) {
-      const map = new Map<number, PisteEntryInfo>(), list: PisteEntryInfo[] = net.runs;
-      for (const r of net.runs) for (const t of r.tiles) map.set(t, r);
-      for (const nd of net.nodes) { const r = net.runs[nd.runsOut[0] ?? nd.runsIn[0] ?? -1]; if (r) for (const t of nd.tiles) map.set(t, r); }
-      pisteIdx = { net, map, list };
-    }
-    return pisteIdx;
-  };
-  const names = new Names({
-    size,
-    pisteAt: (x, y) => {
-      const i = y * size + x;
-      if (((networks.layers[i] ?? 0) & NetLayer.Ski) === 0) return null;
-      return pisteIndex().map.get(i) ?? null;
-    },
-    pistes: () => pisteIndex().list,
-    pisteVersion: () => { pisteIndex(); return runIndex.rebuilds; },
-    lifts: () => lifts.all().map((l) => ({ id: l.id, kindName: LIFTS[l.kind]?.name ?? l.kind, tiles: l.tiles })),
-    buildings: () => buildings.all().map((b) => ({ id: b.id, typeName: BUILDINGS[b.type]?.name ?? b.type, x: b.x, y: b.y, w: b.w, h: b.h })),
-    altFrac: (x, y) => (cond.altitude(x, y) - worldScale.baseWorld) / worldScale.reliefWorld,
-  });
   const safety: Safety = new Safety({
     size, seed, guests: guestSim.safetyPort(), coverage, buildings: () => buildings.all(), bus,
     spend: (c, a) => { economy.spend(c, a); },
@@ -387,6 +395,46 @@ export function createSim(opts: SimOptions) {
     },
   });
   ops.attachSafety(safety);
+
+  // ---- Per-run operations (docs/runs.md): grooming orders, traffic history, last-groomed day ----
+  const absDayNow = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
+  let orderCache: { net: RunNetwork; ver: number; arr: Uint8Array } | null = null;
+  ops.grooming.tileOrder = (i) => {
+    const net = runIndex.network();
+    if (!orderCache || orderCache.net !== net || orderCache.ver !== runSettings.version) {
+      const arr = new Uint8Array(size * size);
+      for (const r of net.runs) {
+        const m = runSettings.groomMode(names.pisteId(r));
+        if (m !== 'auto') for (const t of r.tiles) arr[t] = m === 'first' ? 1 : 2;
+      }
+      orderCache = { net, ver: runSettings.version, arr };
+    }
+    return orderCache.arr[i] as 0 | 1 | 2;
+  };
+  // Run-aware via choice (phase 3): per run crowd cached per sim hour
+  const crowdCache = new Map<number, { stamp: number; net: RunNetwork; v: number }>();
+  guestSim.exploration.runChoice = (t, skill) => {
+    const net = runIndex.network(), r = net.runAt(t);
+    if (!r) return null;
+    const stamp = absDayNow() * 24 + Math.floor(game.date.minute / 60);
+    let c = crowdCache.get(r.index);
+    if (!c || c.stamp !== stamp || c.net !== net) {
+      let sum = 0; const pts = r.poly.length ? r.poly : r.tiles;
+      for (const q of pts) sum += (pq.traffic[q] ?? 0) + (pq.trafficDay[q] ?? 0);
+      c = { stamp, net, v: Math.log1p(sum / Math.max(1, pts.length)) };
+      crowdCache.set(r.index, c);
+    }
+    const ql = guestSim.pisteQualityAt?.(t, skill);
+    const st = openStatus.pisteAt(t % size, (t / size) | 0);
+    return { diff: r.difficulty, crowd: c.v, like: ql ? ql.like : 0.5, open: st ? st.open : true };
+  };
+  pq.onGroom = (i) => { const r = runIndex.runOfTile(i); if (r) runSettings.noteGroomed(names.pisteId(r), absDayNow()); };
+  const runPasses = (r: Run): number => { let m = 0; for (const t of r.poly.length ? r.poly : r.tiles) { const v = (pq.trafficDay[t] ?? 0) + (pq.traffic[t] ?? 0); if (v > m) m = v; } return m; };
+  pq.onDayRollover = () => {
+    const ids: number[] = [];
+    for (const r of runIndex.runs()) { const id = names.pisteId(r); ids.push(id); runSettings.notePasses(id, runPasses(r)); }
+    runSettings.rollDay(ids);
+  };
   if (mods.eventBias?.avalanche !== undefined) safety.avalanche.gainMult = mods.eventBias.avalanche;
   if (mods.bearsMax !== undefined) safety.wildlife.bearsOverride = mods.bearsMax;
   guestSim.injuryHook = (id, x, y, f) => !!safety.incidents.onGuestInjured(id, x, y, f);
@@ -780,12 +828,31 @@ export function createSim(opts: SimOptions) {
     if (e) names.renamePiste(e, name);
     return !!e;
   };
-  const pisteReportAt = (x: number, y: number): (PisteReport & { tileIdx: number[] }) | null => {
-    const e = pisteEntryAt(x, y);
-    if (!e) return null;
+  /** Everything the inspector / Runs list shows about one run. */
+  type RunInfo = PisteReport & { tileIdx: number[]; x: number; y: number; closedByPlayer: boolean; groomMode: GroomMode; passesToday: number; passesWeek: number; groomedDaysAgo: number | null; nodeFrom: number; nodeTo: number };
+  const reportOf = (e: Run): RunInfo => {
     const r = pisteReport(e, { difficulty: networks.difficulty, quality: ops.quality, status: (c) => openStatus.pisteAt(c.tiles[0]! % size, (c.tiles[0]! / size) | 0), runsAt: (tiles) => guestSim.exploration.runsAt(tiles) });
-    return { ...r, id: names.pisteId(e), name: names.pisteName(e), autoName: names.pisteAutoName(e), tileIdx: e.tiles };
+    const id = names.pisteId(e), t = e.poly[e.poly.length >> 1] ?? e.tiles[0]!, lg = runSettings.lastGroomedDay(id);
+    return {
+      ...r, id, name: names.pisteName(e), autoName: names.pisteAutoName(e), tileIdx: e.tiles, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5,
+      closedByPlayer: runSettings.isClosed(id), groomMode: runSettings.groomMode(id), passesToday: runPasses(e), passesWeek: runSettings.passesWeek(id) + runPasses(e),
+      groomedDaysAgo: lg === undefined ? null : Math.max(0, absDayNow() - lg), nodeFrom: e.from, nodeTo: e.to,
+    };
   };
+  const pisteReportAt = (x: number, y: number): RunInfo | null => {
+    const e = pisteEntryAt(x, y);
+    return e ? reportOf(e) : null;
+  };
+  /** Every run (sorted by tile order of the network): the Runs list panel. */
+  const runList = (): RunInfo[] => pisteIndex().list.map(reportOf);
+  const runById = (id: number): Run | undefined => pisteIndex().list.find((r) => names.pisteId(r) === id);
+  const setRunClosed = (id: number, closed: boolean): boolean => {
+    if (!runById(id)) return false;
+    if (runSettings.setClosed(id, closed)) { openStatus.evaluate(); }
+    return true;
+  };
+  const setRunGroomMode = (id: number, m: GroomMode): boolean => { if (!runById(id)) return false; runSettings.setGroomMode(id, m); return true; };
+  const renameRun = (id: number, name: string): boolean => { const r = runById(id); if (r) names.renamePiste(r, name); return !!r; };
 
   /** One label anchor per run (mid centre-line tile) for the 'Runs' overlay and the Runs list. */
   const runLabels = (): Array<{ id: number; name: string; x: number; y: number; difficulty: number }> => pisteIndex().list.map((r) => {
@@ -926,7 +993,7 @@ export function createSim(opts: SimOptions) {
   const sim = {
     achievements, rivals, sustain, landscape, landscapeEnv,
     scenario: scenarioRef as ScenarioRunner | null,
-    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels,
+    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,

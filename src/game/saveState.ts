@@ -114,6 +114,9 @@ export const SAVE_MODULES: SaveModule[] = [
     load: (sim, d) => { const s = d as Obj; sim.cond.skiOpen.set(s.skiOpen); sim.cond.hikeOk.set(s.hikeOk); },
   },
   { key: 'names', version: 1, serialize: (sim) => sim.names.serialize(), load: (sim, d) => sim.names.load(d as Parameters<Sim['names']['load']>[0]) },
+  // Per-run player settings (manual close, grooming order) keyed by persistent run id; weekly traffic / last groomed are observer-only (`runStats`). Old saves: nothing closed, all Auto.
+  { key: 'runs', version: 1, serialize: (sim) => sim.runSettings.serialize(), load: (sim, d) => { sim.runSettings.load(d as Parameters<Sim['runSettings']['load']>[0]); }, reset: (sim) => sim.runSettings.load(undefined) },
+  { key: 'runStats', version: 1, observer: true, serialize: (sim) => sim.runSettings.serializeStats(), load: (sim, d) => sim.runSettings.loadStats(d as Parameters<Sim['runSettings']['loadStats']>[0]), reset: (sim) => sim.runSettings.loadStats(undefined) },
   { key: 'nature', version: 1, serialize: (sim) => sim.nature.serialize(), load: (sim, d) => sim.nature.load(d) },
   { key: 'leavers', version: 1, serialize: (sim) => sim.leavers.serialize(), load: (sim, d) => sim.leavers.load(d as { v: number }) },
   ...(['clock', 'season', 'weather', 'spawner', 'guests', 'attractions', 'economy', 'rating'] as const).map((id) => sysModule(id, id === 'economy' ? 2 : 1)), // economy v2: liftOps.policy (maintenance Auto/Manual; absent = Auto)

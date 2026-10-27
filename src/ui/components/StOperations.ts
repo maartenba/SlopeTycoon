@@ -3,6 +3,7 @@ import { formatMoney } from '../format';
 import { StElement } from './StElement';
 import { REAL_MONTHS } from '../../sim/calendar';
 import { stateLabel, windowOptions, type ServiceStateLabel } from '../maintFormat';
+import { mapDifficultyCss } from '@/config/palette';
 import type { StaffPoolId, WageLevel } from '../../config/staff';
 
 export type OpsProfile = 'winter' | 'shoulder' | 'summer';
@@ -46,8 +47,22 @@ export interface MaintApi {
   serviceNow(id: number): boolean;
   projected(): { cost: number; count: number };
 }
+/** One run in the Runs tab (docs/runs.md). */
+export interface RunRow {
+  id: number; name: string; difficultyLabel: string; difficultyColor: string; lengthM: number; dropM: number;
+  passesToday: number; passesWeek: number; quality: string | null; open: boolean; reason?: string; closedByPlayer: boolean;
+  groomMode: 'auto' | 'first' | 'skip'; groomedDaysAgo: number | null;
+}
+export interface RunsApi {
+  rows(): RunRow[];
+  setClosed(id: number, closed: boolean): void;
+  setGroom(id: number, mode: 'auto' | 'first' | 'skip'): void;
+  /** Click on a name: move the camera to the run and highlight it. */
+  focus(id: number): void;
+}
 export interface OperationsApi {
   maint?: MaintApi;
+  runs?: RunsApi;
   staff?: StaffApi;
   snow?: SnowApi;
   rows(): OpsRow[];
@@ -105,7 +120,7 @@ export class StOperations extends StElement {
   private api: OperationsApi | null = null;
   private wrap = el('div', 'wrap');
   private pending = false;
-  private tab: 'lifts' | 'maint' | 'staff' = 'lifts';
+  private tab: 'lifts' | 'maint' | 'staff' | 'runs' = 'lifts';
   protected css(): string { return css; }
   constructor() { super(); this.root.appendChild(this.wrap); }
   bind(api: OperationsApi): void { this.api = api; this.refresh(); }
@@ -118,17 +133,43 @@ export class StOperations extends StElement {
   refresh(): void {
     const a = this.api;
     if (!a) return;
-    const body = this.tab === 'staff' && a.staff ? this.staffView(a.staff) : this.tab === 'maint' && a.maint ? this.maintView(a.maint) : this.liftsView(a);
+    const body = this.tab === 'runs' && a.runs ? this.runsView(a.runs) : this.tab === 'staff' && a.staff ? this.staffView(a.staff) : this.tab === 'maint' && a.maint ? this.maintView(a.maint) : this.liftsView(a);
     this.wrap.classList.toggle('staff', this.tab === 'staff' && !!a.staff);
-    if (!a.staff && !a.maint) { this.wrap.replaceChildren(...body); return; }
+    if (!a.staff && !a.maint && !a.runs) { this.wrap.replaceChildren(...body); return; }
     const tabs = el('div', 'tabs');
-    for (const [id, label] of ([['lifts', 'Lifts'], ...(a.maint ? [['maint', 'Maintenance']] : []), ...(a.staff ? [['staff', 'Staff']] : [])] as Array<['lifts' | 'maint' | 'staff', string]>)) {
+    for (const [id, label] of ([['lifts', 'Lifts'], ...(a.runs ? [['runs', 'Runs']] : []), ...(a.maint ? [['maint', 'Maintenance']] : []), ...(a.staff ? [['staff', 'Staff']] : [])] as Array<['lifts' | 'maint' | 'staff' | 'runs', string]>)) {
       const b = el('button', `tab${this.tab === id ? ' active' : ''}`, label);
       b.dataset.tab = id;
       b.addEventListener('click', () => { this.tab = id; this.refresh(); });
       tabs.append(b);
     }
     this.wrap.replaceChildren(tabs, ...body);
+  }
+
+  /** Runs tab: every run with traffic, surface, open / closed and grooming order; click a name to look at it. */
+  private runsView(a: RunsApi): HTMLElement[] {
+    const rows = a.rows();
+    if (!rows.length) return [el('div', 'small', 'No pistes yet. Paint a piste: every stretch between junctions and lift stations is a run.')];
+    const tbl = el('table'), head = el('tr');
+    for (const h of ['Run', 'Level', 'Length', 'Drop', 'Today', 'Week', 'Surface', 'Groomed', 'Grooming', 'Status']) head.append(el('th', '', h));
+    tbl.append(head);
+    for (const r of rows) {
+      const tr = el('tr'); tr.dataset.run = String(r.id);
+      const td = (...n: Array<HTMLElement | string>): HTMLElement => { const t = el('td'); t.append(...n); return t; };
+      const name = el('button', 'tab', r.name); name.dataset.focus = String(r.id); name.title = 'Show on the map';
+      name.addEventListener('click', () => a.focus(r.id));
+      const dot = el('span', '', '● '); dot.style.color = mapDifficultyCss(r.difficultyColor);
+      const modes: Array<['auto' | 'first' | 'skip', string]> = [['auto', 'Auto'], ['first', 'First'], ['skip', 'Never']];
+      const g = el('button', 'tab', modes.find((m) => m[0] === r.groomMode)![1]); g.dataset.groom = String(r.id); g.title = 'Grooming order: Auto / Groom first / Never groom';
+      g.addEventListener('click', () => { a.setGroom(r.id, modes[(modes.findIndex((m) => m[0] === r.groomMode) + 1) % modes.length]![0]); this.refresh(); });
+      const st = el('button', `tab${r.open ? '' : ' active'}`, r.open ? 'Open' : 'Closed'); st.dataset.toggle = String(r.id);
+      st.title = r.open ? 'Click to close this run' : r.closedByPlayer ? 'Closed by you: click to reopen' : (r.reason ?? 'Closed');
+      st.addEventListener('click', () => { if (r.open || r.closedByPlayer) { a.setClosed(r.id, r.open); this.refresh(); } });
+      tr.append(td(name), td(dot, r.difficultyLabel), td(`${r.lengthM.toLocaleString('en-US')} m`), td(`${r.dropM.toLocaleString('en-US')} m`), td(String(r.passesToday)), td(String(r.passesWeek)),
+        td(r.quality ?? 'n/a'), td(r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(st));
+      tbl.append(tr);
+    }
+    return [tbl];
   }
 
   private staffView(s: StaffApi): HTMLElement[] {

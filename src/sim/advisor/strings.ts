@@ -30,6 +30,7 @@ export const TEXT = {
   queue: (lift: string, mins: number): Text => ({ title: S('Long lift queue'), why: S(`Guests wait about ${mins} min at ${lift}. Build a second lift or raise capacity (a faster lift type).`) }),
   groomingNone: (): Text => ({ title: S(`No grooming on your pistes`), why: S(`Pistes wear out without grooming. Build a ${B('groomerGarage')} near the lodge, then a ${B('snowcatOutpost')} beside the pistes: the outpost is what reaches them.`) }),
   groomingGap: (pct: number): Text => ({ title: S('Grooming gap'), why: S(`${pct}% of piste tiles are outside grooming coverage. A ${B('snowcatOutpost')} beside them would reach them.`) }),
+  icyRun: (name: string, pct: number): Text => ({ title: S(`${name} is icy`), why: S(`${pct}% of ${name} is icy: groom it first (select it and choose Groom first) or add snowmaking.`) }),
   icy: (pct: number): Text => ({ title: S('Icy pistes'), why: S(`${pct}% of open piste tiles are icy. Groom more often or add snowmaking.`) }),
   patrolNone: (): Text => ({ title: S('No ski patrol'), why: S(`Injured guests wait for help. Build a ${B('patrolHub')}.`) }),
   aidGap: (pct: number): Text => ({ title: S('First aid gap'), why: S(`${pct}% of piste tiles have no first-aid or patrol cover. Build a ${B('firstAid')} beside them.`) }),
