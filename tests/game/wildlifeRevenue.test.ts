@@ -107,7 +107,7 @@ describe('bear threat vs revenue (summer starter resort, hiking + MTB trail next
 
 describe('full-sim save/load with bear + ranger state', () => {
   it('bear territory / den / relocation cooldown / hibernation and ranger staff + bins survive a save and continue identically', async () => {
-    const { sim } = wildlifeScenario(3, 'bear+rangers');
+    const { sim } = wildlifeScenario(4, 'bear+rangers');
     const w = sim.safety.wildlife;
     const st = [...sim.buildings.all()].find((b) => b.type === 'rangerStation')!;
     w.setStaff(st.id, 3); w.setBins(st.id, true);

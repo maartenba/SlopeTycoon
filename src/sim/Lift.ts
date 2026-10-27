@@ -27,7 +27,12 @@ export interface LiftParams {
   /** Min cable clearance above terrain along the span (sag included). */
   minClearance: number;
   minTowerHeight: number;
+  /** Hard cap on tower height (head above the ground at its foot, world units; 1 unit = 10 m). Over it the route is refused. */
   maxTowerHeight: number;
+  /** Comfortable tower height: the solver tries denser towers (shorter spans) while the tallest tower exceeds it. */
+  softTowerHeight: number;
+  /** Hard cap relative to the longer adjacent span: a tower may not be taller than spanRatio x span (at least minTowerHeight + 0.6). */
+  spanRatio: number;
   /** Midspan sag as a fraction of span length. */
   sag: number;
   /** How far carriers hang below the cable (visual pad / old tuning value). */
@@ -36,15 +41,20 @@ export interface LiftParams {
   drop: number;
 }
 
-const CHAIR_PRM: LiftParams = { minClearance: 0.5, minTowerHeight: 0.9, maxTowerHeight: 6, sag: 0.012, hang: 0.4, drop: 0.6 };
-const GONDOLA_PRM: LiftParams = { minClearance: 0.6, minTowerHeight: 1.0, maxTowerHeight: 7, sag: 0.012, hang: 0.5, drop: 0.95 };
+/** Tower height caps (world units, 1 = 10 m): hard (route refused) and soft (solver prefers denser towers above it). See docs/lifts-clearance.md. */
+const TBAR_MAX_H = 3.5, TBAR_SOFT_H = 2.2;
+const CHAIR_MAX_H = 5, CHAIR_SOFT_H = 3;
+const GONDOLA_MAX_H = 6, GONDOLA_SOFT_H = 3.8;
+const CABLECAR_MAX_H = 10, CABLECAR_SOFT_H = 7;
+const CHAIR_PRM: LiftParams = { minClearance: 0.5, minTowerHeight: 0.9, maxTowerHeight: CHAIR_MAX_H, softTowerHeight: CHAIR_SOFT_H, spanRatio: 1, sag: 0.012, hang: 0.4, drop: 0.6 };
+const GONDOLA_PRM: LiftParams = { minClearance: 0.6, minTowerHeight: 1.0, maxTowerHeight: GONDOLA_MAX_H, softTowerHeight: GONDOLA_SOFT_H, spanRatio: 1, sag: 0.012, hang: 0.5, drop: 0.95 };
 export const LIFT_PARAMS: Record<LiftKind, LiftParams> = {
-  tbar: { minClearance: 0.1, minTowerHeight: 0.5, maxTowerHeight: 4, sag: 0.01, hang: 0.25, drop: 0.65 },
+  tbar: { minClearance: 0.1, minTowerHeight: 0.5, maxTowerHeight: TBAR_MAX_H, softTowerHeight: TBAR_SOFT_H, spanRatio: 1, sag: 0.01, hang: 0.25, drop: 0.65 },
   chair2: CHAIR_PRM, chair4: CHAIR_PRM, chair4d: CHAIR_PRM, chair6: CHAIR_PRM,
   chair6b: { ...CHAIR_PRM, minClearance: 0.55, hang: 0.45, drop: 0.6 }, chair8b: { ...CHAIR_PRM, minClearance: 0.55, hang: 0.45, drop: 0.6 },
   gondola6: GONDOLA_PRM, gondola10: { ...GONDOLA_PRM, minClearance: 0.65, hang: 0.55, drop: 1.0 },
-  cablecar: { minClearance: 0.8, minTowerHeight: 1.5, maxTowerHeight: 12, sag: 0.015, hang: 0.6, drop: 1.0 },
-  funicular: { minClearance: 0, minTowerHeight: 0, maxTowerHeight: 0, sag: 0, hang: 0, drop: 0 },
+  cablecar: { minClearance: 0.8, minTowerHeight: 1.5, maxTowerHeight: CABLECAR_MAX_H, softTowerHeight: CABLECAR_SOFT_H, spanRatio: 0.7, sag: 0.015, hang: 0.6, drop: 1.0 },
+  funicular: { minClearance: 0, minTowerHeight: 0, maxTowerHeight: 0, softTowerHeight: 0, spanRatio: 0, sag: 0, hang: 0, drop: 0 },
 };
 
 /** Free air under the carrier above bare terrain (T-bar skis drag on snow: exempt). */
@@ -541,18 +551,27 @@ export function validateLift(env: LiftEnv, kindIn: LiftKind, bottomSite: Station
   } else {
     const solve = (obs: ObsMode): { ok: boolean; reason: string; towers: TowerData[]; nodes: V3[] } => {
       let lastReason = 'Cannot place towers';
+      // Prefer MORE towers over tall ones: keep densifying while the tallest tower exceeds the soft height; of the feasible
+      // layouts take the first under it, else the one with the lowest tallest tower (ties -> fewer towers).
+      let best: { towers: TowerData[]; nodes: V3[]; maxH: number } | null = null;
       for (const mult of TOWER_DENSITY_STEPS) {
         const r = planTowers(env, kind, prm, def, bc, dx, dz, L, hB, hT, tiles, mult, obs);
         if (r.ok) {
           let seg = 0;
           for (let i = 1; i < r.nodes.length; i++) { const a = r.nodes[i - 1]!, b = r.nodes[i]!; seg = Math.max(seg, Math.abs(b.y - a.y) / (Math.hypot(b.x - a.x, b.z - a.z) || 1)); }
-          if (seg <= def.maxLocalGradient || mult === TOWER_DENSITY_STEPS[TOWER_DENSITY_STEPS.length - 1]) return { ok: true, reason: '', towers: r.towers, nodes: r.nodes };
+          const last = mult === TOWER_DENSITY_STEPS[TOWER_DENSITY_STEPS.length - 1];
+          if (seg <= def.maxLocalGradient || last) {
+            if (!best || r.maxH < best.maxH - 0.05) best = { towers: r.towers, nodes: r.nodes, maxH: r.maxH };
+            if (r.maxH <= prm.softTowerHeight + 1e-9) break;
+            continue;
+          }
           lastReason = `Too steep locally: a cable section is ${Math.round(seg * 100)}% (max ${Math.round(def.maxLocalGradient * 100)}%)`;
           continue;
         }
         lastReason = r.reason;
         if (!r.retry) break;
       }
+      if (best) return { ok: true, reason: '', towers: best.towers, nodes: best.nodes };
       return { ok: false, reason: lastReason, towers: [], nodes: [] };
     };
     const wantObs = !!(env.props || env.buildings || env.lifts.size);
@@ -617,14 +636,14 @@ function firstBuilding(env: LiftEnv, bc: { x: number; z: number }, dx: number, d
   return best;
 }
 
-interface TowerPlan { ok: boolean; reason: string; retry: boolean; towers: TowerData[]; nodes: V3[] }
+interface TowerPlan { ok: boolean; reason: string; retry: boolean; towers: TowerData[]; nodes: V3[]; /** Tallest tower (head above its ground). */ maxH: number }
 
 function planTowers(
   env: LiftEnv, kind: LiftKind, prm: LiftParams, def: LiftDef, bc: { x: number; z: number },
   dx: number, dz: number, L: number, hB: number, hT: number, reserved: Set<number>, mult: number, obsMode: ObsMode = { trees: false, buildings: false },
 ): TowerPlan {
   const { grid } = env;
-  const fail = (reason: string, retry: boolean): TowerPlan => ({ ok: false, reason, retry, towers: [], nodes: [] });
+  const fail = (reason: string, retry: boolean): TowerPlan => ({ ok: false, reason, retry, towers: [], nodes: [], maxH: 0 });
   const spans = Math.max(1, Math.ceil(L / (def.towerSpacing * mult)));
   const towers: TowerData[] = [];
   const taken = new Set<number>(reserved);
@@ -705,7 +724,10 @@ function planTowers(
       else { heads[s] = heads[s]! + worst; heads[s + 1] = heads[s + 1]! + worst; }
     }
     for (let i = 1; i < ds.length - 1; i++) {
-      if (heads[i]! - towers[i - 1]!.groundY > prm.maxTowerHeight + 1e-9) return fail(`Terrain too rugged: towers would exceed ${prm.maxTowerHeight} tall`, true);
+      const h = heads[i]! - towers[i - 1]!.groundY;
+      const span = Math.max(ds[i]! - ds[i - 1]!, ds[i + 1]! - ds[i]!);
+      const cap = Math.min(prm.maxTowerHeight, Math.max(prm.minTowerHeight + 0.6, prm.spanRatio * span));
+      if (h > cap + 1e-9) return fail(`Towers would need to be ${Math.ceil(h * TILE_METRES)} m tall (max ${Math.floor(cap * TILE_METRES)} m): shorten the span, clear the forest lane or pick another route`, true);
     }
     if (!changed) break;
     if (iter === 299) return fail('Cannot reach cable clearance', true);
@@ -713,7 +735,7 @@ function planTowers(
   towers.forEach((t, i) => { t.headY = heads[i + 1]!; });
   const nodes: V3[] = ds.map((d, i) => ({ x: bc.x + dx * d, y: heads[i]!, z: bc.z + dz * d }));
   void kind;
-  return { ok: true, reason: '', retry: false, towers, nodes };
+  return { ok: true, reason: '', retry: false, towers, nodes, maxH: towers.reduce((m, t) => Math.max(m, t.headY - t.groundY), 0) };
 }
 
 // ---------- store ----------

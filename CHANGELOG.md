@@ -4,6 +4,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Lifts: towers are no longer crazy tall
+- Hard tower-height caps (head above its foot, 1 unit = 10 m): T-bar 35 m, chairs 50 m, gondolas 60 m, cable car 100 m (were 40 / 60 / 70 / 120), and a tower may not be taller than its longer adjacent span. The solver now prefers **more, shorter towers** (denser spacing, soft heights 22 / 30 / 38 / 70 m) over a few tall ones. Refusals read "Towers would need to be N m tall ...: shorten the span, clear the forest lane or pick another route". Tall towers get thicker poles and masts. Existing lifts are untouched. See `docs/lifts-clearance.md`.
+
 ### Game: anonymous, opt-in analytics
 - **Google Analytics in the game** (`G-NX37ERE0S9`, `src/analytics/`), consent first: nothing is loaded or sent until `localStorage['slope.consent.analytics'] === 'granted'` (same key as the website). A small non-blocking card on the title screen ("Allow anonymous stats" / "No thanks") and **Settings > Privacy** (toggle, off until granted, link to the privacy page). About dialog updated.
 - Whitelisted, typed events only (no free text, names, seeds, saves, coordinates): `app_start`, `game_start` / `game_load`, `level_up`, `goal_done`, `scenario_result`, `year_end`, `achievement`, `festival_booked`, `staff_upgrade`, `view_mode_used`, `feature_first_use`, `error` (class only), `engaged` (every 5 visible minutes). Rate limited, capped per session. One observer-only bus subscriber: `stateHash` unchanged (tested).

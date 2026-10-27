@@ -29,14 +29,19 @@ function mast(b: PartBuilder, height: number, w0: number, w1: number, t: number,
  * Distinct per lift family: T-bar poles, tubular chair towers with sheave pairs, A-frame towers for fast chairs, tall steel
  * gondola masts with big sheave trains, heavy four-legged lattice pylons for the cable car, concrete trestles for the funicular.
  */
+/** Thickness factor for tall towers (1 up to TOWER_THICK_FROM, then ~sqrt growth, capped): tall poles / masts must not look like needles. */
+export const TOWER_THICK_FROM = 2.4;
+export const towerThickness = (height: number): number => Math.min(1.7, Math.max(1, Math.sqrt(height / TOWER_THICK_FROM)));
+
 export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', armHalfWidth = 0.3, near = false): THREE.BufferGeometry {
   const b = new PartBuilder(1, 1);
   const d = liftDef(kind);
   b.box(0, -0.2, 0, 0.5, 0.2, 0.5, C.stone, 'stone');
   const topY = height;
+  const k = towerThickness(height);
   switch (d.family) {
     case 'tbar': { // slim wooden pole with a small crossarm and single sheaves
-      b.cyl(0, 0, 0, 0.045, topY - 0.06, C.wood, 'wood', 10);
+      b.cyl(0, 0, 0, 0.045 * k, topY - 0.06, C.wood, 'wood', 10);
       b.box(0, topY - 0.1, 0, 0.5, 0.04, 0.05, C.dark);
       for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 1, 0.05, 0.1);
       b.box(0, topY * 0.5, 0, 0.05, 0.03, 0.2, C.yellow); // yellow marker plate
@@ -44,17 +49,17 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
     }
     case 'chair': {
       if (kind === 'chair2' || kind === 'chair4') { // tubular steel pole + T arm, two-wheel sheave trains
-        b.cyl(0, 0, 0, 0.07, topY - 0.1, STEEL, 'stone', 10);
-        b.cyl(0, 0, 0, 0.1, 0.12, STEEL_DARK, 'stone', 8);
+        b.cyl(0, 0, 0, 0.07 * k, topY - 0.1, STEEL, 'stone', 10);
+        b.cyl(0, 0, 0, 0.1 * k, 0.12, STEEL_DARK, 'stone', 8);
         b.box(0, topY - 0.1, 0, 0.74, 0.06, 0.1, d.capacityPerCarrier > 2 ? C.red : C.dark);
         for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 2, 0.06, 0.13);
       } else if (kind === 'chair4d') { // tube + ladder + 3-wheel trains
-        b.cyl(0, 0, 0, 0.08, topY - 0.1, STEEL, 'stone', 12);
+        b.cyl(0, 0, 0, 0.08 * k, topY - 0.1, STEEL, 'stone', 12);
         b.box(0, topY - 0.1, 0, 0.8, 0.07, 0.12, C.red);
         b.box(0.1, 0.1, 0, 0.03, topY * 0.8, 0.03, STEEL_DARK); b.box(0.16, 0.1, 0, 0.03, topY * 0.8, 0.03, STEEL_DARK);
         for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 3, 0.055, 0.12);
       } else { // 6-seat / bubble: A-frame steel tower with red cap
-        mast(b, topY - 0.1, 0.32, 0.18, 0.06, STEEL, 0.035, 0.7);
+        mast(b, topY - 0.1, 0.32 * (1 + (k - 1) * 0.5), 0.18, 0.06 * k, STEEL, 0.035 * k, 0.7);
         b.box(0, topY - 0.1, 0, 0.8, 0.08, 0.14, C.red);
         for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 4, 0.055, 0.13);
         if (d.bubble) b.box(0, topY * 0.5, 0.06, 0.34, 0.12, 0.03, C.white);
@@ -64,7 +69,7 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
     case 'gondola': { // tall steel mast, large sheave trains and a service platform
       const big = d.capacityPerCarrier >= 10;
       const w0 = big ? 0.46 : 0.4, w1 = big ? 0.3 : 0.26;
-      mast(b, topY - 0.12, w0, w1, 0.07, STEEL, 0.04, 0.6);
+      mast(b, topY - 0.12, w0 * (1 + (k - 1) * 0.5), w1, 0.07 * k, STEEL, 0.04 * k, 0.6);
       b.box(0, topY - 0.12, 0, 0.9, 0.09, 0.2, big ? 0xc0392b : C.blue);
       for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 5, 0.06, 0.12, C.black);
       for (const x of [-armHalfWidth, armHalfWidth]) b.box(x, topY - 0.36, 0, 0.1, 0.06, 0.55, STEEL_DARK);
@@ -74,7 +79,7 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
     case 'cablecar': { // heavy lattice pylon: four legs, braced faces, big saddle
       const w0 = 0.46, w1 = 0.2;
       const levels = Math.max(2, Math.round(topY / 0.7));
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.beam(sx * w0, 0, sz * w0, sx * w1, topY - 0.15, sz * w1, 0.09, C.red);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.beam(sx * w0, 0, sz * w0, sx * w1, topY - 0.15, sz * w1, 0.09 * k, C.red);
       for (let i = 0; i < levels; i++) {
         const y0 = ((topY - 0.15) * i) / levels, y1 = ((topY - 0.15) * (i + 1)) / levels;
         const a0 = w0 + (w1 - w0) * (y0 / (topY - 0.15)), a1 = w0 + (w1 - w0) * (y1 / (topY - 0.15));
@@ -91,7 +96,7 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
     }
     case 'funicular': { // concrete trestle: two raked legs, deck beam under the track, diagonal bracing
       const w0 = 0.42, w1 = 0.3;
-      for (const s of [-1, 1]) b.beam(s * w0, 0, 0, s * w1, topY - 0.1, 0, 0.12, C.stone);
+      for (const s of [-1, 1]) b.beam(s * w0, 0, 0, s * w1, topY - 0.1, 0, 0.12 * k, C.stone);
       b.box(0, topY - 0.14, 0, 0.9, 0.1, 0.5, C.stone, 'stone');
       b.box(0, topY - 0.04, 0, 0.8, 0.02, 0.5, C.dark);
       const levels = Math.max(1, Math.round(topY / 0.8));

@@ -42,36 +42,37 @@ const GOLDEN_STARTER: Record<string, string> = {
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': '3e5ca217',
+  'core': 'eb3fa788',
   'config': 'd9813cdd',
-  'grid': '3f13db7b',
-  'props': '157da956',
+  'grid': 'dc59b188',
+  'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'd962e46d',
-  'lifts': '314427b5',
+  'lifts': '3f7a6596',
   'cond': 'd91eca6f',
-  'names': '1881b0e8',
-  'nature': '2ed5af70',
-  'leavers': '5c802024',
+  'names': '4d0e9646',
+  'nature': '3339dd42',
+  'leavers': '60e0b595',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': 'cfda327d',
-  'sys.spawner': '05c37a19',
-  'sys.guests': '9f9d5d1a',
-  'sys.attractions': 'ea931b27',
-  'sys.ops': '3af376f2',
-  'sys.economy': '1810a3c1',
-  'sys.rating': '356c291e',
-  'families': 'fd872417',
+  'sys.spawner': '6ca57e98',
+  'sys.guests': '133b0758',
+  'sys.attractions': '69fad026',
+  'sys.ops': '22104486',
+  'sys.economy': 'cb460f36',
+  'sys.rating': '5f6795e5',
+  'families': 'd440d194',
   'openStatus': 'f48290d9',
-  'sessionMeta': '3c0227d7',
-  'goals': 'ff5d73e1',
-  'yearReports': '9c1f1197',
+  'sessionMeta': '871fbe98',
+  'goals': '580b9638',
+  'yearReports': '40ddfd31',
   'advisor': 'ca063e92',
   'progression': '95d25f9b', // re-recorded: the landscape:pond unlock joins the level snapshot
   'scenario': '77074ba4'
 };
-const GOLDEN_BOT_MONEY = 192146.17;
+// RE-RECORDED (tower height caps / denser towers change the bot's lift layouts; docs/lifts-clearance.md).
+const GOLDEN_BOT_MONEY = 193236.89;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; return p; };
 
