@@ -331,6 +331,13 @@ export function computePisteFacts(sim: Sim): PisteFacts {
   const out: PisteFacts = { tiles: 0, icy: 0, noGroom: [], noAid: [] };
   const n = sim.size, q = sim.ops.quality, cov = sim.coverage;
   for (let i = 0; i < n * n; i++) {
+  rule('lift.service', 2, (c) => {
+    const sp = seasonProgress(c.sim.game.date);
+    if (sp.season !== 'autumn' || sp.daysLeft > (c.shown ? 24 : 20)) return null; // the last weeks before winter
+    const late = c.sim.lifts.all().filter((l) => { const s = c.sim.liftOps.serviceStatus(l); return s.state === 'overdue' || s.state === 'critical'; }).sort((a, b) => a.id - b.id);
+    if (!late.length) return null;
+    const plan = c.sim.liftOps.servicePlan(late[0]!), total = late.reduce((t, l) => t + c.sim.liftOps.servicePlan(l).cost, 0);
+    return { id: 'lift.service', severity: 'warn', ...TEXT.liftService(late.length, c.sim.names.liftName(late[0]!.id), plan.days, `$${Math.round(total).toLocaleString('en-US')}`), target: liftTarget(late[0]!), panel: { drawer: 'ops' } };
     if (!q.isPiste(i)) continue;
     out.tiles++;
     const x = i % n, y = (i / n) | 0;

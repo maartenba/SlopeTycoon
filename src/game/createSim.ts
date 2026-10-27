@@ -695,6 +695,9 @@ export function createSim(opts: SimOptions) {
     spend: (a) => { economy.spend('maintenance', a); },
     breakdownFactor: () => staff.breakdownFactor() * staffUpgrades.mod('liftBreakdown'),
     repairFactor: () => staffUpgrades.mod('liftRepairTime'),
+    // planned service: lift-mechanics training and crew morale (careful crew < 1 < sloppy crew) shorten it and cut the bill; untouched = exactly 1
+    today: () => game.date.year * DAYS_PER_YEAR + game.date.day,
+    serviceFactor: () => { const m = 0.6 + 0.4 * staff.breakdownFactor(); return { time: staffUpgrades.mod('liftRepairTime') * m, cost: (0.5 + 0.5 * staffUpgrades.mod('liftBreakdown')) * m }; },
   });
   /** Off-season relief bookkeeping (derived, not saved): consecutive idle days per venue + dollars saved this game session. */
   const closedDays = new Map<number, { sig: number; idle: number }>();

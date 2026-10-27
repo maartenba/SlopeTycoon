@@ -12,6 +12,7 @@ import { LiftTool } from './LiftTool';
 import { registerComponents } from '../ui';
 import type { StLiftInspector } from '../ui/components/StLiftInspector';
 import type { LiftOps } from '../sim/ops/LiftOps';
+import { maintDate } from '../ui/maintFormat';
 import type { Undo } from './UndoActions';
 
 export interface LiftToolsDeps {
@@ -97,6 +98,14 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
       fault: s.fault ? { kind: s.fault.kind, rushed: s.fault.rushed } : null, repairEtaHours: s.repairEtaHours, stranded: s.stranded,
       lastInspectionDaysAgo: s.lastInspectionDaysAgo, nextInspectionDays: s.nextInspectionDays, riskPerDay: s.breakdownRiskPerDay, hasWorkshop: s.hasWorkshop,
       energyPerHour: ops!.energyPerHour(l), queue: 0,
+      service: ((): NonNullable<NonNullable<ReturnType<typeof opsInfo>>['service']> => {
+        const v = s.service;
+        return {
+          state: v.state, policy: v.policy, lastLabel: v.lastDay === null ? null : maintDate(v.lastDay), nextLabel: v.nextDay === null ? null : maintDate(v.nextDay), sinceDays: v.sinceDays,
+          window: v.windowAuto ? 'auto' : String(v.windowMonth), autoMonth: v.autoMonth, plan: { days: v.plan.days, cost: v.plan.cost, level: v.plan.level },
+          riskMult: v.riskMult, skipRiskMult: v.skipRiskMult, inServiceHours: v.inServiceHours, canServiceNow: ops!.canServiceNow(l.id),
+        };
+      })(),
     };
   };
   const showInspector = (): void => {
@@ -175,6 +184,8 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
       setEco: (id, v) => { ops?.setEco(id, v); showInspector(); },
       setSeason: (id, p, v) => { ops?.setSeason(id, p, v); showInspector(); },
       setInspection: (id, lv) => { ops?.setInspection(id, lv); showInspector(); },
+      setServiceWindow: (id, m) => { ops?.setServiceWindow(id, m); showInspector(); d.onChanged?.(); },
+      serviceNow: (id) => { if (!ops?.serviceNow(id)) d.toast('Cannot service now: the lift must be empty and not broken', 'warn'); showInspector(); d.onChanged?.(); },
       inspectNow: (id) => { if (!ops?.inspectNow(id, 'basic')) d.toast('Cannot inspect right now', 'warn'); showInspector(); },
       rename: d.renameLift ? (id, n) => { d.renameLift?.(id, n); showInspector(); d.onChanged?.(); } : undefined,
       repair: (id) => { if (!ops?.repairNow(id)) d.toast('Nothing to repair right now', 'warn'); showInspector(); },

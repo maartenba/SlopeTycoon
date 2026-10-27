@@ -24,6 +24,7 @@ import { Precipitation } from '@/render/Precipitation';
 import { NatureView } from '@/render/NatureView';
 import { VillageDecor } from '@/render/VillageDecor';
 import { buildEventsView } from '@/ui/eventsFormat';
+import { maintDate } from '@/ui/maintFormat';
 import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import type { DressingWorld } from '@/render/festival/placeDressing';
@@ -715,7 +716,7 @@ const opsInfo = (id: number, type: string): { kind: 'groomer'; vehicles: number;
     const cb = buildings.get(id);
     if (!cb) return undefined;
     const alt = cond.altitude(Math.floor(cb.x + cb.w / 2), Math.floor(cb.y + cb.h / 2));
-    return { kind: 'cannon', info: cannonInfo(cb, { sm: opsRef.snowmaking, reservoirs: opsRef.reservoirs, reservoirCentres: buildings.all().filter((q) => q.type === 'reservoir' && q.active).map((q) => ({ x: q.x + q.w / 2, y: q.y + q.h / 2 })), pipeRange: BUILDINGS.reservoir?.serviceRadius ?? 24, altM: altitudeMetres(alt), tempNow: weather.temperatureAt(alt, currentHour()) }) };
+    return { kind: 'cannon', info: cannonInfo(cb, { sm: opsRef.snowmaking, reservoirs: opsRef.reservoirs, reservoirCentres: buildings.all().filter((q) => q.type === 'reservoir' && q.active).map((q) => ({ x: q.x + q.w / 2, y: q.y + q.h / 2 })), pipeRange: BUILDINGS.reservoir?.serviceRadius ?? 24, altM: altitudeMetres(alt), tempNow: weather.temperatureAt(alt, currentHour()), snowlineM: snowlineNow(), highNow: weather.temperatureAt(alt, 15) }) };
   }
   return undefined;
 };
@@ -2276,6 +2277,27 @@ if (ui && !DEMO) {
     keepOnly: (p, ids) => sim.liftOps.keepOnly(p, new Set(ids)),
     projected: (p) => sim.liftOps.projectedDailyEnergy(p),
     staff: {
+    maint: {
+      policy: () => sim.liftOps.getPolicy(), setPolicy: (p) => { sim.liftOps.setPolicy(p); refreshUi(); },
+      rows: () => lifts.all().slice().sort((a, b) => a.id - b.id).map((l) => {
+        const v = sim.liftOps.serviceStatus(l);
+        return { id: l.id, name: liftName(l.kind, l.id).replace(/ \d+$/, ''), state: v.state, window: v.windowAuto ? 'auto' : String(v.windowMonth), autoMonth: v.autoMonth, nextLabel: v.nextDay === null ? null : maintDate(v.nextDay), lastLabel: v.lastDay === null ? null : maintDate(v.lastDay), sinceDays: v.sinceDays, days: v.plan.days, cost: v.plan.cost, riskMult: v.riskMult, canServiceNow: sim.liftOps.canServiceNow(l.id), servicing: v.inServiceHours > 0 };
+      }),
+      setWindow: (id, m) => sim.liftOps.setServiceWindow(id, m), scheduleAll: (m) => sim.liftOps.scheduleAll(m),
+      serviceNow: (id) => { const ok = sim.liftOps.serviceNow(id); if (!ok) toast('Cannot service now: the lift must be empty and not broken', 'warn'); refreshUi(); return ok; },
+      projected: () => sim.liftOps.projectedServiceCost(30),
+    },
+    snow: {
+      mode: () => sim.ops.snowmaking.mode,
+      setMode: (m) => { sim.ops.snowmaking.setMode(m); covOverlay.invalidate(); refreshUi(); },
+      summary: () => {
+        const ids = buildings.all().filter((b) => b.type === 'snowCannon').map((b) => b.id), sm = sim.ops.snowmaking;
+        let running = 0, paused = 0, off = 0;
+        for (const id of ids) { if (sm.isMothballed(id)) off++; else { const st = sm.statsOf(id)?.state; if (st === 'running') running++; else if (st === 'paused') paused++; } }
+        return { total: ids.length, running, paused, off, snowlineM: snowlineNow() };
+      },
+      setAll: (on) => { sim.ops.snowmaking.setAll(buildings.all().filter((b) => b.type === 'snowCannon').map((b) => b.id), on); covOverlay.invalidate(); refreshUi(); },
+    },
       pools: () => { const n = sim.staff.needs(true); return STAFF_POOLS.map((id) => ({ id, label: POOL_INFO[id].label, icon: POOL_INFO[id].icon, auto: sim.staff.isAuto(id), count: sim.staff.headcount(id), need: n[id], fill: sim.staff.fill(id), slows: POOL_INFO[id].slows })); },
       setAuto: (id, v) => sim.staff.setAuto(id, v), setCount: (id, n) => sim.staff.setCount(id, n),
       wage: () => sim.staff.wage, setWage: (w) => sim.staff.setWage(w),

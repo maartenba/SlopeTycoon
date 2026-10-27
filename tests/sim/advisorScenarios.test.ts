@@ -275,6 +275,13 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+  {
+    id: 'lift.service',
+    setup: (s) => { s.game.date.day = seasonStartDay('winter') - 10; for (const l of s.lifts.all()) l.ops!.maint = { last: -400, count: 0 }; },
+    fixes: [
+      { name: 'serviced', apply: (s) => { for (const l of s.lifts.all()) l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } },
+    ],
+  },
     id: 'goal.next', daily: true,
     setup: () => { /* active goals exist */ },
     fixes: [

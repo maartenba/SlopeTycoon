@@ -1,7 +1,7 @@
 import type { GameEventName, GameEvents } from '@/core/events';
 import { GAME_EVENT_NAMES } from '@/core/events';
 import { displayName, sentence } from './text';
-import { SIM_MONTHS_SHORT } from '../sim/calendar';
+import { SIM_MONTHS_SHORT, REAL_MONTHS } from '../sim/calendar';
 
 export type Severity = 'info' | 'good' | 'warn' | 'bad';
 /**
@@ -134,6 +134,10 @@ export const NEWS_FORMATTERS: Table = {
   'lift:repaired': (e, c) => ({ text: `${liftLabel(c, e.id)} repaired after ${e.hours} h`, severity: 'good', tier: 'info', icon: '🔧', key: `lift:repaired:${e.id}`, category: 'incident', focus: at(c, 'lift', e.id) }),
   'incident:stranded': (e, c) => ({ text: `${plural(e.guests, 'guest')} stuck on ${liftLabel(c, e.liftId)}`, severity: 'warn', tier: 'important', icon: '🚠', key: `stranded:${e.liftId}`, category: 'incident', focus: xy(e.x, e.y, 'lift', e.liftId) }),
   'ops:schedule': () => null,
+  'ops:serviceSoon': (e) => ({ text: `Lift service starts tomorrow: ${plural(e.count, 'lift')} closed for ~${e.days} days in ${REAL_MONTHS[e.month] ?? 'the next month'}`, severity: 'info', tier: 'important', icon: '🛠️', key: 'lift:serviceSoon', category: 'incident' }),
+  'lift:serviceStarted': 'ignored', // announced the day before; the lift status says "service"
+  'lift:serviced': (e, c) => ({ text: `${liftLabel(c, e.id)} serviced (${e.days} d): condition ${Math.round(e.condition)}%`, severity: 'good', tier: 'info', icon: '🛠️', key: `lift:serviced:${e.id}`, category: 'incident', focus: at(c, 'lift', e.id) }),
+  'lift:serviceOverdue': (e, c) => ({ text: `${liftLabel(c, e.id)} service ${e.level === 'critical' ? 'long overdue' : 'overdue'} (${e.days} d late): breakdowns more likely`, severity: e.level === 'critical' ? 'bad' : 'warn', tier: 'important', icon: '🛠️', key: `lift:serviceOverdue:${e.id}`, category: 'incident', focus: at(c, 'lift', e.id) }),
   'scenario:objective': (e) => ({ text: `Objective complete: ${e.title}`, severity: 'good', tier: 'info', icon: '✔️', key: `scenario:${e.id}`, category: 'milestone' }),
   'scenario:finished': 'ignored', // the result dialog covers it
   'milestone': (e) => ({ text: e.major ? `Milestone: ${e.title}` : e.title, severity: 'good', tier: e.major ? 'important' : 'info', icon: e.major ? '🏁' : '✔️', key: `milestone:${e.id}`, category: 'milestone' }),
@@ -170,7 +174,7 @@ export function formatEvent<K extends GameEventName>(name: K, payload: GameEvent
 export const NON_SPATIAL_EVENTS: ReadonlySet<GameEventName> = new Set<GameEventName>([
   'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened', 'piste:opened',
   'weather:changed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'ops:grooming', 'incident:resolved', 'incident:escalated',
-  'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'ops:schedule', 'finance:monthClosed', 'rating:changed',
+  'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'ops:schedule', 'ops:serviceSoon', 'lift:serviceStarted', 'finance:monthClosed', 'rating:changed',
   'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished',
 ]);
 

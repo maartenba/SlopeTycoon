@@ -17,7 +17,7 @@ export const EVENT_SAMPLES: { [K in GameEventName]: GameEvents[K] } = {
   'incident:created': { id: 1, kind: 'injury', severity: 2, x: 14, y: 15, guestId: 7 }, 'incident:resolved': { id: 1, responder: 'patrol', responseTicks: 4, outcome: 'hospitalised', severe: true },
   'incident:escalated': { id: 1, to: 'heli' }, 'finance:bankruptcyWarning': { money: -500, daysLeft: 5 }, 'finance:bankrupt': { money: -9000, day: 3 },
   'finance:debtWarning': { money: -900, negDays: 8, level: 2 }, 'finance:declaredBankrupt': { money: -900, day: 4, reason: 'auto' },
-  'lift:broken': { id: 2, kind: 'chair4d', stranded: 3 }, 'lift:repaired': { id: 2, hours: 5 }, 'incident:stranded': { liftId: 2, guests: 3, x: 16, y: 17 },
+  'lift:broken': { id: 2, kind: 'chair4d', stranded: 3 }, 'lift:repaired': { id: 2, hours: 5 }, 'ops:serviceSoon': { count: 3, month: 3, days: 3 }, 'lift:serviceStarted': { id: 2, days: 3, cost: 420 }, 'lift:serviced': { id: 2, days: 3, condition: 96 }, 'lift:serviceOverdue': { id: 2, level: 'overdue', days: 12 }, 'incident:stranded': { liftId: 2, guests: 3, x: 16, y: 17 },
   'ops:schedule': { profile: 'winter', operating: 2, total: 3 }, 'finance:monthClosed': { year: 0, month: 2, net: 1200, income: 3000, expense: 1800 },
   'rating:changed': { stars: 3, previous: 4, reason: 'queues are too long' }, 'day:changed': { year: 0, day: 3 }, 'month:changed': { year: 0, month: 1 }, 'year:changed': { year: 1 }, 'year:report': { year: 1 }, 'time:hour': { hour: 9 },
   'family:dropoff': { group: 1, venueId: 3, venue: 'kidsGround', kids: 2, parents: 2 }, 'family:regroup': { group: 1, reason: 'lunch', venueId: 3 },

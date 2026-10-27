@@ -1,12 +1,13 @@
 import { LIFTS, normalizeLiftKind } from '../../config/lifts';
-import { ENERGY_COST_MULT, LIFT_OPS } from '../../config/liftOps';
-import { GAME_MINUTES_PER_TICK, DAYS_PER_YEAR } from '../../config/balance';
+import { ENERGY_COST_MULT, LIFT_OPS, LIFT_SERVICE } from '../../config/liftOps';
+import { GAME_MINUTES_PER_TICK, DAYS_PER_YEAR, DAYS_PER_MONTH } from '../../config/balance';
+import { simDayOf, realMonthOfDay } from '../calendar';
 import type { GameState } from '../../core/GameState';
 import type { GameBus } from '../../core/events';
 import { Rng } from '../../core/Rng';
 import { hourOfDay, seasonOf } from '../Clock';
 import { autoLiftHours } from '../Daylight';
-import { liftStats, upkeepPerDay, samplePath, liftPath, type InspectionLevel, type LiftData, type LiftFault, type LiftHold, type LiftOpMode, type LiftOpsData } from '../Lift';
+import { liftStats, upkeepPerDay, samplePath, liftPath, type InspectionLevel, type LiftMaint, type LiftData, type LiftFault, type LiftHold, type LiftOpMode, type LiftOpsData } from '../Lift';
 import type { Incident } from './Incidents';
 import { Sev } from './Incidents';
 
@@ -15,7 +16,7 @@ export const SEASON_PROFILES: readonly SeasonProfile[] = ['winter', 'shoulder', 
 export const profileOfSeason = (s: string): SeasonProfile => (s === 'winter' ? 'winter' : s === 'summer' ? 'summer' : 'shoulder');
 
 /** A lift counts as "open for business" for ratings/arrivals when open, or only closed for the night / inspection. */
-export const liftOpenForBusiness = (l: Pick<LiftData, 'open' | 'opsReason'>): boolean => l.open || l.opsReason === 'hours' || l.opsReason === 'inspection';
+export const liftOpenForBusiness = (l: Pick<LiftData, 'open' | 'opsReason'>): boolean => l.open || l.opsReason === 'hours' || l.opsReason === 'inspection' || l.opsReason === 'service'; // planned closures are announced and do not count against the rating
 
 export interface LiftOpsDeps {
   lifts: () => LiftData[];
@@ -38,6 +39,29 @@ export interface LiftOpsDeps {
   breakdownFactor?: () => number;
   /** Lift-mechanics training on repair duration (1 = untouched). */
   repairFactor?: () => number;
+  /** Planned service: duration and cost multipliers from crew morale x lift-mechanics training (1 = untouched). */
+  serviceFactor?: () => { time: number; cost: number };
+  /** Live absolute day (year x 180 + day) for read-only queries between ticks. */
+  today?: () => number;
+}
+
+export type MaintPolicy = 'auto' | 'manual';
+export type ServiceState = 'ok' | 'due' | 'overdue' | 'critical';
+export type ServiceLevel = 'basic' | 'thorough';
+export interface ServicePlan { level: ServiceLevel; days: number; cost: number }
+export interface ServiceStatus {
+  state: ServiceState; policy: MaintPolicy;
+  /** Days since the last service (commissioning counts until the first one). */
+  sinceDays: number; lastDay: number | null; lastLevel: ServiceLevel | null; count: number;
+  /** Real month index (0 = January) of the window; `windowAuto` when it is the automatic pick. */
+  windowMonth: number; windowAuto: boolean; autoMonth: number;
+  /** Absolute day the next service starts (earliest), null when the policy is Manual. */
+  nextDay: number | null;
+  plan: ServicePlan;
+  /** Breakdown-risk multiplier from the service state now (<1 fresh, >1 overdue) and if the next service is skipped. */
+  riskMult: number; skipRiskMult: number;
+  /** Closed for service right now: hours left. */
+  inServiceHours: number;
 }
 
 export interface LiftOpsStatus {
@@ -45,6 +69,7 @@ export interface LiftOpsStatus {
   fault: LiftFault | null; repairEtaHours: number; stranded: number;
   lastInspectionDaysAgo: number | null; nextInspectionDays: number | null; inspection: InspectionLevel;
   breakdownRiskPerDay: number; hasWorkshop: boolean;
+  service: ServiceStatus;
 }
 
 const HPT = GAME_MINUTES_PER_TICK / 60; // hours per tick
@@ -63,6 +88,7 @@ export const inHours = (hr: number, from: number, to: number): boolean => (from 
 /** Lift operations: open/close modes, schedules, energy, wear, inspections, breakdowns, stranded guests, repairs. Deterministic (seeded). */
 export class LiftOps {
   private rng: Rng;
+  private policy: MaintPolicy = 'auto';
   private tick = 0;
   private absDay = -1;
   private profile: SeasonProfile | null = null;
@@ -107,7 +133,124 @@ export class LiftOps {
     const wk = this.weatherKey(l);
     const insp = o.inspection === 'none' ? 1 : this.inspectionFresh(o) ? LIFT_OPS.inspectionRisk[o.inspection] : 1;
     const wear = 1 + (100 - o.condition) / 25;
-    return LIFT_OPS.breakdownPerHour * wear * wear * (1 + o.ageDays / 720) * (wk ? LIFT_OPS.breakdownWeather[wk] : 1) * insp * def.wearRate * (this.d.breakdownFactor?.() ?? 1);
+    return LIFT_OPS.breakdownPerHour * wear * wear * (1 + o.ageDays / 720) * (wk ? LIFT_OPS.breakdownWeather[wk] : 1) * insp * this.serviceRiskMult(o, this.sinceDays(o)) * def.wearRate * (this.d.breakdownFactor?.() ?? 1);
+  }
+
+  // ---------- planned maintenance ----------
+
+  /** Today as an absolute day: the live date when wired (UI / advisor read between ticks), else the last ticked day. */
+  private now(): number { return this.d.today?.() ?? this.absDay; }
+
+  /** Days since the last service (commissioning until the first one). Lifts LiftOps has not seen yet read 0. */
+  private sinceDays(o: LiftOpsData): number { return o.maint ? Math.max(0, this.now() - o.maint.last) : 0; }
+
+  /** Breakdown multiplier from the service state: fresh service relieves (fading over a year), overdue escalates. */
+  private serviceRiskMult(o: LiftOpsData, since: number): number {
+    const S = LIFT_SERVICE, over = since - S.intervalDays;
+    if (over > 0) return 1 + S.overdueSlope * Math.min(over, S.overdueCapDays) / 90;
+    const m = o.maint;
+    if (!m || m.count === 0 || !m.level) return 1;
+    return 1 - S[m.level].riskBonus * (1 - since / S.intervalDays);
+  }
+
+  private stateOf(since: number): ServiceState {
+    const S = LIFT_SERVICE;
+    return since > S.criticalDays ? 'critical' : since > S.intervalDays ? 'overdue' : since >= S.intervalDays - S.dueSoonDays ? 'due' : 'ok';
+  }
+
+  /** Window month (real index, 0 = January): the chosen one, else April for winter lifts and October for summer-only lifts. */
+  windowMonth(l: LiftData): number {
+    const w = this.ops(l).maint?.window;
+    return w !== undefined ? w : this.autoMonth(l);
+  }
+  /** The automatic window month of a lift (ignores a chosen window). */
+  autoMonth(l: LiftData): number {
+    const o = this.ops(l);
+    return !o.seasons.winter && (o.seasons.summer || o.seasons.shoulder) ? LIFT_SERVICE.autoMonthSummer : LIFT_SERVICE.autoMonthWinter;
+  }
+
+  /** Planned service for the lift: level follows the inspection setting (thorough, else basic). Length scales with condition and lift length, cost with length and workshop. */
+  servicePlan(l: LiftData, level?: ServiceLevel): ServicePlan {
+    const o = this.ops(l), S = LIFT_SERVICE, lv = level ?? (o.inspection === 'thorough' ? 'thorough' : 'basic'), B = S[lv];
+    const len = this.info(l).lengthM, f = this.d.serviceFactor?.() ?? { time: 1, cost: 1 };
+    const raw = B.days + (100 - o.condition) / S.conditionDays + (len > S.longLiftM ? S.longLiftDays : 0);
+    const days = Math.max(1, Math.round(raw * f.time * (this.d.hasWorkshop() ? 1 : 1.25)));
+    const cost = (S.labourPerDay * days + B.parts * (1 + (len / 100) * S.partsPer100m)) * (this.d.hasWorkshop() ? S.workshopCost : S.contractorCost) * f.cost;
+    return { level: lv, days, cost };
+  }
+
+  private minGap(o: LiftOpsData): number { return o.maint && o.maint.count > 0 ? LIFT_SERVICE.minGapAfterServiceDays : LIFT_SERVICE.minGapDays; }
+
+  private windowStart(abs: number, month: number): number { return abs - (((abs % DAYS_PER_YEAR) + DAYS_PER_YEAR) % DAYS_PER_YEAR) + simDayOf(month, 1); }
+
+  /** Earliest absolute day the next planned service may start (Auto policy), or null. A window already open and not yet served returns today. */
+  nextServiceDay(l: LiftData): number | null {
+    if (this.policy === 'manual') return null;
+    const o = this.ops(l), last = o.maint?.last ?? this.now(), m = this.windowMonth(l);
+    for (let k = -1; k < 3; k++) {
+      const c = this.windowStart(this.now(), m) + DAYS_PER_YEAR * k, end = c + DAYS_PER_MONTH - 1;
+      const earliest = Math.max(c, last + this.minGap(o));
+      if (earliest <= end && end >= this.now()) return Math.max(earliest, this.now());
+    }
+    return null;
+  }
+
+  serviceStatus(l: LiftData): ServiceStatus {
+    const o = this.ops(l), since = this.sinceDays(o), next = this.nextServiceDay(l);
+    const plan = this.servicePlan(l), f = o.fault;
+    // if the service is skipped: where the risk stands 90 days after it falls due (never below 'due', so a fresh service cannot read as a bargain)
+    const skip = this.serviceRiskMult(o, Math.max(since, LIFT_SERVICE.intervalDays) + 90);
+    return {
+      state: this.stateOf(since), policy: this.policy, sinceDays: since, lastDay: o.maint && o.maint.count > 0 ? o.maint.last : null, lastLevel: o.maint?.level ?? null, count: o.maint?.count ?? 0,
+      windowMonth: this.windowMonth(l), autoMonth: this.autoMonth(l), windowAuto: o.maint?.window === undefined, nextDay: next, plan,
+      riskMult: this.serviceRiskMult(o, since), skipRiskMult: skip, inServiceHours: f?.kind === 'service' ? Math.max(0, (f.endTick - this.tick) * HPT) : 0,
+    };
+  }
+
+  setPolicy(p: MaintPolicy): void { this.policy = p; }
+  getPolicy(): MaintPolicy { return this.policy; }
+  /** Pick a service month (real index 0..11) or 'auto' for one lift. */
+  setServiceWindow(id: number, month: number | 'auto'): void {
+    const l = this.find(id); if (!l) return;
+    const m = this.maintOf(l);
+    if (month === 'auto') delete m.window; else m.window = ((Math.floor(month) % 12) + 12) % 12;
+  }
+  /** Bulk: every lift services in `month` (real index). */
+  scheduleAll(month: number | 'auto'): void { for (const l of this.d.lifts()) this.setServiceWindow(l.id, month); }
+  private maintOf(l: LiftData): LiftMaint { const o = this.ops(l); return o.maint ?? (o.maint = { last: Math.max(0, this.now()), count: 0 }); }
+
+  /** Service now. Only when the lift carries nobody and nobody queues (guests are never stranded) and it is not broken. */
+  serviceNow(id: number, level?: ServiceLevel): boolean {
+    const l = this.find(id); if (!l) return false;
+    const o = this.ops(l);
+    if (o.fault || this.d.queues.ridersOn(l.id) > 0 || this.d.queues.queueLength(l.id) > 0) return false;
+    return this.startService(l, o, level);
+  }
+
+  /** Whether a service could start right now (empty, not faulted). */
+  canServiceNow(id: number): boolean {
+    const l = this.find(id); if (!l) return false;
+    return !this.ops(l).fault && this.d.queues.ridersOn(l.id) === 0 && this.d.queues.queueLength(l.id) === 0;
+  }
+
+  private startService(l: LiftData, o: LiftOpsData, level?: ServiceLevel): boolean {
+    const plan = this.servicePlan(l, level);
+    this.maintOf(l);
+    this.d.spend?.(plan.cost);
+    o.fault = { kind: 'service', startTick: this.tick, endTick: this.tick + Math.max(1, Math.ceil((plan.days * 24) / HPT)), stranded: 0, incidentId: 0, level: plan.level };
+    this.applyHold(l, this.hourNow, this.profile ?? 'winter');
+    this.d.bus?.emit('lift:serviceStarted', { id: l.id, days: plan.days, cost: Math.round(plan.cost) });
+    return true;
+  }
+
+  /** Projected service spend ($) of lifts whose next service starts within `days` days from now (Auto policy). */
+  projectedServiceCost(days = 30): { cost: number; count: number } {
+    let cost = 0, count = 0;
+    for (const l of this.d.lifts()) {
+      const n = this.nextServiceDay(l);
+      if (n !== null && n < this.now() + days) { cost += this.servicePlan(l).cost; count++; }
+    }
+    return { cost, count };
   }
 
   private inspectionFresh(o: LiftOpsData): boolean {
@@ -212,7 +355,7 @@ export class LiftOps {
       repairEtaHours: f ? Math.max(0, (f.endTick - this.tick) * HPT) : 0, stranded: f && !l.evac ? f.stranded : 0,
       lastInspectionDaysAgo: o.lastInspection >= 0 ? this.absDay - o.lastInspection : null,
       nextInspectionDays: I && o.lastInspection >= 0 ? Math.max(0, I.everyDays - (this.absDay - o.lastInspection)) : null,
-      inspection: o.inspection, breakdownRiskPerDay: 1 - Math.pow(1 - this.breakdownPerHour(l), LIFT_OPS.nominalHours), hasWorkshop: this.d.hasWorkshop(),
+      inspection: o.inspection, service: this.serviceStatus(l), breakdownRiskPerDay: 1 - Math.pow(1 - this.breakdownPerHour(l), LIFT_OPS.nominalHours), hasWorkshop: this.d.hasWorkshop(),
     };
   }
 
@@ -235,7 +378,7 @@ export class LiftOps {
   // ---------- tick ----------
 
   private holdFor(l: LiftData, o: LiftOpsData, hr: number, profile: SeasonProfile): LiftHold | null {
-    if (o.fault) return o.fault.kind === 'inspection' ? 'inspection' : 'fault';
+    if (o.fault) return o.fault.kind === 'inspection' ? 'inspection' : o.fault.kind === 'service' ? 'service' : 'fault';
     if (o.mode === 'closed') return 'manual';
     const def = LIFTS[normalizeLiftKind(l.kind)], w = this.d.weather();
     if (w.kind === 'storm' && 0.55 + 0.45 * Math.min(1, w.intensity) > def.windTolerance) return 'wind';
@@ -268,7 +411,10 @@ export class LiftOps {
     for (const l of lifts) {
       const o = this.ops(l);
       if (o.daylight) this.syncDaylight(o, state.date.day);
+      if (!o.maint) o.maint = { last: abs, count: 0 };
       if (o.fault) this.stepFault(l, o);
+      // planned annual service: Auto policy, inside the window, never with riders or a queue (starts at night / off-season / whenever the lift is empty)
+      if (!o.fault && this.policy === 'auto' && this.inWindow(l, o, abs) && this.d.queues.ridersOn(l.id) === 0 && this.d.queues.queueLength(l.id) === 0) this.startService(l, o);
       // periodic inspection: start while the lift is not running (night / off-season), or when badly overdue
       if (!o.fault && o.inspection !== 'none') {
         const I = LIFT_OPS.inspection[o.inspection];
@@ -293,6 +439,11 @@ export class LiftOps {
     this.cache.forEach((_v, id) => { if (!lifts.some((l) => l.id === id)) this.cache.delete(id); });
   }
 
+  private inWindow(l: LiftData, o: LiftOpsData, abs: number): boolean {
+    const c = this.windowStart(abs, this.windowMonth(l));
+    return abs >= c && abs < c + DAYS_PER_MONTH && abs - (o.maint?.last ?? abs) >= this.minGap(o);
+  }
+
   private newDay(abs: number, profile: SeasonProfile, lifts: LiftData[]): void {
     const first = this.absDay < 0;
     this.absDay = abs;
@@ -304,6 +455,18 @@ export class LiftOps {
         o.condition += r;
         this.d.spend?.(r * LIFT_OPS.routineCostPerPoint * (this.d.hasWorkshop() ? 1 : 1.5));
       }
+    }
+    // planned service: announce the day before a window opens; escalate overdue lifts
+    if (!first) {
+      let soon = 0, days = 0, month = -1;
+      for (const l of lifts) {
+        const o = this.ops(l), m = o.maint;
+        if (!m) continue;
+        if (this.policy === 'auto' && !o.fault && this.inWindow(l, o, abs + 1) && !this.inWindow(l, o, abs)) { soon++; days = Math.max(days, this.servicePlan(l).days); month = realMonthOfDay(abs + 1); }
+        const st = this.stateOf(abs - m.last), lvl = st === 'critical' ? 2 : st === 'overdue' ? 1 : 0;
+        if (lvl > (m.notified ?? 0)) { m.notified = lvl; this.d.bus?.emit('lift:serviceOverdue', { id: l.id, level: lvl === 2 ? 'critical' : 'overdue', days: Math.max(0, abs - m.last - LIFT_SERVICE.intervalDays) }); }
+      }
+      if (soon > 0) this.d.bus?.emit('ops:serviceSoon', { count: soon, month, days });
     }
     if (this.profile !== profile) {
       const prev = this.profile; this.profile = profile;
@@ -360,7 +523,13 @@ export class LiftOps {
     if (this.tick >= f.endTick) {
       const hours = (this.tick - f.startTick) * HPT;
       if (inc) this.d.incidents?.resolve(inc, 'left', 'none'); // repaired before anyone came: the ride resumes
-      if (f.kind === 'overhaul') o.condition = 100;
+      if (f.kind === 'service') {
+        const lv = f.level === 'thorough' ? 'thorough' : 'basic', B = LIFT_SERVICE[lv], m = this.maintOf(l);
+        o.condition = Math.max(o.condition, B.condition); o.ageDays = Math.round(o.ageDays * B.ageKept); o.lastInspection = this.absDay;
+        m.last = this.absDay; m.count++; m.level = lv; m.notified = 0;
+        this.d.bus?.emit('lift:serviced', { id: l.id, days: Math.max(1, Math.round(hours / 24)), condition: o.condition });
+      }
+      else if (f.kind === 'overhaul') o.condition = 100;
       else if (f.kind === 'inspection') { o.condition = Math.min(100, o.condition + (f.level && f.level !== 'none' ? LIFT_OPS.inspection[f.level].boost : 0)); o.lastInspection = this.absDay; }
       else o.condition = Math.max(o.condition, 80);
       o.fault = null; l.evac = false;
@@ -368,9 +537,10 @@ export class LiftOps {
     }
   }
 
-  serialize(): unknown { return { rng: this.rng.getState(), absDay: this.absDay, profile: this.profile }; }
+  serialize(): unknown { return { rng: this.rng.getState(), absDay: this.absDay, profile: this.profile, ...(this.policy === 'manual' ? { policy: 'manual' } : {}) }; }
   load(data: unknown): void {
-    const s = data as { rng: number; absDay: number; profile: SeasonProfile | null } | undefined;
+    const s = data as { rng: number; absDay: number; profile: SeasonProfile | null; policy?: MaintPolicy } | undefined;
+    this.policy = s?.policy === 'manual' ? 'manual' : 'auto';
     if (!s) return;
     this.rng.setState(s.rng); this.absDay = s.absDay; this.profile = s.profile;
   }

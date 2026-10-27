@@ -1,6 +1,8 @@
 import { makeSelect } from './StSelect';
 import { formatMoney } from '../format';
 import { StElement } from './StElement';
+import { REAL_MONTHS } from '../../sim/calendar';
+import { stateLabel, windowOptions, type ServiceStateLabel } from '../maintFormat';
 import type { StaffPoolId, WageLevel } from '../../config/staff';
 
 export type OpsProfile = 'winter' | 'shoulder' | 'summer';
@@ -20,7 +22,32 @@ export interface StaffApi {
   upgrades(): StaffUpgradeRow[];
   train(id: string): string | null;
 }
+/** Snowmaking control: global mode (On / Off / Auto) + bulk switch. */
+export interface SnowApi {
+  mode(): 'on' | 'off' | 'auto';
+  setMode(m: 'on' | 'off' | 'auto'): void;
+  summary(): { total: number; running: number; paused: number; off: number; snowlineM: number };
+  /** Turn every cannon on (true) or off (false). */
+  setAll(on: boolean): void;
+}
+/** One lift in the Maintenance tab (planned annual service, sim/ops/LiftOps.ts). */
+export interface MaintRow {
+  id: number; name: string; state: ServiceStateLabel; window: string; autoMonth: number;
+  nextLabel: string | null; lastLabel: string | null; sinceDays: number; days: number; cost: number; riskMult: number; canServiceNow: boolean; servicing: boolean;
+}
+/** Maintenance tab: global policy, per-lift windows, bulk scheduling, 30-day cost projection. */
+export interface MaintApi {
+  policy(): 'auto' | 'manual';
+  setPolicy(p: 'auto' | 'manual'): void;
+  rows(): MaintRow[];
+  setWindow(id: number, month: number | 'auto'): void;
+  /** Bulk: every lift services in this real month (0 = January). */
+  scheduleAll(month: number | 'auto'): void;
+  serviceNow(id: number): boolean;
+  projected(): { cost: number; count: number };
+}
 export interface OperationsApi {
+  maint?: MaintApi;
   staff?: StaffApi;
   rows(): OpsRow[];
   setMode(id: number, mode: 'auto' | 'open' | 'closed'): void;
@@ -77,7 +104,7 @@ export class StOperations extends StElement {
   private api: OperationsApi | null = null;
   private wrap = el('div', 'wrap');
   private pending = false;
-  private tab: 'lifts' | 'staff' = 'lifts';
+  private tab: 'lifts' | 'maint' | 'staff' = 'lifts';
   protected css(): string { return css; }
   constructor() { super(); this.root.appendChild(this.wrap); }
   bind(api: OperationsApi): void { this.api = api; this.refresh(); }
@@ -90,11 +117,11 @@ export class StOperations extends StElement {
   refresh(): void {
     const a = this.api;
     if (!a) return;
-    const body = this.tab === 'staff' && a.staff ? this.staffView(a.staff) : this.liftsView(a);
+    const body = this.tab === 'staff' && a.staff ? this.staffView(a.staff) : this.tab === 'maint' && a.maint ? this.maintView(a.maint) : this.liftsView(a);
     this.wrap.classList.toggle('staff', this.tab === 'staff' && !!a.staff);
-    if (!a.staff) { this.wrap.replaceChildren(...body); return; }
+    if (!a.staff && !a.maint) { this.wrap.replaceChildren(...body); return; }
     const tabs = el('div', 'tabs');
-    for (const [id, label] of [['lifts', 'Lifts'], ['staff', 'Staff']] as const) {
+    for (const [id, label] of ([['lifts', 'Lifts'], ...(a.maint ? [['maint', 'Maintenance']] : []), ...(a.staff ? [['staff', 'Staff']] : [])] as Array<['lifts' | 'maint' | 'staff', string]>)) {
       const b = el('button', `tab${this.tab === id ? ' active' : ''}`, label);
       b.dataset.tab = id;
       b.addEventListener('click', () => { this.tab = id; this.refresh(); });
@@ -162,6 +189,66 @@ export class StOperations extends StElement {
   }
 
   private liftsView(a: OperationsApi): HTMLElement[] {
+  /** Snowmaking: mode buttons, bulk on/off and a status line (only when the resort has cannons). */
+  private snowRow(a: OperationsApi): HTMLElement[] {
+    const s = a.snow?.summary();
+    if (!a.snow || !s || s.total === 0) return [];
+    const api = a.snow, mode = api.mode(), box = el('div', 'row snow');
+    box.dataset.role = 'snow-control';
+    box.append(el('strong', '', 'Snowmaking'));
+    const tips = { on: 'Cannons run whenever it is cold enough.', off: 'All cannons mothballed: no energy or water, 15% upkeep.', auto: 'Cannons also pause while the snowline is above your pistes or the daily high is above +4 °C, and resume when it cools.' };
+    for (const [id, label] of [['on', 'On'], ['auto', 'Auto'], ['off', 'Off']] as const) {
+      const b = el('button', `tab${mode === id ? ' active' : ''}`, label); b.dataset.snowMode = id; b.title = tips[id]; b.setAttribute('aria-pressed', String(mode === id));
+      b.addEventListener('click', () => { api.setMode(id); this.refresh(); });
+      box.append(b);
+    }
+    const allOff = s.off >= s.total;
+    const bulk = el('button', '', allOff ? 'Turn all cannons on' : 'Turn all cannons off'); bulk.dataset.role = 'snow-bulk';
+    bulk.addEventListener('click', () => { api.setAll(allOff); this.refresh(); });
+    box.append(bulk);
+    const txt = mode === 'off' ? 'Off by you' : mode === 'auto' && s.running === 0 && s.paused > 0 ? `Auto: paused, snowline ${s.snowlineM.toLocaleString('en-US')} m` : mode === 'auto' && s.running === 0 ? 'Auto: waiting for cold' : `${s.running} of ${s.total} running`;
+    box.append(el('span', 'small', `${txt}${s.off && mode !== 'off' ? ` · ${s.off} switched off` : ''} · ${s.total} cannon${s.total === 1 ? '' : 's'}`));
+    return [box];
+  }
+
+  private maintView(m: MaintApi): HTMLElement[] {
+    const rows = m.rows();
+    const top = el('div', 'row');
+    const pol = m.policy();
+    for (const [id, label, tip] of [['auto', 'Maintenance: Auto', 'Every lift is serviced once a year in its window, closed only while empty.'], ['manual', 'Maintenance: Manual', 'Nothing starts by itself: use Service now. Skipped services raise breakdown risk.']] as const) {
+      const b = el('button', `tab${pol === id ? ' active' : ''}`, label); b.dataset.policy = id; b.title = tip; b.setAttribute('aria-pressed', String(pol === id));
+      b.addEventListener('click', () => { m.setPolicy(id); this.refresh(); });
+      top.append(b);
+    }
+    const apr = el('button', '', 'Schedule all in April'); apr.dataset.role = 'sched-april'; apr.title = 'Winter lifts rest in April: the quietest weeks of the year.';
+    apr.addEventListener('click', () => { m.scheduleAll(3); this.refresh(); });
+    const autoBtn = el('button', '', 'Reset all to Auto'); autoBtn.dataset.role = 'sched-auto';
+    autoBtn.addEventListener('click', () => { m.scheduleAll('auto'); this.refresh(); });
+    top.append(apr, autoBtn);
+    if (!rows.length) return [top, el('div', 'small', 'No lifts yet. Build a lift to schedule its service here.')];
+    const tbl = el('table'), head = el('tr');
+    for (const h of ['Lift', 'Status', 'Window', 'Next service', 'Last service', 'Closed', 'Cost', '']) head.append(el('th', '', h));
+    tbl.append(head);
+    for (const r of rows) {
+      const tr = el('tr'); tr.dataset.lift = String(r.id);
+      const td = (...n: Array<HTMLElement | string>): HTMLElement => { const t = el('td'); t.append(...n); return t; };
+      const win = makeSelect(windowOptions(r.autoMonth), r.window, `Service window of ${r.name}`, (v) => { m.setWindow(r.id, v === 'auto' ? 'auto' : Number(v)); this.refresh(); });
+      win.style.minWidth = '96px';
+      const warn = r.state === 'overdue' || r.state === 'critical';
+      const st = el('span', warn ? 'warn' : r.state === 'due' ? 'busy' : 'done', r.servicing ? 'In service' : stateLabel(r.state).replace('Service ', '').replace('SERVICE ', '').toLowerCase());
+      st.title = `${r.sinceDays} days since the last service (commissioning counts). Breakdown risk x${r.riskMult.toFixed(2)}`;
+      const svc = el('button', '', 'Service now'); svc.disabled = !r.canServiceNow; svc.dataset.role = 'service-now';
+      svc.title = r.canServiceNow ? `Close ${r.days} d, ${formatMoney(r.cost)}` : 'Only when the lift is empty and not broken';
+      svc.addEventListener('click', () => { m.serviceNow(r.id); this.refresh(); });
+      tr.append(td(`${r.name} #${r.id}`), td(st), td(win), td(m.policy() === 'manual' ? 'manual' : (r.nextLabel ?? '-')), td(r.lastLabel ?? 'never'), td(`${r.days} d`), td(formatMoney(r.cost)), td(svc));
+      tbl.append(tr);
+    }
+    const pr = m.projected(), sum = el('div', 'small');
+    sum.dataset.role = 'maint-projected';
+    sum.append(pr.count > 0 ? `Next 30 days: ${pr.count} ${pr.count === 1 ? 'lift' : 'lifts'} in service, about ${formatMoney(pr.cost)} (booked as maintenance; cheaper with a Lift Workshop, crew morale and the Lift mechanics course).` : `Next 30 days: no planned service. Windows: ${[...new Set(rows.map((r) => (r.window === 'auto' ? r.autoMonth : Number(r.window))))].map((i) => REAL_MONTHS[i]).join(', ')}.`);
+    return [top, tbl, sum];
+  }
+
     const rows = a.rows();
     if (!rows.length) return [el('div', 'small', 'No lifts yet. Build a lift to schedule it here.')];
     const tbl = el('table'), head = el('tr');

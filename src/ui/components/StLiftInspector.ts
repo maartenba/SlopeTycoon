@@ -2,7 +2,17 @@ import { makeSelect } from './StSelect';
 import { LIFTS } from '@/config/lifts';
 import { formatMoney } from '../format';
 import { StElement } from './StElement';
+import { benefitText, stateLabel, windowOptions, type ServiceStateLabel } from '../maintFormat';
 
+/** Planned maintenance of one lift (sim/ops/LiftOps.ts serviceStatus, dates pre-formatted). */
+export interface LiftServiceInfo {
+  state: ServiceStateLabel; policy: 'auto' | 'manual';
+  lastLabel: string | null; nextLabel: string | null; sinceDays: number;
+  /** 'auto' or a real month index as string. */
+  window: string; autoMonth: number;
+  plan: { days: number; cost: number; level: string };
+  riskMult: number; skipRiskMult: number; inServiceHours: number; canServiceNow: boolean;
+}
 export interface LiftOpsInfo {
   mode: 'auto' | 'open' | 'closed'; /** 'Auto (daylight)': hours follow sunrise/sunset. */ daylight?: boolean; from: number; to: number; eco: boolean;
   seasons: { winter: boolean; shoulder: boolean; summer: boolean };
@@ -10,10 +20,11 @@ export interface LiftOpsInfo {
   /** 0..100 */
   condition: number;
   hold: string | null;
-  fault: { kind: 'breakdown' | 'overhaul' | 'inspection'; rushed?: boolean } | null;
+  fault: { kind: 'breakdown' | 'overhaul' | 'inspection' | 'service'; rushed?: boolean } | null;
   repairEtaHours: number; stranded: number;
   lastInspectionDaysAgo: number | null; nextInspectionDays: number | null;
   riskPerDay: number; hasWorkshop: boolean; energyPerHour: number; queue: number;
+  service?: LiftServiceInfo;
 }
 export interface LiftInfo {
   id: number; kind: keyof typeof LIFTS; /** Display name ('Chairlift 1'); editable when `api.rename` is bound. */ name?: string; open: boolean; speed: number;
@@ -35,6 +46,8 @@ export interface LiftInspectorApi {
   setSeason?(id: number, profile: 'winter' | 'shoulder' | 'summer', on: boolean): void;
   setInspection?(id: number, level: 'none' | 'basic' | 'thorough'): void;
   inspectNow?(id: number): void;
+  setServiceWindow?(id: number, month: number | 'auto'): void;
+  serviceNow?(id: number): void;
   repair?(id: number): void;
   /** Rename (already trimmed/clamped; empty = automatic name). */
   rename?(id: number, name: string): void;
@@ -49,8 +62,8 @@ export class StLiftInspector extends StElement {
   private api: LiftInspectorApi | null = null;
   private panel = document.createElement('div');
   protected css(): string {
-    return ':host{position:absolute;right:8px;top:56px}.panel{flex-direction:column;align-items:stretch;min-width:230px;max-width:280px;display:none;gap:4px}'
-      + '.bar{height:8px;background:#222;border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%}.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.warn{color:#ff9a8a}.small{font-size:11px;opacity:.85}';
+    return ':host{position:absolute;right:8px;top:56px}.panel{flex-direction:column;align-items:stretch;min-width:230px;max-width:280px;display:none;gap:4px;max-height:max(220px,calc(100vh - 370px));overflow:auto}'
+      + '.panel>*{flex-shrink:0}.bar{height:8px;background:#222;border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%}.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.warn{color:#ff9a8a}.small{font-size:11px;opacity:.85}';
   }
   constructor() {
     super();
@@ -82,7 +95,7 @@ export class StLiftInspector extends StElement {
       kids.push(line(`${d.name}`, 'small'));
     }
     const status = o?.fault
-      ? (o.fault.kind === 'breakdown' ? `BROKEN DOWN. Repair in ~${o.repairEtaHours.toFixed(1)} h${o.stranded ? ` · ${o.stranded} guests stranded` : ''}` : o.fault.kind === 'inspection' ? `Inspection (${o.repairEtaHours.toFixed(1)} h left)` : `Overhaul (${o.repairEtaHours.toFixed(1)} h left)`)
+      ? (o.fault.kind === 'breakdown' ? `BROKEN DOWN. Repair in ~${o.repairEtaHours.toFixed(1)} h${o.stranded ? ` · ${o.stranded} guests stranded` : ''}` : o.fault.kind === 'inspection' ? `Inspection (${o.repairEtaHours.toFixed(1)} h left)` : o.fault.kind === 'service' ? `Closed for annual service (${(o.repairEtaHours / 24).toFixed(1)} d left)` : `Overhaul (${o.repairEtaHours.toFixed(1)} h left)`)
       : i.open ? `Open${i.activeMode ? ` (${i.activeMode})` : ''}` : (o?.hold === 'hours' ? 'Closed: outside opening hours' : o?.hold === 'season' ? 'Closed: off-season schedule' : o?.hold === 'wind' ? 'Closed: high winds' : o?.hold === 'manual' ? 'Closed by you' : (i.closedReason ?? 'Closed'));
     kids.push(line(`Status: ${status}`, o?.fault?.kind === 'breakdown' ? 'warn' : ''));
     kids.push(line(`${d.capacityPerCarrier}/carrier · ${Math.round(i.lengthM)} m · ${Math.round(i.rideTimeS)} s ride · ${Math.round(i.throughputPerHour)}/h`));
@@ -93,6 +106,14 @@ export class StLiftInspector extends StElement {
       bar.append(fill);
       kids.push(line(`Condition ${Math.round(o.condition)}% · breakdown risk ${(o.riskPerDay * 100).toFixed(1)}%/day`), bar);
       kids.push(line(`Inspection: ${o.lastInspectionDaysAgo === null ? 'never' : `${o.lastInspectionDaysAgo} d ago`}${o.nextInspectionDays !== null ? ` · next in ${o.nextInspectionDays} d` : ''}`, 'small'));
+      if (o.service) {
+        const sv = o.service, cls = sv.state === 'overdue' || sv.state === 'critical' ? 'warn' : 'small';
+        kids.push(line(`${stateLabel(sv.state)} · last service ${sv.lastLabel ?? `never (${sv.sinceDays} d since commissioning)`}`, cls));
+        kids.push(line(sv.policy === 'auto' ? `Next service ${sv.nextLabel ?? 'not planned'}` : 'Next service: manual (policy in Operations)', 'small'));
+        kids.push(line(benefitText(sv), cls === 'warn' ? 'warn small' : 'small'));
+        const win = makeSelect(windowOptions(sv.autoMonth), sv.window, 'Service window', (v) => a?.setServiceWindow?.(i.id, v === 'auto' ? 'auto' : Number(v)));
+        const winL = el('label', { textContent: 'Service window ' }); winL.append(win); kids.push(winL);
+      }
       if (!o.hasWorkshop) kids.push(line('No Lift Maintenance Workshop: repairs are slow and expensive (contractor)', 'small'));
     }
     kids.push(line(`Upkeep ${formatMoney(i.upkeepPerDay)}/day${o ? ` · energy ${formatMoney(o.energyPerHour)}/h running` : ''}`, 'small'));
@@ -129,11 +150,16 @@ export class StLiftInspector extends StElement {
       const btns = el('div', { className: 'row' });
       const inspect = el('button', { textContent: 'Inspect now', disabled: !!o.fault });
       inspect.addEventListener('click', () => a?.inspectNow?.(i.id));
-      const rep = el('button', { textContent: o.fault?.kind === 'breakdown' ? (o.fault.rushed ? 'Rush booked' : 'Rush repair') : 'Repair / overhaul', disabled: (!!o.fault && (o.fault.kind === 'inspection' || !!o.fault.rushed)) || (!o.fault && o.condition >= 95) });
+      const rep = el('button', { textContent: o.fault?.kind === 'breakdown' ? (o.fault.rushed ? 'Rush booked' : 'Rush repair') : 'Repair / overhaul', disabled: (!!o.fault && (o.fault.kind === 'inspection' || o.fault.kind === 'service' || !!o.fault.rushed)) || (!o.fault && o.condition >= 95) });
       rep.addEventListener('click', () => a?.repair?.(i.id));
       const close = el('button', { textContent: o.mode === 'closed' ? 'Open lift' : 'Close lift' });
       close.addEventListener('click', () => a?.setMode?.(i.id, o.mode === 'closed' ? 'auto' : 'closed'));
       btns.append(inspect, rep, close);
+      if (o.service) {
+        const svc = el('button', { textContent: o.fault?.kind === 'service' ? 'Servicing…' : 'Service now', disabled: !o.service.canServiceNow, title: o.service.canServiceNow ? benefitText(o.service) : 'Only when the lift is empty and not broken' });
+        svc.addEventListener('click', () => a?.serviceNow?.(i.id));
+        btns.append(svc);
+      }
       kids.push(btns);
     } else {
       const toggle = el('button', { textContent: i.open ? 'Close lift' : 'Open lift' });

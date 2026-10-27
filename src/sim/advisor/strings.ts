@@ -58,5 +58,6 @@ export const TEXT = {
   priceLow: (pct: number): Text => ({ title: S('Day pass is cheap'), why: S(`The day pass is ${pct}% below fair value. You could earn more per guest.`) }),
   marketing: (name: string): Text => ({ title: S('A campaign is available'), why: S(`${name} meets its requirements. Campaigns bring extra guests for a fee.`) }),
   goal: (title: string, todo: string): Text => ({ title: S(`Next goal: ${title}`), why: S(todo) }),
+  liftService: (n: number, first: string, days: number, cost: string): Text => ({ title: S(n === 1 ? `${first} is overdue for service` : `${n} lifts are overdue for service`), why: S(`Peak season is close and ${n === 1 ? 'it has' : 'they have'} skipped the yearly service, so breakdowns are more likely (and worse in a storm). A service closes a lift for about ${days} days and costs ${cost}. Run it now, or let the Auto policy handle it next April.`) }),
   goalClose: (title: string): Text => ({ title: S(`Close to a goal: ${title}`), why: S('One more step completes it.') }),
 } as const;

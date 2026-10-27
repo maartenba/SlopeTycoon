@@ -78,6 +78,14 @@ export interface GameEvents {
   'lift:broken': { id: number; kind: string; stranded: number };
   /** A lift was repaired after `hours` hours of downtime. */
   'lift:repaired': { id: number; hours: number };
+  /** Planned service: announced the day before the window opens (`count` lifts, real month index 0 = January, typical `days` of closure). */
+  'ops:serviceSoon': { count: number; month: number; days: number };
+  /** A planned service started (the lift is closed and empty; `cost` booked as maintenance). */
+  'lift:serviceStarted': { id: number; days: number; cost: number };
+  /** A planned service finished: condition restored to `condition`. */
+  'lift:serviced': { id: number; days: number; condition: number };
+  /** A lift went past its service interval: 'overdue' (risk rising) or 'critical' (long overdue). */
+  'lift:serviceOverdue': { id: number; level: 'overdue' | 'critical'; days: number };
   /** Guests are stuck on a broken lift. Emitted once per breakdown. */
   'incident:stranded': { liftId: number; guests: number; x: number; y: number };
   /** The season's lift schedule applied: operating lifts out of total. */
@@ -127,7 +135,7 @@ export type GameEventName = keyof GameEvents;
 export const GAME_EVENT_NAMES = [
   'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened',
   'piste:opened', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'incident:avalanche', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated',
-  'incident:injury', 'incident:created', 'incident:resolved', 'incident:escalated', 'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'lift:broken', 'lift:repaired', 'incident:stranded', 'ops:schedule', 'finance:monthClosed', 'rating:changed', 'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'lift:closed', 'weather:changed', 'attraction:opened', 'attraction:closed',
+  'incident:injury', 'incident:created', 'incident:resolved', 'incident:escalated', 'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'lift:broken', 'lift:repaired', 'ops:serviceSoon', 'lift:serviceStarted', 'lift:serviced', 'lift:serviceOverdue', 'incident:stranded', 'ops:schedule', 'finance:monthClosed', 'rating:changed', 'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'lift:closed', 'weather:changed', 'attraction:opened', 'attraction:closed',
   'ops:grooming', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished', 'story:resolved',
 ] as const satisfies readonly GameEventName[];
 

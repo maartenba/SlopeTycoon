@@ -111,12 +111,12 @@ export interface LiftData {
   evac?: boolean;
 }
 
-export type LiftHold = 'manual' | 'hours' | 'season' | 'wind' | 'fault' | 'inspection';
+export type LiftHold = 'manual' | 'hours' | 'season' | 'wind' | 'fault' | 'inspection' | 'service';
 export type LiftOpMode = 'auto' | 'open' | 'closed';
 export type InspectionLevel = 'none' | 'basic' | 'thorough';
 export interface LiftFault {
   /** breakdown: unplanned (strands riders); overhaul: planned repair; inspection: periodic check. */
-  kind: 'breakdown' | 'overhaul' | 'inspection';
+  kind: 'breakdown' | 'overhaul' | 'inspection' | 'service';
   startTick: number;
   /** Tick the work completes (hours of work already scaled by workshop/condition). */
   endTick: number;
@@ -125,8 +125,21 @@ export interface LiftFault {
   incidentId: number;
   /** Rush job bought (halves remaining time once). */
   rushed?: boolean;
-  /** Level for inspections. */
+  /** Level for inspections / planned services. */
   level?: InspectionLevel;
+}
+/** Planned maintenance bookkeeping (sim/ops/LiftOps.ts, config LIFT_SERVICE). Created when LiftOps first sees the lift (= commissioning counts as the first service). */
+export interface LiftMaint {
+  /** Absolute day of the last service (or of commissioning when `count` is 0). */
+  last: number;
+  /** Planned services completed so far. */
+  count: number;
+  /** Chosen service month (real month index, 0 = January); undefined = Auto (April for winter lifts, October for summer-only lifts). */
+  window?: number;
+  /** Level of the last completed service (drives the risk relief). */
+  level?: 'basic' | 'thorough';
+  /** Overdue news already sent: 0 none, 1 overdue, 2 critical. */
+  notified?: number;
 }
 export interface LiftOpsData {
   mode: LiftOpMode;
@@ -146,6 +159,8 @@ export interface LiftOpsData {
   /** Absolute day of the last inspection (-1 = never). */
   lastInspection: number;
   fault: LiftFault | null;
+  /** Planned maintenance (absent until LiftOps first updates the lift). */
+  maint?: LiftMaint;
   /** Dollars of energy / hours of operation accumulated today (settled by Finance at day end). */
   energyToday: number;
   runHoursToday: number;

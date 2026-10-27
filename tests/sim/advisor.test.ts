@@ -47,6 +47,7 @@ const CASES: Case[] = [
   { id: 'lift.worn', trigger: (s) => { s.lifts.all()[0]!.ops!.condition = 20; }, calm: (s) => { s.lifts.all()[0]!.ops!.condition = 90; } },
   { id: 'rating.lowest', trigger: () => { /* starter resort: variety is weakest */ }, calm: (s) => { s.rating.breakdown = () => ({ score: 90, stars: 4.5, components: [{ id: 'happiness', label: 'Guest happiness', score: 90, weight: 0.25, hint: '' }], bonus: 0, bonusHints: [], hints: [] }); } },
   { id: 'piste.disconnected', trigger: (s) => { let t = 0; for (let i = 0; i < s.size * s.size; i++) if (s.ops.quality.isPiste(i)) { t = i; break; } const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => [...real(), { disconnected: true, count: 9, tiles: [t] }] as never; }, calm: (s) => { const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => real().map((c) => ({ ...c, disconnected: false })) as never; } },
+  { id: 'lift.service', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: -400, count: 0 }; } }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } } },
   { id: 'goal.next', trigger: () => { /* active goals exist */ }, calm: (s) => { s.goals.paused = true; } },
 ];
 
@@ -284,8 +285,8 @@ describe('advisor snooze + save', () => {
 describe('advisor strings', () => {
   it('every text builder yields capitalised, id-free text; Rudi is named; friendly lines are short and positive', () => {
     const samples = [TEXT.queue('Chairlift 1', 3), TEXT.groomingNone(), TEXT.groomingGap(40), TEXT.icy(30), TEXT.patrolNone(), TEXT.aidGap(50), TEXT.school(8), TEXT.parking(), TEXT.debt('$5'), TEXT.runway(2),
-      TEXT.winterComing(9, false), TEXT.winterComing(9, true), TEXT.summerComing(9), TEXT.storm(), TEXT.rating('variety', 'too few green runs', 40), TEXT.idleLift('Chairlift 2'), TEXT.pisteDisconnected('Blue Run 1'),
-      TEXT.buildingInactive('Cafe 1', 'no road'), TEXT.bear(), TEXT.liftWorn('Chairlift 1', 20, false), TEXT.liftWorn('Chairlift 1', 20, true), TEXT.priceHigh(50), TEXT.priceLow(50), TEXT.marketing('Families'), TEXT.goal('x', 'build a thing'), TEXT.goalClose('x')];
+      TEXT.winterComing(9, false), TEXT.winterComing(9, true), TEXT.summerComing(9), TEXT.storm(), TEXT.snowWaste(1420), TEXT.snowCold(), TEXT.hikersHungry(30), TEXT.rating('variety', 'too few green runs', 40), TEXT.idleLift('Chairlift 2'), TEXT.pisteDisconnected('Blue Run 1'),
+      TEXT.buildingInactive('Cafe 1', 'no road'), TEXT.bear(), TEXT.liftService(2, 'Chairlift 1', 3, '$900'), TEXT.liftService(1, 'Chairlift 1', 3, '$900'), TEXT.liftWorn('Chairlift 1', 20, false), TEXT.liftWorn('Chairlift 1', 20, true), TEXT.priceHigh(50), TEXT.priceLow(50), TEXT.marketing('Families'), TEXT.goal('x', 'build a thing'), TEXT.goalClose('x')];
     for (const t of samples) for (const v of [t.title, t.why]) { expect(v).toMatch(/^[A-Z0-9]/); expect(v).not.toMatch(/\b[a-z]+[A-Z][a-zA-Z]+\b/); }
     expect(RANGER_NAME).toBe('Ranger Rudi');
     for (const f of FRIENDLY) { expect(f.length).toBeLessThan(40); expect(f).toMatch(/^[A-Z]/); }

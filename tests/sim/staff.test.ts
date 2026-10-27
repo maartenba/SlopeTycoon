@@ -18,7 +18,7 @@ const GOLDEN_STARTER: Record<string, string> = {
   'props': 'f326a89f',
   'networks': '4854bb95',
   'buildings': '82fa8736',
-  'lifts': '863f8439',
+  'lifts': '2297f137',
   'cond': 'ba97dd7b',
   'names': '4e78cc93',
   'nature': '95b95716',
@@ -27,7 +27,7 @@ const GOLDEN_STARTER: Record<string, string> = {
   'sys.season': '757e0fce',
   'sys.weather': '00f02232',
   'sys.spawner': '8d770e56',
-  'sys.guests': '741e489a',
+  'sys.guests': 'cc3fcb29',
   'sys.attractions': 'fc802f5a',
   'sys.ops': 'c298a226',
   'sys.economy': '23749ffa',
@@ -42,38 +42,39 @@ const GOLDEN_STARTER: Record<string, string> = {
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': 'e819ecf9',
+  'core': 'd5198aa7',
   'config': 'd9813cdd',
   'grid': '5aa1ad93',
   'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'a84a574b',
-  'lifts': '6fc6945e',
+  'lifts': 'f8565548',
   'cond': 'd91eca6f',
-  'names': '82233726',
-  'nature': 'cdcfabbb',
-  'leavers': '22cf3a53',
+  'names': '7dbaace9',
+  'nature': 'c49833ec',
+  'leavers': 'ce6127f1',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '571f0cde',
-  'sys.spawner': '10906d4d',
-  'sys.guests': 'e8fcb640',
-  'sys.attractions': 'b7f783cf',
-  'sys.ops': '59903ef7',
-  'sys.economy': '8ce793db',
-  'sys.rating': '3038fcc7',
-  'families': '944ad456',
+  'sys.spawner': 'fbddae0c',
+  'sys.guests': 'd560653f',
+  'sys.attractions': 'a6453283',
+  'sys.ops': '0722578b',
+  'sys.economy': 'bc552549',
+  'sys.rating': '9d33bebc',
+  'families': '15b427e4',
   'openStatus': 'f48290d9',
-  'sessionMeta': 'f802eeeb',
-  'goals': '08ed20c7',
-  'yearReports': '17149107',
+  'sessionMeta': '56cfc140',
+  'goals': 'a2d076ac',
+  'yearReports': '2cb63fb8',
   'advisor': 'ca063e92',
-  'progression': '2b52b0b1',
+  'progression': 'fa20f826',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (tower height caps / denser towers change the bot's lift layouts; docs/lifts-clearance.md).
 // RE-RECORDED (calendar fix: daylight solstices 21 Jun / 21 Dec, temperature/snowline curve aligned to the real Alpine year; docs/time-flow.md section 10). Money 193236.89 -> 191943.33; re-recorded once more after the snowmaking-energy / nature-cache save fixes.
-const GOLDEN_BOT_MONEY = 191943.33;
+// RE-RECORDED (planned lift maintenance, docs/lift-ops-and-debt.md: every lift now carries `ops.maint`, and the bot's lifts are serviced in April). Taken on a tree that also holds other in-progress 0.2.x items (hiker hunger, snowmaking mode, Almabtrieb).
+const GOLDEN_BOT_MONEY = 180221.69;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; return p; };
 

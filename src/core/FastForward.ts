@@ -66,7 +66,7 @@ export const EVENT_STOPS: { [K in GameEventName]: Stopper<K> } = {
   'finance:debtWarning': always('you are in debt'),
   'finance:declaredBankrupt': always('bankruptcy'),
   'lift:broken': (p) => (p.stranded > 0 ? 'a lift broke down with guests stranded' : null),
-  'lift:repaired': never,
+  'lift:repaired': never, 'ops:serviceSoon': never, 'lift:serviceStarted': never, 'lift:serviced': never, 'lift:serviceOverdue': never,
   'incident:stranded': always('guests are stranded on a lift'),
   'ops:schedule': never, 'finance:monthClosed': never, 'rating:changed': never, 'day:changed': never, 'month:changed': never, 'year:changed': never,
   'year:report': always('the year report is ready'),

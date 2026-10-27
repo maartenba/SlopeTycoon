@@ -34,3 +34,26 @@ export const LIFT_OPS = {
   /** Stranded riders: they lose happiness each tick; rescue fallback (ticks) when no responder resolves in time. */
   stranded: { happinessPerTick: 0.006, selfEvacTicks: 24, selfEvacTicksNoWorkshop: 36, severeAfterTicks: 30, severeTemp: -10, severeChance: 0.2, worsenMajor: 6, worsenCritical: 14 },
 } as const;
+
+/**
+ * Planned annual service (docs/lift-ops-and-debt.md "Planned maintenance"). Days are game days; a sim month is 15 days and carries the real month name.
+ * Service length = base days + missing condition / `conditionDays` (+ `longLiftDays` over `longLiftM`), scaled by the staff factor. Cost = (labour/day x days + parts x (1 + length/100 m x partsPer100m)) x workshop / contractor factor x staff factor.
+ */
+export const LIFT_SERVICE = {
+  basic: { days: 2, parts: 120, condition: 96, ageKept: 0.85, riskBonus: 0.2 },
+  thorough: { days: 5, parts: 320, condition: 100, ageKept: 0.6, riskBonus: 0.35 },
+  conditionDays: 40, longLiftM: 1000, longLiftDays: 0.5,
+  labourPerDay: 110, partsPer100m: 0.12, workshopCost: 0.65, contractorCost: 1.4,
+  /** A service is due once this many days passed since the last one (= one game year); the risk relief fades out linearly over it. */
+  intervalDays: 180,
+  /** Warning state starts this many days before it is due. */
+  dueSoonDays: 30,
+  /** Never start a service sooner than this after commissioning (a lift built just before its window is not serviced at once) ... */
+  minGapDays: 60,
+  /** ... and after a real service (a manual one just before the window skips it). */
+  minGapAfterServiceDays: 20,
+  /** Overdue: breakdown risk x(1 + overdueSlope x overdueDays/90), capped at x(1 + overdueSlope x overdueCapDays/90); 'critical' beyond criticalDays since the last service. */
+  overdueSlope: 1.1, overdueCapDays: 200, criticalDays: 270,
+  /** Auto windows (real month index, 0 = January): winter lifts in April, summer-only lifts in October. */
+  autoMonthWinter: 3, autoMonthSummer: 9,
+} as const;

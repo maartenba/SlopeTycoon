@@ -104,7 +104,7 @@ export const SAVE_MODULES: SaveModule[] = [
     load: (sim, d) => { const s = d as Obj; sim.buildings.restore(s.items, s.nextId); sim.buildings.reevaluate(); /* networks load first: never trust a saved status */ },
   },
   {
-    key: 'lifts', version: 1,
+    key: 'lifts', version: 2, // v2: ops.maint (planned maintenance). v1 lifts get it lazily: commissioning = the day they are first ticked after loading, policy Auto
     serialize: (sim) => ({ items: sim.lifts.serialize(), nextId: sim.lifts.nextIdValue() }),
     load: (sim, d) => { const s = d as Obj; sim.lifts.restore(s.items, s.nextId); },
   },

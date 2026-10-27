@@ -29,7 +29,7 @@ Exactly six (`STAFF_UPGRADES`, asserted by a config test). One-off, no tree, no 
 | Instructor training | $5,000 | 6 | $14 | 1 | ski-school capacity x1.25 (`instructorCapacity`) |
 | Patrol training | $6,000 | 6 | $16 | 1 | rescue sleds x1.3 faster (`patrolSpeed`) |
 | Snowcat efficiency | $7,000 | 8 | $12 | 2 | tiles per cat x1.3, fuel x0.75 (`groomCapacity`, `groomFuel`) |
-| Lift mechanics | $8,000 | 8 | $16 | 2 | breakdowns x0.7, repair time x0.75 (`liftBreakdown`, `liftRepairTime`) |
+| Lift mechanics | $8,000 | 8 | $16 | 2 | breakdowns x0.7, repair time x0.75, planned lift service shorter and cheaper (`liftBreakdown`, `liftRepairTime`) |
 | Rangers & wildlife | $8,000 | 10 | $18 | 3 | wildlife scare level x0.7 (`wildlifeScare`); sets `wildlifeProtection()` = 1 |
 | Hospitality | $9,000 | 10 | $18 | 3 | food / bar / shop earnings x1.12 (`hospitalitySpend`) |
 

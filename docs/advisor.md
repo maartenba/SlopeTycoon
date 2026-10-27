@@ -28,6 +28,7 @@
 | `snow.gaps` | hourly | winter, reservoir present, >= 24 piste tiles in pipe range but out of every cannon's reach: place a cannon (valid site) |
 | `season.winter` / `season.summer` | daily | 30 days ahead: reservoir / cannons; bike or hike trails |
 | `piste.disconnected` / `building.inactive` | daily | structure problems |
+| `lift.service` | hourly | last weeks of autumn with a lift overdue for its yearly service (state overdue / critical); names the lift, closure days and total cost |
 | `lift.worn` | daily | condition under 45 %; suggests a workshop when missing |
 | `rating.lowest` | daily | weakest rating component (reuses the Rating hint) |
 | `goal.next` | daily | the current goal's next step (does not duplicate the Goals card) |
