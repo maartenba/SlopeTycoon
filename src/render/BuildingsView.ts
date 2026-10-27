@@ -21,6 +21,9 @@ export class BuildingsView {
   private entries = new Map<number, Entry>();
   private since = 0;
 
+  /** Rotor spin speed (rad/s) of a wind turbine building (wired by main: from the energy grid; absent = still). */
+  spin?: (id: number) => number;
+
   constructor(private scene: Pick<THREE.Scene, 'add' | 'remove'>, private meshes: BuildingMeshes, private grid: Grid, private source: BuildingsSource) {}
 
   get size(): number { return this.entries.size; }
@@ -59,6 +62,13 @@ export class BuildingsView {
   }
 
   update(dt: number): void {
+    if (this.spin) {
+      for (const [id, e] of this.entries) {
+        if (e.type !== 'windTurbine') continue;
+        const r = e.group.getObjectByName('rotor');
+        if (r) r.rotation.z -= this.spin(id) * Math.min(dt, 0.1);
+      }
+    }
     this.since += dt;
     if (this.since >= 0.25) { this.since = 0; this.sync(); }
   }

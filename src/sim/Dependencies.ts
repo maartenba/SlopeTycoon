@@ -18,6 +18,8 @@ export interface DepContext {
   buildings: Iterable<BuildingInstance>;
   /** Lake tiles from terrain (natural lakes). */
   lakeTiles?: Pt[];
+  /** Is tile (x,y) a stream tile? (hydro buildings must stand on a stream bank.) Absent = no streams known. */
+  streamAt?: (x: number, y: number) => boolean;
   /** Resort core anchor (Base Lodge/village). Falls back to the Base Lodge. */
   core?: Pt | null;
   walkingRadius?: number;
@@ -54,6 +56,13 @@ function lakeAdjacent(s: DepContext, b: Pt, w = 1, h = 1): boolean {
   return (s.lakeTiles ?? []).some((t) => t.x >= b.x - 1 && t.x <= b.x + w && t.y >= b.y - 1 && t.y <= b.y + h);
 }
 
+function streamAdjacent(s: DepContext, b: Pt, w = 1, h = 1): boolean {
+  const at = s.streamAt;
+  if (!at) return false;
+  for (let y = b.y - 1; y <= b.y + h; y++) for (let x = b.x - 1; x <= b.x + w; x++) if (at(x, y)) return true;
+  return false;
+}
+
 function coreOf(s: DepContext): Pt | null {
   if (s.core) return s.core;
   return list(s).find((b) => b.type === 'baseLodge') ?? null;
@@ -73,6 +82,7 @@ export function canPlace(type: string, s: DepContext, at?: Pt): PlaceResult {
   const def = BUILDINGS[type];
   const reasons = prereqReasons(type, s, at);
   if (def?.lakeAdjacent && at && !lakeAdjacent(s, at, def.w, def.h)) reasons.push('Must be next to a lake');
+  if (def?.streamAdjacent && at && !streamAdjacent(s, at, def.w, def.h)) reasons.push('Must be next to a stream');
   if (def?.maxCount && list(s).filter((b) => b.type === type).length >= def.maxCount) {
     reasons.push(def.maxCount === 1 ? `Only one ${def.name} allowed` : `Max ${def.maxCount} ${def.name}`);
   }
@@ -85,6 +95,7 @@ export function evaluateStatus(b: BuildingInstance, s: DepContext): Status {
   const missing = prereqReasons(b.type, s, b);
   if (missing.length) return { active: false, reason: missing[0] };
   if (def.lakeAdjacent && !lakeAdjacent(s, b, def.w, def.h)) return { active: false, reason: 'Must be next to a lake' };
+  if (def.streamAdjacent && !streamAdjacent(s, b, b.w ?? def.w, b.h ?? def.h)) return { active: false, reason: 'Must be next to a stream' };
   if (!accessSatisfied(def, s.access, { x: b.x, y: b.y, w: b.w ?? def.w, h: b.h ?? def.h })) return { active: false, reason: accessReason(def) };
   if (def.shuttleDependent) {
     const radius = s.walkingRadius ?? WALKING_RADIUS_TILES;

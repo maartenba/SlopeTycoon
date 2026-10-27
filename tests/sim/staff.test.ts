@@ -9,7 +9,7 @@ import { makeResort, run } from '../game/harness';
  * Parts of the game with Auto staff. First recorded before Task 19 on a pristine tree (staff hooks are no-ops: the only additions were the staff modules).
  * RE-RECORDED in Task 23 (M5.4) on purpose: the rating gained its sustainability facet and a renormalised WEIGHTS table (and the bot builds on open ground and
  * replants), which shifts every rating-driven arrival; see docs/rating.md. Auto-vs-pre-staff equivalence is still pinned by the per-pool tests below
- * (fill 1, no wages, factor 1). New modules (`staff`, `staffUpgrades`, `events`, `stories`, `rivals`) are excluded.
+ * (fill 1, no wages, factor 1). New modules (`staff`, `staffUpgrades`, `events`, `stories`, `rivals`, `energy`) are excluded.
  */
 const GOLDEN_STARTER: Record<string, string> = {
   'core': 'db6597a7',
@@ -68,9 +68,10 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '3175b9e5',
   'yearReports': '29c830a5',
   'advisor': 'ca063e92',
-  'progression': '628a86b5',
+  'progression': 'fbd2bf6c',
   'scenario': '77074ba4'
 };
+// RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
 // RE-RECORDED (tower height caps / denser towers change the bot's lift layouts; docs/lifts-clearance.md).
 // RE-RECORDED (calendar fix: daylight solstices 21 Jun / 21 Dec, temperature/snowline curve aligned to the real Alpine year; docs/time-flow.md section 10). Money 193236.89 -> 191943.33; re-recorded once more after the snowmaking-energy / nature-cache save fixes.
 // RE-RECORDED (planned lift maintenance, docs/lift-ops-and-debt.md: every lift now carries `ops.maint`, and the bot's lifts are serviced in April). Taken on a tree that also holds other in-progress 0.2.x items (hiker hunger, snowmaking mode, Almabtrieb).
@@ -78,7 +79,7 @@ const GOLDEN_BOT: Record<string, string> = {
 // RE-RECORDED AGAIN (run-aware via choice, docs/runs.md phase 3). Money 183647.28 -> 187143.92.
 const GOLDEN_BOT_MONEY = 187143.92;
 
-const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; return p; };
+const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; delete p['energy']; return p; };
 
 describe('staff: Auto is bit-identical to the pre-staff game (golden hash)', () => {
   it('starter resort, 64 / seed 1 / mid-winter, 3 days', () => {

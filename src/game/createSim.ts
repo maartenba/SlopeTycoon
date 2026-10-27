@@ -1,4 +1,4 @@
-import { Grid } from '../world/Grid';
+import { Grid, TileType } from '../world/Grid';
 import { generateTerrain, type TerrainResult } from '../world/TerrainGen';
 import { generateProps, PropStore } from '../world/Props';
 import { Layer as NetLayer, Networks } from '../world/Networks';
@@ -11,6 +11,7 @@ import { constructionMultiplierAt, worldScaleFor } from '../sim/Season';
 import { seasonOf, hourOfDay, jumpTo, seasonStartDay, monthIndex } from '../sim/Clock';
 import { nightWarp } from '../core/pacing';
 import { sunTimes } from '../sim/Daylight';
+import { Energy } from '../sim/Energy';
 import { BUILDINGS } from '../config/buildings';
 import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, oldDays } from '../config/balance';
 import { LIFTS } from '../config/lifts';
@@ -195,6 +196,7 @@ export function createSim(opts: SimOptions) {
   economy.setSeasonHook(() => constructionMultiplierAt(game.date) * (mods.costMultipliers?.construction ?? 1)); // summer = 50 % construction discount
   const buildings = new Buildings(grid.occupancy);
   buildings.bus = bus;
+  buildings.streamAt = (x, y) => x >= 0 && y >= 0 && x < size && y < size && grid.tileType[grid.tileIndex(x, y)] === TileType.Stream;
   buildings.lakeTiles = terrainInfo.lakes.flatMap((l) => l.tileIdx.map((i) => ({ x: i % size, y: Math.floor(i / size) })));
   buildings.core = null;
   buildings.walkingRadius = walkingRadius(cfg);
@@ -513,12 +515,26 @@ export function createSim(opts: SimOptions) {
 
   // ---- Resort rating: daily aggregate of sim stats; drives guest arrivals ----
   const leavers = new LeaverTracker(); leavers.attach(bus);
+  // ---- Energy grid + green buildings (item F, docs/energy.md): generators feed `energy`; the daily cost settlement takes the capped offset off the lift energy line ----
+  let heightRange: { lo: number; hi: number } | null = null;
+  const energy = new Energy({
+    buildings: () => buildings.all(),
+    exposure: (b) => {
+      if (!heightRange) { let lo = Infinity, hi = -Infinity; for (let vy = 0; vy <= size; vy++) for (let vx = 0; vx <= size; vx++) { const c = grid.getCorner(vx, vy); if (c < lo) lo = c; if (c > hi) hi = c; } heightRange = { lo, hi }; }
+      const cs = grid.getCorners(b.x + (b.w >> 1), b.y + (b.h >> 1)), m = (cs[0] + cs[1] + cs[2] + cs[3]) / 4;
+      return Math.min(1, Math.max(0, (m - heightRange.lo) / Math.max(1, heightRange.hi - heightRange.lo)));
+    },
+    snowDepth: (x, y) => grid.snowDepth[grid.tileIndex(x, y)] ?? 0,
+    weather: () => weather.current, day: () => game.date.day, season: () => seasonOf(game.date),
+    felled: () => props.treesFelled, planted: () => props.treesPlanted,
+  });
+  bus.on('time:hour', (e) => { if (e) energy.hour(e.hour); });
   // Sustainability facet (Task 23): energy per guest, trees felled vs planted, wildlife-habitat overlap (reduced by the rangers upgrade). Read-only measurements.
   let habitatTiles: Int32Array | null = null; // forest-habitat tiles of the ORIGINAL terrain (static), built lazily
   const treeSet = new Set<number>(TREE_KINDS);
   const sustain = new Sustainability({
     energyToday: () => { const e = economy.dayBuckets().expense; return (e.energy ?? 0) + (e.snowmaking ?? 0); },
-    trees: () => { let live = 0; const byKind = props.countByKind(); for (const k of treeSet) live += byKind[k] ?? 0; return { felled: props.treesFelled, planted: props.treesPlanted, live }; },
+    trees: () => { let live = 0; const byKind = props.countByKind(); for (const k of treeSet) live += byKind[k] ?? 0; return { felled: props.treesFelled, planted: props.treesPlanted + Math.floor(energy.nurseryCredit), live }; },
     habitat: () => {
       if (!habitatTiles) {
         const fd = terrainInfo.forestDensity, list: number[] = [];
@@ -530,6 +546,7 @@ export function createSim(opts: SimOptions) {
       return habitatTiles.length ? built / habitatTiles.length : 0;
     },
     protection: () => staffUpgrades.wildlifeProtection(),
+    bonus: () => energy.recyclingBonus(),
   });
   bus.on('guest:arrived', () => sustain.noteArrival());
   bus.on('time:hour', (e) => { if (e?.hour === 12) sustain.noteNoon(guestSim.store.count); });
@@ -560,7 +577,7 @@ export function createSim(opts: SimOptions) {
       qualityLike: (skill, q) => 0.5 + 0.5 * qualityPreference(skill, q),
       debt: () => finance.debtSeverity(),
       value: () => pricing.valueScore(),
-    }), scenery: nature.scenery(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
+    }), scenery: (() => { const sc = nature.scenery(), pen = energy.sceneryPenalty(); return pen > 0 ? Math.max(0, sc - pen) : sc; })(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
   });
   registry.replace(createRatingSystem(rating));
   // Rivals + market share (Task 23): scales arrivals by a small bounded factor (exactly 1 in the grace period, in scenarios / the tutorial).
@@ -781,7 +798,9 @@ export function createSim(opts: SimOptions) {
         if (days >= OFFSEASON_RELIEF.furloughAfterDays && wage > 0) { st += wage * OFFSEASON_RELIEF.furloughWageShare; relief.furlough += wage * (1 - OFFSEASON_RELIEF.furloughWageShare); } else st += wage;
       }
       for (const id of [...closedDays.keys()]) if (!seen.has(id)) closedDays.delete(id);
-      return { buildings: b, lifts: l, staff: (st + staff.extraWagesPerDay()) * staff.wageMult() + staffUpgrades.upkeepPerDay(), energy: lo.energy };
+      // green power: the generators' capped offset comes off the lift energy line (nothing changes without generators)
+      const offset = energy.settleDay(lo.energy + (economy.dayBuckets().expense.snowmaking ?? 0), lo.energy);
+      return { buildings: b, lifts: l, staff: (st + staff.extraWagesPerDay()) * staff.wageMult() + staffUpgrades.upkeepPerDay(), energy: offset > 0 ? lo.energy - offset : lo.energy };
     },
     guests: () => ({ count: guestSim.store.count, happiness: avgHappiness() }),
     credit: creditCtx,
@@ -991,7 +1010,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    achievements, rivals, sustain, landscape, landscapeEnv,
+    achievements, rivals, sustain, energy, landscape, landscapeEnv,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,

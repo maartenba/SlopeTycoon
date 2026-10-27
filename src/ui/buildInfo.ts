@@ -5,7 +5,7 @@ import type { SeasonId } from '@/core/events';
 import { usableFrom, type SeasonTag } from './seasonOrder';
 
 /** Sub-tabs of the Buildings drawer. */
-export type BuildingTab = 'services' | 'kids' | 'safety' | 'recreation' | 'transport' | 'utilities';
+export type BuildingTab = 'services' | 'kids' | 'safety' | 'recreation' | 'transport' | 'utilities' | 'energy';
 export const BUILDING_TABS: ReadonlyArray<{ id: BuildingTab; label: string; icon: string }> = [
   { id: 'services', label: 'Services', icon: '🍽️' },
   { id: 'kids', label: 'Ski School & Kids', icon: '🎿' },
@@ -13,13 +13,14 @@ export const BUILDING_TABS: ReadonlyArray<{ id: BuildingTab; label: string; icon
   { id: 'recreation', label: 'Recreation', icon: '🎡' },
   { id: 'transport', label: 'Transport Hubs', icon: '🚉' },
   { id: 'utilities', label: 'Utilities', icon: '💧' },
+  { id: 'energy', label: 'Energy', icon: '⚡' },
 ];
 
 const CATEGORY_TAB: Record<string, BuildingTab> = {
   core: 'services', services: 'services', lodging: 'services',
   kids: 'kids', safety: 'safety', operations: 'safety',
   recreation: 'recreation', water: 'recreation',
-  transport: 'transport', snow: 'utilities', misc: 'utilities',
+  transport: 'transport', snow: 'utilities', misc: 'utilities', energy: 'energy',
 };
 /** Per-id overrides of the category mapping (kept minimal). */
 const ID_TAB: Record<string, BuildingTab> = { parking: 'transport', shuttleDepot: 'transport' };
@@ -37,6 +38,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
+  solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -74,6 +76,13 @@ const DESCRIPTIONS: Record<string, string> = {
   shuttleDepot: 'Runs buses to distant buildings.',
   reservoir: 'Water storage for snowmaking.',
   snowCannon: 'Makes snow in cold weather; needs water.',
+  solarArray: 'Ground-mounted solar field: cuts the energy bill by day, less in winter snow and cloud. Output is capped at 60% of the resort demand.',
+  solarPlant: 'Big solar plant (about 4x an array) for large resorts. Same 60% cap: more panels cannot make energy free.',
+  windTurbine: 'Exposed high ground only. Spins in the wind, shuts down in storms. Small landscape cost to the scenery.',
+  smallHydro: 'Run-of-river turbine on a stream bank: steady day and night, strongest in spring melt, trickle in winter.',
+  biomassHeating: 'Burns timber from the trees you clear plus forestry residue: a small offset on the energy bill.',
+  treeNursery: 'Raises saplings: replanting costs 40% less and replants count against the forest you cleared.',
+  recyclingCentre: 'Sorts waste and composts: a small bonus to the Sustainability score.',
 };
 export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
   tbar: 'Cheap drag lift for short, gentle slopes.',
@@ -111,6 +120,7 @@ export function catalogRules(typeId: string): string[] {
   const out: string[] = [];
   out.push(d.needsFlat ? 'Needs flat ground (or auto-flatten)' : 'Tolerates uneven ground');
   if (d.lakeAdjacent) out.push('Must touch a lake');
+  if (d.streamAdjacent) out.push('Must touch a stream');
   else if (d.allowOnWater === false) out.push('Not on water');
   if (d.waterSource) out.push('Needs a Reservoir or lake nearby');
   if (d.shuttleDependent) out.push('Needs a shuttle depot or to be within walking distance of the lodge');

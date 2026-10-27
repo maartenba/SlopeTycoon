@@ -10,6 +10,8 @@ export interface SustainRaw {
   habitatOverlap: number;
   /** 0 / 1: trained rangers (`staffUpgrades.wildlifeProtection()`). */
   protection: number;
+  /** Flat bonus points (0..~4) from green buildings (recycling centre); the score is capped at 100. Absent = 0. */
+  bonus?: number;
 }
 
 /** The facet as the rating reads it: three 0..1 parts and the weighted 0..100 score. */
@@ -26,7 +28,7 @@ export function sustainParts(raw: SustainRaw): SustainParts {
   const overlap = raw.habitatOverlap * (1 - SUSTAIN.habitat.protection * clamp(raw.protection));
   const habitat = 1 - clamp((overlap - SUSTAIN.habitat.free) / SUSTAIN.habitat.span);
   const w = SUSTAIN.weights;
-  const score = r1(100 * (w.energy * energy + w.trees * trees + w.habitat * habitat));
+  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0)));
   return { energy, trees, habitat, score, raw };
 }
 
@@ -36,7 +38,7 @@ export function sustainHint(p: SustainParts): string {
   const worst = Math.min(p.energy, p.trees, p.habitat);
   if (worst === p.trees) return 'Plant trees to make up for the forest you cleared';
   if (worst === p.habitat) return p.raw.protection > 0 ? 'Pistes and buildings crowd the wildlife: keep to open ground' : 'Pistes and buildings crowd the wildlife: train rangers or keep to open ground';
-  return 'Energy use per guest is high: close idle lifts, fewer snow cannons';
+  return 'Energy use per guest is high: build solar, wind or hydro power, close idle lifts, fewer snow cannons';
 }
 
 /** What the tracker reads from the live game (all read-only). */
@@ -47,6 +49,8 @@ export interface SustainSources {
   /** Share (0..1) of forest-habitat tiles carrying something built. Daily; may scan the map. */
   habitat(): number;
   protection(): number;
+  /** Flat bonus points from green buildings (recycling centre). */
+  bonus?(): number;
 }
 
 /**
@@ -76,7 +80,7 @@ export class Sustainability {
     const raw: SustainRaw = {
       energyPerGuest: this.gSum >= 1 ? this.eSum / this.gSum : -1,
       treeLoss: clamp((t.felled - t.planted) / original),
-      habitatOverlap: s.habitat(), protection: clamp(s.protection()),
+      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0,
     };
     this.cache = sustainParts(raw);
     return this.cache;

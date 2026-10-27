@@ -137,6 +137,8 @@ export const SAVE_MODULES: SaveModule[] = [
     load: (sim, d) => { const o = d as { rivals?: unknown; sustain?: unknown; felled?: number; planted?: number }; sim.rivals.load(o.rivals); sim.sustain.load(o.sustain); sim.props.treesFelled = o.felled ?? 0; sim.props.treesPlanted = o.planted ?? 0; },
     reset: (sim) => { sim.rivals.reset(); sim.sustain.reset(); sim.props.treesFelled = 0; sim.props.treesPlanted = 0; },
   },
+  // Energy grid (item F): today's / yesterday's generation per generator, biomass timber stock, nursery credit, last settled day. Additive: old saves have none -> empty (no generators = no effect).
+  { key: 'energy', version: 1, serialize: (sim) => sim.energy.serialize(), load: (sim, d) => sim.energy.load(d), reset: (sim) => sim.energy.reset() },
   // Welcome-back recap data (M5.1). Additive: old saves have none -> reduced recap.
   { key: 'sessionMeta', version: 1, serialize: (sim) => sim.session.serialize(), load: (sim, d) => sim.session.load(d), reset: (sim) => sim.session.reset() },
   // Resort goal chain. Keep LAST: reset() (old saves without it) silently completes goals the restored world already satisfies.

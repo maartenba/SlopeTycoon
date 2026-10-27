@@ -30,7 +30,7 @@ describe('low-profile build drawer (DOM)', () => {
     expect(grid.querySelector('.card .num')?.textContent).toBe('1');
     const head = q(dock, '.head')!;
     expect(head.querySelector('.tabs')).toBeTruthy();
-    expect(head.querySelectorAll('.tabs button').length).toBe(6);
+    expect(head.querySelectorAll('.tabs button').length).toBe(7);
     expect(head.querySelector('.flat')).toBeTruthy();
     expect((q(dock, '.info') as HTMLElement).hidden).toBe(true);
     expect(q(dock, '.rail .fade.l button')).toBeTruthy();

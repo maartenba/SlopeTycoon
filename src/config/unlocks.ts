@@ -16,10 +16,14 @@ export const UNLOCKS: readonly UnlockDef[] = [
   // Level 2 (Local favourite): bigger detachable lifts.
   { kind: 'lift', id: 'chair6', level: 2 },
   { kind: 'lift', id: 'gondola6', level: 2 },
+  // Level 2: wind power (the solar array, nursery, recycling and biomass are always open; the Advisor suggests the solar array).
+  { kind: 'building', id: 'windTurbine', level: 2 },
   // Level 2: digging ponds (the rest of the Landscape drawer is always available).
   { kind: 'landscape', id: 'pond', level: 2 },
   // Level 3 (Regional name): the heavy transport.
   { kind: 'lift', id: 'funicular', level: 3 },
+  // Level 3: the big solar plant (small hydro needs a stream and $11k: self-limiting, always open).
+  { kind: 'building', id: 'solarPlant', level: 3 },
   // Level 4 (Alpine destination): rescue by air and the biggest cabins / chairs.
   { kind: 'building', id: 'helipad', level: 4 },
   { kind: 'lift', id: 'gondola10', level: 4 },

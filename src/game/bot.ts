@@ -43,6 +43,8 @@ export interface BotOptions {
   staffUpgrades?: boolean;
   /** Green play (Task 23, default true): builds on open ground rather than inside forest habitat, replants the trees the build-out felled, and trains the rangers when buildings and pistes overlap the habitat. */
   green?: boolean;
+  /** Green power (item F, default false so the golden runs stay put): builds ONE solar array when cash allows and the energy part is the weakest sustainability part. */
+  greenEnergy?: boolean;
   /** Apply a price strategy once (exploit tests). */
   prices?: (sim: Sim) => void;
 }
@@ -157,6 +159,15 @@ export class Bot {
     return false;
   }
 
+  /** One solar array when rich and the energy part is the weakest of the facet (and nothing renewable stands yet). */
+  private buildSolar(reserve: number): void {
+    const sim = this.sim, p = sim.sustain.last();
+    if (!p || sim.energy.hasRenewable() || p.raw.energyPerGuest < 0) return;
+    if (p.energy > Math.min(p.trees, p.habitat) + 0.05) return; // energy is not the weakest part
+    if (sim.game.money < BUILDINGS.solarArray!.cost * 1.3 + reserve + 15_000) return;
+    this.build('solarArray');
+  }
+
   private hasSummerAttraction(): boolean { return this.sim.buildings.all().some((b) => b.active && ['adventurePark', 'beach', 'boatRental', 'alpineFarm'].includes(b.type)); }
   private count(type: string): number { return this.sim.buildings.all().filter((b) => b.type === type).length; }
 
@@ -187,6 +198,7 @@ export class Bot {
     }
     if (this.opt.staffUpgrades) this.trainStaff();
     if (this.opt.green !== false) { this.replant(); this.trainRangers(); }
+    if (this.opt.greenEnergy) this.buildSolar(reserve);
     if (this.opt.expand === false) return;
     const si = sim.size >= 256 ? 2 : sim.size >= 128 ? 1 : 0;
     for (const [type, max] of this.policy?.wishes ?? WISHES) {
@@ -212,7 +224,7 @@ export class Bot {
         if (x < 2 || y < 2 || x >= sim.size - 2 || y >= sim.size - 2) continue;
         const plan = planPlanting(env, x, y, 3, 'conifer', 0.7, now);
         if (plan.trees.length < 4) continue;
-        const cost = Math.round(plan.cost * sim.economy.constructionMultiplier());
+        const cost = Math.round(plan.cost * sim.economy.constructionMultiplier() * sim.energy.plantCostMult());
         if (!sim.economy.charge(cost)) return;
         const chunks = applyPlanting(sim.props, plan, now);
         sim.nature.growth.track(chunks); sim.nature.cover.dirty = true; stamps++;

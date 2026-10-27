@@ -29,6 +29,8 @@ export class Buildings {
   /** Optional gameplay bus: emits building:placed / building:removed. */
   bus?: Pick<GameBus, 'emit'>;
   lakeTiles: Pt[] = [];
+  /** Stream-tile lookup for the hydro rule (wired by createSim). */
+  streamAt?: (x: number, y: number) => boolean;
   core: Pt | null = null;
 
   constructor(private occ: Occupancy) {}
@@ -58,7 +60,7 @@ export class Buildings {
   reevaluate(): number[] { return reevaluateAll(this.depContext()); }
 
   depContext(): DepContext {
-    return { buildings: this.all(), lakeTiles: this.lakeTiles, core: this.core, walkingRadius: this.walkingRadius, ...this.network };
+    return { buildings: this.all(), lakeTiles: this.lakeTiles, streamAt: this.streamAt, core: this.core, walkingRadius: this.walkingRadius, ...this.network };
   }
 
   /** Adds a building (no validation: use validatePlacement first). Returns it plus ids whose status changed. */

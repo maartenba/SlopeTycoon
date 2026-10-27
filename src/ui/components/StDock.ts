@@ -480,6 +480,9 @@ export class StDock extends StElement {
         tabs.appendChild(b);
       }
       this.head.appendChild(tabs);
+      // the strip scrolls sideways on narrow windows: keep the chosen tab in view (the Energy tab sits at the far end)
+      const act = tabs.querySelector<HTMLElement>('button.active');
+      if (act && typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { tabs.scrollLeft = Math.max(0, act.offsetLeft + act.offsetWidth - tabs.clientWidth + 28); });
     }
     if (open === 'landscape') {
       const tabs = el('div', 'tabs');

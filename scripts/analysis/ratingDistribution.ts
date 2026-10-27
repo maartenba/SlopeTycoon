@@ -31,8 +31,8 @@ function runPlain(name: string, make: () => Sim): void {
 for (const seed of [61, 7]) {
   runPlain(`starter 64/${seed}`, () => createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', now: () => 0 }));
   for (const lvl of ['starter', 'large'] as DemoLevel[]) runPlain(`demo-${lvl} 64/${seed}`, () => { const s = createSim({ size: 64, seed, mode: 'sandbox', now: () => 0 }); buildDemoResort(s, lvl); return s; });
-  { const sim = createSim({ size: 64, seed, now: () => 0 }), bot = new Bot(sim, { staffUpgrades: process.env.UPG === '1' }), a = mk();
+  { const sim = createSim({ size: 64, seed, now: () => 0 }), bot = new Bot(sim, { staffUpgrades: process.env.UPG === '1', greenEnergy: process.env.GREEN === '1' }), a = mk();
     runBot(sim, bot, 2 * 180, () => { if (sim.game.date.year >= 1 || sim.game.date.day > 10) sample(sim, a); });
-    show(`bot 64/${seed}${process.env.UPG === '1' ? ' +upgrades' : ''}`, a); console.log(raw(sim));
+    show(`bot 64/${seed}${process.env.UPG === '1' ? ' +upgrades' : ''}${process.env.GREEN === '1' ? ' +solar' : ''}`, a); console.log(raw(sim));
     console.log(`   y2 net ${Math.round(bot.rows.filter((r) => r.year === 2).reduce((s, r) => s + r.net, 0))}`); }
 }

@@ -1,6 +1,6 @@
 export type BuildingCategory =
   | 'core' | 'services' | 'lodging' | 'kids' | 'safety' | 'operations'
-  | 'snow' | 'water' | 'recreation' | 'transport' | 'misc';
+  | 'snow' | 'water' | 'recreation' | 'transport' | 'misc' | 'energy';
 
 /** How a building must be connected. Missing access never blocks placement: the building is inactive ('Not connected'). */
 export type AccessKind = 'road' | 'path' | 'rail+path' | 'pisteEdge' | 'none';
@@ -54,6 +54,8 @@ export interface BuildingDef {
   /** Neutral ghost tip shown while access is missing. */
   placeTip?: string;
   lakeAdjacent?: boolean; // must touch lake tile (derived from site.onWater === 'lakeEdge')
+  /** Must touch a stream tile (small hydro). Evaluated like the lake rule: breaking it makes the building inactive. */
+  streamAdjacent?: boolean;
   /** @deprecated derived from `site` for older UI code; use `site` / describeRules(). */
   needsFlat: boolean;
   /** @deprecated derived: site.onWater === 'shallow'. */
@@ -150,5 +152,17 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('parking', 'Parking', 'services', 5, 4, 3000, 8, { access: 'road' }, { capacity: 80 }),
   // Alpine Farm: barn + shop + fenced pasture. Shop is a summer family attraction; its cheese/milk lifts restaurant income a little. Cows/sheep/goats graze the meadows (sim/nature/Livestock).
   b('alpineFarm', 'Alpine Farm', 'recreation', 6, 5, 7000, 20, { access: 'path', altAccess: ['road'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { needs: ['snowFree'], staff: 1, capacity: 30, chimney: { x: -2.3, y: 1.7, z: -1.6 } }),
+  // ---- Energy group (item F, docs/energy.md): generators feed the resort grid (sim/Energy), capped so energy is never free; nursery + recycling are the other green parts ----
+  // Solar array: ground-mounted field; a footpath or road for maintenance. Gentle slopes only (panels sit on frames).
+  b('solarArray', 'Solar Array', 'energy', 3, 2, 6500, 1.5, { access: 'path', altAccess: ['road'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),
+  b('solarPlant', 'Solar Plant', 'energy', 5, 4, 16000, 4, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),
+  // Wind turbine: exposed ground only (the upper third of the terrain); tall, slim, spins with the wind, shuts down in a storm.
+  b('windTurbine', 'Wind Turbine', 'energy', 2, 2, 10000, 3, { access: 'path', altAccess: ['road'], site: { maxSlope: 3, slopeKind: 'any', autoFlatten: 'optional', minAltitude: 20, allowRock: true } }, {}),
+  // Small hydro: must stand on a stream bank (the stream stays free: never ON the water). Seasonal flow.
+  b('smallHydro', 'Small Hydro', 'energy', 3, 2, 11000, 3, { access: 'path', altAccess: ['road'], site: { maxSlope: 3, slopeKind: 'any', autoFlatten: 'optional', allowRock: true } }, { streamAdjacent: true }),
+  // Biomass heating: burns timber from cleared trees (and forestry residue); wood-fire smoke from the stack.
+  b('biomassHeating', 'Biomass Heating', 'energy', 3, 3, 5000, 1.5, { access: 'road' }, { chimney: { x: 0.9, y: 2.3, z: -0.6 } }),
+  b('treeNursery', 'Tree Nursery', 'energy', 3, 3, 3000, 2.5, { access: 'path', altAccess: ['road'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),
+  b('recyclingCentre', 'Recycling & Compost Centre', 'energy', 3, 2, 2500, 2, { access: 'road', altAccess: ['path'] }, {}),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

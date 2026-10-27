@@ -43,6 +43,13 @@ Carrier `meshInfo` (on `geometry.userData`): `{ family, seats, bubble, cabinSize
 | `lodge` | Wood hall with green roof, A-frame glass dining room, two terraces with parasols, log pile |
 | `cafe` | Round pink drum, red cone roof with chimney cap, ring of windows, striped awning, terrace tables |
 | `mountainHut` | Small timber cabin, stone chimney, terrace slab with parasol + picnic table, pennant, logs |
+| `solarArray` | 3x2 gravel bed with two rows of four tilted blue panels on frames (cell lines, NOT the window-glass colour: no night glow), inverter cabinet, low fence |
+| `solarPlant` | 5x4 field of 18 panels in three rows, control hut with a lit window and a SOLAR sign, transformer, fenced yard, lamp post |
+| `windTurbine` | 2x2 tapered white tower (432 triangles) on a plinth, nacelle, service door; the hub + three red-tipped blades are a separate `rotor` group spun by `BuildingsView.update` (`sim.energy.rotorSpeed`) |
+| `smallHydro` | Stone powerhouse with a green gable roof and framed windows, steel penstock on saddles, tailrace trough, gauge post, HYDRO sign |
+| `biomassHeating` | Cream boiler house with a brown roof and a stone stack (smoke), grey wood-chip silo with a blue cone, open log store, chip heap |
+| `treeNursery` | Greenhouse with glass-colour windows (warm night glow), three seedling beds with little trees, potting shed, wheelbarrow, NURSERY sign |
+| `recyclingCentre` | Sorting hall with a green roof, ramp, blue / yellow / green bins, two timber compost bays, RECYCLE sign |
 | `shop` | Yellow shop, red-white awning, big shop window, raised signboard, ski rack, sale barrel |
 | `rental` | Blue counter hut with serving awning, ski rack + three bikes outside |
 | `chalet` | Stone base, log walls, wide brown roof, balcony, shuttered windows, stacked logs, chimney |

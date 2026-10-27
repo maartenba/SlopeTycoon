@@ -24,6 +24,8 @@ export interface PlantToolOptions {
   charge: (cost: number) => boolean;
   earn?: (amount: number) => void;
   multiplier?: () => number;
+  /** Extra price multiplier for planting only (a Tree Nursery makes saplings cheaper). Absent = 1. */
+  plantDiscount?: () => number;
   /** Chunk indices whose props changed (refreshChunks hook). */
   onApplied: (chunks: number[], info: { planted: number; cleared: number }) => void;
   onState?: (s: PlantState) => void;
@@ -78,7 +80,7 @@ export class PlantTool {
   private preview(p: PickResult): { cost: number; text: string; ok: boolean } {
     if (this.mode === 'plant') {
       const plan = planPlanting(this.o.env(), p.tileX, p.tileY, this.brush, this.group, this.density, this.o.now());
-      const cost = Math.round(plan.cost * this.mult());
+      const cost = Math.round(plan.cost * this.mult() * (this.o.plantDiscount?.() ?? 1));
       if (plan.trees.length === 0) return { cost: 0, ok: false, text: plan.liftBlocked ? 'Blocked: trees would grow into a lift cable (keep the lift line clear)' : plan.rejected > 0 ? 'Blocked: slope, water, rock, piste or building' : 'Already full' };
       return { cost, ok: true, text: `Plant ${plan.trees.length} ${PLANT_GROUPS[this.group].label.toLowerCase()} · $${cost}` };
     }
@@ -139,7 +141,7 @@ export class PlantTool {
     if (this.mode === 'plant') {
       const plan = planPlanting(this.o.env(), p.tileX, p.tileY, this.brush, this.group, this.density, now);
       if (!plan.trees.length) return;
-      const cost = Math.round(plan.cost * this.mult());
+      const cost = Math.round(plan.cost * this.mult() * (this.o.plantDiscount?.() ?? 1));
       run(() => {
         if (!this.o.charge(cost)) return { ok: false, flow: 0 };
         this.o.onApplied(applyPlanting(this.o.props, plan, now), { planted: plan.trees.length, cleared: 0 });

@@ -290,6 +290,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'energy.green', daily: true,
+    setup: (s) => { s.sustain.last = () => ({ energy: 0.1, trees: 0.9, habitat: 0.9, score: 60, raw: { energyPerGuest: 10.5, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); },
+    fixes: [
+      { name: 'energy is no longer the weakest part', apply: (s) => { s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score: 90, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); } },
+      { name: 'a solar array stands and works', apply: (s) => { s.energy.hasRenewable = () => true; } },
+    ],
+  },
+  {
     id: 'rating.lowest', daily: true,
     setup: () => { /* starter resort: variety is weakest */ },
     fixes: [

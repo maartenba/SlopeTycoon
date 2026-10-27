@@ -20,6 +20,7 @@ import { altitudeMetres } from '../Season';
 import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/suggest';
 import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
+import { ENERGY } from '../../config/energy';
 import { TEXT, FRIENDLY } from './strings';
 
 export interface Pt { x: number; y: number }
@@ -356,9 +357,18 @@ export const RULES: readonly Rule[] = [
     const s = workshop ? null : near(c, 'lift.worn', 'liftWorkshop', anchors(c.sim).lodge);
     return { id: 'lift.worn', severity: 'warn', ...TEXT.liftWorn(c.sim.names.liftName(l.id), Math.round(l.ops!.condition), workshop), target: liftTarget(l), ...(workshop ? {} : { action: build('liftWorkshop', s) }) };
   }),
+  // ---- green energy (item F): the energy part is the weakest sustainability part and nothing renewable stands ----
+  rule('energy.green', 1, (c) => {
+    const p = c.sim.sustain.last();
+    if (!p || p.raw.energyPerGuest < 0 || c.sim.energy.hasRenewable()) return null;
+    if (p.energy > Math.min(p.trees, p.habitat)) return null; // trees or habitat is the weaker part: sustainability advice is about that
+    if (p.energy >= (c.shown ? ENERGY.advisor.keepBelow : ENERGY.advisor.energyBelow)) return null;
+    const s = near(c, 'energy.green', 'solarArray', anchors(c.sim).lodge, 22);
+    return { id: 'energy.green', severity: 'info', ...TEXT.energyGreen(`$${p.raw.energyPerGuest.toFixed(1)}`), action: build('solarArray', s), target: siteTarget(s), panel: { drawer: 'buildings', item: 'solarArray' } };
+  }),
   // ---- rating + goals ----
   rule('rating.lowest', 2, (c) => {
-    const ROOT: Record<string, string[]> = { safety: ['patrol.none', 'bear.threat'], value: ['price.fair'] };
+    const ROOT: Record<string, string[]> = { safety: ['patrol.none', 'bear.threat'], value: ['price.fair'], sustainability: ['energy.green'] };
     const comps = c.sim.rating.breakdown().components.filter((x) => x.id !== 'queues' && x.id !== 'pisteQuality' && x.score < (c.shown ? 62 : 55) && x.hint && !POSITIVE_HINTS.has(x.hint)
       && !(ROOT[x.id] ?? []).some((r) => firing(c, r)));
     if (!comps.length) return null;

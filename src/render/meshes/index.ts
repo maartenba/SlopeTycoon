@@ -15,6 +15,8 @@ import * as T from './buildings/transport';
 import * as M from './buildings/mountain';
 import * as F from './buildings/farm';
 import * as W from './buildings/ranger';
+import * as G from './buildings/energy';
+import { TURBINE_HUB } from './buildings/energy';
 
 const e = (build: BuildFn, foundation = true): BuilderEntry => ({ build, foundation });
 
@@ -29,6 +31,8 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   boatRental: e(R.boatRental, false), beach: e(R.beach, false), iceRink: e(R.iceRink), heatedTerrace: e(R.heatedTerrace),
   stuntPark: e(R.stuntPark, false), adventurePark: e(R.adventurePark, false),
   alpineFarm: e(F.alpineFarm, false), trainStation: e(T.trainStation), altiport: e(T.altiport), parking: e(T.parking, false),
+  solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
+  smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre),
 };
 
 export const DEFAULT_FOUNDATION = 0.4;
@@ -202,6 +206,14 @@ export class BuildingMeshes {
       if (geo) g.add(new THREE.Mesh(geo, this.mat(l, l === 'roof' ? rv : variant)));
     }
     if (p.sign) g.add(new THREE.Mesh(p.sign.geometry, this.signMat(p.sign.text, p.sign.bg, p.sign.fg)));
+    if (id === 'windTurbine') {
+      // the blades are their own group so the view can spin them about the rotor axis (BuildingsView: `rotor`)
+      const rp = this.parts('windTurbineRotor', 1, 1, 0), rotor = new THREE.Group();
+      rotor.name = 'rotor';
+      rotor.position.set(0, TURBINE_HUB.y, TURBINE_HUB.z);
+      if (rp.stone) rotor.add(new THREE.Mesh(rp.stone, this.mat('stone', variant)));
+      g.add(rotor);
+    }
     return g;
   }
 

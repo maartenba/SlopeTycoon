@@ -58,3 +58,19 @@ Same resorts, same seeds; "after" includes the facet, the new weights, the rival
 * **Starter, demo starter and bot keep the same star count** (4 - 4.5★ band; mean score within +-1.0 except demo starter 61: -1.0). The tutorial resort is additionally exactly neutral for arrivals (`rivalMarket: false`).
 * **The large demo drops from 4.5 / 5★ to 4.5★ (mean -3.7 to -4.5 points) on purpose, not by accident**: it is a deliberately maxed-out build that fells 10-11 % of the forest and covers 14-16 % of the habitat, and its injected crowd (no arrivals through the spawner) makes energy per guest look 5x worse ($33 vs $5). Its facet is 32-38 against 86+ for the others. The title-screen demo never shows the rating, and `tests/game/demoResort.test.ts` / `demoTowns.test.ts` still pass unchanged.
 * Component means after, bot 64/61: happiness 92, safety 96, variety 40, piste quality 69, queues 99, crowding 100, value 54, **sustainability 88** (raw values on the last sampled day: energy $9.8 per guest -> 0.22, net tree loss 0 %, habitat overlap 5 %).
+
+
+### Green energy (item F, docs/energy.md)
+
+The energy input of the facet is **net grid purchase per guest**: generators (solar, wind, hydro, biomass) take a capped share (<= 60 % of the day's demand) off the energy ledger line, and the facet reads that ledger. A Recycling & Compost Centre adds a flat **+4 points** (total clamped to 100); a Tree Nursery credits saplings as planted trees against a net forest deficit (never beyond it). Weights unchanged (`SUSTAIN.weights`, `WEIGHTS`). Hint when energy is weakest: "Energy use per guest is high: build solar, wind or hydro power, close idle lifts, fewer snow cannons"; the Advisor rule `energy.green` adds a Build action for a Solar Array.
+
+Before / after (`npx vite-node scripts/analysis/ratingDistribution.ts`; the default bot builds no generator, so "before" = the default run and is unchanged from the table above; `GREEN=1` = bot with `greenEnergy`, ONE solar array when rich and energy is the weakest part):
+
+| Run (64 map, 2 years) | energy $/guest p10 / p50 / p90 | Facet mean (sustainability component) | Mean score | Stars | Year-2 net |
+|---|---|---|---|---|---|
+| bot 61 | 2.5 / 5.3 / 8.2 | 87 | 86.7 | 4★ 44 %, 4.5★ 56 % | $126,735 |
+| bot 61 + solar | 2.4 / 3.6 / 6.7 | 92 | 87.4 | 4★ 35 %, 4.5★ 65 % | $129,390 |
+| bot 7 | 3.0 / 5.4 / 7.7 | 87 | 88.1 | 4★ 34 %, 4.5★ 66 % | $121,585 |
+| bot 7 + solar | 2.7 / 3.5 / 5.5 | 92 | 88.3 | 4★ 27 %, 4.5★ 73 % | $128,698 |
+
+One array is worth about +5 facet points = +0.4 rating points: a nudge, never dominant. Starter and demo resorts have no generators and are unchanged.

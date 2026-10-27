@@ -25,6 +25,7 @@ import { NatureView } from '@/render/NatureView';
 import { VillageDecor } from '@/render/VillageDecor';
 import { buildEventsView } from '@/ui/eventsFormat';
 import { maintDate } from '@/ui/maintFormat';
+import { generatorLines, greenLines, type EnergyOps } from '@/ui/energyFormat';
 import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import type { DressingWorld } from '@/render/festival/placeDressing';
@@ -497,7 +498,7 @@ const refreshProps = (dirty: number[]): void => {
   rocks.refreshChunks(dirty);
 };
 
-const buildingsView = new BuildingsView(renderer.scene, buildingMeshes, grid, buildings); // single sync point: store -> meshes (boot, place, remove, rotate, terraform)
+const buildingsView = new BuildingsView(renderer.scene, buildingMeshes, grid, buildings); buildingsView.spin = (id) => sim.energy.rotorSpeed(id); // single sync point: store -> meshes (boot, place, remove, rotate, terraform)
 
 // Service coverage + overlays (sim-side coverage/networks come from createSim).
 const covOverlay = new CoverageOverlay(grid, coverage, () => buildings.all(), () => sim.networkProvider, () => ({ depth: grid.snowDepth, skiOpen: cond.skiOpen }), () => ops.quality.state, () => safetyRef?.wildlife.threat ?? null, () => { const q = opsRef?.quality; if (!q) return null; if (!trafficMix) trafficMix = new Uint16Array(q.traffic.length); for (let i = 0; i < trafficMix.length; i++) trafficMix[i] = Math.min(65535, q.traffic[i]! + q.trafficDay[i]!); return trafficMix; }, () => { const sm = opsRef?.snowmaking; if (!sm) return null; if (!gainMix) gainMix = new Float32Array(sm.gainToday.length); for (let i = 0; i < gainMix.length; i++) gainMix[i] = Math.max(sm.gainToday[i]!, sm.gainLast[i]!); return gainMix; }, () => sim.runIndex.labelMap());
@@ -618,6 +619,7 @@ const plantTool = new PlantTool({
   charge: (cost) => economy.charge(cost),
   earn: (amount) => economy.earn('other', amount),
   multiplier: () => economy.constructionMultiplier(),
+  plantDiscount: () => sim.energy.plantCostMult(),
   onApplied: (chunks) => { refreshProps(chunks); sim.nature.growth.track(chunks); sim.nature.cover.dirty = true; },
   onState: () => dockRef?.syncNature(),
 });
@@ -703,7 +705,10 @@ const announceChanged = (ids: number[]): void => {
   }
 };
 /** Inspector info for groomer garages / snowcat outposts (fleet) and reservoirs (water). */
-const opsInfo = (id: number, type: string): { kind: 'groomer'; vehicles: number; groomedLast: number; max: number } | { kind: 'reservoir'; level: number; capacity: number; cannons?: number } | { kind: 'cannon'; info: CannonInfo } | { kind: 'patrol'; staff: number; sleds: number; max: number; open: number } | { kind: 'helipad'; helicopters: number; missions: number; state: string } | { kind: 'ranger'; staff: number; max: number; bins: boolean; binsCost: number; preventedMonth: number; savedMonth: number; bearsInRange: number; hazes: number; relocations: number; ready: number } | undefined => {
+const opsInfo = (id: number, type: string): { kind: 'groomer'; vehicles: number; groomedLast: number; max: number } | { kind: 'reservoir'; level: number; capacity: number; cannons?: number } | { kind: 'cannon'; info: CannonInfo } | { kind: 'patrol'; staff: number; sleds: number; max: number; open: number } | { kind: 'helipad'; helicopters: number; missions: number; state: string } | { kind: 'ranger'; staff: number; max: number; bins: boolean; binsCost: number; preventedMonth: number; savedMonth: number; bearsInRange: number; hazes: number; relocations: number; ready: number } | EnergyOps | undefined => {
+  const gi = sim.energy.info(id);
+  if (gi) return { kind: 'energy', lines: generatorLines(gi, sim.energy.last, sim.energy.stock) };
+  if (type === 'treeNursery' || type === 'recyclingCentre') return { kind: 'energy', lines: greenLines(type, sim.energy, { felled: props.treesFelled, planted: props.treesPlanted }) };
   if (!opsRef) return undefined;
   if (safetyRef && type === 'patrolHub') return { kind: 'patrol', staff: safetyRef.patrol.staffOf(id), sleds: safetyRef.patrol.sledsOf(id), max: 6, open: safetyRef.incidents.open.length };
   if (safetyRef && type === 'rangerStation') { const r = safetyRef.wildlife.stationStats(id); return { kind: 'ranger', staff: r.staff, max: WILD.ranger.maxStaff, bins: r.bins, binsCost: WILD.ranger.binsCost, preventedMonth: r.preventedMonth, savedMonth: r.savedMonth, bearsInRange: r.bearsInRange, hazes: r.hazes, relocations: r.relocations, ready: r.ready }; }
