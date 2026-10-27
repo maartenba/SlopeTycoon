@@ -56,6 +56,10 @@ Recorded during Task 24 / 26 work; none were requested by the user yet (the plan
 * **Suggest a run** only highlights; "auto-paint the suggestion" was deliberately not built (it charges money).
 * **Undo window** is the same in-game day (150 s real at 1x): if a playtester loses something to a day change we might widen it to the last N minutes of game time; today it is refused with a clear message.
 
+## Since this milestone
+
+Trees (plant / clear, species, density) moved to **Landscape > Nature** and the Terrain drawer is terraforming only (`docs/landscaping.md`); the Terrain and View drawers use the shared card grid, icons and hover cards (`docs/ui-kit.md`); undo / redo, Statistics (`docs/stats.md`) and touch (`docs/touch.md`) build on the same stack. Placement works in every season (no season locks).
+
 ## Not verified by agents
 
 Real GPU frame rate / draw calls of the festival dressing and the new profile card, audio by ear (festival ambience / fireworks), pointer-driven drags (terraform / planting / piste strokes were verified through the same recorder in unit tests and the Suggest button in a shot, not by mouse), and how the day-boundary refusal feels at 10x speed.

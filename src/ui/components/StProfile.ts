@@ -40,8 +40,8 @@ export class StProfile extends StElement {
   private legend = document.createElement('div');
 
   protected css(): string {
-    return `:host{position:fixed;left:calc(50% - 160px);top:216px;width:320px;pointer-events:none;z-index:21}
-.card{box-sizing:border-box;background:var(--c-panel);border:1px solid rgba(90,112,144,.35);border-radius:var(--r-md);padding:6px 8px;display:flex;flex-direction:column;gap:3px;box-shadow:0 2px 8px rgba(0,0,0,.28)}
+    return `:host{position:fixed;left:calc(50% - 160px);top:216px;width:320px;pointer-events:none!important;z-index:21}
+.card{pointer-events:none;box-sizing:border-box;background:var(--c-panel);border:1px solid rgba(90,112,144,.35);border-radius:var(--r-md);padding:6px 8px;display:flex;flex-direction:column;gap:3px;box-shadow:0 2px 8px rgba(0,0,0,.28)}
 .head{font-weight:800;color:var(--c-accent-text);font-size:var(--fs-sm);white-space:nowrap}
 .stats{font-size:var(--fs-sm);color:#cfe0f5;white-space:nowrap}
 .note{font-size:var(--fs-sm);color:#ffcf80;white-space:normal}

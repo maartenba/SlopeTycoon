@@ -3,9 +3,9 @@
 A browser ski-resort tycoon: carve a procedurally generated alpine valley, build lifts, pistes and a village, keep guests, families and the bank happy
 through winter *and* summer. Three.js + TypeScript, no backend, no external assets (every model, texture, sound and music piece is generated in code).
 
-**Version 0.1.0** (pre-release)
+**Version 0.2.0** (pre-release)
 
-Status: pre-release (0.1.0) — playtest feedback welcome.
+Status: pre-release (0.2.0) — playtest feedback welcome.
 
 ## Features
 
@@ -31,11 +31,14 @@ Status: pre-release (0.1.0) — playtest feedback welcome.
 - **Scenarios**: six hand-made challenges (First Tracks, Family Valley, Powder Dreams, Summer Escape, Alpine Giant, Safe Slopes) with deadlines, objectives and bronze / silver / gold medals; your best results are kept on this device. Main menu > Scenarios (`docs/scenarios.md`). No sharing.
 - **Achievements & trophies**: 40 profile-wide achievements in three tiers with a trophy shelf (main menu / pause menu), quiet unlock toasts and 13 purely visual cosmetic rewards (building palettes, village bunting, photo frames, lift chair colours) chosen in Settings > Cosmetics. Kept on this device; no sharing (`docs/achievements.md`).
 - **Resort of the Year**: at the end of every in-game year a report shows your stats, awards (bronze / silver / gold against regional baselines), charts and a cover photo; past reports live in Finance > Reports and the image can be saved locally. No sharing (`docs/year-report.md`).
+- **Touch & tablets**: one-finger pan, pinch zoom, two-finger twist, a pan / paint toggle, two-step placement (tap, then tap again or Place), long-press cancel, two-finger-tap undo, on-screen controls for walk / ride / photo, 44 px targets and a compact layout; Settings > Accessibility > Touch controls Auto / On / Off (`docs/touch.md`).
+- **Statistics, regions and accessibility**: press **I** for charts of guests, cash, rating and revenue (`docs/stats.md`); every seed has a region name and peaks; a colour-blind-safe (Okabe-Ito) palette; reduced motion and text size.
+- **Landscape & drawers**: the Landscape drawer (ponds, trees, boulders, decor; `docs/landscaping.md`) and redesigned Terrain / View drawers with cards and hover info; everything can be built in any season.
 - **Tutorial**: an interactive guided tour with an on-screen ranger, "Show me" / "Do it for me", contextual hints.
 
 ## Requirements
 
-- A modern desktop browser with **WebGL2** (current Chrome, Edge, Firefox, Safari) and **IndexedDB** (for saves).
+- A modern desktop browser (or a tablet / phone, see Touch) with **WebGL2** (current Chrome, Edge, Firefox, Safari) and **IndexedDB** (for saves).
 - Node.js 20+ and npm to build from source.
 
 ## Run, build, deploy
@@ -80,8 +83,8 @@ Details, custom domain and troubleshooting: [`docs/deploy.md`](docs/deploy.md).
 ## Controls
 
 WASD / arrows pan, Q / E rotate, wheel zoom, Space pause, `+` / `-` speed (1× / 3× / 10×: a game day is 150 s / 50 s / 15 s, a 180-day year about 7.5 h / 2.5 h / 33 min with fast nights; nights run 3× faster); **K** or the ⏭ button skips to the next month / season / important event (fast-forward; Esc, Space or a click cancels; see `docs/time-flow.md`), dock buttons open build drawers, R rotates the ghost, X bulldozes, O cycles overlays,
-M mutes, F5 / F9 quick save / load, **Esc** cancels the current tool or drawer (and opens the pause menu if nothing is active).
-Full list: press `?` / `H` in game (Help), and `docs/tutorial.md`, `docs/placement-rules.md`.
+M mutes, **I** statistics, Ctrl+Z / Ctrl+Y undo / redo, F5 / F9 quick save / load, **Esc** cancels the current tool or drawer (and opens the pause menu if nothing is active).
+On touch: drag pans, pinch zooms, twist rotates, two-finger tap undoes, tap-then-tap places (`docs/touch.md`). Full list: press `?` / `H` in game (Help), and `docs/tutorial.md`, `docs/placement-rules.md`.
 
 ## How to play
 

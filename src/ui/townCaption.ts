@@ -16,7 +16,7 @@ export function mountTownCaption(doc: Document, text: string, onShuffle: () => v
   const btn = doc.createElement('button');
   btn.textContent = 'Shuffle';
   btn.setAttribute('aria-label', 'Show another town');
-  btn.style.cssText = 'font:inherit;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:inherit;cursor:pointer';
+  btn.style.cssText = 'min-height:var(--touch-min-root,0px);min-width:var(--touch-min-root,0px);font:inherit;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:inherit;cursor:pointer';
   btn.addEventListener('click', () => onShuffle());
   el.append(label, hint, btn);
   host.appendChild(el);

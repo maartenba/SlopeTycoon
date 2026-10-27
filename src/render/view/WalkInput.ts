@@ -159,7 +159,7 @@ export class WalkInputHandler {
 
   private keyDown(e: KeyboardEvent): void {
     if (!this.active) return;
-    const t = e.target as HTMLElement | null;
+    const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.toLowerCase();

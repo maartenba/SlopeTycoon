@@ -56,7 +56,7 @@ export class TerraformTool {
     on(o.dom, 'pointermove', (e: PointerEvent) => this.onMove(e));
     on(o.dom, 'pointerdown', (e: PointerEvent) => this.onDown(e));
     on(window, 'pointerup', (e: PointerEvent) => this.onUp(e));
-    on(o.dom, 'pointerleave', () => { if (!this.painting) this.o.overlays.hide(); });
+    on(o.dom, 'pointerleave', () => { if (this.enabled && !this.painting) this.o.overlays.hide(); }); // only while this tool is the active one (Select's touch hover info must survive the finger lifting)
     on(window, 'keydown', (e: KeyboardEvent) => this.onKey(e));
   }
 
@@ -171,7 +171,7 @@ export class TerraformTool {
   }
 
   private onKey(e: KeyboardEvent): void {
-    const t = e.target as HTMLElement | null;
+    const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (!this.enabled) return;
     switch (e.key) {

@@ -1,8 +1,8 @@
 ---
 title: "Building"
 order: 3
-summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, terrain, trees and the Landscape drawer (ponds, decor)."
-screenshots: [ui-buildings-drawer, ui-lifts-drawer, ui-landscape, landscape-pond]
+summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, the Terrain drawer, trees and the Landscape drawer (ponds, decor)."
+screenshots: [ui-buildings-drawer, ui-terrain-drawer, ui-landscape, landscape-pond]
 ---
 {{fig:ui-buildings-drawer}}
 
@@ -34,13 +34,17 @@ A building can always be *placed*, but it only *works* when it is reachable. Dep
 
 ## Terrain and trees
 
-Open **Terrain** to raise, lower, flatten or smooth the ground (keys <kbd>1</kbd>–<kbd>4</kbd> while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> for brush size). Slopes can't be steeper than the maximum edge step you set. Trees are in the **Landscape** drawer, **Nature** tab: the **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water. Felling forest and planting it back also feeds the *sustainability* bar of your rating (see [Events & the region](page:events)).
+{{fig:ui-terrain-drawer}}
 
-{{fig:ui-lifts-drawer}}
+The **Terrain** drawer is sculpting only. Like Buildings and Pistes it has a card rail on the left (raise, lower, flatten, smooth and more, each with an icon, a key badge and a hover card) and a control column on the right: the **target** (corner or area), **brush size**, the **maximum slope** and a live ghost showing the **cost and number of tiles** before you drag. Keys <kbd>1</kbd>–<kbd>4</kbd> pick a tool while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> change the brush. Slopes can't be steeper than the maximum edge step you set. Trees are in the **Landscape** drawer, **Nature** tab: the **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water. Felling forest and planting it back also feeds the *sustainability* bar of your rating (see [Events & the region](page:events)).
 
 > [!NOTE] Lifts have their own tool: pick a lift type, click the bottom station, then the top station. More in [Lifts & pistes](page:lifts-pistes).
 
+> [!TIP] **Build in any season.** Nothing is locked by the calendar: every building, lift, path, piste and landscape item can be placed in any season. The season badges are only hints about when something earns money.
+
 ## Landscape: ponds, terrain, nature and decor
+
+The **Landscape** drawer is where the scenery lives: water, trees and decoration. **Trees are only here** (Nature tab); the Terrain drawer no longer has tree tools.
 
 {{fig:ui-landscape}}
 

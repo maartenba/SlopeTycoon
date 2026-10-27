@@ -49,3 +49,7 @@ One frame for every dialog: header (icon, title in the display font, ✕), scrol
 ## Logo (`src/ui/logo.ts`)
 
 `logoSvg({variant: 'full'|'mark'|'badge'|'wordmark', theme: 'dark'|'light', height?})`: procedural inline SVG (peaks, sun, piste, lift cable + chair, outlined / shadowed wordmark in Lilita One). The compact **mark** has no text (safe for favicon / PWA icons) and shares `markGeometry` with `scripts/gen-icons.ts`. Used: full logo in the main menu, mark in About / boot splash (`index.html`) / favicon / PWA icons. Candidate sketches: `img/logo-*.png`.
+
+## Drawers (card rail)
+
+Buildings, Lifts, Pistes, Terrain, Landscape and View share one drawer layout in `StDock.ts`: a card rail (procedural SVG icons from `src/ui/dockIcons.ts`, key badges, cost hints, hover info cards, selected state) grouped in sections, and an optional side control column. Terrain: Sculpt cards plus target / brush / slope / live ghost cost and tiles. View: Camera / Modes / Overlays / Season cards. Keep new drawer content on this grid; on compact and touch layouts the rail scrolls sideways and the drawer tucks away (`docs/touch.md`).

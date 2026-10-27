@@ -116,7 +116,11 @@ export class TouchGestures {
     const q = this.pinch, p = this.two();
     if (!q || !p) return;
     const cx = (p[0].x + p[1].x) / 2, cy = (p[0].y + p[1].y) / 2, dist = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y), ang = Math.atan2(p[1].y - p[0].y, p[1].x - p[0].x);
-    if (!q.moved && (Math.hypot(cx - q.cx0, cy - q.cy0) > this.cfg.twoTapSlopPx || Math.abs(dist - q.spread0) > this.cfg.twoTapSlopPx * 1.5 || Math.abs(angleDelta(q.ang0, ang)) > 0.2)) q.moved = true;
+    if (!q.moved && (Math.hypot(cx - q.cx0, cy - q.cy0) > this.cfg.twoTapSlopPx || Math.abs(dist - q.spread0) > this.cfg.twoTapSlopPx * 1.5 || Math.abs(angleDelta(q.ang0, ang)) > 0.2)) {
+      // The fingers have left the tap zone: from here on it is a camera gesture. Catch up with everything they did since they touched down (up to ~11 degrees of twist,
+      // ~20 % of zoom, 14 px of pan), otherwise a twist of 60 degrees would only turn the view by ~50 (measured with real emulated touch, docs/touch.md).
+      q.moved = true; q.dist = q.spread0; q.ang = q.ang0; q.cx = q.cx0; q.cy = q.cy0;
+    }
     if (q.moved) {
       if (q.dist > 1 && dist > 1 && dist !== q.dist) this.emit({ type: 'zoom', factor: dist / q.dist, x: cx, y: cy });
       const da = angleDelta(q.ang, ang);

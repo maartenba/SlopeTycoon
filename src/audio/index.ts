@@ -69,7 +69,7 @@ export function createAudio(d: AudioDeps): AudioApi {
     const onDown = (e: Event): void => { if (isButtonEvent(e)) sfx.play('click'); };
     const onOver = (e: Event): void => { if (isButtonEvent(e)) sfx.play('hover'); };
     const onKey = (e: KeyboardEvent): void => {
-      const t = e.target as HTMLElement | null;
+      const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey) settings.toggleMute();
     };

@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting & FAQ"
-order: 14
+order: 15
 summary: "Fixes for the common problems: a black screen, slow frame rate, guests not arriving, closed buildings and lost saves."
 screenshots: []
 ---
@@ -34,7 +34,7 @@ Saves live in browser storage. Clearing site data, using private windows or swit
 
 ## Can I use it on a phone?
 
-It runs on some tablets and phones but is designed for a mouse and keyboard. Desktop is recommended.
+Yes. The game has touch support (gestures, a pan / paint toggle, two-step placement and on-screen controls for walk, ride and photo mode) that switches on by itself on a touch screen. Tablets work well; phones are playable but cramped. If it does not switch on (or switches on by mistake), see Settings → Accessibility → Touch controls. Details in [Touch & tablets](page:touch). Desktop with a mouse is still the most comfortable.
 
 ## Is anything tracked or uploaded?
 

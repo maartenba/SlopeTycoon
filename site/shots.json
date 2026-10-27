@@ -509,7 +509,7 @@
     "zoom": 2,
     "target": "lodge",
     "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
+    "viewport": "1280x1300",
     "steps": "click:Sound & settings;wait:500"
    }
   },
@@ -727,7 +727,7 @@
     "target": "lodge",
     "extra": "starter=1&mode=sandbox",
     "viewport": "1280x900",
-    "evalJs": "__slope.progression.setLevel(2);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
+    "evalJs": "__slope.progression.setLevel(2);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
     "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:800"
    }
   },
@@ -836,6 +836,147 @@
     "extra": "starter=1&hints=0",
     "viewport": "1280x800",
     "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500"
+   }
+  },
+  {
+   "id": "ui-terrain-drawer",
+   "alt": "The Terrain drawer: a rail of cards for raise, lower, flatten, smooth and more with key badges and cost hints, and a side column with target, brush size, slope limit and a live cost preview.",
+   "pages": [
+    "building"
+   ],
+   "kind": "harness",
+   "caption": "The redesigned Terrain drawer: cards on the left, brush and cost on the right.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x800",
+    "steps": "click:button[data-drawer=terrain];wait:600",
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "ui-view-drawer",
+   "alt": "The View drawer with Camera, Modes, Overlays and Season groups of cards.",
+   "pages": [
+    "interface"
+   ],
+   "kind": "harness",
+   "caption": "The View drawer: camera, modes, overlays and season.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1600x900",
+    "steps": "click:button[data-drawer=view];wait:600",
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "ui-stats",
+   "alt": "The Statistics dialog with charts of guests, cash, rating and revenue over a chosen time range.",
+   "pages": [
+    "money"
+   ],
+   "kind": "harness",
+   "caption": "Statistics (I): guests, cash, rating and revenue over time.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "evalJs": "__slope.stats.demoYear(3)",
+    "steps": "wait:800;key:i;wait:1000"
+   }
+  },
+  {
+   "id": "touch-phone-hud",
+   "alt": "The game on a phone held upright: compact top bar, goals, large on-screen speed buttons and a scrolling dock.",
+   "pages": [
+    "touch"
+   ],
+   "kind": "harness",
+   "caption": "On a phone: a compact HUD with 44 px targets.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "390x844",
+    "touch": true,
+    "steps": "wait:1200",
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "touch-phone-place",
+   "alt": "A phone showing the Buildings drawer open over the map.",
+   "pages": [
+    "touch"
+   ],
+   "kind": "harness",
+   "caption": "Drawers on a phone slide up and tuck away.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "390x844",
+    "touch": true,
+    "steps": "wait:1000;click:button[data-drawer=buildings];wait:800",
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "touch-tablet",
+   "alt": "A tablet in landscape with the Pistes drawer open and the touch controls on screen.",
+   "pages": [
+    "touch"
+   ],
+   "kind": "harness",
+   "caption": "On a tablet the full layout fits, with bigger controls.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1024x768",
+    "touch": true,
+    "steps": "wait:1000;click:button[data-drawer=pistes];wait:800",
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "cbsafe-pistes",
+   "alt": "The slope-profile card for a suggested run drawn in the colour-blind-safe palette: sky blue, blue, vermillion and near-black for the four piste difficulties.",
+   "pages": [
+    "settings"
+   ],
+   "kind": "harness",
+   "caption": "The colour-blind-safe palette on the slope profile (compare the green and blue of the default).",
+   "shot": {
+    "size": 128,
+    "seed": 61,
+    "start": "winter",
+    "hour": 12,
+    "zoom": 3,
+    "target": "lodge",
+    "extra": "starter=1&hints=0",
+    "viewport": "1280x800",
+    "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500",
+    "local": {
+     "slope.a11y.v1": "{\"palette\":\"cbsafe\"}"
+    },
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
    }
   }
  ]

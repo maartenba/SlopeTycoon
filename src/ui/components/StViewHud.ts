@@ -71,7 +71,7 @@ button{display:inline-flex;align-items:center;gap:5px}
 .info{position:fixed;left:calc(50% + 40px);top:calc(50% - 20px);max-width:min(300px,calc(50vw - 56px));padding:8px 12px;pointer-events:none}
 .info b{color:#ffd070;display:block}.info div{color:#dbe6f6;font-size:var(--fs-sm)}
 [hidden]{display:none!important}
-@media (max-width:760px){.keys .k2{display:none}}`;
+@media (max-width:760px){.keys .k2{display:none}.card{flex-wrap:wrap;justify-content:center;gap:4px 10px}.who{flex:1 1 calc(100% - 40px)}.stats{flex:1 1 auto;justify-content:center}}`;
   }
 
   constructor() {

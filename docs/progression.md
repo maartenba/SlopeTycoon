@@ -80,7 +80,7 @@ Open question for the playtest: is that pacing right? (`docs/playtest-m53.md`.) 
 
 ## Unlock list (src/config/unlocks.ts)
 
-Only 9 items are gated. **Everything not listed is always available**: roads, footpaths, pistes, basic terraforming and tree planting, T-bar, chair2 / chair4 / chair4d, Base Lodge, Lodge, Café, Mountain Hut, Ski School, Ticket Office, Parking, **Ski Patrol Hub, First-Aid Hut, Ranger Station**, grooming, snowmaking, rental, shop, lodging, summer attractions, and the Families / Budget / Summer / Brand campaigns.
+Only 9 buildings / lifts / campaigns are gated, plus one landscape item: **digging ponds** (Landscape drawer > Water) unlocks at resort level 2 (`kind: 'landscape'`, `src/config/unlocks.ts`). **Everything not listed is always available**: roads, footpaths, pistes, basic terraforming (Terrain drawer), tree planting and clearing, boulders and decor (Landscape drawer), T-bar, chair2 / chair4 / chair4d, Base Lodge, Lodge, Café, Mountain Hut, Ski School, Ticket Office, Parking, **Ski Patrol Hub, First-Aid Hut, Ranger Station**, grooming, snowmaking, rental, shop, lodging, summer attractions, and the Families / Budget / Summer / Brand campaigns.
 
 | level | item | why there |
 |---|---|---|
@@ -94,7 +94,7 @@ Only 9 items are gated. **Everything not listed is always available**: roads, fo
 | 5 | Altiport | $15k + $40/day; the VIP access |
 | 5 | VIP High-Rollers campaign | $12k; needs an altiport or luxury lodging and 3 stars anyway |
 
-Deliberately **not** gated: the Ranger Station (a goal in the last chapter and an Advisor rule need it long before level 3), anything a goal asks for, terraform / plant tools (basics), anything the tutorial uses. A test (`tests/sim/progression.test.ts`) fails if a goal, an Advisor `build(...)` rule or the tutorial's default lift list references a gated id.
+Deliberately **not** gated: the Ranger Station (a goal in the last chapter and an Advisor rule need it long before level 3), anything a goal asks for, terraform (Terrain drawer) and plant tools (Landscape > Nature) (basics), anything the tutorial uses. A test (`tests/sim/progression.test.ts`) fails if a goal, an Advisor `build(...)` rule or the tutorial's default lift list references a gated id.
 
 ![Buildings drawer: only the Helipad is locked (gold L4 badge)](img/progression-dock-locks.webp)
 ![Lifts drawer: a locked kind with the level reason at the top of the popover](img/progression-lifts-locked.webp)

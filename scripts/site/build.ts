@@ -36,7 +36,7 @@ const imgTag = (s: ShotInfo, o: { sizes?: string; eager?: boolean; cls?: string 
 export function buildLanding(tpl: string, env: SiteEnv, shots: Record<string, ShotInfo>, markSvg: string, fullLogo: string, manifestOrder: string[]): string {
   const need = (id: string): ShotInfo => { const s = shots[id]; if (!s) throw new Error(`landing uses unknown/unshot screenshot '${id}'`); return s; };
   const used = new Set<string>();
-  const facts: Array<[string, string]> = [['3', 'map sizes'], [String(LIFT_KIND_IDS.length), 'lift types'], [String(ACHIEVEMENTS.length), 'trophies'], [String(SCENARIOS.length), 'scenarios'], ['1× 3× 10×', 'speeds + Skip to…'], ['4', 'seasons, 180-day year'], [String(FESTIVALS.filter((f) => f.kind === 'booked').length), 'bookable festivals'], [String(STAFF_UPGRADES.length), 'staff courses']];
+  const facts: Array<[string, string]> = [['3', 'map sizes'], [String(LIFT_KIND_IDS.length), 'lift types'], [String(ACHIEVEMENTS.length), 'trophies'], [String(SCENARIOS.length), 'scenarios'], ['1× 3× 10×', 'speeds + Skip to…'], ['4', 'seasons, 180-day year'], [String(FESTIVALS.filter((f) => f.kind === 'booked').length), 'bookable festivals'], [String(STAFF_UPGRADES.length), 'staff courses'], ['Touch', 'tablets & phones'], ['I', 'statistics charts']];
   const slides = ['hero-winter', 'season-spring', 'season-summer', 'season-autumn', 'night-village'].map((id, i) => { used.add(id); return imgTag(need(id), { sizes: '100vw', eager: i === 0 }); }).join('');
   let html = tpl
     .replace('{{head}}', head(env, { rel: '', title: 'Slope Tycoon: build your own ski resort in the browser', path: '' }))

@@ -13,6 +13,8 @@ export interface ShotOpts {
   /** Steps run after boot, ';'-separated: `key:F3`, `type:text` (keyboard), `mouse:x,y` (click), `move:x,y` (hover), `wheel:dy`, `click:<text of a button or css>`, `wait:ms`, `eval:js` (result logged). Clicks pierce shadow roots (innermost match by css, or button whose text/title/aria-label contains the text). */
   /** Touch emulation (hasTouch + isMobile + `?touch=1`): steps `tap:x,y`, `tdrag:x1,y1,x2,y2`, `pinch:cx,cy,d1,d2` (two fingers, distances in px), `hold:x,y,ms` (long press). */
   touch?: boolean;
+  /** localStorage entries set before the game boots (e.g. `{ "slope.a11y.v1": "{\"palette\":\"cbsafe\"}" }`). */
+  local?: Record<string, string>;
   steps?: string; viewport?: string; overlap?: boolean; bare?: boolean;
   /** JS run in the page BEFORE `ticks` (e.g. `__slope.populateDemo('Medium'); __slope.spawnGuests(150,'skiers')`). */
   pre?: string;
@@ -68,6 +70,7 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
   if (o.touch) q.set('touch', '1');
   const page = await browser.newPage();
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, ...(o.touch ? { hasTouch: true, isMobile: true } : {}) });
+  if (o.local) await page.evaluateOnNewDocument((kv: Record<string, string>) => { for (const [k, v] of Object.entries(kv)) { try { localStorage.setItem(k, v); } catch { /* blocked */ } } }, o.local);
   const errors: string[] = [], logs: string[] = [];
   page.on('console', (m) => { const t = `[${m.type()}] ${m.text()}`; logs.push(t); if (m.type() === 'error' || /shader|webgl|THREE\./i.test(m.text()) && m.type() !== 'log') errors.push(t); });
   page.on('pageerror', (e) => errors.push(`[pageerror] ${String(e)}`));
@@ -209,6 +212,7 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
   mkdirSync('.weave/shots', { recursive: true });
   const file = `.weave/shots/${o.out ?? 'shot'}.png`;
   await page.screenshot({ path: file });
+  if (o.local) await page.evaluate((ks: string[]) => { for (const k of ks) { try { localStorage.removeItem(k); } catch { /* blocked */ } } }, Object.keys(o.local));
   await page.close();
   return { file, errors, logs };
 }

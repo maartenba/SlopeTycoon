@@ -44,11 +44,11 @@ Headings `##` / `###` get anchors and the right-hand table of contents. Every pa
 
 ### Generated blocks (cannot drift from the game)
 
-`{{gen:shortcuts}}` (from `KEY_BINDINGS` in `src/ui/shortcuts.ts`), `levels`, `unlocks` (`config/progression.ts`, `config/unlocks.ts`), `lifts`, `campaigns`, `scenarios` (`config/scenarios`), `achievements`, `cosmetics`, `festivals` (`config/festivals.ts`), `staffUpgrades` (`config/staffUpgrades.ts`). `tests/site/generated.test.ts` fails when a key binding, level, unlock, scenario or trophy is not in the output. After changing game rules, re-read the prose pages that mention numbers (time model, difficulty, goals); the tables update themselves.
+`{{gen:shortcuts}}` (from `KEY_BINDINGS` in `src/ui/shortcuts.ts`), `levels`, `unlocks` (`config/progression.ts`, `config/unlocks.ts`), `lifts`, `campaigns`, `scenarios` (`config/scenarios`), `achievements`, `cosmetics`, `festivals` (`config/festivals.ts`), `staffUpgrades` (`config/staffUpgrades.ts`). The shortcut table includes every key (e.g. `I` for Statistics) because it reads `KEY_BINDINGS`. `tests/site/generated.test.ts` fails when a key binding, level, unlock, scenario or trophy is not in the output. After changing game rules, re-read the prose pages that mention numbers (time model, difficulty, goals); the tables update themselves.
 
 ## Screenshots
 
-`site/shots.json`: `{ id, alt, caption, pages, kind: "harness" | "copy", shot: {...} }`. For `harness` entries `shot` is the options object of `scripts/lib/harness.ts` `shot()` (same names as the `npm run shot` flags in `docs/visual-qa.md`: `size seed start hour zoom target ticks pre evalJs steps viewport bare view guest vticks freeze photo* walk*`; `null` values are dropped). `copy` entries copy an existing image.
+`site/shots.json`: `{ id, alt, caption, pages, kind: "harness" | "copy", shot: {...} }`. For `harness` entries `shot` is the options object of `scripts/lib/harness.ts` `shot()` (same names as the `npm run shot` flags in `docs/visual-qa.md`: `size seed start hour zoom target ticks pre evalJs steps viewport bare view guest vticks freeze photo* walk* touch local`; `touch: true` + `viewport` for phone / tablet shots, `local` = localStorage entries set before boot, e.g. the colour palette; `null` values are dropped). `copy` entries copy an existing image.
 
 ```bash
 npm run site:shots                       # everything (about 15 min; own Vite server + Chrome, sequential)

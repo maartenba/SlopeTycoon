@@ -9,9 +9,13 @@ export interface TouchControlsApi {
   undo(): void;
   rotateView(dir: 1 | -1): void;
   rotateGhost(dir: 1 | -1): void;
+  /** Show / hide the open drawer (tool options) while a map tool is active: on a short screen the drawer would cover the map you paint on. */
+  toggleDrawer?(): void;
+  /** Pause / resume the simulation (in walk mode Space is Hop, so the Pause button cannot send it). */
+  togglePause?(): void;
 }
 export type TouchView = 'iso' | 'ride' | 'walk' | 'photo';
-export interface TouchBarState { enabled: boolean; tool: string; kind: ToolKind; mode: TouchMode; confirming: boolean; /** Ghost summary while aiming ('' = show the default tip). */ hint: string }
+export interface TouchBarState { enabled: boolean; tool: string; kind: ToolKind; mode: TouchMode; confirming: boolean; /** Ghost summary while aiming ('' = show the default tip). */ hint: string; /** The dock drawer is tucked away (touch + a map tool). */ drawerHidden: boolean }
 
 const JOY_R = 52;
 const TIP = 'Tap the map to aim, tap again to place';
@@ -26,7 +30,7 @@ const TIP = 'Tap the map to aim, tap again to place';
  */
 export class StTouchControls extends StElement {
   private api: TouchControlsApi | null = null;
-  private st: TouchBarState = { enabled: false, tool: 'select', kind: 'select', mode: 'pan', confirming: false, hint: '' };
+  private st: TouchBarState = { enabled: false, tool: 'select', kind: 'select', mode: 'pan', confirming: false, hint: '', drawerHidden: false };
   private view: TouchView = 'iso';
   private readonly col = document.createElement('div');
   private readonly bar = document.createElement('div');
@@ -36,7 +40,9 @@ export class StTouchControls extends StElement {
   private readonly hintEl = document.createElement('span');
   private modeBtn!: HTMLButtonElement;
   private cancelBtn!: HTMLButtonElement;
+  private drawerBtn!: HTMLButtonElement;
   private placeBtn!: HTMLButtonElement;
+  private rotBtns: HTMLButtonElement[] = [];
   private runBtn: HTMLButtonElement | null = null;
   private held = new Set<string>();
   private joyId = -1;
@@ -50,7 +56,7 @@ export class StTouchControls extends StElement {
 .bar{left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));flex-direction:row;align-items:center;padding:6px 8px;background:var(--c-panel);border:1px solid rgba(90,112,144,.5);border-radius:var(--r-lg);max-width:calc(100vw - 16px)}
 .views{right:calc(10px + env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));flex-wrap:wrap;justify-content:flex-end;max-width:min(260px,60vw)}
 .views[data-view=photo]{bottom:auto;top:50%;flex-direction:column}
-.joy{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:${JOY_R * 2 + 24}px;height:${JOY_R * 2 + 24}px;border-radius:50%;background:rgba(20,28,40,.55);border:2px solid rgba(255,255,255,.35);display:block;position:fixed}
+.joy{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:${JOY_R * 2 + 24}px;height:${JOY_R * 2 + 24}px;border-radius:50%;background:rgba(20,28,40,.55);border:2px solid rgba(255,255,255,.35);display:block;position:fixed}
 .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,208,112,.85);border:2px solid #fff;pointer-events:none}
 button.t{min-width:var(--tc);min-height:var(--tc);padding:0 10px;font-size:calc(18px * var(--ui-scale,1));display:inline-flex;align-items:center;justify-content:center;gap:4px;background:rgba(20,28,40,.82);border-color:rgba(138,160,190,.7)}
 button.t small{font-size:calc(11px * var(--ui-scale,1));font-weight:700}
@@ -59,8 +65,11 @@ button.t.primary{background:linear-gradient(#f2b43e,#dc9526);border-color:#ffd07
 .hint{max-width:150px;line-height:1.2}
 button.t.wide{padding:0 14px}
 [hidden]{display:none!important}
-@media (max-width:760px) and (min-height:521px){.col{left:auto;right:calc(8px + env(safe-area-inset-right,0px));top:calc(332px + env(safe-area-inset-top,0px));flex-wrap:wrap;max-height:172px;align-content:flex-start;justify-content:flex-start}}
-@media (max-height:520px){.col{top:calc(72px + env(safe-area-inset-top,0px));left:calc(52px + env(safe-area-inset-left,0px));right:auto;flex-direction:row}.bar{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}`;
+.col [data-role=drawer]{display:none}
+@media (max-width:760px) and (min-height:521px){.views[data-view=photo]{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;flex-direction:row}.joy,.views:not([data-view=photo]){bottom:calc(164px + env(safe-area-inset-bottom,0px))}} /* portrait: the view HUD card (Exit) sits at the bottom centre: keep the stick and buttons above it */
+@media (max-width:760px),(max-height:520px){.col [data-role=drawer]{display:inline-flex}}
+@media (max-height:520px){.col{top:calc(72px + env(safe-area-inset-top,0px));left:calc(52px + env(safe-area-inset-left,0px));right:auto;flex-direction:row}.bar{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
+@media (max-height:520px) and (max-width:500px){.col{top:calc(112px + env(safe-area-inset-top,0px));left:calc(8px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px}}`;
   }
 
   constructor() {
@@ -78,7 +87,8 @@ button.t.wide{padding:0 14px}
     const rl = mk('⟲', 'Rotate the view left (twist two fingers for free rotation)', () => this.api?.rotateView(-1)); rl.dataset.role = 'rot-left';
     const rr = mk('⟳', 'Rotate the view right', () => this.api?.rotateView(1)); rr.dataset.role = 'rot-right';
     this.cancelBtn = mk('✕', 'Cancel the tool (long press)', () => this.api?.cancelTool(), 'danger'); this.cancelBtn.dataset.role = 'cancel';
-    this.col.append(this.modeBtn, undo, rl, rr, this.cancelBtn);
+    this.drawerBtn = mk('☰', 'Show the tool options', () => this.api?.toggleDrawer?.()); this.drawerBtn.dataset.role = 'drawer';
+    this.col.append(this.modeBtn, this.drawerBtn, undo, rl, rr, this.cancelBtn);
     // placement bar
     this.bar.className = 'cl bar';
     const gl = mk('⟲', 'Rotate the building left', () => this.api?.rotateGhost(-1)); gl.dataset.role = 'ghost-left';
@@ -86,6 +96,7 @@ button.t.wide{padding:0 14px}
     this.placeBtn = mk('✓ <small>Place</small>', 'Place the building at the ghost (or tap the ghost again)', () => this.api?.confirm(), 'primary wide'); this.placeBtn.dataset.role = 'place';
     const bc = mk('✕', 'Cancel placing', () => this.api?.cancelTool(), 'danger'); bc.dataset.role = 'bar-cancel';
     this.hintEl.className = 'hint'; this.hintEl.textContent = TIP; this.hintEl.setAttribute('role', 'status');
+    this.rotBtns = [gl, gr];
     this.bar.append(gl, gr, this.placeBtn, bc, this.hintEl);
     // views
     this.views.className = 'cl views';
@@ -110,6 +121,8 @@ button.t.wide{padding:0 14px}
 
   private key(k: string, down: boolean): void { window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { key: k, bubbles: true, cancelable: true })); }
   private tapKey(k: string): void { this.key(k, true); this.key(k, false); }
+  /** A key the walk loop POLLS (Space = hop): keep it down for at least one rendered frame, otherwise down + up in the same task is never seen. */
+  private pressKey(k: string): void { this.key(k, true); requestAnimationFrame(() => requestAnimationFrame(() => this.key(k, false))); }
   private releaseAll(): void { for (const k of this.held) this.key(k, false); this.held.clear(); this.runOn = false; this.runBtn?.classList.remove('active'); this.knob.style.transform = ''; this.joyId = -1; }
 
   private buildViews(): void {
@@ -124,11 +137,11 @@ button.t.wide{padding:0 14px}
     this.runBtn = null;
     if (this.view === 'walk') {
       mk('E', 'Interact: inspect / board a lift', () => this.tapKey('e'), 'interact');
-      mk('⤒', 'Hop', () => this.tapKey(' '), 'hop');
+      mk('⤒', 'Hop', () => this.pressKey(' '), 'hop');
       const run = mk('<small>RUN</small>', 'Run (toggle)', () => { this.runOn = !this.runOn; this.key('Shift', this.runOn); if (this.runOn) this.held.add('Shift'); else this.held.delete('Shift'); run.classList.toggle('active', this.runOn); }, 'run');
       this.runBtn = run;
       mk('📷', 'Photo mode', () => this.tapKey('p'), 'photo');
-      mk('⏯', 'Pause / resume', () => this.tapKey(' '), 'pause');
+      mk('⏯', 'Pause / resume', () => (this.api?.togglePause ? this.api.togglePause() : this.tapKey(' ')), 'pause');
     } else if (this.view === 'ride') {
       mk('◎', 'Recentre the view', () => this.tapKey('c'), 'recentre');
       mk('📷', 'Photo mode', () => this.tapKey('p'), 'photo');
@@ -173,7 +186,13 @@ button.t.wide{padding:0 14px}
     this.modeBtn.title = this.st.mode === 'paint' ? 'Paint mode: one-finger drag paints (tap to switch to pan)' : 'Pan mode: one-finger drag pans (tap to paint)';
     this.modeBtn.setAttribute('aria-label', this.modeBtn.title); this.modeBtn.setAttribute('aria-pressed', String(this.st.mode === 'paint'));
     this.cancelBtn.hidden = this.st.tool === 'select';
-    this.bar.hidden = !on || !iso || this.st.tool !== 'placement';
+    this.drawerBtn.hidden = this.st.tool === 'select';
+    this.drawerBtn.setAttribute('aria-pressed', String(!this.st.drawerHidden));
+    this.drawerBtn.classList.toggle('active', !this.st.drawerHidden);
+    this.drawerBtn.title = this.st.drawerHidden ? 'Show the tool options' : 'Hide the tool options (free the map)'; this.drawerBtn.setAttribute('aria-label', this.drawerBtn.title);
+    this.bar.hidden = !on || !iso || (this.st.tool !== 'placement' && this.st.tool !== 'lift');
+    const lift = this.st.tool === 'lift';
+    for (const b of this.rotBtns) b.hidden = lift;
     this.placeBtn.classList.toggle('active', this.st.confirming);
     this.hintEl.textContent = this.st.hint || TIP;
     this.views.hidden = !on || this.view === 'iso';

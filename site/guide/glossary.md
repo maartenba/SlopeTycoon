@@ -1,6 +1,6 @@
 ---
 title: "Glossary"
-order: 15
+order: 16
 summary: "Short definitions of the words the game and this guide use."
 screenshots: []
 ---

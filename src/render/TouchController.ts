@@ -1,6 +1,11 @@
 import { TapConfirm, TouchGestures, toolKindOf, type TouchIntent, type TouchMode } from './touch';
 import type { CameraController } from './CameraController';
 
+/** Chrome: true while input events are queued behind a busy main thread (a long-press tick must wait for them: the finger may already have moved). */
+function inputPending(): boolean {
+  try { return !!(navigator as { scheduling?: { isInputPending?: (o?: { includeContinuous: boolean }) => boolean } }).scheduling?.isInputPending?.({ includeContinuous: true }); } catch { return false; }
+}
+
 export interface TouchControllerOptions {
   dom: HTMLElement;
   camera: CameraController;
@@ -33,6 +38,8 @@ export class TouchController {
   // pinch outside the iso view
   private view2: Map<number, { x: number; y: number }> = new Map();
   private viewDist = 0;
+  /** Photo mode: a two-finger drag also pans the orbit focus (the mouse uses Shift / right drag): a synthetic Shift + drag pointer follows the centroid. */
+  private photoPan = false;
   private lastTool = '';
 
   constructor(private readonly o: TouchControllerOptions) {
@@ -59,11 +66,13 @@ export class TouchController {
   /** The tool changed: refresh the tool kind and drop a pending preview. */
   toolChanged(): void { this.confirmTap.clear(); this.gestures.toolKind = toolKindOf(this.o.toolId()); this.state(); }
   confirm(): boolean { const ok = this.o.confirmPlacement?.() ?? false; this.confirmTap.clear(); this.state(); return ok; }
-  private state(): void { this.o.onState?.({ mode: this.gestures.mode, confirming: this.confirming, hint: this.confirming ? (this.o.ghostText?.() ?? '') : '' }); }
-  reset(): void { this.gestures.reset(); this.tracked.clear(); this.view2.clear(); this.stopTimer(); }
+  private state(): void { this.o.onState?.({ mode: this.gestures.mode, confirming: this.confirming, hint: this.confirming || this.o.toolId() === 'lift' ? (this.o.ghostText?.() ?? '') : '' }); }
+  reset(): void { this.gestures.reset(); this.tracked.clear(); this.endPhotoPan(); this.view2.clear(); this.stopTimer(); }
   dispose(): void { this.reset(); for (const d of this.disposers) d(); this.disposers = []; }
 
   private now(): number { return this.o.now ? this.o.now() : performance.now(); }
+  /** When the finger really did it: the event's own timestamp, so a main thread stalled by a heavy frame cannot turn a quick tap / drag into a long press. */
+  private evTime(e: PointerEvent): number { return !this.o.now && e.timeStamp > 0 && e.timeStamp <= performance.now() + 1 ? e.timeStamp : this.now(); }
   private isoTouch(e: PointerEvent): boolean { return e.pointerType === 'touch' && !(e as { synthetic?: boolean }).synthetic && !this.synthetic && this.o.enabled(); }
 
   private down(e: PointerEvent): void {
@@ -75,12 +84,12 @@ export class TouchController {
     this.gestures.toolKind = tk;
     e.stopImmediatePropagation(); e.preventDefault();
     this.tracked.add(e.pointerId);
-    this.gestures.pointerDown(e.pointerId, e.clientX, e.clientY, this.now());
+    this.gestures.pointerDown(e.pointerId, e.clientX, e.clientY, this.evTime(e));
     this.startTimer();
   }
   private move(e: PointerEvent): void {
     if (e.pointerType !== 'touch' || this.synthetic) return;
-    if (this.tracked.has(e.pointerId)) { e.stopImmediatePropagation(); this.gestures.pointerMove(e.pointerId, e.clientX, e.clientY, this.now()); return; }
+    if (this.tracked.has(e.pointerId)) { e.stopImmediatePropagation(); this.gestures.pointerMove(e.pointerId, e.clientX, e.clientY, this.evTime(e)); return; }
     if (this.view2.has(e.pointerId)) this.viewMove(e);
   }
   private up(e: PointerEvent, cancelled: boolean): void {
@@ -88,37 +97,42 @@ export class TouchController {
     if (this.tracked.has(e.pointerId)) {
       e.stopImmediatePropagation();
       this.tracked.delete(e.pointerId);
-      this.gestures.pointerUp(e.pointerId, this.now(), cancelled);
+      this.gestures.pointerUp(e.pointerId, this.evTime(e), cancelled);
       if (!this.gestures.touching) this.stopTimer();
       return;
     }
-    if (this.view2.has(e.pointerId)) { this.view2.delete(e.pointerId); this.viewDist = 0; }
+    if (this.view2.has(e.pointerId)) { this.view2.delete(e.pointerId); this.viewDist = 0; if (this.view2.size < 2) this.endPhotoPan(); }
   }
 
   // ---- ride / walk / photo: one finger passes through; two fingers = wheel (FOV / zoom)
   private viewDown(e: PointerEvent): void {
     this.view2.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (this.view2.size >= 2) { e.stopImmediatePropagation(); const [a, b] = [...this.view2.values()]; this.viewDist = Math.hypot(a!.x - b!.x, a!.y - b!.y); }
+    if (this.view2.size >= 2) {
+      e.stopImmediatePropagation(); const [a, b] = [...this.view2.values()]; this.viewDist = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+      if (!this.photoPan && document.body.classList.contains('view-photo')) { this.photoPan = true; this.fire(this.o.dom, this.ptr('pointerdown', (a!.x + b!.x) / 2, (a!.y + b!.y) / 2, 1, 9002, true)); }
+    }
   }
+  private endPhotoPan(): void { if (this.photoPan) { this.photoPan = false; this.fire(this.o.dom, this.ptr('pointerup', 0, 0, 0, 9002, true)); } }
   private viewMove(e: PointerEvent): void {
     const p = this.view2.get(e.pointerId)!;
     p.x = e.clientX; p.y = e.clientY;
     if (this.view2.size < 2) return;
     e.stopImmediatePropagation();
     const [a, b] = [...this.view2.values()], d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+    if (this.photoPan) this.fire(this.o.dom, this.ptr('pointermove', (a!.x + b!.x) / 2, (a!.y + b!.y) / 2, 1, 9002, true));
     if (this.viewDist > 1 && d > 1 && d !== this.viewDist) this.fire(this.o.dom, new WheelEvent('wheel', { deltaY: -Math.log(d / this.viewDist) * 1000, bubbles: true, cancelable: true, clientX: (a!.x + b!.x) / 2, clientY: (a!.y + b!.y) / 2 }));
     this.viewDist = d;
   }
 
-  private startTimer(): void { if (!this.timer) this.timer = window.setInterval(() => this.gestures.tick(this.now()), 60); }
+  private startTimer(): void { if (!this.timer) this.timer = window.setInterval(() => { if (!inputPending()) this.gestures.tick(this.now()); }, 60); }
   private stopTimer(): void { if (this.timer) { clearInterval(this.timer); this.timer = 0; } }
 
   private fire(target: EventTarget, ev: Event): void {
     this.synthetic = true;
     try { target.dispatchEvent(ev); } finally { this.synthetic = false; }
   }
-  private ptr(type: string, x: number, y: number, buttons: number): PointerEvent {
-    const e = new PointerEvent(type, { clientX: x, clientY: y, button: 0, buttons, pointerId: 9001, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true });
+  private ptr(type: string, x: number, y: number, buttons: number, id = 9001, shift = false): PointerEvent {
+    const e = new PointerEvent(type, { clientX: x, clientY: y, button: 0, buttons, pointerId: id, pointerType: 'touch', isPrimary: true, shiftKey: shift, bubbles: true, cancelable: true });
     (e as { synthetic?: boolean }).synthetic = true;
     return e;
   }
@@ -133,8 +147,8 @@ export class TouchController {
       case 'zoom': cam.zoomBy(i.factor); break;
       case 'rotate': cam.rotateBy(i.radians); break;
       case 'tap':
-        if (tool === 'placement') {
-          if (this.confirmTap.tap(i.x, i.y) === 'confirm') { if (!this.o.confirmPlacement?.()) this.press(i.x, i.y); this.state(); } // place at the GHOST (never at a tile a finger-width away)
+        if (tool === 'placement' || tool === 'lift') { // two-step: the first tap aims (preview), a second tap near it (or the Place button) commits at the PREVIEW (never at a tile a finger-width away)
+          if (this.confirmTap.tap(i.x, i.y) === 'confirm') { if (!this.o.confirmPlacement?.()) this.press(i.x, i.y); this.confirmTap.clear(); this.state(); }
           else { this.fire(this.o.dom, this.ptr('pointermove', i.x, i.y, 0)); this.state(); }
         } else if (toolKindOf(tool) === 'paint') { // a tap with a paint tool = one dab
           this.press(i.x, i.y); this.release(i.x, i.y);

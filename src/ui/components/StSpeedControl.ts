@@ -47,8 +47,8 @@ export class StSpeedControl extends StElement {
   protected css(): string {
     return `:host{display:block;box-sizing:border-box;width:100%;max-width:260px}
 .panel{box-sizing:border-box;width:100%;flex-direction:column;align-items:stretch;gap:4px;font-size:calc(12px * var(--ui-scale, 1));padding:6px 8px;overflow:hidden}
-.btns{display:flex;gap:4px;align-items:center;flex-wrap:nowrap}
-.btns button{min-width:32px;height:26px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
+.btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.btns button{min-width:max(32px,var(--touch-min,0px));height:26px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
 .btns .sp{flex:1}
 .when{display:flex;align-items:baseline;justify-content:space-between;gap:8px;white-space:nowrap;min-width:0;line-height:1.2}
 .when .d{overflow:hidden;text-overflow:ellipsis;min-width:0}

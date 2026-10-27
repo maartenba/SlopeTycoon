@@ -63,7 +63,7 @@ describe('st-touch-controls', () => {
     e.setView('photo'); expect(btn(e, 'save')).toBeTruthy();
     e.setView('iso'); expect(views.hidden).toBe(true); expect(col.hidden).toBe(false);
   });
-  it('walk buttons send the walk keys; Run toggles a held Shift and leaving walk releases it', () => {
+  it('walk buttons send the walk keys; Run toggles a held Shift and leaving walk releases it; Hop keeps Space down for a couple of frames', async () => {
     const e = el('st-touch-controls'); document.body.append(e);
     e.setState({ enabled: true }); e.setView('walk');
     const ev: string[] = [];
@@ -72,7 +72,9 @@ describe('st-touch-controls', () => {
     btn(e, 'interact').click(); btn(e, 'hop').click();
     btn(e, 'run').click();
     e.setView('ride');
-    expect(ev).toEqual(['keydown:e', 'keyup:e', 'keydown: ', 'keyup: ', 'keydown:Shift', 'keyup:Shift']);
+    expect(ev).toEqual(['keydown:e', 'keyup:e', 'keydown: ', 'keydown:Shift', 'keyup:Shift']); // the walk loop polls held keys: Space is released two frames later
+    await new Promise((r) => setTimeout(r, 100));
+    expect(ev).toEqual(['keydown:e', 'keyup:e', 'keydown: ', 'keydown:Shift', 'keyup:Shift', 'keyup: ']);
   });
   it('the joystick holds W/A/S/D while pushed and releases them on lift', () => {
     const e = el('st-touch-controls'); document.body.append(e);

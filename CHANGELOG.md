@@ -2,13 +2,21 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-26 (pre-release)
+
+Second pre-release (still not a 1.0). Adds Phase 5 (goals, ride-along, photo & walk modes, progression, scenarios, achievements, staff, festivals, stories, rivals, build depth), touch support, colour-blind palette, Statistics, named regions, the Landscape drawer and redesigned Terrain / View drawers.
+
+### Release prep (0.2.0)
+- Version bumped to **0.2.0** (package, lockfile, About label, service-worker cache version, README, docs, site). Still a pre-release; not 1.0.
+- **Website and guide updated**: new guide page *Touch & tablets*, a Statistics section in *Money*, the redesigned Terrain drawer in *Building* (and the Landscape intro: trees only there; build in any season), the View drawer in *The interface*, region names in *Getting started*, the colour-blind palette and Touch setting in *Settings*, a text-field note in *Shortcuts*; landing page gets touch, colour-blind and statistics cards, facts and an updated FAQ. 7 new screenshots (`ui-terrain-drawer`, `ui-view-drawer`, `ui-stats`, `touch-phone-hud`, `touch-phone-place`, `touch-tablet`, `cbsafe-pistes`) and a re-shoot of every picture. Harness: `local` option (localStorage before boot).
+- Docs: `progression.md`, `depth.md`, `ui-kit.md`, `visual-qa.md`, `release.md`, README and AGENTS.md brought up to date.
 
 ### Drawers
 - **Terrain and View drawers redesigned** like Buildings / Pistes / Landscape: card rail with procedural SVG icons, key badges, cost hints, hover info cards, selected states, grouped sections (Sculpt; Camera / Modes / Overlays / Season) and a side control column (target, brush, slope, live ghost cost + tiles). The View drawer gains rotate, zoom and ride-along cards. All hotkeys unchanged.
 
 ### Touch and accessibility
 - **Touch support** for tablets and phones (`docs/touch.md`): one-finger pan, pinch zoom, two-finger twist rotate, tap to select or aim, a two-step building placement (ghost first, then tap again or press Place), long press to cancel, a pan / paint toggle for drag tools, a two-finger tap for undo, on-screen controls (and a joystick) for walk, ride-along and photo mode, 44 px targets, a compact layout for narrow and short screens, safe-area insets and no page zoom / scroll / pull-to-refresh. Settings > Accessibility > Touch controls: Auto / On / Off (Auto follows `(pointer: coarse)`). Desktop behaviour is unchanged.
+- **Touch verified end to end** (`npm run touch:e2e`, `docs/touch.md`): real emulated touch on phone, phone landscape and tablet (585 checks) found and fixed: a walk joystick that never worked (`touch-action`), a Pause button that hopped, lost taps on a busy frame, a vanishing Select hover info, a twist that lost its first degrees, one-tap lift stations (now two-step), no photo pan, hotkeys firing while typing in a text field, a Pistes drawer without a usable card rail, drawers covering the whole landscape map (tuck away + options button), and many targets under 44 px. Holding a finger on a button shows its tooltip.
 - **Colour-blind-safe palette** (Settings > Accessibility > Colour palette): Okabe-Ito based piste difficulty, overlay and status colours; reduced motion now also stills the animations inside the UI panels.
 
 ### Statistics

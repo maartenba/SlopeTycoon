@@ -2,7 +2,7 @@
 title: "Settings & accessibility"
 order: 12
 summary: "Sound, feedback intensity, text size, reduced motion, month and year reports, ride and walk options."
-screenshots: [ui-settings]
+screenshots: [ui-settings, cbsafe-pistes]
 ---
 {{fig:ui-settings}}
 
@@ -22,9 +22,13 @@ Open **Settings** with the gear icon in the top bar. The game pauses while Setti
 
 ## Accessibility
 
-- **Reduced motion** gives a calmer camera, fewer effects and no decorative animation. It defaults to your operating system's setting.
+- **Reduced motion** gives a calmer camera, fewer effects and no decorative animation, also inside the panels. It defaults to your operating system's setting.
 - **Text size** scales the whole interface.
+- **Colour palette**: *Default* or *Colour-blind safe*. The safe palette is based on the Okabe-Ito set and recolours piste difficulty (sky blue, blue, vermillion, near-black), the quality and slope overlays, the slope profile and the good / bad / info colours, so they stay apart for the common kinds of colour blindness (and in greyscale).
+- **Touch controls**: *Auto*, *On* or *Off*, see [Touch & tablets](page:touch).
 - The game can be played largely from the keyboard (see [Keyboard shortcuts](page:shortcuts)), and dialogs trap and restore focus.
+
+{{fig:cbsafe-pistes}}
 
 ## Game
 

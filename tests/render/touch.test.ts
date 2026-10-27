@@ -86,6 +86,22 @@ describe('touch gestures: two fingers', () => {
     const r = out.find((i) => i.type === 'rotate') as Extract<TouchIntent, { type: 'rotate' }>;
     expect(r.radians).toBeCloseTo(0.5, 5);
   });
+  it('a slow twist / pinch / two-finger drag is not short-changed by the tap zone: the total delta since touch-down is applied (60 degrees of finger twist = 60 degrees of rotation)', () => {
+    const steps = 24, total = Math.PI / 3;
+    let { g, out } = rig();
+    g.pointerDown(1, 100, 100, 0); g.pointerDown(2, 200, 100, 0);
+    for (let k = 1; k <= steps; k++) g.pointerMove(2, 100 + 100 * Math.cos(total * k / steps), 100 + 100 * Math.sin(total * k / steps), k * 16);
+    const sum = (t: string, f: (i: never) => number): number => out.filter((i) => i.type === t).reduce((a, i) => a + f(i as never), 0);
+    expect(sum('rotate', (i: { radians: number }) => i.radians)).toBeCloseTo(total, 5);
+    ({ g, out } = rig());
+    g.pointerDown(1, 100, 100, 0); g.pointerDown(2, 200, 100, 0);
+    for (let k = 1; k <= steps; k++) g.pointerMove(2, 200 + 100 * k / steps, 100, k * 16); // spread 100 -> 200
+    expect(out.filter((i) => i.type === 'zoom').reduce((a, i) => a * (i as { factor: number }).factor, 1)).toBeCloseTo(2, 5);
+    ({ g, out } = rig());
+    g.pointerDown(1, 100, 100, 0); g.pointerDown(2, 200, 100, 0);
+    for (let k = 1; k <= steps; k++) { g.pointerMove(1, 100, 100 + 80 * k / steps, k * 16); g.pointerMove(2, 200, 100 + 80 * k / steps, k * 16); }
+    expect(out.filter((i) => i.type === 'pan').reduce((a, i) => a + (i as { dy: number }).dy, 0)).toBeCloseTo(80, 5);
+  });
   it('dragging both fingers together pans by the centroid move', () => {
     const { g, out } = rig();
     g.pointerDown(1, 100, 100, 0); g.pointerDown(2, 200, 100, 5);

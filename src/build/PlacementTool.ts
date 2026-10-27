@@ -211,7 +211,7 @@ export class PlacementTool {
   }
 
   private onKey(e: KeyboardEvent): void {
-    const t = e.target as HTMLElement | null;
+    const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (!this.type) return;
     if (e.key === 'r' || e.key === 'R') this.rotate(e.shiftKey ? -1 : 1);

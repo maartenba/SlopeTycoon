@@ -325,8 +325,8 @@ const demoBag = new DisposeBag(); // everything the title-screen demo owns (time
 // Touch input (docs/touch.md): registered FIRST so its window-capture listeners see touch pointers before any tool; tools/placement are only read lazily.
 const touchWire = wireTouch({
   dom: renderer.webgl.domElement, camera: renderer.controls, toolId: () => tools.current, cancelTool: () => tools.reset(),
-  confirmPlacement: () => placement.confirm(), rotateGhost: (d) => placement.rotate(d),
-  ghostText: () => { const g = placement.ghostInfo(); return !g ? 'Not on the map: tap the ground' : g.valid ? `$${Math.round(g.totalCost).toLocaleString('en-US')} · tap again to place` : `\u2716 ${g.reasons[0] ?? 'cannot build here'}`; },
+  confirmPlacement: () => (tools.current === 'lift' ? (liftToolsRef?.tool.confirm() ?? false) : placement.confirm()), rotateGhost: (d) => placement.rotate(d), togglePause: () => loop.togglePause(),
+  ghostText: () => { if (tools.current === 'lift') return liftToolsRef?.tool.touchHint() ?? ''; const g = placement.ghostInfo(); return !g ? 'Not on the map: tap the ground' : g.valid ? `$${Math.round(g.totalCost).toLocaleString('en-US')} · tap again to place` : `\u2716 ${g.reasons[0] ?? 'cannot build here'}`; },
   undo: () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })),
 });
 
@@ -827,10 +827,10 @@ const startPlacement = (type: string): void => {
     overlays.setColor(0xffee55);
     overlays.setTooltip(null);
   });
-  dom.addEventListener('pointerleave', () => { if (tools.current === 'select') overlays.hide(); });
+  dom.addEventListener('pointerleave', (e) => { if (tools.current === 'select' && e.pointerType !== 'touch') overlays.hide(); }); // touch: lifting the finger fires pointerleave; the long-press hover info must stay (docs/touch.md)
   tools.onChange((id) => { if (id === 'select') overlays.hide(); });
   window.addEventListener('keydown', (e) => {
-    const t = e.target as HTMLElement | null;
+    const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (e.key === 'x' || e.key === 'X') setBulldoze(!bulldozing);
     else if (e.key === 'Escape') tools.reset(); // back to the select tool
@@ -2661,14 +2661,14 @@ window.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || e.ctrlKey || e.metaKey || e.altKey || !pauseRef) return;
   if (modalStack.size) return; // the modal stack (src/ui/modal.ts, registered first) already closed the top-most dialog
   if (gameMenuHandle) { closeGameMenu(); e.stopPropagation(); return; }
-  const t = e.target as HTMLElement | null;
+  const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
   const busy = !tools.isDefault() || dockRef?.drawerOpen || sim.finance.ended;
   if (!busy) pauseRef.open();
 }, true);
 
 window.addEventListener('keydown', (e) => {
-  const t = e.target as HTMLElement | null;
+  const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
   if (saves && (e.key === 'F5' || e.key === 'F9') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); if (e.key === 'F5') void saves.quickSave().catch(() => {}); else void saves.quickLoad(); return; }
   // Ctrl/Cmd+Z undoes, Ctrl+Shift+Z / Ctrl+Y redoes: ONE shared stack for every build action (placements, lifts, strokes, terraform, planting, bulldozes).
@@ -2696,7 +2696,7 @@ hideSplash();
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {
   fx: fxApi, view: viewApi, ff, startFf,
   /** QA (touch e2e): the ToolManager and the touch wire (controller / gestures state). */
-  tools, touch: touchWire,
+  tools, touch: touchWire, selection: () => ({ building: selectedId, piste: selectedPiste }),
   /** Debug / QA: `achievements.unlock('first-lift')` (forced, toasts like a real unlock), `.engine`, `.announcer`, `.trophies()` opens the shelf. */
   achievements: { engine: ach, announcer: achAnnouncer, unlock: (id: string) => ach.unlock(id, true), select: (k: 'palette' | 'flags' | 'frame' | 'chair', id: string) => ach.select(k, id), trophies: () => { const t = document.querySelector('st-trophies') as (HTMLElement & { open(): void }) | null; t?.open(); return !!t; } },
   populateDemo, populateTown, findBear: findBearDebug, spawnBear: spawnBearDebug, findAnimal: findAnimalDebug, spawnGuests: (n: number, mix: 'mixed' | 'skiers' | 'hikers' = 'mixed') => spawnGuests(sim, n, mix, ++debugSpawnCount),

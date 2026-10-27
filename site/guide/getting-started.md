@@ -16,6 +16,7 @@ The title screen shows a live demo village. Pick **New game** (or **Scenarios** 
 
 - **Career** (the default) levels your resort up over time. A few big lifts and buildings unlock as you grow. Recommended for your first game.
 - **Sandbox** unlocks everything from day one. Goals are optional.
+- Every seed has a **region name** (like *Ember Range*) and named peaks. New Game shows the name with a small map thumbnail, and the name returns in the year report. Purely flavour.
 - Choose a **map size** (small 64, medium 128 or large 256 tiles), a **start season**, a **difficulty** and, if you like, a seed for a particular valley.
 
 > [!TIP] Not sure? Take Career, a small map, Normal difficulty and start in winter. The tutorial offers hints right away, and you can skip it at any time.
@@ -31,6 +32,8 @@ The screen is a small valley with a **Base Lodge**, a road and a real **Parking*
 5. **Press play.** Time runs at 1× by default. Watch the first guests arrive, queue and ski.
 
 {{fig:ui-hud}}
+
+> [!NOTE] Playing on a tablet or phone? See [Touch & tablets](page:touch).
 
 ## Let the game guide you
 

@@ -2,7 +2,7 @@
 title: "The interface"
 order: 2
 summary: "A tour of the screen: top bar, goals, speed buttons, dock, news and Ranger Rudi."
-screenshots: [ui-hud, ui-help, ui-pause]
+screenshots: [ui-hud, ui-view-drawer, ui-help, ui-pause]
 ---
 {{fig:ui-hud}}
 
@@ -12,6 +12,7 @@ screenshots: [ui-hud, ui-help, ui-pause]
 - **Menu** returns to the main menu (it autosaves first).
 - **Walk** (the little person) and **Camera** start [walk mode and photo mode](page:modes).
 - **Graphics** switches the quality level, useful on a modest laptop.
+- **Statistics** (the chart button, or <kbd>I</kbd>): charts of your resort over time, see [Money](page:money).
 - **Save**, **Settings** (the gear), **Help** (?) and, when your browser offers it, **Install**.
 
 ## Top right: your resort at a glance
@@ -31,14 +32,18 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 | Lifts | The eleven lift types |
 | Paths & Roads | Footpaths, roads and rail |
 | Pistes & Trails | Ski pistes by difficulty, plus hiking and biking trails |
-| Terrain | Raise, lower, flatten, smooth the ground |
+| Terrain | Raise, lower, flatten, smooth the ground (sculpting only) |
 | Landscape | Dig ponds, boulders, plant or clear trees, garden decor (see [Building](page:building)) |
 | Bulldoze | Remove buildings, lifts, paths and pistes |
-| View | Map overlays, grid, camera and photo/walk shortcuts |
+| View | Camera (rotate, zoom), modes (ride-along, walk, photo), map overlays and season preview |
 | Finance | Money overview, loans, reports |
 | Operations | Lifts and the **Staff** tab (crews, wages, six training courses), grooming, snowmaking and safety coverage |
 | Marketing | Campaigns |
 | Pricing | Ticket, season-pass and food prices |
+
+{{fig:ui-view-drawer}}
+
+The **View** drawer groups **Camera** (rotate, zoom), **Modes** (ride-along, walk, photo), **Overlays** and **Season** as cards with key badges; every shortcut still works without opening it.
 
 ## Bottom left and right
 
@@ -54,5 +59,7 @@ Press <kbd>?</kbd> or <kbd>H</kbd> for the shortcut list. When nothing else is o
 {{fig:ui-pause}}
 
 Camera basics: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrow keys pan, <kbd>Q</kbd> and <kbd>E</kbd> rotate in 90° steps, the mouse wheel zooms, right-drag pans and Alt-drag rotates freely. A full list is in [Keyboard shortcuts](page:shortcuts).
+
+> [!NOTE] On a tablet or phone the same screen adapts: see [Touch & tablets](page:touch).
 
 > [!TIP] Click any building, lift, piste or guest to open its **inspector**: status, staff, prices, and why something is not working.

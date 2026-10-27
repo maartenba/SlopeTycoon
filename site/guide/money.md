@@ -2,7 +2,7 @@
 title: "Money"
 order: 8
 summary: "Prices, passes, seasonal pricing, marketing campaigns and their prerequisites, loans, debt and difficulty."
-screenshots: [ui-finance, ui-pricing, ui-marketing]
+screenshots: [ui-finance, ui-stats, ui-pricing, ui-marketing]
 ---
 {{fig:ui-finance}}
 
@@ -11,6 +11,12 @@ screenshots: [ui-finance, ui-pricing, ui-marketing]
 Income comes from **day passes**, **season passes**, restaurants, shops, lodging, rentals and attractions, plus small **grants** for completing goals. Costs are construction, **upkeep**, **wages**, energy for lifts, rescues, marketing and loan interest. **Finance** shows the breakdown, monthly reports and the year report.
 
 At the end of each month a small **month summary card** shows income, expenses and net (you can switch it off in [Settings](page:settings)).
+
+## Statistics
+
+{{fig:ui-stats}}
+
+Press <kbd>I</kbd> (or the chart button in the top bar, or the pause menu) to open **Statistics**: charts of **guests**, **cash**, **rating** (with the sustainability facet) and **revenue by category**. Choose **30 days**, **a year**, **two years** or **all time**; older days are kept as monthly summaries, so a long game stays light. Hover a chart, or use the left and right arrow keys, to read exact values; **Show the numbers as a table** lists everything as text. The colours follow your palette setting, so they work for colour-blind players too.
 
 ## Pricing
 

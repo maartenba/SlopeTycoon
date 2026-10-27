@@ -4,7 +4,7 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 
 ## Project
 **Slope Tycoon**: a browser PWA, 3D isometric ski-resort tycoon (three.js + TypeScript + Vite). Everything is procedural: terrain, models, textures, icons, logo, sound effects, ambience and music (no asset files except self-hosted fonts Nunito + Lilita One in `public/fonts`). Works offline (service worker), saves locally (IndexedDB + localStorage fallback).
-- Version is **0.1.0** (pre-release). **Never call it 1.0** until the user says so.
+- Version is **0.2.0** (pre-release). **Never call it 1.0** until the user says so.
 - Repo `maartenba/SlopeTycoon`; **not yet published**. No LICENSE file on purpose (README says TBD by the author; see `docs/deploy.md`). Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
 - No trackers, accounts, analytics or external requests. Ever.
 
@@ -34,6 +34,7 @@ npm run build              # tsc + vite build;  npm run verify:pwa
 npm run build:site | site:check | verify:site | site:shots | site:dev
 npm run docs:img           # optimise docs/img (WebP)
 npm run shot -- --size 64 --seed 61 --out NAME   # real-game screenshot via Chrome SwiftShader
+npm run touch:e2e [-- --only camera,walk --viewport phone|land|tablet]   # real emulated-touch end-to-end (gated, ~55 min for all; docs/touch.md)
 npm run shot:suite | ui:suite | ui2:suite | demo:shots | town:shots | recap:shot
 npm run flicker            # camera shimmer / LOD pop measurement (docs/flicker.md)
 npm run analysis:ski|timeflow|hiking|towns   # analysis reports
@@ -58,7 +59,7 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 - **Career** is the default mode; some unlocks gated by resort level (selective), not everything.
 - Tone: light humour, **used sparingly**. Feedback **restrained** (no fireworks/confetti spam); ambience **quiet**.
 - **NO sharing features**: no share buttons/codes/links/leaderboards; Photo mode exports only a local PNG.
-- No land purchase. Desktop first; touch optional (skipped unless the user asks).
+- No land purchase. Desktop first; touch support exists (`docs/touch.md`, `npm run touch:e2e`), keep new UI usable at 44 px targets and never fork tools by pointer type (the TouchController feeds tools synthetic mouse-style events).
 - Sizes 64/128/256 (512 dropped). New game opens a fresh random seed unless `?seed=`.
 
 ## Images
@@ -83,6 +84,6 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 - **IMPORTANT user expectation**: the website (`site/`) and docs (player guide, developer docs, CHANGELOG, README) must reflect changes, but update them **only at the END of a work session** (batch; not after every small change). Then: re-run `npm run site:shots` for changed visuals, and `npm run build:site && npm run site:check && npm run verify:site`.
 
 ## Known gaps / open items
-- M5.4 (depth) not done: light staff with six upgrades, festivals with visible set dressing, guest stories (critics/bloggers), rivals, sustainability score; M5.4 balance + playtest STOP (task 26). Then M5.5 (named mountains, stats, l10n; optional touch).
+- Done (0.2.0): touch, colour-blind palette, Statistics (`I`, `docs/stats.md`), named regions, Landscape drawer, redesigned Terrain / View drawers, M5.4 depth, M5.5. Remaining: human playtest STOP of Task 32.
 - Done: M5.1 goals/advisor/audio, M5.2 ride-along + photo + walk mode, M5.3 progression, scenarios, achievements (verify in the learnings file for current state).
 - Unverified by agents: pointer lock (walk mode), real GPU frame rate / draw calls, audio by ear; open bug noted earlier: pistes paintable over streams.

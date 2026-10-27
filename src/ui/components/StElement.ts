@@ -5,7 +5,7 @@ import { motionSheet } from '../motionSheet';
 /** Shared UI kit (docs/ui-kit.md): buttons, fields, checkbox/toggle, range, tabs, scrollbars, tooltips, focus rings and the dialog frame. Every st-* shadow root gets it. */
 export const KIT_CSS = `
 button, select, input, textarea { font: inherit; }
-button { min-height: var(--touch-min, 0px); background: linear-gradient(#3b4f69, #31435b); color: #fff; border: 1px solid #4f6684; border-radius: var(--r-sm); padding: 3px var(--sp-3); cursor: pointer; font-weight: 600; transition: background .12s, border-color .12s, transform .05s; }
+button { min-height: var(--touch-min, 0px); min-width: var(--touch-min, 0px); background: linear-gradient(#3b4f69, #31435b); color: #fff; border: 1px solid #4f6684; border-radius: var(--r-sm); padding: 3px var(--sp-3); cursor: pointer; font-weight: 600; transition: background .12s, border-color .12s, transform .05s; }
 button:hover:not(:disabled) { background: linear-gradient(#4a6483, #3c5472); border-color: #6f8bb0; }
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .45; cursor: default; }
@@ -19,12 +19,18 @@ button.ghost:hover:not(:disabled) { background: rgba(255,255,255,.08); border-co
 button.icon { padding: 2px 7px; min-width: max(26px, var(--touch-min, 0px)); }
 :focus-visible { outline: 2px solid var(--c-accent-text); outline-offset: 1px; }
 input[type=text], input[type=number], input[type=search], input:not([type]), textarea, select { background: var(--c-field); color: #fff; border: 1px solid var(--c-field-border); border-radius: var(--r-sm); padding: 3px 7px; box-sizing: border-box; }
+input[type=text], input[type=number], input[type=search], input:not([type]), textarea, select { min-height: var(--touch-min, 0px); }
+label:has(> input[type=checkbox]), label:has(> input[type=radio]) { min-height: var(--touch-min, 0px); }
 input[type=text]:hover, input[type=number]:hover, select:hover { border-color: #5f7798; }
 input::placeholder { color: #7d8fa6; }
 input[type=number] { font-variant-numeric: tabular-nums; }
 select { appearance: none; -webkit-appearance: none; padding-right: 22px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b9c6d8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 7px center; }
 select option { background: #141c28; color: #fff; }
 input[type=checkbox] { appearance: none; -webkit-appearance: none; width: max(16px, calc(var(--touch-min, 0px) * .55)); height: max(16px, calc(var(--touch-min, 0px) * .55)); margin: 0; flex: none; vertical-align: middle; background: var(--c-field); border: 1px solid #5f7798; border-radius: 4px; cursor: pointer; display: inline-grid; place-content: center; }
+/* touch: the hit area of a checkbox / toggle grows to --touch-min through an invisible ::before (the control keeps its look) */
+input[type=checkbox] { position: relative; }
+input[type=checkbox]::before { content: ""; position: absolute; inset: calc(var(--touch-min, 0px) * -.25); }
+input[type=checkbox].toggle::before { inset: calc(var(--touch-min, 0px) * -.32) calc(var(--touch-min, 0px) * -.16); }
 input[type=checkbox]::after { content: ""; width: 9px; height: 5px; border-left: 2.5px solid #1a1208; border-bottom: 2.5px solid #1a1208; transform: rotate(-45deg) scale(0); margin-top: -2px; transition: transform .1s; }
 input[type=checkbox]:checked { background: var(--c-accent); border-color: var(--c-accent-text); }
 input[type=checkbox]:checked::after { transform: rotate(-45deg) scale(1); }

@@ -166,15 +166,41 @@ export class LiftTool {
     if (!s) return;
     if (!this.bottom) { this.bottom = s; this.refresh(e); return; }
     this.refresh(e);
-    const top = this.resolvedTop ?? s; // snapped site when the hovered one was invalid but a nearby one works
+    this.build(s);
+  }
+
+  /** Build between the bottom station and the top one (the snapped site when the hovered one was invalid but a nearby one works). */
+  private build(s: StationSite): boolean {
+    if (!this.kind || !this.bottom) return false;
+    const top = this.resolvedTop ?? s;
     const out = this.o.place ? this.o.place(this.kind, this.bottom, top, this.autoFlatten, this.clearLane) : placeLift(this.o.env, this.o.props, this.kind, this.bottom, top, this.autoFlatten, this.clearLane);
-    if (!out.ok) { this.o.onError(out.reasons.join(', ')); return; }
+    if (!out.ok) { this.o.onError(out.reasons.join(', ')); return false; }
     this.o.onPlaced(out);
     this.cancel();
+    return true;
+  }
+
+  /** Touch (docs/touch.md): commit the previewed station (the Place button / second tap): the bottom one first, then build at the top one. False when nothing is aimed yet. */
+  confirm(): boolean {
+    if (!this.kind) return false;
+    const s = this.site();
+    if (!s) return false;
+    if (!this.bottom) { this.bottom = s; this.refresh(); return true; } // first stage: the previewed bottom station
+    return this.build(s);
+  }
+
+  /** Touch bar text: what the next tap does / what the previewed line costs or why it is not valid. */
+  touchHint(): string {
+    const kind = this.kind;
+    if (!kind) return '';
+    if (!this.bottom) return `${LIFTS[kind].name}: tap the map for the bottom station`;
+    const c = this.last;
+    if (!c || !this.pick) return 'Tap the map to aim the top station';
+    return c.ok ? `${formatMoney(c.cost + c.flattenCost)} \u00b7 tap again or \u2713 to build` : `\u2716 ${c.reasons[0] ?? 'not valid here'}`;
   }
 
   private onKey(e: KeyboardEvent): void {
-    const t = e.target as HTMLElement | null;
+    const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (!this.kind) return;
     if (e.key === 'Escape') this.cancel();

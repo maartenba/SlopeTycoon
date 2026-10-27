@@ -37,6 +37,7 @@ html[data-touch] #ui { -webkit-user-select: none; user-select: none; -webkit-tou
   #ui > st-topbar::-webkit-scrollbar { display: none; }
   #right-col { top: calc(72px + env(safe-area-inset-top, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); width: min(230px, calc(100vw - 16px)); gap: 4px; }
   #right-col > st-hud, #right-col > st-speed-control { max-width: 100%; }
+  #right-col { max-height: calc(100% - 80px - env(safe-area-inset-top, 0px)); overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior: contain; } /* a tall stack (speed buttons wrapped, goals open, inspector) scrolls instead of hanging off the screen */
   #ui > st-help { display: none; } /* the top bar has its own ? button */
   #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0px)); }
   #ui > st-debug { display: none; }

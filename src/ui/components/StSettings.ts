@@ -69,8 +69,8 @@ export class StSettings extends StElement {
 
   protected css(): string {
     return ':host{position:absolute;left:8px;top:50px}' +
-      '.row{display:flex;gap:10px;align-items:center}.row input[type=range]{flex:1;min-width:40px;width:0}.row label{min-width:84px;font-weight:700;color:#cfe0f5}.v{flex:none;width:34px;text-align:right;color:#ffd070;font-variant-numeric:tabular-nums}' +
-      '.chk{display:flex;gap:10px;align-items:center;cursor:pointer}.chk small{color:#9fb4cc;font-size:var(--fs-sm)}.hintbtn{opacity:.85;font-size:16px;padding:2px 6px}.links{display:flex;flex-wrap:wrap;gap:6px}.links:empty{display:none}' +
+      '.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input[type=range]{flex:1;min-width:max(40px,var(--touch-min,0px) * 2.4);width:0}.row label{min-width:84px;font-weight:700;color:#cfe0f5}.v{flex:none;width:34px;text-align:right;color:#ffd070;font-variant-numeric:tabular-nums}' +
+      '.chk{display:flex;gap:10px;align-items:center;cursor:pointer;min-height:var(--touch-min,0px)}.chk small{color:#9fb4cc;font-size:var(--fs-sm)}.hintbtn{opacity:.85;font-size:16px;padding:2px 6px}.links{display:flex;flex-wrap:wrap;gap:6px}.links:empty{display:none}' +
       '.cos{display:flex;flex-direction:column;gap:8px}.cos .grp{display:flex;flex-direction:column;gap:4px}.cos .grp>label{font-weight:700;color:#cfe0f5;font-size:var(--fs-sm)}.tiles{display:flex;flex-wrap:wrap;gap:6px}' +
       '.tile{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:104px;padding:5px;border-radius:8px;background:#1c2838;border:2px solid #2f4057;color:#dbe7f5;cursor:pointer;text-align:center;font-size:11.5px}.tile:hover:not([disabled]){border-color:#5a7090}.tile.sel{border-color:#e0b84a}.tile[disabled]{cursor:not-allowed;opacity:.62}' +
       '.tile .sw{display:flex;height:16px;border-radius:4px;overflow:hidden}.tile .sw i{flex:1}.tile .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tile .lk{font-size:10px;color:#e0b84a;line-height:1.15;min-height:23px;display:flex;align-items:center;justify-content:center;gap:3px}.tile .lk svg{flex:none}' +

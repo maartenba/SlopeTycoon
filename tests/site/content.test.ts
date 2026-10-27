@@ -18,7 +18,7 @@ describe('site content', () => {
     for (const s of man.shots) for (const p of s.pages) expect(p === 'landing' || slugs.has(p), `${s.id}: unknown page '${p}'`).toBe(true);
   });
   it('guide has the planned pages with unique order and a summary', () => {
-    for (const s of ['getting-started', 'interface', 'building', 'lifts-pistes', 'guests-seasons', 'operations', 'money', 'career', 'achievements', 'modes', 'settings', 'saves', 'troubleshooting', 'glossary', 'shortcuts']) expect(slugs.has(s), s).toBe(true);
+    for (const s of ['getting-started', 'interface', 'building', 'lifts-pistes', 'guests-seasons', 'operations', 'money', 'career', 'achievements', 'modes', 'touch', 'settings', 'saves', 'troubleshooting', 'glossary', 'shortcuts']) expect(slugs.has(s), s).toBe(true);
     expect(new Set(pages.map((p) => p.data.order)).size).toBe(pages.length);
     for (const p of pages) expect(p.data.summary?.length ?? 0, p.slug).toBeGreaterThan(20);
   });

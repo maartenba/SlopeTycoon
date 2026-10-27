@@ -33,7 +33,7 @@ export class StSelect extends StElement {
       '.lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.car{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #b9c6d8;transition:transform .12s}' +
       'button.sel[aria-expanded=true] .car{transform:rotate(180deg)}' +
       'ul{display:none;position:fixed;z-index:1000;margin:0;padding:4px;list-style:none;box-sizing:border-box;max-height:260px;overflow:auto;background:#121a26;border:1px solid #5f7798;border-radius:var(--r-md);box-shadow:0 10px 30px rgba(0,0,0,.6)}' +
-      'ul.open{display:block}li{padding:5px 9px;border-radius:4px;cursor:pointer;white-space:nowrap;color:#e6eefb;font-weight:600}li.act{background:#2a3d57}li[aria-selected=true]{color:var(--c-accent-text)}li[aria-selected=true]::before{content:"✓ ";font-weight:800}li[aria-disabled=true]{opacity:.4;cursor:default}';
+      'ul.open{display:block}li{padding:5px 9px;min-height:var(--touch-min,0px);display:flex;align-items:center;border-radius:4px;cursor:pointer;white-space:nowrap;color:#e6eefb;font-weight:600}li.act{background:#2a3d57}li[aria-selected=true]{color:var(--c-accent-text)}li[aria-selected=true]::before{content:"✓ ";font-weight:800}li[aria-disabled=true]{opacity:.4;cursor:default}';
   }
 
   constructor() {

@@ -10,6 +10,8 @@ npm run shot:suite     # boot, village summer/winter, night, lodge close-up, far
 
 * Starts `vite` (dev server, free port), launches Chrome with `--headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --use-gl=angle --ignore-gpu-blocklist --disable-gpu-sandbox`, opens `/?size&seed&start&hints=0`, waits for `window.__slope`, positions the camera (`--zoom` = multiplier over the minimum zoom, `--target lodge|x,z`, `--yaw`), sets the hour via `__slope.setHour(h)`, waits 2.5 s, screenshots.
 * Exit code 2 when any shader/WebGL error is logged (`suite` returns 2 if any shot logged an error). GL-driver "GPU stall" warnings are filtered out of the error count (still printed by `shot`).
+* Harness options added for the website: `local` (a `{key: value}` map written to `localStorage` before boot and removed after the shot, e.g. the colour palette `slope.a11y.v1` = `{"palette":"cbsafe"}`; manifest entries only) and `touch` + `viewport` (phone / tablet shots, see `docs/touch.md`).
+* Touch: `npm run touch:e2e` (real emulated fingers, asserts state; docs/touch.md) uses the same Chrome / SwiftShader setup.
 * Code lives in `scripts/lib/harness.ts` (launch/serve/shot), `scripts/shot.ts` (CLI), `scripts/shot-suite.ts` (set).
 * Gotcha: the image-capable `read` tool caches by path: write each new look to a **new file name** (`--out`) or you will be shown the old picture.
 * Gotcha: the console shows the full GLSL with the failing line marked `>` (e.g. `ERROR: 0:1111: '-' : wrong operand types ... vec4 ... vec3`).
