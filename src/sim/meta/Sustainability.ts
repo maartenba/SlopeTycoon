@@ -1,4 +1,5 @@
 import { SUSTAIN } from '../../config/rivals';
+import { TRAIN_SUSTAIN } from '../../config/marketing';
 
 /** Raw measurements behind the sustainability facet. */
 export interface SustainRaw {
@@ -12,6 +13,8 @@ export interface SustainRaw {
   protection: number;
   /** Flat bonus points (0..~4) from green buildings (recycling centre); the score is capped at 100. Absent = 0. */
   bonus?: number;
+  /** Facet points (0..TRAIN_SUSTAIN.maxPoints) from the share of arrivals by rail (Come by Train). Absent = 0. */
+  train?: number;
 }
 
 /** The facet as the rating reads it: three 0..1 parts and the weighted 0..100 score. */
@@ -19,6 +22,9 @@ export interface SustainParts { energy: number; trees: number; habitat: number; 
 
 const clamp = (v: number, lo = 0, hi = 1): number => Math.min(hi, Math.max(lo, v));
 const r1 = (n: number): number => Math.round(n * 10) / 10;
+
+/** Facet points for a rail share of the last days' arrivals: linear up to `TRAIN_SUSTAIN.full`, never more than `TRAIN_SUSTAIN.maxPoints` (3). */
+export const trainSharePoints = (share: number | null | undefined): number => (share == null ? 0 : Math.round(TRAIN_SUSTAIN.maxPoints * Math.min(1, Math.max(0, share / TRAIN_SUSTAIN.full)) * 10) / 10);
 
 /** Pure scoring of the raw numbers. Each part: 1 = gentle on the mountain, 0 = heavy footprint. */
 export function sustainParts(raw: SustainRaw): SustainParts {
@@ -28,7 +34,7 @@ export function sustainParts(raw: SustainRaw): SustainParts {
   const overlap = raw.habitatOverlap * (1 - SUSTAIN.habitat.protection * clamp(raw.protection));
   const habitat = 1 - clamp((overlap - SUSTAIN.habitat.free) / SUSTAIN.habitat.span);
   const w = SUSTAIN.weights;
-  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0)));
+  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0) + Math.min(TRAIN_SUSTAIN.maxPoints, Math.max(0, raw.train ?? 0))));
   return { energy, trees, habitat, score, raw };
 }
 
@@ -51,6 +57,8 @@ export interface SustainSources {
   protection(): number;
   /** Flat bonus points from green buildings (recycling centre). */
   bonus?(): number;
+  /** Share (0..1) of the last 14 days' arrivals by rail; null = unknown / not tracked (no points). */
+  trainShare?(): number | null;
 }
 
 /**
@@ -80,7 +88,7 @@ export class Sustainability {
     const raw: SustainRaw = {
       energyPerGuest: this.gSum >= 1 ? this.eSum / this.gSum : -1,
       treeLoss: clamp((t.felled - t.planted) / original),
-      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0,
+      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0, train: trainSharePoints(s.trainShare?.()),
     };
     this.cache = sustainParts(raw);
     return this.cache;

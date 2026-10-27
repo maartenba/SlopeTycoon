@@ -1,3 +1,4 @@
+import type { PrereqCheck } from '../../sim/Marketing';
 import { costPerGuestText, effLabel, rangeText, shareText, upliftText, type MarketingView } from '../marketingFormat';
 import { formatMoney } from '../format';
 import { PREREQ_GRACE_DAYS } from '../../config/marketing';
@@ -7,6 +8,8 @@ export interface MarketingApi {
   view(): MarketingView;
   /** Start a campaign; returns an error text or null. */
   start(id: string): string | null;
+  /** 'Show me' on an unmet prerequisite (opens the Buildings drawer on its building, pans to the station, or scrolls to the Events calendar). */
+  showMe?(check: PrereqCheck): void;
 }
 
 const css = `
@@ -20,6 +23,7 @@ const css = `
 .card.locked{opacity:.6;outline:1px dashed rgba(255,208,112,.45)}
 .card h5{margin:0;font-size:12px;color:#ffd070}
 .warn{color:#ffb070}.ok{color:#8fd88f}.dim{opacity:.45}.req{display:flex;flex-direction:column;gap:1px}.bad{color:#ff9a8a}.muted{color:#aab}
+.show{font-size:10px;padding:0 5px;margin-left:2px}
 .bar{height:6px;background:#2a3648;border-radius:3px;overflow:hidden}.bar>i{display:block;height:100%;background:#6ac46a}
 h4{margin:2px 0;font-size:12px;color:#ffd070}
 `;
@@ -66,6 +70,8 @@ export class StMarketing extends StElement {
     for (const r of v.running) {
       const row = el('div', 'card');
       row.append(el('h5', '', `${r.def.icon} ${r.def.name}`), el('div', 'muted', `${r.daysLeft} days left · effectiveness ${r.effPct}% · ${r.arrivals} arrivals so far`));
+      if (r.extra) row.append(el('div', 'muted', r.extra));
+      if (r.live !== 1) row.append(el('div', 'muted', `Today: x${Math.round(r.live * 100) / 100}`));
       if (r.paused.length) row.append(el('div', 'warn', `⚠ Paused: requires ${r.paused.join(', ')}. Cancelled in ${Math.max(0, PREREQ_GRACE_DAYS + 1 - r.pausedDays)} days unless fixed.`));
       const bar = el('div', 'bar'), fill = el('i');
       fill.style.width = `${r.pct}%`; bar.appendChild(fill); row.appendChild(bar);
@@ -91,7 +97,15 @@ export class StMarketing extends StElement {
       );
       const req = el('div', 'req');
       req.appendChild(el('div', 'muted', 'Requires:'));
-      for (const q of c.prereqs) req.appendChild(el('div', q.ok ? 'ok' : 'bad', `${q.ok ? '✓' : '✗'} ${q.label}`));
+      for (const q of c.prereqs) {
+        const row = el('div', q.ok ? 'ok' : 'bad', `${q.ok ? '✓' : '✗'} ${q.label}`);
+        if (!q.ok && (q.show || q.build) && a.showMe) {
+          const b = el('button', 'show', 'Show me');
+          b.addEventListener('click', () => a.showMe!(q));
+          row.append(' ', b);
+        }
+        req.appendChild(row);
+      }
       card.appendChild(req);
       for (const w of p.effectiveness.warnings) if (c.prereqsOk) card.appendChild(el('div', 'warn', `⚠ ${w}`));
       const btn = el('button', '', c.locked ? c.locked : !c.prereqsOk ? 'Requirements missing' : c.blocker ? c.blocker : 'Start campaign');

@@ -23,7 +23,7 @@ describe('st-marketing', () => {
     const start = vi.fn((id: string) => m.start(id));
     p.bind({ view: () => buildMarketingView(m, 50000), start });
     const r = root(p);
-    expect(r.querySelectorAll('.card').length).toBe(5);
+    expect(r.querySelectorAll('.card').length).toBe(9);
     expect(r.textContent).toMatch(/Families/);
     expect(r.textContent).toMatch(/✗ Ski School HQ/); // hard prerequisite missing -> listed with a cross
     expect(r.textContent).toMatch(/✓ An open lift/);
@@ -46,6 +46,32 @@ describe('st-marketing', () => {
     m.start('brand'); date.day += 12; m.update();
     p.refresh();
     expect(root(p).textContent).toMatch(/Brand awareness: \$2,?500/);
+  });
+});
+
+describe('st-marketing campaigns v2', () => {
+  it('renders the four early campaigns; unmet prerequisites get Show me; Come by Train shows the rail line', () => {
+    const date = { year: 0, day: 250 };
+    const m = new Marketing({
+      economy: new Economy({ money: 50000 }), date: () => date, trackRail: true,
+      ctx: { season: () => 'winter', stars: () => 3, has: () => false, met: (id) => id !== 'stuntPark' && id !== 'bookedFestival', dayPassRatio: () => 1, rail: () => ({ available: true, load: 12, capacity: 150 }) },
+    });
+    const p = el('st-marketing'); document.body.append(p);
+    const showMe = vi.fn();
+    p.bind({ view: () => buildMarketingView(m, 50000), start: (id) => m.start(id), showMe });
+    const r = root(p);
+    for (const n of ['Come by Train', 'Snowboard Park Jam', 'Hike & Bike Weekends', 'Festival Season']) expect(r.textContent).toContain(n);
+    const jam = [...r.querySelectorAll('.card')].find((c) => /Snowboard Park Jam/.test(c.textContent ?? ''))!;
+    expect(jam.textContent).toMatch(/✗ A Stunt Park/);
+    const btn = [...jam.querySelectorAll('button.show')][0] as HTMLButtonElement;
+    btn.click();
+    expect(showMe).toHaveBeenCalledWith(expect.objectContaining({ id: 'stuntPark', build: 'stuntPark' }));
+    const fest = [...r.querySelectorAll('.card')].find((c) => /Festival Season/.test(c.textContent ?? ''))!;
+    (fest.querySelector('button.show') as HTMLButtonElement).click();
+    expect(showMe).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'bookedFestival', show: 'events' }));
+    expect(m.start('train')).toBeNull();
+    p.refresh();
+    expect(r.textContent).toMatch(/By train: — of arrivals \(station 12\/150\)/);
   });
 });
 

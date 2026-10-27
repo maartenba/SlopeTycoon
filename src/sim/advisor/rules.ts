@@ -242,6 +242,19 @@ export const RULES: readonly Rule[] = [
     const def = m.list().find((d) => m.blocker(d.id) === null);
     return def ? { id: 'marketing.ready', severity: 'info', ...TEXT.marketing(def.name), panel: { drawer: 'marketing', item: def.id } } : null;
   }),
+  // Come by Train (Task 50): the station sits idle, or the car park is full while the station has room. Show me opens the campaign card.
+  rule('marketing.trainIdle', 1, (c) => {
+    const m = c.sim.marketing, st = m.railStatus();
+    if (!st.available || st.share === null || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'train')) return null;
+    if (st.share >= (c.shown ? 0.08 : 0.05) || m.blocker('train') !== null || c.sim.game.money < 4000) return null;
+    return { id: 'marketing.trainIdle', severity: 'info', ...TEXT.trainIdle(pct(st.share)), panel: { drawer: 'marketing', item: 'train' } };
+  }, false, true),
+  rule('marketing.parkingFull', 2, (c) => {
+    const m = c.sim.marketing, a = c.sim.guestSim.spawner.status().arrivals, st = m.railStatus();
+    if (!a || !a.road.available || !st.available || a.road.capacity <= 0 || m.running().some((r) => r.id === 'train') || m.blocker('train') !== null) return null;
+    if (st.load >= st.capacity * 0.8 || c.sim.guestSim.spawner.modeLoadOf(0) < a.road.capacity * (c.shown ? 0.85 : 0.95)) return null;
+    return { id: 'marketing.parkingFull', severity: 'info', ...TEXT.parkingFull(), panel: { drawer: 'marketing', item: 'train' } };
+  }, false, true),
   // ---- season lookahead ----
   // Almabtrieb (autumn cattle descent): no farm -> suggest one (spring..early autumn); farm + herd -> 'Almabtrieb in N days' / 'is on', Show me goes to the dressed road near the base station
   rule('farm.almabtrieb', 1, (c) => {

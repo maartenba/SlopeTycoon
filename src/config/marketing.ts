@@ -9,16 +9,23 @@ export const DAY_CLASSES: readonly DayClass[] = ['peak', 'regular', 'off'];
 export const SCHEDULE_PROFILES: readonly ScheduleProfile[] = ['winter', 'shoulder', 'summer'];
 
 /** Facilities used for soft bonuses (computed by createSim from the placed buildings + rating). */
-export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer';
+export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' | 'parkLift';
 /**
  * HARD campaign prerequisites (checked by `Marketing.canStart` and again daily while a campaign runs).
  * skiSchool: active Ski School HQ · kidsArea: active Kids Ground, Playground or Magic Carpet · openLift: a lift open for business · piste: an open ski piste ·
  * parking: active Parking · dining: active restaurant / café / hut / terrace / bar · vipAccess: Altiport or luxury lodging (VIP_LODGING_MIN chalets+apartments) ·
  * rating: resort rating >= minStars · summerSeason: it is summer · summerAttraction: Adventure Park or an MTB trail · summerAccess: bike-capable lift or hiking trail · rental: active Rental.
  */
-export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental';
-/** `label` is the sentence shown in the Requires list ('Ski School HQ'); `build` = building type the player can place to fix it. */
-export interface Prereq { id: PrereqId; label: string; build?: string }
+export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental'
+  | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival';
+/**
+ * Campaigns v2 (Task 50): railStation: active Train Station on a rail line that is served (Arrivals `rail.available`) · stationPath: that station is active, i.e. within
+ * walking reach of the lodge/village or served by a Shuttle Depot (the Dependencies rule) · stuntPark: active Stunt Park · bookedFestival: a booked festival running or
+ * starting within `FESTIVAL_CAMPAIGN.prereqDays` days (Events calendar).
+ */
+/** `label` is the sentence shown in the Requires list ('Ski School HQ'); `build` = building type the player can place to fix it; `show` = what the Show me button does when it is unmet
+ *  ('build' opens the Buildings drawer on `build`, 'station' pans to the Train Station, 'events' scrolls to the Events calendar). */
+export interface Prereq { id: PrereqId; label: string; build?: string; show?: 'build' | 'station' | 'events'; /** Only needed to START the campaign; not re-checked while it runs (the festival may end before the campaign does). */ startOnly?: boolean }
 /** Chalets + apartments needed for the luxury branch of the VIP prerequisite (the Base Lodge does not count: every resort has one). */
 export const VIP_LODGING_MIN = 2;
 /** A running campaign whose prerequisites vanished is paused (effectiveness 0) and cancelled after this many days. */
@@ -51,7 +58,20 @@ export interface CampaignDef {
   minStars?: number;
   /** Days before the same campaign can be restarted. */
   cooldownDays: number;
+  /** Campaigns v2: effect multiplier by day class (peak = weekends / holidays / powder, regular = Friday, off = Mon-Thu). Absent = 1 every day. Applied live, per day. */
+  dayClassMult?: Partial<Record<DayClass, number>>;
+  /** Campaigns v2: 'festival' = full effect only while a booked festival runs (or starts within `FESTIVAL_CAMPAIGN.leadDays`), `FESTIVAL_CAMPAIGN.outside` otherwise; combined arrivals stay <= ELASTICITY.maxVolume. */
+  window?: 'festival';
+  /** Campaigns v2: share (0..1, x effectiveness) of the arrivals that would drive that are put on the train instead (while the station has headroom). */
+  railBias?: number;
 }
+
+/** Come by Train (`railBias`): fraction of road arrivals moved to rail at effectiveness 1, saturating at the station capacity (150 concurrent guests, buildings.ts). */
+export const TRAIN_CAMPAIGN = { modeShift: 0.25, /** hard cap of the summed bias */ maxBias: 0.5 } as const;
+/** Festival Season: the window around a booked festival where the campaign works in full. */
+export const FESTIVAL_CAMPAIGN = { /** days before a start that already count as 'in the window' */ leadDays: 3, /** effect multiplier outside the window */ outside: 0.2, /** prerequisite: a booking within this many days */ prereqDays: 7 } as const;
+/** Sustainability sub-input (Sustainability.ts): share of the last `days` days' arrivals by rail that earns the maximum, and the facet points that is worth (capped). */
+export const TRAIN_SUSTAIN = { days: 14, full: 0.3, maxPoints: 3 } as const;
 
 export const CAMPAIGNS: readonly CampaignDef[] = [
   {
@@ -78,6 +98,30 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
     id: 'brand', name: 'Brand awareness', icon: '📣', blurb: 'A little more of everyone.', segment: 'All guests',
     cost: 2500, durationDays: 10, targets: {}, volumeBoost: 0.12, seasons: ['winter', 'spring', 'summer', 'autumn'], offSeason: 1,
     prereqs: [{ id: 'openLift', label: 'An open lift' }, { id: 'dining', label: 'A restaurant, café or terrace', build: 'lodge' }], cooldownDays: 7,
+  },
+  // ---- Campaigns v2, early batch (Task 50): existing buildings only. Numbers are starting points (docs/marketing-pricing.md). ----
+  {
+    id: 'train', name: 'Come by Train', icon: '🚆', blurb: 'Green-travel offers: cheaper trips by rail, fewer cars in the car park.', segment: 'Budget, solo and couples',
+    cost: 4000, durationDays: 21, targets: { budget: 0.8, solo: 0.4, couple: 0.3 }, volumeBoost: 0.06, seasons: ['winter', 'spring', 'summer', 'autumn'], offSeason: 1,
+    prereqs: [{ id: 'railStation', label: 'A Train Station on a rail line that trains can reach', build: 'trainStation', show: 'build' }, { id: 'stationPath', label: 'The station within walking reach of the lodge (or a Shuttle Depot)', show: 'station' }],
+    bonus: { id: 'shuttle', factor: 1.15 }, railBias: TRAIN_CAMPAIGN.modeShift, cooldownDays: 14,
+  },
+  {
+    id: 'parkJam', name: 'Snowboard Park Jam', icon: '🏂', blurb: 'A jam session in the Stunt Park for the freestyle crowd.', segment: 'Adventure seekers',
+    cost: 5000, durationDays: 10, targets: { adventure: 1.2, solo: 0.4 }, volumeBoost: 0.08, seasons: ['winter', 'spring'], offSeason: 0.2,
+    prereqs: [{ id: 'stuntPark', label: 'A Stunt Park', build: 'stuntPark', show: 'build' }, { id: 'openLift', label: 'An open lift' }, { id: 'rental', label: 'Rental', build: 'rental', show: 'build' }],
+    bonus: { id: 'parkLift', factor: 1.2 }, cooldownDays: 21,
+  },
+  {
+    id: 'hikeBike', name: 'Hike & Bike Weekends', icon: '🥾', blurb: 'Weekend trail offers for couples and walkers. A gentler sibling of the summer campaign.', segment: 'Couples and solo hikers',
+    cost: 4500, durationDays: 14, targets: { couple: 0.9, solo: 0.6, family: 0.3 }, volumeBoost: 0.1, seasons: ['summer', 'autumn'], offSeason: 0.3,
+    prereqs: [{ id: 'summerSeason', label: 'Summer season' }, { id: 'summerAccess', label: 'A bike-capable lift or a hiking trail' }, { id: 'dining', label: 'A restaurant, café, hut or terrace', build: 'lodge', show: 'build' }],
+    dayClassMult: { peak: 1.4, regular: 0.8, off: 0.6 }, cooldownDays: 14,
+  },
+  {
+    id: 'festival', name: 'Festival Season', icon: '🎪', blurb: 'Ride the buzz of a booked festival. Works around the festival dates only.', segment: 'Everyone',
+    cost: 3000, durationDays: 10, targets: { family: 0.3, couple: 0.3 }, volumeBoost: 0.15, seasons: ['winter', 'spring', 'summer', 'autumn'], offSeason: 1,
+    prereqs: [{ id: 'bookedFestival', label: `A booked festival running or starting within ${FESTIVAL_CAMPAIGN.prereqDays} days`, show: 'events', startOnly: true }], window: 'festival', cooldownDays: 30,
   },
 ];
 

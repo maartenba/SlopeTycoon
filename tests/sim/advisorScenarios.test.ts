@@ -49,6 +49,9 @@ const pisteMid = (s: Sim): Pt => { const p = pistePts(s); return p[Math.floor(p.
 const FAR: Pt = { x: 5, y: 5 };
 const setFamilies = (s: Sim, n: number): void => { const st = s.guestSim.store; for (let i = 0; i < n; i++) { st.alive[i] = 1; st.type[i] = GuestType.Family; } st.count = Math.max(st.count, n); };
 const guests = (s: Sim, n: number): void => { s.guestSim.store.count = n; };
+/** The starter resort has no Train Station: fake a served one (rail share, station load) and make Come by Train startable. */
+const trainStub = (s: Sim, share: number): void => { s.game.money = 50_000; s.marketing.railStatus = () => ({ share, load: 0, capacity: 150, available: true }); const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (id: string) => (id === 'train' ? null : real(id)); };
+const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.spawner, real = sp.status.bind(sp); sp.status = () => { const r = real(); return { ...r, arrivals: { ...r.arrivals!, road: { ...r.arrivals!.road, available: true, capacity: 100 } } }; }; sp.modeLoadOf = (m: number) => (m === 0 ? roadLoad : 0); };
 const openAll = (s: Sim): void => { for (const l of s.lifts.all()) l.open = true; };
 
 interface Fix { name: string; apply(s: Sim, a: Advice): void }
@@ -232,6 +235,22 @@ const SCENARIOS: Scenario[] = [
     fixes: [
       { name: 'start the campaign', apply: (s) => { const def = s.marketing.list().find((d) => s.marketing.blocker(d.id) === null)!; expect(s.marketing.start(def.id)).toBeNull(); } },
       { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 5_000; } },
+    ],
+  },
+  {
+    id: 'marketing.trainIdle',
+    setup: (s) => { guests(s, 20); trainStub(s, 0.01); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'train' }] as never; } },
+      { name: 'more guests take the train', apply: (s) => { trainStub(s, 0.2); } },
+    ],
+  },
+  {
+    id: 'marketing.parkingFull',
+    setup: (s) => { trainStub(s, 0.3); parkingStub(s, 1e6); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'train' }] as never; } },
+      { name: 'the car park empties', apply: (s) => { parkingStub(s, 0); } },
     ],
   },
   {

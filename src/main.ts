@@ -381,6 +381,7 @@ const sim = createSim({
   ...(DEMO ? { hints: false, preset: townOf(DEMO_TOWN.id)!.preset, startSeason: DEMO_TOWN.season } : {}),
   remoteSupply: !DEMO, // Phase 6 Task 2: +25% upkeep for sites supplied only on foot (trail / piste edge)
   stories: !DEMO, // Story guests (M5.4 Task 22): about 1.5% of arrivals get a name and one wish; never in the title demo
+  campaignsV2: !DEMO, // Phase 6 Task 50: rail share tracking + the capped train sustainability bonus (Come by Train)
   rivalMarket: !TUTORIAL_MODE, // rival market share scales arrivals; the guided tutorial resort stays exactly neutral (Task 23)
   autoEvents: !DEMO, // Events calendar: Almabtrieb / New Year / critic / powder day run by themselves in a real game (not in the title demo)
   deferAchievements: true, // armed below, once the local profile has loaded (never in the title demo)
@@ -2293,7 +2294,15 @@ if (ui && !DEMO) {
     book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
     cancel: (id, start) => { if (!sim.events.cancel(id as FestivalId, start)) return 'Cannot cancel'; refreshUi(); return null; },
   });
-  mktPanel.bind({ view: () => buildMarketingView(sim.marketing, game.money), start: (id) => sim.marketing.start(id) });
+  mktPanel.bind({
+    view: () => buildMarketingView(sim.marketing, game.money), start: (id) => sim.marketing.start(id),
+    // 'Show me' on an unmet campaign prerequisite (Task 50): the building in the Buildings drawer, the Train Station on the map, or the Events calendar below the cards
+    showMe: (q) => {
+      if (q.show === 'station') { const st = buildings.all().find((b) => b.type === 'trainStation'); if (st) goTo({ x: st.x, y: st.y, entityKind: 'building', entityId: st.id }); else showPanel({ drawer: 'buildings', item: 'trainStation' }); }
+      else if (q.show === 'events') evPanel.scrollIntoView?.({ block: 'nearest' });
+      else if (q.build) showPanel({ drawer: 'buildings', item: q.build });
+    },
+  });
   const pricePanel = el('st-pricing');
   pricePanel.bind({ pricing: sim.pricing, ...sim.priceApi });
   const opsPanel = el('st-operations');

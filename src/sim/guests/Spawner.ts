@@ -14,7 +14,7 @@ import type { GuestWorld, Pt, ResortStats } from './GuestWorld';
 import type { SpatialHash } from './SpatialHash';
 
 /** Marketing stub: per-type weights (default mix) and an overall multiplier. Later tasks drive it from campaigns. */
-export interface MarketingState { weights: Record<GuestTypeName, number>; boost: number }
+export interface MarketingState { weights: Record<GuestTypeName, number>; boost: number; /** Come by Train: share of the road/rail choice moved to rail (0 = none; absent = 0). */ railBias?: number }
 export const defaultMarketing = (): MarketingState => ({ weights: { solo: 1, couple: 1, family: 1, vip: 1, budget: 1, adventure: 1 }, boost: 1 });
 
 /** Price stub (default price table); real pricing arrives with the economy tasks. */
@@ -127,6 +127,9 @@ export class Spawner {
 
   constructor(private world: GuestWorld, private store: GuestStore, private hash: SpatialHash, private bus?: Pick<GameBus, 'emit'>) {}
 
+  /** Guests currently on a trip / in the resort by arrival mode (0 road, 1 rail, 2 air); capacity checks and the Come by Train card read it. */
+  modeLoadOf(mode: number): number { return this.modeLoad[mode] ?? 0; }
+
   setAttractiveness(fn: ((s: ResortStats) => number) | null): void { this.attractFn = fn ?? attractiveness; }
 
   status(): SpawnStatus {
@@ -228,7 +231,7 @@ export class Spawner {
     if (type === GuestType.VIP && this.modeOk(r.air, size)) p = r.air;
     else {
       const opts = [r.road, r.rail].filter((m) => this.modeOk(m, size));
-      if (opts.length) p = opts.length === 1 ? opts[0]! : rng.chance(0.7) ? r.road : r.rail;
+      if (opts.length) p = opts.length === 1 ? opts[0]! : rng.chance(0.7 * (1 - ((this.marketingFn?.() ?? this.marketing).railBias ?? 0))) ? r.road : r.rail; // railBias 0 = exactly the old 0.7 draw
     }
     if (!p) return 0;
     if (p === r.road && r.road.destinations.some((d) => d.type === 'shuttleDepot') && rng.chance(0.15)) {

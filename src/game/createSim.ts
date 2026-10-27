@@ -53,7 +53,7 @@ import { Marketing } from '../sim/Marketing';
 import { EVENING_VENUES, FOOD } from '../sim/guests/Decision';
 import { accepts as elasticAccepts, affordShare, demandMultiplier, mixVolume } from '../sim/Elasticity';
 import { TYPE_MIX, offSeasonNoLiftFactor } from '../sim/guests/Spawner';
-import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, type DayClass, type ScheduleProfile } from '../config/marketing';
+import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, FESTIVAL_CAMPAIGN, type DayClass, type ScheduleProfile } from '../config/marketing';
 import { PRICE_TABLE } from '../config/prices';
 import { Staff } from '../sim/staff/Staff';
 import { StaffUpgrades } from '../sim/staff/Upgrades';
@@ -114,6 +114,8 @@ export interface SimOptions {
   remoteSupply?: boolean;
   /** Guest-type framework (Task 9): also draw the extra guest types of config/guestTypes.ts (season shares, level + building gates). Default off = the six core types only (goldens). */
   guestTypesV2?: boolean;
+  /** Campaigns v2 (Task 50): track arrivals by mode (rail share) and pay the capped train sustainability bonus. The game turns it on; headless sims / tests default to off (goldens). */
+  campaignsV2?: boolean;
   /** Starting money override (tests). */
   money?: number;
   /** Place the free starting Base Lodge (default true). */
@@ -540,6 +542,7 @@ export function createSim(opts: SimOptions) {
   // Sustainability facet (Task 23): energy per guest, trees felled vs planted, wildlife-habitat overlap (reduced by the rangers upgrade). Read-only measurements.
   let habitatTiles: Int32Array | null = null; // forest-habitat tiles of the ORIGINAL terrain (static), built lazily
   const treeSet = new Set<number>(TREE_KINDS);
+  let marketingRef: Marketing | null = null; // Come by Train: rail share feeds the sustainability facet (marketing is built further down)
   const sustain = new Sustainability({
     energyToday: () => { const e = economy.dayBuckets().expense; return (e.energy ?? 0) + (e.snowmaking ?? 0); },
     trees: () => { let live = 0; const byKind = props.countByKind(); for (const k of treeSet) live += byKind[k] ?? 0; return { felled: props.treesFelled, planted: props.treesPlanted + Math.floor(energy.nurseryCredit), live }; },
@@ -555,6 +558,7 @@ export function createSim(opts: SimOptions) {
     },
     protection: () => staffUpgrades.wildlifeProtection(),
     bonus: () => energy.recyclingBonus(),
+    trainShare: () => (opts.campaignsV2 === true ? marketingRef?.railShare() ?? null : null),
   });
   bus.on('guest:arrived', () => sustain.noteArrival());
   bus.on('time:hour', (e) => { if (e?.hour === 12) sustain.noteNoon(guestSim.store.count); });
@@ -604,11 +608,18 @@ export function createSim(opts: SimOptions) {
     stars: () => rating.stars,
   });
   const hasActive = (types: readonly string[]): boolean => buildings.all().some((b) => b.active && types.includes(b.type));
+  const festDay = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
+  /** Snowboard Park Jam bonus: an active Stunt Park within 12 tiles of the top station of an open lift. */
+  const parkNearLiftTop = (): boolean => buildings.all().some((b) => b.active && b.type === 'stuntPark' && lifts.all().some((l) => liftOpenForBusiness(l) && Math.hypot(l.top.x - (b.x + b.w / 2), l.top.y - (b.y + b.h / 2)) <= 12));
   const marketing = new Marketing({
-    economy, bus, date: () => game.date, gate,
+    economy, bus, date: () => game.date, gate, trackRail: opts.campaignsV2 === true,
     ctx: {
       season: () => seasonOf(game.date), stars: () => rating.stars,
-      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
+      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
+      dayClass: () => pricing.dayClass(),
+      festivalWindow: () => (eventsRef?.booked ?? []).some((b) => festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
+      festivalMult: () => eventsRef?.arrivalMult() ?? 1,
+      rail: () => { const r = guestSim.spawner.status().arrivals?.rail; return { available: r?.available ?? false, load: guestSim.spawner.modeLoadOf(1), capacity: r?.capacity ?? 0 }; },
       met: (id) => {
         switch (id) {
           case 'skiSchool': return hasActive(['skiSchoolHQ']);
@@ -623,13 +634,18 @@ export function createSim(opts: SimOptions) {
           case 'summerAttraction': return hasActive(['adventurePark']) || guestSim.decider.mtbTiles.length > 0;
           case 'summerAccess': return guestSim.decider.hikeTiles.length > 0 || lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes);
           case 'rental': return hasActive(['rental']);
+          case 'railStation': return hasActive(['trainStation']) && (guestSim.spawner.status().arrivals?.rail.available ?? false);
+          case 'stationPath': return hasActive(['trainStation']); // Dependencies: active = within walking reach of the lodge (path distance) or served by a Shuttle Depot
+          case 'stuntPark': return hasActive(['stuntPark']);
+          case 'bookedFestival': return (eventsRef?.booked ?? []).some((b) => b.end > festDay() && b.start - festDay() <= FESTIVAL_CAMPAIGN.prereqDays);
         }
       },
       dayPassRatio: () => pricing.ratioOf('dayPass'),
       spendPerGuest: () => pricing.effective('dayPass') + 40,
     },
   });
-  bus.on('guest:arrived', (e) => { const sl = guestSim.store.slotOf(e.id); if (sl >= 0) marketing.recordArrival(guestSim.store.type[sl]!); });
+  marketingRef = marketing;
+  bus.on('guest:arrived', (e) => { const sl = guestSim.store.slotOf(e.id); if (sl >= 0) marketing.recordArrival(guestSim.store.type[sl]!, guestSim.store.mode[sl]); });
   bus.on('day:changed', () => { pricing.newDay(); marketing.update(); });
   guestSim.spawner.marketingFn = () => marketing.effect();
   guestSim.spawner.pricingDemand = {
