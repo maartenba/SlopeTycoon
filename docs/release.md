@@ -10,9 +10,25 @@ Release-prep batch: version bump, CHANGELOG `[0.2.2]`, player guide (Calendar & 
 |---|---|---|
 | Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 323 files passed, 1 skipped; 3279 tests passed, 31 skipped |
 | Perf | `npm run test:perf` | 21 files, 37 tests passed |
-| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (21 pages, 134 images, screenshots 7.8 MB of the 8 MB budget; 145 URLs crawled at `/` and `/slopetycoon/`) |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (21 pages, 134 images, screenshots 7.8 MB of the 8 MB budget (energy tab + events calendar re-shot: 8,192,904 B of 8,388,608); 145 URLs crawled at `/` and `/slopetycoon/`) |
 | Size | `npm run size` | 2529.1 kB raw / 912.0 kB gzip (budget < 2048 kB gzip) |
-| Not run | `test:balance`, `touch:e2e`, `analytics:e2e`, `audio:render` | not re-run for this batch |
+| Not run | full `touch:e2e` (only phone camera + placement: 24/24) | the full matrix takes ~55 min |
+
+### Hardening pass after the prep batch (same day)
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (twice) | typecheck, lint, test, build, verify:pwa | pass both times: 325 files, 3286 tests passed, 31 skipped |
+| Balance | `npm run test:balance` | 33 passed (~440 s); re-run after the nav change |
+| Perf | `npm run test:perf` | 23 files, 41 tests passed (alone) |
+| Analytics / offline | `npm run analytics:e2e`, `npm run offline:splash` | OK; the game boots offline from the service worker, splash stages recorded (`Loading the mountain...` .. `Ready`), no page errors, no failed requests |
+| Audio | `npm run audio:render` | no clipping (max peak 0.54), no DC offset |
+| Flicker | `npm run flicker:building` | 308 osc px/window (documented ~296: noise) |
+| Shots | `npm run shot:suite` | 17 shots, 0 errors |
+| Touch | `npm run touch:e2e -- --only camera,placement --viewport phone` | 24/24 |
+| Sanity play | `npm run play:sanity -- --size 64 --seed 5 --years 2` | 0 console errors / warnings, MaterialGuard 0 |
+| Commit signatures | `git log --format='%h %G?'` | all show `N` only because `gpg.ssh.allowedSignersFile` is not configured; every commit carries a `gpgsig` header |
+
 
 Note: the site screenshot budget (8 MB) is nearly used; the next new shot needs another one trimmed or a lower quality.
 

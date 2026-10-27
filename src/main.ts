@@ -392,7 +392,7 @@ if (DEMO) { // the showcase resort, built through the real placement APIs (deter
   demoReport = buildTown(sim, DEMO_TOWN.id, DEMO_TOWN.seed);
   sim.jumpToDay(DEMO_TOWN.season === 'summer' ? DEMO_SUMMER_DAY : DEMO_WINTER_DAY, 9); // late morning; BEFORE the guests so their leave day lies ahead
   spawnGuests(sim, demoGuestCap(), townOf(DEMO_TOWN.id)!.guests, 1);
-  console.log(`[demo] ${DEMO_TOWN.id} seed ${DEMO_TOWN.seed} (${DEMO_SIZE}) built in ${(performance.now() - t0).toFixed(0)} ms: ${JSON.stringify(demoReport.placed)} failures=${demoReport.failures.length}`);
+  if (import.meta.env.DEV) console.log(`[demo] ${DEMO_TOWN.id} seed ${DEMO_TOWN.seed} (${DEMO_SIZE}) built in ${(performance.now() - t0).toFixed(0)} ms: ${JSON.stringify(demoReport.placed)} failures=${demoReport.failures.length}`);
 }
 { // restore the camera of a loaded save (position / yaw / zoom)
   const cam = bootSave?.env.meta.camera, c = renderer.controls;
