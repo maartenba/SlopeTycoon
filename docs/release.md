@@ -45,7 +45,7 @@ Version flows: `package.json` → `__APP_VERSION__` (About screen via `src/ui/ve
 - No stray debug files found (`tests/dbg*`, temp scripts): none exist. `.gitignore` ignores `node_modules`, `dist`, `.DS_Store`, `*.log`; it does **not** ignore `.weave` or `public/icons`.
 - `TODO` / `FIXME` grep over `src sw scripts vite-plugins tests`: the single hit (`TODO(networks)` in `src/sim/Coverage.ts`) was a stale comment (the provider is wired via `networkProviderFrom`); replaced. **No TODO markers remain.**
 - `console.log`: only the two `[perf]` benchmark dumps in `src/main.ts`, triggered explicitly by the debug-panel benchmark button. The per-click pointer diagnostic `console.debug` is now gated by `import.meta.env.DEV`. `console.warn` / `console.error` remain for real failures.
-- No LICENSE file exists: README says "License: TBD by the author".
+- LICENSE is a copyright notice only (no open-source grant); the owner may choose a licence later.
 
 ## Manual playtest checklist (final milestone; nothing below was verified by an agent)
 

@@ -5,7 +5,7 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 ## Project
 **Slope Tycoon**: a browser PWA, 3D isometric ski-resort tycoon (three.js + TypeScript + Vite). Everything is procedural: terrain, models, textures, icons, logo, sound effects, ambience and music (no asset files except self-hosted fonts Nunito + Lilita One in `public/fonts`). Works offline (service worker), saves locally (IndexedDB + localStorage fallback).
 - Version is **0.2.0** (pre-release). **Never call it 1.0** until the user says so.
-- Repo `maartenba/SlopeTycoon`; **not yet published**. No LICENSE file on purpose (README says TBD by the author; see `docs/deploy.md`). Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
+- Repo `maartenba/SlopeTycoon`; **not yet published**. `LICENSE` is a copyright notice only (no open-source grant; the owner decides later, see `docs/deploy.md`); do not add or change a licence. Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
 - No trackers, accounts, analytics or external requests. Ever.
 
 ## Architecture (`src/`)
