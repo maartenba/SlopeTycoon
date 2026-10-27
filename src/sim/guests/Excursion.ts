@@ -1,6 +1,7 @@
 import { Layer } from '../../world/Networks';
 import type { GuestStore } from './Guest';
 import type { NavGraph } from './NavGraph';
+import { NEEDS } from './Needs';
 
 /**
  * Excursion model (docs/hiking.md). A hiker/biker commits to a ROUTE (tile polyline from the planning tile to the goal, then back or one-way down)
@@ -22,6 +23,9 @@ export const EXC = {
   /** Safety margin before day guests head home (hours). */
   duskMargin: 0.25,
   checkEvery: 4, lookahead: 5, bearAvoid: 0.35,
+  /** Hunger care (docs/hiking.md 'Hunger audit'): food stops count within `foodRadius` tiles of ANY route tile (not only the goal); the planner shortens a route (or refuses it) whose
+   *  predicted hunger at the goal exceeds `maxGoalHunger` when there is no food stop and no packed lunch; `packShare` % of guests bring a lunch from home (free, eaten once when hunger passes `snackAt`, hunger drops to `snackTo`). */
+  foodRadius: 8, maxGoalHunger: 0.7, packShare: 40, snackAt: 0.45, snackTo: 0.15,
 } as const;
 
 export interface Exc {
@@ -29,6 +33,8 @@ export interface Exc {
   /** Active hours (out + back), stop hours, elapsed hours, out-leg hours. */
   D: number; S: number; e: number; tOut: number;
   goal: number; start: number; lunch: boolean; stopped: boolean; turned: boolean;
+  /** Food stop: route fraction (0..1 of the whole route) where the lunch is eaten, -1 = none; `ate` once eaten; `packed` = still carrying a packed lunch. */
+  fa: number; ate: boolean; packed: boolean;
   /** Trek leg (overnight hut): ends on arrival at the goal; `ok` is reported to the host. */
   trek: boolean;
 }
@@ -42,7 +48,7 @@ export interface ExcHost {
   avoid(tile: number): number;
   /** Guest reached the goal (trail fee, visits). */
   reachedGoal(slot: number, kind: 0 | 1): void;
-  /** A food building within a few tiles of the goal? (hut lunch). */
+  /** A food building (hut / cafe / lodge / farm shop) within `EXC.foodRadius` tiles of this tile? (hut lunch). */
   foodNear(x: number, y: number): boolean;
   lunch(slot: number): void;
   /** Excursion over: guest is idle at its final position. */
@@ -62,6 +68,9 @@ export class Excursions {
   readonly routes = new Map<string, Int32Array>();
   /** Slot -> final goal tile waiting behind a lift-first leg. */
   readonly pending = new Map<number, number>();
+  /** Guest ids that already ate their packed lunch (once per visit). */
+  readonly packedUsed = new Set<number>();
+  snacks = 0; plannerShort = 0; plannerRefused = 0;
   /** Diagnostics: why excursions were cut short. */
   why: Record<string, number> = {};
   started = 0; finishedCount = 0; aborted = 0; turnedBack = 0; liftFirst = 0;
@@ -72,7 +81,15 @@ export class Excursions {
 
   get active(): number { return this.map.size; }
   has(slot: number): boolean { return this.map.has(slot); }
-  clear(): void { this.map.clear(); this.routes.clear(); this.pending.clear(); }
+  clear(): void { this.map.clear(); this.routes.clear(); this.pending.clear(); this.packedUsed.clear(); }
+  /** Does this guest carry a packed lunch (a stable share of guests, until eaten)? */
+  packedFor(slot: number): boolean { const id = this.s.id[slot]!; return (Math.imul(id + 91, 2654435761) >>> 0) % 100 < EXC.packShare && !this.packedUsed.has(id); }
+  /** First route fraction (0..1) with a food stop in reach (sampled every 3 tiles + the goal), or -1. */
+  foodAlong(route: Int32Array, n: number): number {
+    const L = route.length;
+    for (let k = 0; k < L; k += 3) { const t = route[k]!; if (this.h.foodNear(t % n, Math.floor(t / n))) return k / (L - 1); }
+    const g = route[L - 1]!; return this.h.foodNear(g % n, Math.floor(g / n)) ? 1 : -1;
+  }
   drop(slot: number): void { this.map.delete(slot); this.pending.delete(slot); }
 
   /** Shared route cache keyed by (start, goal, mode, network version). Returns the cached array for identical plans. */
@@ -94,11 +111,18 @@ export class Excursions {
     if (!this.enabled || tiles.length < EXC.minTiles) return false;
     let route = tiles;
     const fit = 0.85 + 0.1 * Math.min(3, s.skill[slot]!) + 0.15 * (((Math.imul(s.id[slot]!, 2654435761) >>> 0) % 100) / 100) - 0.2 * s.fatigue[slot]!;
-    let lunch = false;
+    let lunch = false, fa = -1;
+    const rate = NEEDS.hungerHike / EXC.hourPerTick, hunger0 = s.hunger[slot]!, packed = this.packedFor(slot);
+    const outH = (d: number): number => (oneWay ? d : d / 2);
     let D = plannedHours(route.length * (oneWay ? 1 : 2), mapSize, kind, fit);
-    const goalXY = (r: Int32Array): [number, number] => [r[r.length - 1]! % mapSize, Math.floor(r[r.length - 1]! / mapSize)];
-    const stopFor = (r: Int32Array): number => { const [gx, gy] = goalXY(r); lunch = this.h.foodNear(gx, gy) && s.hunger[slot]! > 0.3; return EXC.stopH + (lunch ? EXC.lunchH : 0); };
+    const stopFor = (r: Int32Array): number => { fa = this.foodAlong(r, mapSize); lunch = fa >= 0 && hunger0 + rate * fa * outH(D) > 0.3; if (!lunch) fa = -1; return EXC.stopH + (lunch ? EXC.lunchH : 0); };
     let S = stopFor(route);
+    // food check: no food stop on the way and no packed lunch -> keep the predicted hunger at the goal below maxGoalHunger (shorten, or refuse so the guest eats first)
+    if (!trek && !lunch && !packed && hunger0 + rate * outH(D) > EXC.maxGoalHunger) {
+      const keep = Math.floor(route.length * ((EXC.maxGoalHunger - hunger0) / rate / outH(D)));
+      if (keep < EXC.minTiles) { this.plannerRefused++; return false; }
+      route = route.slice(0, keep); D = plannedHours(route.length * (oneWay ? 1 : 2), mapSize, kind, fit); S = stopFor(route); this.plannerShort++;
+    }
     const allowed = this.h.leaveHour() - EXC.duskMargin - hour - S;
     if (fixed) { /* trek legs are never truncated */ if (trek && D > allowed) return false; } else if (D > allowed) {
       if (allowed < EXC.minH * 0.8) return false;
@@ -109,7 +133,7 @@ export class Excursions {
     }
     const sh = this.shareRoute(route[0]!, route[route.length - 1]!, kind, version, route);
     const e: Exc = {
-      key: sh.key, route: sh.route, kind, oneWay, D, S, e: 0, tOut: oneWay ? D : D / 2, goal: route[route.length - 1]!, start: route[0]!, lunch, stopped: false, turned: false, trek,
+      key: sh.key, route: sh.route, kind, oneWay, D, S, e: 0, tOut: oneWay ? D : D / 2, goal: route[route.length - 1]!, start: route[0]!, lunch, stopped: false, turned: false, trek, fa, ate: false, packed,
     };
     this.map.set(slot, e);
     this.pending.delete(slot);
@@ -173,7 +197,9 @@ export class Excursions {
     const s = this.s;
     x.e += EXC.hourPerTick;
     const [f, ph] = Excursions.locate(x, x.e);
-    if (ph === 1 && !x.stopped) { x.stopped = true; this.h.reachedGoal(slot, x.kind); if (x.lunch) this.h.lunch(slot); if (x.trek) { this.place(slot, x, 1); this.end(slot, true); return; } }
+    if (x.lunch && !x.ate && (ph >= 1 || f >= x.fa)) { x.ate = true; this.h.lunch(slot); }
+    if (x.packed && !x.ate && s.hunger[slot]! > EXC.snackAt) { x.packed = false; s.hunger[slot] = Math.min(s.hunger[slot]!, EXC.snackTo); this.packedUsed.add(s.id[slot]!); this.snacks++; }
+    if (ph === 1 && !x.stopped) { x.stopped = true; this.h.reachedGoal(slot, x.kind); if (x.trek) { this.place(slot, x, 1); this.end(slot, true); return; } }
     this.place(slot, x, f);
     if (x.e >= Excursions.total(x)) { this.end(slot, !x.turned && x.stopped); return; }
     if ((this.tickNo + slot) % EXC.checkEvery !== 0 || ph === 1) return;
@@ -194,13 +220,13 @@ export class Excursions {
     void s;
   }
 
-  serialize(): { routes: Array<[string, number[]]>; list: Array<Record<string, number | string | boolean>>; pending: Array<[number, number]> } {
+  serialize(): { routes: Array<[string, number[]]>; list: Array<Record<string, number | string | boolean>>; pending: Array<[number, number]>; used?: number[] } {
     const s = this.s, used = new Set<string>(), list: Array<Record<string, number | string | boolean>> = [];
     for (const [slot, x] of [...this.map].sort((a, b) => a[0] - b[0])) {
       used.add(x.key);
-      list.push({ id: s.id[slot]!, key: x.key, kind: x.kind, ow: x.oneWay, D: x.D, S: x.S, e: x.e, tOut: x.tOut, goal: x.goal, start: x.start, lunch: x.lunch, st: x.stopped, tn: x.turned, trek: x.trek });
+      list.push({ id: s.id[slot]!, key: x.key, kind: x.kind, ow: x.oneWay, D: x.D, S: x.S, e: x.e, tOut: x.tOut, goal: x.goal, start: x.start, lunch: x.lunch, st: x.stopped, tn: x.turned, trek: x.trek, fa: x.fa, ate: x.ate, pk: x.packed });
     }
-    return { routes: [...used].sort().map((k) => [k, Array.from(this.routes.get(k)!)] as [string, number[]]), list, pending: [...this.pending].map(([slot, t]) => [s.id[slot]!, t] as [number, number]) };
+    return { routes: [...used].sort().map((k) => [k, Array.from(this.routes.get(k)!)] as [string, number[]]), list, pending: [...this.pending].map(([slot, t]) => [s.id[slot]!, t] as [number, number]), used: [...this.packedUsed].filter((id) => s.slotOf(id) >= 0).sort((a, b) => a - b) };
   }
 
   load(d: ReturnType<Excursions['serialize']> | undefined): void {
@@ -211,8 +237,9 @@ export class Excursions {
     for (const o of d.list) {
       const slot = s.slotOf(o.id as number), route = this.routes.get(o.key as string);
       if (slot < 0 || !route) continue;
-      this.map.set(slot, { key: o.key as string, route, kind: o.kind as 0 | 1, oneWay: !!o.ow, D: o.D as number, S: o.S as number, e: o.e as number, tOut: o.tOut as number, goal: o.goal as number, start: o.start as number, lunch: !!o.lunch, stopped: !!o.st, turned: !!o.tn, trek: !!o.trek });
+      this.map.set(slot, { key: o.key as string, route, kind: o.kind as 0 | 1, oneWay: !!o.ow, D: o.D as number, S: o.S as number, e: o.e as number, tOut: o.tOut as number, goal: o.goal as number, start: o.start as number, lunch: !!o.lunch, stopped: !!o.st, turned: !!o.tn, trek: !!o.trek, fa: (o.fa as number | undefined) ?? (o.lunch ? 1 : -1), ate: (o.ate as boolean | undefined) ?? (!!o.lunch && !!o.st), packed: !!o.pk });
     }
+    for (const id of d.used ?? []) this.packedUsed.add(id);
     for (const [id, t] of d.pending ?? []) { const slot = s.slotOf(id); if (slot >= 0) this.pending.set(slot, t); }
   }
 }

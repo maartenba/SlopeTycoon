@@ -10,6 +10,7 @@ import { maxDifficultyFor } from './Skill';
 import { EVENING } from '../../config/balance';
 import { apresEnd, eveningTypeBias, isApres, sleepHour, venueDemand, venueKindOf } from '../Evening';
 import { TrailGoals } from './TrailGoals';
+import { NEEDS } from './Needs';
 
 /** Current activity of a guest (stored in GuestStore.act). */
 export const Act = { None: 0, ToBuilding: 1, ToLift: 2, Queue: 3, Ride: 4, SkiDown: 5, ToTrail: 6, Excursion: 7 } as const;
@@ -283,7 +284,8 @@ export class Decider {
       const b = lunch && group ? [...this.food].sort((a, c) => a.id - c.id)[group % this.food.length]! : this.nearest(this.food, x, y, rng)!;
       const taste = this.port ? 0.5 * (this.port.appeal(b.id, s.type[i]!) - 0.5) : 0;
       const dem = EVENING.demandWeight * Math.max(0, venueDemand(venueKindOf(b.type), this.day, hour) - 1); // peaks (lunch, dinner) pull; quiet hours are neutral
-      out.push({ kind: 'eat', building: b, score: (hunger > 0.4 ? 2 * hunger : 0.1) + (lunch ? 1.5 : 0) + taste + dem + noise() });
+      const outdoorsy = (pref === Pref.Hike || pref === Pref.Bike) && this.hikeTiles.length + this.mtbTiles.length > 0;
+      out.push({ kind: 'eat', building: b, score: (hunger > 0.4 ? 2 * hunger : 0.1) + (lunch ? 1.5 : 0) + (outdoorsy && hunger > NEEDS.hungryExcursion ? 1.5 : 0) + taste + dem + noise() });
     }
     const port = this.port;
     const restList = port ? this.rest.filter((b) => port.canUse(b.id, i)) : this.rest;

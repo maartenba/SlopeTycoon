@@ -42,7 +42,7 @@ const ringTiles = (x: number, y: number, w: number, h: number): Pt[] => {
 };
 
 /** Build the summer resort with a trail network. `lift` = starter chairlift (carries hikers/bikers in summer). */
-export function buildHikingResort(size: Size, seed: number, o: { defaultHours?: boolean } = {}): { sim: Sim; info: TrailInfo } {
+export function buildHikingResort(size: Size, seed: number, o: { defaultHours?: boolean; noHut?: boolean } = {}): { sim: Sim; info: TrailInfo } {
   const sim = createSim({ size, seed, startSeason: 'summer', now: () => 0 });
   const rep = buildStarterResort(sim, { lifts: 1, liftKind: 'chair4' });
   const warnings = [...rep.failures];
@@ -111,12 +111,12 @@ export function buildHikingResort(size: Size, seed: number, o: { defaultHours?: 
   let hut = false;
   const hutAt = routeA[Math.max(0, routeA.length - 4)] ?? summit;
   const def = BUILDINGS['mountainHut']!;
-  search: for (let r = 0; r <= 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+  if (!o.noHut) search: for (let r = 0; r <= 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
     const out = placeBuilding(sim.env, sim.props, 'mountainHut', hutAt.x - (def.w >> 1) + dx, hutAt.y - (def.h >> 1) + dy, 0, true, false);
     if (out.ok && out.building) { sim.refreshCoverage(out.building, out.changed.length > 0); hut = true; break search; }
   }
-  if (!hut) warnings.push('summit hut not placed');
+  if (!hut && !o.noHut) warnings.push('summit hut not placed');
   sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); sim.openStatus.evaluate();
   if (!o.defaultHours) for (const l of sim.lifts.all()) sim.liftOps.setHours(l.id, 6, 22);
 
@@ -153,6 +153,8 @@ export interface Scenario {
   excursionEtaTicks?: number;
   /** Pre-excursion behaviour (uniform random trail goal, NavMovement only): the 'before' numbers. */
   legacy?: boolean;
+  /** Stress: every new guest arrives this much hungrier (long drive, no breakfast). */
+  arriveHungry?: number;
 }
 
 export const HIST_ALT_BANDS = 5;
@@ -166,7 +168,11 @@ interface GuestRec {
   firstTrailTick: number; maxRel: number; ticksAbove50: number; ticksAbove67: number; ticks: number;
   cat: Record<Cat, number>; foodTicks: number; rodeLift: boolean; overnight: boolean; leaveStart: number; leaveStartRel: number; liftRides: number; leaveReason: number; leftTick: number; nearSummit: boolean;
   attempts: number; completed: number; aborted: number;
+  /** Hunger audit: last seen hunger / peak hunger while alive, thought flag at departure, lunches eaten. */
+  lastHunger: number; peakHunger: number; lastHappiness: number; lastFatigue: number; lunches: number;
 }
+/** One excursion (hunger audit): hours planned, hunger at start / at the goal stop / at the end. */
+export interface ExcRec { gid: number; hours: number; hStart: number; hGoal: number; hEnd: number; reachedGoal: boolean; lunch: boolean; food: boolean }
 interface Attempt {
   gid: number; startTick: number; startRel: number; goalRel: number; straight: number; pathLen: number; pathLift: boolean; pathGainRel: number; maxRel: number;
   mode: number; outcome: 'done' | 'aborted-dusk' | 'aborted-needs' | 'aborted-satisfied' | 'aborted-nopath' | 'open'; startHour: number; reqHours: number;
@@ -176,7 +182,7 @@ interface Attempt {
 export interface RunResult {
   scenario: string; size: Size; seed: number; days: number;
   guests: number; hikers: number; bikers: number;
-  recs: GuestRec[]; attempts: Attempt[];
+  recs: GuestRec[]; attempts: Attempt[]; excs: ExcRec[]; foodIncome: number; hutPlaced: boolean;
   heat: number[][]; // [hour][band] hiker-ticks (pref=Hike, alive)
   heatAll: number[][];
   arrivalHist: number[];
@@ -249,6 +255,13 @@ export function runScenario(sim: Sim, info: TrailInfo, sc: Scenario, days: numbe
     origAbort.call(this, i, wait);
   };
   const hourNow = (): number => hourOfDay(sim.game.date);
+  const excs: ExcRec[] = []; const openExc = new Map<number, ExcRec>();
+  const hostLunch = (gsim.exc as unknown as { h: { lunch: (s: number) => void } }).h;
+  const origLunch = hostLunch.lunch;
+  hostLunch.lunch = (slot: number) => { const r = recs.get(store.id[slot]!); if (r) r.lunches++; const o = openExc.get(store.id[slot]!); if (o) o.lunch = true; origLunch.call(hostLunch, slot); };
+  let foodSpend = 0;
+  const prevSpend = sim.guestWorld.onSpend;
+  sim.guestWorld.onSpend = (a, w) => { if (w === 'food') foodSpend += a; prevSpend?.(a, w); };
   const flaggedOvernight = new Set<number>();
   const sumLedger = (): number => Object.values(sim.economy.ledger).reduce((a, b) => a + (b as number), 0);
   const ledger0 = sumLedger();
@@ -282,9 +295,10 @@ export function runScenario(sim: Sim, info: TrailInfo, sc: Scenario, days: numbe
       if (slotId[i] !== id) {
         if (slotId[i]) finalise(i, 0);
         slotId[i] = id;
+        if (sc.arriveHungry) store.hunger[i] = Math.min(1, store.hunger[i]! + sc.arriveHungry);
         const cat = {} as Record<Cat, number>; for (const c of CATS) cat[c] = 0;
         const pref = prefFor(id, store.type[i]!);
-        recs.set(id, { id, pref, type: store.type[i]!, arriveTick: t, arriveHour: hour, firstTrailTick: -1, maxRel: 0, ticksAbove50: 0, ticksAbove67: 0, ticks: 0, cat, foodTicks: 0, rodeLift: false, overnight: store.overnight[i] === 1, leaveStart: -1, leaveStartRel: 0, liftRides: 0, leaveReason: 0, leftTick: -1, nearSummit: false, attempts: 0, completed: 0, aborted: 0 });
+        recs.set(id, { id, pref, type: store.type[i]!, arriveTick: t, arriveHour: hour, firstTrailTick: -1, maxRel: 0, ticksAbove50: 0, ticksAbove67: 0, ticks: 0, cat, foodTicks: 0, rodeLift: false, overnight: store.overnight[i] === 1, leaveStart: -1, leaveStartRel: 0, liftRides: 0, leaveReason: 0, leftTick: -1, nearSummit: false, attempts: 0, completed: 0, aborted: 0, lastHunger: store.hunger[i]!, peakHunger: 0, lastHappiness: 0.8, lastFatigue: 0, lunches: 0 });
         arrivalHist[hh]!++;
       }
       const r = recs.get(id)!;
@@ -293,6 +307,14 @@ export function runScenario(sim: Sim, info: TrailInfo, sc: Scenario, days: numbe
       }
       const x = store.x[i]!, y = store.y[i]!, rr = rel(x, y), st = store.state[i]!, act = store.act[i]!;
       r.ticks++;
+      { const hg = store.hunger[i]!; r.lastHunger = hg; if (hg > r.peakHunger) r.peakHunger = hg; r.lastHappiness = store.happiness[i]!; r.lastFatigue = store.fatigue[i]!; }
+      if (act === Act.Excursion) {
+        let o = openExc.get(id);
+        if (!o) { const pr = gsim.exc.map.get(i); o = { gid: id, hours: pr ? pr.D + pr.S : 0, hStart: store.hunger[i]!, hGoal: NaN, hEnd: NaN, reachedGoal: false, lunch: false, food: !!pr?.lunch }; openExc.set(id, o); excs.push(o); }
+        const pg = gsim.exc.progress(i);
+        if (pg && pg.phase >= 1 && !o.reachedGoal) { o.reachedGoal = true; o.hGoal = store.hunger[i]!; }
+        o.hEnd = store.hunger[i]!;
+      } else if (openExc.has(id)) openExc.delete(id);
       if (rr > r.maxRel) r.maxRel = rr;
       if (rr >= 0.5) r.ticksAbove50++;
       if (rr >= 0.67) r.ticksAbove67++;
@@ -361,12 +383,14 @@ export function runScenario(sim: Sim, info: TrailInfo, sc: Scenario, days: numbe
   const msPerTick = (performance.now() - t0) / total;
   for (let i = 0; i < store.limit; i++) if (slotId[i]) { const r = recs.get(slotId[i]!); if (r) done.push(r); const a = att.get(slotId[i]!); if (a) { a.durTicks = total - a.startTick; attempts.push(a); } }
   (NAV_SPEED as { hike: number }).hike = orig.hike;
+  hostLunch.lunch = origLunch; sim.guestWorld.onSpend = prevSpend;
   const excMetrics = { started: gsim.exc.started - exc0.started, finished: gsim.exc.finishedCount - exc0.fin, aborted: gsim.exc.aborted - exc0.ab, turnedBack: gsim.exc.turnedBack - exc0.tb, liftFirst: gsim.exc.liftFirst - exc0.lf, picks: gsim.decider.goals.picks - exc0.picks, topPicks: gsim.decider.goals.top - exc0.top, ...Object.fromEntries(Object.entries(gsim.exc.why).map(([k, v]) => [`why_${k}`, v])), trekStarted: gsim.trekStats.started, trekNights: gsim.trekStats.nights, trekDone: gsim.trekStats.completed, bedRevenue: Math.round(sim.attractions.all().filter((a) => a.spec.beds).reduce((x, a) => x + a.stats.revenue, 0)) };
   gsim.decider.useGoals = true; gsim.exc.enabled = true;
   sim.guestSim.decider.choose = origChoose; gs.abort = origAbort;
   sim.guestWorld.onLiftRide = prevRide;
   const guestsAll = done;
   return {
+    excs, foodIncome: foodSpend, hutPlaced: info.hutPlaced,
     scenario: sc.id, size: info.size, seed: info.seed, days, guests: guestsAll.length, hikers: guestsAll.filter((g) => g.pref === Pref.Hike).length, bikers: guestsAll.filter((g) => g.pref === Pref.Bike).length,
     recs: guestsAll, attempts, heat, heatAll, arrivalHist, liftRidesByMode, income: sumLedger() - ledger0, msPerTick, ticks: total, queueTicks, queueGuests: queueGuests.size, info, exc: excMetrics, hourPositions, abortReasons, okTop3Start, okMidStart, okTop3End: okShare(0.67),
   };
@@ -393,7 +417,30 @@ export interface Summary {
   leaveDurHigh: number[]; leaveDurLow: number[];
   stayPct: number[]; leaveReasons: Record<string, number>; arrivalHist: number[];
   exc: Record<string, number>; liftFirstShare: number;
+  /** Hunger audit (hikers only; see docs/hiking.md). */
+  hunger: HungerSummary;
   heat: number[][]; abortReasons: Record<string, number>; okTop3Start: number; okTop3End: number; okMidStart: number;
+}
+
+export interface HungerSummary {
+  hikers: number; trips: number; tripHours: number; hStart: number; hGoal: number; hEnd: number;
+  goalAbove75: number; goalP90: number; startAbove50: number; endAbove75: number; foodStopShare: number; lunchTake: number;
+  starvingLeave: number; hungerReviewNeg: number; meanLeaveHunger: number; peakAbove75: number; foodIncomePerHiker: number; foodIncome: number; lunchesPerHiker: number;
+}
+/** Hunger audit: per hiker / trip aggregates. `hungerReviewNeg` = share of hikers whose departure would carry a negative hunger driver (hunger > 0.6, Reviews.ts). */
+export function hungerSummary(runs: RunResult[]): HungerSummary {
+  const hik = runs.flatMap((r) => r.recs).filter((r) => r.pref === Pref.Hike), ex = runs.flatMap((r) => r.excs).filter((e) => e.hours > 0);
+  const eg = ex.filter((e) => e.reachedGoal && Number.isFinite(e.hGoal)), ee = ex.filter((e) => Number.isFinite(e.hEnd));
+  const sh = (a: number, b: number): number => (b ? a / b : NaN);
+  const left = hik.filter((r) => r.leftTick >= 0);
+  return {
+    hikers: hik.length, trips: ex.length, tripHours: mean(ex.map((e) => e.hours)), hStart: mean(ex.map((e) => e.hStart)), hGoal: mean(eg.map((e) => e.hGoal)), hEnd: mean(ee.map((e) => e.hEnd)),
+    goalAbove75: sh(eg.filter((e) => e.hGoal > 0.75).length, eg.length), goalP90: eg.length ? eg.map((e) => e.hGoal).sort((a, b) => a - b)[Math.floor(eg.length * 0.9)]! : NaN, startAbove50: sh(ex.filter((e) => e.hStart > 0.5).length, ex.length), endAbove75: sh(ee.filter((e) => e.hEnd > 0.75).length, ee.length),
+    foodStopShare: sh(ex.filter((e) => e.food).length, ex.length), lunchTake: sh(ex.filter((e) => e.lunch).length, ex.length),
+    starvingLeave: sh(left.filter((r) => r.lastHunger > 0.75).length, left.length), hungerReviewNeg: sh(left.filter((r) => r.lastHunger > 0.6).length, left.length),
+    meanLeaveHunger: mean(left.map((r) => r.lastHunger)), peakAbove75: sh(hik.filter((r) => r.peakHunger > 0.75).length, hik.length),
+    foodIncome: mean(runs.map((r) => r.foodIncome)), foodIncomePerHiker: sh(runs.reduce((a, r) => a + r.foodIncome, 0), hik.length), lunchesPerHiker: sh(hik.reduce((a, r) => a + r.lunches, 0), hik.length),
+  };
 }
 
 const leaveDur = (rs: GuestRec[]): number[] => {
@@ -444,6 +491,7 @@ export function summarise(runs: RunResult[]): Summary {
     okTop3Start: mean(runs.map((r) => r.okTop3Start)), okTop3End: mean(runs.map((r) => r.okTop3End)), okMidStart: mean(runs.map((r) => r.okMidStart)),
     exc: runs.reduce((o, r) => { for (const [k, v] of Object.entries(r.exc)) o[k] = (o[k] ?? 0) + v; return o; }, {} as Record<string, number>),
     liftFirstShare: runs.reduce((a, r) => a + r.exc.liftFirst, 0) / Math.max(1, runs.reduce((a, r) => a + r.exc.started, 0)),
+    hunger: hungerSummary(runs),
     heat, abortReasons: runs.reduce((o, r) => { for (const [k, v] of Object.entries(r.abortReasons)) o[k] = (o[k] ?? 0) + v; return o; }, {} as Record<string, number>),
   };
 }

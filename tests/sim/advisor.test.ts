@@ -32,6 +32,7 @@ const CASES: Case[] = [
   { id: 'patrol.none', trigger: (s) => { guests(s, 14); removeTypes(s, 'patrolHub', 'firstAid'); for (const l of s.lifts.all()) l.open = true; } },
   { id: 'aid.gap', trigger: (s) => { guests(s, 14); s.coverage.map('patrol').fill(0); s.coverage.map('firstAid').fill(0); } },
   { id: 'bear.threat', trigger: (s) => { setDay(s, seasonStartDay('summer') + 5); guests(s, 10); s.ops.safety!.wildlife.animals.push({ kind: 'bear', asleep: false, x: 12, y: 12 } as never); }, calm: (s) => { setDay(s, seasonStartDay('summer') + 5); guests(s, 10); s.ops.safety!.wildlife.animals.push({ kind: 'bear', asleep: true, x: 12, y: 12 } as never); } },
+  { id: 'hikers.hungry', trigger: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 8; }, calm: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 0.5; } },
   { id: 'storm.signs', cheap: true, trigger: (s) => { guests(s, 12); s.weather.current.kind = 'storm'; } },
   { id: 'school.none', trigger: (s) => { removeTypes(s, 'skiSchoolHQ'); setFamilies(s, 9); }, calm: (s) => { setFamilies(s, 9); } },
   { id: 'arrival.parking', trigger: (s) => removeTypes(s, 'parking') },

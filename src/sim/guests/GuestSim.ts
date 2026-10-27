@@ -106,7 +106,7 @@ export class GuestSim {
       leaveHour: () => this.decider.leaveHour,
       avoid: (t) => this.decider.avoidTile(t),
       reachedGoal: (slot, kind) => { const s = this.store; this.attractions?.trail(slot, kind === 1 ? 'bike' : 'hike', this.tick); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); },
-      foodNear: (x, y) => { for (const b of this.byId.values()) if (FOOD.has(b.type) && b.type !== 'baseLodge' && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= 36) return true; return false; },
+      foodNear: (x, y) => { const r2 = EXC.foodRadius * EXC.foodRadius; for (const b of this.byId.values()) if ((FOOD.has(b.type) ? b.type !== 'baseLodge' : b.type === 'alpineFarm') && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= r2) return true; return false; },
       lunch: (slot) => { const s = this.store; s.hunger[slot] = 0.05; s.budget[slot] = s.budget[slot]! - 12; this.world.onSpend?.(12, 'food'); },
       finished: (slot, ok, isTrek) => this.excFinished(slot, ok, isTrek),
     });
@@ -268,8 +268,11 @@ export class GuestSim {
     this.nm?.reset(i);
   }
 
+  /** Decaying counts of hiker / biker departures and how many left starving (hunger > 0.75): feeds the advisor 'hikers.hungry'. Observer data, not saved. */
+  readonly hikerLeaves = { n: 0, starving: 0 };
   private despawn(i: number): void {
     const id = this.store.id[i]!, reason = eventReason(this.store.leaveReason[i]!);
+    if (this.store.pref[i] === 1 || this.store.pref[i] === 2) { const h = this.hikerLeaves; h.n = h.n * 0.97 + 1; h.starving = h.starving * 0.97 + (this.store.hunger[i]! > 0.75 ? 1 : 0); }
     this.queues.cancel(i); this.exc.drop(i); this.trekCleanup(i);
     const rv = this.reviews.enabled ? this.reviewFor(i, id, reason) : null;
     this.maxQueue.delete(id);

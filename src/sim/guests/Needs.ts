@@ -2,11 +2,15 @@ import { GState, Leave, GuestStore, SKILL_NAMES, GUEST_TYPE_NAMES, GSTATE_NAMES 
 
 /** Per-tick need growth (240 ticks = one in-game day). */
 export const NEEDS = {
-  hungerWalk: 0.004, hungerIdle: 0.002, fatigueWalk: 0.003, fatigueIdle: 0.0012, fatigueSleep: -0.012,
+  hungerWalk: 0.004, hungerIdle: 0.002,
+  /** Hunger per tick during a compressed hike / bike excursion (relaxed pace: slightly below `hungerWalk`; docs/hiking.md 'Hunger audit'). */
+  hungerHike: 0.003, fatigueWalk: 0.003, fatigueIdle: 0.0012, fatigueSleep: -0.012,
   /** happiness drifts toward its target at this rate per tick */
   happinessRate: 0.05,
   unhappyBelow: 0.2, unhappyTicks: 20, tiredAbove: 0.95, brokeBelow: 5,
   hungryAbove: 0.55,
+  /** Hikers / bikers go and eat before a planned excursion above this hunger (the generic hungry mark is 0.55). */
+  hungryExcursion: 0.45,
 } as const;
 
 /** External factors feeding happiness (stubs for queues / piste quality until later tasks). */
@@ -40,7 +44,7 @@ export function tickNeeds(s: GuestStore, i: number, env: NeedEnv): number {
   const walking = st === GState.Walking || st === GState.Leaving;
   if (st === GState.Sleeping) s.fatigue[i] = Math.max(0, s.fatigue[i]! + NEEDS.fatigueSleep);
   else {
-    s.hunger[i] = Math.min(1, s.hunger[i]! + (walking ? NEEDS.hungerWalk : NEEDS.hungerIdle));
+    s.hunger[i] = Math.min(1, s.hunger[i]! + (walking ? (s.act[i] === 7 ? NEEDS.hungerHike : NEEDS.hungerWalk) : NEEDS.hungerIdle));
     s.fatigue[i] = Math.min(1, s.fatigue[i]! + (walking ? NEEDS.fatigueWalk : NEEDS.fatigueIdle));
   }
   const target = happinessTarget(s.hunger[i]!, s.fatigue[i]!, env);

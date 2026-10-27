@@ -172,6 +172,21 @@ export const RULES: readonly Rule[] = [
     return { id: 'bear.threat', severity: 'warn', ...TEXT.bear(), action: build('rangerStation', s), target: { x: Math.round(bear.x), y: Math.round(bear.y), kind: 'animal' } };
   }),
   rule('storm.signs', 1, (c) => (c.sim.weather.current.kind === 'storm' && c.sim.guestSim.store.count >= 10 && !has(c.sim, 'warningSign') ? (() => {
+  // Hikers leave starving (decaying share of recent hiker / biker departures with hunger > 0.75): suggest a hut / cafe beside the trails
+  rule('hikers.hungry', 2, (c) => {
+    const h = c.sim.guestSim.hikerLeaves;
+    if (h.n < 6) return null;
+    const share = h.starving / h.n;
+    if (share < (c.shown ? 0.08 : 0.15)) return null;
+    const trail: Pt[] = [], n = c.sim.size, lay = c.sim.networks.layers;
+    for (let i = 0; i < n * n; i++) if (lay[i]! & (Layer.Hike | Layer.Mtb)) trail.push({ x: i % n, y: (i / n) | 0 });
+    const mid = trail.length ? nearest(trail, centroid(trail)) : anchors(c.sim).lodge;
+    // a hut / cafe already beside the trail network's middle: the stats will recover on their own (guests need a few days to notice)
+    if (c.sim.buildings.all().some((b) => b.active && (b.type === 'mountainHut' || b.type === 'cafe' || b.type === 'heatedTerrace') && Math.hypot(b.x + b.w / 2 - mid.x, b.y + b.h / 2 - mid.y) <= 10)) return null;
+    const type = BUILDINGS['mountainHut'] && c.sim.progression.isUnlocked('building', 'mountainHut') ? 'mountainHut' : 'cafe';
+    const s = c.site('hikers.hungry', type, () => findSite(c.sim, type, mid, { rmax: 6 }));
+    return { id: 'hikers.hungry', severity: 'warn', ...TEXT.hikersHungry(pct(share)), action: build(type, s), target: siteTarget(s, mid) };
+  }, false, true),
     const s = near(c, 'storm.signs', 'warningSign', anchors(c.sim).lodge);
     return { id: 'storm.signs', severity: 'info', ...TEXT.storm(), action: build('warningSign', s), target: siteTarget(s) } as Advice;
   })() : null), true, true),

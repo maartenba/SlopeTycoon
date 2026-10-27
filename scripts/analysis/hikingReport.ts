@@ -5,7 +5,9 @@ import type { Summary, TrailInfo } from './hikingLib';
 const dir = 'scripts/analysis/out';
 const sums: Summary[] = [], infos: TrailInfo[] = [];
 let speed: Array<{ what: string; tilesPerTick: number; tilesPerHour: number; kmh: number }> = [];
+const hungerSums: Summary[] = [];
 for (const f of readdirSync(dir).filter((x) => x.endsWith('.json'))) {
+  if (f.startsWith('hunger')) { hungerSums.push(...(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')) as { summaries: Summary[] }).summaries); continue; }
   const o = JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')) as { speed: typeof speed; infos: TrailInfo[]; summaries: Summary[] };
   sums.push(...o.summaries); infos.push(...o.infos); speed = o.speed;
 }
@@ -69,5 +71,9 @@ if (sums.some((s) => s.scenario === 'new')) {
   ba('queue min / guest', (s) => f1(s.meanQueueMinPerGuest)); ba('ms / tick', (s) => s.msPerTick.toFixed(2));
   ba('excursions started / aborted', (s) => (s.exc.started ? `${s.exc.started} / ${s.exc.aborted}` : '-'));
   ba('trek nights / completed / bed revenue', (s) => `${s.exc.trekNights ?? 0} / ${s.exc.trekDone ?? 0} / ${s.exc.bedRevenue ?? 0}`);
+}
+if (hungerSums.length) {
+  out.push('\n### Hunger audit (`npm run analysis:hunger`; hikers only)\n', '| resort | size | hikers | trips | trip h | hunger start / goal / end | goal > 0.75 | goal p90 | start > 0.5 | trips with a food stop | leave starving | hunger review driver | food $ / hiker |', '|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+  for (const s of hungerSums) { const h = s.hunger; out.push(`| ${s.scenario} | ${s.size} | ${h.hikers} | ${h.trips} | ${f1(h.tripHours)} | ${h.hStart.toFixed(2)} / ${h.hGoal.toFixed(2)} / ${h.hEnd.toFixed(2)} | ${p(h.goalAbove75)} | ${h.goalP90.toFixed(2)} | ${p(h.startAbove50)} | ${p(h.foodStopShare)} | ${p(h.starvingLeave)} | ${p(h.hungerReviewNeg)} | ${h.foodIncomePerHiker.toFixed(1)} |`); }
 }
 console.log(out.join('\n'));

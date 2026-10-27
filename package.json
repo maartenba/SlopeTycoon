@@ -30,6 +30,7 @@
     "analysis:timeflow:report": "vite-node scripts/analysis/timeflowReport.ts",
     "analysis:hiking": "vitest run --config vitest.analysis.config.ts tests/analysis/hiking.analysis.ts",
     "analysis:hiking:all": "sh scripts/analysis/hiking-all.sh",
+    "analysis:hunger": "HUNGER_ANALYSIS=1 vitest run --config vitest.analysis.config.ts tests/analysis/hunger.analysis.ts",
     "analysis:hiking:report": "vite-node scripts/analysis/hikingReport.ts",
     "test:perf": "PERF=1 vitest run --config vitest.perf.config.ts",
     "test:all": "npm test && npm run test:perf",

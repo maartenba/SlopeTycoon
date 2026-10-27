@@ -143,6 +143,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'hikers.hungry',
+    setup: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 8; },
+    fixes: [
+      { name: 'hikers stop leaving hungry', apply: (s) => { s.guestSim.hikerLeaves.starving = 0.4; } },
+      { name: 'cafe near the middle of the trails', apply: (s) => { const n = s.size, lay = s.networks.layers; let sx = 0, sy = 0, k = 0; for (let i = 0; i < n * n; i++) if (lay[i]! & (Layer.Hike | Layer.Mtb)) { sx += i % n; sy += (i / n) | 0; k++; } buildAt(s, 'cafe', k ? { x: Math.round(sx / k), y: Math.round(sy / k) } : lodge(s), { rmax: 4 }); } },
+    ],
+  },
+  {
     id: 'storm.signs',
     setup: (s) => { guests(s, 12); s.weather.current.kind = 'storm'; },
     fixes: [

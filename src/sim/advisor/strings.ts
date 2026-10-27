@@ -56,6 +56,7 @@ export const TEXT = {
   liftWorn: (lift: string, pct: number, workshop: boolean): Text => ({ title: S(`${lift} is worn (${pct}%)`), why: S(workshop ? 'Order an inspection or overhaul before it breaks down.' : `Build a ${B('liftWorkshop')} so repairs are faster and cheaper.`) }),
   priceHigh: (pct: number): Text => ({ title: S('Day pass is expensive'), why: S(`The day pass is ${pct}% above fair value. Guests leave unhappy and fewer arrive.`) }),
   priceLow: (pct: number): Text => ({ title: S('Day pass is cheap'), why: S(`The day pass is ${pct}% below fair value. You could earn more per guest.`) }),
+  hikersHungry: (pct: number): Text => ({ title: S('Hikers are going hungry'), why: S(`${pct}% of recent hikers and bikers left starving. Add a ${B('mountainHut')} or ${B('cafe')} near the trails so they can eat on the way.`) }),
   marketing: (name: string): Text => ({ title: S('A campaign is available'), why: S(`${name} meets its requirements. Campaigns bring extra guests for a fee.`) }),
   goal: (title: string, todo: string): Text => ({ title: S(`Next goal: ${title}`), why: S(todo) }),
   liftService: (n: number, first: string, days: number, cost: string): Text => ({ title: S(n === 1 ? `${first} is overdue for service` : `${n} lifts are overdue for service`), why: S(`Peak season is close and ${n === 1 ? 'it has' : 'they have'} skipped the yearly service, so breakdowns are more likely (and worse in a storm). A service closes a lift for about ${days} days and costs ${cost}. Run it now, or let the Auto policy handle it next April.`) }),
