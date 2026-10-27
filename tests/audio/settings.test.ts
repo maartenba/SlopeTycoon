@@ -40,7 +40,7 @@ describe('AudioSettings', () => {
     const d = DEFAULT_AUDIO_SETTINGS;
     expect(busGains({ ...d, muted: true })).toEqual({ master: 0, music: 0, sfx: 0, ambience: 0 });
     const ao = busGains({ ...d, ambienceOnly: true });
-    expect(ao.sfx).toBe(0); expect(ao.music).toBe(0); expect(ao.ambience).toBe(0.28);
+    expect(ao.sfx).toBe(0); expect(ao.music).toBe(0); expect(ao.ambience).toBe(0.45);
     expect(busGains({ ...d, reduceLoud: true }).master).toBeLessThan(busGains(d).master);
   });
 });

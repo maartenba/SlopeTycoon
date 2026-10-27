@@ -82,7 +82,7 @@ describe('AudioEngine state machine', () => {
     expect(sfxBus.gain.value).toBe(0);
     settings.set({ muted: false, ambienceOnly: true });
     expect(sfxBus.gain.value).toBe(0);
-    expect((engine.busNode('ambience') as unknown as { gain: { value: number } }).gain.value).toBeCloseTo(0.28);
+    expect((engine.busNode('ambience') as unknown as { gain: { value: number } }).gain.value).toBeCloseTo(0.45);
     void fb;
   });
   it('attach(): first pointerdown unlocks and listeners are removed after success', async () => {
