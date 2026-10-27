@@ -31,7 +31,8 @@ describe('GitHub workflows', () => {
     const runs = b.map((s) => s.run).filter(Boolean);
     for (const r of ['npm ci', 'npm run typecheck', 'npm run lint', 'npm test', 'npm run build', 'npm run verify:pwa', 'npm run build:site', 'npm run site:check', 'npm run verify:site']) expect(runs).toContain(r);
     const site = b.find((x) => x.run === 'npm run build:site') as { env?: Record<string, string> };
-    expect(Object.keys(site.env ?? {})).toEqual(['SITE_REPO', 'SITE_URL']);
+    expect(Object.keys(site.env ?? {})).toEqual(['SITE_REPO', 'SITE_URL', 'SITE_CNAME']);
+    expect(site.env).toMatchObject({ SITE_URL: 'https://slopetycoon.com/', SITE_CNAME: 'slopetycoon.com' });
     expect(runs).not.toContain('npm run site:shots');
   });
   it('ci.yml: pull requests only, no deploy; extra-tests is manual', () => {

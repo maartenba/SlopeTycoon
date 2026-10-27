@@ -514,6 +514,27 @@
    }
   },
   {
+   "id": "ui-settings-desktop",
+   "alt": "The settings dialog on a desktop screen, with sound, accessibility, touch controls and the privacy section.",
+   "pages": [
+    "settings"
+   ],
+   "kind": "harness",
+   "caption": "Settings on desktop: sound, colour palette, touch controls and the privacy choice.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1600x1300",
+    "local": {
+     "slope.consent.analytics": "denied"
+    },
+    "steps": "click:Sound & settings;wait:500"
+   }
+  },
+  {
    "id": "ui-help",
    "alt": "The help dialog listing keyboard shortcuts.",
    "pages": [
@@ -871,7 +892,7 @@
     "zoom": 2,
     "target": "lodge",
     "extra": "starter=1&mode=sandbox",
-    "viewport": "1600x900",
+    "viewport": "1600x1300",
     "steps": "click:button[data-drawer=view];wait:600",
     "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
    }

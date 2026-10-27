@@ -80,6 +80,8 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 - Never read/expose secrets or env files.
 
 ## Workflow & docs
+- **Canonical site domain**: https://slopetycoon.com/ (site at root, game `/play/`, guide `/guide/`; CNAME via `SITE_CNAME` in the Pages workflow). Never reintroduce `maartenba.github.io` URLs.
+- **RULE: ANY website/site/guide change (and any screenshot change feeding a page) requires, at the end of the session: `npm run site:og` (regenerate the committed social cards; CI does not build them), `npm run docs:img`, and `npm run build:site && npm run site:check && npm run verify:site`.** `site:check` fails on stale cards (`site/assets/og/manifest.json`).
 - Plans (local only, `.weave/` is git-ignored and not in the repo): `.weave/plans/` (current: `slope-tycoon-hook.md`, Phase 5 / milestones M5.1–M5.5, each ends with a human playtest STOP). Learnings: `.weave/learnings/slope-tycoon.md` (append short lessons; read it before large work).
 - `docs/*.md` = **developer docs** (one per feature: saves, time-flow, perf, balance, ui-kit, visual-qa, deploy, release…). **Player docs** = `site/guide/*.md` (generated site, `site/README.md`); `CHANGELOG.md` and `README.md` at root.
 - **IMPORTANT user expectation**: the website (`site/`) and docs (player guide, developer docs, CHANGELOG, README) must reflect changes, but update them **only at the END of a work session** (batch; not after every small change). Then: re-run `npm run site:shots` for changed visuals, and `npm run build:site && npm run site:check && npm run verify:site`.

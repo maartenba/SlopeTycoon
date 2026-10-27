@@ -46,7 +46,7 @@ Installable, fully offline: hand-written service worker (no Workbox, no CDN), pr
 `sw.js` ≈ 2.9 kB. Both JS chunks still exceed Vite's 500 kB warning (three.js itself is ~580 kB; the game is 756 kB); further splitting was not attempted.
 
 ## Subpath hosting (GitHub Pages project sites)
-- `base: './'`, manifest `start_url`/`scope` `./`, `register('./sw.js', { scope: './' })` and the SW's `new URL(rel, registration.scope)` are all relative, so `https://maartenba.github.io/SlopeTycoon/` works unchanged (no `src/` edit needed; checked by `npm run verify:pwa -- --base /SlopeTycoon/`).
+- `base: './'`, manifest `start_url`/`scope` `./`, `register('./sw.js', { scope: './' })` and the SW's `new URL(rel, registration.scope)` are all relative, so `https://slopetycoon.com/` works unchanged (no `src/` edit needed; checked by `npm run verify:pwa -- --base /SlopeTycoon/`).
 - `dist/404.html` (created by `scripts/post-build.ts`) and `.nojekyll`/`CNAME` are excluded from the precache list; they are not needed offline.
 - The SW scope is the app folder; other sites on the same origin (`/<other-repo>/`) are not affected.
 - `npm run preview:pages` serves dist under `/slopetycoon/` (`PAGES_BASE`, `PORT` env) for a manual browser check (unverified in a real browser).

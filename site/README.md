@@ -74,7 +74,7 @@ Notes: the harness needs Chrome / Chromium (macOS paths, `/usr/bin/google-chrome
 | variable | effect |
 |---|---|
 | `SITE_REPO` | `owner/repo` for the footer links (default `maartenba/SlopeTycoon`) |
-| `SITE_URL` | absolute site root (default `https://maartenba.github.io/SlopeTycoon/`) for canonical, og:image, sitemap. Derived from `SITE_REPO` when unset |
+| `SITE_URL` | absolute site root (default `https://slopetycoon.com/`) for canonical, og:image, sitemap. Defaults to the canonical domain when unset |
 | `SITE_CNAME` | writes `dist-site/CNAME` for a custom domain |
 
 The game shows **Website & guide** (About dialog) and **Player guide** (Help) links only when served under `/play/` (`src/ui/siteLink.ts`).
@@ -90,3 +90,9 @@ The game shows **Website & guide** (About dialog) and **Player guide** (Help) li
 **Analytics (opt-in, consent first).** `site/assets/consent.js` is on every page. Nothing is loaded or sent until the visitor clicks **Allow** on the consent bar (stored in `localStorage['slope.consent.analytics']` = `granted` | `denied`; the game in `/play/` uses the same key on the same origin). Only then it injects `https://www.googletagmanager.com/gtag/js?id=G-NX37ERE0S9` with Consent Mode v2 (default denied, update to granted), `send_page_view` after consent, `allow_google_signals: false`, `allow_ad_personalization_signals: false`. It never runs on localhost / private hosts / webdriver / HeadlessChrome, so tests and agents do not pollute the data. The footer link **Privacy & analytics settings** reopens the bar; denying removes the `_ga*` cookies and sets `ga-disable-<id>`. Without JavaScript nothing is tracked. The pure logic is unit-tested (`tests/site/consent.test.ts`). The text lives in `site/pages/privacy.md`; change it together with the code.
 
 **SEO.** `scripts/site/templates.ts` writes unique titles (< 60 chars) and descriptions (120-155; guide pages use the optional front matter `description`, else `summary`), canonical URLs from `SITE_URL`, Open Graph / Twitter cards, `robots`, favicons (`favicon.ico` built with sharp from `public/icons`, `icon.svg`, apple-touch-icon, `site.webmanifest`), a preloaded font, and JSON-LD (`VideoGame` + `WebApplication` + `WebSite` on the landing page, `BreadcrumbList` on every other page, `AboutPage` with the author `Person`). Social cards are 1200x630 PNGs per major page (landing, guide, privacy, about) in `site/assets/og/`: after changing screenshots or card text run `npm run site:og` (headless Chrome renders the real fonts, sharp optimises) and commit them (`scripts/site/ogCards.ts` holds the design). `sitemap.xml` lists the landing page, `/guide/` and every guide page, `/about/`, `/privacy/` and the game `/play/` with `lastmod` from git; `robots.txt` allows everything and names the sitemap. The root `index.html` (the game's head) carries its own title, description, canonical and social tags for `/play/`. `404.html` is a real 404 with links.
+
+## Checklist after ANY site / guide / feeding-screenshot change
+1. `npm run site:shots -- --only <ids>` (look at the result)
+2. `npm run site:og` (cards are committed PNGs; `site:check` fails if `site/assets/og/manifest.json` is stale)
+3. `npm run docs:img`
+4. `npm run build:site && npm run site:check && npm run verify:site`

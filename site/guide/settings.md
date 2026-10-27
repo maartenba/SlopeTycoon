@@ -3,7 +3,7 @@ title: "Settings & accessibility"
 order: 12
 summary: "Sound, feedback intensity, text size, reduced motion, month and year reports, ride and walk options."
 description: "Slope Tycoon settings: sound, feedback intensity, text size, reduced motion, month and year reports, ride and walk options, and the privacy choice."
-screenshots: [ui-settings, cbsafe-pistes]
+screenshots: [ui-settings, ui-settings-desktop, cbsafe-pistes]
 ---
 {{fig:ui-settings}}
 
@@ -44,5 +44,7 @@ Open **Settings** with the gear icon in the top bar. The game pauses while Setti
 Equip unlocked cosmetics here. **Reset profile** clears achievements, cosmetics and scenario medals (never your saved games), after a confirmation.
 
 ## Privacy
+
+{{fig:ui-settings-desktop}}
 
 **Anonymous statistics** is an opt-in switch (off until you allow it): it lets the game send anonymous usage counts such as "a game was started" to Google Analytics. No names, saves or text are ever sent. The same choice is used on the website. Read what is and is not collected on the [privacy & analytics page](../../privacy/).

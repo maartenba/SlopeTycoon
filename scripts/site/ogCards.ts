@@ -1,6 +1,7 @@
 /** `npm run site:og`: renders the 1200x630 social cards (Open Graph / Twitter) into site/assets/og/*.png from site screenshots + the logo,
  * with the real fonts (Lilita One / Nunito) via headless Chrome; sharp optimises the PNGs. The PNGs are committed; `npm run build:site` copies them. */
-import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { logoSvg } from '../../src/ui/logo';
 import { SHOTS_DIR } from './optimize';
@@ -27,6 +28,15 @@ h1{margin:6px 0 10px;font:400 ${key === 'landing' ? 118 : 84}px/1.02 'Lilita One
 p{margin:0 0 22px;font:700 32px/1.3 Nunito;color:#d7e4f5}
 .chips{display:flex;gap:12px}.chips span{background:rgba(255,184,77,.16);border:2px solid rgba(255,184,77,.55);color:#ffd08a;border-radius:999px;padding:6px 20px;font:800 24px Nunito}
 .url{position:absolute;right:48px;bottom:34px;font:800 24px Nunito;color:#fff;background:rgba(8,16,30,.7);padding:6px 18px;border-radius:999px}
-</style><div class="sh"></div><div class="in"><div class="brand">${logoSvg({ variant: 'mark' })}Slope Tycoon</div><div class="k">${c.kicker}</div><h1>${c.title}</h1><p>${c.sub}</p><div class="chips">${c.chips.map((x) => `<span>${x.replace(/&/g, '&amp;')}</span>`).join('')}</div></div><div class="url">maartenba.github.io/SlopeTycoon</div>`;
+</style><div class="sh"></div><div class="in"><div class="brand">${logoSvg({ variant: 'mark' })}Slope Tycoon</div><div class="k">${c.kicker}</div><h1>${c.title}</h1><p>${c.sub}</p><div class="chips">${c.chips.map((x) => `<span>${x.replace(/&/g, '&amp;')}</span>`).join('')}</div></div><div class="url">slopetycoon.com</div>`;
 }
 
+
+/** Hash of everything the cards are rendered from (card design, logo, fonts and the featured screenshots). `site/assets/og/manifest.json` stores it; `site:check` fails when it differs ("run npm run site:og"). */
+export const OG_MANIFEST = `${OG_DIR}/manifest.json`;
+export function ogInputsHash(): string {
+  const h = createHash('sha256');
+  const files = ['scripts/site/ogCards.ts', 'src/ui/logo.ts', 'public/fonts/lilita-one-latin.woff2', 'public/fonts/nunito-latin.woff2', ...[...new Set(Object.values(CARDS).map((c) => c.shot))].sort().map((s) => join(SHOTS_DIR, `${s}-1280.webp`))];
+  for (const f of files) { h.update(f); h.update(existsSync(f) ? readFileSync(f) : 'missing'); }
+  return h.digest('hex');
+}

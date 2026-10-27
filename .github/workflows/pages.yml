@@ -31,11 +31,13 @@ jobs:
       - run: npm run build:site
         env:
           SITE_REPO: ${{ github.repository }}
-          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          SITE_URL: https://slopetycoon.com/
+          SITE_CNAME: slopetycoon.com
       - run: npm run site:check
         env:
           SITE_REPO: ${{ github.repository }}
-          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          SITE_URL: https://slopetycoon.com/
+          SITE_CNAME: slopetycoon.com
       - run: npm run verify:site
       - uses: actions/upload-pages-artifact@v3
         with:

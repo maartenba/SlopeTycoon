@@ -406,12 +406,12 @@
    {
     "w": 640,
     "file": "ui-settings-640.webp",
-    "bytes": 30266
+    "bytes": 30786
    },
    {
     "w": 1280,
     "file": "ui-settings-1280.webp",
-    "bytes": 79244
+    "bytes": 80888
    }
   ]
  },
@@ -780,6 +780,22 @@
     "w": 1280,
     "file": "cbsafe-pistes-1280.webp",
     "bytes": 186346
+   }
+  ]
+ },
+ "ui-settings-desktop": {
+  "w": 1280,
+  "h": 1040,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-settings-desktop-640.webp",
+    "bytes": 24866
+   },
+   {
+    "w": 1280,
+    "file": "ui-settings-desktop-1280.webp",
+    "bytes": 68236
    }
   ]
  }

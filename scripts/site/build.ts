@@ -22,9 +22,8 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: strin
 
 export function siteEnv(e: NodeJS.ProcessEnv = process.env): SiteEnv {
   const repo = e.SITE_REPO?.trim() || 'maartenba/SlopeTycoon';
-  const [owner, name] = repo.split('/');
-  let siteUrl = e.SITE_URL?.trim() ?? '';
-  if (!siteUrl && owner && name ) siteUrl = `https://${owner}.github.io/${name === `${owner}.github.io` ? '' : name}`;
+    let siteUrl = e.SITE_URL?.trim() ?? '';
+  if (!siteUrl) siteUrl = 'https://slopetycoon.com/';
   if (siteUrl && !siteUrl.endsWith('/')) siteUrl += '/';
   return { siteUrl, repo, repoUrl: `https://github.com/${repo}`, version: pkg.version };
 }
@@ -97,7 +96,7 @@ export async function buildSite(env: SiteEnv = siteEnv()): Promise<{ pages: numb
 
   // housekeeping files
   writeFileSync(join(OUT, '404.html'), notFoundPage(env)); writeFileSync(join(OUT, '.nojekyll'), '');
-  const base = env.siteUrl || 'https://maartenba.github.io/SlopeTycoon/', today = new Date().toISOString().slice(0, 10);
+  const base = env.siteUrl || 'https://slopetycoon.com/', today = new Date().toISOString().slice(0, 10);
   const newest = (...f: string[]): string => f.map((x) => lastmodOf(x, today)).sort().pop()!;
   const urls = [
     { path: '', lastmod: newest('site/index.html', 'site/assets/site.css'), changefreq: 'weekly', priority: '1.0' },

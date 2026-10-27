@@ -64,7 +64,7 @@ so a sub-path works without configuration.
 The repo also holds the **one-page website + player guide** (`site/`, no separate project). On GitHub Pages the deployed layout is: **`/` = website**, **`/play/` = the game (PWA)**, **`/guide/` = the guide**.
 
 ```bash
-npm run build:site     # game -> dist-site/play, website + guide -> dist-site/   (defaults: SITE_REPO=maartenba/SlopeTycoon SITE_URL=https://maartenba.github.io/SlopeTycoon/)
+npm run build:site     # game -> dist-site/play, website + guide -> dist-site/   (defaults: SITE_REPO=maartenba/SlopeTycoon SITE_URL=https://slopetycoon.com/)
 npm run site:check     # links, images, alt text, heading order, size budgets
 npm run site:dev       # serve dist-site/ at http://localhost:4190/
 npm run site:shots     # re-shoot every screenshot through the QA harness (needs Chrome), then optimise to site/assets/shots/
@@ -76,7 +76,7 @@ npm run site:shots     # re-shoot every screenshot through the QA harness (needs
 
 [![Deploy](https://github.com/maartenba/SlopeTycoon/actions/workflows/pages.yml/badge.svg)](https://github.com/maartenba/SlopeTycoon/actions/workflows/pages.yml)
 
-Pushing to `main` builds, tests and publishes `dist-site/` (website at `/`, game at `/play/`: <https://maartenba.github.io/SlopeTycoon/> and `.../SlopeTycoon/play/`) via `.github/workflows/pages.yml`. One-time setup: see the publishing checklist in `docs/deploy.md`;
+Pushing to `main` builds, tests and publishes `dist-site/` (website at `/`, game at `/play/`: <https://slopetycoon.com/> and <https://slopetycoon.com/play/>) via `.github/workflows/pages.yml`. One-time setup: see the publishing checklist in `docs/deploy.md`;
 `git push -u origin main`, then Settings → Pages → Source: **GitHub Actions**. Local checks: `npm run build:pages`, `npm run preview:pages` (simulates a repo subpath).
 Details, custom domain and troubleshooting: [`docs/deploy.md`](docs/deploy.md).
 

@@ -36,7 +36,7 @@ describe('site content', () => {
     for (const p of pages) expect(p.body, p.slug).not.toMatch(/\b(sim tick|ECS|shader|vitest|Three\.js|npm run)\b/i);
   });
   it('landing builds from the manifest ids with no leftover placeholders', () => {
-    const html = buildLanding(readFileSync('site/index.html', 'utf8'), siteEnv({ SITE_REPO: 'me/slopes' }), fake, '<svg/>', '<svg/>', man.shots.map((s) => s.id));
+    const html = buildLanding(readFileSync('site/index.html', 'utf8'), siteEnv({ SITE_REPO: 'me/slopes', SITE_URL: 'https://me.github.io/slopes/' }), fake, '<svg/>', '<svg/>', man.shots.map((s) => s.id));
     expect(html).not.toMatch(/\{\{/); expect(html).toContain('https://github.com/me/slopes'); expect(html).toContain('href="./play/"');
     expect(html).toContain('canonical'); expect(html).toContain('https://me.github.io/slopes/assets/og/landing.png');
   });

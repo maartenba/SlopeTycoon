@@ -18,7 +18,7 @@ describe('analytics consent (pure)', () => {
     expect(readConsent(broken)).toBeNull(); expect(writeConsent(broken, 'granted')).toBe(false);
     expect(readConsent(null)).toBeNull(); expect(writeConsent(null, 'granted')).toBe(false);
   });
-  const ok = { prod: true, hostname: 'maartenba.github.io', search: '', userAgent: 'Mozilla/5.0 Chrome/120' };
+  const ok = { prod: true, hostname: 'slopetycoon.com', search: '', userAgent: 'Mozilla/5.0 Chrome/120' };
   it('environment gate: production on a real host only', () => {
     expect(analyticsAllowed(ok)).toBe(true);
     expect(analyticsAllowed({ ...ok, prod: false })).toBe(false); // dev / tests

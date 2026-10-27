@@ -2,7 +2,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { launch } from '../lib/harness';
-import { CARDS, OG_DIR, cardHtml } from './ogCards';
+import { CARDS, OG_DIR, OG_MANIFEST, cardHtml, ogInputsHash } from './ogCards';
 
 {
   const sharp = (await import('sharp')).default; mkdirSync(OG_DIR, { recursive: true });
@@ -16,4 +16,5 @@ import { CARDS, OG_DIR, cardHtml } from './ogCards';
       writeFileSync(join(OG_DIR, `${key}.png`), out); console.log(`[og] ${key}.png ${(out.length / 1024).toFixed(0)} kB`); await page.close();
     }
   } finally { await br.close(); }
+  writeFileSync(OG_MANIFEST, `${JSON.stringify({ inputs: ogInputsHash(), cards: Object.keys(CARDS) }, null, 1)}\n`); console.log('[og] manifest.json written');
 }

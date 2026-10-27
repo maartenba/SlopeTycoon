@@ -53,7 +53,7 @@ describe('site SEO', () => {
     for (const k of Object.keys(CARDS)) { const f = `site/assets/og/${k}.png`; expect(existsSync(f), f).toBe(true); expect(pngSize(readFileSync(f))).toEqual({ w: 1200, h: 630 }); expect(readFileSync(f).length).toBeLessThan(400 * 1024); }
   });
   it('sitemap lists every page plus the game entry point /play/; robots allows all and points at it', () => {
-    const base = 'https://maartenba.github.io/SlopeTycoon/';
+    const base = 'https://slopetycoon.com/';
     const xml = sitemapXml(base, pages.map((p) => ({ path: p.file.replace(/index\.html$/, ''), lastmod: '2026-10-27', changefreq: 'monthly', priority: '0.5' })).concat([{ path: 'play/', lastmod: '2026-10-27', changefreq: 'weekly', priority: '0.9' }]));
     expect(sitemapLint(xml, robotsTxt(base), pages.map((p) => p.file.replace(/index\.html$/, '')), base)).toEqual([]);
     expect(sitemapLint(xml.replace(`${base}play/`, `${base}x/`), 'User-agent: *\nAllow: /\n', [''], base).join()).toMatch(/play\/.*|robots/);
@@ -98,7 +98,7 @@ describe('game entry point (/play/) SEO', () => {
   it('has a short unique title, a 120-155 char description, canonical and social cards', () => {
     const title = /<title>([^<]*)<\/title>/.exec(h)![1]!.replace(/&amp;/g, '&'), desc = /name="description" content="([^"]*)"/.exec(h)![1]!;
     expect(title.length).toBeLessThan(60); expect(title).not.toBe('Slope Tycoon'); expect(desc.length).toBeGreaterThanOrEqual(120); expect(desc.length).toBeLessThanOrEqual(155);
-    expect(h).toContain('<link rel="canonical" href="https://maartenba.github.io/SlopeTycoon/play/"'); expect(h).toContain('property="og:image"'); expect(h).toContain('name="twitter:card"'); expect(h).toContain('<noscript>');
+    expect(h).toContain('<link rel="canonical" href="https://slopetycoon.com/play/"'); expect(h).toContain('property="og:image"'); expect(h).toContain('name="twitter:card"'); expect(h).toContain('<noscript>');
   });
   it('keeps the PWA behaviours (manifest, theme colour, apple meta, module entry)', () => { expect(h).toContain('rel="manifest"'); expect(h).toContain('name="theme-color"'); expect(h).toContain('apple-mobile-web-app-capable'); expect(h).toContain('src="/src/main.ts"'); });
 });

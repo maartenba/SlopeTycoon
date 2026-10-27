@@ -142,7 +142,7 @@ export function checkSite(dir: string, opts: { siteUrl?: string; budgets?: Budge
     const pages = htmlFiles.map((f) => ({ file: f, html: html(f) }));
     for (const p of pages) problems.push(...lintPage(p.file, p.html, { siteUrl: opts.siteUrl, readFile: (r) => (all.has(r) ? readFileSync(join(dir, r)) : null) }));
     problems.push(...uniqueLint(pages));
-    if (all.has('sitemap.xml') && all.has('robots.txt')) problems.push(...sitemapLint(readFileSync(join(dir, 'sitemap.xml'), 'utf8'), readFileSync(join(dir, 'robots.txt'), 'utf8'), htmlFiles.map((f) => f.replace(/index\.html$/, '')), opts.siteUrl || 'https://maartenba.github.io/SlopeTycoon/'));
+    if (all.has('sitemap.xml') && all.has('robots.txt')) problems.push(...sitemapLint(readFileSync(join(dir, 'sitemap.xml'), 'utf8'), readFileSync(join(dir, 'robots.txt'), 'utf8'), htmlFiles.map((f) => f.replace(/index\.html$/, '')), opts.siteUrl || 'https://slopetycoon.com/'));
     for (const f of ['favicon.ico', 'site.webmanifest', 'assets/icons/icon.svg', 'assets/icons/apple-touch-icon.png', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'about/index.html', 'privacy/index.html']) if (!all.has(f)) bad(`missing ${f}`);
     for (const k of ['landing', 'guide', 'privacy', 'about']) { const sz = all.has(`assets/og/${k}.png`) ? pngSize(readFileSync(join(dir, `assets/og/${k}.png`))) : null; if (!sz || sz.w !== 1200 || sz.h !== 630) bad(`assets/og/${k}.png must be a 1200x630 PNG`); }
     if (all.has('404.html') && !/<a href="[^"]+">Play the game<\/a>/.test(readFileSync(join(dir, '404.html'), 'utf8'))) bad('404.html needs links back into the site');
