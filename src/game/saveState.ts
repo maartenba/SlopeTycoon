@@ -29,8 +29,8 @@ export interface SaveModule {
 
 type Obj = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-const sysModule = (id: string): SaveModule => ({
-  key: `sys.${id}`, version: 1,
+const sysModule = (id: string, version = 1): SaveModule => ({
+  key: `sys.${id}`, version,
   serialize: (sim) => sim.registry.get(id)?.serialize?.() ?? null,
   load: (sim, d) => { if (d !== null) sim.registry.get(id)?.load?.(d); },
 });
@@ -116,7 +116,8 @@ export const SAVE_MODULES: SaveModule[] = [
   { key: 'names', version: 1, serialize: (sim) => sim.names.serialize(), load: (sim, d) => sim.names.load(d as Parameters<Sim['names']['load']>[0]) },
   { key: 'nature', version: 1, serialize: (sim) => sim.nature.serialize(), load: (sim, d) => sim.nature.load(d) },
   { key: 'leavers', version: 1, serialize: (sim) => sim.leavers.serialize(), load: (sim, d) => sim.leavers.load(d as { v: number }) },
-  ...(['clock', 'season', 'weather', 'spawner', 'guests', 'attractions', 'ops', 'economy', 'rating'] as const).map(sysModule),
+  ...(['clock', 'season', 'weather', 'spawner', 'guests', 'attractions', 'economy', 'rating'] as const).map((id) => sysModule(id, id === 'economy' ? 2 : 1)), // economy v2: liftOps.policy (maintenance Auto/Manual; absent = Auto)
+  sysModule('ops', 2), // v2: snowmaking mode + per-cannon switches (absent = On, all cannons on)
   { key: 'families', version: 1, serialize: (sim) => sim.guestSim.families.serialize(), load: (sim, d) => sim.guestSim.families.load(d) },
   { key: 'openStatus', version: 1, serialize: (sim) => sim.openStatus.serialize(), load: (sim, d) => sim.openStatus.load(d) },
   // Staff pools (Auto / override / wage level / morale) and the six staff upgrades (M5.4 Tasks 19-20). Additive: old saves have none -> Auto, nothing trained.

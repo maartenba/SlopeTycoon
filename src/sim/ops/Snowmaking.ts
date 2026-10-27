@@ -34,10 +34,18 @@ export const SNOWMAKING = {
   meltPerDegPerDay: 150,
   meltMaxPerDay: 900,
   summerPerDay: 3000,
+  /** Auto mode: cannons pause when the mean daily high (15:00) at the highest covered piste tile is above this °C, or the snowline is above every covered piste tile. */
+  autoMaxHigh: 4,
+  /** Share of upkeep a mothballed (switched-off) cannon pays (same idea as the off-season relief, docs/ops.md). */
+  mothballUpkeepShare: 0.15,
 } as const;
 
+/** Global snowmaking mode: 'on' = run whenever the temperature allows (the classic behaviour, default), 'off' = all mothballed, 'auto' = also pause when it is pointless. */
+export type SnowmakingMode = 'on' | 'off' | 'auto';
+export const SNOWMAKING_MODES: readonly SnowmakingMode[] = ['on', 'off', 'auto'];
+
 /** What a cannon did in its last hourly run (inspector). */
-export type CannonState = 'running' | 'warm' | 'noWater' | 'noPiste' | 'full' | 'idle';
+export type CannonState = 'running' | 'warm' | 'noWater' | 'noPiste' | 'full' | 'idle' | 'off' | 'paused';
 export interface CannonStats {
   state: CannonState;
   /** Tiles in reach (piste within the throw radius + off-piste ground within the small radius, water excluded). */
@@ -48,6 +56,8 @@ export interface CannonStats {
   needy: number;
   /** Today's (this night's so far) and yesterday's totals: summed depth gain over the tiles (m·tile) and water used. */
   gainToday: number; waterToday: number; gainLast: number; waterLast: number;
+  /** Why an Auto-paused cannon is paused. */
+  pause?: 'snowline' | 'warm';
 }
 
 export interface ReservoirBuilding { id: number; type: string; active: boolean }
@@ -125,6 +135,9 @@ export interface SnowmakingEnv {
   /** SnowCover.addSnow. */
   addSnow(i: number, depth: number): void;
   onCost?: (category: OpsCostCategory, amount: number) => void;
+  /** Auto mode inputs: today's effective snowline (world altitude) and the temperature at an altitude at the daily peak (15:00). Absent = Auto never pauses. */
+  snowline?: () => number;
+  dailyHigh?: (alt: number) => number;
 }
 
 /** Hourly cannon logic. Cannons come from Coverage 'snowmaking' sources (active + linked to an active reservoir). */
@@ -140,6 +153,9 @@ export class Snowmaking {
   /** Bumped whenever the gain maps change (renderers repaint). */
   version = 0;
   private stats = new Map<number, CannonStats>();
+  /** Global mode and the cannons switched off one by one (saved only when non-default). */
+  mode: SnowmakingMode = 'on';
+  private off = new Set<number>();
   private scratchIdx = new Int32Array(21 * 21);
   private scratchAdd = new Float32Array(21 * 21);
 
@@ -152,6 +168,27 @@ export class Snowmaking {
   statsOf(id: number): CannonStats | undefined { return this.stats.get(id); }
   isRunning(id: number): boolean { return this.stats.get(id)?.state === 'running'; }
   runningIds(): number[] { const o: number[] = []; for (const [id, s] of this.stats) if (s.state === 'running') o.push(id); return o; }
+
+  /** Is this cannon switched off by the player (itself or via the global Off mode)? Mothballed cannons pay reduced upkeep and use no energy or water. */
+  isMothballed(id: number): boolean { return this.mode === 'off' || this.off.has(id); }
+  isSwitchedOff(id: number): boolean { return this.off.has(id); }
+  setCannon(id: number, on: boolean): void { if (on) this.off.delete(id); else this.off.add(id); this.version++; }
+  /** Bulk: switch every given cannon on or off (the global mode is untouched; turning on also lifts a global Off). */
+  setAll(ids: Iterable<number>, on: boolean): void {
+    if (on && this.mode === 'off') this.mode = 'on';
+    for (const id of ids) { if (on) this.off.delete(id); else this.off.add(id); }
+    this.version++;
+  }
+  setMode(m: SnowmakingMode): void { this.mode = m; this.version++; }
+  offCount(): number { return this.off.size; }
+  /** Save data (undefined = defaults, so old and untouched saves stay byte-identical). */
+  serializeState(): { mode: SnowmakingMode; off: number[] } | undefined {
+    return this.mode === 'on' && this.off.size === 0 ? undefined : { mode: this.mode, off: [...this.off].sort((a, b) => a - b) };
+  }
+  loadState(d: { mode?: SnowmakingMode; off?: number[] } | undefined): void {
+    this.mode = d?.mode && SNOWMAKING_MODES.includes(d.mode) ? d.mode : 'on';
+    this.off = new Set(d?.off ?? []);
+  }
 
   /** Output factor (0..1) at temperature `t` °C. */
   static tempFactor(t: number): number { return t <= SNOWMAKING.maxTemp ? 1 : t <= SNOWMAKING.wetBulbTemp ? SNOWMAKING.marginalRate : 0; }
@@ -166,7 +203,8 @@ export class Snowmaking {
       if (src.id % phases !== phase) continue;
       let st = this.stats.get(src.id);
       if (!st) { st = { state: 'idle', tiles: 0, pisteTiles: 0, needy: 0, gainToday: 0, waterToday: 0, gainLast: 0, waterLast: 0 }; this.stats.set(src.id, st); }
-      let n = 0, need = 0, tiles = 0, pisteTiles = 0, needy = 0, usable = 0;
+      const auto = this.mode === 'auto';
+      let n = 0, need = 0, tiles = 0, pisteTiles = 0, needy = 0, usable = 0, maxPisteAlt = -Infinity;
       const x0 = Math.max(0, Math.floor(src.cx - src.r)), x1 = Math.min(N - 1, Math.ceil(src.cx + src.r));
       const y0 = Math.max(0, Math.floor(src.cy - src.r)), y1 = Math.min(N - 1, Math.ceil(src.cy + src.r));
       const r2 = src.r * src.r, offR2 = S.offPisteRadius * S.offPisteRadius;
@@ -179,7 +217,7 @@ export class Snowmaking {
         if (e.skip?.(i)) continue;
         const piste = e.isPiste(i);
         if (!piste && d2 > offR2) continue;
-        tiles++; if (piste) pisteTiles++;
+        tiles++; if (piste) { pisteTiles++; if (auto) maxPisteAlt = Math.max(maxPisteAlt, e.altOf(x, y)); }
         const target = piste ? S.targetDepth : S.offPisteDepth;
         const d = e.snowDepth[i]!;
         if (d >= target) continue;
@@ -193,8 +231,15 @@ export class Snowmaking {
         need += add * 100 * S.waterPerTileCm;
       }
       st.tiles = tiles; st.pisteTiles = pisteTiles; st.needy = needy;
+      if (this.mode === 'off' || this.off.has(src.id)) { st.state = 'off'; st.pause = undefined; continue; }
       if (tiles === 0) { st.state = 'noPiste'; continue; }
-      if (needy === 0) { st.state = 'full'; continue; }
+      if (needy === 0) { st.state = 'full'; st.pause = undefined; continue; }
+      if (auto && e.snowline && e.dailyHigh) {
+        const top = pisteTiles > 0 ? maxPisteAlt : e.altOf(Math.floor(src.cx), Math.floor(src.cy));
+        const pause = pisteTiles > 0 && e.snowline() > top ? 'snowline' : e.dailyHigh(top) > S.autoMaxHigh ? 'warm' : undefined;
+        if (pause) { st.state = 'paused'; st.pause = pause; continue; }
+      }
+      st.pause = undefined;
       if (usable === 0 || n === 0 || need <= 0) { st.state = 'warm'; continue; }
       const granted = e.reservoirs.consume(need);
       if (granted <= 0) { st.state = 'noWater'; continue; }
@@ -234,6 +279,8 @@ export interface CannonInfo {
   /** Average depth gained last night over the covered tiles (cm) and the water used (units). */
   gainCm: number; waterLast: number;
   reservoirs: number; level: number; capacity: number;
+  /** Switched off by the player (this cannon) and the global mode, for the toggle. */
+  switchedOff: boolean; mode: SnowmakingMode;
   /** Throw radius (piste) and off-piste radius, tiles. */
   radius: number; offPisteRadius: number;
 }
@@ -246,6 +293,9 @@ export interface CannonInfoDeps {
   /** Altitude of the cannon in metres and the temperature there now (°C). */
   altM: number;
   tempNow: number;
+  /** Auto-pause messages: today's snowline in metres and the daily high at the cannon (°C). */
+  snowlineM?: number;
+  highNow?: number;
 }
 const fmtAlt = (m: number): string => Math.round(m).toLocaleString('en-US');
 
@@ -255,14 +305,20 @@ export function cannonInfo(b: { id: number; x: number; y: number; w: number; h: 
   const st = d.sm.statsOf(b.id);
   const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
   const base = { tiles: st?.tiles ?? 0, pisteTiles: st?.pisteTiles ?? 0, gainCm: st && st.tiles > 0 ? (100 * st.gainLast) / st.tiles : 0, waterLast: Math.round(st?.waterLast ?? 0), reservoirs: d.reservoirs.count, level: d.reservoirs.level(), capacity: d.reservoirs.capacity(), radius: r, offPisteRadius: SNOWMAKING.offPisteRadius };
-  const mk = (status: CannonStatus, headline: string): CannonInfo => ({ status, headline, ...base });
+  const mk = (status: CannonStatus, headline: string): CannonInfo => ({ status, headline, switchedOff: d.sm.isSwitchedOff(b.id), mode: d.sm.mode, ...base });
   if (!b.active) return mk('inactive', 'Inactive');
   if (d.reservoirCentres.length === 0) return mk('noReservoir', 'Not connected to a reservoir: build one within ' + d.pipeRange + ' tiles');
   if (!d.reservoirCentres.some((q) => Math.hypot(q.x - cx, q.y - cy) <= d.pipeRange)) return mk('outOfPipe', `Not connected to a reservoir: none within ${d.pipeRange} tiles`);
+  if (d.sm.mode === 'off') return mk('off', 'Off: snowmaking is switched off (Operations)');
+  if (d.sm.isSwitchedOff(b.id)) return mk('off', 'Off by you: mothballed, no energy or water, 15% upkeep');
   if (!st) return mk('idle', 'Idle: waiting for the next hourly check');
   switch (st.state) {
     case 'running': return mk('running', 'Running');
-    case 'warm': return mk('warm', `Idle: too warm (needs ≤ ${SNOWMAKING.maxTemp} °C at ${fmtAlt(d.altM)} m; ${SNOWMAKING.wetBulbTemp} °C at half rate; now ${d.tempNow.toFixed(1)} °C)`);
+    case 'warm': if (d.sm.mode === 'auto') return mk('warm', `Auto: waiting for cold (needs ≤ ${SNOWMAKING.maxTemp} °C at ${fmtAlt(d.altM)} m; now ${d.tempNow.toFixed(1)} °C)`);
+      return mk('warm', `Idle: too warm (needs ≤ ${SNOWMAKING.maxTemp} °C at ${fmtAlt(d.altM)} m; ${SNOWMAKING.wetBulbTemp} °C at half rate; now ${d.tempNow.toFixed(1)} °C)`);
+    case 'paused': return st.pause === 'snowline'
+      ? mk('paused', `Paused: snowline above this piste (${fmtAlt(d.snowlineM ?? 0)} m)`)
+      : mk('paused', `Paused: too warm for snowmaking (daily high ${(d.highNow ?? d.tempNow).toFixed(1)} °C, Auto pauses above ${SNOWMAKING.autoMaxHigh} °C)`);
     case 'noWater': return mk('noWater', 'Idle: no water in the reservoir');
     case 'noPiste': return mk('noPiste', 'Out of range of piste: no piste or ground within reach');
     case 'full': return mk('full', 'Idle: snow base complete');

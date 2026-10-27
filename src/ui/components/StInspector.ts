@@ -23,6 +23,7 @@ export class StInspector extends StElement {
   private attr: AttractionHandlers | null = null;
   private onVehicles: ((id: number, delta: number) => void) | null = null;
   private onBins: ((id: number) => void) | null = null;
+  private onCannon: ((id: number, on: boolean) => void) | null = null;
   private onInstructors: ((id: number, delta: number) => void) | null = null;
 
   protected css(): string {
@@ -54,6 +55,8 @@ export class StInspector extends StElement {
 
   /** Ranger Station: toggle bear-proof bins. */
   bindBins(fn: (id: number) => void): void { this.onBins = fn; }
+  /** Per-cannon on/off (Snowmaking). */
+  bindCannon(fn: (id: number, on: boolean) => void): void { this.onCannon = fn; }
 
   bindAttraction(h: AttractionHandlers): void { this.attr = h; }
 
@@ -131,7 +134,11 @@ export class StInspector extends StElement {
     } else if (t.ops?.kind === 'cannon') {
       const c = t.ops.info, head = line(c.headline, c.status === 'running' ? 'good' : c.status === 'full' ? '' : 'bad');
       head.dataset.role = 'cannon-status';
-      opsRows.push(head,
+      const tog = document.createElement('button'), globalOff = c.mode === 'off';
+      tog.dataset.role = 'cannon-toggle'; tog.textContent = c.switchedOff || globalOff ? 'Turn this cannon on' : 'Turn this cannon off'; tog.disabled = globalOff;
+      tog.title = globalOff ? 'Snowmaking is Off for the whole resort: change it in Operations' : 'A switched-off cannon uses no energy or water and pays 15% upkeep';
+      tog.addEventListener('click', () => { this.onCannon?.(t.id, !!c.switchedOff); });
+      opsRows.push(head, tog,
         line(`Covers ${c.tiles} tiles (${c.pisteTiles} piste) · throw ${c.radius} tiles, ${c.offPisteRadius} off-piste`),
         line(`Last night: +${c.gainCm.toFixed(1)} cm average · ${c.waterLast} water used`),
         line(`Reservoir${c.reservoirs === 1 ? '' : 's'}: ${Math.round(c.level)} / ${Math.round(c.capacity)} (${Math.round((100 * c.level) / Math.max(1, c.capacity))}%)`, c.level < 1 ? 'bad' : ''));

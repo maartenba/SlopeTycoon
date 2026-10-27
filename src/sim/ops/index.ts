@@ -63,6 +63,7 @@ export function createOps(o: OpsOptions): Ops {
   const snowmaking = new Snowmaking({
     size: N, coverage: o.coverage, reservoirs, isPiste: (i) => quality.isPiste(i), skip: (i) => isWaterType(o.grid.tileType[i]!), snowDepth: o.grid.snowDepth,
     altOf: (x, y) => o.cond.altitude(x, y), addSnow: (i, d) => o.snow.addSnow(i, d), onCost: o.onCost,
+    snowline: () => weather.current.snowline, dailyHigh: (alt) => weather.temperatureAt(alt, 15),
   });
   const grooming = new Grooming({
     size: N, quality, coverage: o.coverage, snowDepth: o.grid.snowDepth, buildings: o.buildings, onCost: o.onCost,
@@ -107,10 +108,11 @@ export function createOps(o: OpsOptions): Ops {
     serialize: () => ({
       tr: b64(new Uint8Array(quality.traffic.buffer, quality.traffic.byteOffset, quality.traffic.byteLength)), td: b64(new Uint8Array(quality.trafficDay.buffer, quality.trafficDay.byteOffset, quality.trafficDay.byteLength)),
       q: b64(quality.state), w: b64(new Uint8Array(quality.wear.buffer, quality.wear.byteOffset, quality.wear.byteLength)), res: reservoirs.serialize(),
-      groom: grooming.serialize(), safety: safety?.serialize(), lastStamp, lastDay, lastRow, pe: snowmaking.pendingEnergy,
+      groom: grooming.serialize(), safety: safety?.serialize(), lastStamp, lastDay, lastRow, pe: snowmaking.pendingEnergy, sm: snowmaking.serializeState(),
     }),
     load: (data) => {
-      const s = data as { tr?: string; td?: string; q: string; w: string; res: Array<[number, number, number]>; groom: unknown; safety?: unknown; lastStamp: number; lastDay: number; lastRow: number; pe?: number };
+      const s = data as { tr?: string; td?: string; q: string; w: string; res: Array<[number, number, number]>; groom: unknown; safety?: unknown; lastStamp: number; lastDay: number; lastRow: number; pe?: number; sm?: { mode?: 'on' | 'off' | 'auto'; off?: number[] } };
+      snowmaking.loadState(s.sm);
       snowmaking.pendingEnergy = s.pe ?? 0; // energy not yet billed (flushed at midnight): was lost on load, which made a mid-day save/load differ from a live game
       unb64(s.q, quality.state); unb64(s.w, new Uint8Array(quality.wear.buffer, quality.wear.byteOffset, quality.wear.byteLength));
       if (s.tr) unb64(s.tr, new Uint8Array(quality.traffic.buffer, quality.traffic.byteOffset, quality.traffic.byteLength));

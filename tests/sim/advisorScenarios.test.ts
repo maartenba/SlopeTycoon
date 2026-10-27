@@ -209,6 +209,14 @@ const SCENARIOS: Scenario[] = [
       { name: 'lower it a little', apply: (s) => { s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 1.1); } },
       { name: 'guests leave (too few to judge)', apply: (s) => { guests(s, 3); } },
     ],
+  {
+    id: 'snow.mode',
+    setup: (s) => { s.weather.current.snowline = 1e6; },
+    fixes: [
+      { name: 'switch to Auto', apply: (s) => { s.ops.snowmaking.setMode('auto'); } },
+      { name: 'turn the cannons off', apply: (s) => { s.ops.snowmaking.setMode('off'); } },
+    ],
+  },
   },
   {
     id: 'marketing.ready',

@@ -15,6 +15,8 @@ import { GuestType } from '../guests/Guest';
 import { seasonProgress } from '../Clock';
 import { Q } from '../ops/PisteQuality';
 import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/suggest';
+import { SNOWMAKING } from '../ops/Snowmaking';
+import { altitudeMetres } from '../Season';
 import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { TEXT, FRIENDLY } from './strings';
@@ -277,6 +279,23 @@ export const RULES: readonly Rule[] = [
     const b = c.sim.buildings.all().filter((x) => !x.active && !covered(x)).sort((a, z) => a.id - z.id)[0];
     if (!b) return null;
     return { id: 'building.inactive', severity: 'warn', ...TEXT.buildingInactive(c.sim.names.buildingName(b.id), b.reason ?? 'It is missing a requirement. Select it to see which.'), target: { x: b.x + b.w / 2 - 0.5, y: b.y + b.h / 2 - 0.5, kind: 'building', id: b.id } };
+  // Snowmaking switch: wasting money above the snowline / a cold snap with the cannons off (the player decides; default mode On never changes by itself)
+  rule('snow.mode', 2, (c) => {
+    const sm = c.sim.ops.snowmaking, cannons = c.sim.buildings.all().filter((b) => b.active && b.type === 'snowCannon');
+    if (!cannons.length) return null;
+    const N = c.sim.size, q = c.sim.ops.quality, cond = c.sim.cond;
+    let top = -Infinity, n = 0;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (q.isPiste(y * N + x)) { n++; top = Math.max(top, cond.altitude(x, y)); }
+    if (n < 30) return null;
+    const w = c.sim.weather, high = w.temperatureAt(top, 15), line = w.current.snowline;
+    const anyOn = sm.mode !== 'off' && cannons.some((b) => !sm.isSwitchedOff(b.id));
+    const slack = c.shown ? 1 : 0;
+    if (sm.mode === 'on' && anyOn && (line > top || high > SNOWMAKING.autoMaxHigh + slack))
+      return { id: 'snow.mode', severity: 'info', ...TEXT.snowWaste(Math.round(altitudeMetres(line))), panel: { drawer: 'ops' } };
+    if (!anyOn && line <= top && high <= -slack)
+      return { id: 'snow.mode', severity: 'info', ...TEXT.snowCold(), panel: { drawer: 'ops' } };
+    return null;
+  }),
   }),
   rule('lift.worn', 2, (c) => {
     const l = c.sim.lifts.all().filter((x) => (x.ops?.condition ?? 100) < (c.shown ? 55 : 45)).sort((a, b) => (a.ops!.condition - b.ops!.condition) || a.id - b.id)[0];

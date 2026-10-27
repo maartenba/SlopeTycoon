@@ -4,7 +4,7 @@ import { generateProps, PropStore } from '../world/Props';
 import { Layer as NetLayer, Networks } from '../world/Networks';
 import { Weather, SnowCover, createWeatherSystem } from '../sim/Weather';
 import { Safety } from '../sim/ops/Safety';
-import { createOps, Reservoirs, qualityPreference, qualityInjuryScale, qualitySpeedFactor, type Ops } from '../sim/ops';
+import { createOps, Reservoirs, SNOWMAKING, qualityPreference, qualityInjuryScale, qualitySpeedFactor, type Ops } from '../sim/ops';
 import { TileConditions } from '../sim/TileConditions';
 import { OpenStatus } from '../sim/OpenStatus';
 import { constructionMultiplierAt, worldScaleFor } from '../sim/Season';
@@ -711,6 +711,7 @@ export function createSim(opts: SimOptions) {
         b += full * share;
       }
       const lo = liftOps.settleDay(); // closed lifts only cost base maintenance; running lifts cost energy
+        if (x.type === 'snowCannon' && ops.snowmaking.isMothballed(x.id) && SNOWMAKING.mothballUpkeepShare < share) { relief.mothball += full * (share - SNOWMAKING.mothballUpkeepShare); share = SNOWMAKING.mothballUpkeepShare; } // switched off by the player: 15 % upkeep
       l = lo.upkeep * diff.upkeep * (mods.costMultipliers?.upkeep ?? 1);
       const seen = new Set<number>();
       for (const a of attractions.all()) {
