@@ -3,6 +3,7 @@ import { createSim, type Sim } from '../../src/game/createSim';
 import { Layer } from '../../src/world/Networks';
 import { raiseLowerRect } from '../../src/world/Terraform';
 import { buildRuns } from '../../src/world/Runs';
+import { budget } from '../perfMode';
 
 const line = (x0: number, y0: number, x1: number, y1: number): Array<{ x: number; y: number }> => {
   const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)), out = [];
@@ -89,6 +90,6 @@ describe('RunNetwork rebuild time on realistic resorts', () => {
     const med = times[times.length >> 1]!;
     console.log(`[run-rebuild] ${size} w${w}: ${n} piste tiles, ${runs} runs, median ${med.toFixed(2)} ms, max ${times[times.length - 1]!.toFixed(2)} ms`);
     expect(n).toBeGreaterThan(500);
-    expect(med).toBeLessThan(w === 5 ? 15 : 5); // w5 = 1.4k tiles of heavily overlapping branches (stress, measured ~6 ms); typical resorts < 2 ms. Rebuilds are lazy (network edits only)
+    expect(med).toBeLessThan(budget(w === 5 ? 15 : 5)); // w5 = 1.4k tiles of heavily overlapping branches (stress, measured ~6 ms); typical resorts < 2 ms. Rebuilds are lazy (network edits only)
   });
 });
