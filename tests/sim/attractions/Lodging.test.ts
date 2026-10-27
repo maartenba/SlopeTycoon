@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { NIGHTLY_RATE } from '../../../src/config/prices';
+import { afterEach, describe, expect, it } from 'vitest';
+import { BUILDINGS } from '../../../src/config/buildings';
+import { LODGING_TIER_MULT, NIGHTLY_RATE, tieredNightly } from '../../../src/config/prices';
+import { ATTRACTION_SPECS as SPECS } from '../../../src/sim/attractions/registry';
+import type { AttractionSpec } from '../../../src/sim/attractions/Attraction';
+
+const ATTRACTION_SPECS = SPECS as Record<string, AttractionSpec>;
+import { tierAppeal } from '../../../src/sim/attractions/Lodging';
+import { seasonOf } from '../../../src/sim/Clock';
 import { RoomBook } from '../../../src/sim/attractions/Lodging';
 import { GState } from '../../../src/sim/guests/Guest';
 import { harness } from './harness';
@@ -64,5 +71,83 @@ describe('lodging', () => {
     expect(rb.occupied(7)).toBe(1);
     rb.purge(() => true, () => false);
     expect(rb.total()).toBe(0);
+  });
+});
+
+describe('lodging v2 (tiers, seasonal opening, pool)', () => {
+  const ids = ['testBudget', 'testLux'] as const;
+  const dayOf = (season: string): number => { for (let d = 0; d < 180; d++) if (seasonOf({ day: d }) === season) return d; throw new Error('no day'); };
+  function register(): void {
+    for (const id of ids) {
+      BUILDINGS[id] = { ...BUILDINGS.chalet!, id, name: id } as never;
+      NIGHTLY_RATE[id] = tieredNightly(NIGHTLY_RATE.chalet!, id === 'testBudget' ? 'budget' : 'luxury');
+    }
+    ATTRACTION_SPECS.testBudget = { ...ATTRACTION_SPECS.chalet!, tier: 'budget', seasonOpen: ['summer'] };
+    ATTRACTION_SPECS.testLux = { ...ATTRACTION_SPECS.chalet!, tier: 'luxury', amenity: 'pool', poolSlots: 6, appeal: tierAppeal(ATTRACTION_SPECS.chalet!.appeal, 'luxury') };
+  }
+  afterEach(() => { for (const id of ids) { delete BUILDINGS[id]; delete NIGHTLY_RATE[id]; delete ATTRACTION_SPECS[id]; } });
+
+  it('tier multipliers: budget x0.6, standard x1, luxury x2.5 on rate and cap', () => {
+    expect(LODGING_TIER_MULT).toEqual({ budget: 0.6, standard: 1, luxury: 2.5 });
+    expect(tieredNightly({ price: 40, max: 150 }, 'budget')).toEqual({ price: 24, max: 90 });
+    expect(tieredNightly({ price: 40, max: 150 }, 'standard')).toEqual({ price: 40, max: 150 });
+    expect(tieredNightly({ price: 40, max: 150 }, 'luxury')).toEqual({ price: 100, max: 375 });
+  });
+
+  it('tier shifts the appeal: luxury draws VIPs, budget draws budget guests; chalet/apartment keep their vector', () => {
+    const base = ATTRACTION_SPECS.chalet!.appeal;
+    expect(tierAppeal(base, 'standard')).toEqual(base);
+    expect(tierAppeal(base, 'luxury')[3]).toBeGreaterThan(base[3]);
+    expect(tierAppeal(base, 'budget')[4]).toBeGreaterThan(base[4]);
+    expect(ATTRACTION_SPECS.chalet!.tier).toBeUndefined();
+    expect(ATTRACTION_SPECS.chalet!.seasonOpen).toBeUndefined();
+  });
+
+  it('nightly revenue follows the tier price', () => {
+    register();
+    const h = harness();
+    h.state.date.day = dayOf('summer');
+    const b = h.add('testLux');
+    h.run(1);
+    h.state.date.minute = 18 * 60 + 30;
+    h.guest({ overnight: true, budget: 1000 });
+    h.run(1);
+    expect(h.econ.ledger.lodging).toBe(NIGHTLY_RATE.chalet!.price * 2.5);
+    expect(h.sys.get(b.id)!.stats.nights).toBe(1);
+  });
+
+  it('a closed season blocks check-ins and reports "Closed for the season"; it reopens in season', () => {
+    register();
+    const h = harness();
+    h.state.date.day = dayOf('winter');
+    const b = h.add('testBudget');
+    h.run(1);
+    h.state.date.minute = 18 * 60 + 30;
+    h.guest({ overnight: true });
+    h.run(1);
+    expect(h.sys.get(b.id)!.open).toBe(false);
+    expect(h.sys.get(b.id)!.reason).toBe('Closed for the season');
+    expect(h.econ.ledger.lodging).toBe(0);
+    expect(h.sys.lodgingCapacity()).toBe(0);
+    h.state.date.day = dayOf('summer'); h.state.date.minute = 18 * 60 + 30;
+    h.run(1);
+    expect(h.sys.get(b.id)!.open).toBe(true);
+    expect(h.econ.ledger.lodging).toBe(Math.round(NIGHTLY_RATE.chalet!.price * 0.6));
+  });
+
+  it('pool amenity adds Using places for overnight guests and a happiness bonus', () => {
+    register();
+    const h = harness();
+    h.state.date.day = dayOf('summer');
+    const b = h.add('testLux');
+    h.run(1);
+    expect(h.sys.get(b.id)!.capacity()).toBe((ATTRACTION_SPECS.chalet!.slots ?? 4) + 6);
+    const day = h.guest();
+    expect(h.sys.canUse(b.id, day)).toBe(false);
+    const g = h.guest({ overnight: true });
+    h.store.happiness[g] = 0.5;
+    expect(h.arrive(g, b)).toBe('using');
+    h.run(20);
+    expect(h.store.happiness[g]).toBeGreaterThan(0.5 + 0.05 + 0.05 - 1e-9);
   });
 });

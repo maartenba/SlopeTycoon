@@ -36,6 +36,13 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   hiking: { price: 0, max: 10, billing: 'perUse', category: 'recreation' },
 };
 
+/** Lodging v2 price tiers (D-P8): nightly rate multiplier against the standard rate. */
+export type LodgingTier = 'budget' | 'standard' | 'luxury';
+export const LODGING_TIER_MULT: Record<LodgingTier, number> = { budget: 0.6, standard: 1, luxury: 2.5 };
+/** Nightly rate row for a tiered lodging type: `base` is the standard-tier rate, the cap scales with the tier too. */
+export const tieredNightly = (base: { price: number; max: number }, tier: LodgingTier): { price: number; max: number } =>
+  ({ price: Math.round(base.price * LODGING_TIER_MULT[tier]), max: Math.round(base.max * LODGING_TIER_MULT[tier]) });
+
 /** Nightly rate per guest, by lodging type. */
 export const NIGHTLY_RATE: Record<string, { price: number; max: number }> = {
   baseLodge: { price: 50, max: 150 },

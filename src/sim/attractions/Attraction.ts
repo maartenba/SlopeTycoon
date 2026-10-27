@@ -2,6 +2,8 @@ import { BUILDINGS, type BuildingDef } from '../../config/buildings';
 import { EVENING } from '../../config/balance';
 import { PRICE_TABLE, STAFF_WAGE_PER_DAY, type LedgerCategory } from '../../config/prices';
 import type { WorldBuilding } from '../guests/GuestWorld';
+import type { SeasonId } from '../../core/events';
+import type { LodgingTier } from '../../config/prices';
 
 /** Preference per guest type: [solo, couple, family, vip, budget, adventure]. */
 export type Appeal = readonly [number, number, number, number, number, number];
@@ -22,6 +24,14 @@ export interface AttractionSpec {
   overnightOnly?: boolean;
   /** Overnight rooms (lodging); defaults to none. */
   rooms?: number;
+  /** Lodging v2 (docs/lodging.md): price tier (nightly rate x tier multiplier, appeal vector shift). Absent = legacy (chalet / apartment: unchanged). */
+  tier?: LodgingTier;
+  /** Lodging v2: seasons in which the house takes guests; outside them it is "Closed for the season" (no check-ins). Absent = year-round. */
+  seasonOpen?: readonly SeasonId[];
+  /** Lodging v2 amenity. 'pool': `poolSlots` extra simultaneous `Using` places for overnight guests, `poolHappiness` bonus per visit. */
+  amenity?: 'pool';
+  poolSlots?: number;
+  poolHappiness?: number;
   /** Trekker beds (Mountain Hut): booked by multi-day hikers, separate from `rooms` (overnight resort guests). */
   beds?: number;
   /** Food / drink venue with evening opening hours (serves 08:00 - 23:00 winter / 22:30 summer; evening shift costs extra staff). */
@@ -75,7 +85,7 @@ export class Attraction {
   get billing(): 'perUse' | 'perHour' | 'perNight' { return PRICE_TABLE[this.b.type]?.billing ?? 'perUse'; }
   get maxPrice(): number { return PRICE_TABLE[this.b.type]?.max ?? 0; }
 
-  baseCapacity(): number { return Math.max(1, this.spec.slots ?? this.def.capacity); }
+  baseCapacity(): number { return Math.max(1, (this.spec.slots ?? this.def.capacity) + (this.spec.amenity === 'pool' ? this.spec.poolSlots ?? 0 : 0)); }
   /** Staff ratio 0..1: understaffed attractions serve fewer guests at once. */
   staffFactor(): number { return this.def.staff > 0 ? Math.min(1, this.staff / this.def.staff) : 1; }
   /** Simultaneous capacity after staffing. */

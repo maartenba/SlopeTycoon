@@ -2,6 +2,11 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+- **Lodging v2 framework** (no player-visible change yet): lodging specs can carry a price tier (budget x0.6 / standard x1 / luxury x2.5), a season window ("Closed for the season", no check-ins) and a pool amenity (extra places and a happiness bonus for overnight guests). Chalet, Apartment and Base Lodge are unchanged. The campground and hotels build on it. `docs/lodging.md`.
+- **Guest-type framework** (no player-visible change yet): guest types are now extensible data (`src/config/guestTypes.ts`: season shares, minimum level, required buildings, weather response, appeal profile, marketing segment, look hooks). The arrival mix draws extra types from a separate stream behind the `guestTypesV2` flag (off), the Statistics dialog gains a "Guests by type" card, and the guest inspector shows type labels. No new type is active yet; Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler build on it. `docs/guest-types.md`.
+
 ## [0.2.2] - 2026-10-27 (pre-release)
 
 Changes since 0.2.1: a real calendar, runs, energy, maintenance, snowmaking control and a lot of polish. Still a pre-release; not 1.0. The website, player guide and developer docs were brought up to date (new guide sections *Calendar & seasons*, *Runs*, *Planned maintenance*, *Snowmaking*, *Energy and sustainability*, a loading-screen entry in Troubleshooting, new screenshots `ui-runs-tab`, `runs-overlay`, `ui-maintenance`, `ui-snowmaking`, `ui-energy-tab`, `energy-solar-wind`, `ui-loading`, and a re-shoot of every picture with the date chip).

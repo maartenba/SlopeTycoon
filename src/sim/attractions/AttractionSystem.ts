@@ -1,8 +1,9 @@
+import { appealFor } from '../../config/guestTypes';
 import type { GameState } from '../../core/GameState';
 import type { GameBus } from '../../core/events';
 import { DAYS_PER_YEAR } from '../../config/balance';
 import { NIGHTLY_RATE, type LedgerCategory } from '../../config/prices';
-import { hourOfDay } from '../Clock';
+import { hourOfDay, seasonOf } from '../Clock';
 import type { SimSystem } from '../Systems';
 import { Act } from '../guests/Decision';
 import type { ArriveResult, GuestAttractionPort } from '../guests/AttractionPort';
@@ -90,7 +91,7 @@ export class AttractionSystem implements GuestAttractionPort {
   }
   queueLength(id: number): number { return this.items.get(id)?.queue.length ?? 0; }
   unitPrice(id: number): number { return this.items.get(id)?.unitPrice() ?? 0; }
-  appeal(id: number, type: number): number { return this.items.get(id)?.spec.appeal[type] ?? 0.25; }
+  appeal(id: number, type: number): number { const a = this.items.get(id); return (a ? appealFor(a.spec, a.b.type, type) : undefined) ?? 0.25; }
   needsGear(guestId: number, kind: 'ski' | 'bike'): boolean { return !ownsGear(guestId, kind) && !this.rented.has(guestId); }
 
   /** Total room capacity of active, open lodging (feed to the spawner's overnight cap). */
@@ -143,6 +144,7 @@ export class AttractionSystem implements GuestAttractionPort {
       if (e.hungerTo !== undefined) s.hunger[slot] = Math.min(s.hunger[slot]!, e.hungerTo);
       if (e.fatigue) s.fatigue[slot] = Math.min(1, Math.max(0, s.fatigue[slot]! + e.fatigue));
       if (e.happiness) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + e.happiness));
+      if (effects.spec.amenity === 'pool') s.happiness[slot] = Math.min(1, s.happiness[slot]! + (effects.spec.poolHappiness ?? 0.06));
       if (effects.spec.grantsGear) this.rented.add(id);
       s.visits[slot] = Math.min(255, s.visits[slot]! + 1);
     }
@@ -178,6 +180,7 @@ export class AttractionSystem implements GuestAttractionPort {
     if (!a.b.active) return { open: false, reason: `Inactive: ${a.b.reason ?? 'dependency missing'}` };
     const st = this.d.status(a.id);
     if (st && !st.open) return { open: false, reason: st.reason ?? 'Closed' };
+    if (a.spec.seasonOpen && !a.spec.seasonOpen.includes(seasonOf({ day: this.day }))) return { open: false, reason: 'Closed for the season' };
     if (a.spec.extra === 'lake' && this.d.lakeFrozen?.(a.b)) return { open: false, reason: 'Closed: the lake is frozen' };
     if (a.def.staff > 0 && a.staff <= 0) return { open: false, reason: 'Closed: no staff' };
     return { open: true };
