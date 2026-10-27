@@ -20,6 +20,11 @@ const jobs: Array<{ name: string; path: string; w: number; h: number; full: bool
   { name: 'guide-building-1440', path: 'guide/building/', w: 1440, h: 900, full: false },
   { name: 'guide-shortcuts-1440', path: 'guide/shortcuts/', w: 1440, h: 900, full: false },
   { name: 'guide-career-full', path: 'guide/career/', w: 1440, h: 900, full: true },
+  { name: 'landing-about', path: '', w: 1440, h: 900, full: false, sel: '#about' },
+  { name: 'about-1440', path: 'about/', w: 1440, h: 900, full: false },
+  { name: 'about-mobile', path: 'about/', w: 390, h: 844, full: false },
+  { name: 'privacy-1440', path: 'privacy/', w: 1440, h: 900, full: false },
+  { name: 'privacy-mobile', path: 'privacy/', w: 390, h: 844, full: false },
   { name: 'guide-mobile', path: 'guide/guests-seasons/', w: 390, h: 844, full: false },
 ];
 try {

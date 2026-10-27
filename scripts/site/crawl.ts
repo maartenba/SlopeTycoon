@@ -5,7 +5,66 @@ import { dirname, join, normalize, relative, sep } from 'node:path';
 export interface Budgets { shotMaxBytes: number; shotsTotalBytes: number; cssJsMaxBytes: number }
 export const BUDGETS: Budgets = { shotMaxBytes: 250 * 1024, shotsTotalBytes: 8 * 1024 * 1024, cssJsMaxBytes: 150 * 1024 };
 /** External hosts allowed in href/src (footer links and the game's own About credits live in play/, which is not crawled for these). */
-export const EXTERNAL_OK = [/^https:\/\/github\.com\//];
+export const EXTERNAL_OK = [/^https:\/\/github\.com\//, /^https:\/\/en\.wikipedia\.org\/wiki\/Ski_Resort_Tycoon$/];
+/** Hosts the analytics snippet (assets/consent.js) may contact, and only after the visitor allowed it. */
+export const ANALYTICS_HOSTS = ['www.googletagmanager.com', 'www.google-analytics.com'];
+export const GA_ID = 'G-NX37ERE0S9';
+export const SEO_LIMITS = { titleMax: 59, descMin: 120, descMax: 155 } as const;
+const unesc = (h: string): string => h.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+/** PNG width/height from the IHDR chunk (no image library needed). */
+export function pngSize(buf: Buffer): { w: number; h: number } | null {
+  return buf.length > 24 && buf.toString('latin1', 1, 4) === 'PNG' ? { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) } : null;
+}
+export const metaContent = (h: string, attr: 'name' | 'property', key: string): string | null => {
+  const m = new RegExp(`<meta[^>]*\\s${attr}="${key}"[^>]*\\scontent="([^"]*)"`).exec(h) ?? new RegExp(`<meta[^>]*\\scontent="([^"]*)"[^>]*\\s${attr}="${key}"`).exec(h);
+  return m ? unesc(m[1]!) : null;
+};
+/** SEO / structured-data / privacy lint of one generated page (title + description length, canonical, social cards, JSON-LD, icons, analytics rules). */
+export function lintPage(file: string, h: string, o: { siteUrl?: string; fileExists?: (rel: string) => boolean; readFile?: (rel: string) => Buffer | null } = {}): string[] {
+  const out: string[] = [], bad = (m: string): void => { out.push(`${file}: ${m}`); };
+  const title = unesc(/<title>([^<]*)<\/title>/.exec(h)?.[1] ?? ''), desc = metaContent(h, 'name', 'description') ?? '';
+  if (title.length > SEO_LIMITS.titleMax) bad(`title is ${title.length} chars (max ${SEO_LIMITS.titleMax}): ${title}`);
+  if (desc.length < SEO_LIMITS.descMin || desc.length > SEO_LIMITS.descMax) bad(`meta description is ${desc.length} chars (want ${SEO_LIMITS.descMin}-${SEO_LIMITS.descMax})`);
+  if (!/<meta name="robots" content="[^"]+"/.test(h)) bad('missing robots meta');
+  if (!/<meta name="theme-color"/.test(h) || !/<meta name="viewport"/.test(h)) bad('missing theme-color / viewport');
+  if (!/<link rel="icon" href="[^"]*favicon\.ico"/.test(h) || !/rel="icon" href="[^"]*icon\.svg"/.test(h) || !/rel="apple-touch-icon"/.test(h) || !/rel="manifest"/.test(h)) bad('missing favicon / apple-touch-icon / manifest links');
+  if (!/rel="preload" href="[^"]*lilita-one-latin\.woff2" as="font"/.test(h)) bad('critical font is not preloaded');
+  for (const k of ['og:title', 'og:description', 'og:image', 'og:image:alt', 'og:site_name', 'og:locale', 'og:type']) if (!metaContent(h, 'property', k)) bad(`missing ${k}`);
+  for (const k of ['twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']) if (!metaContent(h, 'name', k)) bad(`missing ${k}`);
+  if (metaContent(h, 'property', 'og:image:width') !== '1200' || metaContent(h, 'property', 'og:image:height') !== '630') bad('og:image dimensions must be 1200x630');
+  if (o.siteUrl) {
+    if (!new RegExp(`<link rel="canonical" href="${o.siteUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^"]*"`).test(h)) bad('missing canonical URL on the site URL');
+    const img = metaContent(h, 'property', 'og:image') ?? '';
+    if (!img.startsWith(o.siteUrl)) bad(`og:image must be absolute: ${img}`);
+    else if (o.readFile) { const buf = o.readFile(img.slice(o.siteUrl.length)); const sz = buf ? pngSize(buf) : null; if (!sz) bad(`og:image file missing or not a PNG: ${img}`); else if (sz.w !== 1200 || sz.h !== 630) bad(`og:image is ${sz.w}x${sz.h}, want 1200x630`); }
+  }
+  const lds = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+  if (!lds.length) bad('no JSON-LD structured data');
+  for (const m of lds) { try { const j = JSON.parse(m[1]!) as { '@context'?: string; '@type'?: unknown }; if (j['@context'] !== 'https://schema.org' || !j['@type']) bad('JSON-LD without @context/@type'); } catch (e) { bad(`invalid JSON-LD: ${String(e).slice(0, 80)}`); } }
+  if (/<script[^>]+src="https?:/.test(h) || /gtag\(|googletagmanager|google-analytics/.test(h)) bad('analytics / external scripts must only be injected by consent.js after consent');
+  if (!/<script src="[^"]*assets\/consent\.js"/.test(h)) bad('missing consent.js');
+  if (!/<footer>[\s\S]*data-consent-open[\s\S]*<\/footer>/.test(h)) bad('footer lacks the "Privacy & analytics settings" link');
+  return out;
+}
+/** Titles and descriptions must be unique across the pages. */
+export function uniqueLint(pages: Array<{ file: string; html: string }>): string[] {
+  const out: string[] = [];
+  for (const [k, label] of [['title', 'title'], ['description', 'meta description']] as const) {
+    const seen = new Map<string, string>();
+    for (const p of pages) { const v = k === 'title' ? unesc(/<title>([^<]*)<\/title>/.exec(p.html)?.[1] ?? '') : metaContent(p.html, 'name', 'description') ?? ''; const prev = seen.get(v); if (prev) out.push(`${p.file}: ${label} duplicates ${prev}`); else seen.set(v, p.file); }
+  }
+  return out;
+}
+/** sitemap.xml must list every website page (and the game at play/), and robots.txt must reference it. */
+export function sitemapLint(sitemap: string, robots: string, pagePaths: string[], base: string): string[] {
+  const out: string[] = [], locs = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!));
+  for (const p of [...pagePaths, 'play/']) if (!locs.has(`${base}${p}`)) out.push(`sitemap.xml lacks ${base}${p}`);
+  for (const l of locs) if (!l.startsWith(base)) out.push(`sitemap.xml has a foreign URL ${l}`);
+  if (!/<lastmod>\d{4}-\d\d-\d\d<\/lastmod>/.test(sitemap)) out.push('sitemap.xml entries need <lastmod>');
+  if (!/^User-agent: \*$/m.test(robots) || !/^Allow: \/$/m.test(robots) || !robots.includes(`Sitemap: ${base}sitemap.xml`)) out.push('robots.txt must allow all and reference the sitemap');
+  return out;
+}
 
 export function walk(dir: string, skip: (rel: string) => boolean = () => false): string[] {
   const out: string[] = [];
@@ -31,7 +90,7 @@ export function resolveRel(page: string, url: string): string | null {
 }
 
 export interface CheckResult { problems: string[]; pages: number; links: number; images: number; shotBytes: number }
-export function checkSite(dir: string, opts: { siteUrl?: string; budgets?: Budgets } = {}): CheckResult {
+export function checkSite(dir: string, opts: { siteUrl?: string; budgets?: Budgets; seo?: boolean } = {}): CheckResult {
   const b = opts.budgets ?? BUDGETS, problems: string[] = [];
   const bad = (m: string): void => { problems.push(m); };
   if (!existsSync(join(dir, 'index.html'))) return { problems: [`${dir}/index.html missing`], pages: 0, links: 0, images: 0, shotBytes: 0 };
@@ -76,6 +135,17 @@ export function checkSite(dir: string, opts: { siteUrl?: string; budgets?: Budge
   if (shotBytes > b.shotsTotalBytes) bad(`screenshots total ${(shotBytes / 1048576).toFixed(1)} MB exceeds the budget`);
   const cssjs = ['assets/site.css', 'assets/site.js'].reduce((n, f) => n + (all.has(f) ? statSync(join(dir, f)).size : 0), 0);
   if (cssjs > b.cssJsMaxBytes) bad(`site css+js ${(cssjs / 1024).toFixed(0)} kB exceeds the budget`);
-  for (const f of ['404.html', '.nojekyll', 'sitemap.xml', 'robots.txt', 'play/index.html', 'play/sw.js', 'play/manifest.webmanifest', 'assets/og.png', 'assets/search-index.json']) if (!all.has(f)) bad(`missing ${f}`);
+  for (const f of ['404.html', '.nojekyll', 'sitemap.xml', 'robots.txt', 'play/index.html', 'play/sw.js', 'play/manifest.webmanifest', 'assets/og/landing.png', 'assets/search-index.json']) if (!all.has(f)) bad(`missing ${f}`);
+  // external hosts inside the site's own scripts / styles: only the analytics endpoints (loaded after consent)
+  for (const f of ['assets/site.js', 'assets/consent.js', 'assets/site.css']) if (all.has(f)) for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) if (!ANALYTICS_HOSTS.includes(m[1]!.toLowerCase()) && !/schema\.org|w3\.org/.test(m[1]!)) bad(`${f}: external host not allowed: ${m[1]}`);
+  if (opts.seo) {
+    const pages = htmlFiles.map((f) => ({ file: f, html: html(f) }));
+    for (const p of pages) problems.push(...lintPage(p.file, p.html, { siteUrl: opts.siteUrl, readFile: (r) => (all.has(r) ? readFileSync(join(dir, r)) : null) }));
+    problems.push(...uniqueLint(pages));
+    if (all.has('sitemap.xml') && all.has('robots.txt')) problems.push(...sitemapLint(readFileSync(join(dir, 'sitemap.xml'), 'utf8'), readFileSync(join(dir, 'robots.txt'), 'utf8'), htmlFiles.map((f) => f.replace(/index\.html$/, '')), opts.siteUrl || 'https://maartenba.github.io/SlopeTycoon/'));
+    for (const f of ['favicon.ico', 'site.webmanifest', 'assets/icons/icon.svg', 'assets/icons/apple-touch-icon.png', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'about/index.html', 'privacy/index.html']) if (!all.has(f)) bad(`missing ${f}`);
+    for (const k of ['landing', 'guide', 'privacy', 'about']) { const sz = all.has(`assets/og/${k}.png`) ? pngSize(readFileSync(join(dir, `assets/og/${k}.png`))) : null; if (!sz || sz.w !== 1200 || sz.h !== 630) bad(`assets/og/${k}.png must be a 1200x630 PNG`); }
+    if (all.has('404.html') && !/<a href="[^"]+">Play the game<\/a>/.test(readFileSync(join(dir, '404.html'), 'utf8'))) bad('404.html needs links back into the site');
+  }
   return { problems, pages: htmlFiles.length, links, images, shotBytes };
 }

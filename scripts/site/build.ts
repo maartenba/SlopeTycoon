@@ -1,14 +1,15 @@
 /** `npm run site:build`: generates the website (landing + guide + assets + 404/sitemap/robots) into dist-site/, next to the game at dist-site/play/ (built by `npm run build:site`).
  * Env: SITE_URL (absolute https URL of the site root, for canonical / og:image / sitemap), SITE_REPO (`owner/repo`, footer links), SITE_CNAME (optional custom domain). */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { logoSvg } from '../../src/ui/logo';
-import { NOT_FOUND_HTML } from '../lib/notFound';
 import { allGenerated } from './generated';
 import { loadManifest, validateManifest } from './manifest';
 import { parseFrontMatter, renderMarkdown, searchEntries, esc, type PageMeta, type ShotInfo } from './md';
 import { readIndex, shotInfo, SHOTS_DIR } from './optimize';
-import { footer, guideIndex, guidePage, head, header, type SiteEnv } from './templates';
+import { LANDING_TITLE, footer, gameLd, guideIndex, guidePage, head, header, infoPage, notFoundPage, robotsTxt, scripts, sitemapXml, websiteLd, type SiteEnv } from './templates';
+import { writeIcons } from './icons';
 import { figureHtml } from './md';
 import { ACHIEVEMENTS } from '../../src/config/achievements';
 import { LIFT_KIND_IDS } from '../../src/config/lifts';
@@ -33,15 +34,15 @@ const imgTag = (s: ShotInfo, o: { sizes?: string; eager?: boolean; cls?: string 
   return `<img src="assets/shots/${f[0]!.file}" srcset="${f.map((x) => `assets/shots/${x.file} ${x.w}w`).join(', ')}" sizes="${o.sizes ?? '(min-width: 900px) 640px, 100vw'}" width="${s.w}" height="${s.h}" alt="${esc(s.alt)}"${o.eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"${o.cls ? ` class="${o.cls}"` : ''}>`;
 };
 
-export function buildLanding(tpl: string, env: SiteEnv, shots: Record<string, ShotInfo>, markSvg: string, fullLogo: string, manifestOrder: string[]): string {
+export function buildLanding(tpl: string, env: SiteEnv, shots: Record<string, ShotInfo>, markSvg: string, fullLogo: string, manifestOrder: string[], guide: readonly PageMeta[] = []): string {
   const need = (id: string): ShotInfo => { const s = shots[id]; if (!s) throw new Error(`landing uses unknown/unshot screenshot '${id}'`); return s; };
   const used = new Set<string>();
   const facts: Array<[string, string]> = [['3', 'map sizes'], [String(LIFT_KIND_IDS.length), 'lift types'], [String(ACHIEVEMENTS.length), 'trophies'], [String(SCENARIOS.length), 'scenarios'], ['1× 3× 10×', 'speeds + Skip to…'], ['4', 'seasons, 180-day year'], [String(FESTIVALS.filter((f) => f.kind === 'booked').length), 'bookable festivals'], [String(STAFF_UPGRADES.length), 'staff courses'], ['Touch', 'tablets & phones'], ['I', 'statistics charts']];
   const slides = ['hero-winter', 'season-spring', 'season-summer', 'season-autumn', 'night-village'].map((id, i) => { used.add(id); return imgTag(need(id), { sizes: '100vw', eager: i === 0 }); }).join('');
   let html = tpl
-    .replace('{{head}}', head(env, { rel: '', title: 'Slope Tycoon: build your own ski resort in the browser', path: '' }))
-    .replace('{{header}}', header('', markSvg)).replace('{{footer}}', footer(env, ''))
-    .replace('{{slides}}', slides).replace('{{logo}}', fullLogo)
+    .replace('{{head}}', head(env, { rel: '', title: LANDING_TITLE, path: '', og: 'landing', ld: [gameLd(env), websiteLd(env)] }))
+    .replace('{{header}}', header('', markSvg)).replace('{{footer}}', footer(env, '', guide))
+    .replace('{{scripts}}', scripts('')).replace('{{repo}}', env.repoUrl).replace('{{slides}}', slides).replace('{{logo}}', fullLogo)
     .replace('{{facts}}', facts.map(([b, l]) => `<div class="fact"><b>${esc(b)}</b><span>${esc(l)}</span></div>`).join(''))
     .replace(/\{\{pic:([\w-]+)\}\}/g, (_m, id: string) => { used.add(id); return figureHtml(need(id), '').replace('class="shot"', 'class="pic"').replace('sizes="(min-width: 900px) 760px, 100vw"', 'sizes="(min-width: 900px) 640px, 100vw"'); })
     .replace('{{achievements}}', String(ACHIEVEMENTS.length)).replace(/\{\{version\}\}/g, env.version).replace('{{changelog}}', `${env.repoUrl}/blob/main/CHANGELOG.md`);
@@ -52,14 +53,9 @@ export function buildLanding(tpl: string, env: SiteEnv, shots: Record<string, Sh
   return html;
 }
 
-async function makeOg(out: string): Promise<void> {
-  try {
-    const sharp = (await import('sharp')).default;
-    const src = join(SHOTS_DIR, 'hero-winter-1280.webp');
-    const text = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset=".35" stop-color="#0b1626" stop-opacity="0"/><stop offset="1" stop-color="#0b1626" stop-opacity=".95"/></linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/><text x="60" y="470" font-family="Lilita One,Arial Rounded MT Bold,Arial,sans-serif" font-weight="800" font-size="104" fill="#ffb84d">Slope Tycoon</text><text x="62" y="540" font-family="Nunito,Arial,sans-serif" font-size="40" fill="#e8f0fb">Build your own ski resort, in the browser.</text><text x="62" y="590" font-family="Nunito,Arial,sans-serif" font-size="28" fill="#a9bbd3">Free · plays offline · no tracking</text></svg>`);
-    const base = existsSync(src) ? sharp(src).resize(1200, 630, { fit: 'cover' }) : sharp({ create: { width: 1200, height: 630, channels: 3, background: '#10213a' } });
-    await base.composite([{ input: text }]).png({ compressionLevel: 9, palette: true }).toFile(out);
-  } catch (e) { console.warn(`[site] og.png skipped: ${String(e).slice(0, 120)}`); }
+/** Last commit date (YYYY-MM-DD) of a source file, or today when it is not committed yet. */
+export function lastmodOf(file: string, today = new Date().toISOString().slice(0, 10)): string {
+  try { const d = execFileSync('git', ['log', '-1', '--format=%cs', '--', file], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); return /^\d{4}-\d\d-\d\d$/.test(d) ? d : today; } catch { return today; }
 }
 
 export async function buildSite(env: SiteEnv = siteEnv()): Promise<{ pages: number }> {
@@ -73,38 +69,56 @@ export async function buildSite(env: SiteEnv = siteEnv()): Promise<{ pages: numb
   // assets
   mkdirSync(join(OUT, 'assets', 'fonts'), { recursive: true }); mkdirSync(join(OUT, 'assets', 'icons'), { recursive: true });
   cpSync('public/fonts', join(OUT, 'assets', 'fonts'), { recursive: true });
-  for (const f of ['favicon.svg', 'apple-touch-icon.png', 'icon-192.png']) cpSync(join('public/icons', f), join(OUT, 'assets', 'icons', f));
-  cpSync('site/assets/site.css', join(OUT, 'assets', 'site.css')); cpSync('site/assets/site.js', join(OUT, 'assets', 'site.js'));
+  await writeIcons(OUT);
+  cpSync('site/assets/site.css', join(OUT, 'assets', 'site.css')); cpSync('site/assets/site.js', join(OUT, 'assets', 'site.js')); cpSync('site/assets/consent.js', join(OUT, 'assets', 'consent.js'));
+  cpSync('site/assets/og', join(OUT, 'assets', 'og'), { recursive: true });
   if (existsSync(SHOTS_DIR)) cpSync(SHOTS_DIR, join(OUT, 'assets', 'shots'), { recursive: true, filter: (s) => !s.endsWith('index.json') });
   writeFileSync(join(OUT, 'assets', 'logo.svg'), logoSvg({ variant: 'full' })); writeFileSync(join(OUT, 'assets', 'logo-mark.svg'), logoSvg({ variant: 'mark' }));
-  await makeOg(join(OUT, 'assets', 'og.png'));
-
-  // landing
-  writeFileSync(join(OUT, 'index.html'), buildLanding(readFileSync('site/index.html', 'utf8'), env, shots, markSvg, fullLogo, man.shots.map((s) => s.id)));
 
   // guide
   const files = readdirSync('site/guide').filter((f) => f.endsWith('.md')).sort();
   const parsed = files.map((f) => { const { data, body } = parseFrontMatter(readFileSync(join('site/guide', f), 'utf8')); return { slug: f.replace(/\.md$/, ''), data, body }; });
   const metas: PageMeta[] = parsed.map((p) => ({ slug: p.slug, title: p.data.title, order: p.data.order, summary: p.data.summary }));
   const slugs = new Set(metas.map((m) => m.slug)); const gen = allGenerated(); const search: unknown[] = [];
+  // landing
+  writeFileSync(join(OUT, 'index.html'), buildLanding(readFileSync('site/index.html', 'utf8'), env, shots, markSvg, fullLogo, man.shots.map((s) => s.id), metas));
   for (const p of parsed) {
     const r = renderMarkdown(p.body, { rel: '../../', shots, slugs, gen });
     for (const id of p.data.screenshots ?? []) if (!r.figures.includes(id)) console.warn(`[site] ${p.slug}: front matter lists '${id}' but the page does not use it`);
     mkdirSync(join(OUT, 'guide', p.slug), { recursive: true });
-    writeFileSync(join(OUT, 'guide', p.slug, 'index.html'), guidePage(env, { rel: '../../', markSvg, pages: metas, slug: p.slug, title: p.data.title, summary: p.data.summary, html: r.html, toc: r.toc }));
+    writeFileSync(join(OUT, 'guide', p.slug, 'index.html'), guidePage(env, { rel: '../../', markSvg, pages: metas, slug: p.slug, title: p.data.title, summary: p.data.summary, description: p.data.description, html: r.html, toc: r.toc }));
     search.push(...searchEntries(p.slug, p.data.title, r.sections));
   }
   writeFileSync(join(OUT, 'guide', 'index.html'), guideIndex(env, { rel: '../', markSvg, pages: metas }));
+  // info pages (about, privacy) from site/pages/*.md
+  const info = infoPages(env, markSvg, metas, shots, slugs, gen);
+  for (const ip of info) { mkdirSync(join(OUT, ip.slug), { recursive: true }); writeFileSync(join(OUT, ip.slug, 'index.html'), ip.html); }
   writeFileSync(join(OUT, 'assets', 'search-index.json'), JSON.stringify(search));
 
   // housekeeping files
-  writeFileSync(join(OUT, '404.html'), NOT_FOUND_HTML); writeFileSync(join(OUT, '.nojekyll'), '');
-  const base = env.siteUrl || 'https://maartenba.github.io/SlopeTycoon/';
-  const urls = ['', 'guide/', ...metas.map((m) => `guide/${m.slug}/`), 'play/'];
-  writeFileSync(join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${base}${u}</loc></url>`).join('\n')}\n</urlset>\n`);
-  writeFileSync(join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${base}sitemap.xml\n`);
+  writeFileSync(join(OUT, '404.html'), notFoundPage(env)); writeFileSync(join(OUT, '.nojekyll'), '');
+  const base = env.siteUrl || 'https://maartenba.github.io/SlopeTycoon/', today = new Date().toISOString().slice(0, 10);
+  const newest = (...f: string[]): string => f.map((x) => lastmodOf(x, today)).sort().pop()!;
+  const urls = [
+    { path: '', lastmod: newest('site/index.html', 'site/assets/site.css'), changefreq: 'weekly', priority: '1.0' },
+    { path: 'play/', lastmod: today, changefreq: 'weekly', priority: '0.9' },
+    { path: 'guide/', lastmod: newest(...files.map((f) => join('site/guide', f))), changefreq: 'weekly', priority: '0.8' },
+    ...metas.map((m) => ({ path: `guide/${m.slug}/`, lastmod: lastmodOf(`site/guide/${m.slug}.md`, today), changefreq: 'monthly', priority: '0.7' })),
+    { path: 'about/', lastmod: lastmodOf('site/pages/about.md', today), changefreq: 'yearly', priority: '0.6' },
+    { path: 'privacy/', lastmod: lastmodOf('site/pages/privacy.md', today), changefreq: 'yearly', priority: '0.3' },
+  ];
+  writeFileSync(join(OUT, 'sitemap.xml'), sitemapXml(base, urls));
+  writeFileSync(join(OUT, 'robots.txt'), robotsTxt(base));
   if (process.env.SITE_CNAME) writeFileSync(join(OUT, 'CNAME'), `${process.env.SITE_CNAME.trim()}\n`);
-  console.log(`[site] built ${OUT}/ : landing + guide index + ${parsed.length} guide pages, ${Object.keys(shots).length}/${man.shots.length} screenshots`);
-  return { pages: parsed.length };
+  console.log(`[site] built ${OUT}/ : landing + guide index + ${parsed.length} guide pages + ${info.length} info pages, ${Object.keys(shots).length}/${man.shots.length} screenshots`);
+  return { pages: parsed.length + info.length };
 }
 
+/** About + privacy pages: site/pages/<slug>.md (front matter: title = SEO title, heading = h1, description). */
+export function infoPages(env: SiteEnv, markSvg: string, pages: readonly PageMeta[], shots: Record<string, ShotInfo>, slugs: ReadonlySet<string>, gen: Record<string, string>): Array<{ slug: 'about' | 'privacy'; html: string }> {
+  return (['about', 'privacy'] as const).map((slug) => {
+    const { data, body } = parseFrontMatter(readFileSync(`site/pages/${slug}.md`, 'utf8'));
+    const r = renderMarkdown(body, { rel: '../', shots, slugs, gen });
+    return { slug, html: infoPage(env, { slug, title: data.title, description: data.description ?? '', heading: data.heading ?? data.title, html: r.html, og: slug, markSvg, pages }) };
+  });
+}

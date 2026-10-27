@@ -2,6 +2,7 @@
 title: "Saves, offline & install"
 order: 14
 summary: "Quick save, slots, autosave, exporting .slope files, and playing offline as an installed app."
+description: "Slope Tycoon saves: quick save, slots, autosave, exporting .slope backup files, and playing offline as an installed app. Everything stays on your device."
 screenshots: [ui-saveload]
 ---
 {{fig:ui-saveload}}

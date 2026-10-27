@@ -2,6 +2,7 @@
 title: "Building"
 order: 3
 summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, the Terrain drawer, trees and the Landscape drawer (ponds, decor)."
+description: "How to place buildings in Slope Tycoon: access rules, auto-flatten, rotating, undo and redo, bulldozing, terraforming, trees and the Landscape drawer."
 screenshots: [ui-buildings-drawer, ui-terrain-drawer, ui-landscape, landscape-pond]
 ---
 {{fig:ui-buildings-drawer}}

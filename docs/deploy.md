@@ -62,6 +62,17 @@ The SW cache name is `slope-tycoon-<package version>-<hash of all files>`: any c
 - **Workflow fails at deploy**: Pages source must be "GitHub Actions"; the environment `github-pages` must allow branch `main`.
 - **Large `.weave/shots`** are git-ignored; plans and learnings in `.weave/` are tracked.
 
+## Google Search Console, sitemap and analytics
+
+The game URL is **https://maartenba.github.io/SlopeTycoon/play/** and the sitemap to submit is **https://maartenba.github.io/SlopeTycoon/sitemap.xml** (landing page, `/guide/` + every guide page, `/about/`, `/privacy/` and `/play/`; `robots.txt` points at it).
+
+1. <https://search.google.com/search-console> → Add property → **URL prefix** `https://maartenba.github.io/SlopeTycoon/` (a project site cannot use the Domain type).
+2. Verify ownership with the **HTML tag** method: Search Console shows a `<meta name="google-site-verification" content="...">`; add it to `head()` in `scripts/site/templates.ts` (website pages) and rebuild/deploy, then click Verify. Alternative: the **Google Analytics** method works once the `G-NX37ERE0S9` snippet is live (someone must have allowed analytics) and you are an editor on that property.
+3. Sitemaps → enter `sitemap.xml` → Submit. Then URL Inspection → `.../play/` and `.../` → Request indexing.
+4. Check Core Web Vitals / Page indexing after a few days. Social previews: paste the URLs into the Facebook Sharing Debugger / LinkedIn Post Inspector (no code needed).
+
+Analytics (consent-first, GA4 `G-NX37ERE0S9`): website + guide: `site/assets/consent.js` (see `site/README.md`); the game uses the same localStorage key `slope.consent.analytics`. In GA4 set Data retention (Admin → Data settings) to your preferred value (default 2 months, max 14), keep Google Signals and ad personalisation off, and review the privacy text in `site/pages/privacy.md` if you change anything. The CSP-like rule enforced by `npm run site:check`: the only external hosts are `googletagmanager.com` / `google-analytics.com` (injected after consent), plus GitHub and the Ski Resort Tycoon Wikipedia link.
+
 ## Publishing checklist (maartenba/SlopeTycoon)
 
 Nothing has been pushed or created on GitHub yet. The local clone already has `origin = git@github.com:maartenba/SlopeTycoon.git` and branch `main`.

@@ -28,7 +28,7 @@ describe('site content', () => {
       const r = renderMarkdown(p.body, { rel: '../../', shots: fake, slugs, gen });
       expect(r.figures.length, p.slug).toBeLessThanOrEqual(4 + (p.slug === 'shortcuts' ? 0 : 0));
       expect([...new Set(r.figures)].sort(), `${p.slug}: front matter screenshots`).toEqual([...(p.data.screenshots ?? [])].sort());
-      const html = guidePage(siteEnv({}), { rel: '../../', markSvg: '<svg/>', pages: pages.map((q) => ({ slug: q.slug, title: q.data.title, order: q.data.order })), slug: p.slug, title: p.data.title, html: r.html, toc: r.toc });
+      const html = guidePage(siteEnv({}), { rel: '../../', markSvg: '<svg/>', pages: pages.map((q) => ({ slug: q.slug, title: q.data.title, order: q.data.order })), slug: p.slug, title: p.data.title, description: p.data.description, html: r.html, toc: r.toc });
       expect(html).toContain('<h1>');
     }
   });
@@ -38,6 +38,6 @@ describe('site content', () => {
   it('landing builds from the manifest ids with no leftover placeholders', () => {
     const html = buildLanding(readFileSync('site/index.html', 'utf8'), siteEnv({ SITE_REPO: 'me/slopes' }), fake, '<svg/>', '<svg/>', man.shots.map((s) => s.id));
     expect(html).not.toMatch(/\{\{/); expect(html).toContain('https://github.com/me/slopes'); expect(html).toContain('href="./play/"');
-    expect(html).toContain('canonical'); expect(html).toContain('https://me.github.io/slopes/assets/og.png');
+    expect(html).toContain('canonical'); expect(html).toContain('https://me.github.io/slopes/assets/og/landing.png');
   });
 });

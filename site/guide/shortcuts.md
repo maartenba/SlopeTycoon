@@ -2,6 +2,7 @@
 title: "Keyboard shortcuts"
 order: 17
 summary: "Every key the game uses, grouped by what you are doing. Generated from the game itself."
+description: "Every keyboard shortcut in Slope Tycoon, grouped by what you are doing: camera, building, speed, panels and views. Generated from the game itself."
 screenshots: [ui-help]
 ---
 {{fig:ui-help}}

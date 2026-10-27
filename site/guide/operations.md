@@ -2,6 +2,7 @@
 title: "Operations & safety"
 order: 6
 summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, crews and training courses."
+description: "Run the mountain in Slope Tycoon: ski patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, crews and courses."
 screenshots: [ui-ops, ui-staff, ops-bear]
 ---
 {{fig:ui-ops}}

@@ -60,6 +60,7 @@
     "site:dev": "vite-node scripts/site/dev.ts",
     "docs:player": "npm run site:build && npm run site:check",
     "verify:site": "vite-node scripts/site/verify-site.ts",
+    "site:og": "vite-node scripts/site/og.ts",
     "site:preview-shots": "vite-node scripts/site/preview-shots.ts",
     "docs:img": "vite-node scripts/docs-img-optimize.ts",
     "licenses": "vite-node scripts/licenses.ts",

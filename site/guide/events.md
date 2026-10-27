@@ -2,6 +2,7 @@
 title: "Events, guests' stories & the region"
 order: 7
 summary: "Festivals and automatic events with their set dressing, guests with a wish, neighbouring resorts and the Green Resort award."
+description: "Festivals and events in Slope Tycoon: book a Christmas Market or World Cup, meet guests with a wish, outpace rival resorts and win the Green Resort award."
 screenshots: [events-calendar, festival-market, story-inspector, ui-rating]
 ---
 ## The Events calendar

@@ -11,7 +11,7 @@ function fixture(extra: Record<string, string | Buffer> = {}, overrides: Record<
   const files: Record<string, string | Buffer> = {
     'index.html': page('Home', '<a href="guide/">g</a><a href="./play/">p</a><img src="assets/shots/a-640.webp" width="640" height="400" alt="An alt">'),
     'guide/index.html': page('Guide', '<a href="../">home</a><a href="x/#sec">x</a>'), 'guide/x/index.html': page('Page X', '<h2 id="sec">s</h2><a href="../../guide/">g</a>'),
-    '404.html': '<html></html>', '.nojekyll': '', 'sitemap.xml': '<x/>', 'robots.txt': '', 'assets/og.png': 'x', 'assets/search-index.json': '[]', 'assets/site.css': 'a{}', 'assets/site.js': ';',
+    '404.html': '<html></html>', '.nojekyll': '', 'sitemap.xml': '<x/>', 'robots.txt': '', 'assets/og/landing.png': 'x', 'assets/search-index.json': '[]', 'assets/site.css': 'a{}', 'assets/site.js': ';',
     'assets/shots/a-640.webp': Buffer.alloc(1000), 'play/index.html': '<html></html>', 'play/sw.js': ';', 'play/manifest.webmanifest': '{}', ...extra, ...overrides,
   };
   for (const [f, c] of Object.entries(files)) { mkdirSync(dirname(join(d, f)), { recursive: true }); writeFileSync(join(d, f), c); }

@@ -1,4 +1,4 @@
-/* Slope Tycoon website: dark glass + alpine palette, matches the game UI. No framework, no external requests. */
+/* Slope Tycoon website: dark glass + alpine palette, matches the game UI. No framework, self-hosted assets. */
 @font-face{font-family:Nunito;font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/nunito-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:Nunito;font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/nunito-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:'Lilita One';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/lilita-one-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -116,3 +116,20 @@ table{border-collapse:collapse;width:100%;font-size:.93rem}th,td{padding:8px 12p
  .hero{min-height:620px}.hero .wrap{padding-top:70px}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.slides img{animation:none!important}.slides img:not(:first-child){display:none}.btn,.pic img,.gallery img{transition:none}.btn:hover{transform:none}}
+/* consent bar (non-blocking, bottom) */
+.consent{position:fixed;left:12px;right:12px;bottom:12px;z-index:70;max-width:760px;margin:0 auto;background:#0f1f36;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6);padding:12px 16px}
+.consent-in{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.consent-txt{flex:1 1 320px;font-size:.92rem;line-height:1.45;color:var(--muted)}.consent-txt b{display:block;color:var(--text);font-size:1rem}
+.consent-btns{display:flex;gap:8px}.consent .btn{padding:8px 18px;font-size:.95rem}
+.consent .btn[aria-pressed=true]{outline:2px solid var(--blue);outline-offset:2px}
+/* about + info pages */
+.aboutbox{display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center}
+.aboutbox blockquote,.story{margin:0}.story p{color:var(--text)}
+.sign{font:400 1.5rem 'Lilita One',sans-serif;color:var(--accent);margin:.2em 0 0}
+.info{max-width:780px;margin:0 auto;padding:40px 20px 70px}.info article{padding:0}
+.info h1{font-size:clamp(2rem,4.4vw,3.2rem)}.crumbs{font-size:.9rem;color:var(--muted);margin:0 0 14px}.crumbs a{color:var(--muted)}
+.fcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px 28px;width:100%}.fcols b{display:block;color:var(--text);margin-bottom:4px}.fcols a{display:block;padding:2px 0}
+.fnote{width:100%;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:860px){.aboutbox{grid-template-columns:1fr;gap:20px}.consent{left:8px;right:8px;bottom:8px}}
+.brand{white-space:nowrap}.nav{flex-wrap:nowrap}
+@media (max-width:520px){.brand span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.top .wrap{gap:8px}.nav a{padding:6px 8px}.nav .btn{padding:7px 14px}}

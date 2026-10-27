@@ -2,6 +2,7 @@
 title: "Guests & seasons"
 order: 5
 summary: "Who visits, how the snowline and the seasons change your job, day and night, and how to control time."
+description: "Guests and seasons in Slope Tycoon: who visits your resort, how the snowline changes your job through the year, day and night, and how to control time."
 screenshots: [slope-guests, season-spring, season-summer, night-village]
 ---
 ## Your guests

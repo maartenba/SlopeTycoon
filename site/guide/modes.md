@@ -2,6 +2,7 @@
 title: "Ride, Walk & Photo"
 order: 11
 summary: "Get close to the action: ride along with a guest, walk in first person, and take photos."
+description: "Get close to the action in Slope Tycoon: ride along with a guest, walk your resort in first person, and take photos with filters, frames and golden light."
 screenshots: [ride-ski, ride-lift, walk-lodge, photo-mode]
 ---
 These three modes put the camera at ground level. They are **read-only**: they never change your resort, and when you leave them the camera returns exactly to where it was.

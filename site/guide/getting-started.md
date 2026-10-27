@@ -2,6 +2,7 @@
 title: "Getting started"
 order: 1
 summary: "Your first ten minutes: start a game, build a lift, paint a piste and open for business."
+description: "Your first ten minutes in Slope Tycoon: start a new ski resort game, build a lift, paint a piste and open for business. A friendly beginner's guide."
 screenshots: [ui-menu, ui-newgame, ui-hud]
 ---
 Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, buy tickets, ski your slopes, eat in your restaurants and tell the world what they think. Your job is to keep that loop humming through every season.

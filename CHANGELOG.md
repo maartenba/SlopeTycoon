@@ -2,6 +2,13 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Website: analytics, SEO, story
+- **Consent-first analytics** on the website and guide (Google Analytics `G-NX37ERE0S9`, Consent Mode v2): a small accessible consent bar ("Allow anonymous statistics?"), footer link *Privacy & analytics settings*, shared `localStorage['slope.consent.analytics']` with the game, nothing loaded until "Allow", never on localhost / headless, works without JavaScript. New **/privacy/** page. The "no tracking" claims everywhere now read: no ads, no accounts, saves stay on your device, anonymous opt-in statistics.
+- **SEO**: unique titles (< 60) and descriptions (120-155), canonical URLs, Open Graph + Twitter cards with a 1200x630 card per major page (`npm run site:og`), JSON-LD (VideoGame / WebApplication, WebSite, BreadcrumbList, AboutPage), favicon set + `site.webmanifest`, breadcrumbs, related-page links, footer sitemap, `sitemap.xml` (with `/play/` and lastmod) and `robots.txt`, a real 404 page, SEO tags on the game's own `index.html`. `site:check` lints all of it.
+- **About**: "Why I built this" section on the landing page and a full **/about/** page.
+
 ## [0.2.0] - 2026-10-26 (pre-release)
 
 Second pre-release (still not a 1.0). Adds Phase 5 (goals, ride-along, photo & walk modes, progression, scenarios, achievements, staff, festivals, stories, rivals, build depth), touch support, colour-blind palette, Statistics, named regions, the Landscape drawer and redesigned Terrain / View drawers.

@@ -1,10 +1,11 @@
 # Slope Tycoon website and player guide
 
-One repo, one GitHub Pages deployment: **`/` = website, `/guide/` = player guide, `/play/` = the game (PWA)**. No framework, no external requests, no trackers.
+One repo, one GitHub Pages deployment: **`/` = website, `/guide/` = player guide, `/play/` = the game (PWA)**. No framework, self-hosted assets. Privacy: no ads, no accounts, saves stay on the device, **anonymous opt-in statistics** (Google Analytics, only after the visitor clicks "Allow"; see [Analytics and SEO](#analytics-and-seo)).
 
 ```
 site/index.html          landing page template ({{placeholders}} are filled by scripts/site/build.ts)
 site/assets/             site.css, site.js, shots/ (optimised WebP + index.json, committed)
+site/pages/*.md          about + privacy pages (front matter: title = SEO title, heading, description)
 site/guide/*.md          player guide pages (front matter: title, order, summary, screenshots)
 site/shots.json          screenshot manifest: id -> harness arguments, alt text, caption, pages
 site/shots-raw/          raw PNGs from the harness (git-ignored)
@@ -65,7 +66,7 @@ Notes: the harness needs Chrome / Chromium (macOS paths, `/usr/bin/google-chrome
 ## Checks
 
 - `npm test`: `tests/site/*` (markdown pipeline, generated tables, landing + every guide page render, crawler, manifest) and `tests/repo/workflows.test.ts`.
-- `npm run site:check`: links / anchors / images / alt / `width`+`height` / heading order / one `<h1>` / no external URLs (except GitHub) / no root-absolute URLs / no service worker on the website / size budgets (each 1280 px shot <= 250 kB, all shots <= 8 MB, site CSS+JS <= 150 kB).
+- `npm run site:check`: links / anchors / images / alt / `width`+`height` / heading order / one `<h1>` / no external URLs (except GitHub and the Ski Resort Tycoon Wikipedia link; the analytics hosts may only appear inside `assets/consent.js`) / SEO lint on every page (title < 60, description 120-155, unique, canonical, Open Graph + Twitter, JSON-LD parses, favicon links, consent script and footer link, og images 1200x630) / sitemap lists every page + `/play/` / robots.txt / no root-absolute URLs / no service worker on the website / size budgets (each 1280 px shot <= 250 kB, all shots <= 8 MB, site CSS+JS <= 150 kB).
 - `npm run verify:site`: serves `dist-site` like GitHub Pages under `/` and `/slopetycoon/`, crawls it over HTTP, checks the game's manifest (`start_url ./`), the service worker at `/play/sw.js`, the 404 page, and runs `verify:pwa --dist dist-site/play`.
 
 ## Configuration (environment)
@@ -83,3 +84,9 @@ The game shows **Website & guide** (About dialog) and **Player guide** (Help) li
 - Screenshots are software-rendered (SwiftShader) and show whatever the game looked like when they were shot.
 - The website has no service worker (only `/play/` is installable); the website itself is not available offline.
 - The og:image is composed with sharp using fallback system fonts.
+
+## Analytics and SEO
+
+**Analytics (opt-in, consent first).** `site/assets/consent.js` is on every page. Nothing is loaded or sent until the visitor clicks **Allow** on the consent bar (stored in `localStorage['slope.consent.analytics']` = `granted` | `denied`; the game in `/play/` uses the same key on the same origin). Only then it injects `https://www.googletagmanager.com/gtag/js?id=G-NX37ERE0S9` with Consent Mode v2 (default denied, update to granted), `send_page_view` after consent, `allow_google_signals: false`, `allow_ad_personalization_signals: false`. It never runs on localhost / private hosts / webdriver / HeadlessChrome, so tests and agents do not pollute the data. The footer link **Privacy & analytics settings** reopens the bar; denying removes the `_ga*` cookies and sets `ga-disable-<id>`. Without JavaScript nothing is tracked. The pure logic is unit-tested (`tests/site/consent.test.ts`). The text lives in `site/pages/privacy.md`; change it together with the code.
+
+**SEO.** `scripts/site/templates.ts` writes unique titles (< 60 chars) and descriptions (120-155; guide pages use the optional front matter `description`, else `summary`), canonical URLs from `SITE_URL`, Open Graph / Twitter cards, `robots`, favicons (`favicon.ico` built with sharp from `public/icons`, `icon.svg`, apple-touch-icon, `site.webmanifest`), a preloaded font, and JSON-LD (`VideoGame` + `WebApplication` + `WebSite` on the landing page, `BreadcrumbList` on every other page, `AboutPage` with the author `Person`). Social cards are 1200x630 PNGs per major page (landing, guide, privacy, about) in `site/assets/og/`: after changing screenshots or card text run `npm run site:og` (headless Chrome renders the real fonts, sharp optimises) and commit them (`scripts/site/ogCards.ts` holds the design). `sitemap.xml` lists the landing page, `/guide/` and every guide page, `/about/`, `/privacy/` and the game `/play/` with `lastmod` from git; `robots.txt` allows everything and names the sitemap. The root `index.html` (the game's head) carries its own title, description, canonical and social tags for `/play/`. `404.html` is a real 404 with links.

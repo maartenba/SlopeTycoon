@@ -4,7 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#1d3b6e" />
-    <meta name="description" content="Slope Tycoon: build and run your own ski resort. Installable, plays offline." />
+    <meta name="description" content="Play Slope Tycoon: build and run your own ski and mountain resort in the browser. Shape terrain, build lifts, run four seasons. Free, plays offline." />
+    <link rel="canonical" href="https://maartenba.github.io/SlopeTycoon/play/" />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Slope Tycoon" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Play Slope Tycoon – ski resort tycoon game" />
+    <meta property="og:description" content="Build and run your own ski and mountain resort in the browser. Free, installable, plays offline." />
+    <meta property="og:url" content="https://maartenba.github.io/SlopeTycoon/play/" />
+    <meta property="og:image" content="https://maartenba.github.io/SlopeTycoon/assets/og/landing.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Slope Tycoon: a ski village with lifts and pistes in the mountains" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Play Slope Tycoon – ski resort tycoon game" />
+    <meta name="twitter:description" content="Build and run your own ski and mountain resort in the browser. Free, installable, plays offline." />
+    <meta name="twitter:image" content="https://maartenba.github.io/SlopeTycoon/assets/og/landing.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -14,7 +30,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/nunito-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/lilita-one-latin.woff2" crossorigin />
-    <title>Slope Tycoon</title>
+    <title>Play Slope Tycoon – ski &amp; mountain resort game</title>
     <style>
       /* Boot splash: static (same mark as src/ui/logo.ts), removed by main.ts (hideSplash); never blocks input once done. */
       /* Very subtle vignette (static CSS, no perf cost): under the HUD (#ui is z 22), above the canvas. */
@@ -27,6 +43,7 @@
     </style>
   </head>
   <body>
+    <noscript><p style="position:relative;z-index:300;padding:24px;font:16px sans-serif;color:#fff;background:#1d3b6e">Slope Tycoon is a free ski and mountain resort tycoon game that runs in your browser. It needs JavaScript and WebGL. Nothing is tracked without JavaScript. <a style="color:#ffd070" href="../">Back to the Slope Tycoon website</a>.</p></noscript>
     <div id="app"></div>
     <div id="ui"></div>
     <div id="splash" role="status" aria-live="polite"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Slope Tycoon" class="logo logo-mark"><title>Slope Tycoon</title><defs><linearGradient id="sp-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86c6"/><stop offset="1" stop-color="#1d3b6e"/></linearGradient><linearGradient id="sp-t1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfe3f7"/></linearGradient><linearGradient id="sp-t2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd070"/><stop offset="1" stop-color="#e0902a"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#sp-sky)"/><circle cx="71" cy="29" r="11" fill="#ffd070"/><path d="M44 82 L72 40 L100 82 Z" fill="#6f93c4"/><path d="M72 40 L63.5 53 L68 50.5 L72 55 L76.5 50.5 L80.5 53 Z" fill="#ffffff"/><path d="M-2 84 L36 22 L74 84 Z" fill="#3f649a"/><path d="M36 22 L74 84 L50 84 L40 52 Z" fill="#2d4c7d" opacity=".55"/><path d="M36 22 L24.5 41 L30 38 L36 44 L42 37.5 L48 41 Z" fill="#ffffff"/><path d="M36 40 C 30 52, 48 56, 40 66 C 35 72, 25 74, 20 84" fill="none" stroke="#ffb23e" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="0.1 6.2"/><path d="M36 40 C 30 52, 48 56, 40 66 C 35 72, 25 74, 20 84" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" opacity=".92"/></svg><b>Slope Tycoon</b><span>Loading<span class="dots"></span></span></div>

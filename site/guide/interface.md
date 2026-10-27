@@ -2,6 +2,7 @@
 title: "The interface"
 order: 2
 summary: "A tour of the screen: top bar, goals, speed buttons, dock, news and Ranger Rudi."
+description: "A tour of the Slope Tycoon screen: the top bar, goals card, speed buttons, build dock, news feed and Ranger Rudi, the friendly guide who helps you."
 screenshots: [ui-hud, ui-view-drawer, ui-help, ui-pause]
 ---
 {{fig:ui-hud}}

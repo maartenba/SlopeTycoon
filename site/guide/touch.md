@@ -2,6 +2,7 @@
 title: "Touch & tablets"
 order: 13
 summary: "Playing on a tablet or phone: gestures, the pan / paint toggle, two-step placement, on-screen controls and the touch setting."
+description: "Playing Slope Tycoon on a tablet or phone: touch gestures, the pan and paint toggle, two-step placement, on-screen controls and the touch setting."
 screenshots: [touch-phone-hud, touch-phone-place, touch-tablet]
 ---
 Slope Tycoon is a desktop-first game, but it works with fingers too. A tablet is comfortable, a phone is playable. There is nothing to install or enable: on a touch screen the game switches itself on.

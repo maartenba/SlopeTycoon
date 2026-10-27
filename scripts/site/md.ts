@@ -13,7 +13,7 @@ export interface Ctx {
 }
 export interface TocItem { level: 2 | 3; id: string; text: string }
 export interface Rendered { html: string; toc: TocItem[]; figures: string[]; sections: { id: string; heading: string; text: string }[] }
-export interface Front { title: string; order: number; summary?: string; screenshots?: string[] }
+export interface Front { title: string; order: number; summary?: string; /** meta description override (120-155 chars); defaults to the summary */ description?: string; /** visible <h1> when it differs from the SEO title (info pages) */ heading?: string; screenshots?: string[] }
 
 export const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 export const slugify = (s: string): string => s.toLowerCase().replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');

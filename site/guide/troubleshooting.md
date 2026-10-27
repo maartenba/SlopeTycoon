@@ -2,6 +2,7 @@
 title: "Troubleshooting & FAQ"
 order: 15
 summary: "Fixes for the common problems: a black screen, slow frame rate, guests not arriving, closed buildings and lost saves."
+description: "Fix common Slope Tycoon problems: a black screen, slow frame rate, guests not arriving, closed buildings and lost saves, plus a privacy FAQ."
 screenshots: []
 ---
 ## The game shows a blank or black screen
@@ -38,7 +39,7 @@ Yes. The game has touch support (gestures, a pan / paint toggle, two-step placem
 
 ## Is anything tracked or uploaded?
 
-No. There are no accounts, ads or trackers, and photos and reports are only ever saved to your device.
+Your saves, photos and reports never leave your device, and there are no accounts or ads. The only thing that can be sent is **anonymous usage statistics (Google Analytics), and only if you allow it**: it is off until you say yes, and you can switch it off again in Settings → Privacy or with the footer link on this website. Details on the [privacy & analytics page](../../privacy/).
 
 ## I found a bug
 

@@ -2,6 +2,7 @@
 title: "Lifts & pistes"
 order: 4
 summary: "The eleven lift types, towers and clearance, piste difficulty, connection, grooming and snowmaking."
+description: "Slope Tycoon lifts and pistes: all eleven lift types, towers and clearance rules, piste difficulty and connection, grooming and snowmaking explained."
 screenshots: [ui-lifts-drawer, ui-pistes-drawer, ride-lift, ui-profile]
 ---
 ## Lifts

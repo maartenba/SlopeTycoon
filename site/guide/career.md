@@ -2,6 +2,7 @@
 title: "Career & scenarios"
 order: 9
 summary: "Career levels and what they unlock, the goal chapters, the six scenarios and the Resort of the Year report."
+description: "Slope Tycoon career mode: resort levels and what they unlock, the goal chapters, the six scenarios and the yearly Resort of the Year report."
 screenshots: [ui-level-panel, ui-levelup, ui-scenarios, ui-year-report]
 ---
 ## Career or Sandbox?

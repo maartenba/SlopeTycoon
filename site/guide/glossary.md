@@ -2,6 +2,7 @@
 title: "Glossary"
 order: 16
 summary: "Short definitions of the words the game and this guide use."
+description: "A Slope Tycoon glossary: short, plain definitions of the ski resort, piste, lift and economy terms that the game and this player guide use."
 screenshots: []
 ---
 **Advice** The suggestions from Ranger Rudi at the bottom left. See [Career & scenarios](page:career).

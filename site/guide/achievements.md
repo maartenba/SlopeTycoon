@@ -2,6 +2,7 @@
 title: "Achievements & cosmetics"
 order: 10
 summary: "The trophy shelf, how tiers work and which cosmetic rewards you can unlock."
+description: "Slope Tycoon trophies explained: the trophy shelf, how bronze, silver and gold tiers work, and the cosmetic rewards you can unlock for your resort."
 screenshots: [ui-trophies]
 ---
 {{fig:ui-trophies}}

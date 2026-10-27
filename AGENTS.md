@@ -6,7 +6,7 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 **Slope Tycoon**: a browser PWA, 3D isometric ski-resort tycoon (three.js + TypeScript + Vite). Everything is procedural: terrain, models, textures, icons, logo, sound effects, ambience and music (no asset files except self-hosted fonts Nunito + Lilita One in `public/fonts`). Works offline (service worker), saves locally (IndexedDB + localStorage fallback).
 - Version is **0.2.0** (pre-release). **Never call it 1.0** until the user says so.
 - Repo `maartenba/SlopeTycoon`; **not yet published**. `LICENSE` is a copyright notice only (no open-source grant; the owner decides later, see `docs/deploy.md`); do not add or change a licence. Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
-- No trackers, accounts, analytics or external requests. Ever.
+- **Privacy (owner decision, supersedes the earlier "no tracking" rule)**: no ads, no accounts, saves stay on the device, **anonymous opt-in statistics** via Google Analytics (`G-NX37ERE0S9`). Consent first: nothing loads or is sent until `localStorage['slope.consent.analytics'] === 'granted'` (shared by the website and the game); never on localhost / headless. The only allowed external hosts are `googletagmanager.com` / `google-analytics.com` (injected after consent), plus the GitHub and Wikipedia links on the website. No other external requests. See `site/pages/privacy.md`, `docs/deploy.md`.
 
 ## Architecture (`src/`)
 - `core/` EventBus, EventLog, TickLoop, FastForward, GameState, Rng (seeded), pacing, ids, safe.
