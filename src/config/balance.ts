@@ -96,7 +96,7 @@ export const CAL = DAYS_PER_YEAR / 360;
 export const oldDays = (d: number): number => d * CAL;
 /** Season layout by month: 2 spring, 4 summer, 2 autumn, 4 winter (order matches render/Season.ts SEASON_NAMES). */
 export const SEASON_MONTHS = [2, 4, 2, 4] as const;
-/** New games start at the beginning of winter (month 9). */
+/** New games start at the beginning of winter = 1 December (sim month 8; the real calendar maps sim day 0 to 1 April, see sim/calendar.ts). */
 export const START_DAY_OF_YEAR = 8 * DAYS_PER_MONTH;
 /** Max fixed steps run per rendered frame (no spiral of death). */
 export const MAX_CATCHUP_STEPS = 8;
@@ -118,9 +118,15 @@ export const SNOWLINE_KEYS: ReadonlyArray<readonly [number, number]> = ([
   [0, -0.1], [10, 0.15], [30, 0.5], [60, 0.95], [80, 1.05], [100, 1.2], [130, 1.3], [160, 1.25], [190, 1.0], [215, 0.6], [240, 0.0],
   [260, -0.2], [300, -0.4], [330, -0.3], [360, -0.1],
 ] as const).map(([d, v]) => [d * CAL, v] as const); // authored for a 360-day year, scaled to the 180-day year (same keys by year fraction)
+/**
+ * Calendar alignment knob (docs/time-flow.md "Calendar"): the curve is read `SNOWLINE_LEAD_DAYS` sim days ahead. It is 0 on purpose: the keys put the
+ * coldest point at sim day 150 (1 Feb; real valleys: mid-Jan) and the warmest at day 65 (5 Aug; real: mid-Jul). A lead of 10 would align both
+ * but changes every winter/summer sim state (goldens, advisor, snow tests), so it is left for a deliberate rebalance.
+ */
+export const SNOWLINE_LEAD_DAYS = 0;
 /** Snowline fraction for a (fractional) day of year. */
 export function snowlineFraction(dayFloat: number): number {
-  const d = ((dayFloat % DAYS_PER_YEAR) + DAYS_PER_YEAR) % DAYS_PER_YEAR;
+  const d = (((dayFloat + SNOWLINE_LEAD_DAYS) % DAYS_PER_YEAR) + DAYS_PER_YEAR) % DAYS_PER_YEAR;
   for (let i = 1; i < SNOWLINE_KEYS.length; i++) {
     const [d1, v1] = SNOWLINE_KEYS[i]!;
     if (d <= d1) {
@@ -194,8 +200,9 @@ export const EXPLORE = {
   corridorMin: 10, corridorFrac: 0.4, poolMax: 90,
 } as const;
 export const GUEST_DUSK_HOUR = 17; // legacy fallback (equinox-ish); the live value follows the sun, see sim/Daylight.ts
-/** Seasonal daylight (sim/Daylight.ts): sinusoid by day of year, extremes at mid-winter (day 150) and mid-summer (day 60) of the 60/120/60/120-day... see SEASON_MONTHS (authored in old days, scaled by CAL). */
+/** Seasonal daylight (sim/Daylight.ts): sinusoid by day of year, extremes at sim day 150 (1 Feb) and 60 (1 Aug), see sim/calendar.ts. */
 export const DAYLIGHT = {
+  /** Authored at sim day 150 / 60 = 1 Feb / 1 Aug on the real calendar (real solstices: sim day 130 / 40 = oldDays(260) / oldDays(80); not applied, it changes the sim, see docs/time-flow.md). */
   winterSolsticeDay: oldDays(300), summerSolsticeDay: oldDays(120),
   /** Mean +- amplitude (hours): sunrise 07:45 winter / 05:15 summer, sunset 16:45 winter / 20:45 summer. */
   sunriseMean: 6.5, sunriseAmp: 1.25, sunsetMean: 18.75, sunsetAmp: 2,

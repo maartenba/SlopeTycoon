@@ -1,4 +1,5 @@
 import { LEDGER_CATEGORIES } from '../config/prices';
+import { SIM_MONTHS_SHORT } from '../sim/calendar';
 import { STATS_DAYS, type StatsAgg, type StatsHistory } from '../sim/meta/StatsHistory';
 
 /** Pure data side of the Statistics screen (Task 30): range selection, bucketing and the colour-blind-safe palette. No DOM. */
@@ -15,13 +16,13 @@ export const MAX_POINTS = 36;
 export const PALETTE = ['#56b4e9', '#e69f00', '#009e73', '#f0e442', '#cc79a7', '#d55e00', '#9fb4cc'] as const;
 export const LINE = { guests: '#56b4e9', peak: '#f0e442', cash: '#009e73', rating: '#e69f00', sustain: '#56b4e9' } as const;
 
-export interface StatsPoint { /** First and last absolute day of the bucket. */ from: number; to: number; /** Short x label ('Y2 M3'). */ label: string }
+export interface StatsPoint { /** First and last absolute day of the bucket. */ from: number; to: number; /** Short x label ('Y2 Jun'). */ label: string }
 export interface StatsFrame { range: StatsRangeId; monthly: boolean; points: StatsPoint[]; value(metric: string, agg: StatsAgg | 'last'): number[] }
 
 const MONTH = 15;
 export function dayLabel(abs: number, monthly: boolean): string {
-  const y = Math.floor(abs / 180) + 1, m = Math.floor((abs % 180) / MONTH) + 1, d = (abs % MONTH) + 1;
-  return monthly ? `Y${y} M${m}` : `Y${y} M${m} D${d}`;
+  const y = Math.floor(abs / 180) + 1, doy = abs % 180, d = (abs % MONTH) + 1, mon = SIM_MONTHS_SHORT[Math.floor(doy / MONTH)]!;
+  return monthly ? `Y${y} ${mon}` : `Y${y} ${mon} ${d}`;
 }
 
 /** Bucket size so that `n` items make at most MAX_POINTS points (buckets are cut from the newest end, so the OLDEST one may be shorter). */

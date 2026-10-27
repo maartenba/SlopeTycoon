@@ -94,7 +94,8 @@ import { Undo, undoMessage, redoMessage, verbIng } from '@/build/UndoActions';
 import { creditScore, creditLetter, debtCap } from '@/sim/Loans';
 import { formatSigned } from '@/ui/financeFormat';
 import { buildMarketingView } from '@/ui/marketingFormat';
-import { formatMoney } from '@/ui/format';
+import { formatMoney, formatDate } from '@/ui/format';
+import { formatGameDate } from '@/sim/calendar';
 import { canPlace } from '@/sim/Dependencies';
 import { autoFlattenDefault } from '@/sim/PlacementRules';
 import { pickHeightfield } from '@/render/Picking';
@@ -562,7 +563,7 @@ const saves = saveBackend && !DEMO ? new SaveManager({
     } catch { /* thumbnails are optional */ }
     return { camera: { x: c.target.x, y: c.target.z, yaw: c.yaw, zoom: c.zoom }, ...(screenshot ? { screenshot } : {}) };
   },
-  defaultName: (s) => `Resort — Year ${s.game.date.year}, Day ${s.game.date.day + 1}`,
+  defaultName: (s) => `Resort — ${formatDate(s.game.date)}`,
   download: downloadBytes,
 }) : null;
 // Loading validates the slot (CRC / version) BEFORE reloading the page into it, so a bad slot never costs the running game.
@@ -2172,6 +2173,7 @@ if (ui && !DEMO) {
   hud.bind(bus, () => game.money);
   hud.bindRating(() => ({ breakdown: rating.breakdown(), happiness: (() => { const st = guestSim.store; let n = 0, h = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; h += st.happiness[i]!; } return n ? h / n : 0.5; })(), market: { share: sim.rivals.share, rank: sim.rivals.rank, of: sim.rivals.rivals.length + 1 } }));
   hud.bindLevel(bus, () => { const v = sim.progression.view(); return v.mode === 'sandbox' ? `${MODE_INFO.sandbox.label}: everything is unlocked \u00B7 ${regionNameOf(SEED)}` : `${MODE_INFO.career.label} \u00B7 Level ${v.level} \u00B7 ${v.name} \u00B7 ${regionNameOf(SEED)}`; });
+  hud.bindDate(bus, () => game.date);
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
     season: SEASON_LABELS[seasonOf(game.date)], kind: weather.current.kind, tempC: weather.valleyTempAt(hourOfDay(game.date)),
@@ -2452,7 +2454,7 @@ if (ui && !DEMO) {
     date: () => game.date,
     // The news feed is the single source of toasts: only critical + important rows toast (muted categories excluded; per-key cooldown in the limiter).
     onItem: (it) => { audioRef?.news(it); const f = it.focus; toastEl.show(it.text, it.severity === 'bad' ? 'error' : it.severity === 'warn' ? 'warn' : 'info', 3500, { key: it.key, category: it.category, severity: it.severity, tier: it.tier, ...(f ? { action: { label: 'Go to', run: () => goTo(f) }, ttlMs: 7000 } : {}) }); },
-    stamp: () => `Day ${game.date.day + 1} ${String(Math.floor(game.date.minute / 60)).padStart(2, '0')}:${String(game.date.minute % 60).padStart(2, '0')}`,
+    stamp: () => `${formatGameDate(game.date).short} ${String(Math.floor(game.date.minute / 60)).padStart(2, '0')}:${String(game.date.minute % 60).padStart(2, '0')}`,
     goTo: (f) => goTo(f),
     focus: (x, y) => goTo({ x, y }),
     muted: () => toastEl.mutedCategories(), setMuted: (c, on) => toastEl.setMuted(c, on),

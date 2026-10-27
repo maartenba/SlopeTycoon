@@ -460,3 +460,23 @@ User feedback after M5.3: "1 year at 8x takes 56 minutes - seems long". Two chan
 * **Stop conditions** (`EVENT_STOPS`, a mapped type over every `GameEvent`, so a new event cannot be forgotten): target reached (toast), `year:report`, `scenario:finished`, major `milestone` (level-up, goal chapter), `finance:bankruptcyWarning` / `debtWarning` / `bankrupt` / `declaredBankrupt`, `incident:created` severity 2, `incident:escalated`, `incident:stranded`, `lift:broken` with stranded guests, avalanche with burials, wildlife attack. Routine events (arrivals, money, weather, month / season changes, grooming ...) never stop it. Also: Esc / Space / any click, a dialog opening, ride / walk / photo / drop mode, tutorial, title demo, game over, 25 consecutive frames whose 4-tick minimum alone takes > 80 ms ("too heavy"). A hidden tab pauses it (no catch-up). Refused to start in those contexts (toast with the reason) and while already running.
 * **Rendering while skipping**: drawing is dropped to every 6th frame (`Renderer.preSim` returns true = skip draw), guests are impostor points (`speedMul` 1000), the feedback layer is suspended (`Feedback.suspend`, nothing persisted), audio is ducked (`AudioSettings.setDucked`: reads as muted, never persisted), month autosaves are held and collapse into one when the run ends (`SaveManager.holdAutosave`). A "Fast-forwarding to next season..." pill (bottom centre above the dock, `role=status`) shows days to go, ETA and a Cancel button.
 * **Throughput** (headless sim only, bot-built resort, mid-winter of year 2, `npx vite-node scripts/analysis/ffThroughput.ts`; WARM=200 DAYS=15): 64 map **107 days/s** (0.04 ms/tick), 128 map **53 days/s** (0.08 ms/tick), 256 map **14 days/s** (0.30 ms/tick). The browser gets about 11 ms of every 16.7 ms frame minus the 1-in-6 draw, i.e. roughly 40-50 % of that: expect ~6 days/s on 256, tens of days/s on 64 / 128, so a 60-day winter takes ~10 s (256) and a year ~30 s. Not measured in a real GPU browser (the harness has SwiftShader at ~3 fps).
+
+
+## 10. Calendar: real month names (northern hemisphere, Alps)
+
+**Label-only.** The sim year is unchanged (180 days = 12 x 15-day months, `date.day` 0..179, seasons 60/30/60/30 days from sim day 0 = first day of spring). `src/sim/calendar.ts` lays the real calendar over it with `CALENDAR_OFFSET_MONTHS = 3`: **sim day 0 = 1 April**. Nothing stored is month-indexed by name (finance reports keep the sim month index 0..11, now labelled through `SIM_MONTHS`), so there is no save migration and no sim state or golden hash changed.
+
+| Real month | Season | Sim days | | Real month | Season | Sim days |
+|---|---|---|---|---|---|---|
+| January | winter | 135-149 | | July | summer | 45-59 |
+| February | winter | 150-164 | | August | summer | 60-74 |
+| March | winter | 165-179 | | September | summer | 75-89 |
+| April | spring | 0-14 | | October | autumn | 90-104 |
+| May | spring | 15-29 | | November | autumn | 105-119 |
+| June | summer | 30-44 | | December | winter | 120-134 |
+
+* Winter Dec-Mar (60 d, the ski season), spring Apr-May (30), summer Jun-Sep (60), autumn Oct-Nov (30). A new game starts 1 December (sim day 120). Day of month is 1..15; New Year's Eve is the last day of December ("Dec 15", sim day 134).
+* **Game year** (`date.year`, "Year 1") rolls on 1 April with the year report; a new game is Year 1 from December until the first April. The label never invents a second year number.
+* Weekdays exist (7-day weeks from the absolute day, used by Pricing) and appear in the chip: `Sat 14 Feb · Winter · Year 1`. `formatGameDate()` (`src/sim/calendar.ts`) is the single formatter (HUD chip with tooltip = day of year + time, speed panel line `Y1 · Sat 14 Feb · 23:18`, news stamp, daily digest, year report, month cards, save list and default save name, Events panel).
+* **Known offsets (deliberately not changed, would alter every winter/summer sim state and the goldens):** daylight extremes sit at sim day 150 / 60 = **1 Feb / 1 Aug** (real: 21 Dec / 21 Jun); the snowline/temperature curve is coldest 1 Feb (real: mid-Jan), warmest 5 Aug (real: mid-Jul). Winter snow cover Dec-Mar and a snow-free valley Jun-Sep are correct. To align them later: `DAYLIGHT.winterSolsticeDay/summerSolsticeDay` -> `oldDays(260)/oldDays(80)` and `SNOWLINE_LEAD_DAYS = 10` (measured: ~61 tests, incl. the staff goldens, advisor and snow tests, change) and rebalance deliberately.
+* Event dates: Christmas Market starts 1-9 Dec, World Cup 6 Jan-15 Feb, Carnival 1-11 Feb, Music Festival 1 Jun-11 Aug, Almabtrieb 1-10 Oct, New Year 15 Dec (eve) / 1 Jan. Tests: `tests/sim/calendar.test.ts`.

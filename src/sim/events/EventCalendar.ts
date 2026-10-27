@@ -1,5 +1,6 @@
 import { Rng } from '../../core/Rng';
-import { DAYS_PER_YEAR } from '../../config/balance';
+import { DAYS_PER_MONTH, DAYS_PER_YEAR } from '../../config/balance';
+import { simDayOf } from '../calendar';
 import { EVENTS, FESTIVALS, FESTIVAL_BY_ID, type FestivalDef, type FestivalId } from '../../config/festivals';
 import type { SeasonId } from '../../core/events';
 import { phaseFor } from '../nature/Livestock';
@@ -57,6 +58,9 @@ const seasonOfDoy = (doy: number): SeasonId => {
   const m = Math.floor(doy / 15);
   return m < 2 ? 'spring' : m < 6 ? 'summer' : m < 8 ? 'autumn' : 'winter';
 };
+/** Sim day of year of New Year's Eve (last day of December, calendar day 179) and of 1 January (sim day 0 is 1 April, see sim/calendar.ts). */
+export const NEW_YEAR_EVE_DOY = simDayOf(11, DAYS_PER_MONTH);
+const NEW_YEAR_DOY = (NEW_YEAR_EVE_DOY + 1) % DAYS_PER_YEAR;
 
 export class EventCalendar {
   booked: Booking[] = [];
@@ -87,9 +91,9 @@ export class EventCalendar {
     for (const b of this.booked) if (day >= b.start && day < b.end) out.push(this.mk(b.id, b.start, b.end, day, false));
     if (this.d.auto) {
       const doy = doyOf(day), base = day - doy;
-      // New Year: the last day of the year (the eve) and day 0 of the next one
-      if (doy >= DAYS_PER_YEAR - 1) out.push(this.mk('newYear', base + DAYS_PER_YEAR - 1, base + DAYS_PER_YEAR + 1, day, true));
-      else if (doy === 0) out.push(this.mk('newYear', base - 1, base + 1, day, true));
+      // New Year: the last day of December (the eve) and 1 January
+      if (doy === NEW_YEAR_EVE_DOY) out.push(this.mk('newYear', day, day + 2, day, true));
+      else if (doy === NEW_YEAR_DOY) out.push(this.mk('newYear', day - 1, day + 1, day, true));
       if (this.d.hasHerd() && phaseFor(doy) === 'descend') {
         let s = doy; while (s > 0 && phaseFor(s - 1) === 'descend') s--;
         let e = doy; while (e < DAYS_PER_YEAR - 1 && phaseFor(e + 1) === 'descend') e++;
@@ -127,7 +131,7 @@ export class EventCalendar {
     for (const b of this.booked) if (b.start > t || (b.start <= t && b.end > t)) out.push({ id: b.id, def: FESTIVAL_BY_ID[b.id], start: b.start, end: b.end, booked: true, daysAway: Math.max(0, b.start - t) });
     if (this.d.auto) {
       const doy = doyOf(t), base = t - doy;
-      const ny = base + DAYS_PER_YEAR - 1;
+      const ny = base + NEW_YEAR_EVE_DOY + (doy > NEW_YEAR_EVE_DOY ? DAYS_PER_YEAR : 0);
       if (ny > t && ny - t <= horizon) out.push({ id: 'newYear', def: FESTIVAL_BY_ID.newYear, start: ny, end: ny + 2, booked: false, daysAway: ny - t });
       if (this.nextCritic !== null && this.nextCritic > t && this.nextCritic - t <= EVENTS.criticAnnounceDays) out.push({ id: 'critic', def: FESTIVAL_BY_ID.critic, start: this.nextCritic, end: this.nextCritic + 1, booked: false, daysAway: this.nextCritic - t });
     }

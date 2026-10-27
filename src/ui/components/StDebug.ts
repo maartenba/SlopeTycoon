@@ -1,4 +1,5 @@
 import { DAYS_PER_MONTH } from '@/config/balance';
+import { SIM_MONTHS_SHORT } from '@/sim/calendar';
 import { makeSelect } from './StSelect';
 import { StElement } from './StElement';
 import { advanceYear, seasonName } from '@/render/Season';
@@ -152,7 +153,7 @@ export class StDebug extends StElement {
     const jumpRow = document.createElement('div');
     jumpRow.className = 'jump';
     if (api.jumpToDay) {
-      const month = makeSelect(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => ({ value: String(i), label: m })), '0', 'Month');
+      const month = makeSelect(SIM_MONTHS_SHORT.map((m, i) => ({ value: String(i), label: m })), '0', 'Month');
       month.style.minWidth = '64px';
       const dom = document.createElement('input');
       dom.type = 'number'; dom.min = '1'; dom.max = String(DAYS_PER_MONTH); dom.value = '1'; dom.style.width = '48px';

@@ -67,7 +67,7 @@ describe('NewsFeed', () => {
     for (let i = 0; i < 12; i++) f.push(formatEvent('guest:left', { id: i, reason: 'tired' } as never)!, 11);
     expect(f.rows.length).toBe(0);
     const d = f.newDay(12, 11)!;
-    expect(d.text).toBe('Day 12: 34 guests arrived, 12 left');
+    expect(d.text).toBe('Apr 12: 34 guests arrived, 12 left');
     expect(f.today.arrived).toBe(0);
     expect(f.visible('important').length).toBe(0); expect(f.visible('all').length).toBe(1);
     expect(f.newDay(13, 12)).toBeNull();

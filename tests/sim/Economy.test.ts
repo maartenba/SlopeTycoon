@@ -89,7 +89,7 @@ describe('finance table helpers match the ledger', () => {
   it('formatting', () => {
     expect(formatSigned(12340)).toBe('+$12,340');
     expect(formatSigned(-5)).toBe('-$5');
-    expect(monthSummary({ month: 2, net: 12340 })).toBe('March: +$12,340');
+    expect(monthSummary({ month: 2, net: 12340 })).toBe('June: +$12,340');
     expect(sparklinePoints([1, 3], 10, 10)).toBe('0.0,10.0 10.0,0.0');
     expect(sparklinePoints([], 10, 10)).toBe('');
   });

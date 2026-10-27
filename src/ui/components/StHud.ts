@@ -1,4 +1,6 @@
 import type { GameBus } from '@/core/events';
+import type { GameDate } from '@/core/GameState';
+import { formatGameDate } from '@/sim/calendar';
 import { formatMoney, formatWeatherLine, nextFps, type WeatherHudInfo } from '../format';
 import type { RatingBreakdown } from '@/sim/Rating';
 import { StElement } from './StElement';
@@ -13,6 +15,7 @@ export class StHud extends StElement {
   private snowEl = document.createElement('span');
   private seasonEl = document.createElement('span');
   private badgeEl = document.createElement('span');
+  private dateEl = document.createElement('span');
   private guestsEl = document.createElement('span');
   private ratingEl = document.createElement('st-rating') as StRating;
   private guests: (() => { count: number; message: string }) | null = null;
@@ -31,6 +34,7 @@ export class StHud extends StElement {
 .row{display:flex;align-items:center;gap:10px;white-space:nowrap;min-width:0}
 .row>*{white-space:nowrap}
 .row .grow{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.r0{font-size:calc(12px * var(--ui-scale, 1));font-weight:700;color:#dbe6f5}
 .r1{justify-content:space-between;font-weight:600}
 .r2{justify-content:space-between;font-size:calc(12px * var(--ui-scale, 1))}
 .r3{font-size:calc(11px * var(--ui-scale, 1));color:#b9c6d8;justify-content:space-between}
@@ -48,7 +52,9 @@ export class StHud extends StElement {
     const row = (cls: string, ...kids: HTMLElement[]): HTMLDivElement => { const d = document.createElement('div'); d.className = `row ${cls}`; d.append(...kids); return d; };
     this.seasonEl.className = 'grow'; this.fpsEl.className = 'fps';
     this.snowEl.style.cssText = 'overflow:hidden;text-overflow:ellipsis';
+    this.dateEl.className = 'grow'; this.dateEl.dataset.role = 'date-chip';
     p.append(
+      row('r0', this.dateEl),
       row('r1', this.moneyEl, this.ratingEl, this.guestsEl),
       row('r2', this.weatherEl, this.tempEl, this.snowEl),
       row('r3', this.seasonEl, this.fpsEl),
@@ -82,6 +88,13 @@ export class StHud extends StElement {
   bind(bus: GameBus, getMoney: () => number): void {
     this.bound = { bus, getMoney };
     if (this.isConnected) this.attach();
+  }
+
+  /** Persistent date chip 'Sat 14 Feb · Winter · Year 1' (tooltip: day of year + time); refreshes on day and hour events. */
+  bindDate(bus: GameBus, get: () => GameDate): void {
+    const refresh = (): void => { const f = formatGameDate(get()); this.dateEl.textContent = f.chip; this.dateEl.title = f.tooltip; };
+    refresh();
+    for (const ev of ['day:changed', 'time:hour', 'season:changed'] as const) this.listen(bus, ev, refresh);
   }
 
   /** Guest count; when `message` is set (e.g. 'No parking/road access') it explains why nobody arrives. Refreshed twice a second. */

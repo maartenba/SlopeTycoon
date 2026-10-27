@@ -15,12 +15,12 @@ const cal = (today: number, money = 50_000): { c: EventCalendar; d: { money: num
 
 describe('events format', () => {
   it('labels days and ranges', () => {
-    expect(dayLabel(0)).toBe('Jan 1'); expect(dayLabel(135)).toBe('Oct 1'); expect(dayLabel(180 + 14, 0)).toBe('Jan 15, year 2');
-    expect(rangeLabel(135, 143)).toBe('Oct 1 – Oct 8'); expect(rangeLabel(10, 11)).toBe('Jan 11');
+    expect(dayLabel(0)).toBe('Apr 1'); expect(dayLabel(135)).toBe('Jan 1'); expect(dayLabel(180 + 14, 0)).toBe('Apr 15, year 1');
+    expect(rangeLabel(135, 143)).toBe('Jan 1 – Jan 8'); expect(rangeLabel(10, 11)).toBe('Apr 11');
   });
   it('view lists upcoming bookings and one card per bookable festival with blockers', () => {
     const { c } = cal(120);
-    c.book('christmasMarket', 155);
+    c.book('christmasMarket', 125);
     const v = buildEventsView(c, 120, 50_000);
     expect(v.upcoming.some((u) => u.id === 'christmasMarket' && u.cancellable)).toBe(true);
     expect(v.cards.map((x) => x.def.id)).toEqual(['christmasMarket', 'carnival', 'musicFestival', 'worldCup']);

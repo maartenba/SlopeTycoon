@@ -1,6 +1,7 @@
 import type { GameEventName, GameEvents } from '@/core/events';
 import { GAME_EVENT_NAMES } from '@/core/events';
 import { displayName, sentence } from './text';
+import { SIM_MONTHS_SHORT } from '../sim/calendar';
 
 export type Severity = 'info' | 'good' | 'warn' | 'bad';
 /**
@@ -45,7 +46,7 @@ export interface NewsCtx {
   /** Tile position of a lift (bottom station) or building (centre); null when unknown/removed. */
   locate?: (kind: 'lift' | 'building', id: number) => { x: number; y: number } | null;
   liftName?: (id: number) => string | undefined; money?: (n: number) => string; where?: (x: number, y: number) => PlaceText }
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = SIM_MONTHS_SHORT;
 
 type Formatter<K extends GameEventName> = (e: GameEvents[K], c: NewsCtx) => NewsItem | null;
 type Table = { [K in GameEventName]: Formatter<K> | 'ignored' };

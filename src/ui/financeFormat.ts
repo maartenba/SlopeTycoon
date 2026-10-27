@@ -1,6 +1,7 @@
 import { EXPENSE_CATEGORIES, LEDGER_CATEGORIES } from '../config/prices';
 import type { Economy, MonthReport } from '../sim/Economy';
 import { formatMoney } from './format';
+import { SIM_MONTHS } from '../sim/calendar';
 
 export interface FinanceRow { key: string; label: string; thisMonth: number; lastMonth: number; ytd: number }
 export interface FinanceTable { income: FinanceRow[]; expense: FinanceRow[]; incomeTotal: FinanceRow; expenseTotal: FinanceRow; net: FinanceRow }
@@ -25,7 +26,8 @@ export function buildFinanceTable(econ: Economy): FinanceTable {
 }
 
 export const formatSigned = (n: number): string => (Math.round(n) >= 0 ? '+' : '-') + formatMoney(Math.abs(n));
-export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
+/** Month names indexed by SIM month (0 = April, the first month of the sim year; real calendar, see sim/calendar.ts). */
+export const MONTH_NAMES = SIM_MONTHS;
 export const monthSummary = (r: Pick<MonthReport, 'month' | 'net'>): string => `${MONTH_NAMES[r.month]}: ${formatSigned(r.net)}`;
 
 /** SVG polyline points string for a sparkline (values scaled into w×h, min..max). */

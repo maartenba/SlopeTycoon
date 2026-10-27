@@ -1,11 +1,14 @@
 import type { GameDate } from '@/core/GameState';
+import { formatGameDate } from '@/sim/calendar';
 
 export function formatMoney(n: number): string {
   const r = Math.round(n);
   return (r < 0 ? '-$' : '$') + Math.abs(r).toLocaleString('en-US');
 }
+/** 'Sat 14 Feb · Year 1' (real month names, see sim/calendar.ts `formatGameDate`). */
 export function formatDate(d: GameDate): string {
-  return `Year ${d.year}, Day ${d.day + 1}`;
+  const f = formatGameDate(d);
+  return `${f.short} · Year ${d.year}`;
 }
 export function nextFps(frames: number, ms: number): number {
   return ms > 0 ? (frames * 1000) / ms : 0;
@@ -22,10 +25,9 @@ export function parseSeed(s: string): number {
 }
 
 
-/** 'Y1 · Day 12 · 14:30' (day is 1-based in the label). */
+/** 'Y1 · Sat 14 Feb · 14:30' (single line; the tooltip carries the day of year, see `formatGameDate().tooltip`). */
 export function formatClock(d: GameDate): string {
-  const h = Math.floor(d.minute / 60), m = d.minute % 60;
-  return `Y${d.year} · Day ${d.day + 1} · ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  return formatGameDate(d).clock;
 }
 
 export type WeatherKindName = 'clear' | 'cloudy' | 'snow' | 'heavySnow' | 'rain' | 'storm';

@@ -51,7 +51,7 @@ describe('st-save-load', () => {
     expect(e.currentTab).toBe('save'); // Save tab first
     expect(e.rowIds()).toEqual(['auto-1', 'quick', 's1']);
     const t = e.rowText('s1');
-    for (const part of ['My Resort', 'Year 2, Day 15', '$123,456', '4★', '321 guests', '128×128', '2.4 MB', '3 h ago']) expect(t, part).toContain(part);
+    for (const part of ['My Resort', 'Thu 15 Apr · Year 2', '$123,456', '4★', '321 guests', '128×128', '2.4 MB', '3 h ago']) expect(t, part).toContain(part);
     expect(e.rowText('auto-1')).toContain('auto'); expect(e.rowText('quick')).toContain('quick');
     expect(e.rowText('auto-1')).toContain('293 KB');
     expect((e as unknown as { root: ShadowRoot }).root.querySelector('.slot[data-id="s1"] img')!.getAttribute('src')).toContain('data:image/jpeg');

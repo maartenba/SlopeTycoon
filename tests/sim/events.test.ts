@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EventCalendar, criticScore, type CalendarDeps } from '../../src/sim/events/EventCalendar';
+import { EventCalendar, NEW_YEAR_EVE_DOY, criticScore, type CalendarDeps } from '../../src/sim/events/EventCalendar';
 import { EVENTS, FESTIVALS, FESTIVAL_BY_ID, BOOKABLE_FESTIVALS } from '../../src/config/festivals';
 import { createSim } from '../../src/game/createSim';
 import { Bot, runBot } from '../../src/game/bot';
@@ -32,7 +32,7 @@ describe('festivals config', () => {
 });
 
 describe('EventCalendar: prerequisites', () => {
-  const winterStart = 155; // doy: inside the Christmas Market window
+  const winterStart = 125; // sim doy 125 = 6 Dec: inside the Christmas Market window (Dec 1-9)
   it('needs lead time, the right season and window, a lodge, stars, cash and a black piste (World Cup)', () => {
     const f = mk({ today: 120 });
     expect(f.cal.blocker('christmasMarket', 121)).toMatch(/notice/);
@@ -51,19 +51,20 @@ describe('EventCalendar: prerequisites', () => {
   });
   it('rejects overlapping bookings', () => {
     const f = mk({ today: 120 });
-    expect(f.cal.book('christmasMarket', 155)).toBe(true);
-    expect(f.cal.blocker('carnival', 140)).toBeNull(); // not overlapping 155..162
-    expect(f.cal.blocker('worldCup', 158)).toMatch(/already booked/);
+    expect(f.cal.book('christmasMarket', 125)).toBe(true);
+    expect(f.cal.blocker('carnival', 150)).toBeNull(); // not overlapping 125..132
+    expect(f.cal.book('carnival', 150)).toBe(true);
+    expect(f.cal.blocker('worldCup', 152)).toMatch(/already booked/);
   });
   it('pays on booking, refunds 80% on cancel before it starts, not after', () => {
     const f = mk({ today: 120 });
-    f.cal.book('christmasMarket', 155);
+    f.cal.book('christmasMarket', 125);
     expect(f.d.money).toBe(100_000 - 3_000);
-    expect(f.cal.cancel('christmasMarket', 155)).toBe(true);
+    expect(f.cal.cancel('christmasMarket', 125)).toBe(true);
     expect(f.d.money).toBe(100_000 - 3_000 + 3_000 * EVENTS.refund);
-    f.cal.book('christmasMarket', 155);
+    f.cal.book('christmasMarket', 125);
     f.d.today = 156;
-    expect(f.cal.cancel('christmasMarket', 155)).toBe(false);
+    expect(f.cal.cancel('christmasMarket', 125)).toBe(false);
   });
 });
 
@@ -71,15 +72,15 @@ describe('EventCalendar: payoff', () => {
   it('arrival multiplier + daily cheer while a festival runs, exactly neutral otherwise; the booking is removed afterwards', () => {
     const f = mk({ today: 120 });
     expect(f.cal.arrivalMult()).toBe(1);
-    f.cal.book('christmasMarket', 155);
-    advance(f, 34); // day 154
+    f.cal.book('christmasMarket', 125);
+    advance(f, 4); // day 124
     expect(f.cal.arrivalMult()).toBe(1);
-    advance(f, 1); // 155: begins
+    advance(f, 1); // 125: begins
     expect(f.cal.arrivalMult()).toBe(FESTIVAL_BY_ID.christmasMarket.arrivalMult);
     expect(f.news.some((n) => /Christmas Market begins/.test(n))).toBe(true);
     expect(f.cal.active().map((e) => e.id)).toEqual(['christmasMarket']);
     expect(f.cheered.length).toBeGreaterThan(0);
-    advance(f, 7); // day 162: last day
+    advance(f, 7); // day 132: last day
     expect(f.cal.active()[0]!.finale).toBe(true);
     advance(f, 1);
     expect(f.cal.active()).toEqual([]); expect(f.cal.arrivalMult()).toBe(1);
@@ -87,11 +88,11 @@ describe('EventCalendar: payoff', () => {
   });
   it('fireworks are scheduled on the finale day only (booked) and on the eve (New Year)', () => {
     const f = mk({ today: 120, auto: true });
-    f.cal.book('christmasMarket', 155);
-    advance(f, 35); expect(f.cal.fireworksToday()).toBeNull(); // first day (155)
-    advance(f, 7); expect(f.cal.fireworksToday()?.id).toBe('christmasMarket'); // last day (162)
-    f.d.today = DAYS_PER_YEAR - 1; expect(f.cal.fireworksToday()?.id).toBe('newYear');
-    f.d.today = DAYS_PER_YEAR; expect(f.cal.fireworksToday()).toBeNull(); // day 0: the show was last night
+    f.cal.book('christmasMarket', 125);
+    advance(f, 5); expect(f.cal.fireworksToday()).toBeNull(); // first day (125)
+    advance(f, 7); expect(f.cal.fireworksToday()?.id).toBe('christmasMarket'); // last day (132)
+    f.d.today = NEW_YEAR_EVE_DOY; expect(f.cal.fireworksToday()?.id).toBe('newYear');
+    f.d.today = NEW_YEAR_EVE_DOY + 1; expect(f.cal.fireworksToday()).toBeNull(); // 1 January: the show was last night
   });
 });
 
@@ -158,17 +159,18 @@ describe('EventCalendar: automatic events', () => {
     f.d.today = days.at(-1)!; expect(f.cal.active().find((e) => e.id === 'almabtrieb')!.finale).toBe(true);
   });
   it('New Year: the eve and day 0, with the show on the eve', () => {
-    const f = mk({ today: DAYS_PER_YEAR - 1, auto: true });
+    const f = mk({ today: NEW_YEAR_EVE_DOY, auto: true }); // 15 December = New Year's Eve on the 15-day-month calendar
     expect(f.cal.active().map((e) => e.id)).toContain('newYear');
-    f.d.today = DAYS_PER_YEAR; expect(f.cal.active().map((e) => e.id)).toContain('newYear');
-    f.d.today = DAYS_PER_YEAR + 1; expect(f.cal.active().map((e) => e.id)).not.toContain('newYear');
+    f.d.today = NEW_YEAR_EVE_DOY + 1; expect(f.cal.active().map((e) => e.id)).toContain('newYear'); // 1 January
+    f.d.today = NEW_YEAR_EVE_DOY + 2; expect(f.cal.active().map((e) => e.id)).not.toContain('newYear');
+    f.d.today = 0; expect(f.cal.active().map((e) => e.id)).not.toContain('newYear'); // 1 April is no longer New Year
   });
 });
 
 describe('EventCalendar: save', () => {
   it('round-trips bookings, critic schedule and review', () => {
     const f = mk({ today: 120, auto: true });
-    f.cal.book('christmasMarket', 155); advance(f, 1);
+    f.cal.book('christmasMarket', 125); advance(f, 1);
     f.d.today = f.cal.nextCritic!; f.cal.newDay();
     const g = mk({ today: f.d.today, auto: true });
     g.cal.load(JSON.parse(JSON.stringify(f.cal.serialize())));

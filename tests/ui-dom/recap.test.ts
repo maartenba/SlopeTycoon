@@ -70,14 +70,14 @@ describe('st-recap', () => {
   it('month card: obeys the limiter (one at a time, the same month never repeats), collapses, and Details opens Finance', () => {
     const { r, calls } = mk();
     expect(r.showMonth(month(2), 'm:1:2', 0)).toBe(true);
-    expect(q(r, '.card')!.textContent).toContain('March closed');
+    expect(q(r, '.card')!.textContent).toContain('June closed');
     expect(r.showMonth(month(2), 'm:1:2', 10)).toBe(false); // duplicate key
     (q(r, 'button.collapse') as HTMLButtonElement).click();
     expect(q(r, '.card')!.classList.contains('collapsed')).toBe(true);
     expect(q(r, 'button.details')).toBeNull();
     (q(r, 'button.collapse') as HTMLButtonElement).click();
     expect(r.showMonth(month(3), 'm:1:3', 20)).toBe(true); // one at a time: the newer replaces the older
-    expect(q(r, '.card')!.textContent).toContain('April closed');
+    expect(q(r, '.card')!.textContent).toContain('July closed');
     (q(r, 'button.details') as HTMLButtonElement).click();
     expect(calls).toEqual(['finance']); expect(r.showing).toBe(false);
   });

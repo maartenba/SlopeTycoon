@@ -13,7 +13,7 @@ const base = (o: Partial<RecapInput> = {}): RecapInput => ({
 
 describe('recap formatting', () => {
   it('month names, money and rating deltas', () => {
-    expect(monthName(0)).toBe('January'); expect(monthName(13)).toBe('February');
+    expect(monthName(0)).toBe('April'); expect(monthName(13)).toBe('May'); expect(monthName(9)).toBe('January');
     expect(moneyDelta(1200)).toBe('+$1,200'); expect(moneyDelta(-300)).toBe('-$300'); expect(moneyDelta(0.2)).toBe('$0');
     expect(ratingDelta(0.5)).toEqual({ text: 'Up half a star', tone: 'good' });
     expect(ratingDelta(-1)).toEqual({ text: 'Down 1 star', tone: 'bad' });
@@ -23,11 +23,11 @@ describe('recap formatting', () => {
   it('formatRecap: date, cash, trend, change, last month, top 2 goals / advice, capitalised', () => {
     const m = formatRecap(base());
     expect(m.title).toBe('Welcome back');
-    expect(m.subtitle).toBe('Winter · April, year 2');
+    expect(m.subtitle).toBe('Winter · July, year 2');
     expect(m.cash).toBe('$52,340');
     expect(m.trend).toEqual({ text: 'Up half a star', tone: 'good' });
     expect(m.change).toEqual({ text: '+$4,340 this month', tone: 'good' });
-    expect(m.lastMonth).toEqual({ text: 'March: +$4,300 net', tone: 'good' });
+    expect(m.lastMonth).toEqual({ text: 'June: +$4,300 net', tone: 'good' });
     expect(m.goals).toEqual([{ text: 'Reach a 3-star rating', pct: 50 }, { text: 'Welcome 80 guests in a day', pct: 25 }]);
     expect(m.advice).toEqual(['Build a first aid post', 'Open the lift']);
     expect(m.issues).toEqual([]); expect(m.reduced).toBe(false);
@@ -53,7 +53,7 @@ describe('month card formatting', () => {
   const r = { year: 1, month: 11, incomeTotal: 20_000, expenseTotal: 25_500, net: -5_500, guests: 1, income: { lifts: 9000, passes: 4000, shops: 7000, grant: 99_999, other: 50_000 } };
   it('title, totals, tone, guests, rating delta and the best earner (grants and other never win)', () => {
     const m = formatMonthCard(r, -0.5);
-    expect(m.title).toBe('December closed');
+    expect(m.title).toBe('March closed');
     expect(m.income.text).toBe('$20,000'); expect(m.expense.text).toBe('$25,500');
     expect(m.net).toEqual({ label: 'Net', text: '-$5,500', tone: 'bad' });
     expect(m.guests).toBe('1 guest in the resort');
@@ -85,7 +85,7 @@ describe('wireMonthCard', () => {
   it('shows once per closed month (limiter), with the formatted card', () => {
     const { bus, shown } = mk(() => true);
     bus.emit('finance:monthClosed', close); bus.emit('finance:monthClosed', close);
-    expect(shown).toEqual([{ title: 'May closed', key: 'month:1:4' }]);
+    expect(shown).toEqual([{ title: 'August closed', key: 'month:1:4' }]);
   });
   it('silent when the Settings toggle is off, or when the report does not match the event', () => {
     const a = mk(() => false); a.bus.emit('finance:monthClosed', close); expect(a.shown).toEqual([]);

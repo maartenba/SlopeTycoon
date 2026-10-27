@@ -39,7 +39,7 @@ export interface FestivalDef {
   kind: 'booked' | 'auto';
   /** Booked: the season the festival may start in. */
   seasons: readonly SeasonId[];
-  /** Booked: day-of-year window (inclusive) the festival may START in (0..179). */
+  /** Booked: sim day-of-year window (inclusive) the festival may START in (0..179; sim day 0 = 1 April, see sim/calendar.ts and the table in docs/festivals.md). */
   startWindow?: Range;
   days: number;
   /** Booked: days between booking and the earliest start. */
@@ -63,37 +63,37 @@ const WARM = [0xd9534a, 0xf2c14e, 0x4f86a8, 0xf4efe2, 0x6fae5a] as const;
 export const FESTIVALS: readonly FestivalDef[] = [
   {
     id: 'almabtrieb', name: 'Almabtrieb', icon: '🐄', kind: 'auto', seasons: ['autumn'], days: 10, leadDays: 0, cost: 0, arrivalMult: 1, cheer: 0, minStars: 0, minLevel: 1, needs: [],
-    blurb: 'The decorated cows come down from the alpine pastures. Needs an Alpine Farm; runs by itself in early autumn.',
+    blurb: 'The decorated cows come down from the alpine pastures. Needs an Alpine Farm; runs by itself in early October.',
     dressing: { bunting: [8, 12], flags: [6, 8], banners: [1, 1], stalls: [0, 0], procession: { kind: 'cow', count: [6, 10] }, palette: [0xf4efe2, 0xd9534a, 0x6fae5a, 0xf2c14e] },
     fireworks: 'none',
   },
   {
-    id: 'christmasMarket', name: 'Christmas Market', icon: '🎄', kind: 'booked', seasons: ['winter'], startWindow: [152, 168], days: 8, leadDays: 3, cost: 3_000, arrivalMult: 1.18, cheer: 0.01, minStars: 2, minLevel: 2, needs: ['lodge'],
+    id: 'christmasMarket', name: 'Christmas Market', icon: '🎄', kind: 'booked', seasons: ['winter'], startWindow: [120, 128], days: 8, leadDays: 3, cost: 3_000, arrivalMult: 1.18, cheer: 0.01, minStars: 2, minLevel: 2, needs: ['lodge'],
     blurb: 'Wooden stalls, mulled wine and fairy lights around the village. A cosy winter draw.',
     dressing: { bunting: [12, 18], flags: [4, 6], banners: [1, 1], stalls: [4, 6], palette: [0xc0392b, 0x2f7d46, 0xf2c14e, 0xf4efe2] },
     fireworks: 'finale',
   },
   {
-    id: 'carnival', name: 'Winter Carnival', icon: '🎭', kind: 'booked', seasons: ['winter'], startWindow: [126, 144], days: 5, leadDays: 3, cost: 4_000, arrivalMult: 1.2, cheer: 0.015, minStars: 2.5, minLevel: 3, needs: ['lodge'],
+    id: 'carnival', name: 'Winter Carnival', icon: '🎭', kind: 'booked', seasons: ['winter'], startWindow: [150, 160], days: 5, leadDays: 3, cost: 4_000, arrivalMult: 1.2, cheer: 0.015, minStars: 2.5, minLevel: 3, needs: ['lodge'],
     blurb: 'Banners, stalls and a costumed procession through the village.',
     dressing: { bunting: [14, 20], flags: [6, 8], banners: [2, 2], stalls: [3, 4], procession: { kind: 'costume', count: [8, 12] }, palette: [0xe8453c, 0xf2c14e, 0x8e5bd0, 0x2ba6a0, 0xf08a24] },
     fireworks: 'finale',
   },
   {
-    id: 'musicFestival', name: 'Summer Music Festival', icon: '🎵', kind: 'booked', seasons: ['summer'], startWindow: [30, 80], days: 4, leadDays: 4, cost: 6_000, arrivalMult: 1.35, cheer: 0.015, minStars: 3, minLevel: 3, needs: ['lodge'],
+    id: 'musicFestival', name: 'Summer Music Festival', icon: '🎵', kind: 'booked', seasons: ['summer'], startWindow: [30, 70], days: 4, leadDays: 4, cost: 6_000, arrivalMult: 1.35, cheer: 0.015, minStars: 3, minLevel: 3, needs: ['lodge'],
     blurb: 'Open-air concerts on the village green. A big off-season crowd for a few days.',
     dressing: { bunting: [10, 16], flags: [6, 8], banners: [2, 2], stalls: [4, 6], palette: [0xf06292, 0x4fc3f7, 0xf2c14e, 0xaed581, 0xba68c8] },
     fireworks: 'finale',
   },
   {
-    id: 'worldCup', name: 'World Cup Race', icon: '🏆', kind: 'booked', seasons: ['winter'], startWindow: [135, 165], days: 3, leadDays: 5, cost: 15_000, arrivalMult: 1.3, cheer: 0.01, minStars: 3.5, minLevel: 4, needs: ['lodge', 'blackPiste'],
+    id: 'worldCup', name: 'World Cup Race', icon: '🏆', kind: 'booked', seasons: ['winter'], startWindow: [140, 164], days: 3, leadDays: 5, cost: 15_000, arrivalMult: 1.3, cheer: 0.01, minStars: 3.5, minLevel: 4, needs: ['lodge', 'blackPiste'],
     blurb: 'Racers on a black piste, a grandstand and a finish banner. Needs a black piste.',
     dressing: { bunting: [8, 12], flags: [8, 10], banners: [1, 2], stalls: [0, 0], procession: { kind: 'racer', count: [6, 8] }, grandstand: true, palette: WARM },
     fireworks: 'finale',
   },
   {
     id: 'newYear', name: 'New Year', icon: '🎆', kind: 'auto', seasons: ['winter'], days: 2, leadDays: 0, cost: 0, arrivalMult: 1.1, cheer: 0.01, minStars: 0, minLevel: 1, needs: [],
-    blurb: 'A small fireworks show on New Year\'s Eve.',
+    blurb: 'A small fireworks show on New Year\'s Eve (last day of December).',
     dressing: { bunting: [6, 8], flags: [4, 4], banners: [1, 1], stalls: [0, 0], palette: [0xf4efe2, 0xf2c14e, 0x4f86a8] },
     fireworks: 'first',
   },

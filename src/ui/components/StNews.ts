@@ -11,7 +11,7 @@ import { StElement } from './StElement';
 export type NewsEntry = FeedRow;
 export interface NewsApi {
   ctx?: NewsCtx;
-  /** Format the in-game time for the stamp (e.g. 'Day 12 14:30'). */
+  /** Format the in-game time for the stamp (e.g. 'Sat 12 Dec 14:30'). */
   stamp(): string;
   focus?(x: number, y: number): void;
   /** 'Go to' a location (camera move, selection, marker). Preferred over `focus` when present. */

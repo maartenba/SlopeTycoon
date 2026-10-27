@@ -6,14 +6,16 @@ Code: `src/config/festivals.ts` (data), `src/sim/events/EventCalendar.ts` (sim),
 
 ## The events
 
+Dates use the real calendar of `docs/time-flow.md` "Calendar" (15-day months, sim day 0 = 1 April, a new game starts 1 December); windows in sim days of the year are in `src/config/festivals.ts`. The Events panel shows today's date, a January-December strip with event markers, countdowns ('in 12 days') and each festival's start window.
+
 | Event | Kind | When | Days | Cost | Arrivals | Needs |
 |---|---|---|---|---|---|---|
-| Almabtrieb | automatic (retrofit) | the autumn descent of the herds (`phaseFor` = `descend`), needs an Alpine Farm | ~10 | - | x1 (the old guest cheer stays in `Livestock`) | a farm with cows |
-| Christmas Market | booked | start day 152-168 (winter) | 8 | $3,000 | x1.18 | Base Lodge, 2 stars, level 2 |
-| Winter Carnival | booked | start day 126-144 (winter) | 5 | $4,000 | x1.20 | Base Lodge, 2.5 stars, level 3 |
-| Summer Music Festival | booked | start day 30-80 (summer) | 4 | $6,000 | x1.35 | Base Lodge, 3 stars, level 3 |
-| World Cup Race | booked | start day 135-165 (winter) | 3 | $15,000 | x1.30 | Base Lodge, a black piste, 3.5 stars, level 4 |
-| New Year | automatic | the last day of the year (the eve) and day 0 | 2 | - | x1.10 | - |
+| Almabtrieb | automatic (retrofit) | the descent of the herds in early October (`phaseFor` = `descend`, 1-10 Oct), needs an Alpine Farm | ~10 | - | x1 (the old guest cheer stays in `Livestock`) | a farm with cows |
+| Christmas Market | booked | start 1-9 Dec (sim day 120-128) | 8 | $3,000 | x1.18 | Base Lodge, 2 stars, level 2 |
+| Winter Carnival | booked | start 1-11 Feb (sim day 150-160) | 5 | $4,000 | x1.20 | Base Lodge, 2.5 stars, level 3 |
+| Summer Music Festival | booked | start 1 Jun - 11 Aug (sim day 30-70) | 4 | $6,000 | x1.35 | Base Lodge, 3 stars, level 3 |
+| World Cup Race | booked | start 6 Jan - 15 Feb (sim day 140-164) | 3 | $15,000 | x1.30 | Base Lodge, a black piste, 3.5 stars, level 4 |
+| New Year | automatic | the last day of December (the eve, 'Dec 15', sim day 134) and 1 January | 2 | - | x1.10 | - |
 | Critic visit | automatic | every 80-140 days, **announced 3 days ahead** (a news item) | 1 | - | review effect | - |
 | Powder day | automatic | a snowfall >= `POWDER.minIntensity` in winter, 8-day cooldown | 1 | - | x1.20 | - |
 

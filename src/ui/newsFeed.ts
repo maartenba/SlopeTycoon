@@ -1,4 +1,5 @@
 import type { CounterId, NewsItem, Tier } from './newsFormat';
+import { dayOfYearLabel } from '../sim/calendar';
 import { TIER_RANK } from './newsFormat';
 
 /** Feed filter: 'important' (default) shows important + critical, 'critical' only critical, 'all' also info rows (digests, sightings...). */
@@ -95,7 +96,7 @@ export class NewsFeed {
   }
 }
 
-/** 'Day 12: 34 guests arrived, 12 left, 5 rescues' (null when nothing happened). `dayOfYear` < 0 omits the prefix. */
+/** 'Dec 12: 34 guests arrived, 12 left, 5 rescues' (null when nothing happened). `dayOfYear` < 0 omits the prefix. */
 export function digestText(c: Counters, dayOfYear: number): string | null {
   const parts: string[] = [];
   if (c.arrived) parts.push(`${c.arrived} guest${c.arrived === 1 ? '' : 's'} arrived`);
@@ -106,7 +107,7 @@ export function digestText(c: Counters, dayOfYear: number): string | null {
   if (c.avalancheControl) parts.push(`${c.avalancheControl} avalanche control${c.avalancheControl === 1 ? '' : 's'}`);
   if (c.grooming) parts.push(`${c.grooming} grooming run${c.grooming === 1 ? '' : 's'}`);
   if (!parts.length) return null;
-  return `${dayOfYear >= 0 ? `Day ${dayOfYear + 1}: ` : ''}${parts.join(', ')}`;
+  return `${dayOfYear >= 0 ? `${dayOfYearLabel(dayOfYear)}: ` : ''}${parts.join(', ')}`;
 }
 
 /** Review tab filter: all / at most 2 stars / at least 4 stars. */
