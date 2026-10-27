@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import type { GameBus } from '../core/events';
 import type { Grid } from '../world/Grid';
+import { OccFlag } from '../world/Occupancy';
 import { Layer, Networks, PISTE_COST_PER_TILE } from '../world/Networks';
 import type { Buildings } from '../sim/Buildings';
 import type { Economy } from '../sim/Economy';
@@ -198,6 +199,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
 
   const bulldozeAt = (x: number, y: number): boolean => {
     if (!grid.inBounds(x, y)) return false;
+    if (grid.occupancy.has(x, y, OccFlag.Building)) return false; // rail under a station stays until the station goes
     networks.beginJournal();
     const k = networks.unbuild(x, y);
     if (k) {

@@ -7,7 +7,7 @@ import { commitChanges, planFlatten, type FlattenFail, type FlattenFailKind, typ
 import type { PropStore } from '../world/Props';
 import { canPlace, evaluateStatus } from './Dependencies';
 import { networkSpreadViolations } from '../world/Networks';
-import { autoFlattenPolicy, checkSlope, meanHeight } from './PlacementRules';
+import { autoFlattenPolicy, checkSlope, isAccessReason, meanHeight } from './PlacementRules';
 import { footprintOf, type Buildings, type PlacedBuilding } from './Buildings';
 import type { Economy } from './Economy';
 import type { UnlockGate } from '../config/unlocks';
@@ -154,7 +154,10 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
     const fl = grid.occupancy.flags[grid.occupancy.index(i, j)]!;
     const tt = grid.tileType[grid.tileIndex(i, j)]!;
     if (fl & OccFlag.Building) { bad('Tile occupied'); hard = true; }
-    if (fl & (OccFlag.Road | OccFlag.Path)) { bad('Cannot build on a road, path or rail'); hard = true; }
+    if (fl & (OccFlag.Road | OccFlag.Path)) {
+      // A rail tile (kindAt 3) is fine for a type that may stand on the line (Train Station): the rail stays in Networks under the platform.
+      if (!(def.overRail && net?.kindAt(i, j) === 3)) { bad('Cannot build on a road, path or rail'); hard = true; }
+    }
     if (fl & OccFlag.Lift) { bad('Blocked by a lift line'); hard = true; }
     if (fl & OccFlag.Decor) { bad('Garden decor in the way: remove it first (Landscape drawer)'); hard = true; }
     if (tt === TileType.Stream) { bad('Cannot build on a stream'); hard = true; }
@@ -198,7 +201,10 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
 
   // Missing access / shuttle never blocks: the building would start inactive.
   const st = evaluateStatus({ id: -1, type, x, y, w, h, active: true }, env.buildings.depContext());
-  if (!st.active && st.reason && !out.reasons.includes(st.reason)) out.warnings.push(st.reason);
+  if (!st.active && st.reason && !out.reasons.includes(st.reason)) {
+    out.warnings.push(st.reason);
+    if (def.placeTip && isAccessReason(st.reason)) out.info.push(def.placeTip);
+  }
 
   out.trees = propsOnFootprint(env, x, y, w, h);
   if (out.trees > 0) out.info.push(`Trees will be cleared (${out.trees})`);

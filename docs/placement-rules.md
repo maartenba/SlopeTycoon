@@ -5,6 +5,7 @@ All rules are data in `src/config/buildings.ts` (`access`, `altAccess`, `pisteRu
 ## Rule semantics
 
 - **access** (`road` | `path` | `rail+path` | `pisteEdge` | `none`, plus optional `altAccess`): *never blocks placement*. Without it the building is inactive with reason `Not connected: needs …` (placement preview shows it as a warning). `path` = footprint touches a footpath/road connected to the road entry; `road` = touches a road connected to the entry; `rail+path` = both; `pisteEdge` = footprint on/next to any piste layer.
+- **overRail** (Train Station only): the footprint may overlap rail tiles (footpaths/roads still refuse it). The platform sits ON the end of the line: the rail tiles stay in `Networks` (kept, counted as connected, drawn under the model's own track bed), nothing is deleted or refunded, so place/undo/bulldoze/save/load need no special handling; the rail Bulldoze refuses tiles under a building. Without access the ghost tip reads *Place the station on the end of a rail line, with a footpath next to it* (`BuildingDef.placeTip`).
 - **pisteRule**: `forbid` – no footprint tile may carry a piste/trail layer (also: a piste cannot be painted over such a building); `allow` – may stand on a piste (and pistes may be painted over it); `edge` – not on a piste tile, intended beside one.
 - **site.maxSlope / slopeKind**: corner spread across the footprint in half-steps tolerated without flattening ("flat" = ≤1). `any` = no limit (cannon, sign). `gentleSlope` (Magic Carpet) = monotone uniform gradient along the long axis, rise 2–6 half-steps, cross-slope ≤1, **not flat**.
 - **site.autoFlatten**: `default` on by default (toggle with F), `optional` off by default, `never` never touches terrain. Flatten cost is shown in the preview and the placement is refused if unaffordable. Levelling is planned by `src/world/FlattenPlanner.ts` (cut & fill pad + apron / retaining wall, see "Auto-flatten: cut & fill" below). It never touches water/streams, buildings or lifts (or pistes, outside the pad); footpaths/roads/rail under the blend are tolerated (they re-drape, dirty chunks refresh the network meshes) provided road/rail keep their max slope; lift cable clearance is checked via `Buildings.liftClearance`; trees on the footprint are cleared (apron trees stay and re-seat on the new ground).
@@ -24,12 +25,12 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 |---|---|---|---|---|---|---|---|---|
 | Base Lodge | road | forbid | flat | default | never | no | 1 | all |
 | Lodge/Restaurant | road | forbid | flat | default | never | no | – | all |
-| Café | path | forbid | flat | default | never | no | – | all |
+| Café | path / pisteEdge | forbid | flat | default | never | no | – | all |
 | Mountain Hut (12 trekker beds) | pisteEdge / path | edge | ≤2 | optional | never | yes | – | all |
-| Shop | road | forbid | flat | default | never | no | – | all |
+| Shop | path (road counts) | forbid | flat | default | never | no | – | all |
 | Rental | road | forbid | flat | default | never | no | – | all |
-| Chalet | road | forbid | flat | default | never | no | – | all |
-| Apartment | road | forbid | flat | default | never | no | – | all |
+| Chalet | path (road counts) | forbid | flat | default | never | no | – | all |
+| Apartment | path (road counts) | forbid | flat | default | never | no | – | all |
 | Ski School HQ | path | forbid | flat | default | never | no | – | winter |
 | Magic Carpet | path / pisteEdge | allow | gentle slope | never | never | no | – | winter |
 | Kids Ground | path | forbid | ≤2 | optional | never | no | – | winter |
@@ -47,9 +48,9 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 | Ice Rink | path | forbid | flat | default | never | no | – | winter |
 | Heated Terrace | path | forbid | flat | default | never | no | – | winter |
 | Après-Ski Bar | road or path | forbid | flat | default | never | no | – | winter |
-| Stunt Park | path | allow | flat | default | never | no | – | winter |
+| Stunt Park | path / pisteEdge | allow | flat | default | never | no | – | winter |
 | Adventure Park | path | forbid | flat | default | never | no | – | summer |
-| Train Station | rail+path | forbid | flat | default | never | no | 1 | all |
+| Train Station | rail+path (may stand on the end of the rail) | forbid | flat | default | never | no | 1 | all |
 | Altiport | road | forbid | flat | default | never | no | 1 | all |
 | Shuttle Bus Depot | road | forbid | flat | default | never | no | – | all |
 | Warning Sign | none | allow | any | never | never | yes | – | all |

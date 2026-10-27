@@ -51,7 +51,7 @@ describe('chalet on a forested slope (the reported case)', () => {
     const { env } = mk(0, 0);
     const chk = validatePlacement(env, 'chalet', 20, 20, 0, true);
     expect(chk.ok).toBe(true);
-    expect(chk.warnings.join()).toMatch(/needs a road/i);
+    expect(chk.warnings.join()).toMatch(/needs a footpath or road/i);
     expect(ghostLines(chk).some((l) => l.kind === 'warn' && /inactive/.test(l.text))).toBe(true);
   });
   it('lists every blocking reason at once (water ripple + occupied tile)', () => {

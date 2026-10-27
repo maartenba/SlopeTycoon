@@ -39,7 +39,8 @@ export class Occupancy {
   clear(x: number, y: number, flag: number): void {
     const i = this.index(x, y);
     this.flags[i]! &= ~flag & 0xff;
-    if (this.flags[i] === 0) this.entityId[i] = 0;
+    // A building's id lives in entityId: drop it with the Building flag even when a rail tile keeps its own flag (Train Station on the rail).
+    if (this.flags[i] === 0 || (flag & OccFlag.Building)) this.entityId[i] = 0;
   }
 
   isFree(x: number, y: number): boolean {

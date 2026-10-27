@@ -4,6 +4,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Train Station can stand on the end of a rail line** (the rail stays under the platform; ghost tip: "Place the station on the end of a rail line, with a footpath next to it"). **Shops, chalets and apartments** now accept a footpath as well as a road; café and stunt park also accept a piste edge. **Speed panel** no longer wraps at night: the fast-night marker is a small badge on the moon button.
 - **Loading indicator on the splash**: a slim progress bar with stage text ("Loading the mountain…", "Carving the terrain…", "Planting trees…", "Warming up the lifts…") driven by real boot stages (`src/ui/bootProgress.ts`, pure DOM, inline CSS in `index.html`, no layout shift, works offline). Indeterminate fallback, a slow-load hint after 8 s, an error state with a Reload button if boot throws, reduced-motion respected, `role=progressbar` + polite live text, smooth fade-out. New Game / Continue reuse it (they reload into the same boot). Dev: `?bootdelay=ms`, `?bootfail=1`, `npm run boot:shots`.
 
 ## [0.2.1] - 2026-10-27 (pre-release)

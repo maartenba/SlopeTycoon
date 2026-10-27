@@ -45,10 +45,10 @@ describe('access rule (never blocks, deactivates)', () => {
   it('road building without road: placeable with Not connected warning, inactive after add', () => {
     const { env, net, buildings } = mk();
     net.roadEntry = { x: 0, y: 20 };
-    const r = validatePlacement(env, 'shop', 20, 20, 0);
+    const r = validatePlacement(env, 'rental', 20, 20, 0);
     expect(r.ok).toBe(true);
     expect(r.warnings.join()).toMatch(/Needs a road next to it/);
-    const { building } = buildings.add('shop', 20, 20);
+    const { building } = buildings.add('rental', 20, 20);
     expect(building.active).toBe(false);
     expect(building.reason).toMatch(/^Needs a road/);
     for (let x = 0; x < 20; x++) net.build(NetKind.Road, x, 20);
@@ -63,7 +63,7 @@ describe('access rule (never blocks, deactivates)', () => {
     for (let x = 0; x <= 19; x++) net.build(NetKind.Road, x, 19);
     expect(validatePlacement(env, 'cafe', 20, 20, 0).warnings).toEqual([]);
     // a road-only type next to just a path (no road) still warns
-    expect(validatePlacement(env, 'shop', 20, 20, 0).warnings.join()).toMatch(/a road/);
+    expect(validatePlacement(env, 'rental', 20, 20, 0).warnings.join()).toMatch(/a road/);
   });
   it('remote types (none) never warn', () => {
     const { env, net } = mk();
@@ -78,6 +78,53 @@ describe('access rule (never blocks, deactivates)', () => {
     net.roadEntry = { x: 0, y: 30 };
     net.railEntry = { x: 0, y: 28 };
     expect(validatePlacement(env, 'trainStation', 20, 30, 0).warnings.join()).toMatch(/a rail line and a footpath/);
+  });
+  it('shop / chalet / apartment accept a footpath (or road); rental stays road-only', () => {
+    const { env, net } = mk();
+    net.roadEntry = { x: 0, y: 19 };
+    for (let x = 0; x <= 19; x++) net.build(NetKind.Road, x, 19);
+    net.build(NetKind.Path, 20, 19);
+    for (const id of ['shop', 'chalet', 'apartment']) {
+      expect(BUILDINGS[id]!.access).toBe('path');
+      expect(validatePlacement(env, id, 20, 20, 0).warnings, id).toEqual([]);
+    }
+    expect(validatePlacement(env, 'rental', 20, 20, 0).warnings.join()).toMatch(/a road/);
+    expect(validatePlacement(env, 'shop', 30, 30, 0).warnings.join()).toMatch(/footpath or road next to it/);
+  });
+  it('café and stunt park accept a piste edge', () => {
+    const { env, net } = mk();
+    net.paint(Layer.Ski, [{ x: 22, y: 20 }]);
+    expect(validatePlacement(env, 'cafe', 20, 20, 0).warnings).toEqual([]);
+    expect(validatePlacement(env, 'stuntPark', 16, 20, 0).warnings).toEqual([]);
+  });
+  it('Train Station may stand on the end of a rail line (rail kept, counted as connected, undoable by removal)', () => {
+    const { env, net, buildings, grid } = mk();
+    net.roadEntry = { x: 0, y: 40 };
+    net.railEntry = { x: 0, y: 30 };
+    for (let x = 0; x <= 21; x++) net.build(NetKind.Rail, x, 30);
+    net.build(NetKind.Path, 20, 32); // footpath next to a 4x2 station at (18..21, 30..31)
+    for (let x = 0; x <= 20; x++) net.build(NetKind.Path, x, 33);
+    const v = validatePlacement(env, 'trainStation', 18, 30, 0);
+    expect(v.reasons).not.toContain('Cannot build on a road, path or rail');
+    expect(v.ok).toBe(true);
+    // a footpath tile inside the footprint is still refused
+    net.build(NetKind.Path, 19, 31);
+    expect(validatePlacement(env, 'trainStation', 18, 30, 0).reasons).toContain('Cannot build on a road, path or rail');
+    net.unbuild(19, 31);
+    const r = placeBuilding(env, undefined, 'trainStation', 18, 30, 0);
+    expect(r.ok).toBe(true);
+    expect(net.kindAt(18, 30)).toBe(NetKind.Rail);
+    expect(net.isRailServed(r.building!.id)).toBe(true);
+    expect(grid.occupancy.has(18, 30, OccFlag.Building)).toBe(true);
+    buildings.remove(r.building!.id);
+    expect(net.kindAt(18, 30)).toBe(NetKind.Rail);
+    expect(grid.occupancy.has(18, 30, OccFlag.Road)).toBe(true);
+    expect(grid.occupancy.has(18, 30, OccFlag.Building)).toBe(false);
+  });
+  it('Train Station without access shows the placement tip', () => {
+    const { env, net } = mk();
+    net.railEntry = { x: 0, y: 30 };
+    expect(validatePlacement(env, 'trainStation', 20, 40, 0).info.join()).toMatch(/end of a rail line, with a footpath next to it/);
   });
   it('Mountain Hut: piste neighbour OR path satisfies access', () => {
     const { env, net } = mk();
@@ -235,7 +282,7 @@ describe('lift access', () => {
 describe('describeRules / placementHints', () => {
   it('produce readable lines', () => {
     expect(describeRules('snowCannon')).toEqual(expect.arrayContaining(['Any slope', 'Never changes terrain', 'May be built on a piste']));
-    expect(describeRules('shop')).toEqual(expect.arrayContaining(['Needs road access', 'Auto-flatten on by default']));
+    expect(describeRules('rental')).toEqual(expect.arrayContaining(['Needs road access', 'Auto-flatten on by default']));
     expect(describeRules('mountainHut').join()).toMatch(/piste/);
     expect(placementHints('cafe')).toMatchObject({ access: 'path', pisteRule: 'forbid' });
     expect(placementHints('nope')).toBeNull();

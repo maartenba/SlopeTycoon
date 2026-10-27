@@ -47,6 +47,9 @@ export interface StarterReport {
 }
 
 /** Toolkit handed to `StarterOptions.extra`. */
+/** Types whose rule allows a footpath but which the generated resorts still connect by road. */
+const ROAD_SERVED = new Set(['shop', 'chalet', 'apartment']);
+
 export interface ResortKit {
   sim: Sim;
   report: StarterReport;
@@ -150,7 +153,8 @@ function buildStarter(sim: Sim, opt: StarterOptions): StarterReport {
     const b = place(type, ax, ay, rmax, autoFlatten);
     if (!b) { fail(`cannot place ${type}`); return null; }
     const access = BUILDINGS[type]!.access;
-    if (access === 'road') ensureRoad(b); else if (access === 'path' || access === 'pisteEdge') ensurePath(b);
+    // Shop / chalet / apartment accept a footpath now, but the built resorts keep serving them by road (the vetted layouts and goldens stay put; the village road is the better-looking choice).
+    if (access === 'road' || ROAD_SERVED.has(type)) ensureRoad(b); else if (access === 'path' || access === 'pisteEdge') ensurePath(b);
     settle();
     return b;
   };

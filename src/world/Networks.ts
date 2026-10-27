@@ -640,6 +640,11 @@ export class Networks {
     return this.ring(r).some((t) => seen[this.idx(t.x, t.y)]);
   }
 
+  private onSeen(r: Rect, seen: Uint8Array): boolean {
+    for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) if (this.inb(i, j) && seen[this.idx(i, j)]) return true;
+    return false;
+  }
+
   /** Building reachable from the road entry via roads + footpaths (adjacent tiles link). */
   isConnected(buildingId: number): boolean {
     const b = this.host.get(buildingId);
@@ -679,7 +684,7 @@ export class Networks {
     switch (kind) {
       case 'road': return this.touches(r, c.roadComp!);
       case 'path': return this.touches(r, c.walkComp!);
-      case 'rail': return this.touches(r, c.railComp!);
+      case 'rail': return this.touches(r, c.railComp!) || this.onSeen(r, c.railComp!); // a station may stand ON the rail
       case 'piste': return this.touchesPiste(r);
     }
   }
@@ -694,7 +699,7 @@ export class Networks {
   /** Train station reached by rail from the rail entry. */
   isRailServed(buildingId: number): boolean {
     const b = this.host.get(buildingId);
-    return !!b && this.touches(b, this.comps().railComp!);
+    return !!b && (this.touches(b, this.comps().railComp!) || this.onSeen(b, this.comps().railComp!));
   }
 
   /** Both points (buildings) sit on roads connected to the road entry (or, with no entry, the same road component). */

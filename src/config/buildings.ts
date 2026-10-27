@@ -49,6 +49,10 @@ export interface BuildingDef {
   site: SiteRule;
   /** Max simultaneous instances (e.g. one Base Lodge). */
   maxCount?: number;
+  /** May stand on rail tiles (Train Station: the platform sits on the end of the line; the rail stays in Networks, drawn under the platform). */
+  overRail?: boolean;
+  /** Neutral ghost tip shown while access is missing. */
+  placeTip?: string;
   lakeAdjacent?: boolean; // must touch lake tile (derived from site.onWater === 'lakeEdge')
   /** @deprecated derived from `site` for older UI code; use `site` / describeRules(). */
   needsFlat: boolean;
@@ -76,7 +80,7 @@ export interface BuildingDef {
 }
 
 type SiteIn = Partial<SiteRule>;
-interface Rules { access: AccessKind; pisteRule?: PisteRule; site?: SiteIn; altAccess?: AccessKind[]; maxCount?: number }
+interface Rules { access: AccessKind; pisteRule?: PisteRule; site?: SiteIn; altAccess?: AccessKind[]; maxCount?: number; overRail?: boolean; placeTip?: string }
 
 const FLAT: SiteRule = { maxSlope: 1, slopeKind: 'flat', autoFlatten: 'default', onWater: 'never' };
 
@@ -97,7 +101,7 @@ function b(id: string, name: string, category: BuildingCategory, w: number, h: n
   const site: SiteRule = { ...FLAT, ...rules.site };
   return {
     id, name, category, w, h, cost, upkeep, requires: [], meshBuilder: id, staff: 0, capacity: 0, season: seasonFor(id, extra.needs),
-    access: rules.access, altAccess: rules.altAccess, pisteRule: rules.pisteRule ?? 'forbid', site, maxCount: rules.maxCount,
+    access: rules.access, altAccess: rules.altAccess, pisteRule: rules.pisteRule ?? 'forbid', site, maxCount: rules.maxCount, overRail: rules.overRail, placeTip: rules.placeTip,
     lakeAdjacent: site.onWater === 'lakeEdge' ? true : undefined,
     needsFlat: site.slopeKind === 'flat' && site.maxSlope <= 1, allowOnWater: site.onWater === 'shallow', minAltitude: site.minAltitude, maxAltitude: site.maxAltitude,
     ...extra,
@@ -110,15 +114,15 @@ const ANY: SiteIn = { maxSlope: Infinity, slopeKind: 'any', autoFlatten: 'never'
 export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('baseLodge', 'Base Lodge', 'core', 4, 3, 8000, 40, { access: 'road', maxCount: 1 }, { staff: 4, capacity: 200, chimney: { x: -1.4, y: 1.8, z: -0.5 } }),
   b('lodge', 'Lodge/Restaurant', 'services', 4, 3, 6000, 30, { access: 'road' }, { staff: 3, capacity: 120, chimney: { x: 1.2, y: 1.7, z: -0.5 } }),
-  b('cafe', 'Café', 'services', 2, 2, 2500, 12, { access: 'path' }, { staff: 1, capacity: 30, chimney: { x: 0, y: 1.4, z: -0.1 } }),
+  b('cafe', 'Café', 'services', 2, 2, 2500, 12, { access: 'path', altAccess: ['pisteEdge'] }, { staff: 1, capacity: 30, chimney: { x: 0, y: 1.4, z: -0.1 } }),
   // Mid-mountain café (own mesh): reachable by a path or simply next to a piste.
   b('mountainHut', 'Mountain Hut', 'services', 2, 2, 3500, 14, { access: 'pisteEdge', altAccess: ['path'], pisteRule: 'edge', site: HUT }, { staff: 1, capacity: 24, chimney: { x: 0.35, y: 1.25, z: -0.35 } }),
   // Après-Ski Bar: cosy timber bar with a terrace; the evening crowd magnet (winter 16:00-22:00). Road or path access.
   b('apresBar', 'Après-Ski Bar', 'services', 4, 3, 7000, 28, { access: 'road', altAccess: ['path'] }, { staff: 4, capacity: 70, chimney: { x: 1.25, y: 1.8, z: -0.45 } }),
-  b('shop', 'Shop', 'services', 2, 2, 2000, 10, { access: 'road' }, { staff: 1, capacity: 20 }),
+  b('shop', 'Shop', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1, capacity: 20 }),
   b('rental', 'Rental', 'services', 3, 2, 3000, 15, { access: 'road' }, { staff: 2, capacity: 40 }),
-  b('chalet', 'Chalet', 'lodging', 3, 3, 5000, 20, { access: 'road' }, { capacity: 12, chimney: { x: -0.7, y: 1.8, z: -0.5 } }),
-  b('apartment', 'Apartment', 'lodging', 3, 4, 9000, 30, { access: 'road' }, { capacity: 40, chimney: { x: 1.0, y: 2.9, z: -0.7 } }),
+  b('chalet', 'Chalet', 'lodging', 3, 3, 5000, 20, { access: 'path' }, { capacity: 12, chimney: { x: -0.7, y: 1.8, z: -0.5 } }),
+  b('apartment', 'Apartment', 'lodging', 3, 4, 9000, 30, { access: 'path' }, { capacity: 40, chimney: { x: 1.0, y: 2.9, z: -0.7 } }),
   b('skiSchoolHQ', 'Ski School HQ', 'kids', 3, 3, 6000, 25, { access: 'path' }, { staff: 3, capacity: 30 }),
   b('magicCarpet', 'Magic Carpet', 'kids', 1, 6, 3000, 10, { access: 'path', altAccess: ['pisteEdge'], pisteRule: 'allow', site: { maxSlope: 2, slopeKind: 'gentleSlope', autoFlatten: 'never' } }, { requires: ['skiSchoolHQ'], needs: ['snow'], capacity: 10 }),
   b('kidsGround', 'Kids Ground', 'kids', 4, 4, 2500, 8, { access: 'path', site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { requires: ['skiSchoolHQ'], needs: ['snow'], capacity: 25 }),
@@ -137,9 +141,9 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('beach', 'Beach', 'water', 4, 3, 3000, 8, { access: 'path', site: { onWater: 'lakeEdge' } }, { waterSource: true, needs: ['warm'], capacity: 40 }),
   b('iceRink', 'Ice Rink', 'recreation', 5, 4, 5000, 18, { access: 'path' }, { needs: ['cold'], capacity: 40 }),
   b('heatedTerrace', 'Heated Terrace', 'recreation', 3, 3, 3500, 14, { access: 'path' }, { needs: ['cold'], capacity: 30, chimney: { x: 0, y: 1.3, z: -0.9 } }),
-  b('stuntPark', 'Stunt Park', 'recreation', 6, 4, 9000, 25, { access: 'path', pisteRule: 'allow' }, { needs: ['snow'], capacity: 30 }),
+  b('stuntPark', 'Stunt Park', 'recreation', 6, 4, 9000, 25, { access: 'path', altAccess: ['pisteEdge'], pisteRule: 'allow' }, { needs: ['snow'], capacity: 30 }),
   b('adventurePark', 'Adventure Park', 'recreation', 6, 6, 9000, 25, { access: 'path' }, { needs: ['snowFree'], capacity: 60 }),
-  b('trainStation', 'Train Station', 'transport', 4, 2, 10000, 30, { access: 'rail+path', maxCount: 1 }, { shuttleDependent: true, capacity: 150 }),
+  b('trainStation', 'Train Station', 'transport', 4, 2, 10000, 30, { access: 'rail+path', maxCount: 1, overRail: true, placeTip: 'Place the station on the end of a rail line, with a footpath next to it' }, { shuttleDependent: true, capacity: 150 }),
   b('altiport', 'Altiport', 'transport', 8, 3, 15000, 40, { access: 'road', maxCount: 1, site: { slopeMessage: 'Runway must be flat' } }, { shuttleDependent: true, capacity: 60 }),
   b('shuttleDepot', 'Shuttle Bus Depot', 'transport', 3, 3, 4000, 20, { access: 'road' }, { staff: 2 }),
   b('warningSign', 'Warning Sign', 'safety', 1, 1, 100, 0, { access: 'none', pisteRule: 'allow', site: ANY }, { serviceRadius: 8, coverageKind: 'warning' }),

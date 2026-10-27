@@ -337,7 +337,7 @@ describe('(c) incomplete fixes get specific, accurate advice', () => {
     hour(s);
     const a = adviceOf(s, 'building.inactive')!;
     expect(a, 'inactive cafe is reported').toBeTruthy();
-    expect(a.why).toMatch(/footpath or road/);
+    expect(a.why).toMatch(/footpath, road or piste/);
     expect(a.title).toMatch(/Caf/i);
   });
 

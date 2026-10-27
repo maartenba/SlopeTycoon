@@ -146,7 +146,8 @@ export class Bot {
         if (out.ok && out.building) {
           const b = out.building;
           sim.refreshCoverage(b, out.changed.length > 0);
-          if (def.access === 'road') this.ensure(NetKind.Road, b, [networks.roadEntry ?? { x: -1, y: -1 }]);
+          // shop / chalet / apartment accept a footpath, but the bot keeps serving them by road (balance + goldens unchanged)
+          if (def.access === 'road' || type === 'shop' || type === 'chalet' || type === 'apartment') this.ensure(NetKind.Road, b, [networks.roadEntry ?? { x: -1, y: -1 }]);
           else if (def.access === 'path' || def.access === 'pisteEdge') this.ensure(NetKind.Path, b, ringOf(lodge));
           buildings.reevaluate(); sim.refreshCoverage(undefined, true);
           return true;

@@ -67,7 +67,8 @@ export class StSpeedControl extends StElement {
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pill .spin{animation:none}}
 .hold{flex:none;font-weight:800;font-size:calc(11px * var(--ui-scale, 1));color:#ffd070;background:#3a2c10;border:1px solid #f0b04088;border-radius:999px;padding:0 8px;line-height:18px;white-space:nowrap}.hold[hidden]{display:none}
-.warp{color:#9bb8ff;font-weight:700;white-space:nowrap;flex:none}.warp:empty{display:none}`;
+.btns .night{position:relative}
+.warp{position:absolute;right:1px;bottom:-1px;color:#9bb8ff;font-weight:800;font-size:calc(10px * var(--ui-scale, 1));line-height:1;pointer-events:none;text-shadow:0 0 2px #000,0 0 2px #000}.warp:empty{display:none}`;
   }
 
   constructor() {
@@ -83,7 +84,7 @@ export class StSpeedControl extends StElement {
       this.btns.set(s, b);
       btns.appendChild(b);
     }
-    this.nightBtn.append(icon('moon', 14)); this.nightBtn.hidden = true; this.nightBtn.setAttribute('aria-label', 'Fast nights');
+    this.nightBtn.className = 'night'; this.nightBtn.append(icon('moon', 14), this.warpEl); this.nightBtn.hidden = true; this.nightBtn.setAttribute('aria-label', 'Fast nights');
     this.nightBtn.addEventListener('click', () => { const f = this.api?.fastNights; if (f) { f.set(!f.get()); this.refreshNights(); } this.nightBtn.blur(); });
     this.warpEl.className = 'warp'; this.warpEl.title = 'Fast nights: time is skipping ahead through the night';
     const sp = document.createElement('span'); sp.className = 'sp';
@@ -97,7 +98,7 @@ export class StSpeedControl extends StElement {
     this.holdEl.className = 'hold'; this.holdEl.hidden = true; this.holdEl.textContent = '⏸ Paused'; this.holdEl.dataset.role = 'dialog-pause';
     this.holdEl.title = 'The game is paused while a dialog (Settings, Help, Save & load…) is open; it resumes when you close it.';
     this.holdEl.setAttribute('role', 'status');
-    btns.append(sp, this.warpEl, this.nightBtn, this.skipBtn);
+    btns.append(sp, this.nightBtn, this.skipBtn);
     const when = document.createElement('div');
     when.className = 'when';
     this.dateEl.className = 'd'; this.seasonEl.className = 's';
@@ -182,7 +183,7 @@ export class StSpeedControl extends StElement {
     const on = f.get();
     this.nightBtn.classList.toggle('active', on);
     this.nightBtn.title = on ? 'Fast nights ON: nights pass about 3× faster (click to turn off)' : 'Fast nights OFF (click to turn on)';
-    this.warpEl.textContent = this.api && on && this.api.getSpeed() > 0 ? warpIndicator(f.warp()) : '';
+    this.warpEl.textContent = this.api && on && this.api.getSpeed() > 0 ? warpIndicator(f.warp()).replace('🌙', '') : '';
   }
 
   connectedCallback(): void { if (this.api) this.attach(); }
