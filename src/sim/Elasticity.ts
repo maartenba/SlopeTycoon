@@ -1,7 +1,8 @@
+import { segmentKey } from '../config/guestTypes';
 import { AFFORD_SHARE, ELASTICITY, GUEST_TYPE_KEYS, SENSITIVITY, type GuestTypeKey } from '../config/marketing';
 
 /** Price elasticity per guest type (pure functions, no state). `ratio` = price / fair value. */
-const keyOf = (t: GuestTypeKey | number): GuestTypeKey => (typeof t === 'number' ? GUEST_TYPE_KEYS[t] ?? 'solo' : t);
+const keyOf = (t: GuestTypeKey | number): GuestTypeKey => (typeof t === 'number' ? (t < GUEST_TYPE_KEYS.length ? GUEST_TYPE_KEYS[t]! : segmentKey(t)) : t);
 
 /** Demand multiplier for one guest type: exp(-k (ratio-1)), capped by crowding (maxVolume); luxury guests shy away from cheap offers. */
 export function demandMultiplier(type: GuestTypeKey | number, ratio: number, sens = 1): number {

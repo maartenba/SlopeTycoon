@@ -8,6 +8,7 @@ import type { SimSystem } from '../Systems';
 import {
   evaluateArrivals, makeCum, tripPlan, VEHICLE_SPEED, VehicleKind, centre, vehiclePose, type ArrivalPoint, type ArrivalReport, type Vehicle,
 } from './Arrivals';
+import { GUEST_TYPE_DEFS, CORE_TYPE_COUNT, extraDef, extraWeight, segmentIndex } from '../../config/guestTypes';
 import { GUEST_TYPE_NAMES, GuestType, Mode, Skill, type GuestStore, type GuestTypeName } from './Guest';
 import type { GuestWorld, Pt, ResortStats } from './GuestWorld';
 import type { SpatialHash } from './SpatialHash';
@@ -64,7 +65,20 @@ export function attractiveness(s: ResortStats): number {
 
 export interface SpawnStatus { text: string; arrivals: ArrivalReport | null; rate: number; attractiveness: number; overflow: number }
 
+/** Deterministic [0,1) from integers (a separate stream for the extra guest types: never touches state.rng, nothing to save). */
+const hash01 = (a: number, b: number, c: number): number => {
+  let h = (Math.imul(a | 0, 0x9e3779b1) ^ Math.imul(b | 0, 0x85ebca6b) ^ Math.imul(c | 0, 0xc2b2ae35)) >>> 0;
+  h ^= h >>> 16; h = Math.imul(h, 0x7feb352d) >>> 0; h ^= h >>> 15; h = Math.imul(h, 0x846ca68b) >>> 0; h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+};
+const groupOf = (type: number): readonly [number, number] => (type < CORE_TYPE_COUNT ? GROUP[type]! : extraDef(type)?.group ?? GROUP[segmentIndex(type)]!);
+const budgetOf = (type: number): readonly [number, number] => (type < CORE_TYPE_COUNT ? BUDGET[type]! : extraDef(type)?.budget ?? BUDGET[segmentIndex(type)]!);
+const overnightOf = (type: number): number => (type < CORE_TYPE_COUNT ? OVERNIGHT_P[type]! : extraDef(type)?.overnight ?? OVERNIGHT_P[segmentIndex(type)]!);
+
 const skillFor = (type: number, r: number): number => {
+  const own = type >= CORE_TYPE_COUNT ? extraDef(type)?.skill : undefined;
+  if (own) { let a = 0; for (let k = 0; k < 4; k++) { a += own[k]!; if (r < a) return k; } return Skill.Expert; }
+  if (type >= CORE_TYPE_COUNT) type = segmentIndex(type);
   const t = type === GuestType.Adventure ? [0.1, 0.2, 0.35, 0.35] : type === GuestType.VIP ? [0.1, 0.3, 0.4, 0.2] : type === GuestType.Family ? [0.5, 0.35, 0.12, 0.03] : [0.3, 0.35, 0.25, 0.1];
   let a = 0;
   for (let k = 0; k < 4; k++) { a += t[k]!; if (r < a) return k; }
@@ -88,6 +102,10 @@ export class Spawner {
   rateMult = 1;
   /** Scenario modifier: per guest type weight multiplier (order = GUEST_TYPE_NAMES); null = none. */
   mixBias: readonly number[] | null = null;
+  /** `guestTypesV2` (default off): also draw the extra guest types of config/guestTypes.ts. Off = the six core types only, draws identical to before. */
+  typesV2 = false;
+  /** Career level for the extra types' `minLevel` (createSim wires the progression; default = max, i.e. no gate). */
+  levelFn: () => number = () => 99;
   /** Live marketing provider (campaigns); default = the `marketing` field. */
   marketingFn: (() => MarketingState) | null = null;
   /** Price elasticity + calendar demand (replaces the fixed-ticket stub when set). */
@@ -100,6 +118,7 @@ export class Spawner {
   private report: ArrivalReport | null = null;
   private stats: ResortStats = { openLifts: 0, openPisteTiles: 0, attractions: 0, amenityVariety: 0 };
   private lodging = 0;
+  private placed = new Set<string>();
   private modeLoad = [0, 0, 0];
   private lastRate = 0;
   private lastAttr = 0;
@@ -119,7 +138,12 @@ export class Spawner {
     this.report = evaluateArrivals(this.world);
     this.stats = this.world.stats();
     this.lodging = 0;
-    for (const b of this.world.buildings()) if (b.active && BUILDINGS[b.type]?.category === 'lodging') this.lodging += BUILDINGS[b.type]!.capacity;
+    this.placed.clear();
+    const wantIds = this.typesV2 && GUEST_TYPE_DEFS.length > 0;
+    for (const b of this.world.buildings()) {
+      if (b.active && BUILDINGS[b.type]?.category === 'lodging') this.lodging += BUILDINGS[b.type]!.capacity;
+      if (wantIds && b.active) this.placed.add(b.type);
+    }
     this.modeLoad = [0, 0, 0];
     const s = this.store;
     for (let i = 0; i < s.limit; i++) if (s.alive[i]) this.modeLoad[s.mode[i]!]!++;
@@ -162,8 +186,31 @@ export class Spawner {
       tot += v; return v;
     });
     let u = state.rng.next() * tot;
-    for (let k = 0; k < ws.length; k++) { u -= ws[k]!; if (u < 0) return k; }
-    return GuestType.Solo;
+    let core: number = GuestType.Solo;
+    for (let k = 0; k < ws.length; k++) { u -= ws[k]!; if (u < 0) { core = k; break; } }
+    return this.typesV2 && GUEST_TYPE_DEFS.length ? this.maybeExtra(state, season, tot, mk, core) : core;
+  }
+
+  /**
+   * Extra types (guestTypesV2): the core draw above ALWAYS happens first, so state.rng stays aligned; here a separate hash stream decides whether the
+   * arrival is an extra type instead. P(extra i) = w_i / (core total + sum w): season share x weather x mix bias x marketing segment x price, gated by
+   * level + required buildings. No eligible type = the core type is returned untouched.
+   */
+  private maybeExtra(state: GameState, season: SeasonId, coreTotal: number, mk: MarketingState, core: number): number {
+    const ctx = { season, level: this.levelFn(), hasBuilding: (id: string) => this.placed.has(id), weather: this.world.weather().kind };
+    let sum = 0;
+    const ws: number[] = [];
+    for (let j = 0; j < GUEST_TYPE_DEFS.length; j++) {
+      const t = CORE_TYPE_COUNT + j, d = GUEST_TYPE_DEFS[j]!, seg = segmentIndex(t);
+      let w = extraWeight(d, ctx);
+      if (w > 0) w *= (this.mixBias?.[t] ?? 1) * (mk.weights[GUEST_TYPE_NAMES[seg]!] ?? 1) * (this.pricingDemand?.typeWeight(seg) ?? 1);
+      ws.push(w); sum += w;
+    }
+    if (sum <= 0) return core;
+    let u = hash01(state.date.year * DAYS_PER_YEAR + state.date.day, state.date.tick, this.nextGroup) * (coreTotal + sum);
+    if (u >= sum) return core;
+    for (let j = 0; j < ws.length; j++) { u -= ws[j]!; if (u < 0) return CORE_TYPE_COUNT + j; }
+    return core;
   }
 
   private modeOk(p: ArrivalPoint, extra: number): boolean { return p.available && this.modeLoad[p.mode]! + extra <= p.capacity; }
@@ -172,7 +219,7 @@ export class Spawner {
   private spawnVehicle(state: GameState, season: SeasonId, r: ArrivalReport): number {
     const rng = state.rng;
     const type = this.pickType(state, season, r);
-    const [gmin, gmax] = GROUP[type]!;
+    const [gmin, gmax] = groupOf(type);
     let size = rng.int(gmin, gmax);
     let kind: number = VehicleKind.Car;
     let riders = [type];
@@ -226,7 +273,7 @@ export class Spawner {
     let added = 0;
     while (this.store.count < target && added < perCall) {
       const type = this.pickType(state, season, r);
-      const [gmin, gmax] = GROUP[type]!;
+      const [gmin, gmax] = groupOf(type);
       const size = state.rng.int(gmin, gmax);
       const v = { id: 0, kind: VehicleKind.Car, mode: Mode.Road, pts: [], cum: [0], dist: 0, speed: 0, riders: Array.from({ length: size }, () => type), group: this.nextGroup++, dest: 0, alt: 0 } as Vehicle;
       this.materialise(state, v, e.x + 0.5, e.y + 0.5);
@@ -269,10 +316,10 @@ export class Spawner {
     const absDay = state.date.year * DAYS_PER_YEAR + state.date.day;
     const ticket = this.world.ticketAtEntrance?.() === false ? 0 : (this.world.dayTicketPrice?.() ?? this.prices.dayTicket);
     for (const type of v.riders) {
-      const [b0, b1] = BUDGET[type]!;
+      const [b0, b1] = budgetOf(type);
       const budget = b0 + rng.next() * (b1 - b0) - ticket;
       const free = this.lodging - this.store.overnightCount;
-      const overnight = free > 0 && rng.chance(OVERNIGHT_P[type]!);
+      const overnight = free > 0 && rng.chance(overnightOf(type));
       const gx = x + (rng.next() - 0.5) * 1.2, gy = y + (rng.next() - 0.5) * 1.2;
       const slot = this.store.add({
         x: gx, y: gy, z: this.world.groundAt(gx, gy), type, skill: skillFor(type, rng.next()), budget, group: v.group, mode: v.mode,

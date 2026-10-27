@@ -5,8 +5,9 @@ import type { GuestStore } from '@/sim/guests/Guest';
 import { GState, WP_MAX } from '@/sim/guests/Guest';
 import { pathPoint, type Pt2 } from './guestPath';
 import {
-  appearanceOf, BOTTOM_COLORS, CLOTH_COLORS, Gear, GEAR_COUNT, gearFor, HAIR_COLORS, outfitFor, POSE, rand01, SKIN_TONES, UsingKind, type Appearance,
+  appearanceOf, BOTTOM_COLORS, CLOTH_COLORS, Gear, GEAR_COUNT, gearFor, typeGearOf, typeOutfitOf, HAIR_COLORS, outfitFor, POSE, rand01, SKIN_TONES, UsingKind, type Appearance,
 } from './guestAppearance';
+import { coreOf, extraDef } from '../config/guestTypes';
 import { LOD_HYSTERESIS, schmitt } from './lodSelect';
 import { ARM_PIVOT_Y, BIKE_WHEEL_R, BIKE_WHEEL_Z, buildGearGeometry, HIP_PIVOT } from './meshes/Figures';
 
@@ -144,6 +145,13 @@ export class GuestRenderer {
   private pointPos: Float32Array;
   private pointCol: Float32Array;
   private colors: THREE.Color[] = GUEST_COLORS.map((c) => new THREE.Color(c));
+  /** Impostor / legend colour of an extra guest type (look hook, else its fallback core type's colour); cached in `colors`. */
+  private extraColour(type: number): THREE.Color {
+    const d = extraDef(type);
+    const c = new THREE.Color(d?.look?.colour ?? GUEST_COLORS[coreOf(type)] ?? GUEST_COLORS[0]);
+    this.colors[type] = c;
+    return c;
+  }
   /** Slots currently drawn (index -> slot), for picking. */
   private drawn: Int32Array;
   drawnCount = 0;
@@ -307,7 +315,7 @@ export class GuestRenderer {
         if (cx > m || cx < -m || cy > m || cy < -m || (persp && (cw > this.perspectiveRange || cw < -1))) { skipped++; continue; }
       }
       if (far) {
-        const c = this.colors[s.type[i]!]!;
+        const c = this.colors[s.type[i]!] ?? this.extraColour(s.type[i]!);
         this.pointPos[n * 3] = x; this.pointPos[n * 3 + 1] = z + 0.3; this.pointPos[n * 3 + 2] = y;
         this.pointCol[n * 3] = c.r; this.pointCol[n * 3 + 1] = c.g; this.pointCol[n * 3 + 2] = c.b;
         this.drawn[n++] = i;
@@ -327,7 +335,7 @@ export class GuestRenderer {
       }
       const state = s.state[i]!;
       const uk = state === GState.Using && this.usingKind ? this.usingKind(i) : UsingKind.Other;
-      const gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk);
+      const gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!));
       const P = POSE[gear]!;
       this.dist[i] = this.dist[i]! + (spd * GAIT_RATE + (P.still ? STILL_RATE : 0)) * dt;
       let bt = B[gear]!;
@@ -353,7 +361,7 @@ export class GuestRenderer {
       const q = k * 4, ap = i * 12;
       bt.a[q] = this.app[ap]!; bt.a[q + 1] = this.app[ap + 1]!; bt.a[q + 2] = this.app[ap + 2]!; bt.a[q + 3] = this.app[ap + 3]!;
       const flags = this.app[ap + 7]!;
-      const outfit = outfitFor(gear, winter, uk === UsingKind.Beach);
+      const outfit = outfitFor(gear, winter, uk === UsingKind.Beach, typeOutfitOf(s.type[i]!));
       const pack = gear === Gear.Hike || gear === Gear.Bike ? 1 : gear === Gear.Lie || gear === Gear.Sit ? 0 : flags % 2;
       bt.b[q] = this.app[ap + 4]!; bt.b[q + 1] = this.app[ap + 5]!; bt.b[q + 2] = this.app[ap + 6]!; bt.b[q + 3] = pack + (flags >= 2 ? 2 : 0) + outfit * 4;
       bt.c[q] = this.dist[i]!; bt.c[q + 1] = spd; bt.c[q + 2] = this.app[ap + 8]!; bt.c[q + 3] = this.app[ap + 9]!;

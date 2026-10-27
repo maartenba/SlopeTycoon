@@ -1,5 +1,5 @@
 import { Act } from '@/sim/guests/Decision';
-import { GUEST_TYPE_NAMES, GState, SKILL_NAMES, type GuestStore } from '@/sim/guests/Guest';
+import { GState, SKILL_NAMES, typeKey, typeLabel, type GuestStore } from '@/sim/guests/Guest';
 import { contextThoughts, thoughts, type ThoughtCtx } from '@/sim/guests/Needs';
 
 export interface GuestInspectorModel {
@@ -34,7 +34,7 @@ export function guestInspectorModel(s: GuestStore, slot: number, extra: { story?
   const th = [...contextThoughts(ctx), ...thoughts(s, slot)];
   return {
     id: s.id[slot]!, title: extra.story ? extra.story.name : `Guest #${s.id[slot]}`, story: extra.story ?? null,
-    type: GUEST_TYPE_NAMES[s.type[slot]!] ?? 'guest', skill: SKILL_NAMES[s.skill[slot]!] ?? 'beginner',
+    type: s.type[slot]! < 6 ? typeKey(s.type[slot]!) : typeLabel(s.type[slot]!), skill: SKILL_NAMES[s.skill[slot]!] ?? 'beginner',
     bars: [
       { id: 'hunger', label: 'Hunger', value: s.hunger[slot]!, text: pct(s.hunger[slot]!), good: 'low' },
       { id: 'fatigue', label: 'Fatigue', value: s.fatigue[slot]!, text: pct(s.fatigue[slot]!), good: 'low' },

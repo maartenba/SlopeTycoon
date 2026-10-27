@@ -1,4 +1,4 @@
-import { GState, Leave, GuestStore, SKILL_NAMES, GUEST_TYPE_NAMES, GSTATE_NAMES } from './Guest';
+import { GState, Leave, GuestStore, SKILL_NAMES, GSTATE_NAMES, typeKey } from './Guest';
 
 /** Per-tick need growth (240 ticks = one in-game day). */
 export const NEEDS = {
@@ -76,7 +76,7 @@ export function thoughts(s: GuestStore, i: number): string[] {
 export function describeGuest(s: GuestStore, i: number): string {
   const f = (v: number): string => `${Math.round(v * 100)}%`;
   return [
-    `Guest #${s.id[i]} · ${GUEST_TYPE_NAMES[s.type[i]!]} · ${SKILL_NAMES[s.skill[i]!]} · ${GSTATE_NAMES[s.state[i]!]}`,
+    `Guest #${s.id[i]} · ${typeKey(s.type[i]!)} · ${SKILL_NAMES[s.skill[i]!]} · ${GSTATE_NAMES[s.state[i]!]}`,
     `Happiness ${f(s.happiness[i]!)} · Hunger ${f(s.hunger[i]!)} · Fatigue ${f(s.fatigue[i]!)} · Budget ${Math.round(s.budget[i]!)}`,
     `Runs ${s.runs[i]} · ${ACT_NAMES[s.act[i]!] ?? 'idle'}${s.state[i] === GState.Queueing ? ' (in lift queue)' : ''}`,
     ...thoughts(s, i),

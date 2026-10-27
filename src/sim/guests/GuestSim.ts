@@ -11,7 +11,7 @@ import type { LiftData } from '../Lift';
 import type { SimSystem } from '../Systems';
 import type { GuestAttractionPort } from './AttractionPort';
 import { Act, Decider, FOOD, type Intent, REST } from './Decision';
-import { eventReason, GState, GuestStore, GuestType, Leave } from './Guest';
+import { coreOf, eventReason, GState, GuestStore, GuestType, Leave } from './Guest';
 import { Mode } from './Guest';
 import type { GuestWorld, WorldBuilding } from './GuestWorld';
 import { LiftQueues, type RideKind } from './LiftQueue';
@@ -312,7 +312,7 @@ export class GuestSim {
 
   private patienceOf(i: number): number {
     const s = this.store;
-    const t = s.type[i] === GuestType.VIP ? 0.7 : s.type[i] === GuestType.Budget ? 1.3 : 1;
+    const ct = coreOf(s.type[i]!), t = ct === GuestType.VIP ? 0.7 : ct === GuestType.Budget ? 1.3 : 1;
     return LIFT_PATIENCE_TICKS * this.patienceMult * t * (0.6 + 0.8 * s.happiness[i]!);
   }
 

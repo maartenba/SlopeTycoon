@@ -110,6 +110,8 @@ export interface SimOptions {
   rivalMarket?: boolean;
   /** Story guests (named guests with one wish; sim/guests/Stories.ts). The game turns them on; headless sims / tests default to off. */
   stories?: boolean;
+  /** Guest-type framework (Task 9): also draw the extra guest types of config/guestTypes.ts (season shares, level + building gates). Default off = the six core types only (goldens). */
+  guestTypesV2?: boolean;
   /** Starting money override (tests). */
   money?: number;
   /** Place the free starting Base Lodge (default true). */
@@ -363,6 +365,8 @@ export function createSim(opts: SimOptions) {
   registerGuestSystems(registry, guestSim);
 
   // ---- Operations AI: piste quality, nightly grooming, hourly snowmaking ----
+  guestSim.spawner.typesV2 = opts.guestTypesV2 === true;
+  guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   const ops: Ops = createOps({
     grid, cond, weather, snow, coverage, net: networks, buildings: () => buildings.all(), bus, reservoirs,
     onCost: (c, a) => { economy.spend(c === 'energy' ? 'snowmaking' : c === 'wages' ? 'staff' : 'upkeep', a); },

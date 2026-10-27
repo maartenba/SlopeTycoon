@@ -3,6 +3,8 @@
 export const GuestType = { Solo: 0, Couple: 1, Family: 2, VIP: 3, Budget: 4, Adventure: 5 } as const;
 export const GUEST_TYPE_NAMES = ['solo', 'couple', 'family', 'vip', 'budget', 'adventure'] as const;
 export type GuestTypeName = (typeof GUEST_TYPE_NAMES)[number];
+/** Extensible type helpers (extra types from config/guestTypes.ts; identity / the old names for the six core types). */
+export { coreOf, typeKey, typeLabel, guestTypeCount } from '../../config/guestTypes';
 
 export const Skill = { Beginner: 0, Intermediate: 1, Advanced: 2, Expert: 3 } as const;
 export const SKILL_NAMES = ['beginner', 'intermediate', 'advanced', 'expert'] as const;

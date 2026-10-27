@@ -1,6 +1,8 @@
 /** Pure (no three / DOM) guest appearance + gear derivation. Everything is a deterministic function of (guest id, type, season / state),
  *  so nothing extra is persisted: save games keep working and a guest always looks the same. */
 
+import { coreOf, extraDef, type TypeGear } from '../config/guestTypes';
+
 /** sRGB hex palettes (the renderer converts them to linear uniform arrays). */
 export const SKIN_TONES = [0xf6d9c4, 0xefc7a3, 0xe0ac82, 0xc98e61, 0xa8693f, 0x8a4f2c, 0x6a3a20, 0x4a2815] as const;
 export const SKIN_NAMES = ['very light', 'light', 'light-medium', 'tan', 'medium-brown', 'brown', 'dark brown', 'deep brown'] as const;
@@ -52,8 +54,9 @@ function pick(r: number, w: readonly number[]): number {
 }
 
 /** Age class from id + type; `kid` (when the family system knows) overrides it. */
-export function ageOf(id: number, type: number, kid?: boolean): number {
+export function ageOf(id: number, rawType: number, kid?: boolean): number {
   if (kid === true) return Age.Child;
+  const type = coreOf(rawType); // extra guest types look like their fallback core type unless a look hook says otherwise
   const r = rand01(id, 11);
   if (type === 2) return kid === false ? (r < 0.12 ? Age.Teen : Age.Adult) : r < 0.36 ? Age.Child : r < 0.46 ? Age.Teen : Age.Adult;
   if (type === 5) return r < 0.12 ? Age.Teen : Age.Adult;
@@ -88,7 +91,7 @@ export function appearanceOf(id: number, type: number, winter: boolean, kid?: bo
   else if (skin >= 5) hair = hr < 0.75 ? 0 : 1;
   else if (skin >= 3) hair = hr < 0.55 ? 0 : hr < 0.85 ? 1 : hr < 0.95 ? 2 : 3;
   else hair = pick(hr / 0.97, [0.14, 0.2, 0.2, 0.14, 0.26, 0.03, 0.03]);
-  const typeTop = TYPE_TOP[type] ?? 7;
+  const typeTop = type < TYPE_TOP.length ? TYPE_TOP[type]! : extraDef(type)?.look?.top ?? TYPE_TOP[coreOf(type)] ?? 7;
   const top = rand01(id, 4) < 0.45 ? typeTop : DISTRICT_TOPS && rand01(id, 14) < 0.5 ? DISTRICT_TOPS[Math.floor(rand01(id, 15) * DISTRICT_TOPS.length)]! : Math.floor(rand01(id, 6) * 16);
   out.female = female; out.age = age; out.skin = skin; out.hair = hair;
   out.build = age === Age.Child ? 1 : pick(rand01(id, 7), [0.3, 0.5, 0.2]);
@@ -124,22 +127,28 @@ export const UsingKind = { Other: 0, Rink: 1, Beach: 2 } as const;
 const ST_RIDING = 5, ST_USING = 6, ST_INJURED = 7, ST_QUEUEING = 4;
 const NM_HIKE = 1, NM_BIKE = 2, NM_SKI0 = 3;
 
+/** Snow gear a guest TYPE insists on (config look hook), or undefined = the per-guest cosmetic below. */
+export const typeGearOf = (type: number): TypeGear | undefined => (type < 6 ? undefined : extraDef(type)?.look?.gear);
+/** Forced outfit of a guest type (look hook), or undefined = by season / state. */
+export const typeOutfitOf = (type: number): number | undefined => (type < 6 ? undefined : extraDef(type)?.look?.outfit);
+
 /** Boarders vs skiers: stable per guest (~30% boards). */
 export const isBoarder = (id: number): boolean => rand01(id, 21) < BOARDER_SHARE;
 
 /** Gear/pose batch for a guest from its sim state. Skis/boards only while the movement mode is a ski mode (on snow); lifts = seated; rink = skates; beach = lying. */
-export function gearFor(state: number, moveMode: number, id: number, usingKind: number = UsingKind.Other): number {
+export function gearFor(state: number, moveMode: number, id: number, usingKind: number = UsingKind.Other, typeGear?: TypeGear): number {
   if (state === ST_INJURED) return Gear.Lie;
   if (state === ST_RIDING) return Gear.Sit;
   if (state === ST_USING) return usingKind === UsingKind.Rink ? Gear.Skate : usingKind === UsingKind.Beach ? Gear.Lie : Gear.Walk;
-  if (moveMode >= NM_SKI0) return isBoarder(id) ? Gear.Board : Gear.Ski;
+  if (moveMode >= NM_SKI0) return typeGear ? (typeGear === 'board' ? Gear.Board : Gear.Ski) : isBoarder(id) ? Gear.Board : Gear.Ski;
   if (moveMode === NM_BIKE) return Gear.Bike;
   if (moveMode === NM_HIKE) return Gear.Hike;
   void ST_QUEUEING;
   return Gear.Walk;
 }
 
-export function outfitFor(gear: number, winter: boolean, usingBeach: boolean): number {
+export function outfitFor(gear: number, winter: boolean, usingBeach: boolean, forced?: number): number {
+  if (forced !== undefined) return forced;
   if (gear === Gear.Ski || gear === Gear.Board || gear === Gear.Skate) return Outfit.Warm;
   if (gear === Gear.Lie && !winter && usingBeach) return Outfit.Swim;
   return winter ? Outfit.Warm : Outfit.Summer;

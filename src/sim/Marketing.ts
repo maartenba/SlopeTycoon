@@ -1,3 +1,4 @@
+import { segmentIndex } from '../config/guestTypes';
 import { CAMPAIGNS, GUEST_TYPE_KEYS, MARKETING, PREREQ_GRACE_DAYS, type CampaignDef, type FacilityId, type GuestTypeKey, type Prereq, type PrereqId, type SeasonKey } from '../config/marketing';
 import { sentence } from '../ui/text';
 import { DAYS_PER_YEAR } from '../config/balance';
@@ -169,7 +170,8 @@ export class Marketing {
   }
 
   /** Count one arriving guest (type index in GUEST_TYPE_KEYS order). Call from the guest:arrived hook. */
-  recordArrival(type: number): void {
+  recordArrival(rawType: number): void {
+    const type = segmentIndex(rawType); // extra guest types count under their marketing segment
     this.rollover();
     const l = this.log[this.log.length - 1]!;
     l.total++; l.byType[type] = (l.byType[type] ?? 0) + 1;

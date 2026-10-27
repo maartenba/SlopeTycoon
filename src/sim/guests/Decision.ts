@@ -2,7 +2,7 @@ import { BUILDINGS } from '../../config/buildings';
 import { LIFTS } from '../../config/lifts';
 import { Layer } from '../../world/Networks';
 import type { LiftData } from '../Lift';
-import { GuestType, type GuestStore } from './Guest';
+import { coreOf, GuestType, type GuestStore } from './Guest';
 import type { WorldBuilding } from './GuestWorld';
 import { NavMode, type NavGraph } from './NavGraph';
 import type { DecisionPort } from './AttractionPort';
@@ -64,7 +64,8 @@ export function snowPreference(skill: number, depth: number): number {
 /** Deterministic activity preference from guest id and type. */
 export function prefFor(id: number, type: number): number {
   const h = (Math.imul(id, 2654435761) >>> 0) % 100;
-  const [hike, bike] = type === GuestType.Adventure ? [5, 15] : type === GuestType.Family ? [30, 20] : [15, 15];
+  const ct = coreOf(type);
+  const [hike, bike] = ct === GuestType.Adventure ? [5, 15] : ct === GuestType.Family ? [30, 20] : [15, 15];
   return h < hike ? Pref.Hike : h < hike + bike ? Pref.Bike : Pref.Ski;
 }
 
@@ -303,10 +304,10 @@ export class Decider {
       const lift = this.pickSkiLift(skill, x, y, rng, i)!;
       out.push({
         kind: 'ski', lift, score: (pref === Pref.Ski ? 1.1 : 0.3) - 0.7 * fatigue + 0.25 * snowPreference(skill, lift.topDepth) + 0.2 * this.pisteQualityScore(skill) + noise(),
-        offPiste: (skill >= 3 || (skill >= 2 && s.type[i] === GuestType.Adventure)) && lift.topDepth > 0.9 && rng.chance(0.25 * this.offPisteScale()),
+        offPiste: (skill >= 3 || (skill >= 2 && coreOf(s.type[i]!) === GuestType.Adventure)) && lift.topDepth > 0.9 && rng.chance(0.25 * this.offPisteScale()),
       });
     }
-    if (this.hikeTiles.length && this.port?.bedsFree && this.useGoals && s.budget[i]! > 60 && hour < this.leaveHour - 3.2 && (s.type[i] === GuestType.Solo || s.type[i] === GuestType.Couple || s.type[i] === GuestType.Adventure)
+    if (this.hikeTiles.length && this.port?.bedsFree && this.useGoals && s.budget[i]! > 60 && hour < this.leaveHour - 3.2 && (coreOf(s.type[i]!) === GuestType.Solo || coreOf(s.type[i]!) === GuestType.Couple || coreOf(s.type[i]!) === GuestType.Adventure)
       && (Math.imul(s.id[i]! + 17, 2246822519) >>> 0) % 100 < this.trekShare && this.canTrek(s.id[i]!)) {
       let hut: WorldBuilding | undefined, best = -Infinity;
       for (const b of this.huts) {

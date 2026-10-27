@@ -1,5 +1,5 @@
 import { EVENING } from '../config/balance';
-import { GuestType } from './guests/Guest';
+import { coreOf, GuestType } from './guests/Guest';
 import { summerness } from './Daylight';
 
 /** Pure evening / après-ski model (no RNG: everything derives from guest id + day). See docs/balance.md "Evenings". */
@@ -42,4 +42,4 @@ export function isApres(id: number, type: number, day: number): boolean {
 /** Hour an après guest finally heads home (19:00-20:00 in winter). */
 export const apresEnd = (id: number, day: number): number => lerp(EVENING.apresEndWinter, EVENING.apresEndSummer, day) + hash(id, 104729) / 100;
 /** Extra pull of the evening for a guest type (couples, VIPs and adventurers like a night out). */
-export const eveningTypeBias = (type: number): number => (type === GuestType.Couple || type === GuestType.VIP || type === GuestType.Adventure ? 0.25 : type === GuestType.Budget ? -0.2 : 0);
+export const eveningTypeBias = (type: number): number => { const t = coreOf(type); return t === GuestType.Couple || t === GuestType.VIP || t === GuestType.Adventure ? 0.25 : t === GuestType.Budget ? -0.2 : 0; };

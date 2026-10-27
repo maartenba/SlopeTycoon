@@ -1,6 +1,6 @@
 import { Layer } from '../../world/Networks';
 import type { LiftInfo } from './Decision';
-import { GuestType } from './Guest';
+import { coreOf, GuestType } from './Guest';
 import { NavMode, type NavGraph } from './NavGraph';
 import { EXC, plannedHours } from './Excursion';
 
@@ -107,7 +107,7 @@ export class TrailGoals {
     const topRel = lift ? this.rel(g, liftTop) : 0;
     const wantLift = !!lift && topRel - here >= T.minLiftGain && c.wait(lift.lift.id) < 80 && rng.chance(T.liftFirstChance);
     const sx = wantLift ? lift!.lift.top.x : c.x, sy = wantLift ? lift!.lift.top.y : c.y, sRel = wantLift ? topRel : here;
-    const hiker = c.pref === 1 || c.type === GuestType.Adventure;
+    const hiker = c.pref === 1 || coreOf(c.type) === GuestType.Adventure;
     const fit = 0.85 + 0.1 * c.skill - 0.2 * c.fatigue;
     const scored: GoalPick[] = [];
     const cands = bike ? this.mtb.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 0 as const })) : this.pois;

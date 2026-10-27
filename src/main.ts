@@ -144,6 +144,7 @@ import type { GameEvents } from '@/core/events';
 import { AttractionSystem } from '@/sim/attractions/AttractionSystem';
 import { AttractionActivity, type ActivityView } from '@/render/AttractionActivity';
 import { GState } from '@/sim/guests/Guest';
+import { guestTypeBreakdown } from '@/sim/guests/TypeBreakdown';
 import { Act } from '@/sim/guests/Decision';
 import { guestInspectorModel } from '@/ui/guestInfo';
 import type { StGuestInspector } from '@/ui/components/StGuestInspector';
@@ -2607,7 +2608,7 @@ if (ui && !DEMO) {
   }, 0);
   rightCol.append(hud, speedEl, status, goalsEl, ...(scen ? [scenCard] : []), inspector, pisteInspector, guestInsp);
   const statsEl = el('st-stats');
-  statsRef = statsEl; statsEl.bind({ history: () => sim.stats });
+  statsRef = statsEl; statsEl.bind({ history: () => sim.stats, guestTypes: () => guestTypeBreakdown(sim.guestSim.store) });
   { const open = statsEl.open.bind(statsEl); let first = true; statsEl.open = (): void => { open(); if (first) { first = false; analytics().track('feature_first_use', { feature: 'stats' }); } }; }
   const trophiesEl = el('st-trophies');
   trophiesEl.bind(trophiesApiFromProfile(profileStore(), { run: () => ach.serializeRun(), runKind: () => (sim.scenario && !sim.scenario.sandbox ? 'scenario' : sim.progression.mode) }));

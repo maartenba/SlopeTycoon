@@ -1,9 +1,10 @@
 import type { StatsHistory } from '@/sim/meta/StatsHistory';
+import type { TypeRow } from '@/sim/guests/TypeBreakdown';
 import { Modal } from '../modal';
 import { LINE, STATS_RANGES, compact, money, niceAxis, revenueSeries, statsFrame, type StatsFrame, type StatsRangeId } from '../statsFormat';
 import { StElement } from './StElement';
 
-export interface StatsApi { history(): StatsHistory }
+export interface StatsApi { history(): StatsHistory; /** Live guests by type (Task 9); optional: the card is skipped without it. */ guestTypes?(): TypeRow[] }
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''): HTMLElementTagNameMap[K] => {
   const e = document.createElement(tag);
@@ -98,6 +99,7 @@ th,td{text-align:right;padding:2px 6px;border-bottom:1px solid #2a394e;white-spa
       { label: 'Sustainability', color: LINE.sustain, values: sus.map((v) => v / 20), dash: true, fmt: (v) => `${Math.round(v * 20)} / 100` },
     ], `${lastOf(stars).toFixed(1)} \u2605`, { min: 0, max: 5, right: (v) => `${Math.round(v * 20)}`, fixedStep: 1 });
     this.addRevenue(grid, rev, f);
+    this.addTypes(grid);
     body.append(grid, this.table());
     requestAnimationFrame(() => this.drawAll(-1));
     this.drawAll(-1);
@@ -145,6 +147,26 @@ th,td{text-align:right;padding:2px 6px;border-bottom:1px solid #2a394e;white-spa
       rows: () => [...rev.map((r) => ({ label: `Revenue: ${r.label}`, cells: r.values.map((v) => money(v)) })), { label: 'Revenue: total', cells: totals.map((v) => money(v)) }],
     };
     this.wire(p); this.panels.push(p);
+  }
+
+  /** Live guests by type: a small table card (no chart: it is a snapshot, not a history). Hidden while nobody is in the resort. */
+  private addTypes(grid: HTMLElement): void {
+    const rows = this.api?.guestTypes?.() ?? [];
+    const total = rows.reduce((s, r) => s + r.count, 0);
+    if (!rows.length) return;
+    const c = el('div', 'card'); c.dataset.chart = 'types';
+    const head = el('h3'); head.append(el('span', '', 'Guests by type'), el('span', 'big', total.toLocaleString('en-US')));
+    c.append(head, el('div', 'hint', 'In the resort right now'));
+    const t = document.createElement('table'); t.className = 'types';
+    const tb = document.createElement('tbody');
+    for (const r of rows) {
+      if (r.count === 0 && r.type < 6) continue;
+      const tr = document.createElement('tr');
+      tr.append(el('td', '', r.label), el('td', '', String(r.count)), el('td', '', `${Math.round(r.share * 100)}%`), el('td', '', r.count ? `${Math.round(r.happiness * 100)}% happy` : '-'));
+      tb.append(tr);
+    }
+    if (!tb.children.length) tb.append(Object.assign(document.createElement('tr'), { innerHTML: '<td>Nobody here yet</td>' }));
+    t.append(tb); c.append(t); grid.append(c);
   }
 
   private wire(p: Panel): void {
