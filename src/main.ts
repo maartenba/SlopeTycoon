@@ -188,15 +188,18 @@ import { t as tr } from '@/tutorial/strings';
 import { ADVISOR_UI } from '@/sim/advisor/strings';
 import { formatRecap, shouldShowRecap, wireMonthCard, type RecapModel } from '@/ui/recap';
 import { sessionIssues } from '@/game/sessionIssues';
+import { bootStage, bootFail, bootFailed, bootDone, bootPause, bootPaint } from '@/ui/bootProgress';
 
 /** Boot splash (index.html #splash): fades out and is removed once the menu / game is up. pointer-events:none as soon as it starts fading. */
 function hideSplash(): void {
   const sp = document.getElementById('splash');
-  if (!sp) return;
+  if (!sp || bootFailed()) return; // an error state stays up (reload button)
+  bootDone();
   sp.classList.add('done');
   window.setTimeout(() => sp.remove(), 500);
 }
 window.setTimeout(hideSplash, 20000); // safety net: never leave it up
+bootStage('module');
 const params = new URLSearchParams(window.location.search);
 // New-game options (Task 35): `?size=&seed=&start=&preset=&difficulty=&money=&radius=&loan=&starter=&hints=` (old params keep working).
 const { config: CFG, explicit: CFG_EXPLICIT } = parseConfig(params);
@@ -216,6 +219,8 @@ const rightCol = document.createElement('div'); rightCol.id = 'right-col';
 ui?.append(rightCol);
 
 function showFatal(msg: string): void {
+  bootFail(msg);
+  if (document.getElementById('splash')) return;
   const el = document.createElement('div');
   el.setAttribute('role', 'alert');
   el.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px sans-serif;color:#fff;background:#222;z-index:210';
@@ -314,8 +319,20 @@ async function showMainMenu(): Promise<void> {
   watchInstall(window, (install) => h.menu.setInstall(install ? () => { void install(); } : null));
 }
 void (async () => {
+  try {
+    await bootPause(params);
+    if (params.has('bootfail') && import.meta.env.DEV) throw new Error('bootfail test');
+    bootStage('fonts');
+    await Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => window.setTimeout(r, 1500))]);
+    await bootPause(params);
+    bootStage('renderer');
+    await bootPaint();
+    await bootMain();
+  } catch (e) { console.error(e); bootFail('The game hit an error while starting. Reloading usually fixes it.'); }
+})();
+async function bootMain(): Promise<void> {
   if (UIKIT_MODE) { if (ui) (await import('@/ui/uikit')).mountUiKit(ui, params.get('uikit') ?? '1'); hideSplash(); return; }
-  if (MENU_MODE) { try { await showMainMenu(); } catch (e) { console.error(e); showFatal('Could not show the menu. Try ?size=128&seed=1 to start directly.'); } requestAnimationFrame(() => hideSplash()); return; }
+  if (MENU_MODE) { bootStage('world'); await bootPause(params); await bootPaint(); try { await showMainMenu(); } catch (e) { console.error(e); showFatal('Could not show the menu. Try ?size=128&seed=1 to start directly.'); } requestAnimationFrame(() => hideSplash()); return; }
   const r = await resolveBootSave(saveBackend, params);
   bootSave = r.save; bootWarnings = r.warnings;
   if (bootSave) { MAP_SIZE = bootSave.env.mapSize; SEED = bootSave.env.seed; }
@@ -330,10 +347,11 @@ void (async () => {
     try { mountFallbackUi(); } catch (e) { console.error(e); }
     hideSplash();
   }
-  if (created) boot(created);
-})();
+  if (created) { bootStage('world'); await bootPause(params); await bootPaint(); boot(created); }
+}
 
 function boot(renderer: Renderer): void {
+bootStage('world');
 const demoBag = new DisposeBag(); // everything the title-screen demo owns (timers, sim, GL resources): disposed when a game starts
 // Touch input (docs/touch.md): registered FIRST so its window-capture listeners see touch pointers before any tool; tools/placement are only read lazily.
 const touchWire = wireTouch({
@@ -382,6 +400,7 @@ const water = new Water(grid, terrainInfo.lakes, terrainInfo.streams, renderer.s
 renderer.scene.add(water.group);
 
 const uniforms = createPropUniforms(renderer.sun.position);
+bootStage('trees');
 const trees = new TreeLayer(props, uniforms);
 const rocks = new RockLayer(props, uniforms);
 renderer.scene.add(trees.group, rocks.group);
@@ -973,6 +992,7 @@ if (!bootSave?.env.meta.camera) {
   ctl.zoomBy(1); // clamps to min/max zoom
 }
 
+bootStage('lifts');
 const liftTools = liftToolsRef = safely('Lifts', () => registerLiftTools({ lifts,
   grid, props, economy, scene: renderer.scene, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays, ui, frame: renderer,
   access: netTools?.networks.access, gate: sim.gate, buildings,
@@ -2717,6 +2737,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 (window as unknown as { __slope: unknown }).__slope = { select, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+bootStage('frame');
 hideSplash();
 
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {

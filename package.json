@@ -33,6 +33,7 @@
     "analysis:hiking:report": "vite-node scripts/analysis/hikingReport.ts",
     "test:perf": "PERF=1 vitest run --config vitest.perf.config.ts",
     "test:all": "npm test && npm run test:perf",
+    "boot:shots": "vite-node scripts/boot-shots.ts",
     "shot": "vite-node scripts/shot.ts",
     "flicker": "vite-node scripts/flicker-test.ts",
     "audio:render": "vite-node scripts/audio-render.ts",

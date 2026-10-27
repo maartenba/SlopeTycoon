@@ -2,6 +2,10 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+- **Loading indicator on the splash**: a slim progress bar with stage text ("Loading the mountain…", "Carving the terrain…", "Planting trees…", "Warming up the lifts…") driven by real boot stages (`src/ui/bootProgress.ts`, pure DOM, inline CSS in `index.html`, no layout shift, works offline). Indeterminate fallback, a slow-load hint after 8 s, an error state with a Reload button if boot throws, reduced-motion respected, `role=progressbar` + polite live text, smooth fade-out. New Game / Continue reuse it (they reload into the same boot). Dev: `?bootdelay=ms`, `?bootfail=1`, `npm run boot:shots`.
+
 ## [0.2.1] - 2026-10-27 (pre-release)
 
 Changes since 0.2.0. Still a pre-release; not 1.0.
