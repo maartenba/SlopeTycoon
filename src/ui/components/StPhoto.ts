@@ -21,6 +21,9 @@ export interface PhotoPanelApi {
   /** The in-game hour currently shown (used by the time slider while following the game clock). */
   hourNow(): number;
   hero(): void;
+  /** Viewpoint photo spots (Phase 6 Task 6): how many there are, and frame the next one. Absent / 0 = no button. */
+  spotCount?(): number;
+  spot?(): void;
   canFollow(): boolean;
   following(): boolean;
   follow(on: boolean): void;
@@ -202,6 +205,7 @@ input[type=range]{width:100%;box-sizing:border-box}
     const hero = this.el('button', '', 'Hero shot'); hero.type = 'button'; hero.title = 'Frame the village from a pleasing angle'; hero.addEventListener('click', () => { api.hero(); this.refreshFollow(); });
     this.followBtn = this.el('button', '', 'Follow guest'); this.followBtn.type = 'button'; this.followBtn.title = 'Keep the ride-along guest in the frame'; this.followBtn.addEventListener('click', () => { api.follow(!api.following()); this.refreshFollow(); });
     presets.append(hero, this.followBtn);
+    if (api.spotCount && api.spotCount() > 0 && api.spot) { const vp = this.el('button', '', 'Viewpoint'); vp.type = 'button'; vp.title = 'Frame the next viewpoint, looking out over the valley'; vp.addEventListener('click', () => api.spot!()); presets.append(vp); }
     const fov = this.slider('Field of view', PHOTO_FOV_MIN, PHOTO_FOV_MAX, 1, () => s().fov, (v) => api.set({ fov: v }), (v) => `${Math.round(v)}°`);
     this.fovInput = fov.input; this.fovOut = fov.out;
     const keys = this.el('div', 'keys', 'Drag: orbit · right/middle drag or WASD: move · wheel: zoom · Q/E: height · Esc: exit');

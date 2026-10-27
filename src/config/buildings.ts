@@ -1,3 +1,5 @@
+import type { ViewpointSpec } from './viewpoints';
+
 export type BuildingCategory =
   | 'core' | 'services' | 'lodging' | 'kids' | 'safety' | 'operations'
   | 'snow' | 'water' | 'recreation' | 'transport' | 'misc' | 'energy';
@@ -24,6 +26,12 @@ export interface SiteRule {
   /** Mean footprint corner height bounds (half-steps). */
   minAltitude?: number;
   maxAltitude?: number;
+  /**
+   * Needs forest around it (treehouse): at least `minTrees` real trees within `radius` tiles of the footprint (Chebyshev ring, footprint included).
+   * Refused with 'Needs forest around it'. `keepTrees` (default true): the trees under the footprint and around it are NOT felled when placing.
+   * Without tree data in the placement env the rule cannot be judged and passes.
+   */
+  forest?: { minTrees: number; radius: number; keepTrees?: boolean };
 }
 
 /** Chimney top in building-local mesh coordinates: x/z from the footprint centre, y above ground (before rotation). Drives winter wood-fire smoke. */
@@ -79,6 +87,8 @@ export interface BuildingDef {
   coverageKind?: 'firstAid' | 'patrol' | 'grooming' | 'snowmaking' | 'warning' | 'heli' | 'wildlife' | 'pipe';
   /** Chimney top offset (see ChimneySpec). Only buildings with a wood fire / stove have one. */
   chimney?: ChimneySpec;
+  /** Viewpoint POI (Phase 6 Task 6, docs/viewpoints.md): hikers choose it as a goal, stop longer, gain happiness; a photo-mode spot. */
+  viewpoint?: ViewpointSpec;
 }
 
 type SiteIn = Partial<SiteRule>;

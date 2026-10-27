@@ -84,6 +84,7 @@ import { GroundMask, treeTowerAo } from '@/render/groundMask';
 import { buildModelGallery, type ModelGallery } from '@/render/meshes/Gallery';
 import { BuildingsView } from '@/render/BuildingsView';
 import { BUILDINGS } from '@/config/buildings';
+import { openDirection } from '@/sim/attractions/Viewpoint';
 import * as THREE from 'three';
 import { Overlays } from '@/render/Overlays';
 import { TerraformTool } from '@/build/TerraformTool';
@@ -1461,12 +1462,25 @@ let gondolaNoted = 0;
 let photoEl: StPhoto | null = null;
 const photoStore = PhotoStore.available() ? new PhotoStore() : null;
 const photoGround = (x: number, z: number): number => surfaceHeight(grid, x, z);
+/** Viewpoint buildings as photo-mode spots (Phase 6 Task 6): centre + the direction the ground falls away (docs/viewpoints.md). */
+const viewpointSpots = (): Array<{ x: number; z: number; look: number; reach: number }> => {
+  const out: Array<{ x: number; z: number; look: number; reach: number }> = [];
+  const alt = (x: number, y: number): number => surfaceHeight(grid, x + 0.5, y + 0.5);
+  for (const b of buildings.all()) {
+    const vp = BUILDINGS[b.type]?.viewpoint;
+    if (!vp || vp.photo === false || !b.active) continue;
+    const cx = Math.floor(b.x + b.w / 2), cy = Math.floor(b.y + b.h / 2);
+    out.push({ x: b.x + b.w / 2, z: b.y + b.h / 2, look: openDirection(alt, grid.size, cx, cy, vp.radius), reach: Math.max(b.w, b.h) / 2 + 0.8 });
+  }
+  return out;
+};
 const photoSample: RideSample = { x: 0, y: 0, z: 0, hx: 0, hz: 0, speed: 0, slope: 0, kind: 'foot' };
 const photo = new PhotoMode({
   renderer, lighting, ground: photoGround, mapSize: MAP_SIZE,
   resortName: () => `Resort Year ${game.date.year}`,
   heroFocus: () => { const lodge = buildings.all().find((b) => b.type === 'baseLodge'), a = terrainInfo.villageAnchor; return lodge ? { x: lodge.x + lodge.w / 2, z: lodge.y + lodge.h / 2 } : { x: a.x, z: a.y }; },
   followTarget: () => (rideAlong.active && rideAlong.sample(1, photoSample) ? photoSample : null),
+  spots: () => viewpointSpots(),
 });
 const photoHour = new HourOverride(() => timeOverride, (h) => { timeOverride = h; lastHour = -1; });
 const photoPrev = { from: 'iso' as 'iso' | 'ride' | 'walk', overlay: 'off' as OverlayMode, grid: false, pausedBy: false, speed: 1 as 0 | 1 | 2 | 3 };
@@ -1878,6 +1892,8 @@ const viewApi = {
     enter: (): boolean => enterPhoto(), exit: (): void => exitPhoto(),
     set: (p: Parameters<typeof sanitizeSettings>[1]): void => { photo.settings = sanitizeSettings(photo.settings, p); applyPhotoSettings(); photoEl?.sync(); },
     hero: (): void => photo.hero(),
+    /** QA: frame the next viewpoint spot (Phase 6 Task 6). */
+    spot: (): boolean => photo.nextSpot(),
     /** Headless export: returns the PNG (base64) and how many pixels are not fully opaque (whole image / top quarter after decoding the PNG). */
     capture: async (): Promise<{ w: number; h: number; clamped: boolean; transparentPx: number; rawTransparentPx: number; skyTransparentPx: number; base64: string }> => {
       const r = await photo.capture();
@@ -2654,6 +2670,7 @@ if (ui && !DEMO) {
       set: (p) => { if (p.frame && frameLock(p.frame)) return; photo.settings = sanitizeSettings(photo.settings, p); applyPhotoSettings(); },
       frameLock: (id) => frameLock(id),
       hourNow: () => currentHour(),
+      spotCount: () => photo.spotCount(), spot: () => { photo.nextSpot(); },
       hero: () => photo.hero(), canFollow: () => photoPrev.from === 'ride' && rideAlong.active, following: () => photo.follow, follow: (on) => photo.followGuest(on),
       save: () => savePhoto(), exit: () => exitPhoto(), gallery: photoGallery,
     });

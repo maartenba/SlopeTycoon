@@ -61,6 +61,9 @@ All 12 rows: **goal > 0.75: 0.4-3.6 % -> 0.0 %** (target < 15 %); **leave starvi
 
 Tests: `tests/sim/guests/HikingHunger.test.ts` (pace, planner shorten / refuse / exempt, stop on the way, old-save load, packed lunch once + save round trip + share, eat-before-trip decision, headless 64-map audit with a hungry stress run), advisor rule in `tests/sim/advisor.test.ts` + `advisorScenarios.test.ts`.
 
+## Viewpoints (Phase 6)
+Buildings with `def.viewpoint` are scored hiker goals with an extra stop and a photo-mode spot; see [viewpoints.md](viewpoints.md).
+
 ## Not done
 Alpine Refuge variant (needs a mesh), hut resupply surcharge, 'Trail popularity' overlay, 'first trekkers' news item, summit-sunrise cosmetic, lift-first for treks, visual QA of hikers in 3D (the headless harness could not stage a trail scene in time).
 

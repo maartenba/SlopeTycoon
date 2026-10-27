@@ -10,6 +10,8 @@ import { maxDifficultyFor } from './Skill';
 import { EVENING } from '../../config/balance';
 import { apresEnd, eveningTypeBias, isApres, sleepHour, venueDemand, venueKindOf } from '../Evening';
 import { TrailGoals } from './TrailGoals';
+import { VIEWPOINT } from '../../config/viewpoints';
+import type { ViewpointSite } from '../attractions/Viewpoint';
 import { NEEDS } from './Needs';
 
 /** Current activity of a guest (stored in GuestStore.act). */
@@ -83,6 +85,8 @@ export class Decider {
   food: WorldBuilding[] = [];
   bars: WorldBuilding[] = [];
   huts: WorldBuilding[] = [];
+  /** Buildings with `def.viewpoint` (Phase 6 Task 6): hiker goals with a view score. */
+  viewSites: ViewpointSite[] = [];
   rest: WorldBuilding[] = [];
   shop: WorldBuilding[] = [];
   activity: WorldBuilding[] = [];
@@ -132,16 +136,26 @@ export class Decider {
     return n ? this.avoidTile(Math.floor(b.y + b.h / 2) * n + Math.floor(b.x + b.w / 2)) : 0;
   }
 
+  /** Viewpoint whose trail goal tile is `goal` (null = none): the view score of the building behind it. */
+  viewAt(goal: number): { id: number; score: number; dwellH: number } | null {
+    const id = this.goals.viewTiles.get(goal);
+    const v = id === undefined ? undefined : this.goals.viewpoints.all.find((x) => x.id === id);
+    return v ? { id: v.id, score: v.score * (v.spec.weight ?? 1), dwellH: v.spec.dwellH ?? VIEWPOINT.dwellH } : null;
+  }
+  /** Extra stop (hours) at a viewpoint goal: dwellH scaled by the view (a poor view is a short look). */
+  viewDwell(goal: number): number { const v = this.viewAt(goal); return v ? v.dwellH * Math.min(1, 0.4 + v.score) : 0; }
+
   /** Drop every cached verdict (save load). */
   reset(): void { this.goals.reset(); this.descent.clear(); this.descentEpoch = -1; this.scanEpoch = -1; this.lifts = []; this.hikeTiles = []; this.mtbTiles = []; this.skiOpenTiles = 0; }
 
   refresh(buildings: Iterable<WorldBuilding>): void {
-    this.food = []; this.bars = []; this.huts = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = [];
+    this.food = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = [];
     for (const b of buildings) {
       if (!b.active) continue;
       if (this.port && !this.port.accepts(b.id)) continue;
       if (LESSON.has(b.type)) this.lessons.push(b);
       if (b.type === 'mountainHut') this.huts.push(b); // trek goals do not depend on serving hours
+      const vp = BUILDINGS[b.type]?.viewpoint; if (vp) this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); // viewpoint buildings (config-driven)
       const serving = this.port?.serving?.(b.id) ?? true; // venues are only candidates while serving (08:00 - 23:00)
       if (FOOD.has(b.type) && serving) this.food.push(b);
       if (BAR.has(b.type) && serving) this.bars.push(b);
@@ -204,7 +218,7 @@ export class Decider {
     }
     const sample = (a: number[]): number[] => { if (a.length <= 48) return a; const step = a.length / 48; return Array.from({ length: 48 }, (_, i) => a[Math.floor(i * step)]!); };
     this.hikeTiles = sample(hike); this.mtbTiles = sample(mtb); this.skiOpenTiles = ski;
-    this.goals.build(nav, hike, mtb, this.huts.map((b) => ({ id: b.id, x: Math.floor(b.x + b.w / 2), y: Math.floor(b.y + b.h / 2) })));
+    this.goals.build(nav, hike, mtb, this.huts.map((b) => ({ id: b.id, x: Math.floor(b.x + b.w / 2), y: Math.floor(b.y + b.h / 2) })), this.viewSites);
   }
 
   /** Nearest of the given buildings to (x,y), choosing randomly among the two closest. */

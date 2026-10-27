@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import type { Renderer } from '../Renderer';
 import { skyGradient, type Lighting } from '../Lighting';
 import type { ViewCameraRig } from './ViewCameraRig';
+import { VIEWPOINT } from '../../config/viewpoints';
 import { horizonFraction } from './cameraMath';
 import { ASPECT_IDS, FILTER_IDS, FRAME_IDS, aspectRect, clampExportSize, compositeExport, cropFov, photoFileName, type AspectId, type FilterId, type FrameId } from './postfx';
 
@@ -102,6 +103,12 @@ export function heroState(cx: number, cz: number, mapSize: number): OrbitState {
   return { fx: cx, fz: cz, lift: 2.5, yaw: 0.62, pitch: -0.3, dist: clamp(mapSize * 0.2, 16, 40) };
 }
 
+/** Orbit state of a viewpoint spot: the camera stands on the viewpoint, the focus lies `photoDist` out in the look direction. */
+export function viewpointState(spot: { x: number; z: number; look: number; reach?: number }, mapSize: number): OrbitState {
+  const pitch = VIEWPOINT.photoPitch, d = VIEWPOINT.photoDist, c = Math.cos(pitch), r = spot.reach ?? 0; // reach: step out past the building's own mesh
+  return { fx: clamp(spot.x + Math.cos(spot.look) * (r + d * c), 0, mapSize), fz: clamp(spot.z + Math.sin(spot.look) * (r + d * c), 0, mapSize), lift: VIEWPOINT.photoLift, yaw: Math.atan2(-Math.cos(spot.look), -Math.sin(spot.look)), pitch, dist: d };
+}
+
 /**
  * Render-only time-of-day override on top of the host's debug lock: `begin` remembers the previous lock, `apply(h)` sets the photo hour (`null` = the
  * remembered lock again), `end` restores it exactly. The sim clock (and therefore stateHash) is never involved.
@@ -127,6 +134,8 @@ export interface PhotoModeDeps {
   heroFocus(): { x: number; z: number };
   /** Live position of the followed ride guest (null = none). */
   followTarget?(): { x: number; y: number; z: number } | null;
+  /** Viewpoint photo spots (Phase 6 Task 6): tile centre + the direction (radians over x / z) in which the ground falls away. */
+  spots?(): ReadonlyArray<{ x: number; z: number; look: number; reach?: number }>;
 }
 
 const KEYS_MOVE = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'q', 'e']);
@@ -164,6 +173,18 @@ export class PhotoMode {
     const f = this.d.heroFocus();
     Object.assign(this.orbit, heroState(f.x, f.z, this.d.mapSize));
     this.follow = false;
+  }
+  /** Number of viewpoint photo spots right now. */
+  spotCount(): number { return this.d.spots?.().length ?? 0; }
+  private spotIx = -1;
+  /** 'Viewpoint': frame the next viewpoint spot from the viewpoint itself, looking out over the lower ground. Returns false without spots. */
+  nextSpot(): boolean {
+    const list = this.d.spots?.() ?? [];
+    if (!list.length) return false;
+    this.spotIx = (this.spotIx + 1) % list.length;
+    Object.assign(this.orbit, viewpointState(list[this.spotIx]!, this.d.mapSize));
+    this.follow = false;
+    return true;
   }
   /** 'Follow guest' (only meaningful when entered from a ride-along): the focus tracks the guest; the orbit angles stay under user control. */
   followGuest(on: boolean): void {

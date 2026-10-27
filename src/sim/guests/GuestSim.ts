@@ -23,6 +23,7 @@ import { injuryRisk, recordRun } from './Skill';
 import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
 import { Layer } from '../../world/Networks';
+import { VIEWPOINT } from '../../config/viewpoints';
 import type { SafetyGuestPort } from '../ops/Incidents';
 import { Families, buildingKidsProvider, type KidsAreaProvider } from './Families';
 
@@ -107,6 +108,8 @@ export class GuestSim {
       avoid: (t) => this.decider.avoidTile(t),
       reachedGoal: (slot, kind) => { const s = this.store; this.attractions?.trail(slot, kind === 1 ? 'bike' : 'hike', this.tick); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); },
       foodNear: (x, y) => { const r2 = EXC.foodRadius * EXC.foodRadius; for (const b of this.byId.values()) if ((FOOD.has(b.type) ? b.type !== 'baseLodge' : b.type === 'alpineFarm') && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= r2) return true; return false; },
+      viewDwellH: (goal) => this.decider.viewDwell(goal),
+      viewed: (slot, goal) => { const v = this.decider.viewAt(goal); if (!v) return; const s = this.store; s.happiness[slot] = Math.min(1, s.happiness[slot]! + VIEWPOINT.happiness * v.score); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); this.decider.goals.viewpoints.record(v.id); },
       lunch: (slot) => { const s = this.store; s.hunger[slot] = 0.05; s.budget[slot] = s.budget[slot]! - 12; this.world.onSpend?.(12, 'food'); },
       finished: (slot, ok, isTrek) => this.excFinished(slot, ok, isTrek),
     });

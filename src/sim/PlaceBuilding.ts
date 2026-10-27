@@ -4,7 +4,10 @@ import { OccFlag } from '../world/Occupancy';
 import { CHUNK_SIZE, TileType, isWaterType, type Grid } from '../world/Grid';
 import type { CornerChange } from '../world/Terraform';
 import { commitChanges, planFlatten, type FlattenFail, type FlattenFailKind, type FlattenPlan } from '../world/FlattenPlanner';
-import type { PropStore } from '../world/Props';
+import { TREE_KINDS, type PropStore } from '../world/Props';
+
+const TREE_SET: ReadonlySet<number> = new Set(TREE_KINDS);
+const isTreeKind = (k: number): boolean => TREE_SET.has(k);
 import { canPlace, evaluateStatus } from './Dependencies';
 import { networkSpreadViolations } from '../world/Networks';
 import { autoFlattenPolicy, checkSlope, isAccessReason, meanHeight } from './PlacementRules';
@@ -206,7 +209,13 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
     if (def.placeTip && isAccessReason(st.reason)) out.info.push(def.placeTip);
   }
 
-  out.trees = propsOnFootprint(env, x, y, w, h);
+  if (site.forest && env.props) {
+    const f = site.forest;
+    const n = env.props.countInRect(x - f.radius, y - f.radius, x + w - 1 + f.radius, y + h - 1 + f.radius, isTreeKind);
+    if (n < f.minTrees) bad('Needs forest around it', `pick a spot with at least ${f.minTrees} trees within ${f.radius} tiles (${n} here)`);
+    else out.info.push(`Forest around it (${n} trees): they stay`);
+  }
+  out.trees = site.forest && site.forest.keepTrees !== false ? 0 : propsOnFootprint(env, x, y, w, h);
   if (out.trees > 0) out.info.push(`Trees will be cleared (${out.trees})`);
   const total = out.cost + out.flattenCost;
   if (!economy.canAfford(total)) bad(`Not enough funds ($${Math.ceil(total)})`, 'save up or pick a cheaper spot');
@@ -250,7 +259,8 @@ export function placeBuilding(
       }
     }
   }
-  props?.removeInRect(x, y, x + w - 1, y + h - 1, touched);
+  const keep = BUILDINGS[type]?.site.forest && BUILDINGS[type]!.site.forest!.keepTrees !== false; // treehouse: the forest stays
+  if (!keep) props?.removeInRect(x, y, x + w - 1, y + h - 1, touched);
   const { building, changed } = env.buildings.add(type, x, y, rot);
   return { ok: true, reasons: [], building, changed, touchedChunks: touched, cost: total };
 }

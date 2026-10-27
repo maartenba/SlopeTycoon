@@ -51,6 +51,10 @@ export interface ExcHost {
   /** A food building (hut / cafe / lodge / farm shop) within `EXC.foodRadius` tiles of this tile? (hut lunch). */
   foodNear(x: number, y: number): boolean;
   lunch(slot: number): void;
+  /** Viewpoint building next to this goal tile: extra stop in hours (0 / absent = none). Phase 6 Task 6. */
+  viewDwellH?(goal: number): number;
+  /** Guest reached the goal tile of a viewpoint (happiness, photo, visit counter). */
+  viewed?(slot: number, goal: number): void;
   /** Excursion over: guest is idle at its final position. */
   finished(slot: number, ok: boolean, trek: boolean): void;
 }
@@ -115,7 +119,7 @@ export class Excursions {
     const rate = NEEDS.hungerHike / EXC.hourPerTick, hunger0 = s.hunger[slot]!, packed = this.packedFor(slot);
     const outH = (d: number): number => (oneWay ? d : d / 2);
     let D = plannedHours(route.length * (oneWay ? 1 : 2), mapSize, kind, fit);
-    const stopFor = (r: Int32Array): number => { fa = this.foodAlong(r, mapSize); lunch = fa >= 0 && hunger0 + rate * fa * outH(D) > 0.3; if (!lunch) fa = -1; return EXC.stopH + (lunch ? EXC.lunchH : 0); };
+    const stopFor = (r: Int32Array): number => { fa = this.foodAlong(r, mapSize); lunch = fa >= 0 && hunger0 + rate * fa * outH(D) > 0.3; if (!lunch) fa = -1; return EXC.stopH + (lunch ? EXC.lunchH : 0) + (this.h.viewDwellH?.(r[r.length - 1]!) ?? 0); };
     let S = stopFor(route);
     // food check: no food stop on the way and no packed lunch -> keep the predicted hunger at the goal below maxGoalHunger (shorten, or refuse so the guest eats first)
     if (!trek && !lunch && !packed && hunger0 + rate * outH(D) > EXC.maxGoalHunger) {
@@ -199,7 +203,7 @@ export class Excursions {
     const [f, ph] = Excursions.locate(x, x.e);
     if (x.lunch && !x.ate && (ph >= 1 || f >= x.fa)) { x.ate = true; this.h.lunch(slot); }
     if (x.packed && !x.ate && s.hunger[slot]! > EXC.snackAt) { x.packed = false; s.hunger[slot] = Math.min(s.hunger[slot]!, EXC.snackTo); this.packedUsed.add(s.id[slot]!); this.snacks++; }
-    if (ph === 1 && !x.stopped) { x.stopped = true; this.h.reachedGoal(slot, x.kind); if (x.trek) { this.place(slot, x, 1); this.end(slot, true); return; } }
+    if (ph === 1 && !x.stopped) { x.stopped = true; this.h.reachedGoal(slot, x.kind); this.h.viewed?.(slot, x.goal); if (x.trek) { this.place(slot, x, 1); this.end(slot, true); return; } }
     this.place(slot, x, f);
     if (x.e >= Excursions.total(x)) { this.end(slot, !x.turned && x.stopped); return; }
     if ((this.tickNo + slot) % EXC.checkEvery !== 0 || ph === 1) return;

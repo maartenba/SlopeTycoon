@@ -3,6 +3,8 @@ import type { LiftInfo } from './Decision';
 import { coreOf, GuestType } from './Guest';
 import { NavMode, type NavGraph } from './NavGraph';
 import { EXC, plannedHours } from './Excursion';
+import { VIEWPOINT } from '../../config/viewpoints';
+import { Viewpoints, type ViewpointSite } from '../attractions/Viewpoint';
 
 /**
  * Appeal-based trail goal selection (docs/hiking.md). Replaces "uniform random trail tile": a POI list is built per nav epoch (highest tile per
@@ -21,7 +23,8 @@ export const TRAIL_GOALS = {
   detour: 1.4,
 } as const;
 
-export interface Poi { tile: number; rel: number; kind: 0 | 1 | 2 | 3 } // 0 viewpoint, 1 summit, 2 hut, 3 lift top
+/** kind: 0 high ground (8x8 cell maximum), 1 summit, 2 hut, 3 lift top, 4 viewpoint building (`view` = view score x weight, `viewId` = building id). */
+export interface Poi { tile: number; rel: number; kind: 0 | 1 | 2 | 3 | 4; view?: number; viewId?: number }
 export interface GoalPick { tile: number; via: number; rel: number; score: number; oneWay: boolean }
 export interface GoalCtx {
   hour: number; leaveHour: number; pref: number; type: number; skill: number; fatigue: number; x: number; y: number; storm: boolean;
@@ -35,6 +38,9 @@ export class TrailGoals {
   private bad = new Set<number>();
   /** Mountain Hut building id -> nearest trail tile (trek goals). */
   readonly hutTiles = new Map<number, number>();
+  /** Viewpoint buildings (scores cached per nav epoch) and their goal trail tiles (trail tile -> building id). */
+  readonly viewpoints = new Viewpoints();
+  readonly viewTiles = new Map<number, number>();
   private epoch = -1;
   private amin = 0; private amax = 1; private size = 0;
   picks = 0; top = 0; withLift = 0;
@@ -43,14 +49,14 @@ export class TrailGoals {
 
   constructor(private nav: () => NavGraph | null) {}
 
-  reset(): void { this.epoch = -1; this.pois = []; this.mtb = []; this.bad.clear(); }
+  reset(): void { this.epoch = -1; this.pois = []; this.mtb = []; this.bad.clear(); this.viewTiles.clear(); this.viewpoints.reset(); }
   markBad(tile: number): void { this.bad.add(tile); }
 
   rel(g: NavGraph, t: number): number { return Math.max(0, Math.min(1, (g.tileAltitude(t) - this.amin) / (this.amax - this.amin || 1))); }
 
   /** Rebuild the POI list from the snow-free trail tiles (called when the nav epoch changes). */
-  build(g: NavGraph, hike: number[], mtb: number[], huts: Array<{ id?: number; x: number; y: number }>): void {
-    this.hutTiles.clear();
+  build(g: NavGraph, hike: number[], mtb: number[], huts: Array<{ id?: number; x: number; y: number }>, views: readonly ViewpointSite[] = []): void {
+    this.hutTiles.clear(); this.viewTiles.clear();
     if (this.size !== g.size) {
       this.size = g.size; this.amin = Infinity; this.amax = -Infinity;
       for (let t = 0; t < g.size * g.size; t++) { const a = g.tileAltitude(t); if (a < this.amin) this.amin = a; if (a > this.amax) this.amax = a; }
@@ -74,12 +80,28 @@ export class TrailGoals {
       for (const t of hike) if ((t % n - l.top.x) ** 2 + ((t / n | 0) - l.top.y) ** 2 <= 16) { list.push({ tile: t, rel: this.rel(g, t), kind: 3 }); break; }
       void top;
     }
-    // keep the highest ones plus an even sample of the rest
-    if (list.length > TRAIL_GOALS.maxPois) {
-      const keep = list.slice(0, 40), rest = list.slice(40), step = rest.length / (TRAIL_GOALS.maxPois - 40);
-      for (let i = 0; i < TRAIL_GOALS.maxPois - 40; i++) keep.push(rest[Math.floor(i * step)]!);
+    // viewpoint buildings: score cached per nav epoch; the goal is the nearest snow-free trail tile (like huts); kept through trimming
+    const vps: Poi[] = [];
+    if (views.length) {
+      const alt = (x: number, y: number): number => g.tileAltitude(y * n + x);
+      for (const v of this.viewpoints.refresh(g.epoch, views, n, alt, this.amin, this.amax)) {
+        let best = -1, bd = VIEWPOINT.trailReach * VIEWPOINT.trailReach + 1;
+        for (const t of hike) { const d = (t % n - v.x) ** 2 + ((t / n | 0) - v.y) ** 2; if (d < bd) { bd = d; best = t; } }
+        if (best < 0) continue;
+        vps.push({ tile: best, rel: this.rel(g, best), kind: 4, view: v.score * (v.spec.weight ?? 1), viewId: v.id });
+        this.viewTiles.set(best, v.id);
+      }
+      vps.sort((a, b) => (b.view ?? 0) - (a.view ?? 0) || a.tile - b.tile);
+      vps.length = Math.min(vps.length, VIEWPOINT.maxKept);
+    } else this.viewpoints.reset();
+    // keep the highest ones plus an even sample of the rest (viewpoints always survive the cap)
+    const cap = TRAIL_GOALS.maxPois - vps.length;
+    if (list.length > cap) {
+      const keep = list.slice(0, 40), rest = list.slice(40), step = rest.length / (cap - 40);
+      for (let i = 0; i < cap - 40; i++) keep.push(rest[Math.floor(i * step)]!);
       this.pois = keep;
     } else this.pois = list;
+    this.pois.push(...vps);
     this.mtb = mtb.length > 96 ? Array.from({ length: 96 }, (_, i) => mtb[Math.floor((i * mtb.length) / 96)]!) : mtb;
   }
 
@@ -110,7 +132,7 @@ export class TrailGoals {
     const hiker = c.pref === 1 || coreOf(c.type) === GuestType.Adventure;
     const fit = 0.85 + 0.1 * c.skill - 0.2 * c.fatigue;
     const scored: GoalPick[] = [];
-    const cands = bike ? this.mtb.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 0 as const })) : this.pois;
+    const cands: Poi[] = bike ? this.mtb.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 0 as const })) : this.pois;
     for (const p of cands) {
       if (this.bad.has(p.tile)) continue;
       const px = p.tile % n, py = (p.tile / n) | 0, d = Math.hypot(px - sx, py - sy);
@@ -121,7 +143,7 @@ export class TrailGoals {
       const D = plannedHours(total, n, bike ? 1 : 0, fit);
       const allowed = c.leaveHour - EXC.duskMargin - c.hour - EXC.stopH - (wantLift ? 0.4 : 0);
       if (allowed < EXC.minH * 0.8) continue;
-      let sc = bike ? 0.4 + 1.2 * (sRel - p.rel) : 0.3 + 0.9 * Math.pow(p.rel, 1.2) + (p.kind === 2 ? T.hutBonus : 0) + (p.kind === 1 ? T.summitBonus : 0) + (p.kind === 3 ? 0.1 : 0);
+      let sc = bike ? 0.4 + 1.2 * (sRel - p.rel) : 0.3 + 0.9 * Math.pow(p.rel, 1.2) + (p.kind === 2 ? T.hutBonus : 0) + (p.kind === 1 ? T.summitBonus : 0) + (p.kind === 3 ? 0.1 : 0) + (p.view ? VIEWPOINT.poiBonus * p.view : 0);
       if (!bike && p.rel >= T.topRel) sc += hiker ? T.pullHiker : T.pullOther;
       if (D > allowed) sc -= 0.8 * (D / allowed - 1);
       if (c.skill <= 0 && p.rel > 0.7) sc -= 0.3;
