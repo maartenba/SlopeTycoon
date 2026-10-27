@@ -118,6 +118,8 @@ export class NavGraph implements PathGraph {
     const trailBridge = mode <= NavMode.Bike && !path && w.bridge !== undefined && w.bridge[b] === 1 && (w.layers[b]! & (Layer.Mtb | Layer.Hike)) !== 0;
     if (!path && !station && !trailBridge && (w.occ[b]! & SOLID) !== 0) return -1;
     const diag = (a % n !== b % n) && (((a / n) | 0) !== ((b / n) | 0));
+    // no corner cutting: a diagonal step may not graze a building / water tile on either side (the drawn straight segment would cross it)
+    if (diag && this.cornerBlocked(a, b)) return -1;
     const len = (diag ? SQRT2 : 1) + (trailBridge ? 0.5 : 0);
     switch (mode) {
       case NavMode.Walk:
@@ -151,6 +153,15 @@ export class NavGraph implements PathGraph {
         return len * (down ? 1.2 : 4) * (t === 4 ? 2.2 : 1);
       }
     }
+  }
+
+  private cornerBlocked(a: number, b: number): boolean {
+    const n = this.size, w = this.world;
+    const c1 = ((a / n) | 0) * n + (b % n), c2 = ((b / n) | 0) * n + (a % n);
+    for (const c of [c1, c2]) {
+      if ((w.occ[c]! & SOLID) !== 0 && !this.isPathTile(c) && this.stationMask[c] !== 1) return true;
+    }
+    return false;
   }
 
   /** Whether a guest in `mode` can stand on tile t (goal resolution / start repair). */

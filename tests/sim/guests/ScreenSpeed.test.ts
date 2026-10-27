@@ -53,7 +53,8 @@ describe.each([[64, 1], [128, 1], [256, 1337]] as const)('on-screen speed budget
     const w = p95(walk) * TICKS_PER_SECOND, se = p95(skiEasy) * TICKS_PER_SECOND, sh = p95(skiHard) * TICKS_PER_SECOND, v = Math.max(0, ...veh) * TICKS_PER_SECOND;
     console.log(`[screen-speed] ${size}: walk p95 ${w.toFixed(1)} t/s (n ${walk.length}), ski easy p95 ${se.toFixed(1)} (n ${skiEasy.length}), ski hard p95 ${sh.toFixed(1)} (n ${skiHard.length}), vehicle max ${v.toFixed(1)} (n ${veh.length})`);
     expect(w).toBeLessThanOrEqual(9);
-    expect(se).toBeLessThanOrEqual(10.7); // was 10.5: the lift tower height caps changed the bot's lift layout, one blue-run p95 now measures 10.56 (same movement physics) expect(sh).toBeLessThanOrEqual(13);
+    expect(se).toBeLessThanOrEqual(10.7); // was 10.5: the lift tower height caps changed the bot's lift layout, one blue-run p95 now measures 10.56 (same movement physics)
+    expect(sh).toBeLessThanOrEqual(13);
     expect(v).toBeLessThanOrEqual(12);
     expect(w).toBeGreaterThan(1.5); // walkers are not frozen either
   }, 120000);
@@ -61,8 +62,8 @@ describe.each([[64, 1], [128, 1], [256, 1337]] as const)('on-screen speed budget
     expect(movers).toBeGreaterThan(100);
     expect(wpGuests / movers).toBeGreaterThan(0.5); // path-following guests record waypoints
     console.log(`[screen-path] ${size}: path samples on solid tiles ${crossings}, chord samples ${chordCrossings}, max deviation from the chord ${maxDev.toFixed(2)} tiles`);
-    // run-aware routing (docs/runs.md) changed the skier lines: one interpolated sample in thousands at 128 now touches a solid tile edge; keep it a rare artefact, not a trend
-    expect(crossings).toBeLessThanOrEqual(2);
+    // root cause of the earlier single crossing: a diagonal nav step that grazed the corner of a building tile (NavGraph.cornerBlocked now forbids it)
+    expect(crossings).toBe(0);
     expect(crossings).toBeLessThanOrEqual(chordCrossings);
   });
 });
