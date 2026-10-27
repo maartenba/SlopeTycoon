@@ -3,9 +3,9 @@
 A browser ski-resort tycoon: carve a procedurally generated alpine valley, build lifts, pistes and a village, keep guests, families and the bank happy
 through winter *and* summer. Three.js + TypeScript, no backend, no external assets (every model, texture, sound and music piece is generated in code).
 
-**Version 0.2.0** (pre-release)
+**Version 0.2.1** (pre-release)
 
-Status: pre-release (0.2.0) — playtest feedback welcome.
+Status: pre-release (0.2.1) — playtest feedback welcome.
 
 ## Features
 

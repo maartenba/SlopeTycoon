@@ -2,9 +2,9 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.2.1] - 2026-10-27 (pre-release)
 
-Changes after 0.2.0 was prepared. The next version bump is the owner's decision (the project stays a pre-release; not 1.0).
+Changes since 0.2.0. Still a pre-release; not 1.0.
 
 ### Audio: rewritten music and calmer ambience
 - **Nine procedural tracks** (Morning Snow, Alpine Noon, Après, Starlight, Summer Meadow, Autumn Gold, Blizzard, Title Theme, Festival) with harmonic instruments (pad, harp, guitar, electric piano, flute, strings; the bell sounds are gone), scale-correct voice leading and a pentatonic lead. Tracks are chosen to fit season, time of day, weather and busyness, never repeat back to back, and crossfade.

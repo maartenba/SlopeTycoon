@@ -4,7 +4,7 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 
 ## Project
 **Slope Tycoon**: a browser PWA, 3D isometric ski-resort tycoon (three.js + TypeScript + Vite). Everything is procedural: terrain, models, textures, icons, logo, sound effects, ambience and music (no asset files except self-hosted fonts Nunito + Lilita One in `public/fonts`). Works offline (service worker), saves locally (IndexedDB + localStorage fallback).
-- Version is **0.2.0** (pre-release). **Never call it 1.0** until the user says so.
+- Version is **0.2.1** (pre-release). **Never call it 1.0** until the user says so.
 - Repo `maartenba/SlopeTycoon`; **not yet published**. `LICENSE` is a copyright notice only (no open-source grant; the owner decides later, see `docs/deploy.md`); do not add or change a licence. Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
 - **Privacy (owner decision, supersedes the earlier "no tracking" rule)**: no ads, no accounts, saves stay on the device, **anonymous opt-in statistics** via Google Analytics (`G-NX37ERE0S9`). Consent first: nothing loads or is sent until `localStorage['slope.consent.analytics'] === 'granted'` (shared by the website and the game); never on localhost / headless. The only allowed external hosts are `googletagmanager.com` / `google-analytics.com` (injected after consent), plus the GitHub and Wikipedia links on the website. No other external requests. See `site/pages/privacy.md`, `docs/deploy.md`.
 
@@ -88,6 +88,6 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 
 ## Known gaps / open items
 - Done (0.2.0): touch, colour-blind palette, Statistics (`I`, `docs/stats.md`), named regions, Landscape drawer, redesigned Terrain / View drawers, M5.4 depth, M5.5. Remaining: human playtest STOP of Task 32.
-- Done after 0.2.0 was prepared (CHANGELOG `[Unreleased]`; next version bump is the owner's call): audio rewrite (nine procedural tracks, Music style + Next track, ambience default 0.28; `docs/audio.md`), lift tower height caps + thicker tall towers (`docs/lifts-clearance.md`).
+- Done in 0.2.1 (CHANGELOG): audio rewrite (nine procedural tracks, Music style + Next track, ambience default 0.28; `docs/audio.md`), lift tower height caps + thicker tall towers (`docs/lifts-clearance.md`).
 - Done: M5.1 goals/advisor/audio, M5.2 ride-along + photo + walk mode, M5.3 progression, scenarios, achievements (verify in the learnings file for current state).
 - Unverified by agents: pointer lock (walk mode), real GPU frame rate / draw calls, audio by ear; open bug noted earlier: pistes paintable over streams.
