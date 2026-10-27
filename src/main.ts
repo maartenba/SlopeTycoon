@@ -500,7 +500,7 @@ const refreshProps = (dirty: number[]): void => {
 const buildingsView = new BuildingsView(renderer.scene, buildingMeshes, grid, buildings); // single sync point: store -> meshes (boot, place, remove, rotate, terraform)
 
 // Service coverage + overlays (sim-side coverage/networks come from createSim).
-const covOverlay = new CoverageOverlay(grid, coverage, () => buildings.all(), () => sim.networkProvider, () => ({ depth: grid.snowDepth, skiOpen: cond.skiOpen }), () => ops.quality.state, () => safetyRef?.wildlife.threat ?? null, () => { const q = opsRef?.quality; if (!q) return null; if (!trafficMix) trafficMix = new Uint16Array(q.traffic.length); for (let i = 0; i < trafficMix.length; i++) trafficMix[i] = Math.min(65535, q.traffic[i]! + q.trafficDay[i]!); return trafficMix; }, () => { const sm = opsRef?.snowmaking; if (!sm) return null; if (!gainMix) gainMix = new Float32Array(sm.gainToday.length); for (let i = 0; i < gainMix.length; i++) gainMix[i] = Math.max(sm.gainToday[i]!, sm.gainLast[i]!); return gainMix; });
+const covOverlay = new CoverageOverlay(grid, coverage, () => buildings.all(), () => sim.networkProvider, () => ({ depth: grid.snowDepth, skiOpen: cond.skiOpen }), () => ops.quality.state, () => safetyRef?.wildlife.threat ?? null, () => { const q = opsRef?.quality; if (!q) return null; if (!trafficMix) trafficMix = new Uint16Array(q.traffic.length); for (let i = 0; i < trafficMix.length; i++) trafficMix[i] = Math.min(65535, q.traffic[i]! + q.trafficDay[i]!); return trafficMix; }, () => { const sm = opsRef?.snowmaking; if (!sm) return null; if (!gainMix) gainMix = new Float32Array(sm.gainToday.length); for (let i = 0; i < gainMix.length; i++) gainMix[i] = Math.max(sm.gainToday[i]!, sm.gainLast[i]!); return gainMix; }, () => sim.runIndex.labelMap());
 let trafficMix: Uint16Array | null = null;
 let gainMix: Float32Array | null = null;
 renderer.scene.add(covOverlay.group);
@@ -720,6 +720,26 @@ const opsInfo = (id: number, type: string): { kind: 'groomer'; vehicles: number;
     return { kind: 'cannon', info: cannonInfo(cb, { sm: opsRef.snowmaking, reservoirs: opsRef.reservoirs, reservoirCentres: buildings.all().filter((q) => q.type === 'reservoir' && q.active).map((q) => ({ x: q.x + q.w / 2, y: q.y + q.h / 2 })), pipeRange: BUILDINGS.reservoir?.serviceRadius ?? 24, altM: altitudeMetres(alt), tempNow: weather.temperatureAt(alt, currentHour()), snowlineM: snowlineNow(), highNow: weather.temperatureAt(alt, 15) }) };
   }
   return undefined;
+};
+/** 'Runs' overlay labels: small DOM tags at the middle of each run (zero-size host, pointer-events none: never blocks the map). */
+const runLabelHost = (() => { const d = document.createElement('div'); d.id = 'run-labels'; d.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:21'; document.body.appendChild(d); return d; })();
+let runLabelKey = '';
+const updateRunLabels = (): void => {
+  if (overlayMode !== 'runs') { if (runLabelHost.childElementCount) { runLabelHost.replaceChildren(); runLabelKey = ''; } return; }
+  const labels = sim.runLabels().slice(0, 60), cam = renderer.controls.camera, dom = renderer.webgl.domElement, r = dom.getBoundingClientRect();
+  const key = labels.map((l) => `${l.id}:${l.name}`).join('|');
+  if (key !== runLabelKey) {
+    runLabelKey = key;
+    runLabelHost.replaceChildren(...labels.map((l) => { const e = document.createElement('div'); e.textContent = l.name; e.style.cssText = 'position:absolute;transform:translate(-50%,-50%);font:700 11px Nunito,sans-serif;color:#fff;background:#000a;padding:1px 6px;border-radius:8px;white-space:nowrap'; return e; }));
+  }
+  labels.forEach((l, i) => {
+    const e = runLabelHost.children[i] as HTMLElement | undefined;
+    if (!e) return;
+    const v = new THREE.Vector3(l.x, surfaceHeight(grid, l.x, l.y) + 0.4, l.y).project(cam);
+    const on = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
+    e.style.display = on ? '' : 'none';
+    if (on) { e.style.left = `${r.left + ((v.x + 1) / 2) * r.width}px`; e.style.top = `${r.top + ((1 - v.y) / 2) * r.height}px`; }
+  });
 };
 const refreshUi = (): void => {
   dockRef?.refresh();
@@ -950,6 +970,7 @@ renderer.onFrame = (dt): void => {
   terrain.update(terrainLodHeightFor(cam, MAP_SIZE), refreshProps);
   groundMask.update();
   covOverlay.update();
+  updateRunLabels();
   const simTps = loop.paused ? 0 : SPEED_MULTIPLIERS[loop.speed]! * TICKS_PER_SECOND * loop.currentWarp * loop.timeScale;
   groomingView?.update(dt, simTps);
   incidentView?.update(dt, 0, simTps);
@@ -2764,7 +2785,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { select, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { select, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

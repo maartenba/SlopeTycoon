@@ -7,6 +7,8 @@ export interface PisteInspectorInfo {
   lengthM: number; dropM: number; openLengthM: number; open: boolean;
   avgQuality: string | null; skiersToday: number; runsToday?: number; warnings: string[];
   highlighted: boolean;
+  /** Run geometry (the selected piste is one run between junctions / lift stations). */
+  avgSlopePct?: number; maxSlopePct?: number; loop?: boolean;
 }
 export interface PisteInspectorApi {
   /** Commit a name (already trimmed/clamped by the component; empty = reset to the automatic name). */
@@ -57,8 +59,9 @@ export class StPisteInspector extends StElement {
     const head = el('div', { className: 'row' });
     head.append(dot, input);
     const kids: HTMLElement[] = [head];
-    kids.push(line(`${i.difficultyLabel} piste · ${i.open ? 'Open' : 'Closed'}`, i.open ? '' : 'warn'));
+    kids.push(line(`${i.difficultyLabel} run · ${i.open ? 'Open' : 'Closed'}`, i.open ? '' : 'warn'));
     kids.push(line(`Length ${i.lengthM.toLocaleString('en-US')} m · drop ${i.dropM.toLocaleString('en-US')} m`));
+    if (i.avgSlopePct !== undefined) kids.push(line(`Slope avg ${Math.round(i.avgSlopePct)} % · max ${Math.round(i.maxSlopePct ?? 0)} %${i.loop ? ' · loop' : ''}`, 'small'));
     kids.push(line(`Open now: ${i.openLengthM.toLocaleString('en-US')} m`));
     kids.push(line(`Surface: ${i.avgQuality ?? 'n/a'} · busiest tile ${i.skiersToday} passes today · runs today: ${i.runsToday ?? 0}`, 'small'));
     for (const w of i.warnings) kids.push(line(`⚠ ${w}`, 'warn'));

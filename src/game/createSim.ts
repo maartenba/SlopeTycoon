@@ -12,12 +12,13 @@ import { seasonOf, hourOfDay, jumpTo, seasonStartDay, monthIndex } from '../sim/
 import { nightWarp } from '../core/pacing';
 import { sunTimes } from '../sim/Daylight';
 import { BUILDINGS } from '../config/buildings';
-import { CLOSED_BUILDING_UPKEEP_SHARE, OFFSEASON_RELIEF, oldDays } from '../config/balance';
+import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, oldDays } from '../config/balance';
 import { LIFTS } from '../config/lifts';
 import { Buildings } from '../sim/Buildings';
 import { Names } from '../sim/Names';
-import { pisteReport, pisteDifficulty, type PisteReport } from '../sim/PisteStats';
-import type { PisteComponent } from '../world/Networks';
+import { pisteReport, type PisteReport } from '../sim/PisteStats';
+import { RunIndex } from '../sim/Runs';
+import type { Run, RunNetwork } from '../world/Runs';
 import { Economy } from '../sim/Economy';
 import { Pricing } from '../sim/Pricing';
 import { Loans, type CreditContext } from '../sim/Loans';
@@ -335,17 +336,21 @@ export function createSim(opts: SimOptions) {
     return skillScore[Math.max(0, Math.min(3, skill | 0))]!;
   };
   // Human names for places (pistes/lifts/buildings/areas) used by news messages; see sim/Names.ts.
-  type PisteEntryInfo = { tiles: readonly number[]; difficulty: number; comp: PisteComponent };
-  let pisteIdx: { v: number; map: Map<number, PisteEntryInfo>; list: PisteEntryInfo[] } = { v: -1, map: new Map(), list: [] };
+  // A "piste" for names / inspector / goals / advisor is a RUN (world/Runs.ts): a stretch between junctions / lift stations / ends, not the whole 8-connected blob.
+  const runIndex = new RunIndex({
+    networks,
+    alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
+    stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; },
+  });
+  type PisteEntryInfo = Run & { difficulty: number };
+  let pisteIdx: { net: RunNetwork | null; map: Map<number, PisteEntryInfo>; list: PisteEntryInfo[] } = { net: null, map: new Map(), list: [] };
   const pisteIndex = (): typeof pisteIdx => {
-    if (pisteIdx.v !== networks.version) {
-      const map = new Map<number, PisteEntryInfo>(), list: PisteEntryInfo[] = [];
-      for (const c of networks.pisteComponents()) {
-        const e = { tiles: c.tiles, difficulty: pisteDifficulty(c.tiles, networks.difficulty), comp: c };
-        list.push(e);
-        for (const t of c.tiles) map.set(t, e);
-      }
-      pisteIdx = { v: networks.version, map, list };
+    const net = runIndex.network();
+    if (pisteIdx.net !== net) {
+      const map = new Map<number, PisteEntryInfo>(), list: PisteEntryInfo[] = net.runs;
+      for (const r of net.runs) for (const t of r.tiles) map.set(t, r);
+      for (const nd of net.nodes) { const r = net.runs[nd.runsOut[0] ?? nd.runsIn[0] ?? -1]; if (r) for (const t of nd.tiles) map.set(t, r); }
+      pisteIdx = { net, map, list };
     }
     return pisteIdx;
   };
@@ -357,7 +362,7 @@ export function createSim(opts: SimOptions) {
       return pisteIndex().map.get(i) ?? null;
     },
     pistes: () => pisteIndex().list,
-    pisteVersion: () => networks.version,
+    pisteVersion: () => { pisteIndex(); return runIndex.rebuilds; },
     lifts: () => lifts.all().map((l) => ({ id: l.id, kindName: LIFTS[l.kind]?.name ?? l.kind, tiles: l.tiles })),
     buildings: () => buildings.all().map((b) => ({ id: b.id, typeName: BUILDINGS[b.type]?.name ?? b.type, x: b.x, y: b.y, w: b.w, h: b.h })),
     altFrac: (x, y) => (cond.altitude(x, y) - worldScale.baseWorld) / worldScale.reliefWorld,
@@ -778,9 +783,15 @@ export function createSim(opts: SimOptions) {
   const pisteReportAt = (x: number, y: number): (PisteReport & { tileIdx: number[] }) | null => {
     const e = pisteEntryAt(x, y);
     if (!e) return null;
-    const r = pisteReport(e.comp, { difficulty: networks.difficulty, quality: ops.quality, status: (c) => openStatus.pisteAt(c.tiles[0]! % size, (c.tiles[0]! / size) | 0), runsAt: (tiles) => guestSim.exploration.runsAt(tiles) });
-    return { ...r, id: names.pisteId(e), name: names.pisteName(e), autoName: names.pisteAutoName(e), tileIdx: e.comp.tiles };
+    const r = pisteReport(e, { difficulty: networks.difficulty, quality: ops.quality, status: (c) => openStatus.pisteAt(c.tiles[0]! % size, (c.tiles[0]! / size) | 0), runsAt: (tiles) => guestSim.exploration.runsAt(tiles) });
+    return { ...r, id: names.pisteId(e), name: names.pisteName(e), autoName: names.pisteAutoName(e), tileIdx: e.tiles };
   };
+
+  /** One label anchor per run (mid centre-line tile) for the 'Runs' overlay and the Runs list. */
+  const runLabels = (): Array<{ id: number; name: string; x: number; y: number; difficulty: number }> => pisteIndex().list.map((r) => {
+    const t = r.poly[r.poly.length >> 1] ?? r.tiles[0]!;
+    return { id: names.pisteId(r), name: names.pisteName(r), x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5, difficulty: r.difficulty };
+  });
 
   // ---- Resort goal chain (M5.1): hourly evaluation off the bus, read-only world adapter, grants via the `grant` ledger category ----
   const goalWorld = (): GoalWorld => ({
@@ -791,7 +802,7 @@ export function createSim(opts: SimOptions) {
     pistes: () => {
       const out: Array<{ difficulty: number; tiles: number; x: number; y: number }> = [];
       for (const p of pisteIndex().list) {
-        if (p.comp.disconnected || p.comp.count < 4) continue;
+        if (p.disconnected || p.count < 4) continue;
         const per = [0, 0, 0, 0], first = [-1, -1, -1, -1];
         for (const t of p.tiles) { const d = Math.max(0, Math.min(3, networks.difficulty[t] ?? 0)); per[d]!++; if (first[d]! < 0) first[d] = t; }
         for (let d = 0; d < 4; d++) if (per[d]! > 0) out.push({ difficulty: d + 1, tiles: per[d]!, x: first[d]! % size, y: (first[d]! / size) | 0 });
@@ -915,7 +926,7 @@ export function createSim(opts: SimOptions) {
   const sim = {
     achievements, rivals, sustain, landscape, landscapeEnv,
     scenario: scenarioRef as ScenarioRunner | null,
-    jumpToDay, pisteReportAt, renamePisteAt,
+    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,

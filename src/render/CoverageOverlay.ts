@@ -28,7 +28,7 @@ export class CoverageOverlay {
   private lastPaint = -Infinity;
   repaints = 0;
 
-  constructor(private grid: Grid, private cov: Coverage, private getBuildings: () => Iterable<CoverageBuilding>, private net: () => NetworkProvider, private getSnow?: () => SnowView | null, private getQuality?: () => Uint8Array | null, private getThreat?: () => Uint8Array | null, private getTraffic?: () => Uint16Array | null, private getGain?: () => Float32Array | null) {
+  constructor(private grid: Grid, private cov: Coverage, private getBuildings: () => Iterable<CoverageBuilding>, private net: () => NetworkProvider, private getSnow?: () => SnowView | null, private getQuality?: () => Uint8Array | null, private getThreat?: () => Uint8Array | null, private getTraffic?: () => Uint16Array | null, private getGain?: () => Float32Array | null, private getRuns?: () => Uint16Array | null) {
     const N = this.N = grid.size, V = N + 1;
     this.data = new Uint8Array(N * N * 4);
     this.tex = new THREE.DataTexture(this.data, N, N, THREE.RGBAFormat);
@@ -99,7 +99,7 @@ export class CoverageOverlay {
       const now = typeof performance !== 'undefined' ? performance.now() : 0;
       if (now - this.lastPaint < this.minRepaintMs) return; // coalesce bursts; stays dirty, painted on a later frame
       this.lastPaint = now; this.repaints++;
-      paintOverlay(this.data, this.N, this.mode, this.cov, this.net(), this.getBuildings(), this.getSnow?.() ?? null, this.getQuality?.() ?? null, this.getThreat?.() ?? null, this.getTraffic?.() ?? null, this.getGain?.() ?? null);
+      paintOverlay(this.data, this.N, this.mode, this.cov, this.net(), this.getBuildings(), this.getSnow?.() ?? null, this.getQuality?.() ?? null, this.getThreat?.() ?? null, this.getTraffic?.() ?? null, this.getGain?.() ?? null, this.getRuns?.() ?? null);
       this.tex.needsUpdate = true;
       this.dirty = false;
     }

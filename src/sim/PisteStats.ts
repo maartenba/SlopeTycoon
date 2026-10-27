@@ -3,6 +3,7 @@ import type { Grid } from '../world/Grid';
 import type { Pt } from './Dependencies';
 import { difficultyFromSteepness } from '../world/Networks';
 import type { PisteComponent } from '../world/Networks';
+import type { Run } from '../world/Runs';
 import type { PisteStatus } from './OpenStatus';
 import { QUALITY_NAMES } from './ops/PisteQuality';
 
@@ -28,15 +29,22 @@ export interface PisteReport {
   /** Runs that took a line over this piste today (exploration via tiles; 0 until guests ski it). */
   runsToday: number;
   warnings: string[];
+  /** Run geometry (a piste is a run: world/Runs.ts). Absent for a legacy component report. */
+  avgSlopePct?: number;
+  maxSlopePct?: number;
+  loop?: boolean;
 }
 
 export const DIFFICULTY_LABELS = ['Green', 'Blue', 'Red', 'Black'] as const;
 export const DIFFICULTY_COLORS = ['#3fb950', '#3b82f6', '#e5484d', '#222222'] as const;
 
+/** What a report needs: a run (preferred) or a legacy 8-connected component. */
+export type PisteUnit = PisteComponent | Run;
+
 export interface PisteReportDeps {
   difficulty: Uint8Array | number[];
   quality: { at(i: number): number; traffic?: Uint16Array; trafficDay?: Uint16Array };
-  status(c: PisteComponent): PisteStatus | undefined;
+  status(c: PisteUnit): PisteStatus | undefined;
   /** Runs counted over the piste's tiles today (guests/Exploration). */
   runsAt?(tiles: readonly number[]): number;
 }
@@ -55,7 +63,7 @@ export function pisteDifficulty(tiles: readonly number[], difficulty: ArrayLike<
 }
 
 /** Pure inspector numbers for a piste component (names are added by the caller). */
-export function pisteReport(c: PisteComponent, d: PisteReportDeps): Omit<PisteReport, 'id' | 'name' | 'autoName'> {
+export function pisteReport(c: PisteUnit, d: PisteReportDeps): Omit<PisteReport, 'id' | 'name' | 'autoName'> {
   const diff = pisteDifficulty(c.tiles, d.difficulty);
   const st = d.status(c);
   const counts = new Array<number>(QUALITY_NAMES.length).fill(0);
@@ -74,7 +82,8 @@ export function pisteReport(c: PisteComponent, d: PisteReportDeps): Omit<PisteRe
   else if (!st) warnings.push('Status not evaluated yet');
   return {
     difficulty: diff, difficultyLabel: DIFFICULTY_LABELS[diff - 1]!, difficultyColor: DIFFICULTY_COLORS[diff - 1]!,
-    tiles: c.count, lengthM: Math.round(c.count * TILE_METRES), dropM: Math.round(Math.max(0, c.topAlt - c.bottomAlt) * TILE_METRES),
+    tiles: c.count, lengthM: 'lengthM' in c ? c.lengthM : Math.round(c.count * TILE_METRES), dropM: 'dropM' in c ? c.dropM : Math.round(Math.max(0, c.topAlt - c.bottomAlt) * TILE_METRES),
+    ...('lengthM' in c ? { avgSlopePct: c.avgSlopePct, maxSlopePct: c.maxSlopePct, loop: c.loop } : {}),
     openLengthM: Math.round(st?.openLengthM ?? 0), open: !!st?.open, reason: st?.reason, avgQuality, skiersToday: busiest, runsToday: d.runsAt?.(c.tiles) ?? 0, warnings,
   };
 }

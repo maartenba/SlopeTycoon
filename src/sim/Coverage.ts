@@ -142,11 +142,11 @@ export class Coverage {
   }
 }
 
-export type OverlayMode = 'off' | CoverageKind | 'piste' | 'connectivity' | 'snow' | 'quality' | 'threat' | 'traffic';
-export const OVERLAY_MODES: OverlayMode[] = ['off', ...COVERAGE_KINDS, 'piste', 'connectivity', 'snow', 'quality', 'threat', 'traffic'];
+export type OverlayMode = 'off' | CoverageKind | 'piste' | 'connectivity' | 'snow' | 'quality' | 'threat' | 'traffic' | 'runs';
+export const OVERLAY_MODES: OverlayMode[] = ['off', ...COVERAGE_KINDS, 'piste', 'connectivity', 'snow', 'quality', 'threat', 'traffic', 'runs'];
 export const OVERLAY_LABELS: Record<OverlayMode, string> = {
   off: 'Overlay: off', firstAid: 'First aid', patrol: 'Ski patrol', grooming: 'Grooming', snowmaking: 'Snowmaking',
-  warning: 'Warning signs', heli: 'Helicopter', piste: 'Piste difficulty', connectivity: 'Connectivity', snow: 'Snow depth', quality: 'Piste quality', wildlife: 'Ranger coverage', threat: 'Wildlife threat', traffic: 'Piste traffic',
+  warning: 'Warning signs', heli: 'Helicopter', piste: 'Piste difficulty', connectivity: 'Connectivity', snow: 'Snow depth', quality: 'Piste quality', wildlife: 'Ranger coverage', threat: 'Wildlife threat', traffic: 'Piste traffic', runs: 'Runs',
 };
 
 const COVER_RGBA: Record<CoverageKind, [number, number, number]> = {
@@ -161,13 +161,20 @@ export const QUALITY_RGB: Array<[number, number, number]> = [
 /** Quality colours of the active palette (Settings > Colour palette): same as QUALITY_RGB in the default palette. */
 export const qualityRgb = (): Array<[number, number, number]> => paletteData().quality;
 
+/** Label value of node (junction / station) tiles in the 'runs' overlay map. */
+export const RUN_LABEL_NODE = 65535;
+/** Distinct run colours (cycled; neighbours get different ones because ids follow tile order). */
+export const RUN_RGB: Array<[number, number, number]> = [
+  [230, 80, 80], [70, 150, 240], [240, 190, 50], [80, 200, 120], [200, 100, 220], [240, 140, 60], [70, 210, 210], [170, 200, 60], [240, 120, 170], [150, 130, 240],
+];
+
 /** Snow data for the 'snow' overlay (depth in metres, skiOpen from TileConditions). */
 export interface SnowView { depth: Float32Array; skiOpen: Uint8Array }
 
 /** Fills an N*N*4 RGBA buffer for the mode (pure; texture upload is the renderer's job). */
 export function paintOverlay(
   out: Uint8Array | Uint8ClampedArray, size: number, mode: OverlayMode,
-  cov: Coverage, net: NetworkProvider, buildings: Iterable<CoverageBuilding>, snow?: SnowView | null, quality?: Uint8Array | null, threat?: Uint8Array | null, traffic?: Uint16Array | null, gain?: Float32Array | null,
+  cov: Coverage, net: NetworkProvider, buildings: Iterable<CoverageBuilding>, snow?: SnowView | null, quality?: Uint8Array | null, threat?: Uint8Array | null, traffic?: Uint16Array | null, gain?: Float32Array | null, runs?: Uint16Array | null,
 ): void {
   out.fill(0);
   const put = (i: number, c: [number, number, number], a: number): void => {
@@ -177,6 +184,12 @@ export function paintOverlay(
   if (mode === 'quality') {
     if (!quality) return;
     for (let i = 0; i < size * size; i++) { const q = quality[i]!; if (q > 0 && q < QUALITY_RGB.length) put(i, qualityRgb()[q]!, 170); }
+    return;
+  }
+  if (mode === 'runs') {
+    // every run in its own colour (RUN_LABEL_NODE = junction / station tile, drawn white): see sim/Runs.ts runLabels()
+    if (!runs) return;
+    for (let i = 0; i < size * size; i++) { const v = runs[i]!; if (v) put(i, v === RUN_LABEL_NODE ? [255, 255, 255] : RUN_RGB[(v - 1) % RUN_RGB.length]!, 175); }
     return;
   }
   if (mode === 'traffic') {
