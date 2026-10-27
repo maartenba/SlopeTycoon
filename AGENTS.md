@@ -4,13 +4,13 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 
 ## Project
 **Slope Tycoon**: a browser PWA, 3D isometric ski-resort tycoon (three.js + TypeScript + Vite). Everything is procedural: terrain, models, textures, icons, logo, sound effects, ambience and music (no asset files except self-hosted fonts Nunito + Lilita One in `public/fonts`). Works offline (service worker), saves locally (IndexedDB + localStorage fallback).
-- Version is **0.2.1** (pre-release). **Never call it 1.0** until the user says so.
+- Version is **0.2.2** (pre-release). **Never call it 1.0** until the user says so.
 - Repo `maartenba/SlopeTycoon`; **not yet published**. `LICENSE` is a copyright notice only (no open-source grant; the owner decides later, see `docs/deploy.md`); do not add or change a licence. Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
 - **Privacy (owner decision, supersedes the earlier "no tracking" rule)**: no ads, no accounts, saves stay on the device, **anonymous opt-in statistics** via Google Analytics (`G-NX37ERE0S9`). Consent first: nothing loads or is sent until `localStorage['slope.consent.analytics'] === 'granted'` (shared by the website and the game); never on localhost / headless. The only allowed external hosts are `googletagmanager.com` / `google-analytics.com` (injected after consent), plus the GitHub and Wikipedia links on the website. No other external requests. See `site/pages/privacy.md`, `docs/deploy.md`.
 
 ## Architecture (`src/`)
 - `core/` EventBus, EventLog, TickLoop, FastForward, GameState, Rng (seeded), pacing, ids, safe.
-- `sim/` pure simulation (no three.js/DOM): Clock, Economy, Finance, Loans, Lift, guests/, nature/, ops/, advisor/, goals/, progression/, scenario/, meta/ (achievements), attractions/, Rating, Marketing, Pricing, Daylight, Season…
+- `sim/` pure simulation (no three.js/DOM): Clock, Economy, Finance, Loans, Lift, guests/, nature/, ops/ (LiftOps = planned lift maintenance, Snowmaking switch), advisor/, goals/, progression/, scenario/, meta/ (achievements), attractions/, Rating, Marketing, Pricing, Daylight, Season, **Runs** (pistes as runs, `world/Runs.ts` + `sim/Runs.ts`, `docs/runs.md`), **Energy** (generators, capped offset, `docs/energy.md`), calendar…
 - `world/` terrain generation, water/streams, skiable stats, tiles/occupancy.
 - `render/` three.js: Renderer, TerrainMesh, props, lod, view/ (ride-along, photo, walk), fx, MaterialGuard, DemoScene (title-screen live demo)…
 - `ui/` custom-element panels (`StElement` base, shared `KIT_CSS`), `modal.ts`, fonts.css.
@@ -39,7 +39,8 @@ npm run shot -- --size 64 --seed 61 --out NAME   # real-game screenshot via Chro
 npm run touch:e2e [-- --only camera,walk --viewport phone|land|tablet]   # real emulated-touch end-to-end (gated, ~55 min for all; docs/touch.md)
 npm run shot:suite | ui:suite | ui2:suite | demo:shots | town:shots | recap:shot
 npm run flicker            # camera shimmer / LOD pop measurement (docs/flicker.md)
-npm run analysis:ski|timeflow|hiking|towns   # analysis reports
+npm run analysis:ski|timeflow|hiking|hunger|towns   # analysis reports
+npm run boot:shots         # loading-splash screenshots (.weave/shots/load-*.png)
 npm run build:pages / deploy:check / release:check / size / licenses
 ```
 **Standard gate**: `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa`. When `site/` or docs are touched also: `npm run build:site && npm run site:check && npm run verify:site`.
@@ -89,6 +90,7 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 
 ## Known gaps / open items
 - Done (0.2.0): touch, colour-blind palette, Statistics (`I`, `docs/stats.md`), named regions, Landscape drawer, redesigned Terrain / View drawers, M5.4 depth, M5.5. Remaining: human playtest STOP of Task 32.
+- Done in 0.2.2 (CHANGELOG): real calendar + date chip + Events strip + climate curves (`docs/time-flow.md` §10-11), pistes as runs (Runs overlay / tab, per-run open / groom / rename, run-aware routing), planned lift maintenance (Operations > Maintenance), snowmaking On / Off / Auto + per-cannon switch, energy grid and green buildings (Energy tab), hiker hunger fixes (`npm run analysis:hunger`), Almabtrieb announcements, train station on rail end, footpath access for shops / chalets / apartments, loading indicator on the splash (`npm run boot:shots`). Guide + site + dev docs updated for all of it.
 - Done in 0.2.1 (CHANGELOG): audio rewrite (nine procedural tracks, Music style + Next track, ambience default 0.28; `docs/audio.md`), lift tower height caps + thicker tall towers (`docs/lifts-clearance.md`).
 - Done: M5.1 goals/advisor/audio, M5.2 ride-along + photo + walk mode, M5.3 progression, scenarios, achievements (verify in the learnings file for current state).
 - Unverified by agents: pointer lock (walk mode), real GPU frame rate / draw calls, audio by ear; open bug noted earlier: pistes paintable over streams.

@@ -3,8 +3,14 @@ title: "Troubleshooting & FAQ"
 order: 15
 summary: "Fixes for the common problems: a black screen, slow frame rate, guests not arriving, closed buildings and lost saves."
 description: "Fix common Slope Tycoon problems: a black screen, slow frame rate, guests not arriving, closed buildings and lost saves, plus a privacy FAQ."
-screenshots: []
+screenshots: [ui-loading]
 ---
+## It stays on the loading screen
+
+{{fig:ui-loading}}
+
+The splash shows a slim progress bar with the current stage (*Loading the mountain…*, *Carving the terrain…*, *Planting trees…*, *Warming up the lifts…*). On a slow device a hint appears after about 8 seconds: keep waiting, the first load of a large map takes longest. If starting fails the splash says so and offers a **Reload** button. New game and Continue use the same screen.
+
 ## The game shows a blank or black screen
 
 Slope Tycoon needs **WebGL 2**. Use a current Chrome, Edge, Firefox or Safari, make sure hardware acceleration is on, and try reloading. Strict privacy modes and some remote desktops disable WebGL.
@@ -12,6 +18,10 @@ Slope Tycoon needs **WebGL 2**. Use a current Chrome, Edge, Firefox or Safari, m
 ## It is slow
 
 Lower **Quality** (Settings or the *Graphics* menu in the top bar), shrink the browser window, use a smaller map, or switch to **Reduced motion**. Large 256-tile maps with thousands of guests are the heaviest.
+
+## A cannon, run or lift is not doing what I expect
+
+A snow cannon that is idle says why (*Off by you*, *Paused: snowline above this piste*, *Auto: waiting for cold*): see **Operations → Lifts → Snowmaking**. A run that guests ignore may be *Closed by you* in **Operations → Runs**. A lift that closed for a few days is probably in its **annual service** (**Operations → Maintenance**), announced in the news the day before.
 
 ## Nobody is coming
 

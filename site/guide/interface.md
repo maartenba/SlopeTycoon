@@ -19,8 +19,8 @@ screenshots: [ui-hud, ui-view-drawer, ui-help, ui-pause]
 ## Top right: your resort at a glance
 
 - **Money**, **star rating**, guest **happiness** face and the number of guests on the mountain.
-- **Weather, temperature and altitude** of the current view, plus the day and how long until the next season.
-- **Speed controls**: pause, 1×, 3× and 10×. The moon button speeds up nights, and the skip button next to the speeds is **Skip to…** (next month, next season or next event). More in [Guests & seasons](page:guests-seasons).
+- **Date chip**: today's real date, season and year (*Sat 14 Feb · Winter · Year 1*; hover for the day of the year and the time), with **weather, temperature and altitude** of the current view and how long until the next season.
+- **Speed controls**: pause, 1×, 3× and 10×, with today's date under them. The moon button speeds up nights (a small badge shows when it is on), and the skip button next to the speeds is **Skip to…** (next month, next season or next event). More in [Guests & seasons](page:guests-seasons).
 - **Goals card** with the three active goals and their rewards. A badge shows your Career level.
 
 ## The dock (bottom)

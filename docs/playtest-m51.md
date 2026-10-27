@@ -2,7 +2,7 @@
 
 Start a **new 128 Normal game** (`npm run dev` or the built game). Settings are in the gear icon.
 
-1. **Version**: Menu > About shows the current version (0.2.1).
+1. **Version**: Menu > About shows the current version (0.2.2).
 2. **Goals**: the Goals card (right column, under the HUD) always shows a goal. Complete the first one: is there a small `+$` grant, a quiet news row, and another goal appears? Does "Show me" take the camera to the right place? Does the career wording feel light and not silly?
 3. **Advice**: click the avatar / "Advice (n)" badge bottom-left. Is each suggestion sensible and correct for your resort? Try Show me and Dismiss (it should stay away for a while).
 4. **Feedback, Subtle (default)**: build and sell for a few minutes at speed 2x. Calm? Only occasional `+$` popups and the odd emote bubble, no confetti except for a major milestone.

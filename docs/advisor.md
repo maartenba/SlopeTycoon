@@ -40,3 +40,13 @@ Every rule has a scenario: it fires, and 2-3 different valid fixes each clear it
 * Remote types (access `none`: first aid, snowcat outpost, cannon, sign, helipad, reservoir) never get road/footpath advice; a connection problem names the type's own requirement (`Needs a road next to it` / `Needs a footpath or road next to it`).
 * Grooming coverage comes from outposts only (a garage alone covers nothing): `grooming.none` says to build the garage AND an outpost.
 * `queue.long` ignores closed lifts; `lift.idle` needs other lifts to be busy (nothing is "barely used" at night); `cash.*` follow the cash, not the midnight finance flag.
+
+## 0.2.2 additions
+| Rule | Cadence | Fires when |
+|---|---|---|
+| `piste.icy` | daily | now names the worst **run** ("Black Run 2 is icy") with a map target (docs/runs.md) |
+| `hikers.hungry` | daily | decaying share of hiker / biker departures that ended hungry is high: add a hut / cafe near the trails (docs/hiking.md) |
+| `farm.almabtrieb` | daily | no Alpine Farm in autumn (suggest one) or 3 days before the Almabtrieb ("Show me" = base station) |
+| `snow.mode` | hourly | cannons burn while the snowline is above the pistes (suggest Auto / Off) or Auto is waiting for cold |
+| `lift.service` | hourly | a lift is overdue for its annual service (Operations > Maintenance) |
+| `energy.green` | daily | energy is the weakest sustainability part: suggests a Solar Array (docs/energy.md) |

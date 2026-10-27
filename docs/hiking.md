@@ -63,3 +63,6 @@ Tests: `tests/sim/guests/HikingHunger.test.ts` (pace, planner shorten / refuse /
 
 ## Not done
 Alpine Refuge variant (needs a mesh), hut resupply surcharge, 'Trail popularity' overlay, 'first trekkers' news item, summit-sunrise cosmetic, lift-first for treks, visual QA of hikers in 3D (the headless harness could not stage a trail scene in time).
+
+## 0.2.2 note
+The hunger audit is repeatable with `npm run analysis:hunger`; the site guide (*Guests & seasons*) describes packed lunch and food stops for players.

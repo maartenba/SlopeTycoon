@@ -18,6 +18,7 @@ The title screen shows a live demo village. Pick **New game** (or **Scenarios** 
 - **Career** (the default) levels your resort up over time. A few big lifts and buildings unlock as you grow. Recommended for your first game.
 - **Sandbox** unlocks everything from day one. Goals are optional.
 - Every seed has a **region name** (like *Ember Range*) and named peaks. New Game shows the name with a small map thumbnail, and the name returns in the year report. Purely flavour.
+- A winter game starts on **1 December**, and the game follows the real calendar (see [Guests & seasons](page:guests-seasons)); the date is in the top bar.
 - Choose a **map size** (small 64, medium 128 or large 256 tiles), a **start season**, a **difficulty** and, if you like, a seed for a particular valley.
 
 > [!TIP] Not sure? Take Career, a small map, Normal difficulty and start in winter. The tutorial offers hints right away, and you can skip it at any time.
@@ -29,7 +30,7 @@ The screen is a small valley with a **Base Lodge**, a road and a real **Parking*
 1. **Build a lift.** Open the **Lifts** drawer and pick a **T-bar** (the cheapest) or a 2-seat chairlift. Click where the bottom station should go, then where the top station should go. If the game says the line is too steep or the cable would hit something, move it a little. See [Lifts & pistes](page:lifts-pistes).
 2. **Paint a piste.** Open **Pistes & Trails**, choose a green (easy) piste and drag from the top of the lift down the slope. Pistes must connect to a lift station to count.
 3. **Connect the village.** Guests walk from the Base Lodge to the bottom station. Draw a **footpath** between them. Buildings without a connection are marked *Not connected*.
-4. **Add the basics.** A **Ski Patrol Hub** and a **First-Aid Hut** (Buildings → Safety) keep guests safe. A restaurant or café feeds them.
+4. **Add the basics.** (Shops, chalets and apartments connect to a footpath or a road, whichever is nearer.) A **Ski Patrol Hub** and a **First-Aid Hut** (Buildings → Safety) keep guests safe. A restaurant or café feeds them.
 5. **Press play.** Time runs at 1× by default. Watch the first guests arrive, queue and ski.
 
 {{fig:ui-hud}}

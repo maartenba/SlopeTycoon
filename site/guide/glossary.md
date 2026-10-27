@@ -9,6 +9,8 @@ screenshots: []
 
 **Almabtrieb** The autumn descent of the decorated cows from the alpine pastures; a festival you can watch.
 
+**Annual service** The yearly planned maintenance of a lift (Operations → Maintenance); a missed one makes the lift *overdue*.
+
 **Auto-flatten** Automatic levelling of the ground under a building when you place it (<kbd>F</kbd> toggles).
 
 **Career** The default game mode where your resort levels up and unlocks big items. Opposite of *Sandbox*.
@@ -17,9 +19,15 @@ screenshots: []
 
 **Crew** One of the four staff groups: instructors, patrol, groomers and lift operators.
 
+**Date chip** The date, season and year shown in the top bar.
+
 **Dock** The row of buttons along the bottom of the screen.
 
 **Drawer** A panel that opens from a dock button.
+
+**Energy grid** The generators (solar, wind, hydro, biomass) that offset a capped share of your lift energy bill.
+
+**Events strip** The January to December overview in the Events calendar.
 
 **Fair price** The price the game considers reasonable for a ticket at your star rating.
 
@@ -35,6 +43,8 @@ screenshots: []
 
 **Level** Career progress from 1 to 6.
 
+**Mothballed** A snow cannon that is switched off: no energy, no water, 15 % of its upkeep.
+
 **Not connected** A building that has no path, road or rail link yet.
 
 **Overlay** A map view (coverage, snowmaking, wildlife…); <kbd>O</kbd> cycles them.
@@ -47,7 +57,13 @@ screenshots: []
 
 **Ranger Rudi** The friendly adviser at the bottom left.
 
+**Run** One stretch of piste between two junctions or lift stations, with its own name, difficulty, traffic and open / closed switch.
+
+**Runs overlay** The map view that colours and labels every run.
+
 **Sandbox** Everything unlocked from day one.
+
+**Service window** The month in which a lift gets its annual service.
 
 **Skip to…** Fast-forward to the next month, season or event (<kbd>K</kbd>).
 

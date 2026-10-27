@@ -129,3 +129,6 @@ Deliberately **not** gated: the Ranger Station (a goal in the last chapter and a
 ### Pacing pass (user feedback "level pacing maybe a little sooner")
 
 `LEVELS` thresholds (stars / chapters / best-day unchanged except where noted): L3 guests 1,500 -> **750**, profit months 2 -> **1**; L4 guests 3,500 -> **1,900**, profit months 6 -> **3**; L5 guests 8,000 -> 5,500, best day 70 -> 60, profit months 14 -> 10, 12-month profit 60k -> 45k; L6 guests 20,000 -> 14,000, best day 120 -> 100, profit months 30 -> 22, 12-month profit 150k -> 110k. The unlock list is unchanged. The achievement `level-4` now also shows in the bot-year snapshot (tests/sim/achievements). Sweep: 64 / 128 / 256 x seeds 61, 62 (`progressionCalibrate.ts`). A "mid-year check-in" card at day 90 was NOT added (the award hints need the year-report award engine; not simple), the month card already covers progress.
+
+## 0.2.2: energy unlocks
+Two energy buildings are gated (selective, D2; the test allows at most four gated buildings): **Wind Turbine** at level 2 and **Solar Plant** at level 3. Solar Array, Small Hydro, Biomass Heating, Tree Nursery and Recycling Centre are free from the start (the Advisor suggests the array, so it must never be gated). The site's *Career* unlock table is generated from `config/unlocks.ts`.

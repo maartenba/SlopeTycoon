@@ -511,3 +511,6 @@ Low-band skiable season (mean depth >= 30 cm), 128 map, seeds 3 / 11 / 29: **bef
 
 ### Re-baseline (calendar fix 2)
 Bot year 1 / 2 / 3 net, ski-season length, summer profitability and bankruptcies before and after: see `docs/balance.md` "Climate aligned with the calendar". Short version: no bankruptcies, years 2-3 profitable on 64 / 128 / 256 (two seeds each), the low-altitude ski season is still ~4.2 months (ends 2-9 Apr instead of 5-12 Apr, starts 2-3 Dec instead of 3-8 Dec), summer stays profitable (one 256-map year-3 summer is -13 k, was -3 k). Two latent save/load determinism bugs surfaced and were fixed.
+
+## 11. 0.2.2 summary (calendar)
+Sim day 0 = 1 April; a sim month = one real month of 15 days; seasons: winter Dec-Mar, spring Apr-May, summer Jun-Sep, autumn Oct-Nov; new games start 1 Dec (sim day 120). Longest day 21 June, shortest 21 December; coldest mid-January, warmest mid-July. The HUD date chip, speed panel date, news, month cards, year report, save list and the Events strip all use `formatGameDate()` (labels only: `stateHash` ignores them). The player-facing table is in the guide page *Guests & seasons*; check numbers against sections 8 and 10 above.

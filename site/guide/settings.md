@@ -35,7 +35,7 @@ Open **Settings** with the gear icon in the top bar. The game pauses while Setti
 
 ## Game
 
-- **Month-end summary**: the small card showing income and expenses.
+- **Month-end summary**: the small card showing income and expenses for the real month that just ended (*January*, *February*…).
 - **Year-end report**: the Resort of the Year dialog; if off, the report is still in Finance → Reports.
 - **Fast nights**: nights pass about three times faster.
 - **Ride-along slow motion**.

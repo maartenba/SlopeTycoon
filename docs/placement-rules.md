@@ -159,3 +159,8 @@ Buildings, Lifts and Pistes & Trails drawers sort their cards by relevance to th
 - Keys 1-9 follow the visible order (number badges are rewritten on reorder). Tutorial targets use `data-id` / `data-tab`, so they are order independent.
 - Reordering is keyed (existing card nodes are moved, never re-created; images/scroll survive); it only happens on a season change (`dock.seasonChanged()`) or chip toggle.
 - Lifts: bike-capable lifts (chairs, gondolas, cable car: `LiftDef.carriesBikes`; not T-bar / funicular) are tagged `all` and carry a bike badge; the rest are `winter` (dimmed and last in summer). Pistes: Ski piste `winter`; MTB / Hiking `summer`: summer shows MTB, Hiking, then Ski; winter Ski first.
+
+## 0.2.2 access changes
+* **Shops, chalets and apartments** accept `path` as well as `road` (`access: 'road', altAccess: ['path']`); **cafe** and **stunt park** also accept `pisteEdge`.
+* **Train Station**: `rail+path`, may stand on the END of a rail line (`overRail`); ghost tip "Place the station on the end of a rail line, with a footpath next to it".
+* New **energy** category: Solar Array / Plant (slope <= 2, optional flatten), Wind Turbine (exposed ground only: mean corner height >= 20), Small Hydro (`streamAdjacent`), Biomass (road), Tree Nursery, Recycling Centre. Details in docs/energy.md.

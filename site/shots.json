@@ -261,7 +261,8 @@
     "zoom": 2,
     "target": "lodge",
     "extra": "starter=1&mode=career",
-    "viewport": "1280x800"
+    "viewport": "1280x800",
+    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100)"
    }
   },
   {
@@ -999,6 +1000,158 @@
     },
     "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
    }
+  },
+  {
+   "id": "ui-runs-tab",
+   "alt": "The Runs tab of the Operations drawer: a table of every run with level, length, drop, traffic, surface, grooming order and an Open / Closed button.",
+   "pages": [
+    "lifts-pistes",
+    "operations"
+   ],
+   "kind": "harness",
+   "caption": "Operations > Runs: every run on its own row, with traffic, grooming order and an open / closed switch.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 3.5,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:button[data-tab=runs];wait:800",
+    "evalJs": "__slope.progression.setLevel(4);(()=>{const S=__slope.sim,L=S.lifts.all();const line=(a,b)=>{const n=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);return Array.from({length:n+1},(_,i)=>({x:Math.round(a.x+(b.x-a.x)*i/n),y:Math.round(a.y+(b.y-a.y)*i/n)}))};const fat=(p)=>{const m=new Map();for(const t of p)for(const [dx,dy] of [[0,0],[1,0],[0,1],[1,1]])m.set((t.x+dx)+','+(t.y+dy),{x:t.x+dx,y:t.y+dy});return [...m.values()]};let tot=0;L.forEach((l,k)=>{const t=l.top,b=l.bottom,dx=b.x-t.x,dy=b.y-t.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;(k==0?[[-4,1],[9,2]]:[[-4,3]]).forEach(([o,d],j)=>{const a={x:Math.round(t.x+1+nx*o),y:Math.round(t.y+1+ny*o)},c={x:Math.round(b.x+1+nx*o),y:Math.round(b.y+1+ny*o)};const pts=[...line({x:t.x+1,y:t.y+1},a),...line(a,c),...line(c,{x:b.x+1,y:b.y+1})];const r=S.networks.paint(1,fat(pts),d);tot+=r.painted});});console.log('RUNS painted',tot);const l0=L[0],c=__slope.renderer.controls,x=(l0.bottom.x+l0.top.x)/2,z=(l0.bottom.y+l0.top.y)/2;c.target.set(x,__slope.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+    "ticks": 1500,
+    "size": 256,
+    "seed": 61,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+   }
+  },
+  {
+   "id": "runs-overlay",
+   "alt": "The Runs map overlay: each run in its own colour with a name label, junction and station tiles in white.",
+   "pages": [
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "The Runs overlay (O cycles overlays): every run in its own colour, labelled.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 3.5,
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "steps": "wait:1500",
+    "evalJs": "(()=>{const S=__slope.sim,L=S.lifts.all();const line=(a,b)=>{const n=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);return Array.from({length:n+1},(_,i)=>({x:Math.round(a.x+(b.x-a.x)*i/n),y:Math.round(a.y+(b.y-a.y)*i/n)}))};const fat=(p)=>{const m=new Map();for(const t of p)for(const [dx,dy] of [[0,0],[1,0],[0,1],[1,1]])m.set((t.x+dx)+','+(t.y+dy),{x:t.x+dx,y:t.y+dy});return [...m.values()]};let tot=0;L.forEach((l,k)=>{const t=l.top,b=l.bottom,dx=b.x-t.x,dy=b.y-t.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;(k==0?[[-4,1],[9,2]]:[[-4,3]]).forEach(([o,d],j)=>{const a={x:Math.round(t.x+1+nx*o),y:Math.round(t.y+1+ny*o)},c={x:Math.round(b.x+1+nx*o),y:Math.round(b.y+1+ny*o)};const pts=[...line({x:t.x+1,y:t.y+1},a),...line(a,c),...line(c,{x:b.x+1,y:b.y+1})];const r=S.networks.paint(1,fat(pts),d);tot+=r.painted});});console.log('RUNS painted',tot);const l0=L[0],c=__slope.renderer.controls,x=(l0.bottom.x+l0.top.x)/2,z=(l0.bottom.y+l0.top.y)/2;c.target.set(x,__slope.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);})();__slope.setOverlay('runs');setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+    "ticks": 800,
+    "size": 256,
+    "seed": 61,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+   }
+  },
+  {
+   "id": "ui-maintenance",
+   "alt": "The Maintenance tab of the Operations drawer: global Auto / Manual policy, a service window per lift, last and next service, overdue marks and a 30-day cost projection.",
+   "pages": [
+    "operations",
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "Operations > Maintenance: a service window for every lift.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:button[data-tab=maint];wait:800",
+    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+    "ticks": 1500,
+    "size": 256,
+    "seed": 61,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+   }
+  },
+  {
+   "id": "ui-energy-tab",
+   "alt": "The Energy tab of the Buildings drawer: Solar Array, Solar Plant, Wind Turbine, Small Hydro, Biomass Heating, Tree Nursery and Recycling & Compost Centre cards with prices.",
+   "pages": [
+    "building",
+    "operations"
+   ],
+   "kind": "harness",
+   "caption": "Buildings > Energy: solar, wind, hydro, biomass, a nursery and a recycling centre.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "steps": "wait:1200;click:button[data-drawer=buildings];wait:400;click:Energy;wait:800",
+    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+    "size": 256,
+    "seed": 61,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')",
+    "ticks": 1500
+   }
+  },
+  {
+   "id": "energy-solar-wind",
+   "alt": "A solar array and a wind turbine beside the village road in summer.",
+   "pages": [
+    "operations",
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "Solar panels and a wind turbine take a share of the lift energy bill.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 5,
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x800",
+    "steps": "wait:1500",
+    "evalJs": "(()=>{const l=__slope.sim.lifts.all()[0],cx=l.bottom.x,cy=l.bottom.y;const P=(t,n,r)=>{let c=0;for(let k=3;k<r&&c<n;k++)for(let dy=-k;dy<=k&&c<n;dy+=2)for(let dx=-k;dx<=k&&c<n;dx+=2){if(Math.max(Math.abs(dx),Math.abs(dy))!==k)continue;const o=__slope.debugPlace(t,cx+dx,cy+dy,0,true);if(o.ok)c++}return c};__slope.progression.setLevel(4);P('solarArray',3,30);P('windTurbine',1,40);P('recyclingCentre',1,30);P('smallHydro',1,60);const c=__slope.renderer.controls;c.target.set(cx,__slope.grid.getCorner(cx,cy)*0.5,cy);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+    "ticks": 1500,
+    "size": 256,
+    "seed": 61,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+   }
+  },
+  {
+   "id": "ui-snowmaking",
+   "alt": "The Operations drawer with the Snowmaking row: On, Off and Auto buttons, a status line and Turn all cannons off / on.",
+   "pages": [
+    "operations",
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "Operations > Snowmaking: On, Off or Auto, per resort and per cannon.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1280x900",
+    "steps": "wait:1500;click:button[data-drawer=ops];wait:800",
+    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+    "ticks": 1500,
+    "size": 256,
+    "seed": 61,
+    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+   }
+  },
+  {
+   "id": "ui-loading",
+   "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
+   "pages": [
+    "troubleshooting",
+    "getting-started"
+   ],
+   "kind": "copy",
+   "caption": "The loading splash shows real boot stages.",
+   "source": "docs/img/loading-splash.webp"
   }
  ]
 }

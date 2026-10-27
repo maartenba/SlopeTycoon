@@ -9,13 +9,15 @@ screenshots: [events-calendar, festival-market, story-inspector, ui-rating]
 
 {{fig:events-calendar}}
 
-Open **Marketing**: below the campaigns sits the **Events calendar**. It lists what is running now, what is coming up (you can cancel a booking before it starts and get 80 % back), and a card for every festival you can book: cost, length, extra guests, what it needs and a start date to pick. A card is greyed out with the reason (not enough stars, no Base Lodge, wrong season, level too low) until you qualify.
+Open **Marketing**: below the campaigns sits the **Events calendar**. It lists what is running now, what is coming up (you can cancel a booking before it starts and get 80 % back), and a card for every festival you can book: cost, length, extra guests, what it needs and a start date to pick. At the top you see **today's date**, countdowns to what is coming, the start window of each festival and a **January to December strip** showing which months have something on. A card is greyed out with the reason (not enough stars, no Base Lodge, wrong season, level too low) until you qualify.
 
 While a festival runs every guest is a little happier and more people turn up. Prices go into the same **marketing** line of the books as campaigns.
 
+Festivals sit in their **real months**: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, Almabtrieb in early October, New Year on 31 December.
+
 {{gen:festivals}}
 
-Most events are booked from the card. A few simply happen: the **Almabtrieb** (the herds come down from the alpine pastures in autumn, if you own an Alpine Farm with cows), **New Year**, a **critic visit** and **powder days**.
+Most events are booked from the card. A few simply happen: the **Almabtrieb** (the herds come down from the alpine pastures in early October, if you own an Alpine Farm with cows; announced three days ahead, with a small arrival bonus), **New Year**, a **critic visit** and **powder days**.
 
 > [!NOTE] A critic is announced three days ahead in the news. Their verdict depends on your stars, how happy your guests are, how many pistes are open and whether incidents are unresolved. A good review brings guests for ten days; a poor one scares a few off.
 
@@ -50,8 +52,8 @@ You are not alone in the valley. Two or three **neighbouring resorts** compete f
 
 The rating has one more bar: **sustainability**, worth 8 % of your score. It rewards three things:
 
-1. **Energy per guest**: lifts and snow cannons that burn little for each visitor.
-2. **Trees**: felling forest costs points, planting saplings earns them back. The first few percent are free: everyone has to build somewhere.
+1. **Energy per guest**: what you still buy from the grid per visitor. Lifts and cannons that burn little help, and so do **solar, wind, hydro and biomass** buildings and a **Recycling Centre** (+4 points); see [Operations & safety](page:operations).
+2. **Trees**: felling forest costs points, planting saplings (or a **Tree Nursery**) earns them back. The first few percent are free: everyone has to build somewhere.
 3. **Habitat**: pistes, paths and buildings in dense forest crowd the wildlife. Trained **rangers** (see [Operations & safety](page:operations)) halve this penalty.
 
 The panel's hint names the weakest of the three. A resort that scores well all year earns the **Green Resort** award in the year report (bronze, silver, gold).

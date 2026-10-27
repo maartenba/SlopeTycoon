@@ -2,7 +2,9 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.2.2] - 2026-10-27 (pre-release)
+
+Changes since 0.2.1: a real calendar, runs, energy, maintenance, snowmaking control and a lot of polish. Still a pre-release; not 1.0. The website, player guide and developer docs were brought up to date (new guide sections *Calendar & seasons*, *Runs*, *Planned maintenance*, *Snowmaking*, *Energy and sustainability*, a loading-screen entry in Troubleshooting, new screenshots `ui-runs-tab`, `runs-overlay`, `ui-maintenance`, `ui-snowmaking`, `ui-energy-tab`, `energy-solar-wind`, `ui-loading`, and a re-shoot of every picture with the date chip).
 
 - **Energy grid + green buildings**: a new Energy tab in the Buildings drawer with a Solar Array, a Solar Plant (level 3), a Wind Turbine (level 2; exposed ground only, shuts down in storms, spinning rotor), Small Hydro (on a stream bank), Biomass Heating, a Tree Nursery and a Recycling & Compost Centre. Generators take a capped share (at most 60 % of the day's demand) off the lift energy bill, surplus is not sold, so energy is never free; typical payback 2.5-4 game years (biomass is the slow one). The sustainability facet now counts net grid purchase per guest (+4 points for recycling, nursery saplings count against the forest you cleared); Ranger Rudi suggests a Solar Array when energy is your weakest green spot; inspectors show output now, today / yesterday and the share of the bill each unit offsets. Games without generators are unchanged. `docs/energy.md`.
 - **Pistes are runs**: painted strokes that touch no longer count as ONE piste. The network is split at junctions and lift stations into runs, each with its own name, difficulty (from its own tiles), length, drop and slope; wide pistes stay one run. New *Runs* map overlay with a label per run. See `docs/runs.md`.

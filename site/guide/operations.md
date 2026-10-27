@@ -1,13 +1,11 @@
 ---
 title: "Operations & safety"
 order: 6
-summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, crews and training courses."
-description: "Run the mountain in Slope Tycoon: ski patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, crews and courses."
-screenshots: [ui-ops, ui-staff, ops-bear]
+summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, energy and green buildings, crews and courses."
+description: "Run the mountain in Slope Tycoon: ski patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, energy, crews and courses."
+screenshots: [ui-staff, ui-maintenance, ui-energy-tab, energy-solar-wind]
 ---
-{{fig:ui-ops}}
-
-Skiing is fun until somebody falls over. The **Operations** drawer and the coverage overlays show how well your resort can cope.
+Skiing is fun until somebody falls over. The **Operations** drawer and the coverage overlays show how well your resort can cope. Its tabs are **Lifts** (opening hours, the snowmaking row), **Runs** (see [Lifts & pistes](page:lifts-pistes)), **Maintenance** and **Staff**.
 
 > [!NOTE] Slope Tycoon is gentle about it: **nobody dies**. A badly handled incident ends with a guest going to hospital and leaving early (and a bad review).
 
@@ -28,7 +26,7 @@ Use the **coverage overlay** (<kbd>O</kbd> cycles overlays) to see which pistes 
 
 {{fig:ui-staff}}
 
-The **Staff** tab (next to *Lifts* in the Operations drawer) keeps four crews: **instructors** (ski-school capacity), **patrol** (how fast the rescue sleds go), **groomers** (the night shift) and **lift operators** (loading speed). By default everything is on **Auto**: crews match what your buildings need, nothing changes and nothing extra is paid.
+The **Staff** tab (the last tab of the Operations drawer) keeps four crews: **instructors** (ski-school capacity), **patrol** (how fast the rescue sleds go), **groomers** (the night shift) and **lift operators** (loading speed). By default everything is on **Auto**: crews match what your buildings need, nothing changes and nothing extra is paid.
 
 Untick Auto to set a headcount yourself. Fewer people than needed slows that job down (never below 30 %), extra people cost wages and bring nothing. The **wage level** (low, normal, high) scales the bill and sets the crew's **morale**: tired, underpaid crews break more lifts, happy ones fewer.
 
@@ -48,12 +46,38 @@ Avalanches are rare and dramatic. They need steep ground (roughly 30–45°), pl
 
 Bears sleep through winter, get hungry in autumn and roam the remote forest in the warm months, along with wolves. They scare guests and cost you income.
 
-{{fig:ops-bear}}
+Autumn has a bonus: the **Almabtrieb**. With an Alpine Farm (and cows) the herds come down from the pastures in early October. It is announced three days ahead in the news and by Ranger Rudi (*Show me* flies to the base station), starts with a news item on 1 October, brings a small arrival bonus and dresses the road by the base station for 11 days. It is listed in the Events panel with its date; without a farm Rudi suggests building one.
 
 Build a **Ranger Station** (it unlocks a goal early on) to keep guests and animals apart. Rangers can stock bear-proof bins. The **Rangers & wildlife** course scares guests less often and halves the habitat penalty in your [sustainability](page:events) score.
 
 ## Lifts: maintenance and breakdowns
 
-Lifts wear out. A **Lift Maintenance Workshop** looks after them. Strong wind closes lifts that are not wind-tolerant, and a stuck lift triggers an evacuation of riders.
+Lifts wear out. A **Lift Maintenance Workshop** looks after them, and every lift gets a planned **annual service** in the **Maintenance** tab: winter lifts in April, summer-only lifts in October, or a month you pick. Skipped services make a lift *overdue* and more likely to break down.
 
-> [!TIP] A flashing red advice badge from Ranger Rudi is almost always one of: no patrol hub, a long queue, an uncovered piste, or a bear.
+{{fig:ui-maintenance}}
+
+The full rules (windows, closures of 2 to 7 days, cost, overdue risk) are in [Lifts & pistes](page:lifts-pistes). Strong wind closes lifts that are not wind-tolerant, and a stuck lift triggers an evacuation of riders.
+
+## Energy and sustainability
+
+Lifts and snow cannons burn energy, and that is a cost line in your books (and a bar in your rating). The **Energy** tab of the Buildings drawer holds the buildings that make it cheaper or greener:
+
+{{fig:ui-energy-tab}}
+
+| Building | Notes |
+|---|---|
+| **Solar Array** | Cheap and flat-ground friendly. Weak under winter snow, strong in summer. |
+| **Solar Plant** | The big one (level 3 in Career); worthwhile on large maps. |
+| **Wind Turbine** | Level 2. Needs exposed, high ground ("Too low for this building" otherwise) and shuts down in storms; the rotor really spins. |
+| **Small Hydro** | Must stand on a stream bank; runs day and night, best in the spring melt. |
+| **Biomass Heating** | Burns timber from the forest you clear. A small, slow-payback offset. |
+| **Tree Nursery** | Raises saplings that count against the forest you felled, and makes replanting cheaper. |
+| **Recycling & Compost Centre** | A flat bonus to the sustainability score (one is enough). |
+
+{{fig:energy-solar-wind}}
+
+How it works: generators cover a **share of the day's lift energy bill**, at most 60 %, hour by hour; the surplus is **not sold**, so energy is never free and overbuilding is wasted money. A solar array or small hydro typically pays itself back in about **3 years**, a turbine in 2.5 to 3, biomass in about 5. Games without generators behave exactly as before.
+
+Inspectors show **output now**, today, yesterday and the share of the bill each unit offsets. The **sustainability** facet of your rating counts the **net grid purchase per guest** (what you still buy), so generators raise it; recycling adds a few points and nursery saplings count against felled trees. Ranger Rudi suggests a Solar Array when energy is your weakest green spot. See [Events, stories & the region](page:events) for the Green Resort award.
+
+> [!TIP] Wind turbines and solar plants work best where the sun and wind are: put turbines on the high, open ground and panels on gentle slopes, then look at the inspector to see what they really offset.

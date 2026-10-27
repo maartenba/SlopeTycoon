@@ -39,3 +39,9 @@ UI: the inspector of a cannon shows `Running / Idle: too warm (needs <= -2 °C a
 - **Default keeps current runs identical**: mode On + no cannon off adds nothing to the save and changes no tick, so goldens and old saves are unaffected. Auto is opt-in. Save: `sys.ops` module **v2**, optional `sm: { mode, off: [ids] }` written only when non-default (absent = On, all on). Non-mothballed behaviour of the daily/legacy snow path is untouched.
 - **Advisor** `snow.mode`: mode On with cannons running while the snowline is above all pistes (or the high is above +4 °C): "Snowmaking is wasting money: switch to Auto or turn the cannons off"; and the reverse, cannons off while it is cold enough ("Cold snap: turn snowmaking on"). Both open the Operations drawer.
 - Tests: `tests/sim/ops/snowmakingMode.test.ts`, `tests/ui-dom/snowmakingControl.test.ts`, `tests/ui-dom/cannonInspector.test.ts`.
+
+## 0.2.2 summary of operations features
+* **Tabs** in the Operations drawer: Lifts (hours + Snowmaking row), **Runs** (docs/runs.md), **Maintenance** (docs/lift-ops-and-debt.md: annual service windows, overdue risk), Staff (docs/staff.md).
+* **Snowmaking switch** (above) and its status lines; mothballed cannons cost 15 % upkeep.
+* **Energy**: generators offset up to 60 % of the lift energy line (docs/energy.md); the Operations projection still shows the gross lift energy.
+* **Almabtrieb** announcements and the Events strip: docs/festivals.md.

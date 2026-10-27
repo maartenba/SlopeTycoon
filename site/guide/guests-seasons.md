@@ -23,18 +23,24 @@ Click any guest to open the **guest inspector**: type, mood, what they are doing
 
 ## The year
 
-A game year has **180 days** in 12 months of 15 days:
+A game year has **180 days** in 12 months of 15 days, and the months are the **real ones** (northern hemisphere). A new game starts on **1 December**. The date is always visible in the top bar as a **date chip** such as *Sat 14 Feb · Winter · Year 1* (hover it for the day of the year and the time of day). The same real dates appear in the speed panel, the news, the month cards, the year report and the save list.
 
-| Season | Length | What it means for you |
-|---|---|---|
-| Spring | 30 days | The snowline climbs. High lifts still ski, the valley turns green. |
-| Summer | 60 days | Hiking, biking, lakes and farms. Lifts that carry bikes shine. |
-| Autumn | 30 days | A breathing space: maintenance, bears get hungry, the first snow. |
-| Winter | 60 days | Peak ski season: queues, grooming nights, holidays. |
+### Calendar & seasons
+
+| Season | Months | Length | What it means for you |
+|---|---|---|---|
+| Winter | December to March | 60 days | Peak ski season: queues, grooming nights, holidays. Coldest in mid-January. |
+| Spring | April and May | 30 days | The snowline climbs. Late March and April are spring skiing: slush in the afternoons, low pistes melt out early in April, high snow lasts into June. |
+| Summer | June to September | 60 days | Hiking, biking, lakes and farms. Lifts that carry bikes shine. Warmest in mid-July. |
+| Autumn | October and November | 30 days | A breathing space: maintenance, bears get hungry, the first snow on the peaks in October and in the valley in late November. |
+
+Daylight follows the sun too: the **longest day is 21 June** and the **shortest 21 December**, so December days are short (lifts open about 08:30) and summer days long. Weekdays are real as well: Saturday and Sunday are the peak days (see [Money](page:money)).
+
+Festivals sit in their real months: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Almabtrieb in early October and New Year on 31 December. The **Events strip** in the Marketing drawer shows all twelve months at a glance (see [Events, stories & the region](page:events)).
 
 ### The real snowline
 
-Snow depends on **altitude and temperature**. Low pistes melt out first, high ones last, which is why **spring skiing** works only up high while the valley already hikes. Buildings show a *closed: too warm at 1,240 m* message when the air is wrong for them. **Snowmaking** buys you time on a thin base (see [Lifts & pistes](page:lifts-pistes)).
+Snow depends on **altitude and temperature**. Low pistes melt out first, high ones last, which is why **spring skiing** works only up high while the valley already hikes. Buildings show a *closed: too warm at 1,240 m* message when the air is wrong for them. **Snowmaking** buys you time on a thin base (see [Lifts & pistes](page:lifts-pistes)); you can switch the cannons off yourself or let them pause when it is too warm.
 
 {{fig:season-spring}}
 
@@ -44,9 +50,11 @@ Winter buildings are mothballed in summer and cost a fraction of their upkeep, b
 
 {{fig:season-summer}}
 
+Hikers get hungry too. Before a trip they eat if they can, about four in ten bring a free packed lunch, and a hut, café, terrace or the farm shop within about eight tiles of the route counts as a **food stop** on the way. If a trail is long and has no food anywhere near it, guests shorten or skip the trip, and Ranger Rudi suggests *Hikers are going hungry*: add a hut or café near the trails.
+
 ## Day and night
 
-Guests ski between morning and the late afternoon. At night windows glow, lamp posts light and **groomers** go to work. The moon button on the speed controls makes nights pass about three times faster.
+Guests ski between morning and the late afternoon. At night windows glow, lamp posts light and **groomers** go to work. The moon button on the speed controls makes nights pass about three times faster; while it is on, a small badge sits on the moon button.
 
 {{fig:night-village}}
 
@@ -61,7 +69,7 @@ One in-game day lasts **150 seconds** at normal speed (1×). The speed buttons:
 | 3× | 50 s |
 | 10× | 15 s |
 
-Use <kbd>+</kbd> / <kbd>.</kbd> for faster and <kbd>-</kbd> / <kbd>,</kbd> for slower.
+The speed panel shows today's real date under the buttons (hover for the full date and day of the year). Use <kbd>+</kbd> / <kbd>.</kbd> for faster and <kbd>-</kbd> / <kbd>,</kbd> for slower.
 
 ### Skip to…
 

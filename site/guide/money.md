@@ -9,7 +9,7 @@ screenshots: [ui-finance, ui-stats, ui-pricing, ui-marketing]
 
 ## Income and costs
 
-Income comes from **day passes**, **season passes**, restaurants, shops, lodging, rentals and attractions, plus small **grants** for completing goals. Costs are construction, **upkeep**, **wages**, energy for lifts, rescues, marketing and loan interest. **Finance** shows the breakdown, monthly reports and the year report.
+Income comes from **day passes**, **season passes**, restaurants, shops, lodging, rentals and attractions, plus small **grants** for completing goals. Costs are construction, **upkeep**, **wages**, energy for lifts and snow cannons, planned lift **maintenance**, rescues, marketing and loan interest. **Energy** can be cut with the generators in the Buildings drawer's Energy tab (at most 60 % of the lift bill; see [Operations & safety](page:operations)), and switched-off snow cannons cost only 15 % of their upkeep. **Finance** shows the breakdown, monthly reports and the year report.
 
 At the end of each month a small **month summary card** shows income, expenses and net (you can switch it off in [Settings](page:settings)).
 
@@ -25,7 +25,7 @@ Press <kbd>I</kbd> (or the chart button in the top bar, or the pause menu) to op
 
 Open **Pricing** to set day-pass and season-pass prices, food and shop markups and prices for individual attractions. The game compares each with a **fair price** (which rises with your star rating) and tells you if you are *cheap* or *expensive*. Too cheap, and VIPs get suspicious. Too dear, and budget skiers stay home. Price changes apply immediately, but jumping a price by more than about a third causes a short-lived **price shock** that hurts happiness and arrivals.
 
-You can price by weekday and season too. **Peak days** are weekends, holidays and powder days (it is snowing hard); regular days are Fridays; off-peak days are Monday to Thursday. Peak days bring more guests, so a premium is reasonable.
+You can price by weekday and season too. **Peak days** are real weekends (Saturday and Sunday), holidays and powder days (it is snowing hard); regular days are Fridays; off-peak days are Monday to Thursday. Peak days bring more guests, so a premium is reasonable.
 
 ## Marketing campaigns
 

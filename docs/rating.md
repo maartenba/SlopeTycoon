@@ -74,3 +74,6 @@ Before / after (`npx vite-node scripts/analysis/ratingDistribution.ts`; the defa
 | bot 7 + solar | 2.7 / 3.5 / 5.5 | 92 | 88.3 | 4★ 27 %, 4.5★ 73 % | $128,698 |
 
 One array is worth about +5 facet points = +0.4 rating points: a nudge, never dominant. Starter and demo resorts have no generators and are unchanged.
+
+## 0.2.2 note
+Sustainability energy counts **net grid purchase** per guest (generator offset is already off the ledger line); recycling adds +4 points and nursery saplings count against felled trees (docs/energy.md). Rudi's `energy.green` rule names energy as the weakest part. The *Runs* change also affects the "Too few green runs" hint: it counts runs, not connected blobs.

@@ -11,7 +11,7 @@ screenshots: [ui-saveload]
 
 - <kbd>F5</kbd> **quick-saves**, <kbd>F9</kbd> **quick-loads**.
 - <kbd>Ctrl</kbd>+<kbd>S</kbd> or the **Save** button opens the **Save / Load** dialog with named slots and thumbnails.
-- The game **autosaves every in-game month** and when you return to the menu.
+- The game **autosaves every in-game month** (the save list shows the real in-game date) and when you return to the menu.
 - **Continue** on the main menu resumes your latest save.
 
 ## Where saves live

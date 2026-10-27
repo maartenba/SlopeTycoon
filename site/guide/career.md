@@ -27,6 +27,8 @@ Everything not listed is available from the start (including the Landscape drawe
 
 {{gen:unlocks}}
 
+The table is generated from the game's rules, so it always matches: the energy buildings are mostly available from the start, with the **Wind Turbine** at level 2 and the **Solar Plant** at level 3.
+
 ## Goals
 
 The goals card walks you through **four chapters and twenty goals** (for example *Paint an easy run*, *Green, blue and red runs*, *Open a black run*): *Season 1: Open for business*, *Local favourite*, *Regional name* and *Alpine destination*. Three goals are active at a time; finishing a chapter opens the next. Each goal pays a small grant. Click **Show me** to jump the camera to the relevant spot, and the card can be collapsed.

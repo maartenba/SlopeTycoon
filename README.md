@@ -3,19 +3,20 @@
 A browser ski-resort tycoon: carve a procedurally generated alpine valley, build lifts, pistes and a village, keep guests, families and the bank happy
 through winter *and* summer. Three.js + TypeScript, no backend, no external assets (every model, texture, sound and music piece is generated in code).
 
-**Version 0.2.1** (pre-release)
+**Version 0.2.2** (pre-release)
 
-Status: pre-release (0.2.1) — playtest feedback welcome.
+Status: pre-release (0.2.2) — playtest feedback welcome.
 
 ## Features
 
 - **Terrain**: seeded procedural valleys (presets, 64 / 128 / 256 map sizes), lakes and streams, forests, rocks; raise / lower / flatten terraforming; a Landscape drawer for ponds, boulders and garden decor; named seeds (`Alpine-Fox-1234`).
-- **Seasons & snow**: full year cycle (15-day months, 180-day year: winter and summer 60 days, spring and autumn 30) with weather, altitude snowline (high-altitude skiing alongside valley hiking in shoulder seasons), snow cover that builds and melts, day/night with optional fast nights, 50 % summer construction cost.
+- **Seasons & snow**: full year cycle (real months: winter Dec-Mar, spring Apr-May, summer Jun-Sep, autumn Oct-Nov, 15-day months, 180-day year; a date chip in the HUD; new games start 1 December) with weather, altitude snowline (high-altitude skiing alongside valley hiking in shoulder seasons), snow cover that builds and melts, day/night with optional fast nights, 50 % summer construction cost.
 - **Lifts**: magic carpets, T-bars, chairlifts, gondolas, funicular and more, with variants, auto-placed towers (height-capped, more and shorter towers preferred), visible cables and moving carriers, breakdowns, operating hours and energy cost.
-- **Pistes & paths**: paint pistes (difficulty from slope), paths, roads, rail; piste naming and inspector; quality, wear and traffic.
+- **Pistes & paths**: paint pistes (difficulty from slope), paths, roads, rail; pistes are split into **runs** (own name, difficulty, traffic, open / close, groom order; Runs overlay + Operations > Runs tab, run-aware routing; `docs/runs.md`); quality, wear and traffic.
 - **Guests & families**: individual guests with needs and decisions, navigation on lifts / pistes / paths, arrivals by road, rail and altiport, families with ski school and childcare.
 - **Attractions & buildings**: lodging, restaurants, rental, shops, ski school, playgrounds, adventure park, beach, bike lifts and the rest of the winter and summer catalogue, with dependency rules (see `docs/placement-rules.md`).
 - **Operations**: nightly grooming and snowmaking (snowcats, reservoirs), ski patrol with sled rescues, first aid, helicopter, avalanches, wildlife (bears, wolves) with warning-sign mitigation, fauna, farms and livestock, tree planting, chimney smoke.
+- **Maintenance, snowmaking and energy**: planned annual lift service (Operations > Maintenance, overdue risk; `docs/lift-ops-and-debt.md`), snowmaking On / Off / Auto with a per-cannon switch (`docs/ops.md`), and an energy grid with solar, wind, small hydro, biomass, a tree nursery and a recycling centre that offset a capped share of the lift bill and raise sustainability (`docs/energy.md`).
 - **Economy**: monthly books, ticket and per-service pricing (seasonal menus), bank loans (starter loan, interest, debt), staff wages, upkeep, difficulty (Relaxed / Normal / Challenging), resort rating.
 - **Career & Sandbox**: new games start in **Career**: your resort has a level (1-6) that grows with stars, guests and profit, and nine big items (6-seat chair, gondolas, funicular, helipad, cable car, altiport, VIP campaign) unlock along the way; the basics, safety and the tutorial are never locked. **Sandbox** (New Game dialog or `?mode=sandbox`, and every old save) has everything from the start (`docs/progression.md`).
 - **Staff, festivals and the region**: four automatic crews with an optional Staff tab and six training courses; bookable festivals (Christmas Market, Winter Carnival, Summer Music Festival, World Cup) plus the Almabtrieb, critic visits and powder days that visibly dress the village; story guests with a wish; two or three rival resorts, a sustainability rating facet and the Green Resort award (`docs/staff.md`, `docs/festivals.md`, `docs/stories.md`, `docs/rivals.md`).

@@ -1,6 +1,20 @@
 # Release notes and checklist
 
-Current release: **0.2.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.2 (2026-10-27)
+
+Release-prep batch: version bump, CHANGELOG `[0.2.2]`, player guide (Calendar & seasons, Runs, Maintenance, Snowmaking, Energy), landing page and FAQ, 7 new screenshots + full re-shoot (57), regenerated OG cards, developer docs.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 323 files passed, 1 skipped; 3279 tests passed, 31 skipped |
+| Perf | `npm run test:perf` | 21 files, 37 tests passed |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (21 pages, 134 images, screenshots 7.8 MB of the 8 MB budget; 145 URLs crawled at `/` and `/slopetycoon/`) |
+| Size | `npm run size` | 2529.1 kB raw / 912.0 kB gzip (budget < 2048 kB gzip) |
+| Not run | `test:balance`, `touch:e2e`, `analytics:e2e`, `audio:render` | not re-run for this batch |
+
+Note: the site screenshot budget (8 MB) is nearly used; the next new shot needs another one trimmed or a lower quality.
 
 ## 0.2.1 results (2026-10-27, macOS, Node v22.23.4)
 
@@ -19,7 +33,7 @@ Current release: **0.2.1 (pre-release, never call it 1.0 until the owner says so
 
 `npm run release:check` = typecheck && lint && test && build && verify:pwa && size; its steps were run individually with the same commands (not as one chain). `shot:suite`, `touch:e2e`, `analytics:e2e`, `audio:render` were not re-run for this note.
 Build and scripts use no network except the opt-in analytics (a runtime feature of the shipped game, `docs/analytics.md`; `npm run analytics:e2e` intercepts Google hosts).
-Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts`) and -> service-worker cache version `0.2.1-<content hash>` (`vite-plugins/precache.ts`).
+Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts`) and -> service-worker cache version `0.2.2-<content hash>` (`vite-plugins/precache.ts`).
 
 ### Dist size (gzip level 9, `scripts/report-size.ts`)
 

@@ -6,12 +6,12 @@
    {
     "w": 640,
     "file": "hero-winter-640.webp",
-    "bytes": 41018
+    "bytes": 41612
    },
    {
     "w": 1280,
     "file": "hero-winter-1280.webp",
-    "bytes": 107222
+    "bytes": 109634
    }
   ]
  },
@@ -22,12 +22,12 @@
    {
     "w": 640,
     "file": "ui-hud-640.webp",
-    "bytes": 42786
+    "bytes": 40932
    },
    {
     "w": 1280,
     "file": "ui-hud-1280.webp",
-    "bytes": 113644
+    "bytes": 109258
    }
   ]
  },
@@ -54,12 +54,12 @@
    {
     "w": 640,
     "file": "season-spring-640.webp",
-    "bytes": 37944
+    "bytes": 38542
    },
    {
     "w": 1280,
     "file": "season-spring-1280.webp",
-    "bytes": 100158
+    "bytes": 101842
    }
   ]
  },
@@ -70,12 +70,12 @@
    {
     "w": 640,
     "file": "season-summer-640.webp",
-    "bytes": 34044
+    "bytes": 34218
    },
    {
     "w": 1280,
     "file": "season-summer-1280.webp",
-    "bytes": 91004
+    "bytes": 91378
    }
   ]
  },
@@ -86,12 +86,12 @@
    {
     "w": 640,
     "file": "season-autumn-640.webp",
-    "bytes": 34984
+    "bytes": 36654
    },
    {
     "w": 1280,
     "file": "season-autumn-1280.webp",
-    "bytes": 93148
+    "bytes": 98164
    }
   ]
  },
@@ -102,12 +102,12 @@
    {
     "w": 640,
     "file": "night-village-640.webp",
-    "bytes": 25668
+    "bytes": 26490
    },
    {
     "w": 1280,
     "file": "night-village-1280.webp",
-    "bytes": 68236
+    "bytes": 69420
    }
   ]
  },
@@ -118,12 +118,12 @@
    {
     "w": 640,
     "file": "slope-guests-640.webp",
-    "bytes": 28676
+    "bytes": 29016
    },
    {
     "w": 1280,
     "file": "slope-guests-1280.webp",
-    "bytes": 71088
+    "bytes": 72560
    }
   ]
  },
@@ -134,12 +134,12 @@
    {
     "w": 640,
     "file": "ride-ski-640.webp",
-    "bytes": 13350
+    "bytes": 15620
    },
    {
     "w": 1280,
     "file": "ride-ski-1280.webp",
-    "bytes": 34876
+    "bytes": 54070
    }
   ]
  },
@@ -150,12 +150,12 @@
    {
     "w": 640,
     "file": "ride-lift-640.webp",
-    "bytes": 38866
+    "bytes": 35116
    },
    {
     "w": 1280,
     "file": "ride-lift-1280.webp",
-    "bytes": 116246
+    "bytes": 102352
    }
   ]
  },
@@ -166,12 +166,12 @@
    {
     "w": 640,
     "file": "walk-lodge-640.webp",
-    "bytes": 29230
+    "bytes": 27998
    },
    {
     "w": 1280,
     "file": "walk-lodge-1280.webp",
-    "bytes": 87446
+    "bytes": 85804
    }
   ]
  },
@@ -182,12 +182,12 @@
    {
     "w": 640,
     "file": "photo-mode-640.webp",
-    "bytes": 36644
+    "bytes": 32238
    },
    {
     "w": 1280,
     "file": "photo-mode-1280.webp",
-    "bytes": 104476
+    "bytes": 90812
    }
   ]
  },
@@ -198,12 +198,12 @@
    {
     "w": 640,
     "file": "ui-buildings-drawer-640.webp",
-    "bytes": 44864
+    "bytes": 44890
    },
    {
     "w": 1280,
     "file": "ui-buildings-drawer-1280.webp",
-    "bytes": 120234
+    "bytes": 120524
    }
   ]
  },
@@ -214,12 +214,12 @@
    {
     "w": 640,
     "file": "ui-lifts-drawer-640.webp",
-    "bytes": 45684
+    "bytes": 45736
    },
    {
     "w": 1280,
     "file": "ui-lifts-drawer-1280.webp",
-    "bytes": 122390
+    "bytes": 122748
    }
   ]
  },
@@ -230,12 +230,12 @@
    {
     "w": 640,
     "file": "ui-pistes-drawer-640.webp",
-    "bytes": 44744
+    "bytes": 44912
    },
    {
     "w": 1280,
     "file": "ui-pistes-drawer-1280.webp",
-    "bytes": 118876
+    "bytes": 119304
    }
   ]
  },
@@ -246,12 +246,12 @@
    {
     "w": 640,
     "file": "ui-finance-640.webp",
-    "bytes": 43828
+    "bytes": 44314
    },
    {
     "w": 1280,
     "file": "ui-finance-1280.webp",
-    "bytes": 117750
+    "bytes": 118672
    }
   ]
  },
@@ -262,12 +262,12 @@
    {
     "w": 640,
     "file": "ui-pricing-640.webp",
-    "bytes": 42288
+    "bytes": 42330
    },
    {
     "w": 1280,
     "file": "ui-pricing-1280.webp",
-    "bytes": 112292
+    "bytes": 113306
    }
   ]
  },
@@ -278,12 +278,12 @@
    {
     "w": 640,
     "file": "ui-marketing-640.webp",
-    "bytes": 42784
+    "bytes": 43264
    },
    {
     "w": 1280,
     "file": "ui-marketing-1280.webp",
-    "bytes": 115696
+    "bytes": 117206
    }
   ]
  },
@@ -294,12 +294,12 @@
    {
     "w": 640,
     "file": "ui-ops-640.webp",
-    "bytes": 44878
+    "bytes": 44880
    },
    {
     "w": 1280,
     "file": "ui-ops-1280.webp",
-    "bytes": 120046
+    "bytes": 119968
    }
   ]
  },
@@ -315,7 +315,7 @@
    {
     "w": 1280,
     "file": "ui-level-panel-1280.webp",
-    "bytes": 116234
+    "bytes": 115188
    }
   ]
  },
@@ -326,12 +326,12 @@
    {
     "w": 640,
     "file": "ui-levelup-640.webp",
-    "bytes": 44176
+    "bytes": 44722
    },
    {
     "w": 1280,
     "file": "ui-levelup-1280.webp",
-    "bytes": 119404
+    "bytes": 119286
    }
   ]
  },
@@ -342,12 +342,12 @@
    {
     "w": 640,
     "file": "ui-scenarios-640.webp",
-    "bytes": 26700
+    "bytes": 27166
    },
    {
     "w": 1280,
     "file": "ui-scenarios-1280.webp",
-    "bytes": 76796
+    "bytes": 78366
    }
   ]
  },
@@ -358,12 +358,12 @@
    {
     "w": 640,
     "file": "ui-newgame-640.webp",
-    "bytes": 18888
+    "bytes": 12152
    },
    {
     "w": 1280,
     "file": "ui-newgame-1280.webp",
-    "bytes": 50966
+    "bytes": 33174
    }
   ]
  },
@@ -374,12 +374,12 @@
    {
     "w": 640,
     "file": "ui-year-report-640.webp",
-    "bytes": 25388
+    "bytes": 25136
    },
    {
     "w": 1280,
     "file": "ui-year-report-1280.webp",
-    "bytes": 66092
+    "bytes": 66002
    }
   ]
  },
@@ -390,12 +390,12 @@
    {
     "w": 640,
     "file": "ui-trophies-640.webp",
-    "bytes": 21420
+    "bytes": 21148
    },
    {
     "w": 1280,
     "file": "ui-trophies-1280.webp",
-    "bytes": 57130
+    "bytes": 56254
    }
   ]
  },
@@ -406,12 +406,12 @@
    {
     "w": 640,
     "file": "ui-settings-640.webp",
-    "bytes": 31864
+    "bytes": 32822
    },
    {
     "w": 1280,
     "file": "ui-settings-1280.webp",
-    "bytes": 83906
+    "bytes": 86056
    }
   ]
  },
@@ -422,12 +422,12 @@
    {
     "w": 640,
     "file": "ui-help-640.webp",
-    "bytes": 34264
+    "bytes": 34490
    },
    {
     "w": 1280,
     "file": "ui-help-1280.webp",
-    "bytes": 94690
+    "bytes": 94828
    }
   ]
  },
@@ -438,12 +438,12 @@
    {
     "w": 640,
     "file": "ui-saveload-640.webp",
-    "bytes": 18384
+    "bytes": 17006
    },
    {
     "w": 1280,
     "file": "ui-saveload-1280.webp",
-    "bytes": 50428
+    "bytes": 46890
    }
   ]
  },
@@ -454,12 +454,12 @@
    {
     "w": 640,
     "file": "ui-pause-640.webp",
-    "bytes": 19694
+    "bytes": 19346
    },
    {
     "w": 1280,
     "file": "ui-pause-1280.webp",
-    "bytes": 53566
+    "bytes": 53590
    }
   ]
  },
@@ -470,12 +470,12 @@
    {
     "w": 640,
     "file": "ui-menu-640.webp",
-    "bytes": 31390
+    "bytes": 28696
    },
    {
     "w": 1280,
     "file": "ui-menu-1280.webp",
-    "bytes": 85948
+    "bytes": 71596
    }
   ]
  },
@@ -502,12 +502,12 @@
    {
     "w": 640,
     "file": "festival-market-640.webp",
-    "bytes": 45324
+    "bytes": 47032
    },
    {
     "w": 1280,
     "file": "festival-market-1280.webp",
-    "bytes": 118176
+    "bytes": 121880
    }
   ]
  },
@@ -518,12 +518,12 @@
    {
     "w": 640,
     "file": "festival-carnival-640.webp",
-    "bytes": 44722
+    "bytes": 45840
    },
    {
     "w": 1280,
     "file": "festival-carnival-1280.webp",
-    "bytes": 116660
+    "bytes": 120344
    }
   ]
  },
@@ -534,12 +534,12 @@
    {
     "w": 640,
     "file": "almabtrieb-640.webp",
-    "bytes": 39248
+    "bytes": 41748
    },
    {
     "w": 1280,
     "file": "almabtrieb-1280.webp",
-    "bytes": 103650
+    "bytes": 110416
    }
   ]
  },
@@ -550,12 +550,12 @@
    {
     "w": 640,
     "file": "events-calendar-640.webp",
-    "bytes": 55682
+    "bytes": 56630
    },
    {
     "w": 1280,
     "file": "events-calendar-1280.webp",
-    "bytes": 155644
+    "bytes": 156292
    }
   ]
  },
@@ -566,12 +566,12 @@
    {
     "w": 640,
     "file": "ui-staff-640.webp",
-    "bytes": 54034
+    "bytes": 53948
    },
    {
     "w": 1280,
     "file": "ui-staff-1280.webp",
-    "bytes": 150150
+    "bytes": 150230
    }
   ]
  },
@@ -582,12 +582,12 @@
    {
     "w": 640,
     "file": "story-inspector-640.webp",
-    "bytes": 55786
+    "bytes": 55186
    },
    {
     "w": 1280,
     "file": "story-inspector-1280.webp",
-    "bytes": 151004
+    "bytes": 150464
    }
   ]
  },
@@ -598,12 +598,12 @@
    {
     "w": 640,
     "file": "ui-rating-640.webp",
-    "bytes": 54888
+    "bytes": 53836
    },
    {
     "w": 1280,
     "file": "ui-rating-1280.webp",
-    "bytes": 158988
+    "bytes": 154324
    }
   ]
  },
@@ -614,12 +614,12 @@
    {
     "w": 640,
     "file": "ui-year-region-640.webp",
-    "bytes": 36566
+    "bytes": 36656
    },
    {
     "w": 1280,
     "file": "ui-year-region-1280.webp",
-    "bytes": 96346
+    "bytes": 96234
    }
   ]
  },
@@ -630,12 +630,12 @@
    {
     "w": 640,
     "file": "ui-profile-640.webp",
-    "bytes": 69406
+    "bytes": 68690
    },
    {
     "w": 1280,
     "file": "ui-profile-1280.webp",
-    "bytes": 185324
+    "bytes": 186100
    }
   ]
  },
@@ -646,12 +646,12 @@
    {
     "w": 640,
     "file": "ui-landscape-640.webp",
-    "bytes": 46034
+    "bytes": 46436
    },
    {
     "w": 1280,
     "file": "ui-landscape-1280.webp",
-    "bytes": 122492
+    "bytes": 123236
    }
   ]
  },
@@ -662,12 +662,12 @@
    {
     "w": 640,
     "file": "landscape-pond-640.webp",
-    "bytes": 20452
+    "bytes": 20640
    },
    {
     "w": 1280,
     "file": "landscape-pond-1280.webp",
-    "bytes": 48252
+    "bytes": 48266
    }
   ]
  },
@@ -678,28 +678,28 @@
    {
     "w": 640,
     "file": "ui-terrain-drawer-640.webp",
-    "bytes": 42942
+    "bytes": 43096
    },
    {
     "w": 1280,
     "file": "ui-terrain-drawer-1280.webp",
-    "bytes": 115876
+    "bytes": 115206
    }
   ]
  },
  "ui-view-drawer": {
   "w": 1280,
-  "h": 720,
+  "h": 1040,
   "files": [
    {
     "w": 640,
     "file": "ui-view-drawer-640.webp",
-    "bytes": 38610
+    "bytes": 49024
    },
    {
     "w": 1280,
     "file": "ui-view-drawer-1280.webp",
-    "bytes": 104706
+    "bytes": 128582
    }
   ]
  },
@@ -710,12 +710,12 @@
    {
     "w": 640,
     "file": "ui-stats-640.webp",
-    "bytes": 27456
+    "bytes": 27308
    },
    {
     "w": 1280,
     "file": "ui-stats-1280.webp",
-    "bytes": 71686
+    "bytes": 71858
    }
   ]
  },
@@ -726,12 +726,12 @@
    {
     "w": 390,
     "file": "touch-phone-hud-640.webp",
-    "bytes": 44196
+    "bytes": 45046
    },
    {
     "w": 390,
     "file": "touch-phone-hud-1280.webp",
-    "bytes": 44196
+    "bytes": 45046
    }
   ]
  },
@@ -742,12 +742,12 @@
    {
     "w": 390,
     "file": "touch-phone-place-640.webp",
-    "bytes": 44120
+    "bytes": 44822
    },
    {
     "w": 390,
     "file": "touch-phone-place-1280.webp",
-    "bytes": 44120
+    "bytes": 44822
    }
   ]
  },
@@ -758,12 +758,12 @@
    {
     "w": 640,
     "file": "touch-tablet-640.webp",
-    "bytes": 46388
+    "bytes": 46650
    },
    {
     "w": 1024,
     "file": "touch-tablet-1280.webp",
-    "bytes": 88742
+    "bytes": 88934
    }
   ]
  },
@@ -774,12 +774,12 @@
    {
     "w": 640,
     "file": "cbsafe-pistes-640.webp",
-    "bytes": 69174
+    "bytes": 68760
    },
    {
     "w": 1280,
     "file": "cbsafe-pistes-1280.webp",
-    "bytes": 186346
+    "bytes": 185852
    }
   ]
  },
@@ -790,12 +790,124 @@
    {
     "w": 640,
     "file": "ui-settings-desktop-640.webp",
-    "bytes": 25282
+    "bytes": 25832
    },
    {
     "w": 1280,
     "file": "ui-settings-desktop-1280.webp",
-    "bytes": 70056
+    "bytes": 71176
+   }
+  ]
+ },
+ "ui-loading": {
+  "w": 600,
+  "h": 320,
+  "files": [
+   {
+    "w": 600,
+    "file": "ui-loading-640.webp",
+    "bytes": 4426
+   },
+   {
+    "w": 600,
+    "file": "ui-loading-1280.webp",
+    "bytes": 4426
+   }
+  ]
+ },
+ "ui-runs-tab": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-runs-tab-640.webp",
+    "bytes": 54514
+   },
+   {
+    "w": 1280,
+    "file": "ui-runs-tab-1280.webp",
+    "bytes": 141120
+   }
+  ]
+ },
+ "runs-overlay": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "runs-overlay-640.webp",
+    "bytes": 53796
+   },
+   {
+    "w": 1280,
+    "file": "runs-overlay-1280.webp",
+    "bytes": 140012
+   }
+  ]
+ },
+ "ui-maintenance": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-maintenance-640.webp",
+    "bytes": 58064
+   },
+   {
+    "w": 1280,
+    "file": "ui-maintenance-1280.webp",
+    "bytes": 182004
+   }
+  ]
+ },
+ "ui-energy-tab": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-energy-tab-640.webp",
+    "bytes": 38368
+   },
+   {
+    "w": 1280,
+    "file": "ui-energy-tab-1280.webp",
+    "bytes": 112474
+   }
+  ]
+ },
+ "energy-solar-wind": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "energy-solar-wind-640.webp",
+    "bytes": 30608
+   },
+   {
+    "w": 1280,
+    "file": "energy-solar-wind-1280.webp",
+    "bytes": 83108
+   }
+  ]
+ },
+ "ui-snowmaking": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-snowmaking-640.webp",
+    "bytes": 59782
+   },
+   {
+    "w": 1280,
+    "file": "ui-snowmaking-1280.webp",
+    "bytes": 185976
    }
   ]
  }
