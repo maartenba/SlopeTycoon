@@ -4,6 +4,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Trail access**: buildings can now be served by a hiking / MTB trail that is connected to the village (new `trail` access kind). The Mountain Hut, Ranger Station, Adventure Park and Alpine Farm accept a trail next to them (Café and Stunt Park keep accepting a piste edge). A building reached only on foot (trail or piste edge, no footpath or road) pays +25% upkeep ("Supplied on foot" in the inspector). `docs/trails-access.md`.
 - **Lodging v2 framework** (no player-visible change yet): lodging specs can carry a price tier (budget x0.6 / standard x1 / luxury x2.5), a season window ("Closed for the season", no check-ins) and a pool amenity (extra places and a happiness bonus for overnight guests). Chalet, Apartment and Base Lodge are unchanged. The campground and hotels build on it. `docs/lodging.md`.
 - **Guest-type framework** (no player-visible change yet): guest types are now extensible data (`src/config/guestTypes.ts`: season shares, minimum level, required buildings, weather response, appeal profile, marketing segment, look hooks). The arrival mix draws extra types from a separate stream behind the `guestTypesV2` flag (off), the Statistics dialog gains a "Guests by type" card, and the guest inspector shows type labels. No new type is active yet; Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler build on it. `docs/guest-types.md`.
 

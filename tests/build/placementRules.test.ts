@@ -128,7 +128,7 @@ describe('access rule (never blocks, deactivates)', () => {
   });
   it('Mountain Hut: piste neighbour OR path satisfies access', () => {
     const { env, net } = mk();
-    expect(validatePlacement(env, 'mountainHut', 20, 20, 0).warnings.join()).toMatch(/footpath, road or piste next to it/);
+    expect(validatePlacement(env, 'mountainHut', 20, 20, 0).warnings.join()).toMatch(/footpath, road, hiking trail or piste next to it/);
     net.paint(Layer.Ski, [{ x: 22, y: 20 }]);
     expect(validatePlacement(env, 'mountainHut', 20, 20, 0).warnings).toEqual([]);
   });

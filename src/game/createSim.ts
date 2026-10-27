@@ -13,7 +13,7 @@ import { nightWarp } from '../core/pacing';
 import { sunTimes } from '../sim/Daylight';
 import { Energy } from '../sim/Energy';
 import { BUILDINGS } from '../config/buildings';
-import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, oldDays } from '../config/balance';
+import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, REMOTE_SUPPLY_MULT, oldDays } from '../config/balance';
 import { LIFTS } from '../config/lifts';
 import { Buildings } from '../sim/Buildings';
 import { Names } from '../sim/Names';
@@ -110,6 +110,8 @@ export interface SimOptions {
   rivalMarket?: boolean;
   /** Story guests (named guests with one wish; sim/guests/Stories.ts). The game turns them on; headless sims / tests default to off. */
   stories?: boolean;
+  /** Buildings reached only by hiking trail / piste edge pay REMOTE_SUPPLY_MULT (+25%) upkeep. The game turns it on; headless sims / tests default to off (goldens). */
+  remoteSupply?: boolean;
   /** Guest-type framework (Task 9): also draw the extra guest types of config/guestTypes.ts (season shares, level + building gates). Default off = the six core types only (goldens). */
   guestTypesV2?: boolean;
   /** Starting money override (tests). */
@@ -788,6 +790,7 @@ export function createSim(opts: SimOptions) {
         let share = x.active && openStatus.buildingStatus(x.id)?.open === false ? CLOSED_BUILDING_UPKEEP_SHARE : 1;
         if (offSeason && def?.season === 'winter' && OFFSEASON_RELIEF.winterOnlyUpkeepShare < share) { relief.mothball += full * (share - OFFSEASON_RELIEF.winterOnlyUpkeepShare); share = OFFSEASON_RELIEF.winterOnlyUpkeepShare; }
         if (x.type === 'snowCannon' && ops.snowmaking.isMothballed(x.id) && SNOWMAKING.mothballUpkeepShare < share) { relief.mothball += full * (share - SNOWMAKING.mothballUpkeepShare); share = SNOWMAKING.mothballUpkeepShare; } // switched off by the player: 15 % upkeep
+        if (opts.remoteSupply === true && networks.suppliedOnFootOnly(x.id)) share *= REMOTE_SUPPLY_MULT; // supplied on foot: +25% upkeep
         b += full * share;
       }
       const lo = liftOps.settleDay(); // closed lifts only cost base maintenance; running lifts cost energy

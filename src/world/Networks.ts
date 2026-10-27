@@ -3,7 +3,7 @@ import { CHUNK_SIZE, TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
 import type { Pt } from '../sim/Dependencies';
 import { HEIGHT_UNIT } from '../config/balance';
-import { accessProblem, type NetworkAccess, type ServedKind } from '../sim/PlacementRules';
+import { accessProblem, suppliedOnFootOnly, type NetworkAccess, type ServedKind } from '../sim/PlacementRules';
 
 export const NetKind = { None: 0, Path: 1, Road: 2, Rail: 3 } as const;
 export type NetKindId = 1 | 2 | 3;
@@ -477,7 +477,7 @@ export class Networks {
     return this.pisteCache;
   }
 
-  private componentsOf(layer: LayerBit): PisteComponent[] {
+  private componentsOf(layer: number): PisteComponent[] {
     const n = this.size, seen = new Uint8Array(n * n), comps: PisteComponent[] = [];
     const occ = this.grid.occupancy.flags;
     for (let s = 0; s < n * n; s++) {
@@ -686,7 +686,44 @@ export class Networks {
       case 'path': return this.touches(r, c.walkComp!);
       case 'rail': return this.touches(r, c.railComp!) || this.onSeen(r, c.railComp!); // a station may stand ON the rail
       case 'piste': return this.touchesPiste(r);
+      case 'trail': return this.touchesTrail(r);
     }
+  }
+
+  private trailCache: { v: number; mask: Uint8Array } | null = null;
+
+  /**
+   * 1 on every Hike / MTB trail tile of an ATTACHED component (cached per version): the component touches a footpath / road
+   * of the walk network from the road entry, or a lift. A trail island nobody can walk to does not serve buildings.
+   */
+  trailMask(): Uint8Array {
+    if (this.trailCache && this.trailCache.v === this.version) return this.trailCache.mask;
+    const n = this.size, mask = new Uint8Array(n * n), walk = this.comps().walkComp!;
+    for (const c of this.componentsOf(Layer.Hike | Layer.Mtb)) {
+      let attached = c.touchesLift;
+      for (let h = 0; !attached && h < c.tiles.length; h++) {
+        const i = c.tiles[h]!, x = i % n, y = (i / n) | 0;
+        if (walk[i]) { attached = true; break; }
+        for (let d = 0; d < 4 && !attached; d++) { const nx = x + DX[d]!, ny = y + DY[d]!; if (this.inb(nx, ny) && walk[this.idx(nx, ny)]) attached = true; }
+      }
+      if (attached) for (const i of c.tiles) mask[i] = 1;
+    }
+    this.trailCache = { v: this.version, mask };
+    return mask;
+  }
+
+  /** Footprint (or its 4-neighbour ring) touches an attached hiking / MTB trail tile. */
+  private touchesTrail(r: Rect): boolean {
+    const m = this.trailMask();
+    for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) if (this.inb(i, j) && m[this.idx(i, j)]) return true;
+    return this.ring(r).some((t) => m[this.idx(t.x, t.y)]);
+  }
+
+  /** True when the building is supplied only on foot (trail / piste edge, no footpath or road): pays the remote-supply upkeep surcharge. */
+  suppliedOnFootOnly(buildingId: number): boolean {
+    const b = this.host.get(buildingId);
+    const def = b?.type ? BUILDINGS[b.type] : undefined;
+    return !!b && !!def && suppliedOnFootOnly(def, this.access, { x: b.x, y: b.y, w: b.w, h: b.h });
   }
 
   /** Query facade for Buildings.setNetwork({ access }). */

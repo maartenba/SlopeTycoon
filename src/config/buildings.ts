@@ -3,7 +3,7 @@ export type BuildingCategory =
   | 'snow' | 'water' | 'recreation' | 'transport' | 'misc' | 'energy';
 
 /** How a building must be connected. Missing access never blocks placement: the building is inactive ('Not connected'). */
-export type AccessKind = 'road' | 'path' | 'rail+path' | 'pisteEdge' | 'none';
+export type AccessKind = 'road' | 'path' | 'rail+path' | 'pisteEdge' | 'trail' | 'none';
 /** forbid: not on piste tiles; allow: on or off; edge: not ON a piste tile, meant to sit beside one. */
 export type PisteRule = 'forbid' | 'allow' | 'edge';
 export type SlopeKind = 'any' | 'flat' | 'gentleSlope';
@@ -118,7 +118,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('lodge', 'Lodge/Restaurant', 'services', 4, 3, 6000, 30, { access: 'road' }, { staff: 3, capacity: 120, chimney: { x: 1.2, y: 1.7, z: -0.5 } }),
   b('cafe', 'Café', 'services', 2, 2, 2500, 12, { access: 'path', altAccess: ['pisteEdge'] }, { staff: 1, capacity: 30, chimney: { x: 0, y: 1.4, z: -0.1 } }),
   // Mid-mountain café (own mesh): reachable by a path or simply next to a piste.
-  b('mountainHut', 'Mountain Hut', 'services', 2, 2, 3500, 14, { access: 'pisteEdge', altAccess: ['path'], pisteRule: 'edge', site: HUT }, { staff: 1, capacity: 24, chimney: { x: 0.35, y: 1.25, z: -0.35 } }),
+  b('mountainHut', 'Mountain Hut', 'services', 2, 2, 3500, 14, { access: 'pisteEdge', altAccess: ['path', 'trail'], pisteRule: 'edge', site: HUT }, { staff: 1, capacity: 24, chimney: { x: 0.35, y: 1.25, z: -0.35 } }),
   // Après-Ski Bar: cosy timber bar with a terrace; the evening crowd magnet (winter 16:00-22:00). Road or path access.
   b('apresBar', 'Après-Ski Bar', 'services', 4, 3, 7000, 28, { access: 'road', altAccess: ['path'] }, { staff: 4, capacity: 70, chimney: { x: 1.25, y: 1.8, z: -0.45 } }),
   b('shop', 'Shop', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1, capacity: 20 }),
@@ -133,7 +133,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('firstAid', 'First-Aid Hut', 'safety', 2, 2, 1800, 8, { access: 'none', pisteRule: 'edge', site: HUT }, { requires: ['patrolHub'], staff: 1, serviceRadius: 18, coverageKind: 'firstAid' }),
   b('helipad', 'Helipad', 'safety', 3, 3, 7000, 30, { access: 'none' }, { requires: ['patrolHub'], staff: 1, serviceRadius: 64, coverageKind: 'heli' }),
   // Ranger Station: wildlife management (hazing, relocation, bear-proof bins). Works alone; better inside Ski Patrol coverage (shared dispatch, not required).
-  b('rangerStation', 'Ranger Station', 'safety', 4, 3, 9000, 25, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default' } }, { staff: 2, serviceRadius: 35, coverageKind: 'wildlife', chimney: { x: -1.15, y: 1.5, z: -0.6 } }),
+  b('rangerStation', 'Ranger Station', 'safety', 4, 3, 9000, 25, { access: 'road', altAccess: ['path', 'trail'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default' } }, { staff: 2, serviceRadius: 35, coverageKind: 'wildlife', chimney: { x: -1.15, y: 1.5, z: -0.6 } }),
   b('groomerGarage', 'Groomer Garage', 'operations', 3, 3, 5000, 20, { access: 'road' }, { staff: 2 }),
   b('liftWorkshop', 'Lift Maintenance Workshop', 'operations', 3, 3, 6000, 25, { access: 'road' }, { staff: 2 }),
   b('snowcatOutpost', 'Snowcat Outpost', 'operations', 2, 2, 3000, 12, { access: 'none', site: HUT }, { requires: ['groomerGarage'], staff: 1, serviceRadius: 28, coverageKind: 'grooming' }),
@@ -144,14 +144,14 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('iceRink', 'Ice Rink', 'recreation', 5, 4, 5000, 18, { access: 'path' }, { needs: ['cold'], capacity: 40 }),
   b('heatedTerrace', 'Heated Terrace', 'recreation', 3, 3, 3500, 14, { access: 'path' }, { needs: ['cold'], capacity: 30, chimney: { x: 0, y: 1.3, z: -0.9 } }),
   b('stuntPark', 'Stunt Park', 'recreation', 6, 4, 9000, 25, { access: 'path', altAccess: ['pisteEdge'], pisteRule: 'allow' }, { needs: ['snow'], capacity: 30 }),
-  b('adventurePark', 'Adventure Park', 'recreation', 6, 6, 9000, 25, { access: 'path' }, { needs: ['snowFree'], capacity: 60 }),
+  b('adventurePark', 'Adventure Park', 'recreation', 6, 6, 9000, 25, { access: 'path', altAccess: ['trail'] }, { needs: ['snowFree'], capacity: 60 }),
   b('trainStation', 'Train Station', 'transport', 4, 2, 10000, 30, { access: 'rail+path', maxCount: 1, overRail: true, placeTip: 'Place the station on the end of a rail line, with a footpath next to it' }, { shuttleDependent: true, capacity: 150 }),
   b('altiport', 'Altiport', 'transport', 8, 3, 15000, 40, { access: 'road', maxCount: 1, site: { slopeMessage: 'Runway must be flat' } }, { shuttleDependent: true, capacity: 60 }),
   b('shuttleDepot', 'Shuttle Bus Depot', 'transport', 3, 3, 4000, 20, { access: 'road' }, { staff: 2 }),
   b('warningSign', 'Warning Sign', 'safety', 1, 1, 100, 0, { access: 'none', pisteRule: 'allow', site: ANY }, { serviceRadius: 8, coverageKind: 'warning' }),
   b('parking', 'Parking', 'services', 5, 4, 3000, 8, { access: 'road' }, { capacity: 80 }),
   // Alpine Farm: barn + shop + fenced pasture. Shop is a summer family attraction; its cheese/milk lifts restaurant income a little. Cows/sheep/goats graze the meadows (sim/nature/Livestock).
-  b('alpineFarm', 'Alpine Farm', 'recreation', 6, 5, 7000, 20, { access: 'path', altAccess: ['road'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { needs: ['snowFree'], staff: 1, capacity: 30, chimney: { x: -2.3, y: 1.7, z: -1.6 } }),
+  b('alpineFarm', 'Alpine Farm', 'recreation', 6, 5, 7000, 20, { access: 'path', altAccess: ['road', 'trail'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { needs: ['snowFree'], staff: 1, capacity: 30, chimney: { x: -2.3, y: 1.7, z: -1.6 } }),
   // ---- Energy group (item F, docs/energy.md): generators feed the resort grid (sim/Energy), capped so energy is never free; nursery + recycling are the other green parts ----
   // Solar array: ground-mounted field; a footpath or road for maintenance. Gentle slopes only (panels sit on frames).
   b('solarArray', 'Solar Array', 'energy', 3, 2, 6500, 1.5, { access: 'path', altAccess: ['road'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),

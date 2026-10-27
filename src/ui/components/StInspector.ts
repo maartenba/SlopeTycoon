@@ -1,5 +1,6 @@
 import { displayName } from '../text';
 import { BUILDINGS } from '@/config/buildings';
+import { REMOTE_SUPPLY_MULT } from '@/config/balance';
 import { formatMoney } from '../format';
 import type { AttractionInfo } from '@/sim/attractions/Attraction';
 import { formatAttractionStats, formatPriceLabel } from '../attractionFormat';
@@ -9,7 +10,7 @@ import type { EnergyOps } from '../energyFormat';
 import { StElement } from './StElement';
 
 const lowerFirst = (s: string): string => (s.startsWith('Needs ') ? s[0]!.toLowerCase() + s.slice(1) : s);
-export interface InspectorTarget { id: number; type: string; /** Display name ('Mountain Hut 2'); editable when bindRename is set. */ name?: string; /** Quarter turns (0..3) for the Rotate button. */ rot?: number; active: boolean; reason?: string; refund: number; /** Condition-based open/closed (sim/OpenStatus); reason like 'Closed: no snow at 1,450 m'. */ conditions?: { open: boolean; reason?: string }; /** Ski School HQ runtime (instructors +/-, lessons today, queue). */ school?: { instructors: number; capacity: number; lessonsToday: number; activeKids: number; queuedKids: number; quality: number }; /** Attraction runtime stats (sim/attractions). */ attraction?: AttractionInfo; /** Ops (Task 25): snowcat fleet of a garage/outpost, or a reservoir's water. */ ops?: { kind: 'groomer'; vehicles: number; groomedLast: number; max: number } | { kind: 'reservoir'; level: number; capacity: number; cannons?: number } | { kind: 'cannon'; info: CannonInfo } | { kind: 'patrol'; staff: number; sleds: number; max: number; open: number } | { kind: 'helipad'; helicopters: number; missions: number; state: string } | { kind: 'ranger'; staff: number; max: number; bins: boolean; binsCost: number; preventedMonth: number; savedMonth: number; bearsInRange: number; hazes: number; relocations: number; ready: number } | EnergyOps }
+export interface InspectorTarget { id: number; type: string; /** Display name ('Mountain Hut 2'); editable when bindRename is set. */ name?: string; /** Quarter turns (0..3) for the Rotate button. */ rot?: number; active: boolean; reason?: string; refund: number; /** Supplied only on foot (trail / piste edge, no footpath or road): +25% upkeep. */ onFoot?: boolean; /** Condition-based open/closed (sim/OpenStatus); reason like 'Closed: no snow at 1,450 m'. */ conditions?: { open: boolean; reason?: string }; /** Ski School HQ runtime (instructors +/-, lessons today, queue). */ school?: { instructors: number; capacity: number; lessonsToday: number; activeKids: number; queuedKids: number; quality: number }; /** Attraction runtime stats (sim/attractions). */ attraction?: AttractionInfo; /** Ops (Task 25): snowcat fleet of a garage/outpost, or a reservoir's water. */ ops?: { kind: 'groomer'; vehicles: number; groomedLast: number; max: number } | { kind: 'reservoir'; level: number; capacity: number; cannons?: number } | { kind: 'cannon'; info: CannonInfo } | { kind: 'patrol'; staff: number; sleds: number; max: number; open: number } | { kind: 'helipad'; helicopters: number; missions: number; state: string } | { kind: 'ranger'; staff: number; max: number; bins: boolean; binsCost: number; preventedMonth: number; savedMonth: number; bearsInRange: number; hazes: number; relocations: number; ready: number } | EnergyOps }
 
 export interface AttractionHandlers { setPrice(id: number, price: number): void; adjustStaff(id: number, delta: number): void }
 
@@ -176,6 +177,7 @@ export class StInspector extends StElement {
       ...opsRows,
       ...(t.attraction ? this.attractionPanel(t.attraction, t.active) : []),
       line(`Upkeep: ${formatMoney(d?.upkeep ?? 0)}/day`),
+      ...(t.onFoot ? [line(`Supplied on foot: +${Math.round((REMOTE_SUPPLY_MULT - 1) * 100)}% upkeep`, 'small')] : []),
       line(`Refund: ${formatMoney(t.refund)}`),
       ...extra,
       btn,

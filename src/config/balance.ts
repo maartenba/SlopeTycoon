@@ -333,6 +333,8 @@ export function pixelRatioFor(q: GraphicsQuality, devicePixelRatio: number): num
 
 /** Share of its daily upkeep a building pays while it is closed for the season (needs snow / warmth that is not there). */
 export const CLOSED_BUILDING_UPKEEP_SHARE = 0.5;
+/** Upkeep multiplier for a building reached only by hiking trail / piste edge (no footpath or road): supplies are carried on foot (D-P9). Needs `createSim({ remoteSupply: true })`. docs/trails-access.md */
+export const REMOTE_SUPPLY_MULT = 1.25;
 /**
  * Off-season relief (docs/balance.md "Gentler summer"): winter-only buildings (snow cannons, ski school, snowcat garage/outpost, après bar...)
  * are mothballed outside winter and pay only this share of their upkeep; staff of a venue that has been closed for `furloughAfterDays`

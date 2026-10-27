@@ -2,7 +2,7 @@ import { BUILDINGS, type AccessKind, type AutoFlattenPolicy, type BuildingDef, t
 import type { Grid } from '../world/Grid';
 
 export interface Rect { x: number; y: number; w: number; h: number }
-export type ServedKind = 'road' | 'path' | 'rail' | 'piste';
+export type ServedKind = 'road' | 'path' | 'rail' | 'piste' | 'trail';
 
 /** Network facts needed by the access/piste rules (implemented by world/Networks). */
 export interface NetworkAccess {
@@ -15,10 +15,10 @@ export interface NetworkAccess {
 }
 
 const ACCESS_TEXT: Record<AccessKind, string> = {
-  road: 'road access', path: 'footpath access', 'rail+path': 'rail and footpath access', pisteEdge: 'a piste next to it', none: '',
+  road: 'road access', path: 'footpath access', 'rail+path': 'rail and footpath access', pisteEdge: 'a piste next to it', trail: 'a hiking trail next to it', none: '',
 };
 /** Noun phrase per access kind for the 'Needs ...' text (a road always also counts as a footpath). */
-const NEED_NOUN: Record<AccessKind, string> = { road: 'road', path: 'footpath', 'rail+path': 'rail line and a footpath', pisteEdge: 'piste', none: '' };
+const NEED_NOUN: Record<AccessKind, string> = { road: 'road', path: 'footpath', 'rail+path': 'rail line and a footpath', pisteEdge: 'piste', trail: 'hiking trail', none: '' };
 
 function servedBy(kind: AccessKind, net: NetworkAccess, r: Rect): boolean {
   switch (kind) {
@@ -27,6 +27,7 @@ function servedBy(kind: AccessKind, net: NetworkAccess, r: Rect): boolean {
     case 'path': return net.serves('path', r);
     case 'rail+path': return net.serves('rail', r) && net.serves('path', r);
     case 'pisteEdge': return net.serves('piste', r);
+    case 'trail': return net.serves('trail', r);
   }
 }
 
@@ -45,19 +46,32 @@ export function accessReason(def: BuildingDef): string {
     if (!nouns.includes(NEED_NOUN[k])) nouns.push(NEED_NOUN[k]);
     if (k === 'path' && !nouns.includes('road')) nouns.push('road'); // a road also serves as a footpath
   }
-  nouns.sort((a, b) => Number(a === 'piste') - Number(b === 'piste')); // piste last: 'a footpath, road or piste'
+  const rank = (n: string): number => (n === 'piste' ? 2 : n === 'hiking trail' ? 1 : 0);
+  nouns.sort((a, b) => rank(a) - rank(b)); // stable: trail then piste last ('a footpath, road, hiking trail or piste')
   const list = nouns.length === 1 ? nouns[0]! : `${nouns.slice(0, -1).join(', ')} or ${nouns[nouns.length - 1]}`;
   return `Needs a ${list} next to it`;
 }
 
 /** True for a reason produced by accessReason (missing network access, as opposed to a missing prerequisite building). */
-export const isAccessReason = (reason: string | undefined): boolean => /^Needs a .* next to it$/.test(reason ?? '') && /road|footpath|piste|rail line/.test(reason ?? '');
+export const isAccessReason = (reason: string | undefined): boolean => /^Needs a .* next to it$/.test(reason ?? '') && /road|footpath|piste|trail|rail line/.test(reason ?? '');
 
 /** The ONE access verdict for a placed building: null when fine (remote types always), else the accessReason text ('Needs a footpath, road or piste next to it'). */
 export function accessProblem(typeId: string, net: NetworkAccess | undefined, r: Rect): string | null {
   const def = BUILDINGS[typeId];
   if (!def || accessSatisfied(def, net, r)) return null;
   return accessReason(def);
+}
+
+/**
+ * True when the building is connected ONLY by trail / piste edge: no footpath or road touches the footprint
+ * (remote types and rail+path never count). Such sites are supplied on foot and pay REMOTE_SUPPLY_MULT upkeep.
+ */
+export function suppliedOnFootOnly(def: BuildingDef, net: NetworkAccess | undefined, r: Rect): boolean {
+  if (!net || def.access === 'none') return false;
+  const kinds = [def.access, ...(def.altAccess ?? [])];
+  if (!kinds.includes('trail') && !kinds.includes('pisteEdge')) return false;
+  if (net.serves('path', r) || net.serves('road', r)) return false;
+  return (kinds.includes('trail') && net.serves('trail', r)) || (kinds.includes('pisteEdge') && net.serves('piste', r));
 }
 
 export interface SlopeCheck { ok: boolean; spread: number; reason?: string }

@@ -4,7 +4,7 @@ All rules are data in `src/config/buildings.ts` (`access`, `altAccess`, `pisteRu
 
 ## Rule semantics
 
-- **access** (`road` | `path` | `rail+path` | `pisteEdge` | `none`, plus optional `altAccess`): *never blocks placement*. Without it the building is inactive with reason `Not connected: needs …` (placement preview shows it as a warning). `path` = footprint touches a footpath/road connected to the road entry; `road` = touches a road connected to the entry; `rail+path` = both; `pisteEdge` = footprint on/next to any piste layer.
+- **access** (`road` | `path` | `rail+path` | `pisteEdge` | `trail` | `none`, plus optional `altAccess`): *never blocks placement*. Without it the building is inactive with reason `Not connected: needs …` (placement preview shows it as a warning). `path` = footprint touches a footpath/road connected to the road entry; `road` = touches a road connected to the entry; `rail+path` = both; `pisteEdge` = footprint on/next to any piste layer; `trail` = footprint on/next to a Hike / MTB trail tile of an *attached* trail (see [trails-access.md](trails-access.md)).
 - **overRail** (Train Station only): the footprint may overlap rail tiles (footpaths/roads still refuse it). The platform sits ON the end of the line: the rail tiles stay in `Networks` (kept, counted as connected, drawn under the model's own track bed), nothing is deleted or refunded, so place/undo/bulldoze/save/load need no special handling; the rail Bulldoze refuses tiles under a building. Without access the ghost tip reads *Place the station on the end of a rail line, with a footpath next to it* (`BuildingDef.placeTip`).
 - **pisteRule**: `forbid` – no footprint tile may carry a piste/trail layer (also: a piste cannot be painted over such a building); `allow` – may stand on a piste (and pistes may be painted over it); `edge` – not on a piste tile, intended beside one.
 - **site.maxSlope / slopeKind**: corner spread across the footprint in half-steps tolerated without flattening ("flat" = ≤1). `any` = no limit (cannon, sign). `gentleSlope` (Magic Carpet) = monotone uniform gradient along the long axis, rise 2–6 half-steps, cross-slope ≤1, **not flat**.
@@ -27,7 +27,7 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 | Base Lodge | road | forbid | flat | default | never | no | 1 | all |
 | Lodge/Restaurant | road | forbid | flat | default | never | no | – | all |
 | Café | path / pisteEdge | forbid | flat | default | never | no | – | all |
-| Mountain Hut (12 trekker beds) | pisteEdge / path | edge | ≤2 | optional | never | yes | – | all |
+| Mountain Hut (12 trekker beds) | pisteEdge / path / trail | edge | ≤2 | optional | never | yes | – | all |
 | Shop | path (road counts) | forbid | flat | default | never | no | – | all |
 | Rental | road | forbid | flat | default | never | no | – | all |
 | Chalet | path (road counts) | forbid | flat | default | never | no | – | all |
@@ -37,7 +37,7 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 | Kids Ground | path | forbid | ≤2 | optional | never | no | – | winter |
 | Playground | path | forbid | flat | default | never | no | – | shoulder |
 | Ski Patrol Hub | road | forbid | flat | default | never | no | – | all |
-| Ranger Station | road / path | forbid | ≤2 | default | never | no | – | all |
+| Ranger Station | road / path / trail | forbid | ≤2 | default | never | no | – | all |
 | First-Aid Hut | none | edge | ≤2 | optional | never | yes | – | all |
 | Helipad | none | forbid | flat | default | never | no | – | all |
 | Groomer Garage | road | forbid | flat | default | never | no | – | winter |
@@ -50,13 +50,13 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 | Heated Terrace | path | forbid | flat | default | never | no | – | winter |
 | Après-Ski Bar | road or path | forbid | flat | default | never | no | – | winter |
 | Stunt Park | path / pisteEdge | allow | flat | default | never | no | – | winter |
-| Adventure Park | path | forbid | flat | default | never | no | – | summer |
+| Adventure Park | path / trail | forbid | flat | default | never | no | – | summer |
 | Train Station | rail+path (may stand on the end of the rail) | forbid | flat | default | never | no | 1 | all |
 | Altiport | road | forbid | flat | default | never | no | 1 | all |
 | Shuttle Bus Depot | road | forbid | flat | default | never | no | – | all |
 | Warning Sign | none | allow | any | never | never | yes | – | all |
 | Parking | road | forbid | flat | default | never | no | – | all |
-| Alpine Farm | path / road | forbid | ≤2 | optional | never | no | – | summer |
+| Alpine Farm | path / road / trail | forbid | ≤2 | optional | never | no | – | summer |
 | Ticket Office | path | forbid | flat | default | never | no | – | all |
 
 ## Lifts
@@ -164,3 +164,6 @@ Buildings, Lifts and Pistes & Trails drawers sort their cards by relevance to th
 * **Shops, chalets and apartments** accept `path` as well as `road` (`access: 'road', altAccess: ['path']`); **cafe** and **stunt park** also accept `pisteEdge`.
 * **Train Station**: `rail+path`, may stand on the END of a rail line (`overRail`); ghost tip "Place the station on the end of a rail line, with a footpath next to it".
 * New **energy** category: Solar Array / Plant (slope <= 2, optional flatten), Wind Turbine (exposed ground only: mean corner height >= 20), Small Hydro (`streamAdjacent`), Biomass (road), Tree Nursery, Recycling Centre. Details in docs/energy.md.
+
+## Phase 6: trail access
+`trail` access kind, approved rows (Mountain Hut, Ranger Station, Adventure Park, Alpine Farm + trail; Café and Stunt Park already accepted `pisteEdge`) and the +25% remote-supply upkeep: see [trails-access.md](trails-access.md). Reason text order: footpath, road, hiking trail, piste (`Needs a footpath, road, hiking trail or piste next to it`).

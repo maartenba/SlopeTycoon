@@ -379,6 +379,7 @@ const sim = createSim({
   },
   fromSave: bootSave?.env.modules,
   ...(DEMO ? { hints: false, preset: townOf(DEMO_TOWN.id)!.preset, startSeason: DEMO_TOWN.season } : {}),
+  remoteSupply: !DEMO, // Phase 6 Task 2: +25% upkeep for sites supplied only on foot (trail / piste edge)
   stories: !DEMO, // Story guests (M5.4 Task 22): about 1.5% of arrivals get a name and one wish; never in the title demo
   rivalMarket: !TUTORIAL_MODE, // rival market share scales arrivals; the guided tutorial resort stays exactly neutral (Task 23)
   autoEvents: !DEMO, // Events calendar: Almabtrieb / New Year / critic / powder day run by themselves in a real game (not in the title demo)
@@ -751,7 +752,7 @@ const refreshUi = (): void => {
   dockRef?.refresh();
   const b = selectedId === null ? undefined : buildings.get(selectedId);
   if (!pisteInspectorRef?.busy) showPisteInspector();
-  inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; return i; })() } : null);
+  inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), onFoot: !DEMO && sim.networks.suppliedOnFootOnly(b.id), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; return i; })() } : null);
 };
 const showPisteInspector = (): void => {
   if (!pisteInspectorRef) return;

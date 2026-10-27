@@ -41,7 +41,7 @@ describe('road and path types warn only when truly unserved, with their own requ
     const { buildings, net } = mk();
     const { building: b } = buildings.add(t, 30, 20);
     if (BUILDINGS[t]!.altAccess?.includes('path')) {
-      expect(net.accessProblem(b.id)).toMatch(/^Needs a (road or footpath|footpath or road) next to it$/);
+      expect(net.accessProblem(b.id)).toMatch(/^Needs a (road or footpath|footpath or road|road, footpath or hiking trail) next to it$/);
       return;
     }
     expect(net.accessProblem(b.id)).toBe('Needs a road next to it');
@@ -59,7 +59,7 @@ describe('road and path types warn only when truly unserved, with their own requ
     const { buildings, net } = mk();
     const { building: b } = buildings.add(t, 30, 20);
     const p = net.accessProblem(b.id);
-    expect(p).toMatch(/^Needs a footpath, road( or piste)? next to it|^Needs a (footpath or road|road or footpath) next to it/);
+    expect(p).toMatch(/^Needs a footpath, road(,? or piste| or hiking trail|, hiking trail or piste)? next to it|^Needs a (footpath or road|road or footpath) next to it/);
     expect(p).not.toMatch(/road entry/);
     linkByRoad(net);
     expect(net.accessProblem(b.id)).toBeNull();
