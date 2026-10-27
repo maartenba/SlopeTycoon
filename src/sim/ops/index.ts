@@ -107,10 +107,11 @@ export function createOps(o: OpsOptions): Ops {
     serialize: () => ({
       tr: b64(new Uint8Array(quality.traffic.buffer, quality.traffic.byteOffset, quality.traffic.byteLength)), td: b64(new Uint8Array(quality.trafficDay.buffer, quality.trafficDay.byteOffset, quality.trafficDay.byteLength)),
       q: b64(quality.state), w: b64(new Uint8Array(quality.wear.buffer, quality.wear.byteOffset, quality.wear.byteLength)), res: reservoirs.serialize(),
-      groom: grooming.serialize(), safety: safety?.serialize(), lastStamp, lastDay, lastRow,
+      groom: grooming.serialize(), safety: safety?.serialize(), lastStamp, lastDay, lastRow, pe: snowmaking.pendingEnergy,
     }),
     load: (data) => {
-      const s = data as { tr?: string; td?: string; q: string; w: string; res: Array<[number, number, number]>; groom: unknown; safety?: unknown; lastStamp: number; lastDay: number; lastRow: number };
+      const s = data as { tr?: string; td?: string; q: string; w: string; res: Array<[number, number, number]>; groom: unknown; safety?: unknown; lastStamp: number; lastDay: number; lastRow: number; pe?: number };
+      snowmaking.pendingEnergy = s.pe ?? 0; // energy not yet billed (flushed at midnight): was lost on load, which made a mid-day save/load differ from a live game
       unb64(s.q, quality.state); unb64(s.w, new Uint8Array(quality.wear.buffer, quality.wear.byteOffset, quality.wear.byteLength));
       if (s.tr) unb64(s.tr, new Uint8Array(quality.traffic.buffer, quality.traffic.byteOffset, quality.traffic.byteLength));
       if (s.td) unb64(s.td, new Uint8Array(quality.trafficDay.buffer, quality.trafficDay.byteOffset, quality.trafficDay.byteLength));

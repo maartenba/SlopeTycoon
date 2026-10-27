@@ -8,7 +8,7 @@ import { GState, GuestStore, GuestType } from '@/sim/guests/Guest';
 import { resetIds, rig, run } from './guests/helpers';
 import { starterResort } from './guests/resortFixture';
 
-const WINTER = DAYLIGHT.winterSolsticeDay, SUMMER = DAYLIGHT.summerSolsticeDay; // day of year (180-day calendar: winter solstice 150, summer 60)
+const WINTER = DAYLIGHT.winterSolsticeDay, SUMMER = DAYLIGHT.summerSolsticeDay; // day of year (180-day calendar: winter solstice 130 = 21 Dec, summer 40 = 21 Jun)
 const hours = (a: number, b: number, step = 0.5): number[] => { const o: number[] = []; for (let h = a; h <= b + 1e-9; h += step) o.push(h); return o; };
 
 describe('hourly venue demand curve', () => {
@@ -120,7 +120,7 @@ describe('evening behaviour in the guest sim', () => {
   it('day guests leave at sunset-30min except the après share, who stay for a drink and go home by ~20:00', () => {
     const w = resort(['lodge', 'apresBar']);
     const ids = crowd(w.r, 60, 30, w.street - 1, { type: GuestType.Couple });
-    const day = 10, apres = ids.filter((id) => isApres(id, GuestType.Couple, day)), others = ids.filter((id) => !apres.includes(id));
+    const day = 170, apres = ids.filter((id) => isApres(id, GuestType.Couple, day)), others = ids.filter((id) => !apres.includes(id));
     expect(apres.length).toBeGreaterThan(8); expect(others.length).toBeGreaterThan(8);
     const leave = dayGuestLeaveHour(day);
     at(w.r, leave - 0.3);

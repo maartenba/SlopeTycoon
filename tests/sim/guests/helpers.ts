@@ -47,10 +47,10 @@ export function fakeWorld(buildings: WorldBuilding[], o: FakeOpts = {}): GuestWo
 
 export interface Rig { state: GameState; bus: EventBus<GameEvents>; sim: GuestSim; reg: SystemRegistry; world: GuestWorld; arrived: number[]; left: Array<{ id: number; reason: string }> }
 
-/** Winter morning (day 10, 07:30) game with the real clock + guest systems. */
+/** Winter morning (day 170 = 11 Mar, 07:30; the same daylight the old day 10 had) game with the real clock + guest systems. */
 export function rig(world: GuestWorld, seed = 42, size: MapSize = 128): Rig {
   const state = createGameState(seed, size);
-  state.date.day = 10; state.date.minute = 7 * 60 + 30;
+  state.date.day = 170; state.date.minute = 7 * 60 + 30;
   const bus = new EventBus<GameEvents>();
   const sim = new GuestSim(world, size, bus);
   sim.spawner.rateMult = 20; // unit rigs use a dense arrival rate (3/tick, the pre-balance-pass value) so mechanics tests stay short; independent of GUEST_BASE_SPAWN_PER_TICK

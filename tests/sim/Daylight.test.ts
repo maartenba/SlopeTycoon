@@ -11,11 +11,12 @@ describe('daylight curve', () => {
   it('hits the design numbers at the solstices and equinoxes', () => {
     expect(sunrise(WINTER)).toBeCloseTo(7.75, 6); expect(sunset(WINTER)).toBeCloseTo(16.75, 6); expect(daylightHours(WINTER)).toBeCloseTo(9, 6);
     expect(sunrise(SUMMER)).toBeCloseTo(5.25, 6); expect(sunset(SUMMER)).toBeCloseTo(20.75, 6); expect(daylightHours(SUMMER)).toBeCloseTo(15.5, 6);
-    for (const d of [15, 105]) { expect(sunrise(d)).toBeCloseTo(6.5, 6); expect(sunset(d)).toBeCloseTo(18.75, 6); expect(daylightHours(d)).toBeGreaterThan(12); expect(daylightHours(d)).toBeLessThan(12.5); }
+    for (const d of [85, 175]) { expect(sunrise(d)).toBeCloseTo(6.5, 6); expect(sunset(d)).toBeCloseTo(18.75, 6); expect(daylightHours(d)).toBeGreaterThan(12); expect(daylightHours(d)).toBeLessThan(12.5); }
   });
   it('solstices sit in the middle of the winter / summer seasons of the 60/120/60/120 (180-day year) layout', () => {
     expect(seasonOf({ day: WINTER })).toBe('winter'); expect(seasonOf({ day: SUMMER })).toBe('summer');
-    expect(seasonOf({ day: 15 })).toBe('spring'); expect(seasonOf({ day: 105 })).toBe('autumn');
+    // real calendar: longest day 21 Jun (day 40), shortest 21 Dec (day 130); equinoxes at days 85 (Sep) and 175 (Mar)
+    expect(seasonOf({ day: 85 })).toBe('summer'); expect(seasonOf({ day: 175 })).toBe('winter');
   });
   it('is monotonic between the solstices (daylight grows into summer, shrinks into winter, sunrise/sunset never reverse)', () => {
     for (let d = WINTER - DAYS_PER_YEAR; d < SUMMER; d += 1) { // winter(prev) -> summer

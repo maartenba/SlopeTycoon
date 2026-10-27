@@ -6,13 +6,13 @@ import { BUILDINGS } from '../../src/config/buildings';
 
 describe('snowline curve', () => {
   it('is below the valley floor in winter, rises through spring, tops the summits in summer, falls in autumn', () => {
-    for (const d of [135, 150, 165]) expect(snowlineFraction(d)).toBeLessThan(0);
+    for (const d of [127, 142, 157, 172]) expect(snowlineFraction(d)).toBeLessThan(0);
     let prev = snowlineFraction(0);
-    for (let d = 2.5; d <= 60; d += 2.5) { const v = snowlineFraction(d); expect(v).toBeGreaterThanOrEqual(prev - 1e-9); prev = v; }
-    expect(snowlineFraction(60)).toBeGreaterThan(1.05);
+    for (let d = 2.5; d <= 52; d += 2.5) { const v = snowlineFraction(d); expect(v).toBeGreaterThanOrEqual(prev - 1e-9); prev = v; }
+    expect(snowlineFraction(52)).toBeGreaterThan(1.2); // peak mid-July (sim day 52)
     expect(snowlineFraction(30)).toBeLessThan(1); // highest peaks keep snow at the start of summer
-    prev = snowlineFraction(75);
-    for (let d = 80; d <= 130; d += 5) { const v = snowlineFraction(d); expect(v).toBeLessThanOrEqual(prev + 1e-9); prev = v; }
+    prev = snowlineFraction(52);
+    for (let d = 57; d <= 142 - 30; d += 5) { const v = snowlineFraction(d); expect(v).toBeLessThanOrEqual(prev + 1e-9); prev = v; }
   });
   it('is cyclic', () => { expect(snowlineFraction(180 + 15)).toBeCloseTo(snowlineFraction(15), 9); });
   it('scales to every map size (world units)', () => {

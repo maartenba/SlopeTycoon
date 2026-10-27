@@ -12,7 +12,7 @@ import { Q } from '../../src/sim/ops/PisteQuality';
 import { GuestType } from '../../src/sim/guests/Guest';
 import { DAYS_PER_YEAR } from '../../src/config/balance';
 
-const fresh = (seed = 61): Sim => { const s = createSim({ size: 64, seed, starterResort: true, startSeason: 'winter', now: () => 0 } as never); s.tick(240 * 3); s.advisor.reset(); return s; };
+const fresh = (seed = 61): Sim => { const s = createSim({ size: 64, seed, starterResort: true, startSeason: 'winter', now: () => 0 } as never); s.tick(240 * 3 + 20); s.advisor.reset(); return s; }; // +20 ticks (2 h): lifts open at sunrise + 45 min = 08:29 on 4 Dec
 const ids = (sim: Sim): string[] => sim.advisor.ranked().map((a) => a.id);
 const eval1 = (sim: Sim, full = true): string[] => { sim.advisor.evaluate(full); return ids(sim); };
 const removeTypes = (sim: Sim, ...types: string[]): void => { for (const b of sim.buildings.all().slice()) if (types.includes(b.type)) sim.buildings.remove(b.id); sim.refreshCoverage(undefined, true); };

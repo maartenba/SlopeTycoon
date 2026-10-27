@@ -21,7 +21,7 @@ import { Queries } from '../../src/tutorial/queries';
 type Pt = { x: number; y: number };
 const make = (seed = 61, size: 64 | 128 | 256 = 64): Sim => {
   const s = createSim({ size, seed, starterResort: true, startSeason: 'winter', now: () => 0 } as never);
-  s.tick(240 * 3);
+  s.tick(240 * 3 + 20); // +20 ticks: lifts open at 08:29 on 4 Dec (calendar fix)
   s.game.money = 5_000_000; // construction must never be the reason a scenario fails
   s.advisor.reset();
   return s;

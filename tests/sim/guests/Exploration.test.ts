@@ -54,8 +54,9 @@ describe('Exploration: piste report counts runs', () => {
 
 describe('Exploration: measured on the winter bot resort (fixed seeds)', () => {
   it('skiers spread over the pistes, ride several of them per day, and complete more runs than before', () => {
+    // calendar fix: early December days are ~1 h shorter (solstice moved to 21 Dec, lifts open 08:29), 64/1 now 2.17 runs (was 2.55); threshold 2.2 -> 2.0
     // measured with the 150 s day (docs/time-flow.md): 64/1 2.45 pistes, 20 % one-piste, 2.55 runs; 64/7 2.2, 31 %, 1.97; 128/1 1.9, 50 %, 1.8 (walking-bound)
-    for (const [size, seed, minPistes, minRuns, maxOne] of [[64, 1, 2.0, 2.2, 0.35], [64, 7, 2.0, 1.8, 0.4], [128, 1, 1.6, 1.5, 0.6]] as const) {
+    for (const [size, seed, minPistes, minRuns, maxOne] of [[64, 1, 2.0, 2.0, 0.35], [64, 7, 2.0, 1.8, 0.4], [128, 1, 1.6, 1.5, 0.6]] as const) {
       const { sim } = buildSkiResort(size, seed, 5);
       const m = measureSki(sim, 4, size, seed);
       expect(m.pistes, `${size}/${seed} pistes`).toBeGreaterThanOrEqual(4);

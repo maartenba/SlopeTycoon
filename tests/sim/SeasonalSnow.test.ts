@@ -36,11 +36,12 @@ describe('seasonal snow cover (summer must be snow-free)', () => {
         expect(snowFraction(w, -1, 2)).toBeLessThan(0.05);
         at(75); // late summer: almost none anywhere
         expect(snowFraction(w, -1, 2)).toBeLessThan(0.01);
-        at(107); // autumn: peaks first, valley still clear
+        at(100); // 11 Oct (calendar fix: the real Alpine autumn): valley still clear
+        expect(snowFraction(w, -1, 0.3)).toBeLessThan(0.06);
+        at(107); // 3 Nov: peaks first (first snow at altitude late Oct / Nov); a cold snap may already whiten the valley (mean valley temperature ~3 C in early Nov)
         expect(snowFraction(w, 0.85, 2)).toBeGreaterThan(0.3);
-        expect(snowFraction(w, -1, 0.3)).toBeLessThan(0.06); // 0.05 in the 360-day year; the snowline now falls twice as fast per day (docs/time-flow.md)
-        at(120); // winter returns to the valley
-        expect(snowFraction(w, -1, 0.3)).toBeGreaterThan(0.8);
+        at(120); // winter returns to the valley (1 Dec: valley mean ~0 C, calendar fix: was 0.8 when Nov was warm)
+        expect(snowFraction(w, -1, 0.3)).toBeGreaterThan(0.7);
       }, 60000);
     }
   }

@@ -216,7 +216,7 @@ describe('determinism', () => {
     const bs = [building('baseLodge', 50, 100), building('parking', 60, 100), building('apartment', 70, 100), building('cafe', 55, 98)];
     const world = fakeWorld(bs, { railEntry: null });
     const state = createGameState(99, 128);
-    state.date.day = 10; state.date.minute = 7 * 60 + 30;
+    state.date.day = 170; state.date.minute = 7 * 60 + 30;
     const bus = new EventBus<GameEvents>();
     const sim = new GuestSim(world, 128, bus);
     sim.spawner.rateMult = 20; // dense arrivals (see helpers.rig)

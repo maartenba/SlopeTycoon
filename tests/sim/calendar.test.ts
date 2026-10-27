@@ -47,20 +47,30 @@ describe('real calendar over the sim year', () => {
   });
 });
 
-describe('climate curves vs month names (documented offsets, sim unchanged)', () => {
-  it('daylight extremes sit at 1 Aug / 1 Feb (real solstices are 21 Jun / 21 Dec: known offset, see docs/time-flow.md)', () => {
-    expect([monthNameOfDay(DAYLIGHT.summerSolsticeDay), calendarDayOfMonth(DAYLIGHT.summerSolsticeDay)]).toEqual(['August', 1]);
-    expect([monthNameOfDay(DAYLIGHT.winterSolsticeDay), calendarDayOfMonth(DAYLIGHT.winterSolsticeDay)]).toEqual(['February', 1]);
+describe('climate curves vs month names (aligned with the real Alpine calendar)', () => {
+  it('daylight extremes sit at ~21 Jun / ~21 Dec', () => {
+    expect([monthNameOfDay(DAYLIGHT.summerSolsticeDay), calendarDayOfMonth(DAYLIGHT.summerSolsticeDay)]).toEqual(['June', 11]);
+    expect([monthNameOfDay(DAYLIGHT.winterSolsticeDay), calendarDayOfMonth(DAYLIGHT.winterSolsticeDay)]).toEqual(['December', 11]);
     const hours = Array.from({ length: DAYS_PER_YEAR }, (_, d) => daylightHours(d));
     expect(Math.abs(hours.indexOf(Math.max(...hours)) - DAYLIGHT.summerSolsticeDay)).toBeLessThanOrEqual(1);
     expect(Math.abs(hours.indexOf(Math.min(...hours)) - DAYLIGHT.winterSolsticeDay)).toBeLessThanOrEqual(1);
   });
-  it('temperature: coldest in winter (Feb), warmest in summer (Aug), snow to the valley Dec-Mar, snow-free valley Jun-Sep', () => {
+  it('temperature: coldest mid-January, warmest mid-July, snow to the valley Dec-Mar (slushy by late March), snow-free valley Jun-Sep', () => {
     const t = Array.from({ length: DAYS_PER_YEAR }, (_, d) => snowlineFraction(d) * TEMP_PER_RELIEF);
-    expect(seasonOf({ day: t.indexOf(Math.min(...t)) })).toBe('winter'); expect(monthNameOfDay(t.indexOf(Math.min(...t)))).toBe('February');
-    expect(seasonOf({ day: t.indexOf(Math.max(...t)) })).toBe('summer'); expect(monthNameOfDay(t.indexOf(Math.max(...t)))).toBe('August');
-    for (let d = simDayOf(11, 1); d < DAYS_PER_YEAR; d++) expect(snowlineFraction(d)).toBeLessThan(0.05);
-    for (let d = simDayOf(5, 1); d <= simDayOf(8, 15); d++) expect(snowlineFraction(d)).toBeGreaterThan(0.9);
+    const cold = t.indexOf(Math.min(...t)), warm = t.indexOf(Math.max(...t));
+    expect(seasonOf({ day: cold })).toBe('winter'); expect(monthNameOfDay(cold)).toBe('January'); expect(calendarDayOfMonth(cold)).toBeGreaterThanOrEqual(5); expect(calendarDayOfMonth(cold)).toBeLessThanOrEqual(11);
+    expect(seasonOf({ day: warm })).toBe('summer'); expect(monthNameOfDay(warm)).toBe('July'); expect(calendarDayOfMonth(warm)).toBeGreaterThanOrEqual(5); expect(calendarDayOfMonth(warm)).toBeLessThanOrEqual(11);
+    for (let d = simDayOf(11, 1); d < simDayOf(2, 8); d++) expect(snowlineFraction(d % DAYS_PER_YEAR)).toBeLessThan(0.05);
+    expect(snowlineFraction(simDayOf(2, 14))).toBeGreaterThan(-0.1); // late March: the snowline is back at the valley floor (spring skiing, wet snow)
+    for (let d = simDayOf(5, 1); d <= simDayOf(8, 15); d++) expect(snowlineFraction(d)).toBeGreaterThan(0.85); // 1 Jun: top 12 % of the relief still white
+  });
+  it('monthly mean valley temperature stays within Alpine reality (+- 6 C, summer is deliberately hotter)', () => {
+    const real = [-4.5, -3, 0.5, 4.5, 9, 13, 16, 16, 12, 7, 1.5, -2.5]; // ~1,200 m valley station
+    for (let m = 0; m < 12; m++) {
+      let sum = 0; const d0 = simDayOf(m, 1);
+      for (let i = 0; i < 15; i++) sum += snowlineFraction(d0 + i + 0.5) * TEMP_PER_RELIEF;
+      expect(Math.abs(sum / 15 - real[m]!)).toBeLessThan(6);
+    }
   });
 });
 

@@ -37,6 +37,12 @@ describe('st-speed-control: speed labels and the Skip menu', () => {
     expect(qa(h, '.btns > button').some((b) => /15 s/.test(b.title))).toBe(true);
     h.remove();
   });
+  it('the date line has a tooltip with the full date and the day of year (and no clock, which would flicker the tooltip)', () => {
+    const { h } = mount();
+    const t = q(h, '.when .d')!.title;
+    expect(t).toContain('Day 13 of 180'); expect(t).toMatch(/April|May|June|July|August|September|October|November|December|January|February|March/); expect(t).not.toMatch(/\d\d:\d\d/);
+    h.remove();
+  });
   it('the Skip button is a menu button (aria) and hidden without the skip API', () => {
     const { h } = mount();
     const b = qa(h, '.btns > button').find((x) => x.getAttribute('aria-haspopup') === 'menu')! as HTMLButtonElement;

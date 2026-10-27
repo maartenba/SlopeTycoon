@@ -38,7 +38,7 @@ import { LandscapeTool } from '@/build/LandscapeTool';
 import { applyDecor, applyPond, applyRocks, planDecor, planPond, planRocks, pondRectAround } from '@/sim/landscape/Landscape';
 import { LandscapeDecorView } from '@/render/LandscapeDecor';
 import { PLANT_GROUPS, PLANT_GROUP_IDS, type PlantGroup } from '@/sim/nature/Planting';
-import { DAYS_PER_YEAR, SPEED_MULTIPLIERS, TICKS_PER_SECOND, TILE_METRES, oldDays } from '@/config/balance';
+import { DAYS_PER_YEAR, SPEED_MULTIPLIERS, TICKS_PER_SECOND, TILE_METRES } from '@/config/balance';
 import { AchievementAnnouncer } from '@/ui/achievementToasts';
 import { cosmeticsApiFromEngine, trophiesApiFromProfile } from '@/ui/trophyData';
 import { COSMETIC_BY_ID, defaultCosmetic } from '@/config/cosmetics';
@@ -95,7 +95,7 @@ import { creditScore, creditLetter, debtCap } from '@/sim/Loans';
 import { formatSigned } from '@/ui/financeFormat';
 import { buildMarketingView } from '@/ui/marketingFormat';
 import { formatMoney, formatDate } from '@/ui/format';
-import { formatGameDate } from '@/sim/calendar';
+import { formatGameDate, simDayOf } from '@/sim/calendar';
 import { canPlace } from '@/sim/Dependencies';
 import { autoFlattenDefault } from '@/sim/PlacementRules';
 import { pickHeightfield } from '@/render/Picking';
@@ -190,6 +190,8 @@ import { ADVISOR_UI } from '@/sim/advisor/strings';
 import { formatRecap, shouldShowRecap, wireMonthCard, type RecapModel } from '@/ui/recap';
 import { sessionIssues } from '@/game/sessionIssues';
 import { bootStage, bootFail, bootFailed, bootDone, bootPause, bootPaint } from '@/ui/bootProgress';
+/** Title-screen demo days on the real calendar: mid-July (warmest, snow-free) and mid-January (coldest, deep snow). */
+const DEMO_SUMMER_DAY = simDayOf(6, 8), DEMO_WINTER_DAY = simDayOf(0, 8);
 
 /** Boot splash (index.html #splash): fades out and is removed once the menu / game is up. pointer-events:none as soon as it starts fading. */
 function hideSplash(): void {
@@ -385,7 +387,7 @@ let demoReport: TownReport | null = null;
 if (DEMO) { // the showcase resort, built through the real placement APIs (deterministic in the seed); ~0.1-0.2 s
   const t0 = performance.now();
   demoReport = buildTown(sim, DEMO_TOWN.id, DEMO_TOWN.seed);
-  sim.jumpToDay(DEMO_TOWN.season === 'summer' ? oldDays(120) : oldDays(270), 9); // late morning; BEFORE the guests so their leave day lies ahead
+  sim.jumpToDay(DEMO_TOWN.season === 'summer' ? DEMO_SUMMER_DAY : DEMO_WINTER_DAY, 9); // late morning; BEFORE the guests so their leave day lies ahead
   spawnGuests(sim, demoGuestCap(), townOf(DEMO_TOWN.id)!.guests, 1);
   console.log(`[demo] ${DEMO_TOWN.id} seed ${DEMO_TOWN.seed} (${DEMO_SIZE}) built in ${(performance.now() - t0).toFixed(0)} ms: ${JSON.stringify(demoReport.placed)} failures=${demoReport.failures.length}`);
 }
@@ -2814,7 +2816,7 @@ if (DEMO) {
   const scene = new DemoScene({
     controls: renderer.controls, size: MAP_SIZE, aspect: () => renderer.webgl.domElement.clientWidth / Math.max(1, renderer.webgl.domElement.clientHeight),
     pois: () => pois, groundY: (x, z) => heightAt(grid, x, z),
-    jumpSeason: (s) => jumpSimToDay(s === 'summer' ? oldDays(120) : oldDays(270), 8),
+    jumpSeason: (s) => jumpSimToDay(s === 'summer' ? DEMO_SUMMER_DAY : DEMO_WINTER_DAY, 8),
     reducedMotion: !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, container: document.body, blur: !params.has('nomenu'),
   }, SEED);
   scene.seasonsEnabled = !!townOf(DEMO_TOWN.id)?.seasonLoop && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; // summer towns stay summer; reduced motion: no season flashes

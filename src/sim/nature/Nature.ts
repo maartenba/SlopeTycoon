@@ -87,6 +87,7 @@ export class Nature {
     this.fauna.load(s.fauna); this.livestock.load(s.livestock); this.growth.load(s.growth);
     this.spots = s.spots; this.hunts = s.hunts; this.spotted = new Map(s.spotted); this.sceneryValue = s.scenery;
     this.cover.rebuild(); this.stats.rebuild();
+    this.cellCount.fill(0); // the guest-position cache (animals flee from it) is not saved: empty it on load so a loaded game and a live one agree until the next rebuild (found by the autumn save/load determinism test after the calendar fix)
   }
 
   /** Call when buildings change (farms may have appeared/vanished). */

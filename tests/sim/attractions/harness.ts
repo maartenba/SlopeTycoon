@@ -22,7 +22,7 @@ export interface Harness {
 export function harness(): Harness {
   resetIds();
   const state = createGameState(5, 64);
-  state.date.day = 10; state.date.minute = 10 * 60;
+  state.date.day = 170; state.date.minute = 10 * 60;
   const bus = new EventBus<GameEvents>();
   const store = new GuestStore(400);
   const money = { money: 1000 };

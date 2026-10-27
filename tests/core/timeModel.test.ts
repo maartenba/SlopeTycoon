@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
   CAL, DAYS_PER_MONTH, DAYS_PER_YEAR, REAL_SECONDS_PER_DAY_1X, SEASON_MONTHS, SNOWLINE_KEYS, SPEED_MULTIPLIERS, TICKS_PER_DAY, TICKS_PER_SECOND, WALK_SPEED_BY_SIZE,
-  NAV_SPEED, walkSizeScale, walkSpeedFor, oldDays, snowlineFraction,
+  NAV_SPEED, walkSizeScale, walkSpeedFor, snowlineFraction,
 } from '../../src/config/balance';
 import { nightWarp, realMinutesForDays, realSecondsForDays, seasonRealMinutes } from '../../src/core/pacing';
 import { TickLoop } from '../../src/core/TickLoop';
@@ -31,9 +31,10 @@ describe('time model constants (150 s day, [0,1,3,8], 15-day months)', () => {
     expect(seasonOf({ day: 29 })).toBe('spring'); expect(seasonOf({ day: 30 })).toBe('summer'); expect(seasonOf({ day: 89 })).toBe('summer');
     expect(seasonOf({ day: 90 })).toBe('autumn'); expect(seasonOf({ day: 120 })).toBe('winter'); expect(seasonOf({ day: 179 })).toBe('winter');
   });
-  it('day-keyed curves keep their shape by year fraction (snowline keys are authored in old days x CAL)', () => {
-    expect(SNOWLINE_KEYS[SNOWLINE_KEYS.length - 1]![0]).toBe(180);
-    expect(snowlineFraction(oldDays(60))).toBeCloseTo(0.95, 9); expect(snowlineFraction(oldDays(130))).toBeCloseTo(1.3, 9); expect(snowlineFraction(oldDays(300))).toBeCloseTo(-0.4, 9);
+  it('snowline keys are authored in real-calendar sim days (extremes mid-January / mid-July), cyclic over the 180-day year', () => {
+    expect(SNOWLINE_KEYS[0]![0]).toBeLessThan(0); expect(SNOWLINE_KEYS[SNOWLINE_KEYS.length - 1]![0]).toBeGreaterThan(DAYS_PER_YEAR);
+    expect(snowlineFraction(52)).toBeCloseTo(1.34, 9); expect(snowlineFraction(142)).toBeCloseTo(-0.34, 9);
+    expect(snowlineFraction(0)).toBeCloseTo(snowlineFraction(DAYS_PER_YEAR), 9);
   });
   it('walk speed per map size: 2.5 / 3.4 / 5.0 tiles per tick (4 / 5.5 / 8 tiles/s at 1x), interpolated for odd sizes', () => {
     expect(walkSpeedFor(64)).toBeCloseTo(2.5, 9); expect(walkSpeedFor(128)).toBeCloseTo(3.4, 9); expect(walkSpeedFor(256)).toBeCloseTo(5, 9);

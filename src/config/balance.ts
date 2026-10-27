@@ -111,17 +111,20 @@ export const SUMMER_CONSTRUCTION_MULT = 0.5;
 
 /**
  * Snowline over the year as a fraction of the terrain relief above the valley floor (0 = valley floor, 1 = highest summit).
- * Keys are [dayOfYear 0..360, fraction]; linear interpolation, cyclic. Negative in winter (snow to the valley), > 1 in summer
- * (above the summits), ~0.95 at the start of summer (day 60) so only the top ~12 % of the relief keeps snow, 1.3 mid-summer. Weather adds a modulation (see sim/Weather).
+ * Keys are [sim dayOfYear, fraction] authored on the REAL calendar (sim day 0 = 1 April, sim/calendar.ts), one key per mid-month (the first and last key
+ * repeat Mar / Apr to close the cycle over day 0 / 179); smoothstep interpolation. Valley temperature = TEMP_PER_RELIEF x fraction, so the mean valley
+ * temperature (1,200 m) per month is about: Jan -5.4, Feb -4, Mar -1, Apr 4.5, May 10, Jun 15, Jul 21, Aug 20.5, Sep 17.5, Oct 9, Nov 2.9, Dec -3.5
+ * (coldest mid-January, warmest mid-July). Summer is deliberately hotter than the real Alps (valley +20 C): the game guarantees a snow-free summer on the
+ * summits (Jun 21 - Sep) for hiking/biking, so the fractions stay > 1 from late June to mid September. Alpine reality mapped onto the relief (snowline ~800 m Jan, 1,200 Mar, 1,700 Apr, 2,800 Jun, high Aug,
+ * 2,000 Oct, 1,300 Nov, 900 Dec) gives the fractions Jan -0.34, Mar -0.06 (valley slushy by late March), Apr 0.28, Jun 0.95, Oct 0.55,
+ * Nov 0.18, Dec -0.22. Weather adds a modulation (sim/Weather). Table of the whole year: docs/time-flow.md section 10.
  */
-export const SNOWLINE_KEYS: ReadonlyArray<readonly [number, number]> = ([
-  [0, -0.1], [10, 0.15], [30, 0.5], [60, 0.95], [80, 1.05], [100, 1.2], [130, 1.3], [160, 1.25], [190, 1.0], [215, 0.6], [240, 0.0],
-  [260, -0.2], [300, -0.4], [330, -0.3], [360, -0.1],
-] as const).map(([d, v]) => [d * CAL, v] as const); // authored for a 360-day year, scaled to the 180-day year (same keys by year fraction)
+export const SNOWLINE_KEYS: ReadonlyArray<readonly [number, number]> = [
+  [-8, -0.06], [7, 0.28], [22, 0.7], [37, 0.98], [52, 1.34], [67, 1.3], [82, 1.15], [97, 0.55], [112, 0.18], [127, -0.22], [142, -0.34], [157, -0.25], [172, -0.06], [187, 0.28],
+] as const;
 /**
- * Calendar alignment knob (docs/time-flow.md "Calendar"): the curve is read `SNOWLINE_LEAD_DAYS` sim days ahead. It is 0 on purpose: the keys put the
- * coldest point at sim day 150 (1 Feb; real valleys: mid-Jan) and the warmest at day 65 (5 Aug; real: mid-Jul). A lead of 10 would align both
- * but changes every winter/summer sim state (goldens, advisor, snow tests), so it is left for a deliberate rebalance.
+ * Calendar alignment knob (docs/time-flow.md "Calendar"): the curve is read `SNOWLINE_LEAD_DAYS` sim days ahead. 0: since the calendar fix the keys
+ * above are authored directly in real-calendar sim days (coldest mid-January = sim day 142, warmest mid-July = day 52).
  */
 export const SNOWLINE_LEAD_DAYS = 0;
 /** Snowline fraction for a (fractional) day of year. */
@@ -203,7 +206,7 @@ export const GUEST_DUSK_HOUR = 17; // legacy fallback (equinox-ish); the live va
 /** Seasonal daylight (sim/Daylight.ts): sinusoid by day of year, extremes at sim day 150 (1 Feb) and 60 (1 Aug), see sim/calendar.ts. */
 export const DAYLIGHT = {
   /** Authored at sim day 150 / 60 = 1 Feb / 1 Aug on the real calendar (real solstices: sim day 130 / 40 = oldDays(260) / oldDays(80); not applied, it changes the sim, see docs/time-flow.md). */
-  winterSolsticeDay: oldDays(300), summerSolsticeDay: oldDays(120),
+  winterSolsticeDay: oldDays(260), summerSolsticeDay: oldDays(80),
   /** Mean +- amplitude (hours): sunrise 07:45 winter / 05:15 summer, sunset 16:45 winter / 20:45 summer. */
   sunriseMean: 6.5, sunriseAmp: 1.25, sunsetMean: 18.75, sunsetAmp: 2,
   /** Civil twilight margin (hours) either side of sunrise/sunset. */

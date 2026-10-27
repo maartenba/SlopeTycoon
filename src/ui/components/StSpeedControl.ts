@@ -1,6 +1,7 @@
 import type { GameBus, Speed } from '@/core/events';
 import type { GameDate } from '@/core/GameState';
 import { seasonOf } from '@/sim/Clock';
+import { formatGameDate } from '@/sim/calendar';
 import { formatClock } from '../format';
 import { warpIndicator } from '@/core/pacing';
 import { StElement } from './StElement';
@@ -68,7 +69,7 @@ export class StSpeedControl extends StElement {
 @media (prefers-reduced-motion:reduce){.pill .spin{animation:none}}
 .hold{flex:none;font-weight:800;font-size:calc(11px * var(--ui-scale, 1));color:#ffd070;background:#3a2c10;border:1px solid #f0b04088;border-radius:999px;padding:0 8px;line-height:18px;white-space:nowrap}.hold[hidden]{display:none}
 .btns .night{position:relative}
-.warp{position:absolute;right:1px;bottom:-1px;color:#9bb8ff;font-weight:800;font-size:calc(10px * var(--ui-scale, 1));line-height:1;pointer-events:none;text-shadow:0 0 2px #000,0 0 2px #000}.warp:empty{display:none}`;
+.warp{position:absolute;right:2px;bottom:0;color:#0d1624;font-weight:900;font-size:calc(11px * var(--ui-scale, 1));line-height:1;white-space:nowrap;pointer-events:none}.warp:empty{display:none}`;
   }
 
   constructor() {
@@ -196,6 +197,8 @@ export class StSpeedControl extends StElement {
       for (const [s, b] of this.btns) b.classList.toggle('active', s === sp);
       const d = a.getDate();
       this.dateEl.textContent = formatClock(d);
+      const tip = formatGameDate({ year: d.year, day: d.day }).tooltip; // full date + day of year, no clock (the text already has it; a changing title would flicker the tooltip)
+      if (this.dateEl.title !== tip) this.dateEl.title = tip;
       this.seasonEl.textContent = seasonOf(d);
       this.holdEl.hidden = !modalPause.active;
       this.refreshNights();

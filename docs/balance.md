@@ -171,3 +171,21 @@ Sweep after Task 23 (`npm run test:balance`, bot incl. the green rules, annual n
 | 256 / 7 (starter loan) | -103.4 k | +97.1 k | +57.8 k | 3.42 | 18 % |
 
 Versus the Task 23 sweep (same bot, no upgrades, events / stories off): year 2 is -23 / -7 / -14 / -21 / -6 / 0 % (the upgrades cost ~$43 k plus ~$94 a day), year 3 is within +-15 % except 128/61 (+169 k vs +176 k) and 64/61 (+106 k vs +119 k). Every case stays profitable in years 2 and 3, never bankrupt, stars 3.4 - 4.3. The rest of the sweep (plain, difficulty ordering 178 k / 116 k / 100 k, grants 5.7 - 8.1 %, Career levels) re-ran unchanged. No constant was retuned. Perf (`npm run test:perf`, alone): 35 / 35, guests at the cap 0.48 / 0.90 / 1.67 ms per tick (64 / 128 / 256). Summary and playtest checklist: `docs/depth.md`.
+
+## Climate aligned with the calendar (daylight solstices 21 Jun / 21 Dec, temperature curve, snowline)
+Sim change, not a label change (docs/time-flow.md "Climate curves"). Bot, Normal, `npm run test:balance`, annual net in k$ (before -> after; year 1 starts 1 Dec so it is a partial winter + full year, year 4 is partial):
+
+| map / seed | year 1 | year 2 | year 3 | summer m2-5 y2 / y3 |
+|---|---|---|---|---|
+| 64 / 61 | +3.0 -> +3.4 | 124.2 -> 123.8 | 115.6 -> 115.2 | +31.8 / +16.7 -> +31.5 / +23.6 |
+| 64 / 7 | -2.0 -> -8.1 | 141.5 -> 112.6 | 124.3 -> 142.4 | +23.0 / +25.7 -> +22.6 / +24.9 |
+| 128 / 61 | +22.6 -> +4.7 | 159.4 -> 182.0 | 169.0 -> 164.8 | +41.5 / +23.5 -> +45.0 / +28.4 |
+| 128 / 7 | +2.3 -> -4.4 | 192.0 -> 153.3 | 152.2 -> 177.5 | +31.2 / +22.4 -> +30.2 / +24.0 |
+| 256 / 61 (loan) | -75.5 -> -81.3 | 204.6 -> 225.1 | 175.1 -> 192.4 | +42.4 / +19.9 -> +42.4 / +25.6 |
+| 256 / 7 (loan) | -100.1 -> -102.9 | 97.4 -> 72.3 | 49.3 -> 59.4 | +6.4 / -3.4 -> +10.0 / -13.0 |
+
+* Nobody goes bankrupt before or after (the sweep asserts it); year 2 and 3 profit hold on all six runs. Differences are per-seed noise of the shifted weather and shorter early-December days (year-1 first winter is a bit weaker on three runs: the new game starts at the shortest days and the lifts open 08:29; year 2 moved -21 % .. +14 %). Difficulty ordering year-2 net: relaxed 184 -> 188, normal 124 -> 124, challenging 94 -> 110. Career: level 4 reached y2/d38 (64), y2/d4 (128), y2/d1 (256) (was d32 / d1 / d1); grants still <= 10 % of year-1 revenue (8.1 / 6.6 / 5.9 %). All-on sweep: y2 / y3 positive everywhere, 256/7 y3 +40 k (was +44 k); y2 stars 3.3-4.3.
+* **Gentler summer guarantees hold**: summer months stay positive on every run except 256/7 year 3 (-13 k over four months, was -3 k; that run was already the weakest and its y3 summer was the only negative before as well), `tests/game/summer.test.ts` (winter-focused resort survives summer: no bankruptcy, cash >= -100 k, summer + autumn net >= -5 k per month) passes unchanged. Autumn trough shallow (balance.test.ts check unchanged).
+* Re-baselined with reasons: `tests/sim/staff.test.ts` goldens (hashes + money 193236.89 -> 191943.33, -0.7 %), `yearReport` snapshot (year-2 profit 1118 -> 1270, guests 2827 -> 3002; year-1 guests 1522 -> 1431), Exploration `64/1` runs per skier floor 2.2 -> 2.0 (measured 2.17: December days are ~1 h shorter), wildlifeRevenue ranger recovery floor 0.84 -> 0.78 (measured 0.80 on four seeds; rangers still +12 % over the bear arm), SeasonalSnow (1 Dec valley coverage >= 0.7 not 0.8; valley-clear check moved from day 107 (3 Nov, cold snaps can now whiten the valley) to day 100), Season / calendar / Daylight tests (new extreme days), guest-test fixtures use day 170 (11 Mar) as "a short winter day" (same daylight as the old day 10; old day 10 is now an April day), advisor tests tick 20 extra ticks (lifts open 08:29).
+* Not re-baselined: all other thresholds in balance.test.ts, scenario calibration (`scenarioBots.test.ts`), difficulty and Career tests passed unchanged.
+* Found by the shifted autumn: two latent save/load determinism bugs (unbilled snowmaking energy was not saved; the nature module's guest-position cache made animals flee from stale positions after a load). Both fixed (`src/sim/ops/index.ts`, `src/sim/nature/Nature.ts`).

@@ -464,7 +464,7 @@ User feedback after M5.3: "1 year at 8x takes 56 minutes - seems long". Two chan
 
 ## 10. Calendar: real month names (northern hemisphere, Alps)
 
-**Label-only.** The sim year is unchanged (180 days = 12 x 15-day months, `date.day` 0..179, seasons 60/30/60/30 days from sim day 0 = first day of spring). `src/sim/calendar.ts` lays the real calendar over it with `CALENDAR_OFFSET_MONTHS = 3`: **sim day 0 = 1 April**. Nothing stored is month-indexed by name (finance reports keep the sim month index 0..11, now labelled through `SIM_MONTHS`), so there is no save migration and no sim state or golden hash changed.
+**Labels, plus an aligned climate.** The sim year is unchanged (180 days = 12 x 15-day months, `date.day` 0..179, seasons 60/30/60/30 days from sim day 0 = first day of spring). `src/sim/calendar.ts` lays the real calendar over it with `CALENDAR_OFFSET_MONTHS = 3`: **sim day 0 = 1 April**. Nothing stored is month-indexed by name (finance reports keep the sim month index 0..11, now labelled through `SIM_MONTHS`), so the calendar labels need no save migration. The climate alignment below DID change sim state (daylight, temperature, snow), see "Re-baseline".
 
 | Real month | Season | Sim days | | Real month | Season | Sim days |
 |---|---|---|---|---|---|---|
@@ -478,5 +478,36 @@ User feedback after M5.3: "1 year at 8x takes 56 minutes - seems long". Two chan
 * Winter Dec-Mar (60 d, the ski season), spring Apr-May (30), summer Jun-Sep (60), autumn Oct-Nov (30). A new game starts 1 December (sim day 120). Day of month is 1..15; New Year's Eve is the last day of December ("Dec 15", sim day 134).
 * **Game year** (`date.year`, "Year 1") rolls on 1 April with the year report; a new game is Year 1 from December until the first April. The label never invents a second year number.
 * Weekdays exist (7-day weeks from the absolute day, used by Pricing) and appear in the chip: `Sat 14 Feb · Winter · Year 1`. `formatGameDate()` (`src/sim/calendar.ts`) is the single formatter (HUD chip with tooltip = day of year + time, speed panel line `Y1 · Sat 14 Feb · 23:18`, news stamp, daily digest, year report, month cards, save list and default save name, Events panel).
-* **Known offsets (deliberately not changed, would alter every winter/summer sim state and the goldens):** daylight extremes sit at sim day 150 / 60 = **1 Feb / 1 Aug** (real: 21 Dec / 21 Jun); the snowline/temperature curve is coldest 1 Feb (real: mid-Jan), warmest 5 Aug (real: mid-Jul). Winter snow cover Dec-Mar and a snow-free valley Jun-Sep are correct. To align them later: `DAYLIGHT.winterSolsticeDay/summerSolsticeDay` -> `oldDays(260)/oldDays(80)` and `SNOWLINE_LEAD_DAYS = 10` (measured: ~61 tests, incl. the staff goldens, advisor and snow tests, change) and rebalance deliberately.
+* **Climate is aligned with the calendar** (see "Climate curves" below; this replaced the earlier "known offsets": daylight extremes 1 Feb / 1 Aug and temperature extremes 1 Feb / 5 Aug). Daylight: longest day **21 Jun = sim day 40**, shortest **21 Dec = sim day 130** (`DAYLIGHT.summerSolsticeDay/winterSolsticeDay` = `oldDays(80)/oldDays(260)`). Temperature: coldest **mid-January (sim day 142)**, warmest **mid-July (day 52)**.
 * Event dates: Christmas Market starts 1-9 Dec, World Cup 6 Jan-15 Feb, Carnival 1-11 Feb, Music Festival 1 Jun-11 Aug, Almabtrieb 1-10 Oct, New Year 15 Dec (eve) / 1 Jan. Tests: `tests/sim/calendar.test.ts`.
+
+### Climate curves (calendar fix 2)
+
+Authored in `src/config/balance.ts` (`SNOWLINE_KEYS`, `DAYLIGHT`); regenerate the numbers with `npx vite-node scripts/analysis/yearCurve.ts` (temperature, snowline, daylight) and `npx vite-node scripts/analysis/snowYear.ts <size> <seeds...>` (whole-year snow depth by altitude band, 2nd game year, no guests).
+
+* **Daylight**: sinusoid, sunrise 07:45 / sunset 16:45 (9.0 h) on 21 Dec and 05:15 / 20:45 (15.5 h) on 21 Jun; equinoxes at sim days 85 / 175. Everything daylight-driven (lighting, night warp, arrival window, day-guest leave hour, `Auto (daylight)` lift hours, snowmaking night window, guest evening mode, music/ambience) follows the functions in `sim/Daylight.ts`, so it moved with the solstice. Early December (the new-game start) is now shorter than before (sunrise 07:44, lifts open 08:29, was 07:22 / 08:07): a new game starts at 08:00 with the lifts opening half an hour later.
+* **Snowline / temperature**: `SNOWLINE_KEYS` are now authored directly in real-calendar sim days (one key per mid-month; `SNOWLINE_LEAD_DAYS` stays 0). Valley temperature = `TEMP_PER_RELIEF` (16) x snowline fraction, so one curve drives temperature, snowline, rain/snow, melt, slush and the freeze. Fractions (share of the relief above the valley floor): Jan -0.34, Feb -0.25, Mar -0.06, Apr 0.28, May 0.7, Jun 0.98, Jul 1.34, Aug 1.3, Sep 1.15, Oct 0.55, Nov 0.18, Dec -0.22 (cyclic, smoothstep between keys).
+* **Alpine sanity check.** Real snowline per month (Jan ~800 m, Mar ~1,200, Apr ~1,700, Jun ~2,800, Aug high, Oct ~2,000, Nov ~1,300, Dec ~900) mapped onto a ~1,600 m relief gives fractions Jan -0.25, Mar 0, Apr 0.3, Jun 1.0, Oct 0.5, Nov 0.06, Dec -0.19: the keys follow them. The game's maps are far smaller than the Alps (a 128 map has ~330 m relief), so the snowline in **metres** cannot match (it spans ~1,160-1,580 m on 128); the **fractions** and the temperature do. Deliberate deviations: the Jan mean is -5 C at 1,200 m (real ~-3), and summer is hotter than real (valley +21 C vs ~+16): the game guarantees a snow-free summer on the summits (hiking, biking, `tests/sim/SeasonalSnow.test.ts`) and a summit at fraction 1.0 stays above the snowline whenever the curve is above 1.0 (21 Jun to mid Sep).
+* **What you see**: late March is spring skiing (valley mean -0.6 C in March, +1 to +2 C by the end; slush starts at +2 C afternoons, see `PQ.slushStartTemp`; low pistes melt out in early April, snow stays at altitude until June); first snow on the peaks in October, the valley whitens in the second half of November, a new game starting 1 December has snow on the ground (mean valley temperature ~0 C that day).
+
+| Month | Valley mean T, 1,200 m (before → after) | Daylight h (before → after) | Sunrise-sunset (after) | Snowline, 128 map, m (before → after) | Mean snow depth m, low / mid / high band (after; before in brackets) |
+|---|---|---|---|---|---|
+| Jan | -5.3 → **-5.1** | 9.1 → **9.3** | 07:37-16:57 | 1154 → 1157 | 1.82 / 2.00 / 2.00 (1.80 / 2.00 / 2.00) |
+| Feb | -5.6 → **-3.8** | 9.1 → **10.4** | 07:13-17:37 | 1149 → 1179 | 2.00 / 2.00 / 2.00 (2.00 / 2.00 / 2.00) |
+| Mar | -3.2 → **-0.6** | 10.0 → **12.0** | 06:36-18:35 | 1188 → 1230 | 1.95 / 2.00 / 2.00 (2.00 / 2.00 / 2.00) |
+| Apr | 3.6 → **4.8** | 11.4 → **13.6** | 05:59-19:35 | 1299 → 1318 | 0.57 / 2.00 / 2.00 (1.05 / 2.00 / 2.00) |
+| May | 11.6 → **11.2** | 13.1 → **14.9** | 05:29-20:22 | 1429 → 1422 | 0.00 / 0.59 / 2.00 (0.00 / 0.86 / 1.95) |
+| Jun | 16.4 → **16.0** | 14.5 → **15.5** | 05:16-20:43 | 1507 → 1500 | 0.00 / 0.03 / 1.34 (0.00 / 0.00 / 0.95) |
+| Jul | 19.4 → **20.9** | 15.4 → **15.2** | 05:23-20:33 | 1555 → 1580 | 0.00 / 0.00 / 0.03 (0.00 / 0.00 / 0.11) |
+| Aug | 20.6 → **20.6** | 15.4 → **14.1** | 05:47-19:53 | 1575 → 1574 | 0.00 / 0.00 / 0.00 (0.00 / 0.00 / 0.00) |
+| Sep | 19.2 → **17.5** | 14.5 → **12.5** | 06:24-18:55 | 1553 → 1525 | 0.00 / 0.00 / 0.01 (0.00 / 0.00 / 0.00) |
+| Oct | 14.5 → **8.9** | 13.1 → **10.9** | 07:01-17:55 | 1475 → 1384 | 0.00 / 0.31 / 0.93 (0.00 / 0.06 / 0.68) |
+| Nov | 5.6 → **2.6** | 11.4 → **9.6** | 07:31-17:08 | 1332 → 1283 | 0.22 / 1.76 / 2.00 (0.11 / 1.05 / 1.93) |
+| Dec | -2.2 → **-3.2** | 10.0 → **9.0** | 07:44-16:47 | 1204 → 1187 | 0.95 / 1.90 / 2.00 (0.81 / 1.85 / 2.00) |
+
+(Snow depth: mean over land tiles of the band, bands = fraction of the relief: low < 0.15, mid 0.4-0.6, high > 0.85; max depth is 2 m. Seeds 3 / 11 / 29, 128 map; 64 and 256 are within 0.05 m except the snowline in metres.)
+
+Low-band skiable season (mean depth >= 30 cm), 128 map, seeds 3 / 11 / 29: **before** ends 12 / 5 / 11 Apr and the next one starts 8 / 4 / 3 Dec; **after** ends 7 / 2 / 9 Apr and starts 2 / 3 / 2 Dec (about 4.2 months either way).
+
+### Re-baseline (calendar fix 2)
+Bot year 1 / 2 / 3 net, ski-season length, summer profitability and bankruptcies before and after: see `docs/balance.md` "Climate aligned with the calendar". Short version: no bankruptcies, years 2-3 profitable on 64 / 128 / 256 (two seeds each), the low-altitude ski season is still ~4.2 months (ends 2-9 Apr instead of 5-12 Apr, starts 2-3 Dec instead of 3-8 Dec), summer stays profitable (one 256-map year-3 summer is -13 k, was -3 k). Two latent save/load determinism bugs surfaced and were fixed.
