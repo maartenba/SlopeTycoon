@@ -4,7 +4,7 @@ import { OccFlag } from './Occupancy';
 import type { Pt } from '../sim/Dependencies';
 import { HEIGHT_UNIT } from '../config/balance';
 import { CROSSING } from '../config/crossings';
-import { BRIDGES, type BridgeKind } from '../config/bridges';
+import { BRIDGES, BRIDGE_MAX_RISE, type BridgeKind } from '../config/bridges';
 import type { Bridge, BridgePlan } from './Bridges';
 import { accessProblem, suppliedOnFootOnly, type NetworkAccess, type ServedKind } from '../sim/PlacementRules';
 
@@ -241,6 +241,7 @@ export class Networks {
     if (d.bid && d.bridges) { this.bid.set(d.bid); for (const b of d.bridges) { this.bridgeDefs.set(b.id, structuredCloneBridge(b)); this.nextBridge = Math.max(this.nextBridge, b.id + 1); } }
     this.recountBridges();
     this.layers.set(d.layers); this.difficulty.set(d.difficulty); this.quality.set(d.quality);
+    this.adoptLegacyBridges();
     this.roadEntry = d.roadEntry ? { ...d.roadEntry } : null; this.railEntry = d.railEntry ? { ...d.railEntry } : null;
     this.pisteCache = null; this.cache = { v: -1 }; this.journal = null;
     this.version = d.version + 1;
@@ -509,7 +510,8 @@ export class Networks {
       const x = i % n, y = (i / n) | 0;
       // run along the axis with more flagged neighbours (streams are one tile wide; a diagonal stream gives one-tile runs)
       const flagged = (tx: number, ty: number): boolean => this.inb(tx, ty) && this.bridge[this.idx(tx, ty)] === 1 && this.bid[this.idx(tx, ty)] === 0 && kindOf(this.idx(tx, ty)) === k;
-      const horizontal = flagged(x - 1, y) || flagged(x + 1, y);
+      const has = (tx: number, ty: number): boolean => this.inb(tx, ty) && kindOf(this.idx(tx, ty)) === k;
+      const horizontal = flagged(x - 1, y) || flagged(x + 1, y) || (!flagged(x, y - 1) && !flagged(x, y + 1) && (has(x - 1, y) || has(x + 1, y)) && !(has(x, y - 1) && has(x, y + 1) && !(has(x - 1, y) && has(x + 1, y))));
       const dx = horizontal ? 1 : 0, dy = horizontal ? 0 : 1;
       let sx = x, sy = y;
       while (flagged(sx - dx, sy - dy)) { sx -= dx; sy -= dy; }
@@ -518,6 +520,27 @@ export class Networks {
       out.push({ id: -(out.length + 1), kind: k, a: { x: sx - dx, y: sy - dy }, b: { x: sx + dx * span.length, y: sy + dy * span.length }, span, deck: 0, cost: 0, auto: true });
     }
     return out;
+  }
+
+  /**
+   * Migration (0.2.4): old saves carry per-tile stream crossings (the `bridge` flag without a record). Give each run a zero-cost record so it renders,
+   * paths and undoes as a real bridge. Runs without both banks in bounds are left alone. Idempotent (records are stored from then on).
+   */
+  private adoptLegacyBridges(): void {
+    const legacy = this.legacyBridges();
+    for (const b of legacy) {
+      if (!this.inb(b.a.x, b.a.y) || !this.inb(b.b.x, b.b.y)) continue;
+      const spec = BRIDGES[b.kind];
+      const maxC = (p: Pt): number => Math.max(...this.grid.getCorners(p.x, p.y));
+      let deck = Math.max(maxC(b.a), maxC(b.b));
+      for (const t of b.span) deck = Math.max(deck, maxC(t) + spec.clearance);
+      deck = Math.min(deck, Math.min(maxC(b.a), maxC(b.b)) + BRIDGE_MAX_RISE);
+      for (const t of b.span) deck = Math.max(deck, maxC(t));
+      const id = this.nextBridge++;
+      for (const t of b.span) this.bid[this.idx(t.x, t.y)] = id;
+      this.bridgeDefs.set(id, { id, kind: b.kind, a: b.a, b: b.b, span: b.span, deck, cost: 0 });
+    }
+    if (legacy.length) this.recountBridges();
   }
 
   /** Every bridge: player-built records first, then the auto records of the old stream crossings. */

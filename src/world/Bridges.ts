@@ -34,6 +34,8 @@ export interface BridgePlan {
   /** Total $ (span + new banks), x multiplier. */
   cost: number;
   spanCost: number;
+  /** Every span tile is stream (tooltip: 'Footbridge over stream'). */
+  overStream?: boolean;
 }
 
 const fail = (kind: BridgeKind | 'rail', a: Pt, b: Pt, reason: string): BridgePlan => ({ ok: false, reason, kind, a, b, span: [], deck: 0, rise: 0, supports: [], newBanks: [], cost: 0, spanCost: 0 });
@@ -137,5 +139,5 @@ export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail',
   if (!anyAnchored && !opts.skipLink) return fail(kind, a, b, spec.layer === 'road' ? ROAD_START_MSG : spec.layer === 'path' ? 'Paths must connect to a path, road or building' : TRAIL_ORPHAN_MSG);
   const spanCost = len * spec.costPerTile * mult;
   const bankUnit = spec.layer === 'road' ? NET_COST[NetKind.Road] : spec.layer === 'path' ? NET_COST[NetKind.Path] : PISTE_COST_PER_TILE;
-  return { ok: true, kind, a, b, span, deck, rise, supports: bridgeSupports(len), newBanks, cost: spanCost + newBanks.length * bankUnit * mult, spanCost };
+  return { ok: true, kind, a, b, span, deck, rise, supports: bridgeSupports(len), newBanks, cost: spanCost + newBanks.length * bankUnit * mult, spanCost, overStream: span.every((t) => grid.tileType[grid.tileIndex(t.x, t.y)] === TileType.Stream) };
 }

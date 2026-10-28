@@ -59,7 +59,7 @@ describe('trails bridge ponds, whatever the wobble of the drag', () => {
       const s = planTrailStroke(net, grid, kind, row(20, 25), 1, 'level');
       expect(s).toMatchObject({ ok: false });
     });
-    it(`${kind}: a lake bank to bank (3 wide, ${kind === 'hike' ? 120 : 140}/tile) costs span + banks, a stream stays an automatic crossing`, () => {
+    it(`${kind}: a lake bank to bank (3 wide, ${kind === 'hike' ? 120 : 140}/tile) costs span + banks, a one-tile stream is a span-1 bridge`, () => {
       const { grid, net } = world(); pond(grid, 20, 3); net.build(NetKind.Path, 17, 30);
       const plan = planTrailStroke(net, grid, kind, row(18, 25), 1, 'level');
       expect(plan.ok, plan.reason).toBe(true);
@@ -68,9 +68,12 @@ describe('trails bridge ponds, whatever the wobble of the drag', () => {
       s.net.build(NetKind.Path, 17, 30);
       const sp = planTrailStroke(s.net, s.grid, kind, row(18, 25), 1, 'level');
       expect(sp.ok, sp.reason).toBe(true);
-      expect(sp.bridges).toHaveLength(0);
+      expect(sp.bridges).toHaveLength(1);
+      expect(sp.bridges[0]!.span).toHaveLength(1);
+      expect(sp.cost).toBe((kind === 'hike' ? 120 : 140) + 7 * 10);
       buildTrailStroke(s.net, kind, sp);
       expect(s.net.bridge[s.net.idxOf(21, 30)]).toBe(1);
+      expect(s.net.bid[s.net.idxOf(21, 30)]).toBeGreaterThan(0);
       expect(s.net.layers[s.net.idxOf(21, 30)]! & layer).toBe(layer);
     });
     it(`${kind}: a trench (gap) gets a bridge; a plain slope is not a gap and paints as before`, () => {

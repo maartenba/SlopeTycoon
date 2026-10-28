@@ -64,7 +64,7 @@ import { chooseStart, resolveDrop, type DropResult } from '@/render/view/walkSta
 import { DropRing } from '@/render/view/DropRing';
 import { WalkDropMarker, DROP_HINT } from '@/ui/walkDropMarker';
 import { yawOfHeading } from '@/render/view/ViewCameraRig';
-import { surfaceHeightAt, NET_NIGHT } from '@/render/meshes/Paths';
+import { surfaceHeightAt, NET_NIGHT, NET_SNOW } from '@/render/meshes/Paths';
 import { CROSSING } from '@/config/crossings';
 import { RailCrossingsView } from '@/render/RailCrossings';
 import { planBridge } from '@/world/Bridges';
@@ -472,6 +472,7 @@ const applyBuildingSnow = (snowline: number): void => {
   const hi = maxWorld + 1, lo = Math.max(1, maxWorld * 0.3);
   const cold = hi > lo ? (hi - snowline) / (hi - lo) : 0;
   buildingMeshes.setSnow((cold - 0.5) / 0.4);
+  NET_SNOW.value = Math.min(1, Math.max(0, (cold - 0.5) / 0.4)); // bridge deck tops
 };
 let gallery: ModelGallery | null = null;
 /** Debug (key B): all buildings plus every lift kind's bottom/top station, tower and carrier in labelled rows at a flat height. */

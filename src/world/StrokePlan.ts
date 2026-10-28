@@ -48,7 +48,7 @@ function findRuns(net: Networks, grid: Grid, kind: StrokeKind, line: Pt[]): Run[
     const i = net.idxOf(t.x, t.y);
     return net.kind[i] === 0 && net.layers[i] === 0 && net.bid[i] === 0;
   };
-  const isWater = (t: Pt): boolean => grid.tileType[net.idxOf(t.x, t.y)] === TileType.Water;
+  const isWater = (t: Pt): boolean => { const tt = grid.tileType[net.idxOf(t.x, t.y)]; return tt === TileType.Water || tt === TileType.Stream; }; // streams are bridged like ponds since 0.2.4
   const gaps = kind !== 'rail'; // trails too: a depression that a bridge can span becomes a bridge, any other dip stays plain ground (planTrailStroke drops the run)
   /** A dry free tile at least GAP_MIN_DROP half-steps below the bank the run starts from (a depression: the bridge planner then checks the far bank). */
   const deep = (t: Pt, ref: number): boolean => gaps && !(grid.occupancy.flags[net.idxOf(t.x, t.y)]! & (OccFlag.Building | OccFlag.Lift | OccFlag.Decor)) && minCorner(grid, t.x, t.y) <= ref - GAP_MIN_DROP;
@@ -81,7 +81,7 @@ const isStraight = (line: Pt[], r: Run): boolean => {
  * A drag that ends in the water is carried on to the far bank. Strokes that are already straight, and runs that cannot be straightened, are left alone.
  */
 export function straightenRuns(net: Networks, grid: Grid, kind: StrokeKind, line: Pt[]): Pt[] {
-  const water = (x: number, y: number): boolean => net.inBounds(x, y) && grid.tileType[net.idxOf(x, y)] === TileType.Water;
+  const water = (x: number, y: number): boolean => net.inBounds(x, y) && (grid.tileType[net.idxOf(x, y)] === TileType.Water || grid.tileType[net.idxOf(x, y)] === TileType.Stream);
   let cur = line;
   for (let guard = 0; guard < 6; guard++) {
     const r = findRuns(net, grid, kind, cur).find((q) => q.water && q.s >= 1 && !isStraight(cur, q) || (q.water && q.s >= 1 && q.e >= cur.length - 1));
@@ -229,7 +229,7 @@ export function buildTrailStroke(net: Networks, kind: 'hike' | 'mtb', plan: Stro
 /** One line for the tooltip: what this stroke adds besides plain tiles. */
 export function describeExtras(plan: StrokePlan): string {
   const out: string[] = [];
-  for (const b of plan.bridges) out.push(`${BRIDGES[b.kind as BridgeKind].label}: span ${b.span.length} tile${b.span.length === 1 ? '' : 's'}, $${Math.round(b.spanCost)}`);
+  for (const b of plan.bridges) out.push(`${BRIDGES[b.kind as BridgeKind].label}${b.overStream ? ' over stream' : ''}: span ${b.span.length} tile${b.span.length === 1 ? '' : 's'}, $${Math.round(b.spanCost)}`);
   const by = (c: number): number => plan.crossings.filter((x) => x.cross === c).length;
   const n1 = by(Cross.Path) + by(Cross.Road);
   if (n1) out.push(n1 === 1 ? 'level crossing: guests wait for trains' : `${n1} level crossings`);

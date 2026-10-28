@@ -6,10 +6,13 @@ import { CROSSING } from '../../config/crossings';
 import { diagonalNS } from '../TerrainGeometry';
 import { footbridgeDeck, footbridgeStairs } from './footbridge';
 import { bridgeTileGeometry } from './bridges';
+export { BRIDGE_SNOW_U } from './bridges';
 
 const NET_LIFT = 0.06;
 /** Shared 0..1 night factor for the road / path / rail material (set by main with Lighting.nightUniform): lifts dark asphalt out of near-black. */
 export const NET_NIGHT = { value: 0 };
+/** 0..1: winter snow on bridge deck tops (follows the building roof-snow mapping); only vertices at u = `BRIDGE_SNOW_U` react. */
+export const NET_SNOW = { value: 0 };
 /** Night floor: faint cool emissive + a little of the albedo so asphalt (albedo ~0.07) reads as dark grey-blue, not black. Added to the radiance in linear space. */
 export const NET_NIGHT_GLSL = 'totalEmissiveRadiance += (diffuseColor.rgb * 0.06 + vec3(0.010, 0.013, 0.026)) * uNetNight;';
 const MARK_LIFT = 0.085;
@@ -426,16 +429,12 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
 }
 
 /**
- * Per-tile decals: only trail bridge decks and the red outline of disconnected pistes. The piste / trail GROUND look is a soft terrain-shader
+ * Per-tile decals: only the red outline of disconnected pistes. The piste / trail GROUND look is a soft terrain-shader
  * treatment (groundMask.ts + TerrainMesh); the full-tile difficulty colours live in the 'Piste difficulty' overlay.
  */
 export function tileDecal(d: GeoData, grid: Grid, net: Networks, x: number, y: number): void {
   const i = y * net.size + x, l = net.layers[i]!;
   if (!l) return;
-  if (net.bridge[i] === 1 && net.bid[i] === 0 && net.kind[i] === 0 && (l & (Layer.Mtb | Layer.Hike))) {
-    // Trail crossing a stream: reuse the footpath bridge deck look.
-    pushQuad(d, grid, x + 0.25, y + 0.05, x + 0.75, y + 0.95, BRIDGE_LIFT, 0, true, 0xc9a37a, Math.max(...grid.getCorners(x, y)) * HEIGHT_UNIT);
-  }
   if ((l & Layer.Ski) && net.disconnectedMask()[i]) {
     // red outline on the sides that border a tile outside this disconnected piste
     const t = 0.07, red = 0xff2a2a, L = DECAL_LIFT + 0.03;
@@ -500,10 +499,10 @@ export class NetworkMeshes {
   constructor(private grid: Grid, private net: Networks) {
     this.netMat = new THREE.MeshLambertMaterial({ map: makeAtlas(), vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     this.netMat.onBeforeCompile = (sh): void => {
-      sh.uniforms.uNetNight = NET_NIGHT;
-      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uNetNight;').replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + NET_NIGHT_GLSL);
+      sh.uniforms.uNetNight = NET_NIGHT; sh.uniforms.uNetSnow = NET_SNOW;
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uNetNight; uniform float uNetSnow;').replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.94, 0.97), uNetSnow * step(abs(vMapUv.x - 0.93), 0.012));').replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + NET_NIGHT_GLSL);
     };
-    this.netMat.customProgramCacheKey = (): string => 'netNight1';
+    this.netMat.customProgramCacheKey = (): string => 'netNight2';
     this.decalMat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
     this.group.name = 'networks';
   }

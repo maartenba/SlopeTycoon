@@ -14,6 +14,8 @@ import type { GeoData } from './Paths';
  */
 export type HeightFn = (x: number, z: number) => number;
 
+/** u of bridge deck-top vertices (inside the white atlas cell): the net material tints them with the winter snow (Paths.ts NET_SNOW). */
+export const BRIDGE_SNOW_U = 0.93;
 const WHITE_CELL_U = 3.5 / 4; // Paths atlas: cell 3 = plain white
 const THICK = 0.07;
 
@@ -33,13 +35,13 @@ function slab(d: GeoData, x0: number, z0: number, x1: number, z1: number, hw: nu
   const P = (e: number, side: number): [number, number] => (alongX ? [e ? x1 : x0, (z0 + z1) / 2 + side * hw] : [(x0 + x1) / 2 + side * hw, e ? z1 : z0]);
   const T = (e: number): number => (e ? yTop1 : yTop0) + lift;
   const v = (e: number, side: number, top: boolean): number[] => { const [x, z] = P(e, side); return [x, T(e) - (top ? 0 : thick), z]; };
-  const quad = (pts: number[][], shade: number): void => {
+  const quad = (pts: number[][], shade: number, u = WHITE_CELL_U): void => {
     const base = d.positions.length / 3;
-    pts.forEach((p, k) => { d.positions.push(p[0]!, p[1]!, p[2]!); d.uvs.push(WHITE_CELL_U, k < 2 ? 0.25 : 0.75); d.colors.push(c.r * shade, c.g * shade, c.b * shade); });
+    pts.forEach((p, k) => { d.positions.push(p[0]!, p[1]!, p[2]!); d.uvs.push(u, k < 2 ? 0.25 : 0.75); d.colors.push(c.r * shade, c.g * shade, c.b * shade); });
     d.indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
   };
   // top (normal up): order so that the triangle winding faces +y for both axes (double-sided material anyway)
-  quad([v(0, -1, true), v(1, -1, true), v(1, 1, true), v(0, 1, true)], 1);
+  quad([v(0, -1, true), v(1, -1, true), v(1, 1, true), v(0, 1, true)], 1, BRIDGE_SNOW_U); // top faces take the winter snow tint (NET_SNOW)
   quad([v(0, 1, false), v(1, 1, false), v(1, -1, false), v(0, -1, false)], 0.5);
   quad([v(0, -1, false), v(1, -1, false), v(1, -1, true), v(0, -1, true)], 0.78);
   quad([v(1, 1, false), v(0, 1, false), v(0, 1, true), v(1, 1, true)], 0.78);

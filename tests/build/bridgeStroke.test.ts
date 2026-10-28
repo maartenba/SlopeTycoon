@@ -92,12 +92,12 @@ describe('footpath and road: a bridge of the matching type appears when the drag
     expect(ROAD_START_MSG).toMatch(/^Start the road from the road entry/);
     tool.dispose(); rail.dispose(); road.dispose();
   });
-  it('a stream is still crossed per tile (the old automatic bridge), no extra price', () => {
+  it('a stream is bridged like a pond: footbridge span 1 ($150) + the bank tiles, no more free per-tile crossing', () => {
     const { grid, net, o } = setup();
     for (let y = 10; y < 50; y++) { grid.tileType[grid.tileIndex(20, y)] = TileType.Stream; grid.occupancy.set(20, y, OccFlag.Water); }
     net.build(NetKind.Path, 18, 30);
     const tool = new SegmentTool(o, NetKind.Path), h = tool as unknown as Hack;
-    expect(h.evaluate(row(18, 22))).toMatchObject({ ok: true, cost: 4 * 20 });
+    expect(h.evaluate(row(18, 22))).toMatchObject({ ok: true, cost: 3 * 20 + 150 });
     tool.dispose();
   });
 });
