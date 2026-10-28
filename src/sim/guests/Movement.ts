@@ -260,7 +260,7 @@ export class NavMovement implements Movement {
         // closed level crossing ahead: wait at the CENTRE of the approach tile (never nearer: family kids are glued to the leader +-0.25 tiles and must
         // stay out of the crossing too). A guest already past the centre steps back. Trains never stop for anyone (docs/crossings.md).
         const sx = ax + 0.5, sy = ay + 0.5, dd = Math.hypot(sx - x, sy - y), step = v * time;
-        if (dd <= step) { x = sx; y = sy; g.world.onCrossingWait?.(); } else { x += ((sx - x) / dd) * step; y += ((sy - y) / dd) * step; }
+        if (dd <= step) { x = sx; y = sy; g.world.onCrossingWait?.(b); } else { x += ((sx - x) / dd) * step; y += ((sy - y) / dd) * step; }
         time = 0;
         break;
       }

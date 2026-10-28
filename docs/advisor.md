@@ -45,6 +45,7 @@ Every rule has a scenario: it fires, and 2-3 different valid fixes each clear it
 | Rule | Cadence | Fires when |
 |---|---|---|
 | `piste.icy` | daily | now names the worst **run** ("Black Run 2 is icy") with a map target (docs/runs.md) |
+| `crossing.waits` | daily | guests spent a lot of time waiting at a footpath level crossing yesterday: suggest the footbridge over rail (docs/crossings.md); Show me = that crossing |
 | `hikers.hungry` | daily | decaying share of hiker / biker departures that ended hungry is high: add a hut / cafe near the trails (docs/hiking.md) |
 | `farm.almabtrieb` | daily | no Alpine Farm in autumn (suggest one) or 3 days before the Almabtrieb ("Show me" = base station) |
 | `snow.mode` | hourly | cannons burn while the snowline is above the pistes (suggest Auto / Off) or Auto is waiting for cold |

@@ -3,6 +3,7 @@ import { CHUNK_SIZE, type Grid } from '../../world/Grid';
 import { Conn, Layer, type Networks } from '../../world/Networks';
 import { HEIGHT_UNIT } from '../../config/balance';
 import { diagonalNS } from '../TerrainGeometry';
+import { footbridgeDeck, footbridgeStairs } from './footbridge';
 
 const NET_LIFT = 0.06;
 /** Shared 0..1 night factor for the road / path / rail material (set by main with Lighting.nightUniform): lifts dark asphalt out of near-black. */
@@ -390,7 +391,8 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
   const flatY = bridge ? Math.max(...grid.getCorners(x, y)) * HEIGHT_UNIT : undefined;
   const rgb = bridge ? 0xc9a37a : 0xffffff;
   const cx = x + 0.5, cz = y + 0.5;
-  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); return; }
+  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); else if (cr === 3) footbridgeDeck(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, m === (Conn.N | Conn.S)); return; }
+  if (k === 1 && net.crossCount > 0) { const rd = net.rampDir(x, y); if (rd >= 0) footbridgeStairs(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, rd); }
   if (k === 1 && m !== 0 && pathTile(d, grid, x, y, m, net.size, hw, cell, lift, rgb, flatY, networkEdgeTan(net, x, y))) return;
   if (k === 2 && !bridge && roadTile(d, grid, net, x, y, m, hw, cell, lift)) return;
   const vertical = (m & (Conn.N | Conn.S)) !== 0 && (m & (Conn.E | Conn.W)) === 0;

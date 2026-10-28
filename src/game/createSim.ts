@@ -46,6 +46,7 @@ import type { GuestWorld } from '../sim/guests/GuestWorld';
 import type { NavWorld } from '../sim/guests/NavGraph';
 import { routeOnKind } from '../sim/guests/Arrivals';
 import { RailCrossings } from '../sim/RailCrossings';
+import { CROSSING } from '../config/crossings';
 import { FACILITY, measureFacilities } from '../sim/meta/Facilities';
 import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
 import { Rating, createRatingSystem } from '../sim/Rating';
@@ -330,12 +331,12 @@ export function createSim(opts: SimOptions) {
     skiOpen: cond.skiOpen, hikeOk: cond.hikeOk, snow: grid.snowDepth, closed: openStatus.closedMask, bridge: networks.bridge,
     networkVersion: () => networks.version,
     terrainVersion: () => grid.terrainVersion,
+    cross: networks.cross, crossClosed: (t) => crossings.isClosed(t), onCrossingWait: (t) => crossings.noteWait(t),
   // Rail level crossings (Phase 6 Task 10, docs/crossings.md): pure derivation from the train polylines; inert (no work, no state) while the world has none.
   const crossings = new RailCrossings(networks);
     tileAlt: (x, y) => cond.altitude(x, y),
     isBikeable: (x, y) => cond.isBikeable(x, y),
     lifts: () => lifts.all(),
-    cross: networks.cross, crossClosed: (t) => crossings.isClosed(t), onCrossingWait: () => crossings.noteWait(),
     consumeFlips: () => { const a = cond.takeFlips(), b = openStatus.takeClosureFlips(); return a && b ? [...a, ...b] : a ?? b; },
   };
   let ticketing: Ticketing | null = null;
@@ -350,7 +351,7 @@ export function createSim(opts: SimOptions) {
     networkVersion: () => networks.version,
     route: (k, from, to) => routeOnKind(networks.kind, size, k === 'road' ? 2 : 3, from, to, networks.cross),
     walkNet: () => networks,
-    groundAt: (x, y) => groundHeight(grid, x, y),
+    groundAt: (x, y) => groundHeight(grid, x, y) + (networks.crossCount > 0 ? networks.footLift(x, y) * CROSSING.footbridge.deck : 0), // guests climb the rail footbridge stairs
     stats: () => {
       let openLifts = 0, openPisteTiles = 0, attractions = 0;
       const cats = new Set<string>();

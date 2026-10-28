@@ -34,6 +34,7 @@ export class RailCrossings {
   private routes = new Map<number, { v: number; pos: RoutePos[] }>();
   /** Ticks guests spent waiting at closed crossings today / yesterday (advisor: "a footbridge helps"). */
   private waitToday = 0; private waitYesterday = 0; private day = -1;
+  private tileToday = new Map<number, number>(); private tileYesterday = new Map<number, number>();
   /** Total guest-ticks waited, diagnostics. */
   totalWait = 0;
 
@@ -60,9 +61,17 @@ export class RailCrossings {
   closedTiles(): ReadonlySet<number> { return this.closed; }
 
   /** A guest wanted to enter closed crossing `tile` this tick (counts towards the advisor's wait metric). */
-  noteWait(): void { this.waitToday++; this.totalWait++; }
+  noteWait(tile = -1): void { this.waitToday++; this.totalWait++; if (tile >= 0) this.tileToday.set(tile, (this.tileToday.get(tile) ?? 0) + 1); }
   /** Guest-ticks waited yesterday (the advisor reads it; today's value is still accumulating). */
   waitedYesterday(): number { return this.waitYesterday; }
+  /** The footpath crossing where guests waited most yesterday (tile index) and how long (ticks, summed over guests); null = none. */
+  worstWaited(): { tile: number; ticks: number } | null {
+    let best: { tile: number; ticks: number } | null = null;
+    for (const [tile, ticks] of this.tileYesterday) if (this.net.cross[tile] === Cross.Path && (!best || ticks > best.ticks || (ticks === best.ticks && tile < best.tile))) best = { tile, ticks };
+    return best;
+  }
+  /** Tests: pretend guests waited `ticks` at `tile` yesterday. */
+  debugWaits(tile: number, ticks: number): void { this.tileYesterday.set(tile, ticks); this.waitYesterday = ticks; }
 
   /** Crossings of the polyline in route order: tile, distance along the route to the tile centre, cross kind. Cached per vehicle + network version. */
   private positionsOn(v: Vehicle): RoutePos[] {
@@ -81,7 +90,12 @@ export class RailCrossings {
 
   /** Recompute the closed set from the trains in flight. Call once per tick after the vehicles advanced. `absDay` rolls the daily wait counter. */
   refresh(vehicles: ReadonlyArray<Vehicle>, absDay = 0): void {
-    if (absDay !== this.day) { this.waitYesterday = this.day >= 0 && absDay === this.day + 1 ? this.waitToday : 0; this.waitToday = 0; this.day = absDay; }
+    if (this.day < 0) this.day = absDay; // first call: just learn the day (nothing waited yet)
+    else if (absDay !== this.day) {
+      const cons = absDay === this.day + 1;
+      this.waitYesterday = cons ? this.waitToday : 0; this.waitToday = 0; this.day = absDay;
+      this.tileYesterday = cons ? this.tileToday : new Map(); this.tileToday = new Map();
+    }
     if (!this.active) { if (this.closed.size) { this.closed.clear(); this.version++; } if (this.routes.size) this.routes.clear(); return; }
     const next = new Set<number>();
     const live = new Set<number>();

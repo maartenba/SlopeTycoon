@@ -9,6 +9,14 @@ import { defaultMarketing } from '../../src/sim/guests/Spawner';
  */
 export function crossingWorld(opts: { footbridge?: boolean; bias?: number; road?: boolean } = {}): Sim {
   const sim = createSim({ size: 64, seed: 61, now: () => 0, money: 900000 });
+  addCrossingLayout(sim, opts);
+  const bias = opts.bias ?? 0.9;
+  sim.guestSim.spawner.marketingFn = () => ({ ...defaultMarketing(), railBias: bias });
+  return sim;
+}
+
+/** Builds the layout described above into an existing 64 / seed-61 starter sim. */
+export function addCrossingLayout(sim: Sim, opts: { footbridge?: boolean; road?: boolean } = {}): void {
   const n = sim.networks;
   n.buildSegment(NetKind.Rail, lineTiles({ x: 38, y: 57 }, { x: 38, y: 50 }));
   placeBuilding(sim.env, sim.props, 'trainStation', 37, 50, 1, true, true);
@@ -23,9 +31,6 @@ export function crossingWorld(opts: { footbridge?: boolean; bias?: number; road?
     placeBuilding(sim.env, sim.props, 'parking', 47, 58, 0, true, true);
   }
   sim.buildings.reevaluate();
-  const bias = opts.bias ?? 0.9;
-  sim.guestSim.spawner.marketingFn = () => ({ ...defaultMarketing(), railBias: bias });
-  return sim;
 }
 
 export const CROSS_TILE = (sim: Sim): number => 57 * sim.size + 38;

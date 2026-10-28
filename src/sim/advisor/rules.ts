@@ -21,6 +21,7 @@ import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/sug
 import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { ENERGY } from '../../config/energy';
+import { CROSSING } from '../../config/crossings';
 import { TEXT, FRIENDLY } from './strings';
 
 export interface Pt { x: number; y: number }
@@ -197,6 +198,12 @@ export const RULES: readonly Rule[] = [
     const a = anchors(c.sim);
     const s = c.site('toilets.none', 'toilets', () => findAlongPiste(c.sim, 'toilets', 6, undefined, 'path') ?? findSite(c.sim, 'toilets', a.lodge, { rmax: 10, route: 'path' }));
     return { id: 'toilets.none', severity: 'warn', ...TEXT.toiletsNone(missing, pct(share)), action: build('toilets', s), target: siteTarget(s) };
+  }),
+  // Rail level crossings (docs/crossings.md): guests spent a lot of time waiting at a footpath crossing yesterday: a footbridge over the rail ends the waiting
+  rule('crossing.waits', 2, (c) => {
+    const cx = c.sim.crossings, w = cx.worstWaited();
+    if (!cx.active || !w || w.ticks < CROSSING.advisorWaitTicksPerDay * (c.shown ? 0.7 : 1)) return null;
+    return { id: 'crossing.waits', severity: 'info', ...TEXT.crossingWaits(Math.round(w.ticks / 10)), target: { x: w.tile % c.sim.size, y: Math.floor(w.tile / c.sim.size) } };
   }),
   // Hikers leave starving (decaying share of recent hiker / biker departures with hunger > 0.75): suggest a hut / cafe beside the trails
   rule('hikers.hungry', 2, (c) => {

@@ -2418,6 +2418,7 @@ if (ui && !DEMO) {
       setOverride: (d) => netTools?.setOverride(d),
       setBrush: (n) => netTools?.setBrush(n),
       setErase: (on) => netTools?.setErase(on),
+      setOverRail: (on) => netTools?.setOverRail(on),
       undo: () => netTools?.undo() ?? false,
       redo: () => netTools?.redo() ?? false,
       suggest: (w) => suggestRun(w),

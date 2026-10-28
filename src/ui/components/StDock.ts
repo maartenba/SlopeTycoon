@@ -29,7 +29,7 @@ export interface DockApi {
   buildings: { locked(id: string): string[]; cost(id: string): number; multiplier(): number; select(id: string): void };
   lifts: { select(kind: LiftKind): void; costPer100m(kind: LiftKind): number; /** Career lock reasons ('Unlocks at level 2: ...'); empty = available. */ locked?(kind: LiftKind): string[] };
   /** Toggle semantics: starting the already-active key stops it. */
-  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4): number };
+  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; setOverRail?(on: boolean): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4): number };
   terraform: {
     setMode(m: TerraformMode): void; setTarget(t: TerraformTarget): void; setBrush(n: number): void; setMaxEdgeDelta(d: 1 | 2): void;
     state(): { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 };
@@ -550,7 +550,7 @@ export class StDock extends StElement {
     switch (open) {
       case 'buildings': this.buildGrid(buildingsInTab(this.tab).map((d) => d.id), 'buildings'); break;
       case 'lifts': this.buildGrid(Object.keys(LIFTS), 'lifts'); break;
-      case 'paths': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'paths').map((i) => i.key), 'paths'); break;
+      case 'paths': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'paths').map((i) => i.key), 'paths'); this.pathControls(); break;
       case 'pistes': this.buildGrid(NETWORK_ITEMS.filter((i) => i.group === 'pistes').map((i) => i.key), 'pistes'); this.pisteControls(); break;
       case 'terrain': this.buildGrid(this.tvItems('terrain').map((i) => i.id), 'terrain'); this.terrainControls(); break;
       case 'landscape': b.sync = this.landscapePane(this.landTab); break;
@@ -812,6 +812,19 @@ export class StDock extends StElement {
     b.title = title;
     b.addEventListener('click', fn);
     return b;
+  }
+
+  /** Paths drawer extras: the footbridge-over-rail toggle (Phase 6 Task 11). A 44 px toggle, same for mouse and touch. */
+  private overRail = false;
+  private pathControls(): void {
+    this.overRail = false;
+    const api = this.api!;
+    api.network.setOverRail?.(false);
+    const side = el('div', 'pc');
+    const b = this.btn('Bridge over rail', 'Footpaths drawn across a rail line become a footbridge: guests never wait for trains (costs more than a level crossing, which makes guests wait). Roads cannot use it.', () => { this.overRail = !this.overRail; api.network.setOverRail?.(this.overRail); b.classList.toggle('active', this.overRail); });
+    b.dataset.overRail = '';
+    side.append(b);
+    this.body.appendChild(side);
   }
 
   private erasing = false;

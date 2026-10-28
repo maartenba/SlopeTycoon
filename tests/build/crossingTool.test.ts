@@ -35,6 +35,20 @@ describe('path / road tool over a rail line', () => {
     expect(net.crossAt(30, 50)).toBe(Cross.Path);
     tool.dispose();
   });
+  it('with the Bridge over rail toggle the same stroke becomes a footbridge (own text and price, no waiting)', () => {
+    const { net, o } = setup();
+    net.buildSegment(NetKind.Path, [{ x: 29, y: 50 }]);
+    const tool = new SegmentTool(o, NetKind.Path), h = tool as unknown as Hack;
+    const stroke = lineTiles({ x: 29, y: 50 }, { x: 31, y: 50 });
+    h.overRail = true;
+    const ev = h.evaluate(stroke);
+    expect(ev.ok).toBe(true);
+    expect(ev.text).toContain('footbridge over the rail');
+    expect(ev.cost).toBe(20 + 900);
+    h.commit(stroke);
+    expect(net.crossAt(30, 50)).toBe(Cross.Footbridge);
+    tool.dispose();
+  });
   it('shows the exact reason for an angled / dead-end stroke', () => {
     const { net, o } = setup();
     net.buildSegment(NetKind.Path, [{ x: 29, y: 50 }]);

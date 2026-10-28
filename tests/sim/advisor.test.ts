@@ -19,6 +19,8 @@ const removeTypes = (sim: Sim, ...types: string[]): void => { for (const b of si
 const setFamilies = (sim: Sim, n: number): void => { const st = sim.guestSim.store; for (let i = 0; i < n; i++) { st.alive[i] = 1; st.type[i] = GuestType.Family; } st.count = Math.max(st.count, n); };
 const setDay = (sim: Sim, day: number): void => { sim.game.date.day = day; };
 const sicy = (sim: Sim): void => { const q = sim.ops.quality as unknown as { state: Uint8Array }; for (let i = 0; i < q.state.length; i++) if (sim.ops.quality.isPiste(i)) q.state[i] = Q.Icy; };
+/** Marks one rail tile of the starter resort as a footpath level crossing (the rule only reads the wait stats and the tile kind). */
+const fakeCrossing = (sim: Sim): number => { const n = sim.networks; const t = n.kind.findIndex((k, i) => k === 3 && !n.cross[i]); n.cross[t] = 1; n.crossCount++; return t; };
 const guests = (sim: Sim, n: number): void => { sim.guestSim.store.count = n; };
 
 /** The starter resort has no Train Station: fake a served one (rail share, station load) and make Come by Train startable. */
@@ -37,6 +39,7 @@ const CASES: Case[] = [
   { id: 'aid.gap', trigger: (s) => { guests(s, 14); s.coverage.map('patrol').fill(0); s.coverage.map('firstAid').fill(0); } },
   { id: 'bear.threat', trigger: (s) => { setDay(s, seasonStartDay('summer') + 5); guests(s, 10); s.ops.safety!.wildlife.animals.push({ kind: 'bear', asleep: false, x: 12, y: 12 } as never); }, calm: (s) => { setDay(s, seasonStartDay('summer') + 5); guests(s, 10); s.ops.safety!.wildlife.animals.push({ kind: 'bear', asleep: true, x: 12, y: 12 } as never); } },
   { id: 'hikers.hungry', trigger: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 8; }, calm: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 0.5; } },
+  { id: 'crossing.waits', trigger: (s) => { s.crossings.debugWaits(fakeCrossing(s), 900); }, calm: (s) => { s.crossings.debugWaits(fakeCrossing(s), 40); } },
   { id: 'toilets.none', trigger: (s) => { guests(s, 14); removeTypes(s, 'toilets'); } },
   { id: 'storm.signs', cheap: true, trigger: (s) => { guests(s, 12); s.weather.current.kind = 'storm'; } },
   { id: 'school.none', trigger: (s) => { removeTypes(s, 'skiSchoolHQ'); setFamilies(s, 9); }, calm: (s) => { setFamilies(s, 9); } },

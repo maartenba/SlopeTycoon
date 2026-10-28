@@ -154,6 +154,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'crossing.waits',
+    setup: (s) => { const n = s.networks, t = n.kind.findIndex((k, i) => k === 3 && !n.cross[i]); n.cross[t] = 1; n.crossCount++; s.crossings.debugWaits(t, 900); (s as unknown as { _x: number })._x = t; },
+    fixes: [
+      { name: 'the waiting stops (calmer trains / fewer guests)', apply: (s) => { s.crossings.debugWaits((s as unknown as { _x: number })._x, 10); } },
+      { name: 'the crossing is turned into a footbridge', apply: (s) => { const n = s.networks, t = (s as unknown as { _x: number })._x; n.cross[t] = 3; } },
+    ],
+  },
+  {
     id: 'hikers.hungry',
     setup: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 8; },
     fixes: [

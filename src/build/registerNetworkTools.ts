@@ -66,6 +66,8 @@ export interface NetworkTools {
   setBrush(n: number): void;
   /** Toggle erase mode for piste/trail tools (Shift-drag also erases). */
   setErase(on: boolean): void;
+  /** Footpath strokes over a rail line become footbridges (no waiting) instead of level crossings. */
+  setOverRail(on: boolean): void;
   /** Undo the latest stroke (of the active tool's group, else any); false if nothing to undo. */
   undo(): boolean;
   /** Redo the latest undone action (shared stack); false if nothing to redo. */
@@ -230,6 +232,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     setOverride: (d) => { diffSel.value = d === null ? 'auto' : String(d); piste.setOverride(d); },
     setBrush: (n) => { piste.brush = n; },
     setErase: (on) => { eraseOn = on; piste.setErase(on); },
+    setOverRail: (on) => { path.overRail = on; },
     undo,
     redo: () => ctx.performRedo?.() ?? false,
     refresh: afterChange,

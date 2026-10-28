@@ -314,6 +314,30 @@ export class Networks {
   /** Cost ($, before the construction multiplier) of one crossing of this `cross` value. */
   crossCost(cross: number): number { return cross === Cross.Footbridge ? CROSSING.footbridge.cost : cross === Cross.Road ? CROSSING.cost.road : CROSSING.cost.path; }
 
+  /** Direction (0 N, 1 E, 2 S, 3 W) from path tile (x,y) to an adjacent rail footbridge it climbs to by stairs; -1 = none. */
+  rampDir(x: number, y: number): number {
+    if (!this.inb(x, y) || this.kind[this.idx(x, y)] !== NetKind.Path) return -1;
+    for (let d = 0; d < 4; d++) {
+      const nx = x + DX[d]!, ny = y + DY[d]!;
+      if (this.crossAt(nx, ny) === Cross.Footbridge && this.crossJoins(nx, ny, (d + 2) % 4, NetKind.Path)) return d;
+    }
+    return -1;
+  }
+
+  /**
+   * Fraction (0..1) of the rail footbridge deck height at a world position: 1 on the deck tile, 0..1 along the stairs of the approach tile
+   * (linear), 0 elsewhere. Guests' z follows it (createSim.groundAt); render draws the stairs with the same ramp.
+   */
+  footLift(x: number, y: number): number {
+    const tx = Math.floor(x), ty = Math.floor(y);
+    if (!this.inb(tx, ty)) return 0;
+    if (this.cross[this.idx(tx, ty)] === Cross.Footbridge) return 1;
+    const d = this.rampDir(tx, ty);
+    if (d < 0) return 0;
+    const fx = x - tx, fy = y - ty;
+    return d === 0 ? 1 - fy : d === 2 ? fy : d === 1 ? fx : 1 - fx;
+  }
+
   /** Is there a level crossing / rail footbridge on this tile? */
   crossAt(x: number, y: number): number { return this.inb(x, y) ? this.cross[this.idx(x, y)]! : 0; }
 

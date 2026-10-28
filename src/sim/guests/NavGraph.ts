@@ -35,7 +35,7 @@ export interface NavWorld {
   /** Is this crossing tile closed right now (a train is coming)? Guests never enter a closed tile (Movement). Optional. */
   crossClosed?(tile: number): boolean;
   /** A guest waited a tick at a closed crossing (metric for the advisor). Optional. */
-  onCrossingWait?(): void;
+  onCrossingWait?(tile: number): void;
   /** Snow depth in metres. */
   readonly snow: Float32Array;
   networkVersion(): number;

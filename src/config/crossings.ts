@@ -16,7 +16,7 @@ export const CROSSING = {
   /** Guests waiting this many ticks in total at crossings (per day) before the advisor suggests a footbridge. */
   advisorWaitTicksPerDay: 400,
   /** Footbridge over rail (Task 11). */
-  footbridge: { cost: 900, span: 1 },
+  footbridge: { cost: 900, /** Deck height above the rail (world units; a train is ~0.6 tall). Guests climb the stairs on the approach tiles up to it. */ deck: 1.0, steps: 5 },
 } as const;
 
 export type CrossKind = 1 | 2;

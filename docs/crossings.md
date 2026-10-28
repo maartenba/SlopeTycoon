@@ -1,14 +1,15 @@
 # Rail level crossings and the rail footbridge
 
-Phase 6 task 10 (and 11, below once built). A footpath or road may cross a straight rail line at a right angle. Guests and cars wait for trains at a **level crossing**. Config: `src/config/crossings.ts`. Sim: `src/sim/RailCrossings.ts`. Data and placement: `src/world/Networks.ts`. Render: `src/render/RailCrossings.ts` (barriers, lamps, bell) and `src/render/meshes/Paths.ts` (`crossingDeck`).
+Phase 6 tasks 10 and 11. A footpath or road may cross a straight rail line at a right angle. Guests and cars wait for trains at a **level crossing**; a **footbridge over the rail** lets guests cross without ever waiting. Config: `src/config/crossings.ts`. Sim: `src/sim/RailCrossings.ts`. Data and placement: `src/world/Networks.ts`. Render: `src/render/RailCrossings.ts` (barriers, lamps, bell) and `src/render/meshes/Paths.ts` (`crossingDeck`) and `src/render/meshes/footbridge.ts` (the rail footbridge).
 
 ## Owner decisions
 - Guests **always wait** at a closed crossing; **trains never stop**.
 - The crossing closes shortly before a train arrives (barriers down, bell, blinking red lamps).
 - No deaths and no collisions, ever (see "Safety").
+- A footbridge over the rail is the alternative (path only, no waiting, a higher price).
 
 ## Data (`Networks`)
-- `cross: Uint8Array` per tile: `0` none, `1` footpath crossing, `2` road crossing, (`3` is reserved for the footbridge over rail). The tile's `kind` stays **Rail** (so trains, `railComp` and rail stations are untouched); `crossCount` counts the tiles (0 = every crossing system is inert).
+- `cross: Uint8Array` per tile: `0` none, `1` footpath crossing, `2` road crossing, `3` footbridge over the rail. The tile's `kind` stays **Rail** (so trains, `railComp` and rail stations are untouched); `crossCount` counts the tiles (0 = every crossing system is inert).
 - Floods: `walkComp` includes a rail tile with `cross >= 1`, `roadComp` with `cross === 2`, `railComp` is unchanged. `pathDistance` walks across crossings.
 - `conn` of the path / road tiles next to a crossing gets a bit towards it (`crossJoins`), so the approach arms are drawn into the deck.
 - Save: networks module **v2**. `cross` is written only when a crossing exists, so a world without one saves and hashes exactly as before; old saves load with no crossings. `TileSnap.cross` keeps undo / redo exact.
@@ -40,6 +41,14 @@ The slowest guest on a path moves 2 tiles/tick (0.5 tick per tile), cars at leas
 - `RailCrossingsView`: per crossing two posts with a crossbuck, two lamps and a striped boom (about 18 tiny meshes, no lights, unlit lamp materials). Booms lerp over 1 s from the sim's closed state; lamps blink alternately every 0.5 s while closed. No `gl_FragCoord`.
 - Bell (`crossingBell`, ambience bus): a quiet double ding about every 0.9 s while closed, gain falls with camera distance (silent beyond 70 tiles).
 
+## Footbridge over rail (Task 11)
+The Paths drawer has a **Bridge over rail** toggle (44 px button, same for mouse and touch; `Networks.planSegment(..., overRail)`, `PathTool.overRail`). With it on, a footpath stroke across a straight rail tile makes a footbridge instead of a level crossing: the same placement rule and spacing, `cross = 3`, `CROSSING.footbridge.cost` ($900, level crossing $150). The tool tooltip reads `Cost: $920 (2 tiles + footbridge over the rail)`. The tile is walkable (`walkComp`, nav) at the normal walking cost with **no wait cost and no closing**; trains pass underneath. Roads cannot use it (`Roads need a level crossing, not a footbridge`); an underpass is not built (v1).
+
+- Render (`footbridge.ts`): a raised timber deck on the rail tile (`CROSSING.footbridge.deck` = 1.0 above the surface) with side and hand rails and four posts, plus 5 stairs on each approach tile (`Networks.rampDir`); ~25 flat-shaded boxes, ~300 triangles per bridge, in the chunk network mesh (no extra draw call).
+- Guests climb: `Networks.footLift(x, y)` is the fraction of the deck height (1 on the deck, linear along the stairs); `createSim` adds it to `groundAt`, so guests really walk above the train (their z is part of the saved guest state only when such a bridge exists).
+- Advisor: `crossing.waits` (info) *Guests wait long at the level crossing*: yesterday's guest-ticks waiting at the worst footpath crossing exceeded `CROSSING.advisorWaitTicksPerDay` (400, 70 % to keep showing); Show me = that crossing.
+
 ## Out of scope / known limits
+- Walk mode / ride-along use their own ground sampling and do not climb the footbridge stairs.
 - A guest or car that spawns inside a crossing tile is outside the guarantee only for the single tick it takes to leave it; trains spawn with the lead (see above).
 - The title-screen demo and tests build no crossings; every system above is a no-op there, so goldens are unchanged.
