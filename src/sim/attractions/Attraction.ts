@@ -4,6 +4,7 @@ import { PRICE_TABLE, STAFF_WAGE_PER_DAY, type LedgerCategory } from '../../conf
 import type { WorldBuilding } from '../guests/GuestWorld';
 import type { SeasonId } from '../../core/events';
 import type { LodgingTier } from '../../config/prices';
+import type { TourInfo } from './Tour';
 
 /** Preference per guest type: [solo, couple, family, vip, budget, adventure]. */
 export type Appeal = readonly [number, number, number, number, number, number];
@@ -38,6 +39,8 @@ export interface AttractionSpec {
   eveningShift?: boolean;
   /** Extra closed condition evaluated by the system, e.g. 'lake'. */
   extra?: 'lake';
+  /** Tour base (Phase 6 Task 5, docs/tours.md): TourDef id. Guests board in scheduled departures instead of one by one; see TourSystem. */
+  tour?: string;
 }
 
 export interface AttractionStats { /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
@@ -53,6 +56,8 @@ export interface AttractionInfo {
   staff: number; staffRequired: number; upkeepPerDay: number;
   /** Trekker beds (Mountain Hut): capacity, booked tonight, nights sold so far. */
   beds?: { total: number; used: number; sold: number };
+  /** Tour base: departures today, riders, next departure, route (TourSystem.info). */
+  tour?: TourInfo;
   /** Toilets (comfort need): guests served today and the per-day figure above which the block is overrun. */
   toilet?: { usesToday: number; perDay: number };
 }
@@ -64,6 +69,8 @@ export class Attraction {
   readonly def: BuildingDef;
   price: number;
   staff: number;
+  /** Tour bases: inspector data (set by the attraction system). */
+  tourInfo: (() => TourInfo | null) | undefined;
   /** Live price multiplier (markup % x seasonal schedule), set by the system; 1 = list price. */
   priceScale: () => number = () => 1;
   /** Hour-of-day price multiplier (evening drinks premium for venues); 1 = none. Set by the system. */
@@ -127,6 +134,7 @@ export class Attraction {
       queue: this.queue.length, users: this.users.length, capacity: this.capacity(), busiestHour: this.busiestHour(),
       price: this.price, maxPrice: this.maxPrice, billing: this.billing, unitPrice: this.unitPrice(),
       staff: this.staff, staffRequired: this.def.staff, upkeepPerDay: this.upkeepPerDay(),
+      ...(this.tourInfo ? { tour: this.tourInfo() ?? undefined } : {}),
     };
   }
 

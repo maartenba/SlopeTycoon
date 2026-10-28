@@ -16,6 +16,7 @@ import { hikeFee, mtbFee } from './MtbTrail';
 import { ownsGear } from './Rental';
 import { ATTRACTION_SPECS } from './registry';
 import { eveningPremium, venueServing } from '../Evening';
+import type { TourSystem } from './Tour';
 import { GRUBBY_URGE, TOILET_USES_PER_DAY } from './Toilets';
 
 export interface AttractionDeps {
@@ -40,6 +41,8 @@ export interface AttractionDeps {
   nightRate?: (type: string) => number;
   /** May this guest use/book at this price? (deterministic elasticity roll; `salt` varies per day). */
   willBuy?: (guestType: number, guestId: number, buildingType: string, listPrice: number, salt: number) => boolean;
+  /** Tour bases (Phase 6 Task 5): schedule, closures and ride bookkeeping of attractions with `spec.tour`. Absent = tours never run. */
+  tours?: TourSystem;
 }
 
 /** Ticks a guest waits in an attraction queue before giving up. */
@@ -86,7 +89,7 @@ export class AttractionSystem implements GuestAttractionPort {
   accepts(id: number): boolean { const a = this.items.get(id); return a ? a.open : true; }
   serving(id: number): boolean { const a = this.items.get(id); return a ? this.servingNow(a) : true; }
   /** Venues with an evening shift only serve between opening and closing hour (open flag = conditions only, so no closed-for-the-night news). */
-  servingNow(a: Attraction): boolean { return !a.spec.eveningShift || venueServing(this.day, this.hour); }
+  servingNow(a: Attraction): boolean { return a.spec.tour ? this.d.tours?.serving(a) ?? true : !a.spec.eveningShift || venueServing(this.day, this.hour); }
   canUse(id: number, slot: number): boolean {
     const a = this.items.get(id);
     return !a || !a.spec.overnightOnly || this.d.store.overnight[slot] === 1;
@@ -172,6 +175,7 @@ export class AttractionSystem implements GuestAttractionPort {
 
   /** Move queued guests into free slots, charging on entry. */
   private admit(a: Attraction, tick: number): void {
+    if (a.spec.tour) return; // tour bases board in departures (boardTour)
     const s = this.d.store, cap = a.capacity();
     while (a.users.length < cap && a.queue.length) {
       const q = a.queue.shift()!, slot = s.slotOf(q.id);
@@ -183,6 +187,23 @@ export class AttractionSystem implements GuestAttractionPort {
     }
   }
 
+  /** Tour departure: up to the free seats of the queue board, pay the ticket and ride for the tour duration (they stay Using, off the nav graph). */
+  private boardTour(a: Attraction, tick: number): void {
+    const s = this.d.store, free = a.capacity() - a.users.length;
+    if (free < 1) return;
+    const end = tick + a.serviceTime();
+    let riders = 0, revenue = 0;
+    while (riders < free && a.queue.length) {
+      const q = a.queue.shift()!, slot = s.slotOf(q.id);
+      if (slot < 0) continue;
+      const price = a.unitPrice();
+      if (s.budget[slot]! < price) { a.stats.turnedAway++; this.release(q.id, tick, null); continue; }
+      if (price > 0) { s.budget[slot] = s.budget[slot]! - price; this.d.earn(a.category, price); a.stats.revenue += price; a.recordRevenue(this.hour, price); revenue += price; }
+      a.users.push({ id: q.id, end }); riders++;
+    }
+    if (riders > 0) this.d.tours?.departed(a, riders, revenue, end - tick);
+  }
+
   private evalOpen(a: Attraction): { open: boolean; reason?: string } {
     if (!a.b.active) return { open: false, reason: `Inactive: ${a.b.reason ?? 'dependency missing'}` };
     const st = this.d.status(a.id);
@@ -190,6 +211,7 @@ export class AttractionSystem implements GuestAttractionPort {
     if (a.spec.seasonOpen && !a.spec.seasonOpen.includes(seasonOf({ day: this.day }))) return { open: false, reason: 'Closed for the season' };
     if (a.spec.extra === 'lake' && this.d.lakeFrozen?.(a.b)) return { open: false, reason: 'Closed: the lake is frozen' };
     if (a.def.staff > 0 && a.staff <= 0) return { open: false, reason: 'Closed: no staff' };
+    if (a.spec.tour) { const r = this.d.tours?.closed(a); if (r) return { open: false, reason: r }; }
     return { open: true };
   }
 
@@ -211,6 +233,7 @@ export class AttractionSystem implements GuestAttractionPort {
         if (bp !== undefined) n.price = Math.min(n.maxPrice, bp);
         n.priceScale = () => this.d.priceScale?.(b.type) ?? 1;
         if (spec.eveningShift) n.hourScale = () => eveningPremium(this.hour);
+        if (spec.tour) n.tourInfo = () => this.d.tours?.info(n) ?? null;
         if (cur) { n.price = cur.price; n.staff = cur.staff; n.stats = cur.stats; n.users = cur.users; n.queue = cur.queue; n.open = cur.open; n.reported = cur.reported; }
         this.items.set(b.id, n);
       }
@@ -220,12 +243,14 @@ export class AttractionSystem implements GuestAttractionPort {
       for (const u of a.users) this.release(u.id, this.tick, null);
       for (const q of a.queue) this.release(q.id, this.tick, null);
       this.items.delete(id);
+      this.d.tours?.gone(id);
     }
   }
 
   update(state: GameState, tick: number): void {
     this.tick = tick;
     this.hour = hourOfDay(state.date); this.day = state.date.day; this.absDay = state.date.year * DAYS_PER_YEAR + state.date.day;
+    this.d.tours?.setContext({ tick, day: state.date.day, absDay: state.date.year * DAYS_PER_YEAR + state.date.day, hour: this.hour });
     this.sync();
     for (const a of this.items.values()) {
       const v = this.evalOpen(a);
@@ -236,12 +261,17 @@ export class AttractionSystem implements GuestAttractionPort {
         else this.d.bus?.emit('attraction:closed', { id: a.id, type: a.b.type, reason: v.reason ?? 'Closed' });
       }
       if (!v.open) {
-        for (const u of a.users) this.release(u.id, tick, null);
-        for (const q of a.queue) this.release(q.id, tick, null);
-        a.users = []; a.queue = [];
-        continue;
+        if (a.spec.tour && a.users.length) { // a tour that closes (wind, season, route) lets the rides in progress finish; only the queue goes home
+          for (const q of a.queue) this.release(q.id, tick, null);
+          a.queue = [];
+        } else {
+          for (const u of a.users) this.release(u.id, tick, null);
+          for (const q of a.queue) this.release(q.id, tick, null);
+          a.users = []; a.queue = [];
+          continue;
+        }
       }
-      if (a.users.length === 0 && a.queue.length === 0) continue;
+      if (a.users.length === 0 && a.queue.length === 0 && !a.spec.tour) continue;
       // drop guests pulled away by other systems (leaving, sleeping, despawn)
       if (a.users.length) a.users = a.users.filter((u) => this.member(u.id, a.id));
       if (a.queue.length) a.queue = a.queue.filter((q) => this.member(q.id, a.id));
@@ -266,6 +296,7 @@ export class AttractionSystem implements GuestAttractionPort {
         a.queue = keep;
       }
       this.admit(a, tick);
+      if (a.spec.tour && v.open && this.d.tours?.due(a, a.queue.length)) this.boardTour(a, tick);
     }
     if (tick % 20 === 0) this.sweep(tick);
     const hour = hourOfDay(state.date);

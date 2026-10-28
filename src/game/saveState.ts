@@ -23,6 +23,8 @@ export interface SaveModule {
   load(sim: Sim, data: unknown, version: number): void;
   /** Pure observer state (achievements): saved, but not part of `stateHash` (it can never change a simulation outcome). */
   observer?: boolean;
+  /** Left out of `stateHash` while `serialize` returns null (a module whose feature has no content yet: keeps older goldens identical). */
+  omitWhenNull?: boolean;
   /** Called when the save has no data for this module (older save): put the module in a sane default state. */
   reset?(sim: Sim): void;
 }
@@ -139,6 +141,8 @@ export const SAVE_MODULES: SaveModule[] = [
   },
   // Energy grid (item F): today's / yesterday's generation per generator, biomass timber stock, nursery credit, last settled day. Additive: old saves have none -> empty (no generators = no effect).
   { key: 'energy', version: 1, serialize: (sim) => sim.energy.serialize(), load: (sim, d) => sim.energy.load(d), reset: (sim) => sim.energy.reset() },
+  // Tour bases (Phase 6 Task 5): per-tour counters + schedule slot. `null` (= left out of stateHash, like an absent module) until a tour base exists.
+  { key: 'tours', version: 1, omitWhenNull: true, serialize: (sim) => sim.tours.serialize(), load: (sim, d) => sim.tours.load(d), reset: (sim) => sim.tours.reset() },
   // Welcome-back recap data (M5.1). Additive: old saves have none -> reduced recap.
   { key: 'sessionMeta', version: 1, serialize: (sim) => sim.session.serialize(), load: (sim, d) => sim.session.load(d), reset: (sim) => sim.session.reset() },
   // Resort goal chain. Keep LAST: reset() (old saves without it) silently completes goals the restored world already satisfies.
@@ -215,7 +219,9 @@ export function stateHash(sim: Sim): { hash: string; parts: Record<string, strin
   let total = 0x811c9dc5;
   for (const m of SAVE_MODULES) {
     if (m.observer) continue;
-    const text = JSON.stringify(pack(m.serialize(sim)));
+    const data = m.serialize(sim);
+    if (m.omitWhenNull && data === null) continue;
+    const text = JSON.stringify(pack(data));
     let h = 0x811c9dc5;
     for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
     parts[m.key] = h.toString(16).padStart(8, '0');

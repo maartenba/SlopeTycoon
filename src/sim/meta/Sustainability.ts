@@ -1,5 +1,6 @@
 import { SUSTAIN } from '../../config/rivals';
 import { TRAIN_SUSTAIN } from '../../config/marketing';
+import { TOURS } from '../../config/tours';
 
 /** Raw measurements behind the sustainability facet. */
 export interface SustainRaw {
@@ -15,6 +16,8 @@ export interface SustainRaw {
   bonus?: number;
   /** Facet points (0..TRAIN_SUSTAIN.maxPoints) from the share of arrivals by rail (Come by Train). Absent = 0. */
   train?: number;
+  /** Facet points TAKEN by motorised tours (0..TOURS.maxSustainPenalty; Task 5). Absent = 0. */
+  motor?: number;
 }
 
 /** The facet as the rating reads it: three 0..1 parts and the weighted 0..100 score. */
@@ -34,7 +37,7 @@ export function sustainParts(raw: SustainRaw): SustainParts {
   const overlap = raw.habitatOverlap * (1 - SUSTAIN.habitat.protection * clamp(raw.protection));
   const habitat = 1 - clamp((overlap - SUSTAIN.habitat.free) / SUSTAIN.habitat.span);
   const w = SUSTAIN.weights;
-  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0) + Math.min(TRAIN_SUSTAIN.maxPoints, Math.max(0, raw.train ?? 0))));
+  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0) + Math.min(TRAIN_SUSTAIN.maxPoints, Math.max(0, raw.train ?? 0)) - Math.min(TOURS.maxSustainPenalty, Math.max(0, raw.motor ?? 0))));
   return { energy, trees, habitat, score, raw };
 }
 
@@ -59,6 +62,8 @@ export interface SustainSources {
   bonus?(): number;
   /** Share (0..1) of the last 14 days' arrivals by rail; null = unknown / not tracked (no points). */
   trainShare?(): number | null;
+  /** Facet points taken by motorised tours (TourSystem.motorPenalty; >= 0). */
+  motor?(): number;
 }
 
 /**
@@ -88,7 +93,7 @@ export class Sustainability {
     const raw: SustainRaw = {
       energyPerGuest: this.gSum >= 1 ? this.eSum / this.gSum : -1,
       treeLoss: clamp((t.felled - t.planted) / original),
-      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0, train: trainSharePoints(s.trainShare?.()),
+      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0, train: trainSharePoints(s.trainShare?.()), motor: s.motor?.() ?? 0,
     };
     this.cache = sustainParts(raw);
     return this.cache;

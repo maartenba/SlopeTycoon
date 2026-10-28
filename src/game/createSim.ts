@@ -40,6 +40,8 @@ import { TickLoop } from '../core/TickLoop';
 import { createDefaultRegistry, registerGuestSystems, type SystemRegistry } from '../sim/Systems';
 import { GuestSim } from '../sim/guests/GuestSim';
 import { AttractionSystem } from '../sim/attractions/AttractionSystem';
+import { TourSystem } from '../sim/attractions/Tour';
+import { FAUNA } from '../sim/nature/Fauna';
 import type { GuestWorld } from '../sim/guests/GuestWorld';
 import type { NavWorld } from '../sim/guests/NavGraph';
 import { routeOnKind } from '../sim/guests/Arrivals';
@@ -483,7 +485,28 @@ export function createSim(opts: SimOptions) {
     exitCache.set(b.id, { v: networks.version, b, pt });
     return pt;
   };
+  // Tour attractions (Phase 6 Task 5, docs/tours.md): schedule / route / closures for bases with `spec.tour`. Inert while TOUR_DEFS is empty.
+  const tours = new TourSystem({
+    size,
+    allows: (kind, x, y, def) => {
+      const i = y * size + x, k = networks.kind[i] ?? 0, l = networks.layers[i] ?? 0;
+      switch (kind) {
+        case 'road': return k === 2;
+        case 'path': return k === 1 || k === 2;
+        case 'trail': return (l & (def.trailLayer ?? NetLayer.Hike)) !== 0;
+        case 'piste': return (l & NetLayer.Ski) !== 0;
+        default: return false; // 'water': validator filled in Task 24
+      }
+    },
+    isPiste: (x, y) => ((networks.layers[y * size + x] ?? 0) & NetLayer.Ski) !== 0,
+    version: () => networks.version,
+    instability: (i) => safety.avalanche.inst[i] ?? 0,
+    weather: () => ({ wind: weather.current.wind }),
+    frozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0,
+    disturb: (x, y, r) => { const f = natureRef?.fauna; if (f) for (const a of f.animals) if ((a.x - x) ** 2 + (a.y - y) ** 2 <= r * r) a.flee = Math.max(a.flee, FAUNA.fleeTicks); },
+  });
   const attractions = new AttractionSystem({
+    tours,
     exitFor,
     buildings: () => buildings.all(),
     store: guestSim.store,
@@ -559,6 +582,7 @@ export function createSim(opts: SimOptions) {
     },
     protection: () => staffUpgrades.wildlifeProtection(),
     bonus: () => energy.recyclingBonus(),
+    motor: () => tours.motorPenalty(),
     trainShare: () => (opts.campaignsV2 !== false ? marketingRef?.railShare() ?? null : null),
   });
   bus.on('guest:arrived', () => sustain.noteArrival());
@@ -1036,7 +1060,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    achievements, rivals, sustain, energy, landscape, landscapeEnv,
+    tours, achievements, rivals, sustain, energy, landscape, landscapeEnv,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,

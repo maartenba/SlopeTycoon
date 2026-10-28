@@ -25,6 +25,19 @@ export function formatAttractionStats(i: AttractionInfo): string[] {
     formatStaff(i.staff, i.staffRequired),
     `Upkeep incl. wages: ${formatMoney(i.upkeepPerDay)}/day`,
     ...(i.toilet ? [`Used today: ${i.toilet.usesToday}/${i.toilet.perDay} · ${i.toilet.usesToday > i.toilet.perDay ? 'overrun: add more toilets' : 'clean'}`] : []),
+    ...(i.tour ? formatTourLines(i.tour) : []),
     ...(i.beds ? [`Trekker beds: ${i.beds.used}/${i.beds.total} booked tonight · ${i.beds.sold} nights sold`] : []),
+  ];
+}
+
+/** Tour inspector lines (docs/tours.md): departures today, riders, revenue, next departure, route. */
+export function formatTourLines(t: NonNullable<AttractionInfo['tour']>): string[] {
+  const hh = (h: number): string => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
+  return [
+    `Departures today: ${t.departuresToday} · ${t.ridersToday} riders · ${formatMoney(t.revenueToday)}`,
+    t.riding > 0 ? `On the route now: ${t.riding}` : 'No ride in progress',
+    t.next ? `Next departure: ${hh(t.next.hour)}${t.next.tomorrow ? ' tomorrow' : ''}` : 'No departures scheduled',
+    t.routeLen > 0 ? `Route: ${t.routeLen} tiles out and back` : 'No route',
+    `All time: ${t.totalDepartures} departures · ${t.totalRiders} riders · ${formatMoney(t.totalRevenue)}`,
   ];
 }

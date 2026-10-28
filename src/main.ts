@@ -28,6 +28,7 @@ import { maintDate } from '@/ui/maintFormat';
 import { generatorLines, greenLines, type EnergyOps } from '@/ui/energyFormat';
 import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
+import { TourVehicles } from '@/render/TourVehicles';
 import type { DressingWorld } from '@/render/festival/placeDressing';
 import { dressingWorldOf } from '@/render/festival/dressingWorld';
 import { almabtriebWindow } from '@/sim/events/EventCalendar';
@@ -437,6 +438,10 @@ const updateVillageDecor = (dt: number): void => {
 const natureView = new NatureView((x, y) => surfaceHeight(grid, x, y));
 renderer.scene.add(natureView.group);
 
+// Tour carriers (Phase 6 Task 5): cosmetic sleighs / scooters / rafts on the rides in progress; instanced, capped, view only. Empty until a tour building exists.
+const tourVehicles = new TourVehicles((x, z) => surfaceHeight(grid, x, z), (t, out, max) => sim.tours.carriers(t, out, max));
+renderer.scene.add(tourVehicles.group);
+
 // Festival set dressing (M5.4 Task 21): bunting, flags, banners, stalls, grandstand + a procession for the running events. View only (no Occupancy / pathing); 3 draw calls in total.
 const festivalWorld = (): DressingWorld => dressingWorldOf(sim);
 const festivalDressing = new FestivalDressing((x, z) => surfaceHeight(grid, x, z), festivalWorld, SEED);
@@ -676,6 +681,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   updateVillageDecor(dt);
   updateLandscapeView();
   updateFestival(dt);
+  tourVehicles.update(sim.loop.tickCount);
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
   { // snowmaking cannon spray (1 draw call; only running cannons near the view centre)
     const run = new Set(opsRef?.snowmaking.runningIds() ?? []);
