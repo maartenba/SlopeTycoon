@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Grid, TileType } from '../../src/world/Grid';
 import { OccFlag } from '../../src/world/Occupancy';
 import { Buildings } from '../../src/sim/Buildings';
-import { Layer, NetKind, Networks, ROAD_START_MSG } from '../../src/world/Networks';
+import { Layer, NetKind, Networks, ROAD_START_MSG, TRAIL_ORPHAN_MSG } from '../../src/world/Networks';
 import { bridgeSupports, planBridge } from '../../src/world/Bridges';
 import { BRIDGES, BRIDGE_KINDS, BRIDGE_MSG, type BridgeKind } from '../../src/config/bridges';
 
@@ -114,7 +114,7 @@ describe('planBridge: reasons', () => {
     expect(planBridge(net, grid, 'hikeBridge', A, Bk(2)).ok).toBe(true);
     expect(planBridge(net, grid, 'mtbBridge', A, Bk(2)).ok).toBe(true);
     const far = planBridge(net, grid, 'hikeBridge', { x: 19, y: 45 }, { x: 22, y: 45 });
-    expect(far.reason).toBe('Trails must start at a path or building');
+    expect(far.reason).toBe(TRAIL_ORPHAN_MSG);
   });
 });
 

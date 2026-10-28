@@ -1,11 +1,12 @@
-import { Difficulty, PISTE_WATER_MSG, interpolateStroke, Layer, PISTE_COST_PER_TILE, sweepBrush, type LayerBit } from '../world/Networks';
+import { TRAIL_ORPHAN_MSG, NetKind, Difficulty, PISTE_WATER_MSG, interpolateStroke, Layer, PISTE_COST_PER_TILE, sweepBrush, type LayerBit } from '../world/Networks';
 import type { Pt } from '../sim/Dependencies';
 import { slopeProfile } from '../sim/PisteStats';
 import { buildTrailStroke, describeExtras, planTrailStroke, type CrossMode } from '../world/StrokePlan';
 import { DragTool, ghostOf, type DragToolOptions, type Evaluation } from './PathTool';
 
 export const DIFFICULTY_NAMES = ['green', 'blue', 'red', 'black'] as const;
-export const TRAIL_ORPHAN_MSG = 'Trails must connect to a path, building or another trail';
+export { TRAIL_ORPHAN_MSG };
+export const PISTE_RAIL_MSG = "Can't build a piste across a rail line — pistes cannot cross water or rails: route around (trails can cross with a bridge or level crossing)";
 
 /**
  * Freehand painting of ski piste / MTB trail / hiking trail. Pointer samples are interpolated into a 4-connected
@@ -49,11 +50,12 @@ export class PisteTool extends DragTool {
     if (this.erasing || this.trail) return line; // trails carry on over a lake: the planner turns it into a bridge (docs/bridges.md)
     // A stroke that hits water stops at the bank (everything after the first water tile is dropped).
     const net = this.o.networks;
-    const cut = line.findIndex((t) => net.canPaint(t.x, t.y, this.layer).reason === PISTE_WATER_MSG);
+    const cut = line.findIndex((t) => { const w = net.canPaint(t.x, t.y, this.layer).reason === PISTE_WATER_MSG; if (w) this.hitMsg = PISTE_WATER_MSG; else if (net.kind[net.idxOf(t.x, t.y)] === NetKind.Rail) this.hitMsg = PISTE_RAIL_MSG; return w || net.kind[net.idxOf(t.x, t.y)] === NetKind.Rail; });
     this.hitWater = cut >= 0;
     return cut >= 0 ? line.slice(0, cut) : line;
   }
   private hitWater = false;
+  private hitMsg = PISTE_WATER_MSG;
 
   protected hoverTiles(p: Pt): Pt[] { return sweepBrush([p], this.effectiveBrush, this.o.grid.size); }
 
@@ -69,7 +71,7 @@ export class PisteTool extends DragTool {
   }
 
   protected evaluate(tiles: Pt[]): Evaluation {
-    if (!tiles.length && this.hitWater && !this.erasing) return { ok: false, cost: 0, text: PISTE_WATER_MSG };
+    if (!tiles.length && this.hitWater && !this.erasing) return { ok: false, cost: 0, text: this.hitMsg };
     if (!tiles.length) return { ok: false, cost: 0, text: this.erasing ? 'Nothing to erase here' : 'Blocked: nothing to paint here' };
     if (this.erasing) return { ok: true, cost: 0, text: `Erase ${tiles.length} tiles` };
     const net = this.o.networks;
@@ -109,7 +111,7 @@ export class PisteTool extends DragTool {
 
   protected commit(tiles: Pt[]): void {
     const net = this.o.networks;
-    if (!this.erasing && this.hitWater) this.o.onInfo?.(PISTE_WATER_MSG);
+    if (!this.erasing && this.hitWater) this.o.onInfo?.(this.hitMsg);
     if (this.erasing) {
       for (const t of tiles) net.unpaint(this.layer, t.x, t.y);
     } else if (this.trail) {

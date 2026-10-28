@@ -3,7 +3,7 @@ import { CROSSING } from '../config/crossings';
 import { TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
 import { planBridge, type BridgePlan } from './Bridges';
-import { Cross, Layer, NetKind, PISTE_COST_PER_TILE, type LayerBit, type Networks, type NetKindId } from './Networks';
+import { Cross, Layer, NetKind, TRAIL_ORPHAN_MSG, PISTE_COST_PER_TILE, type LayerBit, type Networks, type NetKindId } from './Networks';
 import type { Pt } from '../sim/Dependencies';
 
 /**
@@ -49,7 +49,7 @@ function findRuns(net: Networks, grid: Grid, kind: StrokeKind, line: Pt[]): Run[
     return net.kind[i] === 0 && net.layers[i] === 0 && net.bid[i] === 0;
   };
   const isWater = (t: Pt): boolean => grid.tileType[net.idxOf(t.x, t.y)] === TileType.Water;
-  const gaps = kind === 'path' || kind === 'road';
+  const gaps = kind !== 'rail'; // trails too: a depression that a bridge can span becomes a bridge, any other dip stays plain ground (planTrailStroke drops the run)
   /** A dry free tile at least GAP_MIN_DROP half-steps below the bank the run starts from (a depression: the bridge planner then checks the far bank). */
   const deep = (t: Pt, ref: number): boolean => gaps && !(grid.occupancy.flags[net.idxOf(t.x, t.y)]! & (OccFlag.Building | OccFlag.Lift | OccFlag.Decor)) && minCorner(grid, t.x, t.y) <= ref - GAP_MIN_DROP;
   for (let k = 0; k < line.length; k++) {
@@ -66,6 +66,48 @@ function findRuns(net: Networks, grid: Grid, kind: StrokeKind, line: Pt[]): Run[
   return runs;
 }
 
+const isStraight = (line: Pt[], r: Run): boolean => {
+  if (r.s < 1 || r.e >= line.length - 1) return true; // missing banks are reported by planRun
+  const a = line[r.s - 1]!, b = line[r.e + 1]!;
+  const h = a.y === b.y, v = a.x === b.x;
+  if (!h && !v) return false;
+  for (let k = r.s - 1; k <= r.e + 1; k++) if (h ? line[k]!.y !== a.y : line[k]!.x !== a.x) return false;
+  return true;
+};
+
+/**
+ * A freehand drag is never a perfectly straight line, but a bridge is: where the stroke enters a lake / pond on a bank the bridge runs straight on in the
+ * direction of entry up to the first dry tile (the far bank), and the stroke carries on from there (an L-shaped connector to where the drag came out).
+ * A drag that ends in the water is carried on to the far bank. Strokes that are already straight, and runs that cannot be straightened, are left alone.
+ */
+export function straightenRuns(net: Networks, grid: Grid, kind: StrokeKind, line: Pt[]): Pt[] {
+  const water = (x: number, y: number): boolean => net.inBounds(x, y) && grid.tileType[net.idxOf(x, y)] === TileType.Water;
+  let cur = line;
+  for (let guard = 0; guard < 6; guard++) {
+    const r = findRuns(net, grid, kind, cur).find((q) => q.water && q.s >= 1 && !isStraight(cur, q) || (q.water && q.s >= 1 && q.e >= cur.length - 1));
+    if (!r) break;
+    const a = cur[r.s - 1]!, dx = cur[r.s]!.x - a.x, dy = cur[r.s]!.y - a.y;
+    const walk: Pt[] = [];
+    let x = a.x + dx, y = a.y + dy;
+    while (water(x, y) && walk.length < 12) { walk.push({ x, y }); x += dx; y += dy; }
+    if (!net.inBounds(x, y) || water(x, y)) break;
+    walk.push({ x, y }); // the far bank
+    let rest = cur.slice(r.e + 1);
+    if (rest.length && rest[0]!.x === x && rest[0]!.y === y) rest = rest.slice(1); // the drag came out exactly on the far bank
+    let conn: Pt[] = [];
+    if (rest.length) {
+      const t = rest[0]!;
+      const L = (hFirst: boolean): Pt[] => { const out: Pt[] = []; let px = x, py = y; const stepX = (): void => { while (px !== t.x) { px += Math.sign(t.x - px); out.push({ x: px, y: py }); } }; const stepY = (): void => { while (py !== t.y) { py += Math.sign(t.y - py); out.push({ x: px, y: py }); } }; if (hFirst) { stepX(); stepY(); } else { stepY(); stepX(); } return out; };
+      const wet = (c: Pt[]): number => c.filter((q) => water(q.x, q.y)).length;
+      const c1 = L(true), c2 = L(false);
+      conn = wet(c1) <= wet(c2) ? c1 : c2;
+      if (conn.length && conn[conn.length - 1]!.x === t.x && conn[conn.length - 1]!.y === t.y) conn.pop(); // the target is the head of `rest`
+    }
+    cur = [...cur.slice(0, r.s), ...walk, ...conn, ...rest];
+  }
+  return cur;
+}
+
 /** Validate a run: banks exist, the run is one straight line, then `planBridge` (spans, clearance, cost). */
 function planRun(net: Networks, grid: Grid, kind: Exclude<StrokeKind, 'rail'>, line: Pt[], r: Run, mult: number, planned: ReadonlySet<number>): BridgePlan | { reason: string } {
   if (r.s < 1) return { reason: BRIDGE_MSG.nearBank };
@@ -77,7 +119,7 @@ function planRun(net: Networks, grid: Grid, kind: Exclude<StrokeKind, 'rail'>, l
   const plan = planBridge(net, grid, BRIDGE_OF[kind], a, b, mult, { planned, skipLink: true });
   if (plan.ok) return plan;
   // a steep slope is not a gap: say 'Too steep', not 'Bridges only cross water or a gap'
-  if (!r.water && (plan.reason === BRIDGE_MSG.notGap || plan.reason === BRIDGE_MSG.nothing || plan.reason?.startsWith('Span too long'))) {
+  if (!r.water && (kind === 'path' || kind === 'road') && (plan.reason === BRIDGE_MSG.notGap || plan.reason === BRIDGE_MSG.nothing || plan.reason?.startsWith('Span too long'))) {
     const nk = (kind === 'path' ? NetKind.Path : NetKind.Road) as NetKindId;
     const c = net.canBuild(nk, line[r.s]!.x, line[r.s]!.y, planned as Set<number>);
     if (!c.ok && c.reason) return { reason: c.reason };
@@ -141,7 +183,9 @@ const LAYER_OF = { hike: Layer.Hike, mtb: Layer.Mtb } as const;
  */
 export function planTrailStroke(net: Networks, grid: Grid, kind: 'hike' | 'mtb', line: Pt[], mult = 1, mode: CrossMode = 'level'): StrokePlan {
   const layer: LayerBit = LAYER_OF[kind];
-  const runs = findRuns(net, grid, kind, line);
+  line = straightenRuns(net, grid, kind, line);
+  // runs a bridge cannot serve: a dip that is no gap (steep ground) is simply painted as before; water always needs its bridge or a clear refusal
+  const runs = findRuns(net, grid, kind, line).filter((r) => r.water || 'ok' in planRun(net, grid, kind, line, r, mult, new Set()));
   const inRun = (k: number): boolean => runs.some((r) => k >= r.s && k <= r.e);
   const steps: StrokeStep[] = [], bridges: BridgePlan[] = [], crossings: Array<Pt & { cross: number }> = [];
   let cost = 0;
@@ -170,7 +214,7 @@ export function planTrailStroke(net: Networks, grid: Grid, kind: 'hike' | 'mtb',
     if (!bank.has(k)) painted.push(t);
     solid.push(t);
   }
-  if (!net.strokeAnchored(solid, layer)) return failed('Trails must connect to a path, building or another trail', line);
+  if (!net.strokeAnchored(solid, layer)) return failed(TRAIL_ORPHAN_MSG, line);
   steps.push({ type: 'seg', tiles: painted });
   return { ok: true, cost: cost + painted.length * PISTE_COST_PER_TILE * mult, newTiles: painted, crossings, bridges, steps, line: solid };
 }

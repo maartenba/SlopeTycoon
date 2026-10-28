@@ -62,3 +62,7 @@ Trail strokes go through `StrokePlan.planTrailStroke` and reuse `crossingCheck` 
 - Walk mode / ride-along use their own ground sampling and do not climb the footbridge stairs.
 - A guest or car that spawns inside a crossing tile is outside the guarantee only for the single tick it takes to leave it; trains spawn with the lead (see above).
 - The title-screen demo and tests build no crossings; every system above is a no-op there, so goldens are unchanged.
+
+
+## One Crossings section (0.2.4)
+The toggle is no longer 'rail only' wording: the dock's **Crossings** section (both drawers) covers every crossing a stroke makes. Over **rail** the player picks level crossing / bridge (`CrossMode`, hiking trail and footpath footbridge $900, MTB ramp $1,100, roads always level); over **water or a gap** the stroke always gets the matching bridge (automatic, docs/bridges.md); over another **path or road** it merges or crosses. Ski pistes cannot cross water or rail: the stroke stops there with *PISTE_RAIL_MSG* / *PISTE_WATER_MSG*.

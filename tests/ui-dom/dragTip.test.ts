@@ -30,4 +30,15 @@ describe('drag tool tooltip', () => {
     expect(parseFloat(h.tip.style.left)).toBe(34); expect(parseFloat(h.tip.style.top)).toBe(34);
     tool.dispose();
   });
+  it('is measured at the origin: a fixed box left near the right edge is squeezed to the room left there (the clipped "Trails must con..." tip)', () => {
+    const tool = make(), h = tool as unknown as Hack;
+    (window as unknown as { innerWidth: number }).innerWidth = 400; (window as unknown as { innerHeight: number }).innerHeight = 300;
+    // like a real browser: shrink-to-fit width = min(natural 260, room right of `left`)
+    Object.defineProperty(h.tip, 'offsetWidth', { get: () => Math.min(260, 400 - (parseFloat(h.tip.style.left) || 0)), configurable: true });
+    Object.defineProperty(h.tip, 'offsetHeight', { value: 48, configurable: true });
+    h.tip.style.left = '380px'; // where the previous pointer move left it
+    h.show([], { ok: false, cost: 0, text: 'Start the trail next to a path, building or another trail' }, 380, 100);
+    expect(parseFloat(h.tip.style.left) + 260).toBeLessThanOrEqual(400 - 8);
+    tool.dispose();
+  });
 });

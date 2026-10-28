@@ -34,12 +34,13 @@ describe('Paths & Roads drawer: bridges are part of drawing, not a mode', () => 
     expect(all(dock, 'button').map((b) => b.textContent).join('|')).not.toContain('Build bridge');
     expect(q(dock, 'st-select')).toBeNull();
     const group = q(dock, '[role=radiogroup][data-cross]')!;
-    expect(group.getAttribute('aria-label')).toBe('Cross rails');
+    expect(group.getAttribute('aria-label')).toBe('Crossings over rail');
+    expect(q(dock, '[data-cross-heading]')!.textContent).toBe('Crossings');
     const [lvl, brg] = [...group.querySelectorAll<HTMLButtonElement>('button')];
     expect(lvl!.getAttribute('aria-checked')).toBe('true'); expect(brg!.getAttribute('aria-checked')).toBe('false');
     expect(lvl!.textContent).toContain('Level crossing'); expect(lvl!.textContent).toContain('$150'); // two-line label with the price
     expect(brg!.textContent).toContain('Bridge'); expect(brg!.textContent).toContain('$900');
-    expect(q(dock, '[data-bridge-hint]')!.textContent).toBe('Drag across water or rails to build a bridge. Roads always use a level crossing; rail cannot cross water.');
+    expect(q(dock, '[data-bridge-hint]')!.textContent).toBe('Drag across water, a gap or rails. Meeting a path or road just merges (automatic). Roads always use a level crossing; rail cannot cross water.');
     expect(q(dock, '[data-bridge-list]')!.textContent).toContain('Footpath: Footbridge');
     expect(q(dock, '[data-bridge-list]')!.textContent).toContain('$600/tile, max 3');
     expect(modes).toEqual(['level']);
@@ -77,14 +78,30 @@ describe('Paths & Roads drawer: bridges are part of drawing, not a mode', () => 
 });
 
 describe('Pistes & Trails drawer', () => {
-  it('has the same control for trails with the trail prices and a hint for ponds', () => {
+  it('has the very same Crossings section for trails (heading, radio group, legend) with trail prices and a hint for water, gaps and rails', () => {
     const { dock } = mount();
     dock.show('pistes');
     const group = q(dock, '[data-cross]')!;
-    expect(group.getAttribute('aria-label')).toBe('Trails over rails');
-    expect(group.textContent).toContain('MTB $1,100');
-    expect(q(dock, '[data-bridge-hint]')!.textContent).toBe('Drag a trail across a pond or rails to build a bridge: hiking $120/tile, MTB $140/tile, max 4. Ski pistes cannot cross water.');
+    expect(group.getAttribute('aria-label')).toBe('Crossings over rail');
+    expect(q(dock, '[data-cross-heading]')!.textContent).toBe('Crossings');
+    expect(group.textContent).toContain('$150 · guests wait'); expect(group.textContent).toContain('$900 · no waiting'); // same wording as the Paths drawer
+    const legend = q(dock, '[data-cross-legend]')!.textContent!;
+    expect(legend).toContain('Over rail'); expect(legend).toContain('Water & gaps'); expect(legend).toContain('bridge (automatic)'); 
+    const list = q(dock, '[data-bridge-list]')!.textContent!;
+    expect(list).toContain('Hiking trail: Wooden hiking bridge'); expect(list).toContain('$120/tile, max 4');
+    expect(list).toContain('MTB trail: MTB bridge'); expect(list).toContain('$140/tile, max 4');
+    expect(q(dock, '[data-bridge-hint]')!.textContent).toContain('pond, lake, stream, gap or rails');
+    expect(q(dock, '[data-bridge-hint]')!.textContent).toContain('merges (automatic)');
+    expect(q(dock, '[data-cross]')!.querySelector('[data-cross-mode=bridge]')!.getAttribute('title')).toContain('MTB ramp bridge $1,100');
+    expect(q(dock, '[data-bridge-hint]')!.textContent).toContain('Ski pistes cannot cross water or rails');
     expect(q(dock, '[data-bridge]')).toBeNull();
+    dock.remove();
+  });
+  it('both drawers show the same legend rows', () => {
+    const { dock } = mount();
+    dock.show('paths'); const a = q(dock, '[data-cross-legend]')!.textContent;
+    dock.show('pistes'); const b = q(dock, '[data-cross-legend]')!.textContent;
+    expect(a).toBe(b);
     dock.remove();
   });
 });

@@ -151,7 +151,7 @@ const css = `
 .pc{flex:none;width:280px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:4px;align-content:start;overflow:auto;max-height:150px}
 .pc select,.pc button{min-width:0;width:100%;box-sizing:border-box}
 .drawer.tall{max-height:min(46vh,380px)}
-.drawer.mid{max-height:min(44vh,312px)}
+.drawer.mid{max-height:min(54vh,420px)}
 .drawer.mid .pc{max-height:none}
 .drawer.tall .pane{max-height:calc(min(46vh,380px) - 48px)}
 .pc .small{grid-column:1/-1}
@@ -830,14 +830,19 @@ export class StDock extends StElement {
 
   /** Rail crossing choice shared by the Paths & Roads and the Pistes & Trails drawers (docs/crossings.md); persists while the page lives. */
   private crossMode: 'level' | 'bridge' = 'level';
-  /** Segmented control 'Cross rails: Level crossing | Bridge' (two-line labels, 44 px, radio semantics, arrow keys). */
-  private crossControl(side: HTMLElement, label: string, bridgeNote: string): void {
+  /**
+   * The shared 'Crossings' section of Paths & Roads and Pistes & Trails: what a stroke does where it meets something. Over rail the player chooses (segmented
+   * control: level crossing / bridge, 44 px two-line buttons, radio semantics, arrow keys); water and gaps always get a bridge (automatic); other paths and
+   * roads merge or cross. Then a one-line hint and the price legend (docs/bridges.md, docs/crossings.md).
+   */
+  private crossingsSection(side: HTMLElement, rows: Array<[string, 'footbridge' | 'roadBridge' | 'hikeBridge' | 'mtbBridge']>, hint: string): void {
     const api = this.api!;
     api.network.setCrossMode?.(this.crossMode);
-    const lbl = el('div', 'seg-l', label);
+    const lbl = el('div', 'seg-l', 'Crossings');
+    lbl.dataset.crossHeading = '';
     const seg = el('div', 'seg');
     seg.setAttribute('role', 'radiogroup');
-    seg.setAttribute('aria-label', label);
+    seg.setAttribute('aria-label', 'Crossings over rail');
     seg.dataset.cross = '';
     const mk = (mode: 'level' | 'bridge', name: string, sub: string, title: string): HTMLButtonElement => {
       const b = el('button', '') as HTMLButtonElement;
@@ -846,8 +851,8 @@ export class StDock extends StElement {
       b.append(el('span', '', name), el('small', '', sub));
       return b;
     };
-    const lvl = mk('level', 'Level crossing', `$${CROSSING.cost.path} · guests wait`, 'Cross the rail at ground level. Trains never stop: guests wait at the barriers. The cheaper choice.');
-    const brg = mk('bridge', 'Bridge', bridgeNote, 'Cross the rail on a bridge: nobody ever waits for a train, but it costs more. Roads always use a level crossing.');
+    const lvl = mk('level', 'Level crossing', `$${CROSSING.cost.path} · guests wait`, 'Over a rail line: cross at ground level. Trains never stop: guests wait at the barriers. The cheaper choice.');
+    const brg = mk('bridge', 'Bridge', `$${CROSSING.footbridge.cost} · no waiting`, `Over a rail line: cross on a bridge. Nobody ever waits for a train, but it costs more (MTB ramp bridge $${CROSSING.mtbBridge.cost.toLocaleString('en-US')}). Roads always use a level crossing.`);
     const sync = (): void => { for (const b of [lvl, brg]) { const on = b.dataset.crossMode === this.crossMode; b.classList.toggle('active', on); b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; } };
     const set = (m: 'level' | 'bridge'): void => { this.crossMode = m; api.network.setCrossMode?.(m); sync(); };
     lvl.addEventListener('click', () => set('level'));
@@ -859,28 +864,24 @@ export class StDock extends StElement {
     });
     seg.append(lvl, brg);
     sync();
-    side.append(lbl, seg);
-  }
-
-  /** The price legend under the crossing control: which bridge each kind gets over water. */
-  private bridgeList(side: HTMLElement, rows: Array<[string, 'footbridge' | 'roadBridge' | 'hikeBridge' | 'mtbBridge']>, note: string): void {
-    const hint = el('div', 'trailnote', note);
-    hint.dataset.bridgeHint = '';
+    const legend = el('div', 'blist');
+    legend.dataset.crossLegend = '';
+    for (const [k, v] of [['Over rail', 'your choice above'], ['Water & gaps', 'bridge (automatic)']] as const) legend.append(el('b', '', k), el('span', '', v));
+    const note = el('div', 'trailnote', hint);
+    note.dataset.bridgeHint = '';
     const list = el('div', 'blist');
     list.dataset.bridgeList = '';
     for (const [kind, id] of rows) {
       const sp = BRIDGES[id];
       list.append(el('b', '', `${kind}: ${sp.label}`), el('span', '', `$${sp.costPerTile}/tile, max ${sp.maxSpan}`));
     }
-    side.append(hint);
-    if (rows.length) side.append(list);
+    side.append(lbl, seg, legend, note, list);
   }
 
   private pathControls(): void {
     const side = el('div', 'pc wide');
     side.dataset.pathControls = '';
-    this.crossControl(side, 'Cross rails', `$${CROSSING.footbridge.cost} · no waiting`);
-    this.bridgeList(side, [['Footpath', 'footbridge'], ['Road', 'roadBridge']], 'Drag across water or rails to build a bridge. Roads always use a level crossing; rail cannot cross water.');
+    this.crossingsSection(side, [['Footpath', 'footbridge'], ['Road', 'roadBridge']], 'Drag across water, a gap or rails. Meeting a path or road just merges (automatic). Roads always use a level crossing; rail cannot cross water.');
     this.body.appendChild(side);
   }
 
@@ -905,9 +906,8 @@ export class StDock extends StElement {
     note.hidden = !t;
     side.append(sel, brush, suggest, erase, undo, redo, prune, note);
     side.classList.add('wide');
-    side.title = 'Drag to paint (interpolated, no gaps). Shift-drag erases. Trails must start at a path/building.';
-    this.crossControl(side, 'Trails over rails', `$${CROSSING.footbridge.cost} (MTB $${CROSSING.mtbBridge.cost.toLocaleString('en-US')})`);
-    this.bridgeList(side, [], `Drag a trail across a pond or rails to build a bridge: hiking $${BRIDGES.hikeBridge.costPerTile}/tile, MTB $${BRIDGES.mtbBridge.costPerTile}/tile, max ${BRIDGES.hikeBridge.maxSpan}. Ski pistes cannot cross water.`);
+    side.title = 'Drag to paint (interpolated, no gaps). Shift-drag erases. Start a trail next to a path, building or another trail.';
+    this.crossingsSection(side, [['Hiking trail', 'hikeBridge'], ['MTB trail', 'mtbBridge']], 'Drag a trail across a pond, lake, stream, gap or rails. Meeting a path or road just merges (automatic). Ski pistes cannot cross water or rails.');
     this.body.appendChild(side);
   }
 

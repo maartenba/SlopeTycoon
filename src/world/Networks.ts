@@ -36,6 +36,8 @@ export const Cross = { None: 0, Path: 1, Road: 2, Footbridge: 3, MtbBridge: 4 } 
 /** Actionable refusals: where a road / rail line has to start (docs/placement-rules.md). */
 export const ROAD_START_MSG = 'Start the road from the road entry (the grey stub at the map edge) or extend an existing road';
 export const RAIL_START_MSG = 'Start the rail from the rail entry (the stub at the map edge) or extend an existing line';
+/** Tooltip when a trail stroke touches nothing it could start from (actionable: where to begin). */
+export const TRAIL_ORPHAN_MSG = 'Start the trail next to a path, building or another trail';
 export const PISTE_WATER_MSG = "Can't build a piste over water — use a bridge (footpath/road) or route around";
 /** Max corner spread (half-steps) per network kind. */
 export const NET_MAX_SPREAD: Record<NetKindId, number> = { 1: 2, 2: 1, 3: 1 };

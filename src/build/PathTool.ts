@@ -204,6 +204,8 @@ export abstract class DragTool {
     const tip = this.tip;
     if (!tip || typeof window === 'undefined') return;
     const vw = (window as { innerWidth?: number }).innerWidth ?? 1280, vh = (window as { innerHeight?: number }).innerHeight ?? 800;
+    // measure at the origin: a fixed box left near the right edge by the previous move is squeezed to the room that is left there and wraps / clips the text
+    tip.style.left = '0px'; tip.style.top = '0px';
     const w = tip.offsetWidth || 0, h = tip.offsetHeight || 0, m = 8;
     let x = cx + 14, y = cy + 14;
     if (x + w + m > vw) x = cx - 14 - w;

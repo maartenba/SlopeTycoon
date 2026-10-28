@@ -1,7 +1,7 @@
 import { BRIDGES, BRIDGE_MAX_RISE, BRIDGE_MSG, GAP_MIN_DROP, type BridgeKind, type BridgeSpec } from '../config/bridges';
 import { TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
-import { Layer, NET_COST, ROAD_START_MSG, NetKind, PISTE_COST_PER_TILE, type Networks, type NetKindId } from './Networks';
+import { Layer, NET_COST, ROAD_START_MSG, TRAIL_ORPHAN_MSG, NetKind, PISTE_COST_PER_TILE, type Networks, type NetKindId } from './Networks';
 import type { Pt } from '../sim/Dependencies';
 
 /** A stored bridge: the deck runs a -> b (both bank tiles are ordinary network tiles), `span` are the tiles between them. */
@@ -134,7 +134,7 @@ export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail',
   // a bank whose lowest corner is too far below the deck cannot be reached (the stairs would be a wall)
   if (deck - maxCorner(grid, a.x, a.y) > BRIDGE_MAX_RISE || deck - maxCorner(grid, b.x, b.y) > BRIDGE_MAX_RISE) return fail(kind, a, b, BRIDGE_MSG.low);
 
-  if (!anyAnchored && !opts.skipLink) return fail(kind, a, b, spec.layer === 'road' ? ROAD_START_MSG : spec.layer === 'path' ? 'Paths must connect to a path, road or building' : 'Trails must start at a path or building');
+  if (!anyAnchored && !opts.skipLink) return fail(kind, a, b, spec.layer === 'road' ? ROAD_START_MSG : spec.layer === 'path' ? 'Paths must connect to a path, road or building' : TRAIL_ORPHAN_MSG);
   const spanCost = len * spec.costPerTile * mult;
   const bankUnit = spec.layer === 'road' ? NET_COST[NetKind.Road] : spec.layer === 'path' ? NET_COST[NetKind.Path] : PISTE_COST_PER_TILE;
   return { ok: true, kind, a, b, span, deck, rise, supports: bridgeSupports(len), newBanks, cost: spanCost + newBanks.length * bankUnit * mult, spanCost };
