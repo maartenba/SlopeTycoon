@@ -45,6 +45,10 @@ The screen is a small valley with a **Base Lodge**, a road and a real **Parking*
 
 > [!NOTE] Money is tight at first. If you run out, the game lets you go into debt rather than stopping, but construction is refused while you are in the red. See [Money](page:money).
 
+## Money tips
+
+New resorts start with $150,000 and one winter ahead. Build one lift, a gentle piste, parking and a lodge first, then add one building at a time while cash stays above its price plus about $5,000. The **Starter loan** ($50,000) is cheap money for the first winter, and the ticket price is fine at its default. Ranger Rudi's **Cash tips** card shows up when cash is thin. Full list: [Money](page:money).
+
 ## Save early
 
 Press <kbd>F5</kbd> to quick-save and <kbd>F9</kbd> to quick-load. The game also autosaves every in-game month. More in [Saves & offline](page:saves).

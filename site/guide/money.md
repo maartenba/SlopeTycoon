@@ -63,3 +63,15 @@ Festivals have their own cards just below the campaigns: see [Events, stories & 
 | Challenging | Less money, higher upkeep and interest, pickier guests, more incidents |
 
 > [!TIP] Rudi's “cash runway” advice appears when you have under five days of upkeep in the bank. Believe him.
+
+## Money tips
+
+- **Start small, grow one step at a time.** One lift, a gentle piste, parking and a lodge first; the next building only when cash is above its price plus about $5,000. A second lift or a gondola is a big purchase: save up or take the Starter loan first.
+- **Winter pays the bills.** Dec-Mar brings most of the year's profit. Keep the pistes snowy, the queues short and the guests fed.
+- **Leave the ticket price near the default.** A few percent either way is fine; doubling it loses guests.
+- **Use the Starter loan.** $50,000 at 5 % is the cheapest way over the first winter. Repay when cash stays comfortably high.
+- **Plan summer in spring.** Paint hiking and biking trails along a lift, rest lifts nobody rides, add one summer attraction and save about 30 days of upkeep. Summer building is half price.
+- **Campaigns need cash** (keep $20,000 spare). *Come by Train* is a good cheap filler once a Train Station stands.
+- **Avoid** building everything on day one, training every staff course in year 1 and big early terraforming.
+
+Ranger Rudi shows a **Cash tips** card when your cash is thin early in the game.

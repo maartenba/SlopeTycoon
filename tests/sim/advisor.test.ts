@@ -46,6 +46,7 @@ const CASES: Case[] = [
   { id: 'arrival.parking', trigger: (s) => removeTypes(s, 'parking') },
   { id: 'cash.debt', cheap: true, trigger: (s) => { (s.finance as unknown as { status: string }).status = 'debt'; s.game.money = -500; } },
   { id: 'cash.runway', cheap: true, trigger: (s) => { s.game.money = 300; } },
+  { id: 'cash.tips', cheap: true, trigger: (s) => { s.game.money = 3_000; }, calm: (s) => { s.game.money = 50_000; } },
   { id: 'price.fair', trigger: (s) => { guests(s, 20); s.pricing.set('dayPass', s.pricing.defaultOf('dayPass') * 3); } },
   { id: 'marketing.ready', trigger: () => { /* the starter resort already qualifies */ }, calm: (s) => { s.game.money = 100; } },
   { id: 'marketing.trainIdle', trigger: (s) => { guests(s, 20); trainStub(s, 0.01); }, calm: (s) => { guests(s, 20); trainStub(s, 0.2); } },

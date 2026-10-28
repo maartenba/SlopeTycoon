@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSim, type Sim } from '../../src/game/createSim';
-import { Bot, runBot, type BotOptions, type MonthRow } from '../../src/game/bot';
+import { Bot, WISHES, runBot, type BotOptions, type MonthRow } from '../../src/game/bot';
 import { makeResort, run, attachCounters } from './harness';
 import { LOAN_OFFERS } from '../../src/config/prices';
 import { GEAR_OWNERS } from '../../src/config/prices';
@@ -75,7 +75,7 @@ describe('balance: the early loan is meaningful (128, tutorial-style starter cha
   it('without the loan the chain leaves little cash; with it there is room to grow', () => {
     const a = new Bot(createSim({ size: 128, seed: 61, now: () => 0 })), b = new Bot(createSim({ size: 128, seed: 61, now: () => 0 }), { starterLoan: true });
     const starter = LOAN_OFFERS.find((o) => o.id === 'starter')!.baseAmount;
-    expect(a.sim.game.money).toBeLessThan(35_000); // can't afford the next lift (+ piste) or a second lodge soon
+    expect(a.sim.game.money).toBeLessThan(50_000); // (start cash 130k -> 150k in the money pass: 43k) can't afford the next lift (+ piste) or a second lodge soon
     expect(b.sim.game.money - a.sim.game.money).toBeCloseTo(starter, -2);
     expect(b.sim.game.money).toBeGreaterThan(60_000);
     expect(a.report?.failures).toEqual([]);
@@ -197,4 +197,19 @@ describe.skipIf(!FULL)('[balance] everything on (M5.4 closing sweep): automatic 
       expect(stars).toBeGreaterThanOrEqual(3); expect(stars).toBeLessThanOrEqual(4.6);
     }, 900_000);
   }
+});
+
+describe('balance: money pass (docs/balance.md "Money pass"): a winter-focused human is rarely blocked and survives summer (64, Normal)', () => {
+  it('no summer attractions, lifts left on all summer, small reserve: never below $0, year 2 positive, summer months >= -$3k on average', () => {
+    const sim = createSim({ size: 64, seed: 61, now: () => 0 });
+    const summerOnly = new Set(['adventurePark', 'beach', 'boatRental', 'alpineFarm']);
+    const bot = new Bot(sim, { respectUnlocks: true, reserve: 2_000, summerLifts: 'keep', policy: { id: 'human', wishes: WISHES.filter(([t]) => !summerOnly.has(t)) }, starterOpts: { lifts: 1, attractions: 0, toilet: true } });
+    let min = sim.game.money, below1k = 0;
+    runBot(sim, bot, 2 * DAYS_PER_YEAR, () => { min = Math.min(min, sim.game.money); if (sim.game.money < 1_000) below1k++; });
+    expect(min).toBeGreaterThan(0);
+    expect(below1k).toBeLessThanOrEqual(5); // blocked on construction for at most a few days
+    expect(sum(year(bot.rows, 2), (r) => r.net)).toBeGreaterThan(0);
+    const s = summer(bot.rows, 2);
+    expect(sum(s, (r) => r.net) / s.length).toBeGreaterThan(-3_000);
+  });
 });

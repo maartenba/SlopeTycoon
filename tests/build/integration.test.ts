@@ -123,7 +123,7 @@ describe('terraform vs lift clearance', () => {
 
 describe('new game', () => {
   it('starts with a playable amount of money', () => {
-    expect(STARTING_MONEY).toBe(130000);
-    expect(createGameState(1).money).toBe(130000);
+    expect(STARTING_MONEY).toBe(150000);
+    expect(createGameState(1).money).toBe(150000);
   });
 });

@@ -12,13 +12,13 @@ import { makeResort, run } from '../game/harness';
  * (fill 1, no wages, factor 1). New modules (`staff`, `staffUpgrades`, `events`, `stories`, `rivals`, `energy`) are excluded.
  */
 const GOLDEN_STARTER: Record<string, string> = {
-  'core': '283341c0',
+  'core': '7bfc0bbd',
   'config': '0c4169f7',
   'grid': 'faf291c3',
   'props': 'f326a89f',
   'networks': '4854bb95',
   'buildings': 'defd0fcb',
-  'lifts': '76faef99',
+  'lifts': '39d22bf2',
   'cond': 'ba97dd7b',
   'names': '323feaff',
   'nature': '41b50fb0',
@@ -26,49 +26,49 @@ const GOLDEN_STARTER: Record<string, string> = {
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '00f02232',
-  'sys.spawner': '587e17e6',
+  'sys.spawner': 'a22970d2',
   'sys.guests': '3c9da463',
   'sys.attractions': 'a48da1b4',
-  'sys.economy': 'b97c7eff',
-  'sys.rating': '8f787234',
+  'sys.economy': '210da444',
+  'sys.rating': 'e5465c96',
   'sys.ops': 'faf8607b',
   'families': '9592c8dc',
   'openStatus': 'f48290d9',
   'sessionMeta': '77074ba4',
-  'goals': '9bab649b',
+  'goals': '24481a95',
   'yearReports': 'e696b440',
   'advisor': 'ca063e92',
   'progression': 'b8977d94',
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': '249ec25b',
+  'core': '31c0e1a8',
   'config': 'd9813cdd',
   'grid': '410860f8',
   'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'a0aaa356',
-  'lifts': 'fc3dcda6',
+  'lifts': '18031c1a',
   'cond': 'd91eca6f',
   'names': '21b69d9a',
-  'nature': 'fc5cf664',
-  'leavers': '2f8deddf',
+  'nature': '616ad076',
+  'leavers': '7244ae81',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '571f0cde',
-  'sys.spawner': 'ffb412d1',
-  'sys.guests': '770867af',
-  'sys.attractions': 'e8429d38',
-  'sys.economy': '0d993708',
-  'sys.rating': '1f2a9ee5',
-  'sys.ops': '9c0dc01e',
-  'families': '66973481',
+  'sys.spawner': '88eeedf8',
+  'sys.guests': 'bf9ff94b',
+  'sys.attractions': '3fb8c6cf',
+  'sys.economy': '63a28414',
+  'sys.rating': 'aa8b69de',
+  'sys.ops': 'e3cf2bf0',
+  'families': '72cac77e',
   'openStatus': 'f48290d9',
-  'sessionMeta': '5a560bf5',
-  'goals': 'c95c2eae',
-  'yearReports': '8889e413',
+  'sessionMeta': '2c2097de',
+  'goals': '137b8822',
+  'yearReports': '102ceb83',
   'advisor': 'ca063e92',
-  'progression': 'c6874bb3',
+  'progression': '71be28b7',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
@@ -80,7 +80,8 @@ const GOLDEN_BOT: Record<string, string> = {
 // RE-RECORDED (NavGraph no corner cutting: diagonal nav steps no longer graze building / water corners; also the nav altitude cache now follows terraforming). Money 187143.92 -> 192905.9.
 // RE-RECORDED (createSim defaults == the real game, docs/balance.md "Defaults == the real game"): autoEvents, stories, remoteSupply, campaignsV2, guestTypesV2 are now ON by default. Money 192905.9 -> 203294.15 (autoEvents +5.05%, stories +0.30%, remoteSupply / campaignsV2 0%, combined +5.39%).
 // RE-RECORDED (Phase 6 M6.1: comfort need + toilets, facilities rating facet, trail access, campaigns v2, bridges / crossings; docs/balance.md "M6.1 re-record"). Money 203294.15 -> 191483.3 (-5.8%).
-const GOLDEN_BOT_MONEY = 191483.3;
+// RE-RECORDED (money pass, docs/balance.md "Money pass": starting cash 130k -> 150k, goal grants +2k, softer off-season relief, autumn demand 0.4 -> 0.5). Money 191483.3 -> 222414.97.
+const GOLDEN_BOT_MONEY = 222414.97;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; delete p['energy']; return p; };
 

@@ -251,6 +251,13 @@ export const RULES: readonly Rule[] = [
     if (days >= (c.shown ? 8 : 5)) return null;
     return { id: 'cash.runway', severity: 'warn', ...TEXT.runway(Math.max(0, Math.floor(days))), panel: { drawer: 'finance' } };
   }, true, true),
+  // Early-game cash hint (docs/money-tips.md): thin but not negative cash in the first two years. cash.debt / cash.runway speak first when they apply.
+  rule('cash.tips', 1, (c) => {
+    const money = c.sim.game.money, d = c.sim.game.date;
+    if (money < 0 || d.year > 2 || estimatedUpkeep(c.sim) <= 0) return null;
+    if (money >= (c.shown ? 9_000 : 6_000)) return null;
+    return { id: 'cash.tips', severity: 'info', ...TEXT.cashTips(`$${Math.round(money).toLocaleString('en-US')}`), panel: { drawer: 'finance' } } as Advice;
+  }, true, true),
   rule('price.fair', 2, (c) => {
     if (c.sim.guestSim.store.count < 10) return null;
     const r = c.sim.pricing.ratioOf('dayPass');

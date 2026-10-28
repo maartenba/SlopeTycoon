@@ -33,7 +33,7 @@ export const TYPE_MIX: Record<SeasonId, readonly number[]> = {
   summer: [0.1, 0.15, 0.35, 0.05, 0.1, 0.25],
   autumn: [0.2, 0.3, 0.1, 0.1, 0.1, 0.2],
 };
-export const SEASON_RATE: Record<SeasonId, number> = { winter: 1, spring: 0.5, summer: 0.6, autumn: 0.4 };
+export const SEASON_RATE: Record<SeasonId, number> = { winter: 1, spring: 0.5, summer: 0.6, autumn: 0.5 };
 
 /**
  * Off-season demand floor (docs/balance.md "Gentler summer"). With no open lift only 15 % of the guests came, which made every

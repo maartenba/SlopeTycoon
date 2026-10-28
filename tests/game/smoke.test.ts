@@ -132,7 +132,7 @@ describe('early-game finances', () => {
     const sim = createSim({ size: 128, seed: 1, now: () => 0 });
     let bankrupt = 0;
     sim.bus.on('finance:bankrupt', () => bankrupt++);
-    expect(sim.game.money).toBe(130000);
+    expect(sim.game.money).toBe(150000);
     for (let d = 1; d <= 365; d++) {
       run(sim, { days: 1 });
       if (d <= 120) { expect(sim.game.money, `day ${d}`).toBeGreaterThan(0); expect(bankrupt).toBe(0); }

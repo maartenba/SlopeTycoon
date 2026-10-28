@@ -340,7 +340,7 @@ export const REMOTE_SUPPLY_MULT = 1.25;
  * are mothballed outside winter and pay only this share of their upkeep; staff of a venue that has been closed for `furloughAfterDays`
  * in a row go on seasonal furlough at `furloughWageShare` of the wage.
  */
-export const OFFSEASON_RELIEF = { winterOnlyUpkeepShare: 0.25, furloughAfterDays: 3, furloughWageShare: 0.5 } as const;
+export const OFFSEASON_RELIEF = { winterOnlyUpkeepShare: 0.15, furloughAfterDays: 3, furloughWageShare: 0.35 } as const;
 
 // ---- Difficulty & new-game options (Task 35; docs/balance.md) ----
 export type DifficultyId = 'relaxed' | 'normal' | 'challenging';

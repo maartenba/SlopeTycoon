@@ -213,6 +213,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'cash.tips',
+    setup: (s) => { s.game.money = 3_000; },
+    fixes: [
+      { name: 'a loan or income lifts the cash', apply: (s) => { s.game.money = 60_000; } },
+      { name: 'the first two years are over', apply: (s) => { s.game.date.year = 3; } },
+    ],
+  },
+  {
     id: 'cash.summerBuffer',
     setup: (s) => { s.game.date.day = seasonStartDay('summer') - 10; s.game.money = 800; },
     fixes: [

@@ -45,6 +45,8 @@ export interface BotOptions {
   green?: boolean;
   /** Green power (item F, default false so the golden runs stay put): builds ONE solar array when cash allows and the energy part is the weakest sustainability part. */
   greenEnergy?: boolean;
+  /** Summer lift handling: 'rest' (default; the bot closes the winter lifts) or 'keep' (a typical human leaves every lift on the default schedule: energy for nobody). */
+  summerLifts?: 'rest' | 'keep';
   /** Apply a price strategy once (exploit tests). */
   prices?: (sim: Sim) => void;
 }
@@ -178,7 +180,7 @@ export class Bot {
     if (summer !== this.lastSummer) {
       this.lastSummer = summer;
       // lifts that are not bike lifts rest in summer (no snow => no skiers; schedule profile so energy is not wasted)
-      if (summer) sim.liftOps.keepOnly('summer', new Set(sim.lifts.all().filter((l) => LIFTS[l.kind]?.carriesBikes).map((l) => l.id)));
+      if (this.opt.summerLifts === 'keep') { /* human: lifts stay on the schedule */ } else if (summer) sim.liftOps.keepOnly('summer', new Set(sim.lifts.all().filter((l) => LIFTS[l.kind]?.carriesBikes).map((l) => l.id)));
       else sim.liftOps.enableAll('summer');
     }
     const key = d.year * 12 + monthIndex(d);

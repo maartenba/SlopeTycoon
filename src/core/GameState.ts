@@ -35,7 +35,7 @@ export interface GameState {
 }
 
 /** Starting funds: enough for a lodge-adjacent build-out, a couple of lifts and some terraforming. */
-export const STARTING_MONEY = 130000;
+export const STARTING_MONEY = 150000;
 
 export function createGameState(seed: number, mapSize: MapSize = 128, money = STARTING_MONEY): GameState {
   return {

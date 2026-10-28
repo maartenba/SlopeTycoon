@@ -6,7 +6,7 @@ export const LIFT_OPS = {
   /** Share of full upkeep paid while closed (base maintenance). */
   closedUpkeepShare: 0.15,
   /** Share of the running energy a lift draws while it is empty (no riders on the line, nobody queueing): summer lifts idle on demand. */
-  idleEnergyShare: 0.35,
+  idleEnergyShare: 0.25,
   /** Operating hours/day regarded as "full schedule" for upkeep. */
   nominalHours: 8,
   /** Wear (condition points) per operating hour at wearRate 1. */

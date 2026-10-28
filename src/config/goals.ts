@@ -1,7 +1,7 @@
 /**
  * Resort goal chain (M5.1 Task 3): the career of a resort director in four chapters, 20 goals. Engine: `src/sim/goals/Goals.ts`.
  * Tone (decision D4): plain career voice, a light joke now and then, never more than one short line. Rewards are small grants
- * (`grant` ledger category); the whole chain pays about 67,500 dollars (`TOTAL_REWARDS`) over several years; the balance bot earns about 4.5 % of its year-1 revenue from grants (limit 10 %, tests/sim/goals.test.ts).
+ * (`grant` ledger category); the whole chain pays about 69,500 dollars (`TOTAL_REWARDS`) over several years; the balance bot earns about 4.5 % of its year-1 revenue from grants (limit 10 %, tests/sim/goals.test.ts).
  * Every goal must be reachable by normal play (no luck-based goals such as "survive an avalanche"), because a chapter ends when all its goals are done.
  */
 import type { GoalCtx, GoalWorld, PanelRef, Pt } from '../sim/goals/Goals';
@@ -55,14 +55,14 @@ const SUMMER_TYPES = ['adventurePark', 'beach', 'boatRental'];
 
 export const GOALS: readonly GoalDef[] = [
   // ---- Season 1: Open for business ----
-  { id: 'firstLift', panel: { drawer: 'lifts' }, chapter: 's1', title: 'Open your first lift', flavour: 'Cut the ribbon. Somebody will have to hold the scissors.', todo: 'Build a lift from the base to higher ground and keep it open.', reward: 1000,
+  { id: 'firstLift', panel: { drawer: 'lifts' }, chapter: 's1', title: 'Open your first lift', flavour: 'Cut the ribbon. Somebody will have to hold the scissors.', todo: 'Build a lift from the base to higher ground and keep it open.', reward: 1500,
     check: ({ w }) => (w.lifts().some((l) => l.open) ? 1 : w.lifts().length > 0 ? 0.5 : 0), focus: liftPt },
-  { id: 'greenRun', panel: { drawer: 'pistes', item: 'ski' }, chapter: 's1', title: 'Paint an easy run', flavour: 'Every director starts on the nursery slope.', todo: 'Paint a connected, gentle piste (green or blue) next to your lift.', reward: 1000,
+  { id: 'greenRun', panel: { drawer: 'pistes', item: 'ski' }, chapter: 's1', title: 'Paint an easy run', flavour: 'Every director starts on the nursery slope.', todo: 'Paint a connected, gentle piste (green or blue) next to your lift.', reward: 1500,
     // Easy = green + blue tiles (difficulty codes 1 and 2). Before the 0.1.0-m5.4 difficulty fix this was "difficulty 1", which in practice also meant green + blue.
     check: ({ w }) => ratio(pisteTiles(w, 1) + pisteTiles(w, 2), PISTE_FULL), focus: (w) => pistePt(w, 1) ?? pistePt(w, 2) ?? liftPt(w) },
-  { id: 'patrol', panel: { drawer: 'buildings', item: 'patrolHub' }, chapter: 's1', title: 'Safety first: Ski Patrol Hub', flavour: 'The insurer asks about it before anything else.', todo: 'Build a Ski Patrol Hub on a road.', reward: 1500,
+  { id: 'patrol', panel: { drawer: 'buildings', item: 'patrolHub' }, chapter: 's1', title: 'Safety first: Ski Patrol Hub', flavour: 'The insurer asks about it before anything else.', todo: 'Build a Ski Patrol Hub on a road.', reward: 2000,
     check: ({ w }) => (has(w, 'patrolHub') ? 1 : 0), focus: (w) => firstOf(w, 'patrolHub') ?? lodge(w) },
-  { id: 'guests30', panel: { drawer: 'ops' }, chapter: 's1', title: 'Welcome 30 guests in a day', flavour: 'The first proper queue at the ticket window.', todo: 'Open lifts and pistes and keep the base easy to reach.', reward: 1500,
+  { id: 'guests30', panel: { drawer: 'ops' }, chapter: 's1', title: 'Welcome 30 guests in a day', flavour: 'The first proper queue at the ticket window.', todo: 'Open lifts and pistes and keep the base easy to reach.', reward: 2000,
     check: (c) => dayGuests(c, 30), focus: lodge },
 
   // ---- Local favourite ----
