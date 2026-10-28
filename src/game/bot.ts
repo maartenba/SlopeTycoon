@@ -17,6 +17,7 @@ import { buildStarterResort, type StarterOptions, type StarterReport } from './s
 import { monthIndex, seasonOf } from '../sim/Clock';
 import { DAYS_PER_MONTH } from '../config/balance';
 import type { Sim } from './createSim';
+import { ECO, ECO_POLICY_BY_ID } from '../config/eco';
 import { BOT_UPGRADE_ORDER, STAFF_UPGRADES } from '../config/staffUpgrades';
 import { policyFor, type BotPolicy, type Wish } from './botPolicies';
 import { applyPlanting, planPlanting } from '../sim/nature/Planting';
@@ -45,6 +46,8 @@ export interface BotOptions {
   green?: boolean;
   /** Green power (item F, default false so the golden runs stay put): builds ONE solar array when cash allows and the energy part is the weakest sustainability part. */
   greenEnergy?: boolean;
+  /** Eco programme (docs/eco.md, default false so the golden runs stay put): builds the Eco Centre (+ two solar arrays) when rich ('build' = buildings only, no policies: the A/B control), then funds every policy and the certificate as cash allows. */
+  eco?: boolean | 'build';
   /** Summer lift handling: 'rest' (default; the bot closes the winter lifts) or 'keep' (a typical human leaves every lift on the default schedule: energy for nobody). */
   summerLifts?: 'rest' | 'keep';
   /** Apply a price strategy once (exploit tests). */
@@ -170,6 +173,21 @@ export class Bot {
     this.build('solarArray');
   }
 
+  /** Eco programme: a solar array first (renewables for the certificate), then the Eco Centre, then every policy, then the audit. One step a month. */
+  private ecoStep(reserve: number): void {
+    const sim = this.sim, cash = sim.game.money;
+    const centre = sim.buildings.all().find((b) => b.type === 'ecoCentre');
+    if (!centre) {
+      if (this.opt.respectUnlocks && !sim.progression.isUnlocked('building', 'ecoCentre')) return;
+      if (this.count('solarArray') < 2 && cash > BUILDINGS.solarArray!.cost * 1.3 + reserve + 10_000) { this.build('solarArray'); return; }
+      if (cash > BUILDINGS.ecoCentre!.cost * 1.3 + reserve + 10_000) this.build('ecoCentre');
+      return;
+    }
+    if (!centre.active || this.opt.eco === 'build') return; // 'build': the buildings only (the control of the balance A/B)
+    for (const v of sim.eco.views()) if (v.state === 'off' && cash > ECO_POLICY_BY_ID[v.id]!.fee * 2 + reserve + 5_000) { sim.eco.start(v.id); return; }
+    if (!sim.eco.certView().on && sim.eco.activeCount() >= 3 && cash > ECO.cert.fee * 2 + reserve) sim.eco.startCert();
+  }
+
   private hasSummerAttraction(): boolean { return this.sim.buildings.all().some((b) => b.active && ['adventurePark', 'beach', 'boatRental', 'alpineFarm'].includes(b.type)); }
   private count(type: string): number { return this.sim.buildings.all().filter((b) => b.type === type).length; }
 
@@ -201,6 +219,7 @@ export class Bot {
     if (this.opt.staffUpgrades) this.trainStaff();
     if (this.opt.green !== false) { this.replant(); this.trainRangers(); }
     if (this.opt.greenEnergy) this.buildSolar(reserve);
+    if (this.opt.eco) this.ecoStep(reserve);
     // comfort need: the starter chain has one free toilet; a busier resort gets one more per ~100 guests (max 3), cheap and free to use
     if (sim.guestSim.comfortNeed && cash() > reserve + 3_000 && this.count('toilets') < Math.min(3, 1 + Math.floor(sim.guestSim.store.count / 100))) this.build('toilets');
     if (this.opt.expand === false) return;

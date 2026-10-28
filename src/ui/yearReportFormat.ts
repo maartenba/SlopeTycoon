@@ -43,6 +43,7 @@ export function highlightLines(r: YearReport): string[] {
   if (r.weather.snowiestWeek) out.push(`Snowiest week: from ${dayLabel(r.weather.snowiestWeek.startDay)} (${r.weather.snowiestWeek.snowDays} snow days)`);
   if (r.weather.warmSpell && r.weather.warmSpell.days >= 5) out.push(`Longest warm spell: ${r.weather.warmSpell.days} days from ${dayLabel(r.weather.warmSpell.startDay)}`);
   if (r.wildlife.sightings > 0) out.push(`Wildlife: ${r.wildlife.sightings} sighting${r.wildlife.sightings === 1 ? '' : 's'}${r.wildlife.attacks ? `, ${r.wildlife.attacks} attack${r.wildlife.attacks === 1 ? '' : 's'}` : ''}`);
+  if (r.eco) out.push(`Eco programme: ${r.eco.policies} polic${r.eco.policies === 1 ? 'y' : 'ies'} running, +${r.eco.points.toFixed(0)} sustainability points${r.eco.certified ? ', carbon-neutral certified' : ''}`);
   if (r.goalsCompleted > 0) out.push(`Goals completed: ${r.goalsCompleted}`);
   if (r.level !== null) out.push(`Resort level: ${r.level}`);
   return out;

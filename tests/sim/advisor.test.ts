@@ -29,6 +29,12 @@ const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.
 
 interface Case { id: string; cheap?: boolean; trigger(sim: Sim): void; calm?(sim: Sim): void }
 /** One mutation that makes each rule fire (on the starter resort) and, optionally, a mutation that keeps it quiet. */
+const ecoCase = (s: Sim, score: number): void => {
+  s.progression.unlockAll = true; // the Eco Centre is a level-4 building: the rule only advises it once unlocked
+  s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } });
+  s.energy.hasRenewable = () => true;
+  s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score, weight: 0.08, hint: 'Plant trees' }, { id: 'happiness', label: 'Guest happiness', score: 85, weight: 0.22, hint: 'Guests are happy' }], bonus: 0, bonusHints: [], hints: [] });
+};
 const CASES: Case[] = [
   { id: 'queue.long', cheap: true, trigger: (s) => { s.guestSim.queues.waitTicks = () => 40; }, calm: (s) => { s.guestSim.queues.waitTicks = () => 3; } },
   { id: 'lift.idle', trigger: (s) => { guests(s, 25); const l = s.lifts.all()[0]!; const c = { ...l, id: 99, ops: { ...l.ops!, ageDays: 9 }, riders: { total: 0, perHour: 0 } }; const a = { ...l, ops: { ...l.ops!, ageDays: 9 }, riders: { total: 90, perHour: 90 } }; s.lifts.all = () => [a, c] as never; }, calm: (s) => { guests(s, 25); const l = s.lifts.all()[0]!; const c = { ...l, id: 99, ops: { ...l.ops!, ageDays: 9 }, riders: { total: 90, perHour: 90 } }; s.lifts.all = () => [{ ...l, ops: { ...l.ops!, ageDays: 9 }, riders: { total: 90, perHour: 90 } }, c] as never; } },
@@ -60,6 +66,7 @@ const CASES: Case[] = [
   { id: 'building.inactive', trigger: (s) => { s.buildings.all().find((b) => !['groomerGarage', 'snowcatOutpost', 'patrolHub', 'skiSchoolHQ', 'parking', 'trainStation', 'shuttleDepot', 'altiport', 'rangerStation'].includes(b.type))!.active = false; } },
   { id: 'lift.service', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: -400, count: 0 }; } }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } } },
   { id: 'lift.worn', trigger: (s) => { s.lifts.all()[0]!.ops!.condition = 20; }, calm: (s) => { s.lifts.all()[0]!.ops!.condition = 90; } },
+  { id: 'eco.centre', trigger: (s) => { ecoCase(s, 40); }, calm: (s) => { ecoCase(s, 90); } },
   { id: 'energy.green', trigger: (s) => { s.sustain.last = () => ({ energy: 0.1, trees: 0.9, habitat: 0.9, score: 60, raw: { energyPerGuest: 10.5, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); }, calm: (s) => { s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score: 90, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); } },
   { id: 'rating.lowest', trigger: () => { /* starter resort: variety is weakest */ }, calm: (s) => { s.rating.breakdown = () => ({ score: 90, stars: 4.5, components: [{ id: 'happiness', label: 'Guest happiness', score: 90, weight: 0.25, hint: '' }], bonus: 0, bonusHints: [], hints: [] }); } },
   { id: 'piste.disconnected', trigger: (s) => { let t = 0; for (let i = 0; i < s.size * s.size; i++) if (s.ops.quality.isPiste(i)) { t = i; break; } const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => [...real(), { disconnected: true, count: 9, tiles: [t] }] as never; }, calm: (s) => { const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => real().map((c) => ({ ...c, disconnected: false })) as never; } },

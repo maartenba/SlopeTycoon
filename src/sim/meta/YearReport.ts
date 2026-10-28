@@ -40,6 +40,8 @@ export interface YearReport {
   deltas: DeltaChip[];
   /** Rival comparison (Task 23); absent in reports from before rivals existed. */
   rivals?: RivalSection;
+  /** Eco programme at the end of the year (docs/eco.md); absent without an Eco Centre. */
+  eco?: { policies: number; certified: boolean; points: number };
   /** Small JPEG data URL (<= 30 kB) added by the UI after the report was generated; absent headless. */
   cover?: string;
 }
@@ -51,6 +53,7 @@ export interface ReportInput {
   level?: number | null; goalsTotal?: number; venues?: Array<{ name: string; revenue: number }>;
   /** Rival comparison of the year (Task 23) and the year's mean sustainability facet. */
   rivals?: RivalSection | null;
+  eco?: { policies: number; certified: boolean; points: number } | null;
 }
 
 const r0 = (n: number): number => Math.round(n);
@@ -143,7 +146,7 @@ export function computeYearReport(i: ReportInput): YearReport {
     v: 1, year: i.year, name: i.name, days, partial, totals, months, bestMonth: best?.month ?? null, worstMonth: worst?.month ?? null, busiest, bestSeason,
     categories: cats, venues, safety, weather: { snowiestWeek: snowiest, warmSpell: warm }, wildlife: { sightings: r0(sightings), attacks: r0(attacks) },
     goalsCompleted: Math.max(0, goalsTotal - (p?.goalsTotal ?? 0)), goalsTotal, level: i.level ?? null,
-    awards, points, maxPoints, headline: { tier, title: HEADLINE_TEXT[tier] }, deltas, ...(i.rivals ? { rivals: i.rivals } : {}),
+    awards, points, maxPoints, headline: { tier, title: HEADLINE_TEXT[tier] }, deltas, ...(i.rivals ? { rivals: i.rivals } : {}), ...(i.eco ? { eco: i.eco } : {}),
   };
 }
 
@@ -153,6 +156,8 @@ export interface YearReportSources {
   venues(): Array<{ id: number; name: string; revenue: number }>;
   /** Rival section of a year (Task 23); omitted = no rivals. */
   rivals?(year: number): RivalSection | null;
+  /** Eco programme state when an Eco Centre works (docs/eco.md). */
+  eco?(): { policies: number; certified: boolean; points: number } | null;
   /** Called after a report was stored (the game emits `year:report`). */
   ready(r: YearReport): void;
 }
@@ -171,7 +176,7 @@ export class YearReports {
     const s = this.src!, prev = [...this.list].reverse().find((r) => r.year < year) ?? null;
     const vs = s.venues();
     const rep = computeYearReport({
-      hist: this.hist, year, mapSize: s.mapSize, name: s.name(year), baselines: this.baselines, prev, level: s.level(), goalsTotal: s.goalsTotal(), rivals: s.rivals?.(year) ?? null,
+      hist: this.hist, year, mapSize: s.mapSize, name: s.name(year), baselines: this.baselines, prev, level: s.level(), goalsTotal: s.goalsTotal(), rivals: s.rivals?.(year) ?? null, eco: s.eco?.() ?? null,
       venues: vs.map((v) => ({ name: v.name, revenue: v.revenue - (this.venueBase.get(v.id) ?? 0) })),
     });
     this.venueBase = new Map(vs.map((v) => [v.id, v.revenue]));

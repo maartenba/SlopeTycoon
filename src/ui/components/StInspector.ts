@@ -25,6 +25,7 @@ export class StInspector extends StElement {
   private attr: AttractionHandlers | null = null;
   private onVehicles: ((id: number, delta: number) => void) | null = null;
   private onBins: ((id: number) => void) | null = null;
+  private onAction: ((id: string) => void) | null = null;
   private onCannon: ((id: number, on: boolean) => void) | null = null;
   private onInstructors: ((id: number, delta: number) => void) | null = null;
 
@@ -57,6 +58,8 @@ export class StInspector extends StElement {
 
   /** Ranger Station: toggle bear-proof bins. */
   bindBins(fn: (id: number) => void): void { this.onBins = fn; }
+  /** Inspector button of a green building (Eco Centre: open the Eco programme). */
+  bindAction(fn: (id: string) => void): void { this.onAction = fn; }
   /** Per-cannon on/off (Snowmaking). */
   bindCannon(fn: (id: number, on: boolean) => void): void { this.onCannon = fn; }
 
@@ -130,6 +133,7 @@ export class StInspector extends StElement {
         line(`Prevented scares this month: ${o.preventedMonth} · est. revenue saved $${Math.round(o.savedMonth).toLocaleString('en-US')}`, o.preventedMonth > 0 ? 'good' : ''));
     } else if (t.ops?.kind === 'energy') {
       for (const l of t.ops.lines) { const r = line(l.text, l.tone ?? ''); r.dataset.role = 'energy'; opsRows.push(r); }
+      if (t.ops.action) { const ab = document.createElement('button'), id = t.ops.action.id; ab.textContent = t.ops.action.label; ab.dataset.role = 'energy-action'; ab.style.minHeight = '44px'; ab.addEventListener('click', () => this.onAction?.(id)); opsRows.push(ab); }
     } else if (t.ops?.kind === 'helipad') {
       opsRows.push(line(`Helicopter: ${t.ops.helicopters ? t.ops.state : 'none (needs an active Helipad)'} · missions flown ${t.ops.missions}`));
     } else if (t.ops?.kind === 'reservoir') {

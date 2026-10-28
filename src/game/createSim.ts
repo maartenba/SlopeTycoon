@@ -12,6 +12,7 @@ import { seasonOf, hourOfDay, jumpTo, seasonStartDay, monthIndex } from '../sim/
 import { nightWarp } from '../core/pacing';
 import { sunTimes } from '../sim/Daylight';
 import { Energy } from '../sim/Energy';
+import { Eco } from '../sim/meta/Eco';
 import { BUILDINGS } from '../config/buildings';
 import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, REMOTE_SUPPLY_MULT, oldDays } from '../config/balance';
 import { LIFTS } from '../config/lifts';
@@ -392,7 +393,7 @@ export function createSim(opts: SimOptions) {
   // ---- Operations AI: piste quality, nightly grooming, hourly snowmaking ----
   const ops: Ops = createOps({
     grid, cond, weather, snow, coverage, net: networks, buildings: () => buildings.all(), bus, reservoirs,
-    onCost: (c, a) => { economy.spend(c === 'energy' ? 'snowmaking' : c === 'wages' ? 'staff' : 'upkeep', a); },
+    onCost: (c, a) => { economy.spend(c === 'energy' ? 'snowmaking' : c === 'wages' ? 'staff' : 'upkeep', c === 'energy' ? a * eco.snowEnergyMod() : a); },
   });
   registry.replace(ops.system);
   state.opsOn = true;
@@ -528,7 +529,7 @@ export function createSim(opts: SimOptions) {
     store: guestSim.store,
     hash: guestSim.hash,
     status: (id) => openStatus.buildingStatus(id),
-    earn: (c0, a0) => { const c = c0, a = HOSPITALITY_CATS.has(c) ? a0 * staffUpgrades.mod('hospitalitySpend') : a0; economy.earn(c, a); const fb = c === 'restaurants' ? natureRef?.farmBonus() ?? 0 : 0; if (fb > 0) economy.earn(c, Math.round(a * fb * 100) / 100); }, // Alpine Farm dairy bonus; hospitality training (Task 20)
+    earn: (c0, a0) => { const c = c0, a = HOSPITALITY_CATS.has(c) ? a0 * staffUpgrades.mod('hospitalitySpend') : a0; economy.earn(c, a); if (c === 'restaurants' && eco.restaurantMod() !== 1) { economy.earn(c, Math.round(a * (eco.restaurantMod() - 1) * 100) / 100); } const fb = c === 'restaurants' ? natureRef?.farmBonus() ?? 0 : 0; if (fb > 0) economy.earn(c, Math.round(a * fb * 100) / 100); }, // Alpine Farm dairy bonus; hospitality training (Task 20)
     bus,
     groundAt: (x, y) => groundHeight(grid, x, y),
     lakeFrozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0,
@@ -579,13 +580,23 @@ export function createSim(opts: SimOptions) {
     felled: () => props.treesFelled, planted: () => props.treesPlanted,
   });
   bus.on('time:hour', (e) => { if (e) energy.hour(e.hour); });
+  // Eco Centre + Eco programme (docs/eco.md): policies are multipliers that are exactly 1 without an active Eco Centre
+  const eco = new Eco({
+    centreActive: () => buildings.all().some((b) => b.type === 'ecoCentre' && b.active),
+    funds: () => game.money, pay: (a) => { economy.spend('upkeep', a); },
+    transit: () => buildings.all().some((b) => b.active && (b.type === 'trainStation' || b.type === 'shuttleDepot')),
+    treeDeficit: () => props.treesFelled - props.treesPlanted - Math.floor(energy.nurseryCredit),
+    grid: () => ({ demand: energy.last.demand, applied: energy.last.applied }),
+    onCertified: () => bus.emit('milestone', { id: 'eco:certified', title: 'Carbon-neutral certificate earned', major: false }),
+  });
+  bus.on('day:changed', () => eco.newDay());
   // Sustainability facet (Task 23): energy per guest, trees felled vs planted, wildlife-habitat overlap (reduced by the rangers upgrade). Read-only measurements.
   let habitatTiles: Int32Array | null = null; // forest-habitat tiles of the ORIGINAL terrain (static), built lazily
   const treeSet = new Set<number>(TREE_KINDS);
   let marketingRef: Marketing | null = null; // Come by Train: rail share feeds the sustainability facet (marketing is built further down)
   const sustain = new Sustainability({
     energyToday: () => { const e = economy.dayBuckets().expense; return (e.energy ?? 0) + (e.snowmaking ?? 0); },
-    trees: () => { let live = 0; const byKind = props.countByKind(); for (const k of treeSet) live += byKind[k] ?? 0; return { felled: props.treesFelled, planted: props.treesPlanted + Math.floor(energy.nurseryCredit), live }; },
+    trees: () => { let live = 0; const byKind = props.countByKind(); for (const k of treeSet) live += byKind[k] ?? 0; return { felled: props.treesFelled, planted: props.treesPlanted + Math.floor(energy.nurseryCredit) + Math.floor(eco.treeCredit()), live }; },
     habitat: () => {
       if (!habitatTiles) {
         const fd = terrainInfo.forestDensity, list: number[] = [];
@@ -598,6 +609,7 @@ export function createSim(opts: SimOptions) {
     },
     protection: () => staffUpgrades.wildlifeProtection(),
     bonus: () => energy.recyclingBonus(),
+    eco: () => eco.points(),
     motor: () => tours.motorPenalty(),
     trainShare: () => (opts.campaignsV2 !== false ? marketingRef?.railShare() ?? null : null),
   });
@@ -666,7 +678,7 @@ export function createSim(opts: SimOptions) {
   });
   bus.on('day:changed', () => rivals.newDay());
   let eventsRef: EventCalendar | null = null; // Events calendar (festival / critic / powder arrival effects), built further down
-  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (eventsRef?.arrivalMult() ?? 1) * rivals.arrivalMult());
+  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (eventsRef?.arrivalMult() ?? 1) * rivals.arrivalMult() * eco.arrivalMult());
   pricing.bind({
     date: () => game.date,
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
@@ -842,7 +854,7 @@ export function createSim(opts: SimOptions) {
   safety.wildlife.scareMod = () => staffUpgrades.mod('wildlifeScare');
   ops.grooming.crewLimit = () => staff.groomerLimit();
   ops.grooming.capacityMod = () => staffUpgrades.mod('groomCapacity');
-  ops.grooming.fuelMod = () => staffUpgrades.mod('groomFuel');
+  ops.grooming.fuelMod = () => staffUpgrades.mod('groomFuel') * eco.groomFuelMod();
   // ---- Lift operations: schedules, energy, wear, inspections, breakdowns, stranded guests (ticked by the economy system) ----
   const liftOps = new LiftOps({
     lifts: () => lifts.all(), bus, seed,
@@ -874,7 +886,9 @@ export function createSim(opts: SimOptions) {
         if (opts.remoteSupply !== false && networks.suppliedOnFootOnly(x.id)) share *= REMOTE_SUPPLY_MULT; // supplied on foot: +25% upkeep
         b += full * share;
       }
+      b += eco.upkeepPerDay(); // Eco programme running costs (0 without an Eco Centre)
       const lo = liftOps.settleDay(); // closed lifts only cost base maintenance; running lifts cost energy
+      lo.energy *= eco.liftEnergyMod(); // Eco programme: dimmed lifts (exactly 1 without it)
       l = lo.upkeep * diff.upkeep * (mods.costMultipliers?.upkeep ?? 1);
       const seen = new Set<number>();
       for (const a of attractions.all()) {
@@ -1055,6 +1069,7 @@ export function createSim(opts: SimOptions) {
     level: () => levelHost?.progression?.level ?? null,
     goalsTotal: () => goals.view().completed,
     rivals: (y) => rivals.section(y),
+    eco: () => (eco.enabled ? { policies: eco.activeCount(), certified: eco.certified, points: eco.points() } : null),
     venues: () => attractions.all().filter((a) => a.stats.revenue > 0).map((a) => ({ id: a.b.id, name: names.buildingName(a.b.id), revenue: a.stats.revenue })),
     ready: (r) => bus.emit('year:report', { year: r.year }),
   });
@@ -1100,7 +1115,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    tours, achievements, rivals, sustain, energy, landscape, landscapeEnv,
+    tours, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,

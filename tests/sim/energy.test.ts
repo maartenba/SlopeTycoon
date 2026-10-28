@@ -219,7 +219,7 @@ describe('placement rules of the green buildings', () => {
     expect(BUILDINGS.solarArray!.access).toBe('path'); expect(BUILDINGS.solarArray!.altAccess).toContain('road');
     expect(BUILDINGS.biomassHeating!.access).toBe('road'); expect(BUILDINGS.smallHydro!.streamAdjacent).toBe(true);
     const gated = UNLOCKS.filter((u) => GREEN_BUILDINGS.includes(u.id as never)).map((u) => `${u.id}:${u.level}`).sort();
-    expect(gated).toEqual(['solarPlant:3', 'windTurbine:2']);
+    expect(gated).toEqual(['ecoCentre:4', 'solarPlant:3', 'windTurbine:2']);
     expect(UNLOCKS.some((u) => u.id === 'solarArray')).toBe(false); // the Advisor suggests it: never gated
     expect(isGenerator('solarArray')).toBe(true); expect(isGenerator('treeNursery')).toBe(false);
   });

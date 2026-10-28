@@ -341,6 +341,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'eco.centre', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score: 40, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); s.energy.hasRenewable = () => true; s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score: 40, weight: 0.08, hint: 'Plant trees' }, { id: 'happiness', label: 'Guest happiness', score: 85, weight: 0.22, hint: 'Guests are happy' }], bonus: 0, bonusHints: [], hints: [] }); },
+    fixes: [
+      { name: 'sustainability is no longer the weakest area', apply: (s) => { s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score: 90, weight: 0.08, hint: 'Gentle on the mountain' }, { id: 'happiness', label: 'Guest happiness', score: 60, weight: 0.22, hint: 'x' }], bonus: 0, bonusHints: [], hints: [] }); } },
+      { name: 'an Eco Centre stands', apply: (s) => { buildAt(s, 'ecoCentre', { x: 10, y: 20 }, { connect: false, rmax: 12 }); } },
+    ],
+  },
+  {
     id: 'rating.lowest', daily: true,
     setup: () => { /* starter resort: variety is weakest */ },
     fixes: [

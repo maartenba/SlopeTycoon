@@ -213,3 +213,23 @@ describe('balance: money pass (docs/balance.md "Money pass"): a winter-focused h
     expect(sum(s, (r) => r.net) / s.length).toBeGreaterThan(-3_000);
   });
 });
+
+describe('balance: Eco programme (docs/eco.md)', () => {
+  it('the eco bot builds the centre, funds the policies and earns the certificate within two years (64 / 61)', () => {
+    const { sim } = play(64, 61, 2 * DAYS_PER_YEAR, { eco: true, greenEnergy: true });
+    expect(sim.buildings.all().some((b) => b.type === 'ecoCentre' && b.active)).toBe(true);
+    expect(sim.eco.activeCount()).toBeGreaterThanOrEqual(3);
+    expect(sim.eco.points()).toBeGreaterThanOrEqual(15); expect(sim.eco.everCertifiedFlag).toBe(true);
+    expect(sim.sustain.last()!.score).toBeLessThanOrEqual(100);
+    expect(sim.finance.ended).toBe(false);
+  }, 300_000);
+  it.skipIf(!FULL)('[balance] year-3 net with every policy stays within 15 % of the same resort with the buildings only (never dominant, never ruinous)', () => {
+    for (const seed of [61, 7]) {
+      const ctl = play(64, seed, 3 * DAYS_PER_YEAR, { eco: 'build', greenEnergy: true }), all = play(64, seed, 3 * DAYS_PER_YEAR, { eco: true, greenEnergy: true });
+      const net = (b: Bot): number => sum(year(b.rows, 3), (r) => r.net);
+      const diff = (net(all.bot) - net(ctl.bot)) / Math.abs(net(ctl.bot));
+      console.log(`[balance] eco ${seed}: y3 net buildings-only ${Math.round(net(ctl.bot))} vs all policies ${Math.round(net(all.bot))} (${(100 * diff).toFixed(1)} %), facet ${ctl.sim.sustain.last()!.score} -> ${all.sim.sustain.last()!.score}`);
+      expect(Math.abs(diff)).toBeLessThan(0.15);
+    }
+  }, 900_000);
+});

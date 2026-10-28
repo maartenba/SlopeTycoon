@@ -32,7 +32,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   stuntPark: e(R.stuntPark, false), adventurePark: e(R.adventurePark, false),
   alpineFarm: e(F.alpineFarm, false), trainStation: e(T.trainStation), altiport: e(T.altiport), parking: e(T.parking, false),
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
-  smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre),
+  smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 
 export const DEFAULT_FOUNDATION = 0.4;

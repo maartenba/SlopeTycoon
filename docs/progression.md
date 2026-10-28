@@ -88,6 +88,7 @@ Only 9 buildings / lifts / campaigns are gated, plus one landscape item: **diggi
 | 2 | Gondola (6-person) | the "I made it" lift; $25k stations |
 | 3 | Funicular | heavy transport ($50k stations, short, steep limits): not needed before the resort is regional |
 | 4 | Helipad | rescue by air (needs a Ski Patrol Hub); $7k + $30/day, only worth it for a big resort |
+| 4 | Eco Centre | $20k + $18/day; opens the Eco programme (policies up to +29 sustainability points, docs/eco.md) |
 | 4 | Gondola (10-person) | $40k stations |
 | 4 | Chairlift (8-seat, bubble) | $30k stations |
 | 5 | Cable Car | $60k stations, 200-tile reach |

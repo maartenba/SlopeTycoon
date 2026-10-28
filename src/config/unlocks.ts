@@ -25,6 +25,7 @@ export const UNLOCKS: readonly UnlockDef[] = [
   // Level 3: the big solar plant (small hydro needs a stream and $11k: self-limiting, always open).
   { kind: 'building', id: 'solarPlant', level: 3 },
   // Level 4 (Alpine destination): rescue by air and the biggest cabins / chairs.
+  { kind: 'building', id: 'ecoCentre', level: 4 },
   { kind: 'building', id: 'helipad', level: 4 },
   { kind: 'lift', id: 'gondola10', level: 4 },
   { kind: 'lift', id: 'chair8b', level: 4 },

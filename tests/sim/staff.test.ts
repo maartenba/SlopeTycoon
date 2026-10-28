@@ -68,10 +68,11 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '137b8822',
   'yearReports': '102ceb83',
   'advisor': 'ca063e92',
-  'progression': '71be28b7',
+  'progression': '8e20e249',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
+// RE-RECORDED (Eco Centre, docs/eco.md: ONLY `progression` moved (71be28b7 -> 8e20e249): the unlock snapshot gained building:ecoCentre at level 4; money, guests, rating and every other part are byte-identical, and the `eco` module is omitted while untouched).
 // RE-RECORDED (tower height caps / denser towers change the bot's lift layouts; docs/lifts-clearance.md).
 // RE-RECORDED (calendar fix: daylight solstices 21 Jun / 21 Dec, temperature/snowline curve aligned to the real Alpine year; docs/time-flow.md section 10). Money 193236.89 -> 191943.33; re-recorded once more after the snowmaking-energy / nature-cache save fixes.
 // RE-RECORDED (planned lift maintenance, docs/lift-ops-and-debt.md: every lift now carries `ops.maint`, and the bot's lifts are serviced in April). Taken on a tree that also holds other in-progress 0.2.x items (hiker hunger, snowmaking mode, Almabtrieb).

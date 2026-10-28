@@ -1,10 +1,12 @@
 import { ENERGY } from '@/config/energy';
+import { ECO_POLICIES } from '@/config/eco';
+import type { Eco } from '@/sim/meta/Eco';
 import type { Energy, GeneratorInfo, GridDay } from '@/sim/Energy';
 
 /** One inspector line for the green buildings. */
 export interface EnergyLine { text: string; tone?: 'good' | 'bad' | '' }
 /** Inspector payload of a generator / nursery / recycling centre (`StInspector` just prints the lines). */
-export interface EnergyOps { kind: 'energy'; lines: EnergyLine[] }
+export interface EnergyOps { kind: 'energy'; lines: EnergyLine[]; /** A button under the lines (Eco Centre: opens the Eco programme). */ action?: { id: string; label: string } }
 
 const kwhOf = (dollars: number): number => dollars / ENERGY.gridPricePerKwh;
 export const fmtKwh = (dollars: number): string => `${Math.round(kwhOf(dollars)).toLocaleString('en-US')} kWh`;
@@ -42,4 +44,16 @@ export function greenLines(type: string, e: Energy, net: { felled: number; plant
   }
   if (type === 'recyclingCentre') return [{ text: `Sustainability bonus: +${ENERGY.recycling.bonusPoints} points (one centre; more do not stack)`, tone: 'good' }];
   return [];
+}
+
+/** Inspector lines of the Eco Centre (the programme itself opens from the button under them). */
+export function ecoLines(eco: Eco, score: number | null): EnergyLine[] {
+  if (!eco.enabled) return [{ text: 'Not connected: the policies pause until it has road or footpath access', tone: 'bad' }];
+  const n = eco.activeCount();
+  const out: EnergyLine[] = [
+    { text: n > 0 ? `${n} of ${ECO_POLICIES.length} policies running · +${eco.points().toFixed(1)} sustainability points · ${money(eco.upkeepPerDay())}/day` : 'No policy running yet: open the programme to pick some (each has a start fee and a daily cost)' },
+    { text: eco.certified ? 'Carbon-neutral certificate held (+5% arrivals)' : 'Not certified yet (needs 3 policies and renewable power)', tone: eco.certified ? 'good' : '' },
+  ];
+  if (score !== null) out.push({ text: `Sustainability score: ${Math.round(score)} / 100` });
+  return out;
 }

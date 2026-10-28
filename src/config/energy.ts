@@ -22,7 +22,7 @@ export const GENERATORS: Record<string, GeneratorDef> = {
 };
 
 /** Ids of every green building (generators + the nursery and the recycling centre). */
-export const GREEN_BUILDINGS = ['solarArray', 'solarPlant', 'windTurbine', 'smallHydro', 'biomassHeating', 'treeNursery', 'recyclingCentre'] as const;
+export const GREEN_BUILDINGS = ['solarArray', 'solarPlant', 'windTurbine', 'smallHydro', 'biomassHeating', 'treeNursery', 'recyclingCentre', 'ecoCentre'] as const;
 
 export const ENERGY = {
   /** Dollars per kWh of grid power: only the unit shown to the player (1 kWh = this many energy dollars). */

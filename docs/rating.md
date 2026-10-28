@@ -101,3 +101,5 @@ A ninth component, **Facilities**, weight **0.06**: 45 % comfort satisfaction (s
 
 ## 0.2.2 note
 Sustainability also has a small **train share** input (Come by Train, Phase 6 Task 50): the share of the last 14 days' arrivals by rail earns up to +3 facet points (linear to a 30 % share, `TRAIN_SUSTAIN` in `config/marketing.ts`, tracked only when `createSim({ campaignsV2: true })`), at most 0.24 rating score points. Sustainability energy counts **net grid purchase** per guest (generator offset is already off the ledger line); recycling adds +4 points and nursery saplings count against felled trees (docs/energy.md). Rudi's `energy.green` rule names energy as the weakest part. The *Runs* change also affects the "Too few green runs" hint: it counts runs, not connected blobs.
+
+The **eco** term (Eco Centre policies + carbon-neutral certificate, up to +29 points, bounded by `ECO.maxPoints` = 30) is added like recycling and train; the total is still clamped to 100. At the 0.08 weight the maximum is +2.3 rating score points (+0.12 stars): docs/eco.md.

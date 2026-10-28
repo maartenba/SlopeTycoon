@@ -141,6 +141,8 @@ export const SAVE_MODULES: SaveModule[] = [
   },
   // Energy grid (item F): today's / yesterday's generation per generator, biomass timber stock, nursery credit, last settled day. Additive: old saves have none -> empty (no generators = no effect).
   { key: 'energy', version: 1, serialize: (sim) => sim.energy.serialize(), load: (sim, d) => sim.energy.load(d), reset: (sim) => sim.energy.reset() },
+  // Eco programme (docs/eco.md): policies on, certificate hold, rolling renewable share, sapling credit. `null` (left out of stateHash) until the player touches it.
+  { key: 'eco', version: 1, omitWhenNull: true, serialize: (sim) => sim.eco.serialize(), load: (sim, d) => sim.eco.load(d), reset: (sim) => sim.eco.reset() },
   // Tour bases (Phase 6 Task 5): per-tour counters + schedule slot. `null` (= left out of stateHash, like an absent module) until a tour base exists.
   { key: 'tours', version: 1, omitWhenNull: true, serialize: (sim) => sim.tours.serialize(), load: (sim, d) => sim.tours.load(d), reset: (sim) => sim.tours.reset() },
   // Welcome-back recap data (M5.1). Additive: old saves have none -> reduced recap.

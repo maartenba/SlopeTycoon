@@ -110,8 +110,8 @@ describe('level thresholds (config/progression.ts)', () => {
 });
 
 describe('unlock table (config/unlocks.ts)', () => {
-  it('is short (8 to 12 items), every id exists in its catalogue, levels are 2..6', () => {
-    expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(12);
+  it('is short (8 to 13 items), every id exists in its catalogue, levels are 2..6', () => {
+    expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(13);
     for (const u of UNLOCKS) {
       const exists = u.kind === 'landscape' ? u.id === 'pond' : u.kind === 'building' ? !!BUILDINGS[u.id] : u.kind === 'lift' ? !!LIFTS[u.id as keyof typeof LIFTS] : CAMPAIGNS.some((c) => c.id === u.id);
       expect(exists, `${u.kind}:${u.id}`).toBe(true);
@@ -127,7 +127,7 @@ describe('unlock table (config/unlocks.ts)', () => {
     for (const l of ['tbar', 'chair2', 'chair4', 'chair4d']) expect(isGated('lift', l), l).toBe(false);
     for (const c of ['families', 'budget', 'summer', 'brand']) expect(isGated('campaign', c), c).toBe(false);
     expect(unlockLevel('building', 'nope')).toBe(1);
-    expect(Object.keys(BUILDINGS).filter((b) => isGated('building', b)).length).toBeLessThanOrEqual(4);
+    expect(Object.keys(BUILDINGS).filter((b) => isGated('building', b)).length).toBeLessThanOrEqual(5);
   });
 
   it('no goal, advisor rule or tutorial lift default depends on a gated item (they could deadlock / propose locked things)', () => {

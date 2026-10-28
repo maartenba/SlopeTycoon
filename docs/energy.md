@@ -72,3 +72,7 @@ Procedural, within the budget (<3000 triangles for <= 6 tiles, else <9000). Tria
 ## Tuning cheat sheet
 
 `ENERGY.maxOffsetShare` (0.6) is the one knob that keeps the economy honest; `GENERATORS[...].rated` scale each building; `ENERGY.solar.snowCovered` / `winterTilt` shape the seasonal curve; `ENERGY.nursery.saplingsPerDay` and `recycling.bonusPoints` are the sustainability side. Re-run `scripts/analysis/energyPayback.ts` after touching any of them.
+
+## Eco Centre (bigger measures)
+
+The Eco Centre (level 4) opens an Eco programme worth up to +29 facet points (a bounded `eco` term, weights unchanged, total clamped to 100): see docs/eco.md.

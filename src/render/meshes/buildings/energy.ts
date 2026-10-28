@@ -156,3 +156,30 @@ export function recyclingCentre(b: PartBuilder, w: number, h: number): void {
   b.sign('RECYCLE', -0.5, 0.95, 0.12, 0.8, 0.22, 0, '#2e6b3a', '#fff4d6');
   void w; void h;
 }
+
+/** Eco Centre (4x3): glass-fronted visitor and education hall with a grass roof, a solar canopy on posts, a small static turbine and a rain-water tank. */
+export function ecoCentre(b: PartBuilder, w: number, h: number): void {
+  const hz = -0.45;
+  b.box(0, 0, 0, w - 0.1, 0.05, h - 0.1, C.sand, 'stone'); // paved forecourt
+  // hall: timber walls, a long glass front, flat roof under a thick grass cover
+  b.box(-0.2, 0.05, hz, 2.5, 0.85, 1.2, C.cream);
+  b.box(-0.2, 0.9, hz, 2.7, 0.1, 1.4, C.wood, 'wood'); // roof edge
+  b.box(-0.2, 1.0, hz, 2.6, 0.1, 1.3, 0x5c9a4a, 'roof'); // grass roof
+  for (let i = 0; i < 5; i++) b.cone(-1.2 + i * 0.5, 1.1, hz + ((i % 2) * 0.3 - 0.15), 0.12, 0.2, 0x3f8f4a, 'roof', 6); // roof shrubs
+  for (let i = 0; i < 4; i++) frameWin(b, -1.05 + i * 0.6, 0.2, hz + 0.61, 's', 0.34, 0, C.cream); // lit glass front
+  doorway(b, 0.95, hz + 0.61, 's', 0.34, 0.55, C.dark, C.cream);
+  // solar canopy over the forecourt: tilted panels on four posts
+  const cy = 0.75, cz = 0.62;
+  for (const px of [-1.35, 0.15]) for (const pz of [0.3, 0.95]) b.box(px, 0.05, pz, 0.06, cy, 0.06, C.grey, 'stone');
+  for (let i = 0; i < 3; i++) b.box(-1.2 + i * 0.52, cy + 0.05, cz, 0.48, 0.04, 0.9, PV, 'stone', { rx: -0.18 });
+  b.box(-0.6, cy + 0.02, cz, 1.6, 0.04, 0.06, FRAME, 'stone', { rx: -0.18 });
+  // small static turbine on the right edge (3 blades, thicker than MIN_THIN)
+  const tx = w / 2 - 0.35, tz = 0.5;
+  b.cyl(tx, 0.05, tz, 0.07, 1.5, C.white, 'stone', 8);
+  b.box(tx, 1.5, tz, 0.12, 0.12, 0.2, C.white, 'stone');
+  for (let k = 0; k < 3; k++) b.box(tx, 1.56, tz + 0.12, 0.05, 0.5, 0.03, C.white, 'stone', { rz: (k * Math.PI * 2) / 3 });
+  // rain-water tank + bench
+  b.cyl(w / 2 - 0.6, 0.05, -h / 2 + 0.5, 0.26, 0.6, C.blue, 'wood', 10);
+  b.box(0.5, 0.05, h / 2 - 0.3, 0.7, 0.2, 0.2, C.wood);
+  b.sign('ECO CENTRE', -0.2, 0.78, hz + 0.64, 1.1, 0.22, 0, '#2e6b3a', '#fff4d6');
+}

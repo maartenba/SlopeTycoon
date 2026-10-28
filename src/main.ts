@@ -25,7 +25,10 @@ import { NatureView } from '@/render/NatureView';
 import { VillageDecor } from '@/render/VillageDecor';
 import { buildEventsView } from '@/ui/eventsFormat';
 import { maintDate } from '@/ui/maintFormat';
-import { generatorLines, greenLines, type EnergyOps } from '@/ui/energyFormat';
+import { generatorLines, greenLines, ecoLines, type EnergyOps } from '@/ui/energyFormat';
+import { openEcoProgramme } from '@/ui/ecoPanel';
+import { ecoModel } from '@/ui/ecoFormat';
+import { ECO_POLICY_BY_ID } from '@/config/eco';
 import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import { TourVehicles } from '@/render/TourVehicles';
@@ -724,6 +727,7 @@ const announceChanged = (ids: number[]): void => {
 const opsInfo = (id: number, type: string): { kind: 'groomer'; vehicles: number; groomedLast: number; max: number } | { kind: 'reservoir'; level: number; capacity: number; cannons?: number } | { kind: 'cannon'; info: CannonInfo } | { kind: 'patrol'; staff: number; sleds: number; max: number; open: number } | { kind: 'helipad'; helicopters: number; missions: number; state: string } | { kind: 'ranger'; staff: number; max: number; bins: boolean; binsCost: number; preventedMonth: number; savedMonth: number; bearsInRange: number; hazes: number; relocations: number; ready: number } | EnergyOps | undefined => {
   const gi = sim.energy.info(id);
   if (gi) return { kind: 'energy', lines: generatorLines(gi, sim.energy.last, sim.energy.stock) };
+  if (type === 'ecoCentre') return { kind: 'energy', lines: ecoLines(sim.eco, sim.sustain.last()?.score ?? null), action: { id: 'eco', label: 'Open the Eco programme' } };
   if (type === 'treeNursery' || type === 'recyclingCentre') return { kind: 'energy', lines: greenLines(type, sim.energy, { felled: props.treesFelled, planted: props.treesPlanted }) };
   if (!opsRef) return undefined;
   if (safetyRef && type === 'patrolHub') return { kind: 'patrol', staff: safetyRef.patrol.staffOf(id), sleds: safetyRef.patrol.sledsOf(id), max: 6, open: safetyRef.incidents.open.length };
@@ -2488,6 +2492,19 @@ if (ui && !DEMO) {
   inspector.bindRename((id, name) => { sim.names.rename('building', id, name); refreshUi(); });
   inspector.bind(demolish, (id, d) => { const sc = guestSim.families.school(id); sc.setInstructors(sc.instructors + d); refreshUi(); });
   inspector.bindOps((id, d) => { const b = buildings.get(id); if (b && safetyRef && b.type === 'rangerStation') { safetyRef.wildlife.setStaff(id, safetyRef.wildlife.staffOf(id) + d); refreshUi(); return; } if (b && safetyRef && b.type === 'patrolHub') { safetyRef.patrol.setStaff(id, safetyRef.patrol.staffOf(id) + d); safetyRef.resync(); refreshUi(); return; } if (b && opsRef) { opsRef.grooming.setVehicles(id, opsRef.grooming.vehiclesOf(id, b.type) + d); refreshUi(); } });
+  const openEco = (): void => {
+    if (!ui) return;
+    openEcoProgramme(ui, {
+      model: () => ecoModel({ enabled: sim.eco.enabled, parts: sim.sustain.last(), policies: sim.eco.views(), cert: sim.eco.certView(), ecoPoints: sim.eco.points(), perDay: sim.eco.upkeepPerDay() }),
+      toggle: (id) => {
+        if (sim.eco.has(id)) { sim.eco.stop(id); toast(`Switched off: ${ECO_POLICY_BY_ID[id]?.name ?? id}`); refreshUi(); return null; }
+        const why = sim.eco.blocker(id); if (why) { toast(why, 'error'); return why; }
+        sim.eco.start(id); toast(`Eco policy started: ${ECO_POLICY_BY_ID[id]?.name ?? id}`); refreshUi(); return null;
+      },
+      toggleCert: () => { if (sim.eco.certView().on) { sim.eco.stopCert(); refreshUi(); return null; } const why = sim.eco.startCert(); if (why) { toast(why, 'error'); return why; } refreshUi(); return null; },
+    });
+  };
+  inspector.bindAction((id) => { if (id === 'eco') openEco(); });
   inspector.bindCannon((id, on) => { sim.ops.snowmaking.setCannon(id, on); covOverlay.invalidate(); refreshUi(); });
   inspector.bindBins((id) => { if (safetyRef) { safetyRef.wildlife.setBins(id, !safetyRef.wildlife.binsOf(id)); refreshUi(); } });
   inspector.bindAttraction({

@@ -408,9 +408,20 @@ export const RULES: readonly Rule[] = [
     const s = near(c, 'energy.green', 'solarArray', anchors(c.sim).lodge, 22);
     return { id: 'energy.green', severity: 'info', ...TEXT.energyGreen(`$${p.raw.energyPerGuest.toFixed(1)}`), action: build('solarArray', s), target: siteTarget(s), panel: { drawer: 'buildings', item: 'solarArray' } };
   }),
+  // ---- Eco Centre (docs/eco.md): sustainability is the weakest rating component, nothing renewable-first advice is pending, no Eco Centre yet ----
+  rule('eco.centre', 1, (c) => {
+    const sim = c.sim, p = sim.sustain.last();
+    if (!p || p.raw.energyPerGuest < 0 || sim.buildings.all().some((b) => b.type === 'ecoCentre')) return null;
+    if (sim.progression.locked('building', 'ecoCentre')) return null; // not unlocked yet: never advise a locked item
+    if (firing(c, 'energy.green')) return null; // solar first: one root cause at a time
+    const comps = sim.rating.breakdown().components;
+    const w = comps.filter((x) => x.id !== 'queues' && x.id !== 'pisteQuality').sort((a, b) => a.score - b.score)[0];
+    if (!w || w.id !== 'sustainability' || w.score >= (c.shown ? 72 : 65)) return null;
+    return { id: 'eco.centre', severity: 'info', ...TEXT.ecoCentre(p.score), panel: { drawer: 'buildings', item: 'ecoCentre' } };
+  }),
   // ---- rating + goals ----
   rule('rating.lowest', 2, (c) => {
-    const ROOT: Record<string, string[]> = { safety: ['patrol.none', 'bear.threat'], value: ['price.fair'], sustainability: ['energy.green'] };
+    const ROOT: Record<string, string[]> = { safety: ['patrol.none', 'bear.threat'], value: ['price.fair'], sustainability: ['energy.green', 'eco.centre'] };
     const comps = c.sim.rating.breakdown().components.filter((x) => x.id !== 'queues' && x.id !== 'pisteQuality' && x.score < (c.shown ? 62 : 55) && x.hint && !POSITIVE_HINTS.has(x.hint)
       && !(ROOT[x.id] ?? []).some((r) => firing(c, r)));
     if (!comps.length) return null;

@@ -174,6 +174,8 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('biomassHeating', 'Biomass Heating', 'energy', 3, 3, 5000, 1.5, { access: 'road' }, { chimney: { x: 0.9, y: 2.3, z: -0.6 } }),
   b('treeNursery', 'Tree Nursery', 'energy', 3, 3, 3000, 2.5, { access: 'path', altAccess: ['road'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),
   b('recyclingCentre', 'Recycling & Compost Centre', 'energy', 3, 2, 2500, 2, { access: 'road', altAccess: ['path'] }, {}),
+  // Eco Centre (docs/eco.md): level-4 education centre; hosts the Eco programme (policies with running costs and a bounded sustainability payoff).
+  b('ecoCentre', 'Eco Centre', 'energy', 4, 3, 20000, 18, { access: 'road', altAccess: ['path'], maxCount: 1, site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),
   // Toilets (Phase 6 Task 7, docs/comfort.md): 1x1 hut on a path, a trail or beside a piste; free to use, small upkeep. Restores the comfort need.
   b('toilets', 'Toilets', 'services', 1, 1, 600, 3, { access: 'path', altAccess: ['trail', 'pisteEdge'], pisteRule: 'edge', site: HUT }, { capacity: 4, placeTip: 'Place toilets beside a path, a trail or a piste' }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),

@@ -39,7 +39,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️',
+  solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -85,6 +85,7 @@ const DESCRIPTIONS: Record<string, string> = {
   biomassHeating: 'Burns timber from the trees you clear plus forestry residue: a small offset on the energy bill.',
   treeNursery: 'Raises saplings: replanting costs 40% less and replants count against the forest you cleared.',
   recyclingCentre: 'Sorts waste and composts: a small bonus to the Sustainability score.',
+  ecoCentre: 'Visitor and education centre. Opens the Eco programme: policies that raise the Sustainability score by a lot, with running costs.',
 };
 export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
   tbar: 'Cheap drag lift for short, gentle slopes.',

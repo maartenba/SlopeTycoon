@@ -1,6 +1,7 @@
 import { SUSTAIN } from '../../config/rivals';
 import { TRAIN_SUSTAIN } from '../../config/marketing';
 import { TOURS } from '../../config/tours';
+import { ECO } from '../../config/eco';
 
 /** Raw measurements behind the sustainability facet. */
 export interface SustainRaw {
@@ -18,6 +19,8 @@ export interface SustainRaw {
   train?: number;
   /** Facet points TAKEN by motorised tours (0..TOURS.maxSustainPenalty; Task 5). Absent = 0. */
   motor?: number;
+  /** Facet points (0..ECO.maxPoints) from the Eco programme (Eco Centre policies + certificate). Absent = 0. */
+  eco?: number;
 }
 
 /** The facet as the rating reads it: three 0..1 parts and the weighted 0..100 score. */
@@ -37,7 +40,7 @@ export function sustainParts(raw: SustainRaw): SustainParts {
   const overlap = raw.habitatOverlap * (1 - SUSTAIN.habitat.protection * clamp(raw.protection));
   const habitat = 1 - clamp((overlap - SUSTAIN.habitat.free) / SUSTAIN.habitat.span);
   const w = SUSTAIN.weights;
-  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0) + Math.min(TRAIN_SUSTAIN.maxPoints, Math.max(0, raw.train ?? 0)) - Math.min(TOURS.maxSustainPenalty, Math.max(0, raw.motor ?? 0))));
+  const score = r1(Math.min(100, 100 * (w.energy * energy + w.trees * trees + w.habitat * habitat) + Math.max(0, raw.bonus ?? 0) + Math.min(TRAIN_SUSTAIN.maxPoints, Math.max(0, raw.train ?? 0)) + Math.min(ECO.maxPoints, Math.max(0, raw.eco ?? 0)) - Math.min(TOURS.maxSustainPenalty, Math.max(0, raw.motor ?? 0))));
   return { energy, trees, habitat, score, raw };
 }
 
@@ -64,6 +67,8 @@ export interface SustainSources {
   trainShare?(): number | null;
   /** Facet points taken by motorised tours (TourSystem.motorPenalty; >= 0). */
   motor?(): number;
+  /** Facet points from the Eco programme (0 without an Eco Centre). */
+  eco?(): number;
 }
 
 /**
@@ -93,7 +98,7 @@ export class Sustainability {
     const raw: SustainRaw = {
       energyPerGuest: this.gSum >= 1 ? this.eSum / this.gSum : -1,
       treeLoss: clamp((t.felled - t.planted) / original),
-      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0, train: trainSharePoints(s.trainShare?.()), motor: s.motor?.() ?? 0,
+      habitatOverlap: s.habitat(), protection: clamp(s.protection()), bonus: s.bonus?.() ?? 0, train: trainSharePoints(s.trainShare?.()), motor: s.motor?.() ?? 0, eco: s.eco?.() ?? 0,
     };
     this.cache = sustainParts(raw);
     return this.cache;
