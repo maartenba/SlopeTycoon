@@ -75,6 +75,8 @@ export class GuestSim {
   /** Observer hook run at the end of every guest tick (story guests poll the store here; it must never change guest behaviour). */
   afterUpdate: ((tick: number) => void) | null = null;
   private tick = 0;
+  /** Comfort need (docs/comfort.md): urge grows, toilets are sought, an unmet urge costs a little happiness. createSim turns it ON (the real game); direct constructions stay off. */
+  comfortNeed = false;
   /** Guest reviews (M5.1): own RNG, never touches the sim RNG or the saved state. `reviewPlace` names the spot (Names.describeLocation). */
   readonly reviews = new ReviewDirector();
   reviewPlace: ((x: number, y: number) => PlaceText | null) | null = null;
@@ -289,7 +291,7 @@ export class GuestSim {
     const s = this.store, x = s.x[i]!, y = s.y[i]!;
     const q = this.pisteQualityAt && s.runs[i]! > 0 ? this.pisteQualityAt(((y | 0) * this.world.mapSize) + (x | 0), s.skill[i]!) : null;
     return this.reviews.consider({
-      id, day: this.absDay, reason, happiness: s.happiness[i]!, hunger: s.hunger[i]!, fatigue: s.fatigue[i]!, budget: s.budget[i]!, runs: s.runs[i]!,
+      id, day: this.absDay, reason, happiness: s.happiness[i]!, hunger: s.hunger[i]!, fatigue: s.fatigue[i]!, urge: s.urge[i]!, budget: s.budget[i]!, runs: s.runs[i]!,
       queueMin: this.maxQueue.get(id) ?? 0, crowd: this.hash.countAt(x, y), weatherPenalty: this.env.weatherPenalty, pisteLike: q ? q.like : null, x, y,
     }, this.reviewPlace?.(x, y) ?? null);
   }
@@ -376,6 +378,7 @@ export class GuestSim {
     const leaveHour = dayGuestLeaveHour(state.date.day); // day guests head home before sunset
     const env = this.env;
     env.weatherPenalty = WEATHER_PENALTY[w.weather().kind] ?? 0;
+    env.comfort = this.comfortNeed; this.decider.comfort = this.comfortNeed;
     this.decider.day = state.date.day; this.decider.eveningStart = eveningStart(state.date.day);
     const venuesOpen = this.decider.food.length + this.decider.bars.length > 0;
     this.decider.leaveHour = leaveHour; this.decider.stormy = w.weather().kind === 'storm';
@@ -662,7 +665,7 @@ export class GuestSim {
     this.exc.drop(i);
     this.nm?.reset(i);
     switch (it.kind) {
-      case 'eat': case 'rest': case 'shop': case 'activity': case 'lesson':
+      case 'eat': case 'rest': case 'shop': case 'activity': case 'lesson': case 'relief':
         if (it.building && (it.kind === 'eat' || it.kind === 'activity') && this.hour >= this.decider.eveningStart && s.eve[i]! < 255 && (s.overnight[i] || isApres(s.id[i]!, s.type[i]!, this.decider.day))) s.eve[i] = s.eve[i]! + 1;
         if (!it.building) { s.state[i] = GState.Idle; s.timer[i] = 10; return; }
         s.target[i] = it.building.id; s.act[i] = Act.ToBuilding; s.state[i] = GState.Walking; s.moveMode[i] = this.contextMode(i);

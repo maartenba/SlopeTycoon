@@ -146,6 +146,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'toilets.none',
+    setup: (s) => { guests(s, 14); removeTypes(s, 'toilets'); },
+    fixes: [
+      { name: 'toilets at the suggested site', apply: (s, a) => { const st = a.action!.site!; expect(placeSite(s, { type: 'toilets', x: st.x, y: st.y, rot: st.rot, autoFlatten: true, cost: 0, rect: { x: st.x, y: st.y, w: 1, h: 1 } }).ok).toBe(true); } },
+      { name: 'toilets near the lodge', apply: (s) => { buildAt(s, 'toilets', lodge(s), { rmax: 10 }); } },
+    ],
+  },
+  {
     id: 'hikers.hungry',
     setup: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 8; },
     fixes: [

@@ -1,7 +1,7 @@
 import type { AttractionSpec } from './Attraction';
 
 const dine = (serviceTicks: number, appeal: AttractionSpec['appeal'], slots?: number, happiness = 0.06): AttractionSpec =>
-  ({ kind: 'restaurant', serviceTicks, slots, effects: { hungerTo: 0.05, happiness }, appeal, eveningShift: true });
+  ({ kind: 'restaurant', serviceTicks, slots, effects: { hungerTo: 0.05, urgeTo: 0.25, happiness }, appeal, eveningShift: true });
 
 /** Dining: Lodge/Restaurant, Base Lodge (also lodging), Café, Mountain Hut and the Heated Terrace dining variant. */
 export const RESTAURANT_SPECS: Record<string, AttractionSpec> = {

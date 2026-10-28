@@ -34,7 +34,7 @@ export function buildingsInTab(tab: BuildingTab): BuildingDef[] {
 }
 
 export const BUILDING_ICONS: Record<string, string> = {
-  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', parking: '🅿️',
+  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', parking: '🅿️',
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
@@ -51,6 +51,7 @@ const DESCRIPTIONS: Record<string, string> = {
   chalet: 'Small guest lodging.',
   apartment: 'Large lodging block for many guests.',
   ticketOffice: 'Sells lift passes away from the lodge.',
+  toilets: 'Free toilets. Guests who need one walk to the nearest; busy pistes and the village want one in reach.',
   parking: 'Car park for day visitors.',
   skiSchoolHQ: 'Lessons for beginners. Unlocks kids facilities.',
   magicCarpet: 'Gentle conveyor for first-timers.',

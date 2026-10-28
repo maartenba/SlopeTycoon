@@ -4,10 +4,10 @@
  * sim/guests/Reviews.ts (a light template is chosen for at most ~15% of reviews; the hard cap is 20%).
  * Tokens: {on} = 'on Blue Run 3' / 'at Chairlift 1' (only offered when a place is known), {name} = 'Blue Run 3'.
  */
-export type ReviewDriver = 'queue' | 'piste' | 'price' | 'hunger' | 'tired' | 'weather' | 'crowd' | 'injury' | 'general';
+export type ReviewDriver = 'queue' | 'piste' | 'price' | 'hunger' | 'tired' | 'weather' | 'crowd' | 'injury' | 'comfort' | 'general';
 export type ReviewSentiment = 'pos' | 'neg';
 export type ReviewTone = 'plain' | 'light';
-export const REVIEW_DRIVERS: readonly ReviewDriver[] = ['queue', 'piste', 'price', 'hunger', 'tired', 'weather', 'crowd', 'injury', 'general'];
+export const REVIEW_DRIVERS: readonly ReviewDriver[] = ['queue', 'piste', 'price', 'hunger', 'tired', 'weather', 'crowd', 'injury', 'comfort', 'general'];
 
 export interface ReviewTemplate { id: string; driver: ReviewDriver; sentiment: ReviewSentiment; tone: ReviewTone; text: string; needsPlace: boolean }
 
@@ -72,6 +72,10 @@ const RAW: Record<string, Row[]> = {
   'crowd.pos': [
     [P, 'Lively atmosphere without being too busy.'], [P, 'Plenty of people around but still room to ski.'],
     [L, 'Busy enough to feel lively, quiet enough to avoid a snow jam.'],
+  ],
+  'comfort.neg': [
+    [P, 'Could not find a toilet when I needed one. A few more along the pistes and in the village would help.'], [P, 'Too far to the nearest toilet. Please add some near the busy runs.'],
+    [L, 'Nature called. The nearest toilet was in another valley.'],
   ],
   'injury.neg': [
     [P, 'Took a fall {on} and had to end my day early. Hoping for a quick recovery.'], [P, 'Got hurt on the slopes. The patrol helped, but the day was over.'],

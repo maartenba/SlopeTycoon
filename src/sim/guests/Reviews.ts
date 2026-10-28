@@ -16,6 +16,8 @@ export interface ReviewInput {
   id: number; day: number; reason: LeaveReasonName;
   /** 0..1 */
   happiness: number; hunger: number; fatigue: number;
+  /** Comfort need at departure (0..1, optional: absent = 0). */
+  urge?: number;
   budget: number; runs: number;
   /** Longest queue wait this visit, in minutes. */
   queueMin: number;
@@ -40,6 +42,7 @@ export function reviewDrivers(g: ReviewInput): DriverScore[] {
   if (g.reason === 'bored') add('general', 'neg', 0.5);
   if (g.queueMin >= 6) add('queue', 'neg', g.queueMin * 0.05); else if (g.runs >= 3 && g.queueMin < 2) add('queue', 'pos', 0.35);
   if (g.hunger > 0.6) add('hunger', 'neg', (g.hunger - 0.35) * 1.2); else if (g.hunger < 0.2 && g.happiness > 0.6) add('hunger', 'pos', 0.3);
+  if ((g.urge ?? 0) > 0.75) add('comfort', 'neg', ((g.urge ?? 0) - 0.4) * 1.1);
   if (g.fatigue > 0.7) add('tired', g.happiness > 0.55 ? 'pos' : 'neg', (g.fatigue - 0.3) * 0.9);
   if (g.weatherPenalty >= 0.05) add('weather', 'neg', g.weatherPenalty * 5); else if (g.weatherPenalty < 0.03 && g.happiness > 0.75) add('weather', 'pos', 0.25);
   if (g.crowd > 30) add('crowd', 'neg', (g.crowd - 20) * 0.03); else if (g.crowd >= 8 && g.happiness > 0.7) add('crowd', 'pos', 0.2);

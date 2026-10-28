@@ -183,6 +183,21 @@ export const RULES: readonly Rule[] = [
     const s = near(c, 'bear.threat', 'rangerStation', anchors(c.sim).lodge, 20);
     return { id: 'bear.threat', severity: 'warn', ...TEXT.bear(), action: build('rangerStation', s), target: { x: Math.round(bear.x), y: Math.round(bear.y), kind: 'animal' } };
   }),
+  // Comfort need (docs/comfort.md): no toilet at all, or a share of the guests currently in the resort is desperate (urge > 0.8)
+  rule('toilets.none', 2, (c) => {
+    const gs = c.sim.guestSim, st = gs.store;
+    if (!gs.comfortNeed || st.count < 12) return null;
+    const idle = idleOf(c.sim, 'toilets');
+    const missing = !has(c.sim, 'toilets');
+    let bad = 0;
+    for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.urge[i]! > 0.8) bad++;
+    const share = bad / Math.max(1, st.count);
+    if (!missing && share < (c.shown ? 0.15 : 0.25)) return null;
+    if (missing && idle) return notWorking(c, 'toilets.none', 'warn', 'toilets');
+    const a = anchors(c.sim);
+    const s = c.site('toilets.none', 'toilets', () => findAlongPiste(c.sim, 'toilets', 6, undefined, 'path') ?? findSite(c.sim, 'toilets', a.lodge, { rmax: 10, route: 'path' }));
+    return { id: 'toilets.none', severity: 'warn', ...TEXT.toiletsNone(missing, pct(share)), action: build('toilets', s), target: siteTarget(s) };
+  }),
   // Hikers leave starving (decaying share of recent hiker / biker departures with hunger > 0.75): suggest a hut / cafe beside the trails
   rule('hikers.hungry', 2, (c) => {
     const h = c.sim.guestSim.hikerLeaves;
@@ -346,7 +361,7 @@ export const RULES: readonly Rule[] = [
   }),
   rule('building.inactive', 2, (c) => {
     /** Missing-building rule that already names a building of this type (it points at the real building). */
-    const OWNER: Record<string, string> = { groomerGarage: 'grooming.none', snowcatOutpost: 'grooming.none', patrolHub: 'patrol.none', skiSchoolHQ: 'school.none', parking: 'arrival.parking', trainStation: 'arrival.parking', shuttleDepot: 'arrival.parking', altiport: 'arrival.parking', rangerStation: 'bear.threat' };
+    const OWNER: Record<string, string> = { groomerGarage: 'grooming.none', snowcatOutpost: 'grooming.none', patrolHub: 'patrol.none', skiSchoolHQ: 'school.none', parking: 'arrival.parking', trainStation: 'arrival.parking', shuttleDepot: 'arrival.parking', altiport: 'arrival.parking', rangerStation: 'bear.threat', toilets: 'toilets.none' };
     const cache = new Map<string, boolean>();
     const owned = (type: string): boolean => { const id = OWNER[type]; if (!id) return false; if (!cache.has(id)) cache.set(id, firing(c, id)); return cache.get(id)!; };
     // A building that waits for a missing prerequisite (first aid without a hub) is the same root cause as the prerequisite's own advice.

@@ -11,6 +11,10 @@ export const NEEDS = {
   hungryAbove: 0.55,
   /** Hikers / bikers go and eat before a planned excursion above this hunger (the generic hungry mark is 0.55). */
   hungryExcursion: 0.45,
+  /** Comfort need (docs/comfort.md): urge growth per tick (only with `NeedEnv.comfort`), and the urge above which a guest looks for a toilet. */
+  urgeWalk: 0.010, urgeIdle: 0.005, urgeSeek: 0.55,
+  /** Largest happiness-target penalty an unmet urge can cost (never worse than this). */
+  urgePenalty: 0.18,
 } as const;
 
 /** External factors feeding happiness (stubs for queues / piste quality until later tasks). */
@@ -23,15 +27,17 @@ export interface NeedEnv {
   pisteQuality: number;
   /** Average queue wait, minutes (stub 0). */
   queueMinutes: number;
+  /** Comfort need on (createSim default): the urge grows and an unmet urge costs a little happiness. Absent / false = the old needs, bit for bit. */
+  comfort?: boolean;
 }
 
 export const NEUTRAL_ENV: NeedEnv = { crowd: 0, weatherPenalty: 0, pisteQuality: 0.5, queueMinutes: 0 };
 
 /** Target happiness from needs and environment, clamped 0..1. */
-export function happinessTarget(hunger: number, fatigue: number, env: NeedEnv): number {
+export function happinessTarget(hunger: number, fatigue: number, env: NeedEnv, urge = 0): number {
   const crowdPen = Math.min(0.2, Math.max(0, env.crowd - 25) * 0.004);
   const queuePen = Math.min(0.25, env.queueMinutes * 0.01);
-  const t = 1 - 0.45 * hunger * hunger - 0.4 * fatigue * fatigue - crowdPen - queuePen - env.weatherPenalty + 0.15 * (env.pisteQuality - 0.5);
+  const t = 1 - 0.45 * hunger * hunger - 0.4 * fatigue * fatigue - crowdPen - queuePen - env.weatherPenalty - NEEDS.urgePenalty * urge * urge + 0.15 * (env.pisteQuality - 0.5);
   return Math.min(1, Math.max(0, t));
 }
 
@@ -47,7 +53,8 @@ export function tickNeeds(s: GuestStore, i: number, env: NeedEnv): number {
     s.hunger[i] = Math.min(1, s.hunger[i]! + (walking ? (s.act[i] === 7 ? NEEDS.hungerHike : NEEDS.hungerWalk) : NEEDS.hungerIdle));
     s.fatigue[i] = Math.min(1, s.fatigue[i]! + (walking ? NEEDS.fatigueWalk : NEEDS.fatigueIdle));
   }
-  const target = happinessTarget(s.hunger[i]!, s.fatigue[i]!, env);
+  if (env.comfort && st !== GState.Sleeping) s.urge[i] = Math.min(1, s.urge[i]! + (walking ? NEEDS.urgeWalk : NEEDS.urgeIdle));
+  const target = happinessTarget(s.hunger[i]!, s.fatigue[i]!, env, s.urge[i]!);
   s.happiness[i] = s.happiness[i]! + (target - s.happiness[i]!) * NEEDS.happinessRate;
   if (s.state[i] === GState.Leaving) return 0;
   if (s.budget[i]! < NEEDS.brokeBelow) return Leave.Broke;
@@ -64,6 +71,8 @@ export function thoughts(s: GuestStore, i: number): string[] {
   const out: string[] = [];
   if (s.hunger[i]! > 0.75) out.push('I am starving!');
   else if (s.hunger[i]! > NEEDS.hungryAbove) out.push('I could eat something.');
+  if (s.urge[i]! > 0.8) out.push('I really need a toilet!');
+  else if (s.urge[i]! > NEEDS.urgeSeek) out.push('I could do with a toilet.');
   if (s.fatigue[i]! > 0.8) out.push('I am exhausted.');
   else if (s.fatigue[i]! > 0.55) out.push('My legs are tired.');
   if (s.budget[i]! < 30) out.push('My wallet is nearly empty.');

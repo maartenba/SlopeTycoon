@@ -16,6 +16,7 @@ import { hikeFee, mtbFee } from './MtbTrail';
 import { ownsGear } from './Rental';
 import { ATTRACTION_SPECS } from './registry';
 import { eveningPremium, venueServing } from '../Evening';
+import { GRUBBY_URGE, TOILET_USES_PER_DAY } from './Toilets';
 
 export interface AttractionDeps {
   buildings: () => Iterable<WorldBuilding>;
@@ -66,6 +67,7 @@ export class AttractionSystem implements GuestAttractionPort {
   /** Calendar position (set every update): drives venue opening hours and the evening premium. */
   private hour = 12;
   private day = 0;
+  private absDay = 0;
 
   constructor(private d: AttractionDeps) {}
 
@@ -142,8 +144,10 @@ export class AttractionSystem implements GuestAttractionPort {
     if (effects) {
       const e = effects.spec.effects;
       if (e.hungerTo !== undefined) s.hunger[slot] = Math.min(s.hunger[slot]!, e.hungerTo);
+      const grubby = effects.spec.kind === 'toilet' && this.usesToday(effects) > TOILET_USES_PER_DAY; // overrun block: only half relief, no goodwill
+      if (e.urgeTo !== undefined) s.urge[slot] = Math.min(s.urge[slot]!, grubby ? GRUBBY_URGE : e.urgeTo);
       if (e.fatigue) s.fatigue[slot] = Math.min(1, Math.max(0, s.fatigue[slot]! + e.fatigue));
-      if (e.happiness) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + e.happiness));
+      if (e.happiness && !grubby) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + e.happiness));
       if (effects.spec.amenity === 'pool') s.happiness[slot] = Math.min(1, s.happiness[slot]! + (effects.spec.poolHappiness ?? 0.06));
       if (effects.spec.grantsGear) this.rented.add(id);
       s.visits[slot] = Math.min(255, s.visits[slot]! + 1);
@@ -157,6 +161,9 @@ export class AttractionSystem implements GuestAttractionPort {
     }
     s.state[slot] = GState.Idle; s.timer[slot] = 6 + (id % 8); s.act[slot] = Act.None; s.target[slot] = 0; s.actTick[slot] = tick;
   }
+
+  /** Toilets: guests served today (cleanliness; saved in the attraction stats so a reload keeps it). */
+  usesToday(a: Attraction): number { return a.stats.todayDay === this.absDay ? a.stats.today ?? 0 : 0; }
 
   private member(id: number, bid: number): boolean {
     const s = this.d.store, slot = s.slotOf(id);
@@ -218,7 +225,7 @@ export class AttractionSystem implements GuestAttractionPort {
 
   update(state: GameState, tick: number): void {
     this.tick = tick;
-    this.hour = hourOfDay(state.date); this.day = state.date.day;
+    this.hour = hourOfDay(state.date); this.day = state.date.day; this.absDay = state.date.year * DAYS_PER_YEAR + state.date.day;
     this.sync();
     for (const a of this.items.values()) {
       const v = this.evalOpen(a);
@@ -242,6 +249,7 @@ export class AttractionSystem implements GuestAttractionPort {
       for (const u of a.users) {
         if (u.end > tick) { still.push(u); continue; }
         a.stats.served++;
+        if (a.spec.kind === 'toilet') { a.stats.today = (a.stats.todayDay === this.absDay ? a.stats.today ?? 0 : 0) + 1; a.stats.todayDay = this.absDay; }
         this.release(u.id, tick, a);
       }
       a.users = still;

@@ -16,7 +16,7 @@ export interface AttractionSpec {
   /** Simultaneous users; defaults to the catalog capacity. */
   slots?: number;
   /** Need effects applied when service completes. */
-  effects: { hungerTo?: number; fatigue?: number; happiness?: number };
+  effects: { hungerTo?: number; fatigue?: number; happiness?: number; /** Comfort need: the urge is lowered to at most this (0 = fully relieved). Toilets 0, dining venues a little. */ urgeTo?: number };
   appeal: Appeal;
   /** Guests get ski/board/bike gear (rental). */
   grantsGear?: boolean;
@@ -40,7 +40,7 @@ export interface AttractionSpec {
   extra?: 'lake';
 }
 
-export interface AttractionStats { served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
+export interface AttractionStats { /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
 
 /** Plain data for the inspector / reports. */
 export interface AttractionInfo {
@@ -53,6 +53,8 @@ export interface AttractionInfo {
   staff: number; staffRequired: number; upkeepPerDay: number;
   /** Trekker beds (Mountain Hut): capacity, booked tonight, nights sold so far. */
   beds?: { total: number; used: number; sold: number };
+  /** Toilets (comfort need): guests served today and the per-day figure above which the block is overrun. */
+  toilet?: { usesToday: number; perDay: number };
 }
 
 export interface InstanceSave { id: number; price: number; staff: number; stats: AttractionStats; open?: boolean; reason?: string; reported?: boolean }

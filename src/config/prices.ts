@@ -33,6 +33,8 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   magicCarpet: { price: 2, max: 10, billing: 'perUse', category: 'recreation' },
   kidsGround: { price: 5, max: 20, billing: 'perUse', category: 'recreation' },
   mtbTrail: { price: 3, max: 15, billing: 'perUse', category: 'recreation' },
+  /** Free to use (docs/comfort.md): the entry exists so the attraction runtime has a ledger category; price 0 / max 0 = no price slider. */
+  toilets: { price: 0, max: 0, billing: 'perUse', category: 'other' },
   hiking: { price: 0, max: 10, billing: 'perUse', category: 'recreation' },
 };
 

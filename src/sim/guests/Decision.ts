@@ -19,7 +19,7 @@ export const Act = { None: 0, ToBuilding: 1, ToLift: 2, Queue: 3, Ride: 4, SkiDo
 /** Activity preference (GuestStore.pref). */
 export const Pref = { Ski: 0, Hike: 1, Bike: 2 } as const;
 
-export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike';
+export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike' | 'relief';
 
 export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace']);
 /** Evening venues beyond the daytime FOOD list: the Après-Ski Bar (a drinks stop, not a meal). */
@@ -31,6 +31,8 @@ export const SHOP = new Set(['shop', 'rental']);
 /** Real attractions (activity goals); everything else visitable counts as generic wandering. */
 export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet']);
 export const LESSON = new Set(['skiSchoolHQ']);
+/** Comfort need (docs/comfort.md): buildings a guest walks to on purpose when the urge is high. */
+export const RELIEF = new Set(['toilets']);
 const VISIT_CATEGORIES = new Set(['core', 'services', 'lodging', 'recreation', 'kids', 'water']);
 
 export interface LiftInfo {
@@ -92,6 +94,10 @@ export class Decider {
   activity: WorldBuilding[] = [];
   other: WorldBuilding[] = [];
   lessons: WorldBuilding[] = [];
+  /** Open toilet blocks (comfort need). */
+  toilets: WorldBuilding[] = [];
+  /** Comfort need on: guests above `NEEDS.urgeSeek` look for a toilet. Set by GuestSim (createSim default ON). */
+  comfort = false;
   lifts: LiftInfo[] = [];
   hikeTiles: number[] = [];
   mtbTiles: number[] = [];
@@ -149,11 +155,12 @@ export class Decider {
   reset(): void { this.goals.reset(); this.descent.clear(); this.descentEpoch = -1; this.scanEpoch = -1; this.lifts = []; this.hikeTiles = []; this.mtbTiles = []; this.skiOpenTiles = 0; }
 
   refresh(buildings: Iterable<WorldBuilding>): void {
-    this.food = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = [];
+    this.food = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
     for (const b of buildings) {
       if (!b.active) continue;
       if (this.port && !this.port.accepts(b.id)) continue;
       if (LESSON.has(b.type)) this.lessons.push(b);
+      if (RELIEF.has(b.type)) { this.toilets.push(b); continue; } // never a wandering target
       if (b.type === 'mountainHut') this.huts.push(b); // trek goals do not depend on serving hours
       const vp = BUILDINGS[b.type]?.viewpoint; if (vp) this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); // viewpoint buildings (config-driven)
       const serving = this.port?.serving?.(b.id) ?? true; // venues are only candidates while serving (08:00 - 23:00)
@@ -285,13 +292,24 @@ export class Decider {
     return cands.reduce((a, c) => (c.score > a.score ? c : a));
   }
 
+  /** Comfort need: walk to the nearest open toilet once the urge passes the seek mark (no RNG draw, so guests that do not seek keep their stream). */
+  private relief(s: GuestStore, i: number): Intent | null {
+    if (!this.comfort || !this.toilets.length || s.urge[i]! < NEEDS.urgeSeek) return null;
+    const x = s.x[i]!, y = s.y[i]!;
+    let best: WorldBuilding | undefined, bd = Infinity;
+    for (const b of this.toilets) { const d = dist2(b, x, y); if (d < bd || (d === bd && b.id < best!.id)) { bd = d; best = b; } }
+    return { kind: 'relief', building: best!, score: 1.4 + 2.5 * (s.urge[i]! - NEEDS.urgeSeek) - 0.02 * Math.sqrt(bd) };
+  }
+
   choose(s: GuestStore, i: number, rng: { next(): number; chance(p: number): boolean; pick<T>(a: readonly T[]): T }, hour: number): Intent {
     const skill = Math.min(s.skill[i]!, this.skillCap(i)), pref = prefFor(s.id[i]!, s.type[i]!), hunger = s.hunger[i]!, fatigue = s.fatigue[i]!;
     const x = s.x[i]!, y = s.y[i]!;
     s.pref[i] = pref;
     const out: Intent[] = [];
     const noise = (): number => rng.next() * 0.25;
-    if (hour >= this.eveningStart && (s.overnight[i] || isApres(s.id[i]!, s.type[i]!, this.day))) return this.chooseEvening(s, i, rng, hour);
+    const rel = this.relief(s, i);
+    if (hour >= this.eveningStart && (s.overnight[i] || isApres(s.id[i]!, s.type[i]!, this.day))) { const ev = this.chooseEvening(s, i, rng, hour); return rel && rel.score > ev.score ? rel : ev; }
+    if (rel) out.push(rel);
 
     if (this.food.length) {
       const lunch = hour >= 11.5 && hour <= 13.5 && hunger > 0.2;

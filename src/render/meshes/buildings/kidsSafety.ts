@@ -142,3 +142,15 @@ export function ticketOffice(b: PartBuilder, w: number, h: number): void {
   b.fence(-0.8, h / 2 - 0.05, 0.8, h / 2 - 0.05, C.red, 0.3, 4);
   b.box(w / 2 - 0.15, 0, -0.2, 0.05, 0.9, 0.05, C.dark); b.box(w / 2 - 0.15, 0.55, -0.2, 0.02, 0.3, 0.3, C.white); // price board
 }
+
+/** Toilets (1x1): a small timber hut with a pitched roof, a door with a crescent plate, a high vent slit and a hand-wash trough (about 120 triangles). */
+export function toilets(b: PartBuilder, w: number, h: number): void {
+  const bw = Math.min(0.62, w - 0.3), bd = Math.min(0.58, h - 0.34);
+  b.box(0, 0, -0.06, bw, 0.62, bd, C.wood);
+  b.gable(0, 0.62, -0.06, bd + 0.1, bw + 0.12, 0.22, C.roofRed, false);
+  const fz = -0.06 + bd / 2;
+  doorway(b, 0, fz, 's', 0.2, 0.4, C.dark, C.white);
+  b.box(0, 0.4, fz + 0.015, 0.07, 0.07, 0.015, C.yellow); // crescent plate stand-in
+  b.box(0, 0.5, -0.06 + bd / 2 + 0.01, 0.3, 0.04, 0.02, C.dark); // vent slit
+  b.box(0.3, 0.0, 0.34, 0.26, 0.1, 0.1, C.stone, 'stone'); // wash trough
+}

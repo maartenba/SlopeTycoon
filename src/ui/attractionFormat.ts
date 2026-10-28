@@ -24,6 +24,7 @@ export function formatAttractionStats(i: AttractionInfo): string[] {
     `Price: ${formatPriceLabel(i.price, i.billing)}`,
     formatStaff(i.staff, i.staffRequired),
     `Upkeep incl. wages: ${formatMoney(i.upkeepPerDay)}/day`,
+    ...(i.toilet ? [`Used today: ${i.toilet.usesToday}/${i.toilet.perDay} · ${i.toilet.usesToday > i.toilet.perDay ? 'overrun: add more toilets' : 'clean'}`] : []),
     ...(i.beds ? [`Trekker beds: ${i.beds.used}/${i.beds.total} booked tonight · ${i.beds.sold} nights sold`] : []),
   ];
 }

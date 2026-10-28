@@ -114,6 +114,8 @@ export interface SimOptions {
   remoteSupply?: boolean;
   /** Campaigns v2 (Task 50): track arrivals by mode (rail share) and pay the capped train sustainability bonus. Default ON; the title demo opts out. */
   campaignsV2?: boolean;
+  /** Comfort need (Phase 6 Task 7, docs/comfort.md): guests get an urge, toilets restore it, an unmet urge costs a little happiness; the pre-built starter resort gets one free toilet. Default ON (= the real game); pass false for a neutral baseline. */
+  comfortNeed?: boolean;
   /** Starting money override (tests). */
   money?: number;
   /** Place the free starting Base Lodge (default true). */
@@ -363,6 +365,7 @@ export function createSim(opts: SimOptions) {
   };
   const guestSim = new GuestSim(guestWorld, size, bus);
   guestSim.spawner.rateMult = diff.spawn; guestSim.patienceMult = diff.patience; guestSim.injuryMult = diff.incidents * (mods.eventBias?.incidents ?? 1);
+  guestSim.comfortNeed = opts.comfortNeed !== false; // default ON like the real game (tests that need the old needs opt out)
   guestSim.spawner.typesV2 = true; // extra guest types of config/guestTypes.ts (the game always draws them; list is empty today)
   guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   if (mods.guestMix) guestSim.spawner.mixBias = GUEST_TYPE_NAMES.map((n) => mods.guestMix?.[n] ?? 1);

@@ -33,6 +33,8 @@ export interface StarterOptions {
   pre?: (kit: ResortKit) => void;
   /** Called at the very end with the builder toolkit (used by buildDemoResort to add more on top). */
   extra?: (kit: ResortKit) => void;
+  /** Free toilet beside the village footpath (comfort need). Default: placed when the sim has the comfort need ON; false = none (before/after rating probes). */
+  toilet?: boolean;
   /** Funds the resort is topped up to before building (so placement never fails on money). */
   funds?: number;
 }
@@ -311,6 +313,7 @@ function buildStarter(sim: Sim, opt: StarterOptions): StarterReport {
   // ---- attractions ----
   const kinds = ['iceRink', 'heatedTerrace', 'cafe', 'shop', 'kidsGround'];
   for (let i = 0; i < nAttr + 1; i++) placeConnected(kinds[i % kinds.length]!, lc.x + ((i % 2) * 2 - 1) * (8 + i * 2), lc.y - 4 - i * 2, 16);
+  if (opt.toilet ?? sim.guestSim.comfortNeed) placeConnected('toilets', lc.x - 3, lc.y + 4, 10, undefined); // the one free toilet (owner decision R2-6): a facilities cushion, docs/comfort.md
   settle();
   }
   opt.extra?.(kit);

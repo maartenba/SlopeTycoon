@@ -5,7 +5,7 @@ import { PRICE_TABLE } from '../../../src/config/prices';
 import { GState } from '../../../src/sim/guests/Guest';
 import { harness } from './harness';
 
-const SERVED = Object.keys(ATTRACTION_SPECS).filter((t) => !ATTRACTION_SPECS[t]!.overnightOnly);
+const SERVED = Object.keys(ATTRACTION_SPECS).filter((t) => !ATTRACTION_SPECS[t]!.overnightOnly && t !== 'toilets'); // toilets are free (own tests in tests/sim/comfort.test.ts)
 
 describe('registry covers the catalog', () => {
   it('every restaurant/shop/rental/lodging/recreation/kids/water item has a spec and a price entry', () => {

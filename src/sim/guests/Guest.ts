@@ -69,6 +69,8 @@ export class GuestStore {
   readonly overnight: Uint8Array;
   /** Evening venue visits tonight (dinner / drinks / terrace); reset each morning. */
   readonly eve: Uint8Array;
+  /** Comfort need (docs/comfort.md): 0 = comfortable .. 1 = desperate. Saved / hashed only while any guest has a non-zero value (flag off = bit-identical). */
+  readonly urge: Float32Array;
   readonly leaveDay: Int32Array;
   readonly leaveReason: Uint8Array;
   readonly lowTicks: Uint16Array; // consecutive ticks with happiness below the unhappy threshold
@@ -96,7 +98,7 @@ export class GuestStore {
     this.hunger = new Float32Array(n); this.fatigue = new Float32Array(n); this.happiness = new Float32Array(n); this.budget = new Float32Array(n);
     this.group = new Int32Array(n); this.target = new Int32Array(n);
     this.goalX = new Float32Array(n); this.goalY = new Float32Array(n);
-    this.timer = new Int32Array(n); this.visits = new Uint8Array(n); this.overnight = new Uint8Array(n); this.eve = new Uint8Array(n);
+    this.timer = new Int32Array(n); this.visits = new Uint8Array(n); this.overnight = new Uint8Array(n); this.eve = new Uint8Array(n); this.urge = new Float32Array(n);
     this.leaveDay = new Int32Array(n); this.leaveReason = new Uint8Array(n); this.lowTicks = new Uint16Array(n); this.bornTick = new Int32Array(n);
     this.act = new Uint8Array(n); this.moveMode = new Uint8Array(n); this.liftId = new Int32Array(n); this.runMax = new Uint8Array(n);
     this.runs = new Uint16Array(n); this.skillXp = new Float32Array(n); this.pref = new Uint8Array(n); this.actTick = new Int32Array(n); this.rideRun = new Uint8Array(n);
@@ -118,7 +120,7 @@ export class GuestStore {
     this.timer[i] = 0; this.visits[i] = 0; this.overnight[i] = g.overnight ? 1 : 0; this.leaveDay[i] = g.leaveDay;
     this.leaveReason[i] = Leave.None; this.lowTicks[i] = 0; this.bornTick[i] = g.tick;
     this.act[i] = 0; this.moveMode[i] = 0; this.liftId[i] = 0; this.runMax[i] = 0; this.runs[i] = 0; this.skillXp[i] = 0; this.pref[i] = 0; this.actTick[i] = g.tick; this.rideRun[i] = 0;
-    this.recA[i] = 0; this.recB[i] = 0; this.recC[i] = 0; this.via[i] = 0; this.eve[i] = 0;
+    this.recA[i] = 0; this.recB[i] = 0; this.recC[i] = 0; this.via[i] = 0; this.eve[i] = 0; this.urge[i] = 0;
     this.count++;
     if (g.overnight) this.overnightCount++;
     return i;
@@ -155,6 +157,7 @@ export class GuestStore {
         const a = this[k] as ArrayLike<number>;
         if (a instanceof Float32Array) { f32[0] = a[i]!; mix(u32[0]!); } else mix(a[i]!);
       }
+      if (this.urge[i]) { f32[0] = this.urge[i]!; mix(u32[0]!); } // comfort need: only mixed while in use, so a resort without it keeps its old hash
     }
     mix(this.count);
     return h.toString(16).padStart(8, '0');
@@ -163,6 +166,7 @@ export class GuestStore {
   serialize(): { capacity: number; nextId: number; free: number[]; high: number; cols: Record<string, number[]> } {
     const cols: Record<string, number[]> = { alive: Array.from(this.alive.subarray(0, this.high)) };
     for (const k of GuestStore.FIELDS) cols[k] = Array.from((this[k] as unknown as Float32Array).subarray(0, this.high));
+    if (this.urge.subarray(0, this.high).some((v) => v !== 0)) cols.urge = Array.from(this.urge.subarray(0, this.high)); // absent = all comfortable (old saves, flag off)
     return { capacity: this.capacity, nextId: this.nextId, free: [...this.free], high: this.high, cols };
   }
 
@@ -170,6 +174,7 @@ export class GuestStore {
     this.alive.fill(0); this.idToSlot.clear(); this.count = 0; this.overnightCount = 0;
     this.high = Math.min(d.high, this.capacity); this.nextId = d.nextId; this.free = d.free.filter((s) => s < this.capacity);
     for (const k of GuestStore.FIELDS) { const col = d.cols[k], a = this[k] as unknown as { [i: number]: number }; for (let i = 0; i < this.high; i++) a[i] = col?.[i] ?? 0; }
+    this.urge.fill(0); if (d.cols.urge) for (let i = 0; i < this.high; i++) this.urge[i] = d.cols.urge[i] ?? 0;
     for (let i = 0; i < this.high; i++) {
       if (!d.cols.alive![i]) continue;
       this.alive[i] = 1; this.count++; this.idToSlot.set(this.id[i]!, i);
