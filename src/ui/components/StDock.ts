@@ -1,4 +1,5 @@
-import { BRIDGES, BRIDGE_KINDS, type BridgeKind } from '../../config/bridges';
+import { BRIDGES } from '../../config/bridges';
+import { CROSSING } from '../../config/crossings';
 import { makeSelect } from './StSelect';
 import { BUILDINGS } from '@/config/buildings';
 import { LIFTS, type LiftKind } from '@/config/lifts';
@@ -30,7 +31,7 @@ export interface DockApi {
   buildings: { locked(id: string): string[]; cost(id: string): number; multiplier(): number; select(id: string): void };
   lifts: { select(kind: LiftKind): void; costPer100m(kind: LiftKind): number; /** Career lock reasons ('Unlocks at level 2: ...'); empty = available. */ locked?(kind: LiftKind): string[] };
   /** Toggle semantics: starting the already-active key stops it. */
-  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; setOverRail?(on: boolean): void; startBridge?(kind: BridgeKind): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4): number };
+  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; setOverRail?(on: boolean): void; setCrossMode?(mode: 'level' | 'bridge'): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4): number };
   terraform: {
     setMode(m: TerraformMode): void; setTarget(t: TerraformTarget): void; setBrush(n: number): void; setMaxEdgeDelta(d: 1 | 2): void;
     state(): { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 };
@@ -147,11 +148,21 @@ const css = `
 .sec{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .pane{flex:1;display:flex;flex-direction:column;gap:6px;padding:2px;overflow:auto;max-height:134px}
 .pane.cols{flex-direction:row;flex-wrap:wrap;align-content:flex-start}
-.pc{flex:none;width:280px;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start;overflow:auto;max-height:150px}
+.pc{flex:none;width:280px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:4px;align-content:start;overflow:auto;max-height:150px}
 .pc select,.pc button{min-width:0;width:100%;box-sizing:border-box}
 .drawer.tall{max-height:min(46vh,380px)}
+.drawer.mid{max-height:min(44vh,312px)}
+.drawer.mid .pc{max-height:none}
 .drawer.tall .pane{max-height:calc(min(46vh,380px) - 48px)}
 .pc .small{grid-column:1/-1}
+.pc.wide{width:300px}
+.pc .seg-l{grid-column:1/-1;font-size:calc(11px * var(--ui-scale, 1));font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#ffd070;margin-top:2px}
+.pc .seg{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.pc .seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:max(44px,var(--touch-min,0px));padding:4px 6px;line-height:1.15;white-space:normal;text-align:center;overflow-wrap:anywhere}
+.pc .seg button small{font-size:calc(10px * var(--ui-scale, 1));opacity:.8;font-weight:400}
+.pc .blist{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:1px 8px;font-size:calc(11px * var(--ui-scale, 1));line-height:1.3;color:#cfe3f3}
+.pc .blist b{color:#fff;font-weight:600}
+.pc .blist span{text-align:right}
 .pc.one{width:190px;grid-template-columns:1fr}
 .pc .trailnote.bad{color:#ff9a8a}
 .gh{flex:none;align-self:stretch;display:flex;align-items:center;justify-content:center;width:16px;margin:0 -2px;writing-mode:vertical-rl;transform:rotate(180deg);font-size:calc(10px * var(--ui-scale, 1));font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffd070;opacity:.85;border-right:1px solid #5a7090}
@@ -175,9 +186,10 @@ const css = `
 .dock button{flex:0 0 auto;min-width:58px;min-height:var(--touch-min,0px)}
 .pc.one{width:148px}
 /* Pistes & Trails drawer on a narrow screen: the card rail gets the full width, the option grid goes below it and the body scrolls (the side-by-side layout left the cards a 50 px strip) */
-.body:has(.pc [data-suggest]){flex-direction:column;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.body:has(.pc [data-suggest]) .rail{flex:none}
+.body:has(.pc [data-suggest]),.body:has(.pc[data-path-controls]){flex-direction:column;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.body:has(.pc [data-suggest]) .rail,.body:has(.pc[data-path-controls]) .rail{flex:none}
 .body:has(.pc [data-suggest]) .pc{width:100%;grid-template-columns:repeat(3,1fr);max-height:none;overflow:visible}
+.body:has(.pc[data-path-controls]) .pc{width:100%;max-height:none;overflow:visible}
 }
 `;
 
@@ -469,6 +481,7 @@ export class StDock extends StElement {
     this.infoEl.hidden = true;
     if (!open || !this.api) { this.drawer.hidden = true; return; }
     this.drawer.hidden = false;
+    this.drawer.classList.toggle('mid', open === 'pistes');
     this.drawer.classList.toggle('tall', open === 'finance' || open === 'ops' || open === 'marketing' || open === 'pricing');
     this.head.replaceChildren(el('h3', '', this.drawerTitle(open)));
     this.body.replaceChildren();
@@ -815,21 +828,59 @@ export class StDock extends StElement {
     return b;
   }
 
-  /** Paths drawer extras: the footbridge-over-rail toggle (Phase 6 Task 11). A 44 px toggle, same for mouse and touch. */
-  private overRail = false;
-  private bridgeKind: BridgeKind = 'footbridge';
-  private pathControls(): void {
-    this.overRail = false;
+  /** Rail crossing choice shared by the Paths & Roads and the Pistes & Trails drawers (docs/crossings.md); persists while the page lives. */
+  private crossMode: 'level' | 'bridge' = 'level';
+  /** Segmented control 'Cross rails: Level crossing | Bridge' (two-line labels, 44 px, radio semantics, arrow keys). */
+  private crossControl(side: HTMLElement, label: string, bridgeNote: string): void {
     const api = this.api!;
-    api.network.setOverRail?.(false);
-    const side = el('div', 'pc');
-    const b = this.btn('Bridge over rail', 'Footpaths drawn across a rail line become a footbridge: guests never wait for trains (costs more than a level crossing, which makes guests wait). Roads cannot use it.', () => { this.overRail = !this.overRail; api.network.setOverRail?.(this.overRail); b.classList.toggle('active', this.overRail); });
-    b.dataset.overRail = '';
-    // Bridges (Task 45): pick a kind, then drag from one bank across the water / gap to the other
-    const kindSel = makeSelect(BRIDGE_KINDS.map((k) => ({ value: k, label: `${BRIDGES[k].label} ($${BRIDGES[k].costPerTile}/tile, max ${BRIDGES[k].maxSpan})` })), 'footbridge', 'Bridge type', (v) => { this.bridgeKind = v as BridgeKind; });
-    const bb = this.btn('Build bridge', 'Drag from one bank across a stream, pond or gap to the other bank. Footbridge: footpaths; wooden hiking bridge and MTB bridge: trails; road bridge: roads (flat banks). Rail cannot cross water.', () => { api.network.startBridge?.(this.bridgeKind); });
-    bb.dataset.bridge = '';
-    side.append(b, kindSel, bb);
+    api.network.setCrossMode?.(this.crossMode);
+    const lbl = el('div', 'seg-l', label);
+    const seg = el('div', 'seg');
+    seg.setAttribute('role', 'radiogroup');
+    seg.setAttribute('aria-label', label);
+    seg.dataset.cross = '';
+    const mk = (mode: 'level' | 'bridge', name: string, sub: string, title: string): HTMLButtonElement => {
+      const b = el('button', '') as HTMLButtonElement;
+      b.type = 'button'; b.title = title; b.dataset.crossMode = mode;
+      b.setAttribute('role', 'radio');
+      b.append(el('span', '', name), el('small', '', sub));
+      return b;
+    };
+    const lvl = mk('level', 'Level crossing', `$${CROSSING.cost.path} · guests wait`, 'Cross the rail at ground level. Trains never stop: guests wait at the barriers. The cheaper choice.');
+    const brg = mk('bridge', 'Bridge', bridgeNote, 'Cross the rail on a bridge: nobody ever waits for a train, but it costs more. Roads always use a level crossing.');
+    const sync = (): void => { for (const b of [lvl, brg]) { const on = b.dataset.crossMode === this.crossMode; b.classList.toggle('active', on); b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; } };
+    const set = (m: 'level' | 'bridge'): void => { this.crossMode = m; api.network.setCrossMode?.(m); sync(); };
+    lvl.addEventListener('click', () => set('level'));
+    brg.addEventListener('click', () => set('bridge'));
+    seg.addEventListener('keydown', (e) => {
+      const k = (e as KeyboardEvent).key;
+      if (k === 'ArrowLeft' || k === 'ArrowUp') { e.preventDefault(); set('level'); lvl.focus(); }
+      else if (k === 'ArrowRight' || k === 'ArrowDown') { e.preventDefault(); set('bridge'); brg.focus(); }
+    });
+    seg.append(lvl, brg);
+    sync();
+    side.append(lbl, seg);
+  }
+
+  /** The price legend under the crossing control: which bridge each kind gets over water. */
+  private bridgeList(side: HTMLElement, rows: Array<[string, 'footbridge' | 'roadBridge' | 'hikeBridge' | 'mtbBridge']>, note: string): void {
+    const hint = el('div', 'trailnote', note);
+    hint.dataset.bridgeHint = '';
+    const list = el('div', 'blist');
+    list.dataset.bridgeList = '';
+    for (const [kind, id] of rows) {
+      const sp = BRIDGES[id];
+      list.append(el('b', '', `${kind}: ${sp.label}`), el('span', '', `$${sp.costPerTile}/tile, max ${sp.maxSpan}`));
+    }
+    side.append(hint);
+    if (rows.length) side.append(list);
+  }
+
+  private pathControls(): void {
+    const side = el('div', 'pc wide');
+    side.dataset.pathControls = '';
+    this.crossControl(side, 'Cross rails', `$${CROSSING.footbridge.cost} · no waiting`);
+    this.bridgeList(side, [['Footpath', 'footbridge'], ['Road', 'roadBridge']], 'Drag across water or rails to build a bridge. Roads always use a level crossing; rail cannot cross water.');
     this.body.appendChild(side);
   }
 
@@ -853,7 +904,10 @@ export class StDock extends StElement {
     note.textContent = t ?? '';
     note.hidden = !t;
     side.append(sel, brush, suggest, erase, undo, redo, prune, note);
+    side.classList.add('wide');
     side.title = 'Drag to paint (interpolated, no gaps). Shift-drag erases. Trails must start at a path/building.';
+    this.crossControl(side, 'Trails over rails', `$${CROSSING.footbridge.cost} (MTB $${CROSSING.mtbBridge.cost.toLocaleString('en-US')})`);
+    this.bridgeList(side, [], `Drag a trail across a pond or rails to build a bridge: hiking $${BRIDGES.hikeBridge.costPerTile}/tile, MTB $${BRIDGES.mtbBridge.costPerTile}/tile, max ${BRIDGES.hikeBridge.maxSpan}. Ski pistes cannot cross water.`);
     this.body.appendChild(side);
   }
 

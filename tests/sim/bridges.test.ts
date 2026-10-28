@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bridgeWorld, eastSide } from './bridgeHelper';
 import { planBridge } from '../../src/world/Bridges';
-import { Layer, NetKind, lineTiles } from '../../src/world/Networks';
+import { Layer, NetKind, lineTiles, ROAD_START_MSG } from '../../src/world/Networks';
 import { NavMode } from '../../src/sim/guests/NavGraph';
 import { routeOnKind, VehicleKind } from '../../src/sim/guests/Arrivals';
 import { defaultMarketing } from '../../src/sim/guests/Spawner';
@@ -51,7 +51,7 @@ describe('bridges: pathing', () => {
   it('road bridge: the car route crosses it, the car park is road-served and cars arrive over it', () => {
     const sim = bridgeWorld(); const n = sim.networks;
     const park = () => sim.buildings.all().find((b) => b.type === 'parking')!;
-    expect(n.planSegment(NetKind.Road, lineTiles({ x: 41, y: 46 }, { x: 52, y: 46 })).reason).toBe('Roads must start at the road entry'); // no way across yet
+    expect(n.planSegment(NetKind.Road, lineTiles({ x: 41, y: 46 }, { x: 52, y: 46 })).reason).toBe(ROAD_START_MSG); // no way across yet
     const b = n.buildBridge(planBridge(n, sim.grid, 'roadBridge', { x: 39, y: 46 }, { x: 41, y: 46 }))!;
     eastSide(sim); // the road beyond the bridge links through it
     expect(n.isRoadServed(park().id)).toBe(true);

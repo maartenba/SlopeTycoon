@@ -58,8 +58,8 @@ export function footbridgeDeck(d: GeoData, h: HeightFn, x: number, y: number, ns
  * Stairs on the approach tile (x,y) climbing towards the bridge in direction `dir` (0 N, 1 E, 2 S, 3 W). Steps rise linearly from the surface at
  * the far edge to the deck height at the near edge (the same ramp as `Networks.footLift`, so guests' z matches).
  */
-export function footbridgeStairs(d: GeoData, h: HeightFn, x: number, y: number, dir: number): void {
-  const cx = x + 0.5, cz = y + 0.5, H = CROSSING.footbridge.deck, N = CROSSING.footbridge.steps;
+export function footbridgeStairs(d: GeoData, h: HeightFn, x: number, y: number, dir: number, steps: number = CROSSING.footbridge.steps): void {
+  const cx = x + 0.5, cz = y + 0.5, H = CROSSING.footbridge.deck, N = steps; // the MTB ramp bridge passes `CROSSING.mtbBridge.steps` (a gentler, finer ramp)
   const ns = dir === 0 || dir === 2; // walkway runs N-S
   const sgn = dir === 2 || dir === 1 ? 1 : -1; // +1 when the bridge is towards +x / +z
   for (let i = 0; i < N; i++) {

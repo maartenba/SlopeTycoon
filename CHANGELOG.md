@@ -4,6 +4,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Bridges are part of drawing a path**: the separate Bridge tool, bridge-type select and *Build bridge* button are gone. Drag a footpath, road, hiking trail or MTB trail across a pond or gap and the matching bridge (footbridge, road bridge, wooden hiking bridge, MTB bridge) is built as part of the stroke; the ghost shows the raised deck, span and price, or why not (*Span too long: max 3 tiles*, *Keep dragging to the far bank...*). Rail still cannot cross water. `docs/bridges.md`.
+- **Cross rails: level crossing or bridge for every walkable kind**: a clear two-line toggle in the Paths & Roads and Pistes & Trails drawers (level crossing by default). Footpaths and hiking trails can take the footbridge ($900), MTB trails a new **MTB ramp bridge** ($1,100); trails over rail now get a real crossing too (they used to cross with nothing). Roads always use the level crossing (no road overpass yet). `docs/crossings.md`.
+- **Tidier tool tooltips**: the ghost tooltip stays inside the screen and wraps; *Blocked: Roads must start at the road entrance* now says where to start (*Start the road from the road entry (the grey stub at the map edge) or extend an existing road*).
 ## [0.2.3] - 2026-10-28 (pre-release)
 
 Changes since 0.2.2: toilets and a comfort need, level crossings, footbridges and bridges, trail access, four new marketing campaigns, plus the inert frameworks (tours, viewpoints, lodging tiers, guest types) that the next content builds on. Still a pre-release; not 1.0. Guide, landing page, screenshots (toilets, level crossing, footbridge, bridges, the new campaign cards) and developer docs were updated; the staff / year-report goldens were re-recorded (`docs/balance.md`, "M6.1 re-record").

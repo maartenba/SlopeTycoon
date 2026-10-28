@@ -1,7 +1,7 @@
 import { BRIDGES, BRIDGE_MAX_RISE, BRIDGE_MSG, GAP_MIN_DROP, type BridgeKind, type BridgeSpec } from '../config/bridges';
 import { TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
-import { Layer, NET_COST, NetKind, PISTE_COST_PER_TILE, type Networks, type NetKindId } from './Networks';
+import { Layer, NET_COST, ROAD_START_MSG, NetKind, PISTE_COST_PER_TILE, type Networks, type NetKindId } from './Networks';
 import type { Pt } from '../sim/Dependencies';
 
 /** A stored bridge: the deck runs a -> b (both bank tiles are ordinary network tiles), `span` are the tiles between them. */
@@ -61,7 +61,14 @@ export function bridgeSupports(n: number): number[] {
  * rail -> straight line -> span length (1..maxSpan) -> both banks solid and legal for the layer -> every span tile is free and either water or a gap ->
  * deck level (clearance over water, never below a bank) and the rise to the banks. Returns the tiles, deck level, supports and cost, or the exact reason.
  */
-export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail', a: Pt, b: Pt, mult = 1): BridgePlan {
+export interface PlanBridgeOpts {
+  /** Tile indices (`net.idxOf`) of the rest of the same stroke that will exist when this bridge is built (a road bank links through them). */
+  planned?: ReadonlySet<number>;
+  /** The caller judges linking for the whole stroke (drag-to-bridge): skip the per-bridge anchoring check. */
+  skipLink?: boolean;
+}
+
+export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail', a: Pt, b: Pt, mult = 1, opts: PlanBridgeOpts = {}): BridgePlan {
   if (kind === 'rail') return fail(kind, a, b, BRIDGE_MSG.rail);
   const spec: BridgeSpec = BRIDGES[kind];
   if (a.x !== b.x && a.y !== b.y) return fail(kind, a, b, BRIDGE_MSG.straight);
@@ -76,7 +83,8 @@ export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail',
   // banks: solid ground, legal for the layer
   const banks = [a, b];
   const newBanks: Pt[] = [];
-  const planned = new Set<number>(span.map((t) => net.idxOf(t.x, t.y)));
+  const planned = new Set<number>(opts.planned);
+  for (const t of span) planned.add(net.idxOf(t.x, t.y));
   planned.add(net.idxOf(a.x, a.y)); planned.add(net.idxOf(b.x, b.y)); // linking is judged once, at the end (physical reasons come first)
   let anyAnchored = false;
   for (let k = 0; k < 2; k++) {
@@ -126,7 +134,7 @@ export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail',
   // a bank whose lowest corner is too far below the deck cannot be reached (the stairs would be a wall)
   if (deck - maxCorner(grid, a.x, a.y) > BRIDGE_MAX_RISE || deck - maxCorner(grid, b.x, b.y) > BRIDGE_MAX_RISE) return fail(kind, a, b, BRIDGE_MSG.low);
 
-  if (!anyAnchored) return fail(kind, a, b, spec.layer === 'road' ? 'Roads must start at the road entry' : spec.layer === 'path' ? 'Paths must connect to a path, road or building' : 'Trails must start at a path or building');
+  if (!anyAnchored && !opts.skipLink) return fail(kind, a, b, spec.layer === 'road' ? ROAD_START_MSG : spec.layer === 'path' ? 'Paths must connect to a path, road or building' : 'Trails must start at a path or building');
   const spanCost = len * spec.costPerTile * mult;
   const bankUnit = spec.layer === 'road' ? NET_COST[NetKind.Road] : spec.layer === 'path' ? NET_COST[NetKind.Path] : PISTE_COST_PER_TILE;
   return { ok: true, kind, a, b, span, deck, rise, supports: bridgeSupports(len), newBanks, cost: spanCost + newBanks.length * bankUnit * mult, spanCost };

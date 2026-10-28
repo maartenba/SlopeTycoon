@@ -167,6 +167,9 @@ Buildings, Lifts and Pistes & Trails drawers sort their cards by relevance to th
 * **Train Station**: `rail+path`, may stand on the END of a rail line (`overRail`); ghost tip "Place the station on the end of a rail line, with a footpath next to it".
 * New **energy** category: Solar Array / Plant (slope <= 2, optional flatten), Wind Turbine (exposed ground only: mean corner height >= 20), Small Hydro (`streamAdjacent`), Biomass (road), Tree Nursery, Recycling Centre. Details in docs/energy.md.
 
+## Where roads and rail start (actionable refusals)
+A road that does not touch the road network says `Start the road from the road entry (the grey stub at the map edge) or extend an existing road` (`ROAD_START_MSG`), rail `Start the rail from the rail entry (the stub at the map edge) or extend an existing line` (`RAIL_START_MSG`), both in `world/Networks.ts`. The tool tooltip is clamped inside the viewport (`DragTool.placeTip`). No automatic 'Show me' camera jump (a failed click should not move the camera).
+
 ## Phase 6: rail level crossings
 The "no path / road on rail" rule is lifted for valid crossings only: a straight rail tile crossed at a right angle (stroke tile on both sides), no station, no bridge, at least 3 tiles from another crossing. Reasons and costs, the closing logic and the safety argument are in [crossings.md](crossings.md). A building never stands on a crossing (`Cannot build on a level crossing`).
 

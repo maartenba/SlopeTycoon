@@ -16,11 +16,11 @@ Version 0.2.3. Play a normal Career game (`npm run dev`, or the build) for 20-30
 - [ ] A road across the line ($400) makes cars wait.
 - [ ] Refused cases read well: diagonal stroke, next to another crossing, at the station, on a bridge.
 - [ ] Bulldoze the crossing tile: plain rail again. Undo / redo it.
-- [ ] Turn on **Bridge over rail** and cross again: a timber footbridge with stairs ($900); guests walk up and over and never wait. Ranger Rudi suggests it when many guests waited.
+- [ ] Set **Cross rails** to **Bridge** and cross again: a timber footbridge with stairs ($900); guests walk up and over and never wait. Ranger Rudi suggests it when many guests waited.
 - [ ] Known gap: walk mode and ride-along do not climb the footbridge stairs (walk mode follows deck height now but was not verified on the stairs).
 
 ## Bridges over streams, ponds and gaps
-- [ ] Paths drawer: pick **Bridge type** + **Build bridge**; drag from one bank to the other over a stream. Tooltip: span, deck height, supports, price (or the reason).
+- [ ] Paths drawer: pick Footpath (or Road / a trail) and drag across a pond or gap: the matching bridge is part of the stroke. Tooltip: span, deck height, supports, price (or the reason).
 - [ ] Footbridge connects two footpaths; guests walk across on the deck (not under it).
 - [ ] Hiking bridge for a Hike trail, MTB bridge for an MTB trail: hikers / bikers use it.
 - [ ] Road bridge (one lane) lets cars drive to a car park on the far side; it needs flat banks.
@@ -42,6 +42,6 @@ Version 0.2.3. Play a normal Career game (`npm run dev`, or the build) for 20-30
 - [ ] Lodging tiers / guest-type framework: nothing new in the UI beyond the Statistics "Guests by type" card.
 
 ## Also check
-- [ ] Phone / tablet: toilets card, Bridge button and "Bridge over rail" toggle are tappable (44 px), no overflow in the Paths drawer (the automated phone drawers check passed).
+- [ ] Phone / tablet: toilets card, Cross rails control are tappable (44 px), no overflow in the Paths drawer (the automated phone drawers check passed).
 - [ ] Balance feel: the first year is a bit tighter than 0.2.2 (bot profit -5.8 % in the golden); is it still fun?
 - [ ] Performance on your GPU with several crossings, bridges and many guests.

@@ -2426,7 +2426,7 @@ if (ui && !DEMO) {
       setBrush: (n) => netTools?.setBrush(n),
       setErase: (on) => netTools?.setErase(on),
       setOverRail: (on) => netTools?.setOverRail(on),
-      startBridge: (k) => netTools?.startBridge(k),
+      setCrossMode: (m) => netTools?.setCrossMode(m),
       undo: () => netTools?.undo() ?? false,
       redo: () => netTools?.redo() ?? false,
       suggest: (w) => suggestRun(w),

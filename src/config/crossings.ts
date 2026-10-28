@@ -16,6 +16,8 @@ export const CROSSING = {
   /** Guests waiting this many ticks in total at crossings (per day) before the advisor suggests a footbridge. */
   advisorWaitTicksPerDay: 400,
   /** Footbridge over rail (Task 11). */
+  /** MTB ramp bridge over rail: bikes cannot take stairs, so long ramps on both approach tiles (more expensive than the footbridge). */
+  mtbBridge: { cost: 1100, steps: 10 },
   footbridge: { cost: 900, /** Deck height above the rail (world units; a train is ~0.6 tall). Guests climb the stairs on the approach tiles up to it. */ deck: 1.0, steps: 5 },
 } as const;
 

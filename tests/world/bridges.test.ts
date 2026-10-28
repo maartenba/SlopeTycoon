@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Grid, TileType } from '../../src/world/Grid';
 import { OccFlag } from '../../src/world/Occupancy';
 import { Buildings } from '../../src/sim/Buildings';
-import { Layer, NetKind, Networks } from '../../src/world/Networks';
+import { Layer, NetKind, Networks, ROAD_START_MSG } from '../../src/world/Networks';
 import { bridgeSupports, planBridge } from '../../src/world/Bridges';
 import { BRIDGES, BRIDGE_KINDS, BRIDGE_MSG, type BridgeKind } from '../../src/config/bridges';
 
@@ -107,7 +107,7 @@ describe('planBridge: reasons', () => {
     grid.setCornerUnchecked(21, 30, 2);
     expect(planBridge(net, grid, 'roadBridge', A, Bk(1)).reason).toBe(BRIDGE_MSG.flatEnds);
     const off = world(1); off.net.roadEntry = { x: 5, y: 5 };
-    expect(planBridge(off.net, off.grid, 'roadBridge', A, Bk(1)).reason).toBe('Roads must start at the road entry');
+    expect(planBridge(off.net, off.grid, 'roadBridge', A, Bk(1)).reason).toBe(ROAD_START_MSG);
   });
   it('trail bridges: banks must not be water and need a path or trail to attach to', () => {
     const { grid, net } = world(2);

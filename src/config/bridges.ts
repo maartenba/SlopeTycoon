@@ -40,7 +40,9 @@ export const GAP_MIN_DROP = 3;
 export const BRIDGE_MSG = {
   straight: 'Bridges must run in a straight line',
   nothing: 'Nothing to bridge: drag from one bank across water or a gap',
-  tooLong: (max: number): string => `Too long (max ${max})`,
+  tooLong: (max: number): string => `Span too long: max ${max} tiles`,
+  nearBank: 'Start the bridge on solid ground: begin the drag on the near bank',
+  farBank: 'Keep dragging to the far bank: a bridge needs solid ground at both ends',
   ends: 'Needs solid ground at both ends',
   flatEnds: 'Road bridges need flat ground at both ends',
   low: 'Too low over the water: the banks are lower than the deck needs',

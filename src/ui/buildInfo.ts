@@ -3,6 +3,7 @@ import { LIFTS, nominalThroughput, type LiftKind } from '@/config/lifts';
 import { describeRules } from '@/sim/PlacementRules';
 import type { SeasonId } from '@/core/events';
 import { usableFrom, type SeasonTag } from './seasonOrder';
+import { BRIDGES, type BridgeKind } from '@/config/bridges';
 
 /** Sub-tabs of the Buildings drawer. */
 export type BuildingTab = 'services' | 'kids' | 'safety' | 'recreation' | 'transport' | 'utilities' | 'energy';
@@ -99,6 +100,7 @@ export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
   funicular: 'Rail-borne lift for moderate slopes.',
 };
 
+const BRIDGE_OF_KEY: Partial<Record<string, BridgeKind>> = { path: 'footbridge', road: 'roadBridge', hike: 'hikeBridge', mtb: 'mtbBridge' };
 export interface NetworkItem { key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike'; name: string; icon: string; costPerTile: number; desc: string; group: 'paths' | 'pistes' }
 export const NETWORK_ITEMS: NetworkItem[] = [
   { key: 'path', name: 'Footpath', icon: '🚶', costPerTile: 20, desc: 'Walkway connecting buildings to the village.', group: 'paths' },
@@ -199,7 +201,13 @@ export function liftInfo(kind: LiftKind, costPer100m: number, season?: SeasonId,
 }
 export function networkInfo(it: NetworkItem, pisteCost: number, season?: SeasonId): InfoModel {
   const c = it.costPerTile || pisteCost, h = seasonHint(networkSeason(it.key), season);
-  return { id: it.key, title: it.name, desc: it.desc, icon: it.icon, stats: [['Cost', `${money(c)}/tile`]], reqs: [], rules: [...(h ? [h] : []), ...(it.key === 'path' || it.key === 'road' || it.key === 'rail' ? ['Drag to draw; R flips the L-corner'] : ['Drag to paint with the brush'])] };
+  const bk = BRIDGE_OF_KEY[it.key], sp = bk ? BRIDGES[bk] : null;
+  const stats: Array<[string, string]> = [['Cost', `${money(c)}/tile`]];
+  if (sp) stats.push(['Over water', `${sp.label} ${money(sp.costPerTile)}/tile, max ${sp.maxSpan}`]);
+  const rules = [...(h ? [h] : []), ...(it.key === 'path' || it.key === 'road' || it.key === 'rail' ? ['Drag to draw; R flips the L-corner'] : ['Drag to paint with the brush'])];
+  if (sp) rules.push(`Drag across water${it.key === 'path' || it.key === 'road' ? ' or a gap' : ''}: a ${sp.label.toLowerCase()} is built for you`);
+  if (it.key !== 'ski' && it.key !== 'rail') rules.push(it.key === 'road' ? 'Crosses rails at a level crossing' : 'Crosses rails: level crossing or bridge (Cross rails)');
+  return { id: it.key, title: it.name, desc: it.desc, icon: it.icon, stats, reqs: [], rules };
 }
 
 /** Auto-flatten tooltip. */

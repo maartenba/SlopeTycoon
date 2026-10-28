@@ -186,6 +186,8 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
     else if (kind === 'wheel') { await page.mouse.wheel({ deltaY: Number(arg) }); }
     else if (kind === 'mouse') { const [mx, my] = arg.split(',').map(Number); await page.mouse.click(mx!, my!); }
     else if (kind === 'drag') { const [x1, y1, x2, y2] = arg.split(',').map(Number); await page.mouse.move(x1!, y1!); await page.mouse.down(); for (let k = 1; k <= 12; k++) { await page.mouse.move(x1! + (x2! - x1!) * k / 12, y1! + (y2! - y1!) * k / 12); await new Promise((r) => setTimeout(r, 30)); } await page.mouse.up(); }
+    else if (kind === 'down') { const [mx, my] = arg.split(',').map(Number); await page.mouse.move(mx!, my!); await page.mouse.down(); } // press and hold: a following `move:` shows the tool ghost mid-drag
+    else if (kind === 'up') await page.mouse.up();
     else if (kind === 'eval') logs.push(`[eval] ${JSON.stringify(await page.evaluate(arg))}`);
     else if (kind === 'tap') { const [tx, ty] = arg.split(',').map(Number); await page.touchscreen.tap(tx!, ty!); }
     else if (kind === 'hold') { const [tx, ty, ms] = arg.split(',').map(Number); const t = await page.touchscreen.touchStart(tx!, ty!); await new Promise((r) => setTimeout(r, ms ?? 600)); await t.end(); }

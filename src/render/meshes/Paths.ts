@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CHUNK_SIZE, type Grid } from '../../world/Grid';
 import { Conn, Layer, type Networks } from '../../world/Networks';
 import { HEIGHT_UNIT } from '../../config/balance';
+import { CROSSING } from '../../config/crossings';
 import { diagonalNS } from '../TerrainGeometry';
 import { footbridgeDeck, footbridgeStairs } from './footbridge';
 import { bridgeTileGeometry } from './bridges';
@@ -380,10 +381,19 @@ export function crossingDeck(d: GeoData, grid: Grid, x: number, y: number, m: nu
   for (let k = 0; k < 8; k++) rect(k / 8 + 0.058, k / 8 + 0.067, -hw, hw, DECK_LIFT + 0.004, DECK_WOOD_DARK, MARK_CELL); // plank gaps
 }
 
+/** Stairs (footbridge) or the long ramp (MTB bridge) on an approach tile of a rail footbridge, if this tile is one. */
+function rampTile(d: GeoData, grid: Grid, net: Networks, x: number, y: number): void {
+  const rd = net.rampDir(x, y);
+  if (rd < 0) return;
+  const c = net.crossAt(x + (rd === 1 ? 1 : rd === 3 ? -1 : 0), y + (rd === 2 ? 1 : rd === 0 ? -1 : 0));
+  footbridgeStairs(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, rd, c === 4 ? CROSSING.mtbBridge.steps : CROSSING.footbridge.steps);
+}
+
 /** Geometry for one tile of network (auto-tiled: centre + arms by connection mask). */
 export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y: number): void {
   const i = y * net.size + x, k = net.kind[i]!;
   if (net.bridgeTiles > 0) bridgeTileGeometry(d, grid, net, (px, pz) => surfaceHeightAt(grid, px, pz), x, y); // Phase 6 bridges: span deck / bank ramp (docs/bridges.md)
+  if (!k && net.crossCount > 0) rampTile(d, grid, net, x, y); // trails climb to a footbridge / MTB ramp bridge over rail
   if (!k) return;
   if (net.bid[i]) return; // a bridge span tile: the bridge mesh replaces the plain deck
   const m = net.conn[i]!;
@@ -394,8 +404,8 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
   const flatY = bridge ? Math.max(...grid.getCorners(x, y)) * HEIGHT_UNIT : undefined;
   const rgb = bridge ? 0xc9a37a : 0xffffff;
   const cx = x + 0.5, cz = y + 0.5;
-  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); else if (cr === 3) footbridgeDeck(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, m === (Conn.N | Conn.S)); return; }
-  if (k === 1 && net.crossCount > 0) { const rd = net.rampDir(x, y); if (rd >= 0) footbridgeStairs(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, rd); }
+  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); else if (cr === 3 || cr === 4) footbridgeDeck(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, m === (Conn.N | Conn.S)); return; }
+  if (k === 1 && net.crossCount > 0) rampTile(d, grid, net, x, y);
   if (k === 1 && m !== 0 && pathTile(d, grid, x, y, m, net.size, hw, cell, lift, rgb, flatY, networkEdgeTan(net, x, y))) return;
   if (k === 2 && !bridge && roadTile(d, grid, net, x, y, m, hw, cell, lift)) return;
   const vertical = (m & (Conn.N | Conn.S)) !== 0 && (m & (Conn.E | Conn.W)) === 0;

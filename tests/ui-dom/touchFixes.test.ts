@@ -96,7 +96,7 @@ describe('drawers on a narrow screen', () => {
   it('Pistes & Trails: the card rail gets the full width above the option grid and the body scrolls (side by side left the cards a 50 px strip: Ski piste could not be tapped)', () => {
     const e = el('st-dock'); document.body.append(e);
     const css = styleOf(e);
-    expect(css).toContain('.body:has(.pc [data-suggest]){flex-direction:column;overflow-y:auto');
+    expect(css).toContain('.body:has(.pc [data-suggest]),.body:has(.pc[data-path-controls]){flex-direction:column;overflow-y:auto'); // the Paths & Roads panel (Cross rails) stacks the same way
     expect(css).toContain('.body:has(.pc [data-suggest]) .pc{width:100%;grid-template-columns:repeat(3,1fr)');
   });
 });
