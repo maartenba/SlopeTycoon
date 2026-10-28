@@ -62,12 +62,21 @@ describe('st-assistant advice mode', () => {
     expect(q(a, '.advice')!.textContent).toContain(ADVISOR_UI.empty);
     expect(q(a, '.advice')!.textContent).toContain(`${RANGER_NAME}: ${ADVISOR_UI.emptyFriendly}`);
   });
-  it('the card box is fixed: 340x214 in the same CSS as the lesson bubble (no jumping)', () => {
+  it('the card is 340 wide with a max-height (list scrolls); advice text is never clamped or ellipsised', () => {
     expect(ASSISTANT_CSS).toMatch(/\.advice\{[^}]*width:100%/);
-    expect(ASSISTANT_CSS).toMatch(/\.advice\{[^}]*height:214px/);
+    expect(ASSISTANT_CSS).toMatch(/\.advice\{[^}]*max-height:/);
+    expect(ASSISTANT_CSS).not.toMatch(/\.advice\{[^}]*[^-]height:214px/);
     expect(ASSISTANT_CSS).toMatch(/\.wrap\{[^}]*width:340px/);
     expect(ASSISTANT_CSS).toMatch(/\.bubble\{height:214px\}/);
-    expect(ASSISTANT_CSS).not.toMatch(/\.advice\{[^}]*(min-height|max-height)/);
+    expect(ASSISTANT_CSS).not.toMatch(/\.advice \.(why|tt)\{[^}]*(line-clamp|text-overflow)/);
+  });
+  it('long advice shows in full with Show / Dismiss in their own action group', () => {
+    const { a } = mk();
+    const long = 'You owe $20,710. Raise prices or open more lifts, and pause new construction until the books recover. The Tourism Board will not be amused by this at all.';
+    a.renderAdvice({ items: [{ id: 'x', severity: 'warn', title: 'Debt', why: long }], count: 1 });
+    a.toggleAdvice(true);
+    expect(q(a, '.advice .why')!.textContent).toBe(long);
+    expect(q(a, '.advice .ab')!.querySelectorAll('button').length).toBe(2);
   });
   it('the tutorial has priority: while it runs the badge and card are hidden; they return afterwards', () => {
     const { a } = mk();

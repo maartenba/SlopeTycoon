@@ -39,14 +39,14 @@ export const ASSISTANT_CSS =
   '.advbadge{pointer-events:auto;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:13px;background:rgba(20,28,40,.92);border:1px solid #5a7090;color:#ffd070;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}' +
   '.advbadge:hover{border-color:#ffd070}.advbadge.open{background:#2f4666}' +
   '@media (max-width:1099px){.arow{position:relative}.advbadge{position:absolute;left:34px;top:-10px;height:22px;padding:0 6px;gap:3px}.advbadge .lbl{display:none}}' +
-  '.advice{pointer-events:auto;background:rgba(20,28,40,.92);border:1px solid #5a7090;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,.4);width:100%;height:214px;box-sizing:border-box}' +
+  '.advice{pointer-events:auto;background:rgba(20,28,40,.92);border:1px solid #5a7090;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,.4);width:100%;max-height:min(360px,calc(100vh - 230px));box-sizing:border-box}' +
   '.advice .ah{flex:none;display:flex;align-items:baseline;gap:6px;white-space:nowrap}.advice .ah b{color:#ffd070;font-size:13px}.advice .ah span{color:#9bb0c9;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis}' +
   '.advice .al{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin}' +
   '.advice .it{flex:none;display:flex;flex-direction:column;gap:2px;border-top:1px solid #34465e;padding-top:4px}.advice .it:first-child{border-top:0;padding-top:0}' +
-  '.advice .tr{display:flex;align-items:center;gap:6px;min-width:0}.advice .tt{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:700;color:#fff}' +
+  '.advice .tr{display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 6px;min-width:0}.advice .tt{flex:1 1 150px;min-width:0;overflow-wrap:anywhere;font-weight:700;color:#fff}.advice .sev{margin-top:4px}.advice .ab{flex:none;display:flex;gap:5px;margin-left:auto}' +
   '.advice .sev{flex:none;width:8px;height:8px;border-radius:50%;background:#7fb0e0}.advice .sev.warn{background:#ffd070}.advice .sev.urgent{background:#ff6a5a}' +
-  '.advice .tr button{flex:none;font-size:11px;padding:0 6px;line-height:18px}.advice .tr button.primary{background:#2f8f4a;border-color:#6fd08a}' +
-  '.advice .why{margin:0;color:#cfe3f1;font-size:11px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.advice .fr{color:#9fe0a0}' +
+  '.advice .ab button{flex:none;font-size:11px;padding:0 8px;line-height:22px;min-height:24px}.advice .ab button.primary{background:#2f8f4a;border-color:#6fd08a}' +
+  '.advice .why{margin:0;color:#cfe3f1;font-size:11px;line-height:1.3;overflow-wrap:anywhere;white-space:normal}@media (pointer:coarse){.advice .ab button{min-height:44px;min-width:44px;font-size:12px}}.advice .fr{color:#9fe0a0}' +
   '.advice .empty{color:#cfe3f1}.advice .foot2{flex:none;color:#7f93ad;font-size:10px}' +
   '.hintb{border-color:#ffd070}.hintb .row{display:flex;gap:6px;align-items:flex-start}.hintb .grow{flex:1}';
 
@@ -153,7 +153,7 @@ export class StAssistant extends StElement {
     this.avatar.title = t('ui.name'); this.avatar.setAttribute('aria-label', t('ui.unhide'));
     this.avatar.addEventListener('click', () => { if (this.tutorialOn) this.api?.minimise(!this.bubble.hidden); else this.toggleAdvice(); });
     this.avatar.append(avatarSvg('idle'));
-    // Advice mode (M5.1): a fixed 340x214 card (same box as the lesson bubble) opened by a small badge beside the avatar.
+    // Advice mode (M5.1): a 340px wide card (full messages, list scrolls past max-height) opened by a small badge beside the avatar.
     this.advCard.className = 'advice'; this.advCard.hidden = true; this.advCard.setAttribute('role', 'region'); this.advCard.setAttribute('aria-label', `${RANGER_NAME}: ${ADVISOR_UI.title}`);
     const ah = document.createElement('div'); ah.className = 'ah';
     const an = document.createElement('b'); an.textContent = RANGER_NAME;
@@ -282,9 +282,11 @@ export class StAssistant extends StElement {
         const it = document.createElement('div'); it.className = 'it'; it.dataset.id = a.id;
         const tr = document.createElement('div'); tr.className = 'tr';
         const sev = document.createElement('span'); sev.className = `sev ${a.severity}`;
-        const tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = a.title; tt.title = a.title;
-        tr.append(sev, tt, btn('primary', ADVISOR_UI.show, () => { this.advApi?.show(a.id); if (typeof window !== 'undefined' && window.innerWidth < 1100) this.toggleAdvice(false); }), btn('', ADVISOR_UI.dismiss, () => this.advApi?.dismiss(a.id)));
-        const why = document.createElement('p'); why.className = 'why'; why.textContent = a.why; why.title = a.why;
+        const tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = a.title;
+        const ab = document.createElement('div'); ab.className = 'ab';
+        ab.append(btn('primary', ADVISOR_UI.show, () => { this.advApi?.show(a.id); if (typeof window !== 'undefined' && window.innerWidth < 1100) this.toggleAdvice(false); }), btn('', ADVISOR_UI.dismiss, () => this.advApi?.dismiss(a.id)));
+        tr.append(sev, tt, ab);
+        const why = document.createElement('p'); why.className = 'why'; why.textContent = a.why;
         it.append(tr, why);
         if (a.friendly) { const f = document.createElement('div'); f.className = 'fr why'; f.textContent = `${RANGER_NAME}: ${a.friendly}`; it.append(f); }
         return it;

@@ -43,7 +43,7 @@ button.head:hover:not(:disabled){background:transparent;border:0}
 .head .n{flex:0 0 auto;color:#9fb4cc;font-size:11px;font-weight:600}
 .head .c{flex:0 0 auto;color:#9fb4cc;font-size:10px}
 .goal{display:grid;grid-template-columns:1fr auto;column-gap:6px;row-gap:2px;align-items:center}
-.goal .name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.goal .name{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:600}
 .goal .show{padding:0 6px;font-size:11px;line-height:16px;color:#c9dcf3}
 .goal .bar{grid-column:1;height:6px;background:#34485f;border-radius:3px;overflow:hidden}
 .goal .bar>i{display:block;height:100%;background:#4caf50;border-radius:3px}
@@ -56,9 +56,9 @@ button.chip.sb{border-color:#5a7090;color:#cfe0ff}
 .lv{display:flex;flex-direction:column;gap:2px}
 .lv .nm{font-weight:700;color:#ffd070;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lv .bar{height:6px;background:#34485f;border-radius:3px;overflow:hidden}.lv .bar>i{display:block;height:100%;background:#d9a441;border-radius:3px}
-.lv .cr{display:flex;gap:6px;font-size:11px;color:#c9dcf3}.lv .cr>span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lv .cr>span:last-child{color:#9fb4cc;white-space:nowrap}
+.lv .cr{display:flex;gap:6px;font-size:11px;color:#c9dcf3}.lv .cr>span:first-child{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}.lv .cr>span:last-child{color:#9fb4cc;white-space:nowrap}
 .lv .cr.met>span:first-child{color:#7fd68a}
-.lv .nx{font-size:11px;color:#9fb4cc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}`;
+.lv .nx{font-size:11px;color:#9fb4cc;overflow-wrap:anywhere}`;
   }
 
   constructor() {

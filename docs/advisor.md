@@ -9,7 +9,7 @@
 * **Show me**: camera focus + the ping marker ring (`goTo` in main.ts). **Dismiss**: snoozes that advice for 30 in-game days (`advisor` save module: `{ snooze: [[id, absoluteDay]], dismissed }`; old saves load with nothing snoozed).
 * **State, not tile**: advice is satisfied by the STATE of the resort, never by the suggested site (`action.site`/`target` are only a hint). A building of the right type that works (active) anywhere clears the rule; one that was placed but is inactive turns the advice into a specific one about the real building (`TEXT.notWorking`: names it, its coordinates, the sim's reason and, for road access, the nearest road end), with 'Show me' focusing that building. Rules about a missing building (`grooming.none`, `patrol.none`, `school.none`, `arrival.parking`, `storm.signs`) are `instant`: no 2-evaluation hold. Any building/road/lift change marks the advisor dirty and the next hourly evaluation runs every rule.
 * **Placement honesty**: a rule that suggests a building asks `RuleCtx.site`, which uses `tutorial/suggest.findSite/findAlongPiste` (real `validatePlacement`, docs/placement-rules.md) and re-validates the cached site on every evaluation; with no valid site only the building type is named.
-* **UI**: an SVG-icon `Advice (n)` badge beside the avatar (Ranger Rudi: flat-vector park ranger bust, `src/ui/components/rudiAvatar.ts`, expressions idle/point/cheer/worried/think/wave, ~2.7 kB inline SVG, blink + bob unless reduced motion; sheet at `/?uikit=rudi`; bottom-left, zone `left-assist`) opens a fixed 340x214 card (same box as the lesson bubble: no jump). Hidden and paused while the tutorial runs.
+* **UI**: an SVG-icon `Advice (n)` badge beside the avatar (Ranger Rudi: flat-vector park ranger bust, `src/ui/components/rudiAvatar.ts`, expressions idle/point/cheer/worried/think/wave, ~2.7 kB inline SVG, blink + bob unless reduced motion; sheet at `/?uikit=rudi`; bottom-left, zone `left-assist`) opens a 340 px wide card showing the full advice text (max-height, the list scrolls). Hidden and paused while the tutorial runs.
 
 | Rule | Cadence | Notes |
 |---|---|---|
@@ -21,7 +21,8 @@
 | `storm.signs` | hourly | storm, no warning sign |
 | `school.none` | daily | many families, no ski school |
 | `arrival.parking` | daily | lodge but no parking / rail / shuttle / altiport |
-| `cash.debt` / `cash.runway` | hourly | in debt; cash under ~5 days of upkeep |
+| `cash.debt` / `cash.runway` | hourly | in debt (lists loan / price / rest-lifts options); cash under ~5 days of upkeep |
+| `cash.tips` | hourly | first two years, cash between $0 and ~$6k: build order, Starter loan, price check (docs/money-tips.md) |
 | `price.fair` | daily | day pass far from fair value |
 | `marketing.ready` | daily | a campaign meets its prerequisites, none run yet |
 | `cash.summerBuffer` | hourly | last 20 days of spring and cash < 30 days of upkeep: amount to save, summer attractions, rest lifts; `cash.debt` also mentions the open support loan |

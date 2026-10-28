@@ -7,6 +7,7 @@ import type { TerrainPresetId } from '../world/TerrainPresets';
 import { trainStation } from './demoResort';
 import { buildStarterResort, type ResortKit } from './starterResort';
 import type { Sim } from './createSim';
+import { pathQuality, tidyPaths, type PathQuality } from './townPaths';
 import type { GuestMix } from './demoResort';
 
 export type TownId = 'alpine' | 'family' | 'luxury' | 'hiking' | 'lakeside' | 'fortress' | 'bigmountain' | 'hamlet' | 'festival' | 'rescue';
@@ -210,6 +211,10 @@ export interface TownReport {
   sites: Record<string, Pt>;
   /** 'Niceness' 0..1 (variety, density, piste coverage). */
   score: number;
+  /** Footpath tidiness (holes, 2x2 blocks, adjacency, longest spur; docs/demo-towns.md). */
+  paths?: PathQuality;
+  /** Footpath tiles taken back by the tidy pass. */
+  tidied?: number;
   buildMs: number;
 }
 
@@ -265,6 +270,7 @@ export function buildTown(sim: Sim, id: TownId | string, seed = 1): TownReport {
   sim.game.money = moneyBefore;
   out.sites = townSites(sim.buildings.all());
   out.score = townScore(sim, out.pisteTiles);
+  out.paths = pathQuality(sim);
   out.buildMs = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
   return out;
 }
@@ -275,12 +281,13 @@ function run(sim: Sim, t: TownArchetype, seed: number, out: TownReport): void {
   const log = (m: string): void => { out.log.push(m); };
   const existing = new Set(sim.buildings.all().map((b) => b.id));
   const already = sim.lifts.all().length > 0;
+  let feet: Pt[] = [];
   try {
     const rep = buildStarterResort(sim, {
       curvedPaths: true,
       lifts: already ? 0 : t.lifts.length, liftKinds: t.lifts, pisteDifficulties: t.pisteDifficulties, skipCore: true,
       pre: (kit) => { if (t.rail) trainStation(sim, kit, { rail: true }, out, log); },
-      extra: (kit) => extras(sim, kit, t, rng, scale, out, log),
+      extra: (kit) => { feet = kit.pisteStroke.filter((l) => l.length).map((l) => ({ ...l[l.length - 1]! })); extras(sim, kit, t, rng, scale, out, log); },
     });
     for (const [k, v] of Object.entries(rep.placed)) out.placed[k] = (out.placed[k] ?? 0) + v;
     out.pisteTiles += rep.pisteTiles;
@@ -298,9 +305,11 @@ function run(sim: Sim, t: TownArchetype, seed: number, out: TownReport): void {
     out.failures.push(`${b.type}: removed (${b.reason ?? 'not connected'})`);
     swept = true;
   }
+  const tidied = tidyPaths(sim, feet);
+  if (tidied) { out.tidied = tidied; log(`tidied ${tidied} footpath tiles (leftover strokes, ladders, parallel runs)`); }
   const pruned = pruneRoads(sim);
   if (pruned) log(`pruned ${pruned} road tiles (spurs / loops that serve nothing)`);
-  if (swept || pruned) { sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); }
+  if (swept || pruned || tidied) { sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); }
   // lifts requested but not built are visible in the failure list already ('no lift line N')
 }
 
@@ -333,11 +342,12 @@ export function pruneRoads(sim: Sim): number {
     for (let y = b.y; y < b.y + b.h; y++) { need(b.x - 1, y); need(b.x + b.w, y); }
   }
   const served = (): number[] => bs.filter((b) => net.isRoadServed(b.id)).map((b) => b.id);
-  const before = served(), drop: number[] = [];
+  const before = served(), drop: number[] = [], active0 = new Map(bs.map((b) => [b.id, b.active] as const));
   for (const i of q) if (!keep[i]) drop.push(i);
   if (!drop.length) return 0;
   for (const i of drop) net.unbuild(i % n, (i / n) | 0);
-  if (served().length < before.length) { for (const i of drop) net.build(NetKind.Road, i % n, (i / n) | 0); return 0; }
+  sim.buildings.reevaluate(); // trails / huts attach through roads too: nothing that was active may go dark
+  if (served().length < before.length || bs.some((b) => active0.get(b.id) && !b.active)) { for (const i of drop) net.build(NetKind.Road, i % n, (i / n) | 0); sim.buildings.reevaluate(); return 0; }
   return drop.length;
 }
 

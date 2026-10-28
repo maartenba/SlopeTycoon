@@ -220,7 +220,7 @@ describe('hedges and stone walls in walk mode', () => {
 
 describe('demo town roads: no orphan spurs / loops', () => {
   it('pruneRoads is idempotent after buildTown and every road tile of the network is needed; a bolted-on dead-end spur is removed', () => {
-    const sim = createSim({ ...townSimOptions('alpine', 64), seed: 22, now: () => 0 });
+    const sim = createSim({ ...townSimOptions('alpine', 128), seed: 22, now: () => 0 });
     const rep = buildTown(sim, 'alpine', 22);
     expect(rep.failures.length).toBeLessThanOrEqual(1);
     expect(pruneRoads(sim)).toBe(0);

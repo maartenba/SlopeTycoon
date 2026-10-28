@@ -34,6 +34,10 @@ Seeds are vetted by `scripts/analysis/townSeedScan.ts` (<= 1 failure, no inactiv
 
 How: `buildTown(sim, id, seed)` runs `buildStarterResort` for the lift + piste skeleton (the lift site search), then every `TownItem { type, n: [min, max], at, spread, rmax }` is placed at an **anchor** derived from the terrain (`village` / `road` / `piste` / `foot` / `top` / `lake` / `hill` / `pasture`). For each item, 12 candidate sites around the anchor are scored (flat, hugging a path / road, not crowding other buildings, near the anchor) and tried best-first, then the spiral search of the starter kit, then the other anchors. Counts are drawn from a seeded `Rng` and scaled by map size (64: 0.7, 128: 1, 256: 1.6). Buildings that cannot be wired up are removed again (no inactive buildings). It never throws: `report.failures` lists what is short. `report.sites` (farm / hut / beach / station / altiport / heli / festival ...) drives the camera POIs, `report.score` is the niceness (variety 40 %, density 30 %, piste coverage 30 %).
 
+## Path network
+
+Buildings are wired up one by one during the build, and rejected candidate sites left their footpaths behind (ladders, 2x2 blobs, parallel runs). `routeFrom` now penalises new tiles next to existing ones, and `tidyPaths` (`src/game/townPaths.ts`) rebuilds the footpaths as a forest after the town is built: for every building, lift station and piste foot that was served, only the shortest new stroke to the existing network is kept (nearest first); roads are never touched; reverts if any service would be lost. `pathQuality` (holes, 2x2 blocks, adjacency per tile, longest spur, score) is reported as `TownReport.paths` and checked in `tests/game/townPaths.test.ts`.
+
 ## Title screen
 
 * Each boot picks a random vetted `(archetype, seed, size, season)` (weighted by `titleWeight`, nicer seeds slightly favoured) and **never the previous one** (`localStorage slope.title.last`).
