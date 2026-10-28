@@ -4,9 +4,14 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Easier money (Career)**: starting cash $130,000 -> $150,000 (Relaxed $225,000, Challenging $112,500), the first four goals pay $2,000 more in total, the quiet months cost less (idle lifts draw 25 % energy, closed winter venues 15 % upkeep, furloughed staff 35 % wages) and autumn brings more day guests (0.4 -> 0.5). Ranger Rudi's *In debt* advice now lists concrete options and a new *Cash tips* card appears when cash is thin in the first two years. See docs/money-tips.md, docs/balance.md "Money pass".
+
 - **Bridges are part of drawing a path**: the separate Bridge tool, bridge-type select and *Build bridge* button are gone. Drag a footpath, road, hiking trail or MTB trail across a pond or gap and the matching bridge (footbridge, road bridge, wooden hiking bridge, MTB bridge) is built as part of the stroke; the ghost shows the raised deck, span and price, or why not (*Span too long: max 3 tiles*, *Keep dragging to the far bank...*). Rail still cannot cross water. `docs/bridges.md`.
 - **Cross rails: level crossing or bridge for every walkable kind**: a clear two-line toggle in the Paths & Roads and Pistes & Trails drawers (level crossing by default). Footpaths and hiking trails can take the footbridge ($900), MTB trails a new **MTB ramp bridge** ($1,100); trails over rail now get a real crossing too (they used to cross with nothing). Roads always use the level crossing (no road overpass yet). `docs/crossings.md`.
 - **Tidier tool tooltips**: the ghost tooltip stays inside the screen and wraps; *Blocked: Roads must start at the road entrance* now says where to start (*Start the road from the road entry (the grey stub at the map edge) or extend an existing road*).
+- **Cleaner footpaths in generated towns**: leftover strokes from rejected building sites, ladders and double-width bands are gone; towns now get a tidy street network (short single-tile spurs to doors, no parallel runs, no pinholes). The player's path tool is unchanged.
+- **Ranger Rudi's advice shows full messages**: advice text is no longer cut with an ellipsis; the card grows to a maximum height and the list scrolls, and Show me / Dismiss sit beside or under the title. Goal names in the Goals card wrap instead of being clipped.
+
 ## [0.2.3] - 2026-10-28 (pre-release)
 
 Changes since 0.2.2: toilets and a comfort need, level crossings, footbridges and bridges, trail access, four new marketing campaigns, plus the inert frameworks (tours, viewpoints, lodging tiers, guest types) that the next content builds on. Still a pre-release; not 1.0. Guide, landing page, screenshots (toilets, level crossing, footbridge, bridges, the new campaign cards) and developer docs were updated; the staff / year-report goldens were re-recorded (`docs/balance.md`, "M6.1 re-record").
