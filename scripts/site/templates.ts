@@ -74,11 +74,14 @@ export function header(rel: string, markSvg: string): string {
 
 export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = []): string {
   const top = ['getting-started', 'lifts-pistes', 'money', 'shortcuts'].map((s) => guide.find((p) => p.slug === s)).filter((p): p is PageMeta => !!p);
-  return `<footer><div class="wrap"><div><b>Slope Tycoon</b> v${env.version} (pre-release). Everything procedural. ${esc(PRIVACY_CLAIM)}<br>Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT).</div>
-<div class="fcols"><nav aria-label="Footer: the game"><b>The game</b><a href="${rel}play/">Play</a><a href="${rel || './'}">Home</a><a href="${rel}about/">About / why I built this</a></nav>
-<nav aria-label="Footer: guide"><b>Player guide</b><a href="${rel}guide/">All guide pages</a>${top.map((p) => `<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`).join('')}</nav>
-<nav aria-label="Footer: project"><b>Project</b><a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a><a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>${sponsorLink('sponsor-foot', 'Sponsor on GitHub')}<a href="${env.repoUrl}/tree/main/docs">Developer docs</a><a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a></nav>
-<nav aria-label="Footer: privacy"><b>Privacy</b><a href="${rel}privacy/">Privacy &amp; analytics</a><a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a></nav></div></div></footer>`;
+  const col = (label: string, title: string, links: string): string => `<nav class="fcol" aria-label="Footer: ${label}"><p class="fh">${title}</p><ul>${links}</ul></nav>`;
+  const li = (h: string): string => `<li>${h}</li>`;
+  return `<footer><div class="wrap"><div class="fbrand"><b>Slope Tycoon</b> <span class="fver">v${env.version} (pre-release)</span><span class="fnote">${esc(PRIVACY_CLAIM)}</span></div>
+<div class="fcols">${col('the game', 'The game', li(`<a href="${rel}play/">Play</a>`) + li(`<a href="${rel || './'}">Home</a>`) + li(`<a href="${rel}about/">About / why I built this</a>`))}
+${col('guide', 'Player guide', li(`<a href="${rel}guide/">All guide pages</a>`) + top.map((p) => li(`<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`)).join(''))}
+${col('project', 'Project', li(`<a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a>`) + li(`<a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>`) + li(sponsorLink('sponsor-foot', 'Sponsor on GitHub')) + li(`<a href="${env.repoUrl}/tree/main/docs">Developer docs</a>`) + li(`<a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`))}
+${col('privacy', 'Privacy', li(`<a href="${rel}privacy/">Privacy &amp; analytics</a>`) + li(`<a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a>`))}</div>
+<div class="fbottom">Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT). Everything procedural.</div></div></footer>`;
 }
 
 const crumbsHtml = (rel: string, items: Array<{ name: string; href?: string }>): string => `<nav class="crumbs" aria-label="Breadcrumb">${items.map((i) => (i.href !== undefined ? `<a href="${rel}${i.href}">${esc(i.name)}</a>` : `<span aria-current="page">${esc(i.name)}</span>`)).join(' › ')}</nav>`;

@@ -4,6 +4,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Website footer**: tidy four-column footer (heading above a vertical link list, aligned columns, 2 columns on phones, underline only on hover).
 - **Update card + What's new**: when a new version is waiting, a small non-blocking card (no dialog, nothing is paused) says *A new version is available: 0.2.4* with a few plain-language highlights of what changed (read from the new build's `whats-new.json`; offline it just says *A new version is ready*), with *Reload now* (autosaves first) and *Later* (no reminder for an hour). The first launch of a new version shows a one-time *What's new* card, and the About dialog has a *What's new* button. Highlights come from a `### Highlights` block in each CHANGELOG release (`npm run whats-new`). `docs/pwa.md`.
 - **Sponsor link**: a discreet *Sponsor on GitHub* heart link in the website header and footer, the About page (with a short support note) and the landing page, plus *Support the game ♥* in the game's About dialog and menu footer. Plain links to <https://github.com/sponsors/maartenba> that open only on click; the game stays free, no ads, nothing nags.
 
