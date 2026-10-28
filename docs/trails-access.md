@@ -10,7 +10,7 @@
 
 ## Remote-supply upkeep (D-P9)
 `REMOTE_SUPPLY_MULT = 1.25` (`config/balance.ts`). A building pays +25% upkeep when its access holds **only** through `trail` / `pisteEdge`: no footpath or road touches the footprint (`PlacementRules.suppliedOnFootOnly`, `Networks.suppliedOnFootOnly(id)`). Remote types (`access: 'none'`), unserved (inactive) buildings and rail+path never qualify. Applied in `createSim` `finance.costs` on top of the closed / mothball share. The inspector shows `Supplied on foot: +25% upkeep`.
-It is opt-in: `createSim({ remoteSupply: true })` (main.ts, not in the title demo); headless sims / tests / goldens stay at exactly 1.
+It is on by default (`createSim({ remoteSupply: false })` opts out; only the title demo does), so headless sims / tests / goldens see the same +25% as the game.
 
 ## Approved rows (Task 3)
 | Building | access now |

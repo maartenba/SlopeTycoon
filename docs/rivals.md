@@ -13,7 +13,7 @@ Code: `src/sim/meta/Rivals.ts` (rivals, share, awards benchmark, year section), 
 `1 + ramp x (clamp(1 + 0.25 x (share / fair - 1), 0.9, 1.12) - 1)`, multiplied into the spawner attractiveness next to the wildlife and event factors.
 
 * `ramp` = 0 for the first 30 days of a game, then linear to 1 over 150 days: a new resort is not judged before it exists.
-* **Exactly 1** (a literal `1`, asserted) in scenarios (their thresholds are calibrated against fixed arrivals) and in the guided tutorial (`createSim({ rivalMarket: false })`, passed by `main.ts`); the share is still shown there. Also 1 when your share equals the fair share.
+* **Exactly 1** (a literal `1`, asserted) in scenarios (their thresholds are calibrated against fixed arrivals) and in the guided tutorial (`createSim({ rivalMarket: false })`, the only opt-out `main.ts` passes besides the demo ones); the share is still shown there. Also 1 when your share equals the fair share.
 * Bounded by design: -10 % / +12 % at most, so price extremes and the existing demand elasticity (which already punishes high prices) cannot be compounded into an exploit. The price part only matters inside the share.
 
 ## News

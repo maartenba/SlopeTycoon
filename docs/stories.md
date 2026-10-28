@@ -4,7 +4,7 @@ About 1.5% of arrivals become a **story guest**: a named guest ("Marta from Graz
 
 ## Rules
 - **Observer only.** `src/sim/guests/Stories.ts` reads the guest store at the end of every guest tick (`GuestSim.afterUpdate`). It never steers a guest, so the resort can only grant a wish by being good. The wish is picked from what the resort can currently offer (`WishNeed`: black piste, a meal venue, an après bar, a ski school, trails).
-- **Own RNG stream** (`seed ^ 0x5707`): the sim RNG and every other module are untouched. Off by default (`createSim({ stories: true })`; main.ts turns it on, not in the title demo), so headless sims, goldens and the other balance tests keep their numbers. Cap: 8 active story guests.
+- **Own RNG stream** (`seed ^ 0x5707`): the sim RNG and every other module are untouched. On by default (`createSim({ stories: false })` opts out; only the title demo does), so headless sims play the same game as the player. Cap: 8 active story guests.
 - **Save module `stories`** (v1, additive: `reset()` for old saves): active stories, counters, last 12 outcomes, the pin, the RNG state and the daily tip bookkeeping. Part of `stateHash` (it changes money when enabled).
 
 ## Wishes (`src/config/storyWishes.ts`, data + wording)

@@ -78,7 +78,8 @@ describe('goals save module v1', () => {
 
   it('a pre-built (sandbox) starter resort ticks off its goals quietly at game start', () => {
     const fired: string[] = [];
-    const sim = createSim({ size: 64, seed: 61, starterResort: true, now: () => 0 });
+    // autoEvents off: with them on (the default) a day-one arrival bump can legitimately reach 'Welcome 30 guests in a day' and close chapter s1 inside this window; this test only pins the gift-resort ticking.
+    const sim = createSim({ size: 64, seed: 61, starterResort: true, autoEvents: false, now: () => 0 });
     sim.bus.on('milestone', (e) => fired.push(e.id));
     expect(sim.goals.isDone('firstLift')).toBe(true);
     expect(sim.goals.granted).toBe(0);

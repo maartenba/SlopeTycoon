@@ -17,7 +17,7 @@ Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventur
 | `look` | `top` cloth colour index, `colour` (impostor / legend), `gear` (`ski` / `board`, replaces the ~30 % boarder cosmetic), `outfit` (forced) |
 
 ## Spawning
-`Spawner.typesV2` (`createSim({ guestTypesV2: true })`, default **off**) enables extras. The spawner **always** makes the core draw first, so `state.rng` stays aligned. Then a separate hash stream (day, tick, group counter: no state, nothing to save) decides whether the arrival is an extra type: `P(extra i) = w_i / (coreTotal + sum w)`, where `w_i` = season share x weather x scenario `mixBias` x marketing segment weight x price elasticity of the segment, and 0 when the level or required building is missing. Extras therefore take part of the mix and do not raise the arrival rate. Old saves load unchanged (types >= 6 appear only after load).
+`Spawner.typesV2` is **always on** in `createSim` (the `guestTypesV2` option was removed; unit tests may toggle `sim.guestSim.spawner.typesV2` directly) and enables extras. The spawner **always** makes the core draw first, so `state.rng` stays aligned. Then a separate hash stream (day, tick, group counter: no state, nothing to save) decides whether the arrival is an extra type: `P(extra i) = w_i / (coreTotal + sum w)`, where `w_i` = season share x weather x scenario `mixBias` x marketing segment weight x price elasticity of the segment, and 0 when the level or required building is missing. Extras therefore take part of the mix and do not raise the arrival rate. Old saves load unchanged (types >= 6 appear only after load).
 
 ## Appeal
 `appealFor(spec, buildingId, type)`: core types read `spec.appeal[type]` exactly as before. Extras read their `appeal[buildingId]`, then `appeal[spec.kind]`, then the fallback core column. The 6-tuples in the attraction specs are not touched.
@@ -31,4 +31,4 @@ Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventur
 1. Append a row to `GUEST_TYPE_DEFS` (index = 6 + position; **never reorder**: the saved SoA stores the index).
 2. Add specific attraction appeal under `appeal` if the fallback column is not right.
 3. If behaviour differs from the fallback (e.g. snowboarders and flats), add a `coreOf`-style hook at that single decision site.
-4. Turn `guestTypesV2` on for the game (`main.ts` option), re-record goldens in that milestone's STOP task, add tests.
+4. Re-record goldens in that milestone's STOP task (the framework is already live; the list is empty today so it is a no-op), add tests.

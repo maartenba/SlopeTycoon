@@ -104,17 +104,15 @@ export interface SimOptions {
   size: MapSize;
   seed: number;
   hooks?: SimHooks;
-  /** Automatic events of the Events calendar (Almabtrieb, New Year, critic visits, powder days). The game turns them on; headless sims / tests default to off. Booked festivals always work. */
+  /** Automatic events of the Events calendar (Almabtrieb, New Year, critic visits, powder days). Default ON (= the real game); pass false to opt out (title demo). Booked festivals always work. */
   autoEvents?: boolean;
-  /** Rival market share scales arrivals (default true). The guided tutorial passes false: exactly neutral. Scenarios are always neutral. */
+  /** Rival market share scales arrivals. Default ON; the guided tutorial passes false (exactly neutral). Scenarios are always neutral. */
   rivalMarket?: boolean;
-  /** Story guests (named guests with one wish; sim/guests/Stories.ts). The game turns them on; headless sims / tests default to off. */
+  /** Story guests (named guests with one wish; sim/guests/Stories.ts). Default ON; the title demo opts out. */
   stories?: boolean;
-  /** Buildings reached only by hiking trail / piste edge pay REMOTE_SUPPLY_MULT (+25%) upkeep. The game turns it on; headless sims / tests default to off (goldens). */
+  /** Buildings reached only by hiking trail / piste edge pay REMOTE_SUPPLY_MULT (+25%) upkeep. Default ON; the title demo opts out. */
   remoteSupply?: boolean;
-  /** Guest-type framework (Task 9): also draw the extra guest types of config/guestTypes.ts (season shares, level + building gates). Default off = the six core types only (goldens). */
-  guestTypesV2?: boolean;
-  /** Campaigns v2 (Task 50): track arrivals by mode (rail share) and pay the capped train sustainability bonus. The game turns it on; headless sims / tests default to off (goldens). */
+  /** Campaigns v2 (Task 50): track arrivals by mode (rail share) and pay the capped train sustainability bonus. Default ON; the title demo opts out. */
   campaignsV2?: boolean;
   /** Starting money override (tests). */
   money?: number;
@@ -365,7 +363,7 @@ export function createSim(opts: SimOptions) {
   };
   const guestSim = new GuestSim(guestWorld, size, bus);
   guestSim.spawner.rateMult = diff.spawn; guestSim.patienceMult = diff.patience; guestSim.injuryMult = diff.incidents * (mods.eventBias?.incidents ?? 1);
-  guestSim.spawner.typesV2 = opts.guestTypesV2 === true;
+  guestSim.spawner.typesV2 = true; // extra guest types of config/guestTypes.ts (the game always draws them; list is empty today)
   guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   if (mods.guestMix) guestSim.spawner.mixBias = GUEST_TYPE_NAMES.map((n) => mods.guestMix?.[n] ?? 1);
   registerGuestSystems(registry, guestSim);
@@ -558,7 +556,7 @@ export function createSim(opts: SimOptions) {
     },
     protection: () => staffUpgrades.wildlifeProtection(),
     bonus: () => energy.recyclingBonus(),
-    trainShare: () => (opts.campaignsV2 === true ? marketingRef?.railShare() ?? null : null),
+    trainShare: () => (opts.campaignsV2 !== false ? marketingRef?.railShare() ?? null : null),
   });
   bus.on('guest:arrived', () => sustain.noteArrival());
   bus.on('time:hour', (e) => { if (e?.hour === 12) sustain.noteNoon(guestSim.store.count); });
@@ -612,7 +610,7 @@ export function createSim(opts: SimOptions) {
   /** Snowboard Park Jam bonus: an active Stunt Park within 12 tiles of the top station of an open lift. */
   const parkNearLiftTop = (): boolean => buildings.all().some((b) => b.active && b.type === 'stuntPark' && lifts.all().some((l) => liftOpenForBusiness(l) && Math.hypot(l.top.x - (b.x + b.w / 2), l.top.y - (b.y + b.h / 2)) <= 12));
   const marketing = new Marketing({
-    economy, bus, date: () => game.date, gate, trackRail: opts.campaignsV2 === true,
+    economy, bus, date: () => game.date, gate, trackRail: opts.campaignsV2 !== false,
     ctx: {
       season: () => seasonOf(game.date), stars: () => rating.stars,
       has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
@@ -742,10 +740,10 @@ export function createSim(opts: SimOptions) {
     critic: () => { const x = safety.incidents.stats(); return { stars: rating.stars, happiness: avgHappiness(), openShare: openStatus.pisteStatuses().length ? openStatus.pisteStatuses().filter((p) => p.open).length / openStatus.pisteStatuses().length : 0, incidents: x.penalty > 0 ? 1 : 0 }; },
     cheer: (amt) => { const st = guestSim.store; for (let i = 0; i < st.limit; i++) if (st.alive[i]) st.happiness[i] = Math.min(1, st.happiness[i]! + amt); },
     news: (m) => toast(m, 'info', 'building'),
-    seed, auto: opts.autoEvents === true,
+    seed, auto: opts.autoEvents !== false,
   });
   eventsRef = events;
-  // Story guests (M5.4 Task 22): observer module polled at the end of every guest tick; own RNG; off unless `stories: true`.
+  // Story guests (M5.4 Task 22): observer module polled at the end of every guest tick; own RNG; on unless `stories: false`.
   const storyCache = { day: -1, black: false, trail: false };
   const storyHas = (need: 'black' | 'meal' | 'apres' | 'school' | 'trail'): boolean => {
     if (need === 'meal') return buildings.all().some((b) => b.active && FOOD.has(b.type));
@@ -764,7 +762,7 @@ export function createSim(opts: SimOptions) {
     isKid: (slot) => guestSim.families.isKid(slot),
     tip: (amount) => economy.earn('other', amount),
   });
-  stories.enabled = opts.stories === true;
+  stories.enabled = opts.stories !== false;
   guestSim.afterUpdate = (tick) => { if (stories.enabled) stories.update(tick); };
   bus.on('guest:arrived', (e) => stories.onArrived(e.id));
   bus.on('lesson:started', (e) => stories.onLesson(e.kids));
@@ -806,7 +804,7 @@ export function createSim(opts: SimOptions) {
         let share = x.active && openStatus.buildingStatus(x.id)?.open === false ? CLOSED_BUILDING_UPKEEP_SHARE : 1;
         if (offSeason && def?.season === 'winter' && OFFSEASON_RELIEF.winterOnlyUpkeepShare < share) { relief.mothball += full * (share - OFFSEASON_RELIEF.winterOnlyUpkeepShare); share = OFFSEASON_RELIEF.winterOnlyUpkeepShare; }
         if (x.type === 'snowCannon' && ops.snowmaking.isMothballed(x.id) && SNOWMAKING.mothballUpkeepShare < share) { relief.mothball += full * (share - SNOWMAKING.mothballUpkeepShare); share = SNOWMAKING.mothballUpkeepShare; } // switched off by the player: 15 % upkeep
-        if (opts.remoteSupply === true && networks.suppliedOnFootOnly(x.id)) share *= REMOTE_SUPPLY_MULT; // supplied on foot: +25% upkeep
+        if (opts.remoteSupply !== false && networks.suppliedOnFootOnly(x.id)) share *= REMOTE_SUPPLY_MULT; // supplied on foot: +25% upkeep
         b += full * share;
       }
       const lo = liftOps.settleDay(); // closed lifts only cost base maintenance; running lifts cost energy

@@ -122,9 +122,10 @@ describe('guest-type framework (Task 9)', () => {
     expect(coreOf(42)).toBe(0); expect(typeLabel(42)).toBe('Guest'); expect(segmentIndex(42)).toBe(0);
   });
 
-  it('createSim: guestTypesV2 with no types defined leaves the state hash identical (goldens)', () => {
+  it('createSim (v2 is always on): with no types defined, the v2 spawner path leaves the state hash identical to the core-only path', () => {
     const run = (v2: boolean): string => {
-      const sim = createSim({ size: 64, seed: 7, startSeason: 'summer', guestTypesV2: v2, now: () => 0 });
+      const sim = createSim({ size: 64, seed: 7, startSeason: 'summer', now: () => 0 });
+      expect(sim.guestSim.spawner.typesV2).toBe(true); sim.guestSim.spawner.typesV2 = v2;
       for (let i = 0; i < 400; i++) sim.tick(1);
       return stateHash(sim.game, sim.registry);
     };

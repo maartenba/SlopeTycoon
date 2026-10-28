@@ -16,7 +16,7 @@ Summary for the milestone playtest. Details live in the per-feature docs; this p
 
 How they connect: festivals and rivals both multiply arrivals (events x1.1-1.35 during the event; rivals 0.9-1.12), the rating (incl. sustainability) drives the rival share and the critic's score, the staff upgrades feed hospitality revenue, wildlife protection (rangers) and lift breakdowns, story wishes only resolve if the resort is actually good at the thing, and the year report collects all of it (rival comparisons, Green Resort, event highlights).
 
-Switches and determinism: staff Auto, events (`autoEvents`), stories (`stories`) and rivals (`rivalMarket`) are `createSim` options so every golden hash and the pre-M5.4 balance tests keep their numbers; `main.ts` turns the real-game ones on (not in the title demo).
+Switches: staff Auto, events (`autoEvents`), stories (`stories`) and rivals (`rivalMarket`) are `createSim` options that default ON (= the real game); only the title demo (events / stories) and the guided tutorial (rivals) opt out. Goldens and balance tests run with them on (docs/balance.md).
 
 ## Balance (closing sweep with everything on)
 

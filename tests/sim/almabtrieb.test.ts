@@ -90,7 +90,7 @@ describe('Almabtrieb: calendar window = livestock descent phase', () => {
 describe('Almabtrieb: a real sim year with an Alpine Farm', () => {
   const year = (seed: number) => {
     const news: string[] = [], on: number[] = [];
-    const sim = createSim({ size: 64, seed, startSeason: 'winter', now: () => 0, autoEvents: true, hooks: { toast: (t: string) => news.push(t) } });
+    const sim = createSim({ size: 64, seed, startSeason: 'winter', now: () => 0, hooks: { toast: (t: string) => news.push(t) } });
     buildDemoResort(sim, 'large');
     expect(sim.buildings.all().some((b) => b.type === 'alpineFarm')).toBe(true);
     let last = -1, shown = 0;
@@ -117,7 +117,7 @@ describe('Almabtrieb: a real sim year with an Alpine Farm', () => {
 
 describe('Almabtrieb: dressing during the event, nothing after', () => {
   it('props exist while it runs and are gone (0 props, empty meshes) afterwards', () => {
-    const sim = createSim({ size: 64, seed: 61, startSeason: 'autumn', now: () => 0, autoEvents: true });
+    const sim = createSim({ size: 64, seed: 61, startSeason: 'autumn', now: () => 0 });
     buildDemoResort(sim, 'large');
     const d = new FestivalDressing(() => 0, () => dressingWorldOf(sim), 61);
     sim.events.debugStart('almabtrieb', 2);
@@ -133,7 +133,7 @@ describe('Almabtrieb: dressing during the event, nothing after', () => {
 });
 
 describe('Almabtrieb: Rudi advice', () => {
-  const mkSim = () => { const s = createSim({ size: 64, seed: 61, starterResort: true, startSeason: 'summer', now: () => 0, autoEvents: true } as never); s.tick(60); s.advisor.reset(); return s; };
+  const mkSim = () => { const s = createSim({ size: 64, seed: 61, starterResort: true, startSeason: 'summer', now: () => 0 } as never); s.tick(60); s.advisor.reset(); return s; };
   const adv = (s: ReturnType<typeof mkSim>) => { s.advisor.evaluate(true); return s.advisor.ranked().find((a) => a.id === 'farm.almabtrieb'); };
   it('no farm: suggests building an Alpine Farm (with a build action); quiet in winter and with auto events off', () => {
     const s = mkSim();
@@ -147,7 +147,7 @@ describe('Almabtrieb: Rudi advice', () => {
     s.game.date.day = almabtriebWindow().first - 40; s.events.setAuto(false); expect(adv(s)).toBeUndefined();
   });
   it('farm + herd: counts down 5 days ahead, "is on" during the window, and Show me lands on the base station', () => {
-    const s = createSim({ size: 64, seed: 61, startSeason: 'summer', now: () => 0, autoEvents: true });
+    const s = createSim({ size: 64, seed: 61, startSeason: 'summer', now: () => 0 });
     buildDemoResort(s, 'large'); s.tick(60); s.advisor.reset();
     expect(s.buildings.all().some((b) => b.type === 'alpineFarm')).toBe(true);
     const w = almabtriebWindow();

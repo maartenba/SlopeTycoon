@@ -23,7 +23,7 @@ A booking needs `leadDays` of notice, the right season and start window, no over
 
 **Critic score** (`criticScore`): `0.6 x stars + 1.25 x guest mood + 0.75 x open-piste share - 0.5 if incidents are open`, rounded to half steps, clamped 0..5. A score >= 4 gives x1.12 arrivals for 10 days, <= 2 gives x0.92, anything between changes nothing.
 
-**Automatic events are off in headless sims** (`createSim({ autoEvents })`, default `false`; `main.ts` turns them on except in the title demo). Booked festivals work everywhere. This keeps every pre-existing headless test / balance run / golden hash untouched: only the new `events` save module appears (excluded in `tests/sim/staff.test.ts`). With `autoEvents: true`, New Year, critic and powder days do change arrivals slightly.
+**Automatic events are ON by default** (`createSim({ autoEvents })`; pass `false` to opt out: only the title demo does). Booked festivals work everywhere. New Year, critic and powder days change arrivals slightly; the goldens are recorded with them on (docs/balance.md, "Defaults == the real game").
 
 ### Almabtrieb: how to see it
 

@@ -6,8 +6,7 @@ import type { SeasonId, WeatherKind } from '../core/events';
  * The six CORE types (solo, couple, family, vip, budget, adventure; indices 0..5) keep their hand-tuned tables in Spawner / Marketing / the attraction
  * specs and are untouched. EXTRA types (index 6+) are plain data rows in `GUEST_TYPE_DEFS`: season shares, a minimum resort level, required buildings,
  * a weather response, an appeal profile (by attraction kind or id, falling back to a core column), a marketing segment, group / budget / overnight
- * numbers and look hooks (top colour, gear, outfit). The list is EMPTY by default and the spawner only draws extras when `Spawner.typesV2` is on
- * (`guestTypesV2`), so existing games and the golden hashes are byte-identical until a milestone turns a type on.
+ * numbers and look hooks (top colour, gear, outfit). The list is EMPTY by default and the spawner always runs the v2 path (`Spawner.typesV2`, on in `createSim`), so an empty list is a no-op until a milestone adds a type (then re-record goldens).
  *
  * Config module: no sim / render imports (only event id types).
  */

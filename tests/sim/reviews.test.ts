@@ -87,7 +87,7 @@ describe('stateHash unchanged with reviews disabled vs enabled', () => {
     const { createSim } = await import('../../src/game/createSim');
     const { stateHash } = await import('../../src/game/saveState');
     const hashFor = (on: boolean, withNames = false): { hash: string; parts: Record<string, string>; reviews: number } => {
-      const sim = createSim({ size: 64, seed: 11, starterResort: true, startSeason: 'winter', now: () => 0 });
+      const sim = createSim({ size: 64, seed: 11, starterResort: true, startSeason: 'winter', stories: false, now: () => 0 }); // stories also emit (failure) reviews: this test counts review events
       sim.guestSim.reviews.enabled = on; sim.guestSim.reviews.rate = on ? 1 : 0.05; sim.guestSim.reviews.perDay = 1e9;
       if (withNames) sim.guestSim.reviewPlace = (x, y) => { const p = sim.names.describeLocation(x, y); return { name: p.name, on: p.on }; };
       let reviews = 0; sim.bus.on('guest:review', () => { reviews++; });

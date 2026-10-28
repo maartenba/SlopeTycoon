@@ -46,7 +46,7 @@ const CASES: Case[] = [
   { id: 'marketing.ready', trigger: () => { /* the starter resort already qualifies */ }, calm: (s) => { s.game.money = 100; } },
   { id: 'marketing.trainIdle', trigger: (s) => { guests(s, 20); trainStub(s, 0.01); }, calm: (s) => { guests(s, 20); trainStub(s, 0.2); } },
   { id: 'marketing.parkingFull', trigger: (s) => { trainStub(s, 0.3); parkingStub(s, 1e6); }, calm: (s) => { trainStub(s, 0.3); parkingStub(s, 0); } },
-  { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { setDay(s, seasonStartDay('summer') + 5); } },
+  { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.events.setAuto(false); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
   { id: 'season.summer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.networks.layers[100] = (s.networks.layers[100]! | Layer.Hike) as never; } },
   { id: 'cash.summerBuffer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 800; }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 5_000_000; } },

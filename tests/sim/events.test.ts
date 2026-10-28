@@ -180,10 +180,12 @@ describe('EventCalendar: save', () => {
 });
 
 describe('events in the sim (createSim)', () => {
-  it('is a registered save module and the default (no booking, auto off) leaves arrivals untouched', () => {
+  it('is a registered save module; auto events are ON by default (= the real game), autoEvents: false opts out and leaves arrivals untouched', () => {
     expect(SAVE_MODULES.some((m) => m.key === 'events')).toBe(true);
     const { sim } = makeResort(64, 1, { startDay: 167 });
-    expect(sim.events.arrivalMult()).toBe(1); expect(sim.events.auto).toBe(false);
+    expect(sim.events.auto).toBe(true);
+    const off = createSim({ size: 64, seed: 1, startDay: 167, autoEvents: false, now: () => 0 });
+    expect(off.events.arrivalMult()).toBe(1); expect(off.events.auto).toBe(false);
   });
 
   it('a booked festival pays, runs, lifts the spawner attractiveness and is part of the save', () => {
@@ -204,7 +206,7 @@ describe('events in the sim (createSim)', () => {
 
   it('a 365-day headless run with one festival is deterministic', () => {
     const go = (): string => {
-      const sim = createSim({ size: 64, seed: 61, now: () => 0, autoEvents: true });
+      const sim = createSim({ size: 64, seed: 61, now: () => 0 });
       const bot = new Bot(sim);
       let booked = false;
       runBot(sim, bot, 365, () => {
@@ -227,7 +229,7 @@ describe('events in the sim (createSim)', () => {
   it('save / load mid-festival gives the same state hash as the uninterrupted control run', () => {
     const make = (): ReturnType<typeof createSim> => { const { sim } = makeResort(64, 61, { startDay: 100 }); sim.events.setAuto(true); return sim; };
     const a = make(); run(a, { days: 3 });
-    const b = createSim({ size: 64, seed: 61, now: () => 0, fromSave: collectSave(a), autoEvents: true });
+    const b = createSim({ size: 64, seed: 61, now: () => 0, fromSave: collectSave(a) });
     applySave(b, collectSave(a));
     expect(stateHash(b).parts.events).toBe(stateHash(a).parts.events);
   }, 60_000);

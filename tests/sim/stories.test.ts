@@ -218,10 +218,10 @@ describe('Stories (observer module)', () => {
 });
 
 describe('Stories in a real sim', () => {
-  it('off by default (no stories, no events), on with the option; save module round trips', () => {
-    const off = createSim({ size: 64, seed: 61, now: () => 0 });
+  it('on by default (= the real game), off with stories: false; save module round trips', () => {
+    const off = createSim({ size: 64, seed: 61, now: () => 0, stories: false });
     expect(off.stories.enabled).toBe(false);
-    const on = createSim({ size: 64, seed: 61, now: () => 0, stories: true });
+    const on = createSim({ size: 64, seed: 61, now: () => 0 });
     expect(on.stories.enabled).toBe(true);
     expect(collectSave(on)['stories']).toBeTruthy();
   });

@@ -185,7 +185,7 @@ describe.skipIf(!FULL)('[balance] everything on (M5.4 closing sweep): automatic 
   const cases: Array<[64 | 128 | 256, number, boolean]> = [[64, 61, false], [64, 7, false], [128, 61, false], [128, 7, false], [256, 61, true], [256, 7, true]];
   for (const [size, seed, loan] of cases) {
     it(`${size} seed ${seed}: profit by year 2 and 3 holds with every depth system active`, () => {
-      const sim = createSim({ size, seed, now: () => 0, autoEvents: true, stories: true });
+      const sim = createSim({ size, seed, now: () => 0 });
       const bot = new Bot(sim, { starterLoan: loan, staffUpgrades: true });
       runBot(sim, bot, 3 * DAYS_PER_YEAR);
       const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);

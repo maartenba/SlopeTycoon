@@ -102,7 +102,7 @@ export class Spawner {
   rateMult = 1;
   /** Scenario modifier: per guest type weight multiplier (order = GUEST_TYPE_NAMES); null = none. */
   mixBias: readonly number[] | null = null;
-  /** `guestTypesV2` (default off): also draw the extra guest types of config/guestTypes.ts. Off = the six core types only, draws identical to before. */
+  /** Also draw the extra guest types of config/guestTypes.ts (`createSim` sets it true; unit tests may set false = the six core types only). */
   typesV2 = false;
   /** Career level for the extra types' `minLevel` (createSim wires the progression; default = max, i.e. no gate). */
   levelFn: () => number = () => 99;

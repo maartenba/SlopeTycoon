@@ -196,3 +196,22 @@ Sim change, not a label change (docs/time-flow.md "Climate curves"). Bot, Normal
 
 ## Pistes as runs (0.2.2)
 Open / closed is evaluated per run: a run without enough skiable snow closes alone while its neighbours stay open (before, the whole 8-connected network stayed open). `tests/sim/staff.test.ts` goldens re-recorded for this reason (bot 64 / seed 61, 200 days: money 180221.69 -> 183647.28, +1.9 %; run-aware routing then moved it to 187143.92, +3.8 % in total, the year-report snapshot and one rivals tolerance (sustainability score vs plain bot, 1.5 -> 2.5) with it); the `runs` save module is excluded from those goldens (additive). Run-aware via choice adds `EXPLORE.runCrowdWeight / runQualityWeight / moodEase`.
+
+## Defaults == the real game (0.2.2)
+Rule: `createSim` runs the same game the player plays; options only opt out (AGENTS.md conventions). Before, `main.ts` turned five systems on that headless tests, bots and analysis scripts ran without, so goldens described a different (neutral) game.
+
+| Option | Before (createSim default) | After | Exclusions (opt-out) |
+|---|---|---|---|
+| `autoEvents` | off | **on** | title demo (`!DEMO`) |
+| `stories` | off | **on** | title demo |
+| `remoteSupply` (+25 % upkeep, trail-only supply) | off | **on** | title demo |
+| `campaignsV2` (rail share, train sustainability) | off | **on** | title demo |
+| `rivalMarket` | on | on | guided tutorial (`false`); scenarios always neutral inside `createSim` |
+| `guestTypesV2` | off | **removed**; `Spawner.typesV2` always on (list empty = no-op, hash identical) | unit tests may set `spawner.typesV2 = false` |
+
+`main.ts` now passes only opt-outs. Energy, maintenance, snowmaking mode, runs and staff Auto were already unconditional; the bot's `greenEnergy` / `staffUpgrades` are bot behaviour options (not sim flags) and stay opt-in.
+
+**Money golden** (bot, 64 / seed 61, 200 days; each flag alone on the old baseline 192905.90): autoEvents 202654.1 (+5.05 %), stories 193485.9 (+0.30 %), remoteSupply 192905.9 (0 %), campaignsV2 192905.9 (0 %), all together **203294.15 (+5.39 %)**. Seed 7: 177888.9 -> autoEvents +2.62 %, stories +0.25 %, all +2.83 %. remoteSupply / campaignsV2 do not move the bot: it builds no hut on a trail-only edge and no train station, so they only bite for players (and in tests that set the situation up). Auto events change arrivals (critic / powder / New Year / Almabtrieb), stories add ~1.5 % named guests and tips.
+* Re-recorded in one commit: `tests/sim/staff.test.ts` goldens (starter 3 days: core, weather, spawner, guests, economy, rating, goals, ... all moved; bot 200 days: nearly every part moved), `yearReport` snapshot (year 1 guests 1430 -> 1518, profit -178 -> -121; year 2 guests 3015 -> 3075, income 3091 -> 3235, profit 1264 -> 1400, incidents 18 -> 20).
+* Test adjustments (not goldens): reviews hash test uses `stories: false` (story failures emit reviews); goalsSave gift-resort test uses `autoEvents: false` (a day-one arrival bump can legitimately close chapter s1 via "30 guests in a day"); events / stories / advisor tests assert the new defaults.
+* Cross-platform tolerance unchanged: on CI the bot golden still skips `sys.spawner` and compares money within 1 %.
