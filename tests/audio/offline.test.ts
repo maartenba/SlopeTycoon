@@ -124,4 +124,12 @@ describe('ambience beds, rendered (ambience 100 % so flaws are not hidden by gai
     const sp = spectrum(x, 32000); expect(sp.above(6000)).toBeLessThan(0.02); expect(sp.centroid).toBeGreaterThan(1800); expect(sp.centroid).toBeLessThan(4500);
     expect(RECIPES.birdChirp.maxPerSec).toBeLessThanOrEqual(3);
   }, 60000);
+  it('the level crossing bell is quiet and clean at full gain (M6.1: no clipping, no DC, no clicks), repeated like the view does', async () => {
+    const ob = new OfflineBackend(32000), { AudioEngine } = await import('../../src/audio/AudioEngine'), { AudioSettings } = await import('../../src/audio/AudioSettings'), { Sfx } = await import('../../src/audio/Sfx');
+    const eng = new AudioEngine({ factory: () => ob as never, settings: new AudioSettings(null) }); await eng.onGesture();
+    const sfx = new Sfx(eng); for (let i = 0; i < 8; i++) { sfx.play('crossingBell', { gain: 1, pan: i % 2 ? 0.5 : -0.5 }); ob.process(0.4); }
+    const x = ob.capture().l, s = statsOf(x);
+    expect(s.peak).toBeGreaterThan(0.001); expect(s.peak).toBeLessThan(0.15); expect(s.maxJump).toBeLessThan(0.05);
+    expect(Math.abs(x.reduce((a: number, b: number) => a + b, 0) / x.length)).toBeLessThan(1e-3);
+  }, 60000);
 });

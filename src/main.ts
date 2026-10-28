@@ -62,6 +62,7 @@ import { DropRing } from '@/render/view/DropRing';
 import { WalkDropMarker, DROP_HINT } from '@/ui/walkDropMarker';
 import { yawOfHeading } from '@/render/view/ViewCameraRig';
 import { surfaceHeightAt, NET_NIGHT } from '@/render/meshes/Paths';
+import { CROSSING } from '@/config/crossings';
 import { RailCrossingsView } from '@/render/RailCrossings';
 import { planBridge } from '@/world/Bridges';
 import { liftStats } from '@/sim/Lift';
@@ -1618,7 +1619,12 @@ window.addEventListener('keydown', (e) => {
 // ---- Walk mode (Task 12): first-person on foot. READS the sim only (grid, networks, props, buildings, lifts, guests, animals); the walker is not a sim guest and is never saved ----
 const WALK_STORAGE = (() => { try { return window.localStorage; } catch { return null; } })();
 let walkSettings: WalkSettings = loadWalkSettings(WALK_STORAGE);
-const walkWorld = buildWalkWorld(grid, networks, props, (x, z) => surfaceHeightAt(grid, x, z), allDecorItems);
+const walkWorld = buildWalkWorld(grid, networks, props, (x, z) => { // the walker climbs bridge decks and the rail footbridge stairs like guests do (docs/bridges.md, docs/crossings.md)
+  const g = surfaceHeightAt(grid, x, z) + (networks.crossCount > 0 ? networks.footLift(x, z) * CROSSING.footbridge.deck : 0);
+  if (networks.bridgeTiles === 0) return g;
+  const d = networks.deckY(x, z);
+  return d !== null && d > g ? d : g;
+}, allDecorItems);
 const walkPaths = new Map<number, { nodes: unknown; path: CablePath }>();
 let walkRng = 0x9e3779b9; // render-only RNG (footstep pitch jitter): never touches the sim RNG
 const walkRand = (): number => { walkRng = (Math.imul(walkRng, 1664525) + 1013904223) >>> 0; return walkRng / 4294967296; };
