@@ -356,6 +356,28 @@ function roadTile(d: GeoData, grid: Grid, net: Networks, x: number, y: number, m
   return true;
 }
 
+const DECK_LIFT = NET_LIFT + 0.052; // just above the rail tops (rail top = NET_LIFT + 0.04)
+const DECK_WOOD = 0xa4834f, DECK_WOOD_DARK = 0x6e5636, DECK_ROAD = 0x575b63;
+/**
+ * Level crossing deck (cross 1 footpath / 2 road): planks (path) or asphalt (road) laid across the rails over the full tile, running along the
+ * path direction (perpendicular to the rail), draped on the surface. The path / road tiles next to it already reach into it (Networks.crossJoins).
+ */
+export function crossingDeck(d: GeoData, grid: Grid, x: number, y: number, m: number, cross: number): void {
+  const hw = cross === 2 ? HALF_W[2]! : HALF_W[1]! + 0.03, cx = x + 0.5, cz = y + 0.5;
+  const ns = m === (Conn.N | Conn.S); // rail runs N-S => the deck runs E-W
+  const rect = (a: number, b: number, c: number, e: number, lift: number, rgb: number, cell: number): void => {
+    if (ns) pushQuad(d, grid, x + a, cz + c, x + b, cz + e, lift, cell, true, rgb, undefined, 2);
+    else pushQuad(d, grid, cx + c, y + a, cx + e, y + b, lift, cell, true, rgb, undefined, 2);
+  };
+  if (cross === 2) {
+    rect(0, 1, -hw, hw, DECK_LIFT, DECK_ROAD, MARK_CELL);
+    rect(0, 1, -0.012, 0.012, DECK_LIFT + 0.004, 0xf2c14e, MARK_CELL);
+    return;
+  }
+  rect(0, 1, -hw, hw, DECK_LIFT, DECK_WOOD, MARK_CELL);
+  for (let k = 0; k < 8; k++) rect(k / 8 + 0.058, k / 8 + 0.067, -hw, hw, DECK_LIFT + 0.004, DECK_WOOD_DARK, MARK_CELL); // plank gaps
+}
+
 /** Geometry for one tile of network (auto-tiled: centre + arms by connection mask). */
 export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y: number): void {
   const i = y * net.size + x, k = net.kind[i]!;
@@ -368,7 +390,7 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
   const flatY = bridge ? Math.max(...grid.getCorners(x, y)) * HEIGHT_UNIT : undefined;
   const rgb = bridge ? 0xc9a37a : 0xffffff;
   const cx = x + 0.5, cz = y + 0.5;
-  if (k === 3) { railTile(d, grid, x, y, m, net.size); return; }
+  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); return; }
   if (k === 1 && m !== 0 && pathTile(d, grid, x, y, m, net.size, hw, cell, lift, rgb, flatY, networkEdgeTan(net, x, y))) return;
   if (k === 2 && !bridge && roadTile(d, grid, net, x, y, m, hw, cell, lift)) return;
   const vertical = (m & (Conn.N | Conn.S)) !== 0 && (m & (Conn.E | Conn.W)) === 0;

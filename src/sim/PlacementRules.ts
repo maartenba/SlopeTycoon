@@ -12,6 +12,8 @@ export interface NetworkAccess {
   pisteAt(x: number, y: number): boolean;
   /** NetKind on tile (0 none, 1 path, 2 road, 3 rail). */
   kindAt(x: number, y: number): number;
+  /** Level crossing / rail footbridge on the tile (Networks.cross: 0 none). A building never stands on one. */
+  crossAt?(x: number, y: number): number;
   /** Why a road / path / rail footprint is NOT served although the network exists nearby (precise placement hint). */
   diagnose?(kind: 'road' | 'path' | 'rail', r: Rect): 'unlinked' | 'corner' | 'gap' | null;
 }

@@ -45,6 +45,7 @@ import { FAUNA } from '../sim/nature/Fauna';
 import type { GuestWorld } from '../sim/guests/GuestWorld';
 import type { NavWorld } from '../sim/guests/NavGraph';
 import { routeOnKind } from '../sim/guests/Arrivals';
+import { RailCrossings } from '../sim/RailCrossings';
 import { Rating, createRatingSystem } from '../sim/Rating';
 import { LeaverTracker, gatherRatingInput } from '../sim/RatingInputs';
 import { Coverage, type NetworkProvider } from '../sim/Coverage';
@@ -324,9 +325,12 @@ export function createSim(opts: SimOptions) {
     skiOpen: cond.skiOpen, hikeOk: cond.hikeOk, snow: grid.snowDepth, closed: openStatus.closedMask, bridge: networks.bridge,
     networkVersion: () => networks.version,
     terrainVersion: () => grid.terrainVersion,
+  // Rail level crossings (Phase 6 Task 10, docs/crossings.md): pure derivation from the train polylines; inert (no work, no state) while the world has none.
+  const crossings = new RailCrossings(networks);
     tileAlt: (x, y) => cond.altitude(x, y),
     isBikeable: (x, y) => cond.isBikeable(x, y),
     lifts: () => lifts.all(),
+    cross: networks.cross, crossClosed: (t) => crossings.isClosed(t), onCrossingWait: () => crossings.noteWait(),
     consumeFlips: () => { const a = cond.takeFlips(), b = openStatus.takeClosureFlips(); return a && b ? [...a, ...b] : a ?? b; },
   };
   let ticketing: Ticketing | null = null;
@@ -339,7 +343,7 @@ export function createSim(opts: SimOptions) {
     isRoadServed: (id) => networks.isRoadServed(id),
     isRailServed: (id) => networks.isRailServed(id),
     networkVersion: () => networks.version,
-    route: (k, from, to) => routeOnKind(networks.kind, size, k === 'road' ? 2 : 3, from, to),
+    route: (k, from, to) => routeOnKind(networks.kind, size, k === 'road' ? 2 : 3, from, to, networks.cross),
     walkNet: () => networks,
     groundAt: (x, y) => groundHeight(grid, x, y),
     stats: () => {
@@ -372,6 +376,7 @@ export function createSim(opts: SimOptions) {
   guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   if (mods.guestMix) guestSim.spawner.mixBias = GUEST_TYPE_NAMES.map((n) => mods.guestMix?.[n] ?? 1);
   registerGuestSystems(registry, guestSim);
+  guestSim.spawner.crossings = crossings;
 
   // ---- Operations AI: piste quality, nightly grooming, hourly snowmaking ----
   const ops: Ops = createOps({
@@ -1090,6 +1095,7 @@ export function createSim(opts: SimOptions) {
             const b = kit.placeConnected('alpineFarm', kit.lc.x + [-8, 8, 0, -12][k]!, kit.lc.y + [6, 6, 12, -4][k]!, 30, true);
             if (!b) return;
             if (!b.active) { kit.ensureRoad(b); kit.settle(); }
+    crossings,
             if (b.active) return;
             buildings.remove(b.id); kit.report.placed['alpineFarm'] = Math.max(0, (kit.report.placed['alpineFarm'] ?? 1) - 1); kit.settle();
           }

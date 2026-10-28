@@ -139,9 +139,11 @@ const DX4 = [0, 1, 0, -1], DY4 = [-1, 0, 1, 0];
  * BFS over tiles of one network kind (2 = road, 3 = rail) from `from` to a tile adjacent to `to`'s footprint.
  * Returns tile-centre points (flat-mapped by the caller) or [] when unreachable. Only existing network tiles are used.
  */
-export function routeOnKind(kind: ArrayLike<number>, size: number, netKind: number, from: Pt, to: Rect): Pt[] {
+export function routeOnKind(kind: ArrayLike<number>, size: number, netKind: number, from: Pt, to: Rect, cross?: ArrayLike<number>): Pt[] {
   const s = from.y * size + from.x;
   if (from.x < 0 || from.y < 0 || from.x >= size || from.y >= size || kind[s] !== netKind) return [];
+  /** A road runs over a road level crossing (a rail tile with cross 2); rail already runs on its own tiles. */
+  const ok = (i: number): boolean => kind[i] === netKind || (netKind === 2 && cross !== undefined && kind[i] === 3 && cross[i] === 2);
   const prev = new Int32Array(size * size).fill(-2);
   prev[s] = -1;
   const q = [s];
@@ -157,7 +159,7 @@ export function routeOnKind(kind: ArrayLike<number>, size: number, netKind: numb
       const nx = x + DX4[k]!, ny = y + DY4[k]!;
       if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
       const ni = ny * size + nx;
-      if (prev[ni] !== -2 || kind[ni] !== netKind) continue;
+      if (prev[ni] !== -2 || !ok(ni)) continue;
       prev[ni] = i; q.push(ni);
     }
   }

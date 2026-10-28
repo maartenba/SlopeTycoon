@@ -1,7 +1,7 @@
 import type { ProfileView } from '../ui/components/StProfile';
 import * as THREE from 'three';
 import { heightAt, pickHeightfield } from '../render/Picking';
-import { lineTiles, NetKind, type NetKindId, type Networks } from '../world/Networks';
+import { Cross, lineTiles, NetKind, type NetKindId, type Networks } from '../world/Networks';
 import type { Grid } from '../world/Grid';
 import type { Pt } from '../sim/Dependencies';
 import type { StrokeHistory } from './StrokeHistory';
@@ -217,6 +217,8 @@ export abstract class DragTool {
 /** Footpath / road / rail: straight or L-shaped drag (R flips the corner). */
 export class SegmentTool extends DragTool {
   readonly group: string;
+  /** Path strokes over a rail line become footbridges (no waiting) instead of level crossings (Task 11). Toggled by the dock button / B. */
+  overRail = false;
   constructor(o: DragToolOptions, readonly kind: NetKindId) { super(o); this.group = kind === NetKind.Path ? 'path' : kind === NetKind.Road ? 'road' : 'rail'; }
   startTool(): void { this.begin_(); }
 
@@ -224,14 +226,16 @@ export class SegmentTool extends DragTool {
     return this.start && this.cur ? lineTiles(this.start, this.cur, this.vFirst) : [];
   }
   protected evaluate(tiles: Pt[]): Evaluation {
-    const plan = this.o.networks.planSegment(this.kind, tiles, this.o.multiplier());
+    const plan = this.o.networks.planSegment(this.kind, tiles, this.o.multiplier(), this.overRail);
     if (plan.ok && this.kind === NetKind.Path && plan.newTiles.length && !this.o.networks.strokeAnchored(tiles)) {
       return { ok: false, cost: 0, text: 'Paths must connect to a path, road or building' };
     }
     if (!plan.ok) return { ok: false, cost: 0, text: `Blocked: ${plan.reason}` };
-    return { ok: true, cost: plan.cost, text: `Cost: $${Math.round(plan.cost)} (${plan.newTiles.length} tiles)` };
+    const x = plan.crossings.length;
+    const what = x ? ` + ${x === 1 ? (plan.crossings[0]!.cross === Cross.Footbridge ? 'footbridge over the rail' : 'level crossing: guests wait for trains') : `${x} crossings`}` : '';
+    return { ok: true, cost: plan.cost, text: `Cost: $${Math.round(plan.cost)} (${plan.newTiles.length} tiles${what})` };
   }
-  protected commit(tiles: Pt[]): void { this.o.networks.buildSegment(this.kind, tiles); }
+  protected commit(tiles: Pt[]): void { this.o.networks.buildSegment(this.kind, tiles, this.overRail); }
 }
 
 export class PathTool extends SegmentTool {

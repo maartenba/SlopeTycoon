@@ -23,6 +23,8 @@ export interface GuestWorld {
   railEntry(): Pt | null;
   isRoadServed(buildingId: number): boolean;
   isRailServed(buildingId: number): boolean;
+  /** Level crossings (Phase 6): closed state for cars, rail spawn rule. Absent / inactive = no crossings in the world. */
+  crossings?: import('../RailCrossings').RailCrossings;
   /** Bumped when roads/paths/rail change (route/field cache key). */
   networkVersion(): number;
   /** Tile route from `from` to the tile(s) adjacent to `to`; [] when none. */

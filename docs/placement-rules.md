@@ -167,6 +167,8 @@ Buildings, Lifts and Pistes & Trails drawers sort their cards by relevance to th
 * New **energy** category: Solar Array / Plant (slope <= 2, optional flatten), Wind Turbine (exposed ground only: mean corner height >= 20), Small Hydro (`streamAdjacent`), Biomass (road), Tree Nursery, Recycling Centre. Details in docs/energy.md.
 
 ## Phase 6: trail access
+## Phase 6: rail level crossings
+The "no path / road on rail" rule is lifted for valid crossings only: a straight rail tile crossed at a right angle (stroke tile on both sides), no station, no bridge, at least 3 tiles from another crossing. Reasons and costs, the closing logic and the safety argument are in [crossings.md](crossings.md). A building never stands on a crossing (`Cannot build on a level crossing`).
 `trail` access kind, approved rows (Mountain Hut, Ranger Station, Adventure Park, Alpine Farm + trail; Café and Stunt Park already accepted `pisteEdge`) and the +25% remote-supply upkeep: see [trails-access.md](trails-access.md). Reason text order: footpath, road, hiking trail, piste (`Needs a footpath, road, hiking trail or piste next to it`).
 
 ## Access adjacency, exactly (ghost = placed verdict)

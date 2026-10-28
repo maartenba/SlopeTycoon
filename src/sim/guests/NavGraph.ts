@@ -1,4 +1,5 @@
 import { LIFTS } from '../../config/lifts';
+import { CROSSING } from '../../config/crossings';
 import { NAV_MAX_BUILDS_PER_TICK, NAV_SPEED, walkSizeScale } from '../../config/balance';
 import { Layer } from '../../world/Networks';
 import { OccFlag } from '../../world/Occupancy';
@@ -29,6 +30,12 @@ export interface NavWorld {
   readonly closed?: Uint8Array;
   /** Trail/path bridge flag per tile (1 = crossing a stream): hike/bike trails may cross water tiles flagged so. Optional. */
   readonly bridge?: Uint8Array;
+  /** Level crossing per tile (Networks.cross; 0 none, 1 footpath / 2 road crossing, 3 footbridge over rail): such a rail tile is walkable. Optional. */
+  readonly cross?: Uint8Array;
+  /** Is this crossing tile closed right now (a train is coming)? Guests never enter a closed tile (Movement). Optional. */
+  crossClosed?(tile: number): boolean;
+  /** A guest waited a tick at a closed crossing (metric for the advisor). Optional. */
+  onCrossingWait?(): void;
   /** Snow depth in metres. */
   readonly snow: Float32Array;
   networkVersion(): number;
@@ -74,6 +81,7 @@ export class NavGraph implements PathGraph {
   private netVersion = -1;
   private terrainV = -1;
   private liftSig = NaN;
+  private shCross: Uint8Array;
   private shKind: Uint8Array; private shLayers: Uint8Array; private shDiff: Uint8Array;
   /** Optional per-tile ski-speed multiplier by piste quality (ops, Task 25). */
   qualityFactor: ((tile: number) => number) | null = null;
@@ -86,7 +94,7 @@ export class NavGraph implements PathGraph {
     const n2 = world.size * world.size;
     this.alt = new Float32Array(n2).fill(NaN);
     this.stationMask = new Uint8Array(n2);
-    this.shKind = new Uint8Array(n2); this.shLayers = new Uint8Array(n2); this.shDiff = new Uint8Array(n2);
+    this.shCross = new Uint8Array(n2); this.shKind = new Uint8Array(n2); this.shLayers = new Uint8Array(n2); this.shDiff = new Uint8Array(n2);
     for (let m = 0; m < MODES; m++) this.linkMaps.push(new Map());
     this.pf = new Pathfinder(this);
     this.pf.maxBuildsPerTick = NAV_MAX_BUILDS_PER_TICK;
@@ -109,18 +117,23 @@ export class NavGraph implements PathGraph {
   /** Tile height used for downhill checks. */
   tileAltitude(t: number): number { return this.altOf(t); }
 
-  private isPathTile(t: number): boolean { const k = this.world.kind[t]!; return k === 1 || k === 2; }
+  private isPathTile(t: number): boolean { const k = this.world.kind[t]!; return k === 1 || k === 2 || (k === 3 && (this.world.cross?.[t] ?? 0) > 0); }
+
+  /** A level crossing that closes for trains (footpath / road crossing; a footbridge over rail never does). */
+  isCrossing(t: number): boolean { const c = this.world.cross?.[t] ?? 0; return (c === 1 || c === 2) && this.world.kind[t] === 3; }
+  /** Closed level crossing: nobody may enter it. */
+  crossingClosed(t: number): boolean { return this.isCrossing(t) && !!this.world.crossClosed?.(t); }
 
   step(mode: number, a: number, b: number): number {
     const w = this.world, n = this.size;
-    const kb = w.kind[b]!;
-    const road = kb === 2, path = kb === 1 || road, station = this.stationMask[b] === 1;
+    const kb = w.kind[b]!, cb = kb === 3 && w.cross ? w.cross[b]! : 0;
+    const road = kb === 2 || cb === 2, path = kb === 1 || road || cb > 0, station = this.stationMask[b] === 1;
     const trailBridge = mode <= NavMode.Bike && !path && w.bridge !== undefined && w.bridge[b] === 1 && (w.layers[b]! & (Layer.Mtb | Layer.Hike)) !== 0;
     if (!path && !station && !trailBridge && (w.occ[b]! & SOLID) !== 0) return -1;
     const diag = (a % n !== b % n) && (((a / n) | 0) !== ((b / n) | 0));
     // no corner cutting: a diagonal step may not graze a building / water tile on either side (the drawn straight segment would cross it)
     if (diag && this.cornerBlocked(a, b)) return -1;
-    const len = (diag ? SQRT2 : 1) + (trailBridge ? 0.5 : 0);
+    const len = (diag ? SQRT2 : 1) + (trailBridge ? 0.5 : 0) + (cb === 1 || cb === 2 ? CROSSING.waitCost : 0); // a level crossing costs an expected wait
     switch (mode) {
       case NavMode.Walk:
         return path || station ? len * (road ? 0.8 : 1) : -1;
@@ -238,7 +251,8 @@ export class NavGraph implements PathGraph {
       const n2 = this.size * this.size;
       let changed = 0;
       for (let i = 0; i < n2; i++) {
-        if (this.shKind[i] !== w.kind[i] || this.shLayers[i] !== w.layers[i] || this.shDiff[i] !== w.difficulty[i]) {
+        if (this.shKind[i] !== w.kind[i] || this.shLayers[i] !== w.layers[i] || this.shDiff[i] !== w.difficulty[i] || (w.cross !== undefined && this.shCross[i] !== w.cross[i])) {
+          if (w.cross) this.shCross[i] = w.cross[i]!;
           this.shKind[i] = w.kind[i]!; this.shLayers[i] = w.layers[i]!; this.shDiff[i] = w.difficulty[i]!;
           if (!first) { this.pf.markDirty(i); changed++; }
         }

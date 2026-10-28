@@ -6,7 +6,7 @@ export const SFX_NAMES = [
   'click', 'hover', 'tick', 'blip', 'thud', 'crunch', 'scrape', 'kaching', 'clank', 'bell', 'grind', 'alarm',
   'chimeInfo', 'chimeImportant', 'chimeCritical', 'rescue', 'avalanche', 'bankruptcy', 'ratingUp', 'ratingDown', 'season',
   'birdChirp', 'cowbell', 'churchBell', 'drip', 'creak', 'shutter',
-  'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad',
+  'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'crossingBell',
 ] as const;
 export type SfxName = (typeof SFX_NAMES)[number];
 
@@ -122,6 +122,10 @@ export const RECIPES: Record<SfxName, Recipe> = {
       swellEnv(e.gain, at, 0.035 * o.gain, 0.02, 0.1, 0.06);
       connectChain(c, e); connectChain(h, hg, e); toOut(s, e, o.pan, 1);
     }
+  } },
+  // Rail level crossing bell (docs/crossings.md): a quiet high double "ding-ding" (two pure partials, short), repeated by the view while the barriers are down; the caller scales gain by camera distance. Lowest priority, ambience bus.
+  crossingBell: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.55, maxPerSec: 3, minGap: 0.3, build: (s, o) => {
+    for (const at of [0, 0.16]) { tone(s, 'sine', 1568 * o.pitch, at, 0.05 * o.gain, 0.22, o.pan, 0.003); tone(s, 'sine', 3136 * o.pitch, at, 0.012 * o.gain, 0.1, o.pan, 0.003); }
   } },
   // Distant, soft cowbell: two harmonic-ish low sines (3:2), gentle attack. Rare.
   cowbell: { priority: PRIORITY.ambience, bus: 'ambience', dur: 1.2, maxPerSec: 2, minGap: 0.4, build: (s, o) => {

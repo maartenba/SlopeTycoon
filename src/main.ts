@@ -62,6 +62,7 @@ import { DropRing } from '@/render/view/DropRing';
 import { WalkDropMarker, DROP_HINT } from '@/ui/walkDropMarker';
 import { yawOfHeading } from '@/render/view/ViewCameraRig';
 import { surfaceHeightAt, NET_NIGHT } from '@/render/meshes/Paths';
+import { RailCrossingsView } from '@/render/RailCrossings';
 import { liftStats } from '@/sim/Lift';
 import { PhotoStore } from '@/persist/PhotoStore';
 import { YearReportGate } from '@/ui/yearReportFormat';
@@ -1094,6 +1095,10 @@ renderer.scene.add(activity.group);
 const guestRenderer = new GuestRenderer(guestSim.store);
 const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => heightAt(grid, x, y));
 renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
+// Rail level crossings (Phase 6 Task 10, docs/crossings.md): barriers / lamps animate from the sim's closed state; the bell is quiet and fades with camera distance.
+const crossingsView = new RailCrossingsView(grid, sim.crossings);
+renderer.scene.add(crossingsView.group);
+crossingsView.onBell = (x, z): void => { const c = renderer.camera.position, d = Math.hypot(c.x - x, c.z - z), g = Math.max(0, 1 - d / 70); if (g > 0.04) audioRef?.sfx.play('crossingBell', { gain: g * g, pan: Math.max(-0.6, Math.min(0.6, (x - c.x) / 60)) }); };
 guestRenderer.isKid = (slot) => guestSim.families.isKid(slot);
 guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.target[slot]!)?.type; return ty === 'iceRink' ? 1 : ty === 'beach' ? 2 : 0; };
 {
@@ -1108,6 +1113,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     guestRenderer.speedMul = ff.active ? 1000 : loop.paused ? 0 : SPEED_MULTIPLIERS[loop.speed]!; guestRenderer.frameSeconds = dt;
     guestRenderer.update(a, lodHeightFor(cam), cam, loop.tickCount);
     vehicleRenderer.update(a);
+    crossingsView.update(dt);
     activity.update(game.date.tick + a, lodHeightFor(cam));
     audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
   };

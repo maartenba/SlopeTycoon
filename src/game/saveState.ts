@@ -96,8 +96,8 @@ export const SAVE_MODULES: SaveModule[] = [
     reset: (sim) => { sim.props.chunks.forEach((_, i) => { sim.props.chunks[i] = emptyProps(); }); },
   },
   {
-    key: 'networks', version: 1,
-    serialize: (sim) => { const n = sim.networks; return { kind: n.kind.slice(), conn: n.conn.slice(), bridge: n.bridge.slice(), layers: n.layers.slice(), difficulty: n.difficulty.slice(), quality: n.quality.slice(), roadEntry: n.roadEntry, railEntry: n.railEntry, version: n.version }; },
+    key: 'networks', version: 2, // v2: `cross` (level crossings / rail footbridges) and `bridges` (Phase 6): both written only when non-empty, so a world without them saves and hashes exactly as v1
+    serialize: (sim) => { const n = sim.networks; return { kind: n.kind.slice(), conn: n.conn.slice(), bridge: n.bridge.slice(), ...(n.crossCount > 0 ? { cross: n.cross.slice() } : {}), layers: n.layers.slice(), difficulty: n.difficulty.slice(), quality: n.quality.slice(), roadEntry: n.roadEntry, railEntry: n.railEntry, version: n.version }; },
     load: (sim, d) => sim.networks.restoreAll(d as Parameters<Sim['networks']['restoreAll']>[0]),
   },
   {

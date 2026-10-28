@@ -175,7 +175,7 @@ export class NavMovement implements Movement {
     const add = (x: number, y: number): void => {
       if (x < 0 || y < 0 || x >= n || y >= n) return;
       const t = y * n + x;
-      if (!g.standable(mode, t)) return;
+      if (!g.standable(mode, t) || g.isCrossing(t)) return; // nobody ever parks on a level crossing
       c.push({ t, d: (x - fx) * (x - fx) + (y - fy) * (y - fy) });
     };
     const r = goal.rect;
@@ -255,7 +255,16 @@ export class NavMovement implements Movement {
         return 'lift';
       }
       const v = g.speed(mode, a, b, skill);
-      const tx = bx + 0.5, ty = by + 0.5, d = Math.hypot(tx - x, ty - y);
+      const tx = bx + 0.5, ty = by + 0.5;
+      if (g.crossingClosed(b) && !(Math.floor(x) === bx && Math.floor(y) === by)) {
+        // closed level crossing ahead: wait at the CENTRE of the approach tile (never nearer: family kids are glued to the leader +-0.25 tiles and must
+        // stay out of the crossing too). A guest already past the centre steps back. Trains never stop for anyone (docs/crossings.md).
+        const sx = ax + 0.5, sy = ay + 0.5, dd = Math.hypot(sx - x, sy - y), step = v * time;
+        if (dd <= step) { x = sx; y = sy; g.world.onCrossingWait?.(); } else { x += ((sx - x) / dd) * step; y += ((sy - y) / dd) * step; }
+        time = 0;
+        break;
+      }
+      const d = Math.hypot(tx - x, ty - y);
       if (d / v <= time) {
         x = tx; y = ty; time -= d / v; j++;
         { const w = s.wpN[i]!; if (w < WP_MAX) { s.wp[(i * WP_MAX + w) * 2] = tx; s.wp[(i * WP_MAX + w) * 2 + 1] = ty; s.wpN[i] = w + 1; } }

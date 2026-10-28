@@ -3,6 +3,7 @@ import { CHUNK_SIZE, TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
 import type { Pt } from '../sim/Dependencies';
 import { HEIGHT_UNIT } from '../config/balance';
+import { CROSSING } from '../config/crossings';
 import { accessProblem, suppliedOnFootOnly, type NetworkAccess, type ServedKind } from '../sim/PlacementRules';
 
 export const NetKind = { None: 0, Path: 1, Road: 2, Rail: 3 } as const;
@@ -16,6 +17,17 @@ export const Difficulty = { Green: 0, Blue: 1, Red: 2, Black: 3 } as const;
 
 export const NET_COST: Record<NetKindId, number> = { 1: 20, 2: 60, 3: 100 };
 export const PISTE_COST_PER_TILE = 10;
+/** Reasons for level crossings / footbridges over rail (docs/crossings.md). */
+export const CROSS_MSG = {
+  angle: 'Paths can only cross a straight rail line at right angles',
+  spacing: 'Crossings need more room: another crossing is too close',
+  station: 'Cannot cross rail at a station',
+  bridge: 'Cannot cross rail on a bridge',
+  roadOnly: 'Roads need a level crossing, not a footbridge',
+  ends: 'A crossing needs path or road on both sides of the rail',
+} as const;
+/** `cross` values: 0 none, 1 footpath level crossing, 2 road level crossing, 3 footbridge over rail (path only, never closes). */
+export const Cross = { None: 0, Path: 1, Road: 2, Footbridge: 3 } as const;
 export const PISTE_WATER_MSG = "Can't build a piste over water — use a bridge (footpath/road) or route around";
 /** Max corner spread (half-steps) per network kind. */
 export const NET_MAX_SPREAD: Record<NetKindId, number> = { 1: 2, 2: 1, 3: 1 };
@@ -105,7 +117,7 @@ export function sweepBrush(stroke: ReadonlyArray<Pt>, brush: number, size: numbe
 }
 
 /** Snapshot of one tile's mutable state (for stroke undo). */
-export interface TileSnap { i: number; kind: number; bridge: number; layers: number; difficulty: number; quality: number }
+export interface TileSnap { i: number; kind: number; bridge: number; cross?: number; layers: number; difficulty: number; quality: number }
 
 export interface PisteComponent {
   id: number;
@@ -175,6 +187,10 @@ export class Networks {
   readonly conn: Uint8Array;
   /** 1 = bridge segment (over stream). */
   readonly bridge: Uint8Array;
+  /** Level crossing per tile (Cross.*): the tile's `kind` stays Rail; 1 = footpath, 2 = road crossing, 3 = footbridge over the rail. */
+  readonly cross: Uint8Array;
+  /** Number of tiles with cross > 0 (0 = every crossing system is inert). */
+  crossCount = 0;
   /** Piste layer bits per tile. */
   readonly layers: Uint8Array;
   /** Difficulty 0..3 per tile (valid where Ski/Mtb/Hike layer set). */
@@ -195,14 +211,15 @@ export class Networks {
     this.kind = new Uint8Array(n);
     this.conn = new Uint8Array(n);
     this.bridge = new Uint8Array(n);
+    this.cross = new Uint8Array(n);
     this.layers = new Uint8Array(n);
     this.difficulty = new Uint8Array(n);
     this.quality = new Uint8Array(n);
   }
 
   /** Save/load (Task 33): replace all per-tile state; invalidates every cache and marks every chunk dirty. */
-  restoreAll(d: { kind: ArrayLike<number>; conn: ArrayLike<number>; bridge: ArrayLike<number>; layers: ArrayLike<number>; difficulty: ArrayLike<number>; quality: ArrayLike<number>; roadEntry: Pt | null; railEntry: Pt | null; version: number }): void {
-    this.kind.set(d.kind); this.conn.set(d.conn); this.bridge.set(d.bridge); this.layers.set(d.layers); this.difficulty.set(d.difficulty); this.quality.set(d.quality);
+  restoreAll(d: { kind: ArrayLike<number>; conn: ArrayLike<number>; bridge: ArrayLike<number>; cross?: ArrayLike<number>; layers: ArrayLike<number>; difficulty: ArrayLike<number>; quality: ArrayLike<number>; roadEntry: Pt | null; railEntry: Pt | null; version: number }): void {
+    this.kind.set(d.kind); this.conn.set(d.conn); this.bridge.set(d.bridge); if (d.cross) this.cross.set(d.cross); else this.cross.fill(0); this.recountCross(); this.layers.set(d.layers); this.difficulty.set(d.difficulty); this.quality.set(d.quality);
     this.roadEntry = d.roadEntry ? { ...d.roadEntry } : null; this.railEntry = d.railEntry ? { ...d.railEntry } : null;
     this.pisteCache = null; this.cache = { v: -1 }; this.journal = null;
     this.version = d.version + 1;
@@ -244,24 +261,84 @@ export class Networks {
         const nx = x + DX[d]!, ny = y + DY[d]!;
         if (!this.inb(nx, ny)) continue;
         const ni = this.idx(nx, ny);
-        if (this.kind[ni] === kind || planned?.has(ni)) linked = true;
+        if (this.kind[ni] === kind || planned?.has(ni) || (kind === NetKind.Road && this.kind[ni] === NetKind.Rail && this.cross[ni] === Cross.Road)) linked = true;
       }
       if (!linked) return { ok: false, reason: kind === NetKind.Road ? 'Roads must start at the road entry' : 'Rail must start at the rail entry' };
     }
     return { ok: true };
   }
 
-  /** Validate a drag segment (tiles in order). Cost counts only new tiles. */
-  planSegment(kind: NetKindId, tiles: Pt[], mult = 1): { ok: boolean; cost: number; reason?: string; newTiles: Pt[] } {
+  /**
+   * Level-crossing / footbridge check for stroke tile `k` landing on a tile of another network kind. Pure.
+   * A path/road stroke over a straight rail tile, or a rail stroke over a straight path/road tile, must run perpendicular to it with a
+   * stroke tile on each side; no building (station), no bridge, and at least CROSSING.minSpacing tiles from any other crossing.
+   * `overRail` = footbridge over the rail (path only, never closes).
+   */
+  crossingCheck(kind: NetKindId, tiles: ReadonlyArray<Pt>, k: number, extra: ReadonlyArray<Pt>, overRail = false): { ok: boolean; reason?: string; cross: number } {
+    const t = tiles[k]!, i = this.idx(t.x, t.y), ex = this.kind[i]!;
+    const fail = (reason: string): { ok: false; reason: string; cross: number } => ({ ok: false, reason, cross: 0 });
+    if (this.grid.occupancy.flags[i]! & (OccFlag.Building | OccFlag.Lift)) return fail(CROSS_MSG.station);
+    if (this.bridge[i] === 1 || this.grid.tileType[i] === TileType.Stream) return fail(CROSS_MSG.bridge);
+    // which network is the "line" being crossed and what is crossing it
+    if (kind !== NetKind.Rail && ex !== NetKind.Rail) return fail('Crossing not supported');
+    if (kind === NetKind.Rail && ex !== NetKind.Path && ex !== NetKind.Road) return fail('Crossing not supported');
+    if (overRail && kind !== NetKind.Path) return fail(CROSS_MSG.roadOnly);
+    const m = this.conn[i]!;
+    const ns = m === (Conn.N | Conn.S), ew = m === (Conn.E | Conn.W);
+    if (!ns && !ew) return fail(CROSS_MSG.angle);
+    const a = tiles[k - 1], b = tiles[k + 1];
+    if (!a || !b) {
+      const o = a ?? b; // a stroke that runs ALONG the line is an angle problem, one that merely ends on it lacks an approach tile
+      return fail(o && (ns ? o.x === t.x : o.y === t.y) ? CROSS_MSG.angle : CROSS_MSG.ends);
+    }
+    // the stroke must enter and leave on opposite sides, perpendicular to the line
+    const perpX = ns, perpY = ew; // line N-S => stroke runs E-W
+    const okAxis = perpX ? (a.y === t.y && b.y === t.y && Math.abs(a.x - t.x) === 1 && Math.abs(b.x - t.x) === 1 && a.x !== b.x)
+      : perpY ? (a.x === t.x && b.x === t.x && Math.abs(a.y - t.y) === 1 && Math.abs(b.y - t.y) === 1 && a.y !== b.y) : false;
+    if (!okAxis) return fail(CROSS_MSG.angle);
+    const cur = this.cross[i]!;
+    const want = overRail ? Cross.Footbridge : kind === NetKind.Road || (kind === NetKind.Rail && ex === NetKind.Road) ? Cross.Road : Cross.Path;
+    if (cur === want || (cur === Cross.Road && want === Cross.Path)) return { ok: true, cross: cur };
+    if (cur) return fail('Crossing not supported');
+    const sp = CROSSING.minSpacing;
+    for (let j = 0; j < this.size * this.size && this.crossCount > 0; j++) {
+      if (!this.cross[j]) continue;
+      if (Math.abs((j % this.size) - t.x) + Math.abs(((j / this.size) | 0) - t.y) <= sp) return fail(CROSS_MSG.spacing);
+    }
+    for (const e of extra) if (Math.abs(e.x - t.x) + Math.abs(e.y - t.y) <= sp) return fail(CROSS_MSG.spacing);
+    const c = this.grid.getCorners(t.x, t.y);
+    if (Math.max(...c) - Math.min(...c) > Math.min(NET_MAX_SPREAD[NetKind.Rail], NET_MAX_SPREAD[(kind === NetKind.Rail ? ex : kind) as NetKindId])) return fail(kind === NetKind.Path ? 'Too steep' : 'Too steep (max half-slope)');
+    return { ok: true, cross: want };
+  }
+
+  /** Cost ($, before the construction multiplier) of one crossing of this `cross` value. */
+  crossCost(cross: number): number { return cross === Cross.Footbridge ? CROSSING.footbridge.cost : cross === Cross.Road ? CROSSING.cost.road : CROSSING.cost.path; }
+
+  /** Is there a level crossing / rail footbridge on this tile? */
+  crossAt(x: number, y: number): number { return this.inb(x, y) ? this.cross[this.idx(x, y)]! : 0; }
+
+  /** Validate a drag segment (tiles in order). Cost counts only new tiles (+ level crossings). `overRail`: path strokes over rail become footbridges. */
+  planSegment(kind: NetKindId, tiles: Pt[], mult = 1, overRail = false): { ok: boolean; cost: number; reason?: string; newTiles: Pt[]; crossings: Array<Pt & { cross: number }> } {
     const planned = new Set<number>();
     const newTiles: Pt[] = [];
-    for (const t of tiles) {
+    const crossings: Array<Pt & { cross: number }> = [];
+    let cost = 0;
+    for (let k = 0; k < tiles.length; k++) {
+      const t = tiles[k]!;
+      const i = this.inb(t.x, t.y) ? this.idx(t.x, t.y) : -1;
+      const ex = i >= 0 ? this.kind[i]! : 0;
+      if (i >= 0 && ex !== 0 && ex !== kind && ((kind !== NetKind.Rail && ex === NetKind.Rail) || (kind === NetKind.Rail && (ex === NetKind.Path || ex === NetKind.Road)))) {
+        const c = this.crossingCheck(kind, tiles, k, crossings, overRail);
+        if (!c.ok) return { ok: false, cost: 0, reason: c.reason, newTiles, crossings };
+        planned.add(i); // the far side links through the crossing (roads / rail: 'must start at the entry' linking rule)
+        if (this.cross[i] !== c.cross) { crossings.push({ x: t.x, y: t.y, cross: c.cross }); cost += this.crossCost(c.cross) * mult; }
+        continue;
+      }
       const c = this.canBuild(kind, t.x, t.y, planned);
-      if (!c.ok) return { ok: false, cost: 0, reason: c.reason, newTiles };
-      const i = this.idx(t.x, t.y);
+      if (!c.ok) return { ok: false, cost: 0, reason: c.reason, newTiles, crossings };
       if (this.kind[i] !== kind) { planned.add(i); newTiles.push(t); }
     }
-    return { ok: true, cost: newTiles.length * NET_COST[kind] * mult, newTiles };
+    return { ok: true, cost: cost + newTiles.length * NET_COST[kind] * mult, newTiles, crossings };
   }
 
   /** Build one tile (validated). Returns true if a tile was newly added. */
@@ -277,10 +354,33 @@ export class Networks {
     return true;
   }
 
+  /**
+   * Turn tile (x,y) into a level crossing / footbridge (already validated by `planSegment`). A path/road over rail only sets `cross`; a rail over a
+   * path/road replaces the tile's kind by Rail and remembers the old kind as `cross`.
+   */
+  buildCrossing(kind: NetKindId, x: number, y: number, cross: number): boolean {
+    if (!this.inb(x, y)) return false;
+    const i = this.idx(x, y), ex = this.kind[i]!;
+    if (!cross || this.cross[i] === cross) return false;
+    this.note(i);
+    if (kind === NetKind.Rail && ex !== NetKind.Rail) {
+      this.grid.occupancy.clear(x, y, ex === NetKind.Path ? OccFlag.Path : OccFlag.Road);
+      this.kind[i] = NetKind.Rail;
+      this.grid.occupancy.set(x, y, OccFlag.Road);
+    } else if (ex !== NetKind.Rail) return false;
+    if (!this.cross[i]) this.crossCount++;
+    this.cross[i] = cross;
+    this.refreshConn(x, y);
+    return true;
+  }
+
+  private recountCross(): void { let n = 0; for (let i = 0; i < this.cross.length; i++) if (this.cross[i]) n++; this.crossCount = n; }
+
   /** Build a validated segment atomically. Returns tiles added (empty if invalid). */
-  buildSegment(kind: NetKindId, tiles: Pt[]): Pt[] {
-    const plan = this.planSegment(kind, tiles);
+  buildSegment(kind: NetKindId, tiles: Pt[], overRail = false): Pt[] {
+    const plan = this.planSegment(kind, tiles, 1, overRail);
     if (!plan.ok) return [];
+    for (const c of plan.crossings) this.buildCrossing(kind, c.x, c.y, c.cross); // first: the road tiles beyond it link through the crossing
     for (const t of plan.newTiles) this.build(kind, t.x, t.y);
     return plan.newTiles;
   }
@@ -291,6 +391,12 @@ export class Networks {
     const i = this.idx(x, y), k = this.kind[i]!;
     if (!k) return 0;
     this.note(i);
+    if (this.cross[i]) { // bulldozing a level crossing / rail footbridge reverts the tile to plain rail; the path / road is cut (docs/crossings.md)
+      const was = this.cross[i]!;
+      this.cross[i] = 0; this.crossCount--;
+      this.refreshConn(x, y);
+      return was === Cross.Road ? NetKind.Road : NetKind.Path;
+    }
     this.kind[i] = 0;
     this.bridge[i] = (this.layers[i]! & (Layer.Mtb | Layer.Hike)) && this.grid.tileType[i] === TileType.Stream ? 1 : 0;
     this.grid.occupancy.clear(x, y, k === NetKind.Path ? OccFlag.Path : OccFlag.Road);
@@ -306,12 +412,30 @@ export class Networks {
       if (!this.inb(tx, ty)) return;
       const i = this.idx(tx, ty), k = this.kind[i]!;
       let m = 0;
-      if (k) for (let d = 0; d < 4; d++) if (this.kindAt(tx + DX[d]!, ty + DY[d]!) === k) m |= BITS[d]!;
+      if (k) for (let d = 0; d < 4; d++) {
+        const nx = tx + DX[d]!, ny = ty + DY[d]!, nk = this.kindAt(nx, ny);
+        if (nk === k) m |= BITS[d]!;
+        else if (k !== NetKind.Rail && nk === NetKind.Rail && this.crossJoins(nx, ny, d, k)) m |= BITS[d]!; // an approach tile reaches into the crossing
+      }
       this.conn[i] = m;
       this.markDirty(tx, ty);
     };
     recompute(x, y);
     for (let d = 0; d < 4; d++) recompute(x + DX[d]!, y + DY[d]!);
+    // a crossing tile's own arms may just have changed (rail laid next to it): its approach tiles must follow
+    for (let d = 0; d < 4; d++) {
+      const nx = x + DX[d]!, ny = y + DY[d]!;
+      if (this.crossAt(nx, ny)) for (let e = 0; e < 4; e++) recompute(nx + DX[e]!, ny + DY[e]!);
+    }
+  }
+
+  /** Does the crossing on tile (x,y) join a path/road tile of kind `k` coming from direction `d` (the line must run perpendicular to `d`)? */
+  private crossJoins(x: number, y: number, d: number, k: number): boolean {
+    const i = this.idx(x, y), c = this.cross[i]!;
+    if (!c) return false;
+    if (!(c === k || (k === NetKind.Path && c === Cross.Footbridge) || (k === NetKind.Road && c === Cross.Road))) return false;
+    const m = this.conn[i]!;
+    return d === 1 || d === 3 ? m === (Conn.N | Conn.S) : m === (Conn.E | Conn.W);
   }
 
   // ---------- pistes / trails ----------
@@ -375,7 +499,7 @@ export class Networks {
   // ---------- undo journal ----------
 
   private snap(i: number): TileSnap {
-    return { i, kind: this.kind[i]!, bridge: this.bridge[i]!, layers: this.layers[i]!, difficulty: this.difficulty[i]!, quality: this.quality[i]! };
+    return { i, kind: this.kind[i]!, bridge: this.bridge[i]!, cross: this.cross[i]!, layers: this.layers[i]!, difficulty: this.difficulty[i]!, quality: this.quality[i]! };
   }
   /** Snapshots of the CURRENT state of the given tiles (redo of a stroke replays the post-state). */
   snapshotTiles(idx: ReadonlyArray<number>): TileSnap[] { return idx.map((i) => this.snap(i)); }
@@ -394,6 +518,7 @@ export class Networks {
       const old = this.kind[s.i]!;
       if (old) this.grid.occupancy.clear(x, y, old === NetKind.Path ? OccFlag.Path : OccFlag.Road);
       this.kind[s.i] = s.kind; this.bridge[s.i] = s.bridge;
+      { const c = s.cross ?? 0; if (c && !this.cross[s.i]) this.crossCount++; else if (!c && this.cross[s.i]) this.crossCount--; this.cross[s.i] = c; }
       if (s.kind) this.grid.occupancy.set(x, y, s.kind === NetKind.Path ? OccFlag.Path : OccFlag.Road);
       this.layers[s.i] = s.layers; this.difficulty[s.i] = s.difficulty; this.quality[s.i] = s.quality;
       touched.push(s.i);
@@ -575,6 +700,9 @@ export class Networks {
    * Distance = path tiles walked + 1 (entering from building A's edge counts one step; reaching B's edge counts none extra),
    * i.e. number of steps from A's footprint to B's footprint. Infinity if > maxTiles or unreachable.
    */
+  /** Footpath tile, or a footpath level crossing / footbridge over rail. */
+  private isFootTile(i: number): boolean { return this.kind[i] === NetKind.Path || (this.kind[i] === NetKind.Rail && (this.cross[i] === Cross.Path || this.cross[i] === Cross.Footbridge)); }
+
   pathDistance = (from: Pt, to: Pt, maxTiles: number): number => {
     const a = this.footprintOf(from) ?? { x: from.x, y: from.y, w: 1, h: 1 };
     const b = this.footprintOf(to) ?? { x: to.x, y: to.y, w: 1, h: 1 };
@@ -584,7 +712,7 @@ export class Networks {
     let frontier: number[] = [];
     for (const t of this.ring(a)) {
       const i = this.idx(t.x, t.y);
-      if (this.kind[i] === NetKind.Path && !dist.has(i)) { dist.set(i, 1); frontier.push(i); }
+      if (this.isFootTile(i) && !dist.has(i)) { dist.set(i, 1); frontier.push(i); }
       else if (inB(t.x, t.y)) return 1;
     }
     let d = 1;
@@ -597,7 +725,7 @@ export class Networks {
           if (!this.inb(nx, ny)) continue;
           if (inB(nx, ny)) return d + 1 <= maxTiles ? d + 1 : Infinity;
           const ni = this.idx(nx, ny);
-          if (this.kind[ni] !== NetKind.Path || dist.has(ni)) continue;
+          if (!this.isFootTile(ni) || dist.has(ni)) continue;
           dist.set(ni, d + 1);
           next.push(ni);
         }
@@ -630,8 +758,9 @@ export class Networks {
     const k = this.kind;
     const e = (p: Pt | null): number[] => (p ? [this.idx(p.x, p.y)] : []);
     c.v = this.version;
-    c.roadComp = this.flood(e(this.roadEntry), (i) => k[i] === NetKind.Road);
-    c.walkComp = this.flood(e(this.roadEntry), (i) => k[i] === NetKind.Road || k[i] === NetKind.Path);
+    const cr = this.cross;
+    c.roadComp = this.flood(e(this.roadEntry), (i) => k[i] === NetKind.Road || (k[i] === NetKind.Rail && cr[i] === Cross.Road));
+    c.walkComp = this.flood(e(this.roadEntry), (i) => k[i] === NetKind.Road || k[i] === NetKind.Path || (k[i] === NetKind.Rail && cr[i]! > 0));
     c.railComp = this.flood(e(this.railEntry), (i) => k[i] === NetKind.Rail);
     return c;
   }
@@ -747,6 +876,7 @@ export class Networks {
     diagnose: (k, r) => this.diagnose(k, r),
     pisteAt: (x, y) => this.pisteAt(x, y),
     kindAt: (x, y) => this.kindAt(x, y),
+    crossAt: (x, y) => this.crossAt(x, y),
   };
 
   /** Train station reached by rail from the rail entry. */

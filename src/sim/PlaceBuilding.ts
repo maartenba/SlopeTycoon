@@ -160,6 +160,7 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
     if (fl & (OccFlag.Road | OccFlag.Path)) {
       // A rail tile (kindAt 3) is fine for a type that may stand on the line (Train Station): the rail stays in Networks under the platform.
       if (!(def.overRail && net?.kindAt(i, j) === 3)) { bad('Cannot build on a road, path or rail'); hard = true; }
+      else if (net?.crossAt?.(i, j)) { bad('Cannot build on a level crossing'); hard = true; }
     }
     if (fl & OccFlag.Lift) { bad('Blocked by a lift line'); hard = true; }
     if (fl & OccFlag.Decor) { bad('Garden decor in the way: remove it first (Landscape drawer)'); hard = true; }

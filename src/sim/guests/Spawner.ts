@@ -5,6 +5,7 @@ import { DAYS_PER_YEAR, GUEST_BASE_SPAWN_PER_TICK, SIZE_SPAWN_MULT } from '../..
 import { hourOfDay, seasonOf } from '../Clock';
 import { arrivalWindow } from '../Daylight';
 import type { SimSystem } from '../Systems';
+import type { RailCrossings } from '../RailCrossings';
 import {
   evaluateArrivals, makeCum, tripPlan, VEHICLE_SPEED, VehicleKind, centre, vehiclePose, type ArrivalPoint, type ArrivalReport, type Vehicle,
 } from './Arrivals';
@@ -112,6 +113,8 @@ export class Spawner {
   pricingDemand: PricingDemand | null = null;
   /** Attractiveness provider (Task 27 hooks the resort rating in); default = the stub above. */
   private attractFn: (s: ResortStats) => number = attractiveness;
+  /** Rail level crossings (createSim wires it; null = none): cars hold at closed road crossings, trains never spawn inside a closing window. */
+  crossings: RailCrossings | null = null;
   private acc = 0;
   private nextVehicle = 1;
   private nextGroup = 1;
@@ -258,6 +261,7 @@ export class Spawner {
       id: this.nextVehicle++, kind, mode: p.mode, pts, cum, dist: plan.dist, speed: plan.speed,
       riders, group: this.nextGroup++, dest: dest.id, alt: kind === VehicleKind.Plane ? 6 : 0,
     };
+    if (kind === VehicleKind.Train && this.crossings) v.dist = this.crossings.spawnDist(v, v.dist); // a train never appears inside a crossing's closing window
     this.vehicles.push(v);
     this.modeLoad[p.mode]! += size;
     return size;
@@ -301,17 +305,19 @@ export class Spawner {
   }
 
   private advanceVehicles(state: GameState): void {
-    if (!this.vehicles.length) return;
+    const cx = this.crossings;
+    if (!this.vehicles.length) { cx?.refresh(this.vehicles, state.date.year * DAYS_PER_YEAR + state.date.day); return; }
     const keep: Vehicle[] = [];
     const pose = { x: 0, y: 0, heading: 0 };
     for (const v of this.vehicles) {
-      v.dist += v.speed;
+      v.dist = cx?.active && (v.kind === VehicleKind.Car || v.kind === VehicleKind.Bus) ? cx.holdCar(v, v.dist + v.speed) : v.dist + v.speed; // cars wait at a closed road crossing
       const total = v.cum[v.cum.length - 1]!;
       if (v.dist < total) { keep.push(v); continue; }
       vehiclePose(v, total, pose);
       this.materialise(state, v, pose.x, pose.y);
     }
     this.vehicles = keep;
+    cx?.refresh(keep, state.date.year * DAYS_PER_YEAR + state.date.day);
   }
 
   private materialise(state: GameState, v: Vehicle, x: number, y: number): void {
