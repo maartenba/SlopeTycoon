@@ -90,6 +90,8 @@ Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts
 
 ## How to cut a release
 
+0. **Write 3-6 player-facing Highlights** (`### Highlights`, short plain sentences, light tone, no doc paths) at the top of the new CHANGELOG release section (the technical bullets go under `### Changes`). They feed the in-game update card and the one-time *What's new* card (`docs/pwa.md`). Run `npm run whats-new` and commit `src/config/whatsNew.generated.ts`; `npm test` fails when it is stale.
+
 1. Bump the version: `npm run release -- patch|minor|major [--dry-run]` (`scripts/release.ts`: bumps `package.json`, adds a CHANGELOG heading, runs `build:pages`, commits `Release vX.Y.Z`, tags `vX.Y.Z`; `package-lock.json`'s version is not touched, update by hand). Or by hand.
 2. Write the `CHANGELOG.md` entry; update README, docs, AGENTS.md version lines.
 3. `npm run licenses` (refreshes `THIRD_PARTY_NOTICES.md`).

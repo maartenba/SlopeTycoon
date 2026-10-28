@@ -27,7 +27,8 @@ export function shouldCache(r: ReqLike, scope: string): boolean {
   if (u.origin !== s.origin || !/^https?:$/.test(u.protocol)) return false;
   return !u.pathname.endsWith('/sw.js');
 }
-export const isManifestRequest = (url: string): boolean => new URL(url).pathname.endsWith('.webmanifest');
+/** Network-first resources: the web manifest and whats-new.json (never precached: the old build reads the new highlights from it). */
+export const isManifestRequest = (url: string): boolean => /(\.webmanifest|\/whats-new\.json)$/.test(new URL(url).pathname);
 
 // ---- minimal structural types so the module needs neither the DOM nor WebWorker libs ----
 export interface CacheLike { addAll(reqs: unknown[]): Promise<void>; put(r: unknown, res: ResponseLike): Promise<void>; match(r: unknown, o?: { ignoreSearch?: boolean }): Promise<ResponseLike | undefined> }

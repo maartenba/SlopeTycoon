@@ -187,6 +187,8 @@ import { mountMainMenu } from '@/ui/menuHost';
 import { modalStack } from '@/ui/modal';
 import { showModal } from '@/ui/components/StModal';
 import { APP_VERSION } from '@/ui/version';
+import { buildUpdateCard, fetchWhatsNew, updateReminderDue, whatsNewOnLaunch, SEEN_VERSION_KEY, UPDATE_REMIND_KEY } from '@/config/whatsNew';
+import { changelogUrl } from '@/ui/whatsNewView';
 import { installErrorBoundary } from '@/ui/errorBoundary';
 import { openBackend, resolveBootSave, stripBootParams, loadQuery, type BootSave } from '@/game/restore';
 import { SaveManager, downloadBytes } from '@/persist/SaveManager';
@@ -2699,7 +2701,8 @@ if (ui && !DEMO) {
     photoEl = pe;
     ui.append(pe);
   }
-  ui.append(topbar, debug, recapEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, statsEl, viewHud);
+  const whatsNewEl = el('st-whats-new');
+  ui.append(topbar, debug, recapEl, whatsNewEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, statsEl, viewHud);
   { const touchBar = el('st-touch-controls'); touchWire.bindBar(touchBar); ui.append(touchBar); }
   {
     const pause = el('st-pause-menu');
@@ -2739,8 +2742,28 @@ if (ui && !DEMO) {
       return true;
     },
     reload: () => { window.location.search = saves ? 'continue=1' : ''; },
-    onUpdate: (apply) => toastEl.show('Update available — reload', 'info', 0, { key: 'pwa:update', severity: 'good', tier: 'important', ttlMs: 10 * 60 * 1000, action: { label: 'Reload', run: () => { void apply(); } } }),
+    // Update card (docs/pwa.md): a compact non-blocking card with the NEW build's highlights (same-origin whats-new.json, network only, offline => generic text).
+    // "Later" snoozes it for an hour (stored, so a new session does not nag either). Reload = autosave (beforeApply) -> SKIP_WAITING -> reload.
+    onUpdate: (apply) => {
+      const ls = ((): Storage | null => { try { return window.localStorage; } catch { return null; } })();
+      const last = Number(ls?.getItem(UPDATE_REMIND_KEY) ?? '') || null;
+      if (!updateReminderDue(last, Date.now())) return;
+      void fetchWhatsNew({ online: navigator.onLine, fetch: (u, i) => fetch(u, i) }).then((entries) => {
+        whatsNewEl.showUpdate(buildUpdateCard(APP_VERSION, entries), {
+          reload: async () => { await apply(); },
+          later: () => { try { ls?.setItem(UPDATE_REMIND_KEY, String(Date.now())); } catch { /* private mode */ } },
+        });
+      });
+    },
   }).catch(() => { /* registration failures must never affect the game */ });
+  // One-time "What's new" after the first launch of a new version (not for brand-new players, the title demo or the tutorial).
+  if (!DEMO && !TUTORIAL_MODE) {
+    try {
+      const wn = whatsNewOnLaunch(window.localStorage.getItem(SEEN_VERSION_KEY), APP_VERSION);
+      if (wn.store) window.localStorage.setItem(SEEN_VERSION_KEY, wn.store);
+      if (wn.show.length) whatsNewEl.showWhatsNew(wn.show, changelogUrl());
+    } catch { /* storage unavailable: skip the card */ }
+  }
   watchOnline(window, () => navigator.onLine, (off) => topbar.setOffline(off));
   watchInstall(window, (install) => topbar.setInstall(install ? () => { void install(); } : null));
   // ---- Tutorial assistant + contextual hints (Task 34a) ----

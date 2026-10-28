@@ -6,7 +6,7 @@ import { buildSync } from 'esbuild';
 import type { Plugin } from 'vite';
 
 export interface PrecacheEntry { url: string; revision: string }
-const SKIP = (rel: string): boolean => rel === 'sw.js' || rel === '404.html' || rel === '.nojekyll' || rel === 'CNAME' || rel.endsWith('.map') || rel.endsWith('.DS_Store');
+const SKIP = (rel: string): boolean => rel === 'sw.js' || rel === 'whats-new.json' || rel === '404.html' || rel === '.nojekyll' || rel === 'CNAME' || rel.endsWith('.map') || rel.endsWith('.DS_Store');
 
 /** Every emitted file in `dist` (relative './' URLs, posix) with a content hash. Sorted for determinism. */
 export function enumerateDist(dist: string): PrecacheEntry[] {
