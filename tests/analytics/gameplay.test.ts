@@ -38,8 +38,8 @@ describe('gameplay analytics subscriber', () => {
     const r = rec(); const once = onceTracker(r);
     expect(once('view_mode_used', { mode: 'ride' })).toBe(true); expect(once('view_mode_used', { mode: 'ride' })).toBe(false); expect(once('view_mode_used', { mode: 'walk' })).toBe(true);
     expect([500, 800, 1400].map(viewportClass)).toEqual(['phone', 'tablet', 'desktop']);
-    const p = appStartParams({ version: '0.2.2', page: 'menu', standalone: true, touch: false, width: 1280 });
-    expect(p).toEqual({ version: '0.2.2', page: 'menu', display: 'standalone', touch: 'no', viewport: 'desktop' });
+    const p = appStartParams({ version: '0.2.3', page: 'menu', standalone: true, touch: false, width: 1280 });
+    expect(p).toEqual({ version: '0.2.3', page: 'menu', display: 'standalone', touch: 'no', viewport: 'desktop' });
     expect(sanitizeEvent('app_start', p)!.params).toEqual(p);
   });
   it('heartbeat: one engaged event per 5 visible minutes, none while hidden', () => {

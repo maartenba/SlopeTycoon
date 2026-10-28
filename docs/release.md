@@ -1,6 +1,22 @@
 # Release notes and checklist
 
-Current release: **0.2.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.3 (2026-10-28)
+
+M6.1 milestone batch (Phase 6 content wave 1): toilets / comfort / facilities, level crossings, footbridge, bridges, trail access, four campaigns, inert tour / viewpoint / lodging / guest-type frameworks. Version bump, CHANGELOG `[0.2.3]`, guide (Guests, Money, Building "Rails, crossings & bridges", events Facilities, glossary), landing mention, six screenshots, goldens re-recorded (`docs/balance.md`).
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 342 files passed, 1 skipped; 3462 tests passed, 31 skipped |
+| Balance | `npm run test:balance` | 33 passed (~520 s); bot money golden 191483.30 |
+| Perf | `npm run test:perf` | 24 files, 42 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on every shot |
+| Analytics | `npm run analytics:e2e` | OK |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | 39/39 |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (22 pages, 61 screenshots, 7.2 MB of 8 MB: the 1280 px files over 100 kB were re-encoded from raw at quality 68 to make room for 5 new shots; new guide page *Rails, crossings & bridges*) |
+| Audio | crossing bell offline render (`tests/audio/offline.test.ts`) | peak < 0.15, no DC, no clicks |
 
 ## 0.2.2 (2026-10-27)
 
@@ -49,7 +65,7 @@ Note: the site screenshot budget (8 MB) is nearly used; the next new shot needs 
 
 `npm run release:check` = typecheck && lint && test && build && verify:pwa && size; its steps were run individually with the same commands (not as one chain). `shot:suite`, `touch:e2e`, `analytics:e2e`, `audio:render` were not re-run for this note.
 Build and scripts use no network except the opt-in analytics (a runtime feature of the shipped game, `docs/analytics.md`; `npm run analytics:e2e` intercepts Google hosts).
-Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts`) and -> service-worker cache version `0.2.2-<content hash>` (`vite-plugins/precache.ts`).
+Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts`) and -> service-worker cache version `0.2.3-<content hash>` (`vite-plugins/precache.ts`).
 
 ### Dist size (gzip level 9, `scripts/report-size.ts`)
 

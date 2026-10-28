@@ -32,4 +32,4 @@ Score = 45 % comfort satisfaction (1 - share of guests with urge > 0.8) + 25 % t
 `urge` is saved as an extra guest column only while any guest has a non-zero value, and mixed into the guest hash only then. A resort without the need (flag off) is therefore byte-identical, and saves from before load all guests comfortable. No `SAVE_FORMAT_VERSION` bump.
 
 ## Golden impact
-Switching the need ON changes guest behaviour, so these goldens move (not re-recorded in the Task 7/8 lane, left to the M6.1 STOP task): see the list in the Task 8 report / `.weave/learnings/slope-tycoon.md`.
+Switching the need ON changed guest behaviour; the goldens (`tests/sim/staff.test.ts`, the `yearReport` snapshot) were re-recorded at M6.1 with before / after numbers in `docs/balance.md` ("M6.1 re-record"): bot money 203294.15 -> 191483.30 (-5.8 %), still profitable on every map in the balance sweep.

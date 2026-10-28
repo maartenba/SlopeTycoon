@@ -3,9 +3,9 @@
 A browser ski-resort tycoon: carve a procedurally generated alpine valley, build lifts, pistes and a village, keep guests, families and the bank happy
 through winter *and* summer. Three.js + TypeScript, no backend, no external assets (every model, texture, sound and music piece is generated in code).
 
-**Version 0.2.2** (pre-release)
+**Version 0.2.3** (pre-release)
 
-Status: pre-release (0.2.2) — playtest feedback welcome.
+Status: pre-release (0.2.3) — playtest feedback welcome.
 
 ## Features
 
@@ -35,6 +35,7 @@ Status: pre-release (0.2.2) — playtest feedback welcome.
 - **Touch & tablets**: one-finger pan, pinch zoom, two-finger twist, a pan / paint toggle, two-step placement (tap, then tap again or Place), long-press cancel, two-finger-tap undo, on-screen controls for walk / ride / photo, 44 px targets and a compact layout; Settings > Accessibility > Touch controls Auto / On / Off (`docs/touch.md`).
 - **Statistics, regions and accessibility**: press **I** for charts of guests, cash, rating and revenue (`docs/stats.md`); every seed has a region name and peaks; a colour-blind-safe (Okabe-Ito) palette; reduced motion and text size.
 - **Landscape & drawers**: the Landscape drawer (ponds, trees, boulders, decor; `docs/landscaping.md`) and redesigned Terrain / View drawers with cards and hover info; everything can be built in any season.
+- **Comfort, rails and bridges**: guests get an urge and walk to **Toilets** (Facilities rating bar, `docs/comfort.md`); footpaths and roads cross rail at **level crossings** (barriers, bell, guests wait) or over a **footbridge** (`docs/crossings.md`); **bridges** span streams, ponds and gaps for footpaths, hiking, MTB and roads (`docs/bridges.md`); trails can serve buildings (`docs/trails-access.md`); four new campaigns incl. **Come by Train** (`docs/marketing-pricing.md`).
 - **Tutorial**: an interactive guided tour with an on-screen ranger, "Show me" / "Do it for me", contextual hints.
 
 ## Requirements
