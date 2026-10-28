@@ -131,3 +131,37 @@ describe('sustainability facet (Task 23)', () => {
     expect(q.breakdown().components.find((c) => c.id === 'sustainability')!.score).toBe(10);
   });
 });
+
+describe('facilities facet (Phase 6 Task 8)', () => {
+  it('weights sum to exactly 1 and facilities is 6 %', async () => {
+    const { WEIGHTS } = await import('../../src/sim/Rating');
+    expect(Object.values(WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 10);
+    expect(WEIGHTS.facilities).toBe(0.06);
+    expect(WEIGHTS).toMatchObject({ happiness: 0.22, safety: 0.17, variety: 0.13, pisteQuality: 0.10, queues: 0.10, crowding: 0.04, value: 0.10, sustainability: 0.08 });
+  });
+  it('absent facet = left out and renormalised; present = a Facilities bar with its hint; "Well equipped" is never a to-do', () => {
+    expect(scoreInput(good()).components.some((c) => c.id === 'facilities')).toBe(false);
+    const poor = scoreInput({ ...good(), facilities: { score: 10, hint: 'Build toilets near the village and the busy pistes' } });
+    expect(poor.components.find((c) => c.id === 'facilities')!.label).toBe('Facilities');
+    expect(poor.hints).toContain('Build toilets near the village and the busy pistes');
+    expect(poor.score).toBeLessThan(scoreInput(good()).score - 3);
+    expect(scoreInput({ ...good(), facilities: { score: 40, hint: 'Well equipped' } }).hints).not.toContain('Well equipped');
+  });
+  it('an old save without the facilities smooth value loads', () => {
+    const r = new Rating({ inputs: () => ({ ...good(), facilities: { score: 80, hint: '' } }) });
+    r.load({ s: [['happiness', 80]], b: 1, st: 4, e: 0, i: true });
+    expect(() => r.evaluate(1)).not.toThrow();
+  });
+});
+
+describe('measureFacilities', () => {
+  const base = { toilets: [{ x: 10, y: 10 }], venues: [], lodge: { x: 12, y: 12 }, pisteTiles: [{ x: 15, y: 10 }, { x: 60, y: 60 }], guests: { count: 50, desperate: 0 }, overrun: 0 };
+  it('no toilets scores low with the build hint; toilets near the lodge and the piste raise it', async () => {
+    const { measureFacilities } = await import('../../src/sim/meta/Facilities');
+    const none = measureFacilities({ ...base, toilets: [] }), some = measureFacilities(base);
+    expect(none.hint).toMatch(/Build toilets/);
+    expect(some.score).toBeGreaterThan(none.score + 20);
+    expect(measureFacilities({ ...base, guests: { count: 50, desperate: 20 } }).hint).toMatch(/desperate/);
+    expect(measureFacilities({ ...base, pisteTiles: [{ x: 60, y: 60 }] }).hint).toMatch(/busiest pistes/);
+  });
+});

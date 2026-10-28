@@ -46,6 +46,8 @@ import type { GuestWorld } from '../sim/guests/GuestWorld';
 import type { NavWorld } from '../sim/guests/NavGraph';
 import { routeOnKind } from '../sim/guests/Arrivals';
 import { RailCrossings } from '../sim/RailCrossings';
+import { FACILITY, measureFacilities } from '../sim/meta/Facilities';
+import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
 import { Rating, createRatingSystem } from '../sim/Rating';
 import { LeaverTracker, gatherRatingInput } from '../sim/RatingInputs';
 import { Coverage, type NetworkProvider } from '../sim/Coverage';
@@ -168,6 +170,9 @@ export const groundHeight = (grid: Grid, x: number, y: number): number => height
  * Sim-side composition of the whole game (no three / DOM). main.ts calls this and only adds renderer / UI / view wiring.
  * System ordering and adapters are identical to the previous inline wiring.
  */
+/** Dining venues that partly cover the comfort need (facilities facet). */
+const FOOD_VENUES: ReadonlySet<string> = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace']);
+
 export function createSim(opts: SimOptions) {
   const { size, seed } = opts;
   const hooks = opts.hooks ?? {};
@@ -619,6 +624,30 @@ export function createSim(opts: SimOptions) {
       qualityLike: (skill, q) => 0.5 + 0.5 * qualityPreference(skill, q),
       debt: () => finance.debtSeverity(),
       value: () => pricing.valueScore(),
+      facilities: () => {
+        if (!guestSim.comfortNeed) return undefined; // comfort need off: facet not measured (the other weights renormalise)
+        const pt = (b: { x: number; y: number; w: number; h: number }): { x: number; y: number } => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+        const toilets: Array<{ x: number; y: number }> = [], venues: Array<{ x: number; y: number }> = [];
+        let overrun = 0, lodgeAt: { x: number; y: number } | null = null;
+        for (const b of buildings.all()) {
+          if (!b.active) continue;
+          if (b.type === 'toilets') { toilets.push(pt(b)); const a = attractions.get(b.id); if (a && a.open && attractions.usesToday(a) > TOILET_USES_PER_DAY) overrun++; if (a && !a.open) toilets.pop(); }
+          else if (FOOD_VENUES.has(b.type)) venues.push(pt(b));
+          if (b.type === 'baseLodge') lodgeAt = pt(b);
+        }
+        const tiles: Array<{ x: number; y: number }> = [];
+        let k = 0;
+        for (let i = 0; i < networks.layers.length; i++) {
+          if (!(networks.layers[i]! & NetLayer.Ski) || networks.kind[i] !== 0) continue;
+          const x = i % size, y = (i / size) | 0;
+          if (!cond.isSkiable(x, y) || openStatus.isTileClosed(i) || !openStatus.pisteAt(x, y)?.open) continue;
+          if (k++ % 4 === 0) tiles.push({ x, y }); // a quarter of the open tiles is plenty for a share
+        }
+        const st = guestSim.store; let n = 0, bad = 0;
+        for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; if (st.urge[i]! > FACILITY.desperate) bad++; }
+        const f = measureFacilities({ toilets, venues, lodge: lodgeAt, pisteTiles: tiles, guests: { count: n, desperate: bad }, overrun });
+        return { score: f.score, hint: f.hint };
+      },
     }), scenery: (() => { const sc = nature.scenery(), pen = energy.sceneryPenalty(); return pen > 0 ? Math.max(0, sc - pen) : sc; })(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
   });
   registry.replace(createRatingSystem(rating));

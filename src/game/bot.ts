@@ -199,6 +199,8 @@ export class Bot {
     if (this.opt.staffUpgrades) this.trainStaff();
     if (this.opt.green !== false) { this.replant(); this.trainRangers(); }
     if (this.opt.greenEnergy) this.buildSolar(reserve);
+    // comfort need: the starter chain has one free toilet; a busier resort gets one more per ~100 guests (max 3), cheap and free to use
+    if (sim.guestSim.comfortNeed && cash() > reserve + 3_000 && this.count('toilets') < Math.min(3, 1 + Math.floor(sim.guestSim.store.count / 100))) this.build('toilets');
     if (this.opt.expand === false) return;
     const si = sim.size >= 256 ? 2 : sim.size >= 128 ? 1 : 0;
     for (const [type, max] of this.policy?.wishes ?? WISHES) {

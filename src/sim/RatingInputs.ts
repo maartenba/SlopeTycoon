@@ -38,6 +38,8 @@ export interface RatingSources {
   /** Piste-quality liking (0..1) for a skill and quality id. */
   qualityLike(skill: number, quality: number): number;
   value?(): number;
+  /** Facilities facet (comfort need on): undefined = not measured. */
+  facilities?(): { score: number; hint: string } | undefined;
 }
 
 const ICY = 4;
@@ -87,5 +89,6 @@ export function gatherRatingInput(s: RatingSources): RatingInput {
     amenities: { restaurants, lodgingCapacity: lodging, lodgingDemand: g.overnight },
     openLifts,
     debt: s.debt ? s.debt() : 0,
+    ...(s.facilities ? (() => { const f = s.facilities!(); return f ? { facilities: f } : {}; })() : {}),
   };
 }

@@ -75,5 +75,29 @@ Before / after (`npx vite-node scripts/analysis/ratingDistribution.ts`; the defa
 
 One array is worth about +5 facet points = +0.4 rating points: a nudge, never dominant. Starter and demo resorts have no generators and are unchanged.
 
+## Facilities facet (Phase 6 Tasks 7-8, docs/comfort.md)
+
+A ninth component, **Facilities**, weight **0.06**: 45 % comfort satisfaction (share of guests in the resort who are not desperate for a toilet), 25 % toilet cover of the open pistes, 15 % cover of the Base Lodge, 15 % toilets per guest (`src/sim/meta/Facilities.ts`). It is only measured while the comfort need is on (`createSim({ comfortNeed })`, default ON); otherwise it is left out and the others renormalise, as for sustainability. Weights = previous x 0.94, rounded to hundredths (sum exactly 1.00, tested): happiness .22, safety .17, variety .13, pisteQuality .10, queues .10, crowding .04, value .10, sustainability .08, facilities .06. Hints: "Build toilets near the village and the busy pistes" / "Guests are desperate for a toilet: add more" / "Toilets are overrun: add more" / "No toilets near the busiest pistes" / "Too few toilets for this many guests"; "Well equipped" is a positive hint. The HUD rating panel lists it as another bar (generic rows); `rating:changed` hysteresis is unchanged.
+
+### Star distributions before / after (daily samples after day 10, 64 map, `scripts/analysis/ratingDistribution.ts`)
+
+"before" = `COMFORT=0` (no comfort need, no toilet, old weights; the code before Task 7); "Task 7 only" = comfort need + toilets, no facet yet; "after" = Task 7 + the facet + new weights (the default). 360-day runs, bots 2 years. Mean = mean 0..100 score.
+
+| resort (64) | seed | before: mean, stars | Task 7 only: mean, stars | after: mean, stars |
+|---|---|---|---|---|
+| starter (sandbox gift) | 61 | 87.5; 4★ 37, 4.5★ 63 | 86.9; 4★ 45, 4.5★ 55 | 87.9; 4★ 24, 4.5★ 76 |
+| starter | 7 | 88.1; 4★ 31, 4.5★ 69 | 87.8; 4★ 36, 4.5★ 64 | 88.8; 4★ 25, 4.5★ 71, 5★ 4 |
+| demo starter | 61 | 85.3; 3.5★ 1, 4★ 52, 4.5★ 47 | 84.4; 3.5★ 2, 4★ 56, 4.5★ 43 | 86.5; 4★ 42, 4.5★ 58 |
+| demo starter | 7 | 88.3; 4★ 23, 4.5★ 77 | 87.8; 4★ 30, 4.5★ 70 | 88.9; 4★ 15, 4.5★ 85 |
+| demo large | 61 | 89.7; 4★ 10, 4.5★ 86, 5★ 3 | 89.2; 4★ 14, 4.5★ 85, 5★ 1 | 89.7; 4★ 6, 4.5★ 93, 5★ 1 |
+| demo large | 7 | 89.0; 4★ 28, 4.5★ 72 | 88.8; 4★ 26, 4.5★ 74 | 89.2; 4★ 15, 4.5★ 85 |
+| bot (2 years) | 61 | 86.6; 4★ 41, 4.5★ 59 | 87.0; 4★ 47, 4.5★ 53 | 87.2; 4★ 35, 4.5★ 65 |
+| bot | 7 | 88.2; 4★ 34, 4.5★ 66 | 88.0; 4★ 38, 4.5★ 63 | 89.0; 4★ 23, 4.5★ 74, 5★ 4 |
+
+* **Every resort keeps its star band (4 - 4.5★)**; means move by +0.2 (demo large 61), +0.4 (starter 61), +0.7 (starter 7), +1.2 (demo starter 61), +0.6 (bot 61) and +0.8 (bot 7) points: all within the <= 2 point target. The facet itself reads 87 - 93 on starter / demo / bot (they have a toilet by the lodge and cafes beside the pistes); about 63 without the free toilet.
+* The comfort need alone (Task 7) costs 0.3 - 0.9 points (an unmet urge drags happiness 92 -> 90 - 93); the facet and its 6 % weight give it back.
+* **Free starter toilet**: starter resort without it (comfort on, 200-day probe, `NOTOILET=1`): seed 61 86.2 (4★ 46, 4.5★ 54; facilities 64), seed 7 87.3 (facilities 65); with it 87.9 / 88.8. It would not have dropped half a star on average, but the owner chose one free toilet (cushion) and it is worth about +1.5 points. A career game does not get it (it starts with the Base Lodge only).
+* The balance bot builds one more toilet per ~100 guests (max 3, $600 each): year-2 net 136k -> 128k (seed 61) and 124k -> 134k (seed 7) vs before, i.e. within run-to-run noise of the other changes.
+
 ## 0.2.2 note
 Sustainability also has a small **train share** input (Come by Train, Phase 6 Task 50): the share of the last 14 days' arrivals by rail earns up to +3 facet points (linear to a 30 % share, `TRAIN_SUSTAIN` in `config/marketing.ts`, tracked only when `createSim({ campaignsV2: true })`), at most 0.24 rating score points. Sustainability energy counts **net grid purchase** per guest (generator offset is already off the ledger line); recycling adds +4 points and nursery saplings count against felled trees (docs/energy.md). Rudi's `energy.green` rule names energy as the weakest part. The *Runs* change also affects the "Too few green runs" hint: it counts runs, not connected blobs.

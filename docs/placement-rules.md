@@ -39,6 +39,7 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 | Playground | path | forbid | flat | default | never | no | – | shoulder |
 | Ski Patrol Hub | road | forbid | flat | default | never | no | – | all |
 | Ranger Station | road / path / trail | forbid | ≤2 | default | never | no | – | all |
+| Toilets | path / trail / pisteEdge | edge | ≤2 | optional | never | yes | – | all |
 | First-Aid Hut | none | edge | ≤2 | optional | never | yes | – | all |
 | Helipad | none | forbid | flat | default | never | no | – | all |
 | Groomer Garage | road | forbid | flat | default | never | no | – | winter |
@@ -177,3 +178,5 @@ The "no path / road on rail" rule is lifted for valid crossings only: a straight
 - The touching `path` / `road` / `rail` tile must also be in the component **linked to the road / rail entry** (`Networks.comps`). A painted but unlinked footpath does not serve.
 - The ghost (`validatePlacement`) and the placed building (`evaluateStatus`) use the same `accessSatisfied`; both read `Networks.version`-cached components, so they cannot disagree (property test `tests/build/placementPreviewAgrees.test.ts`: random placements, preview warning == `active`/`reason` after placement; same result at HEAD).
 - When access is missing the ghost adds one precise line from `accessHint` (`Networks.diagnose`): *Needs a connected footpath: the one next to it isn't linked to the road entrance* (edge touches an unlinked network), *The footpath touches only the corner: move it one tile (it must share a side)*, *The footpath is one tile away: ...*; otherwise the building's `placeTip` / plain text.
+
+**Free starter toilet** (Phase 6 Task 7): `buildStarterResort` (the pre-built resort of the sandbox, the demo towns and the balance bot) places ONE Toilets block by the village footpath at no charge (it runs through `withBypass`, the whole chain is a gift) whenever the comfort need is on (`createSim` default; `StarterOptions.toilet: false` skips it). A career game still starts with just the Base Lodge. See [comfort.md](comfort.md).

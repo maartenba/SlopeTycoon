@@ -7,6 +7,8 @@ import { Bot, runBot } from '../../src/game/bot';
 import { buildDemoResort, type DemoLevel } from '../../src/game/demoResort';
 
 const days = Number(process.argv[2] ?? 360);
+/** NOTOILET=1: comfort on but the free starter toilet removed. COMFORT=0: the old game (no comfort need, no free toilet) for the before / after tables of docs/rating.md. */
+const CMF = process.env.COMFORT === '0' ? { comfortNeed: false } : {};
 interface Agg { e: number[]; n: number; score: number; hist: Record<string, number>; comps: Record<string, number> }
 const mk = (): Agg => ({ e: [], n: 0, score: 0, hist: {}, comps: {} });
 function sample(sim: Sim, a: Agg): void {
@@ -24,14 +26,15 @@ function show(name: string, a: Agg): void {
 }
 function runPlain(name: string, make: () => Sim): void {
   const sim = make(), a = mk();
+  if (process.env.NOTOILET === '1') { for (const b of sim.buildings.all().filter((x) => x.type === 'toilets')) sim.buildings.remove(b.id); sim.refreshCoverage(undefined, true); } // facilities probe: comfort need on, free toilet removed
   for (let d = 0; d < days; d++) { sim.tick(240); if (d >= 10) sample(sim, a); }
   show(name, a);
   console.log(raw(sim));
 }
 for (const seed of [61, 7]) {
-  runPlain(`starter 64/${seed}`, () => createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', now: () => 0 }));
-  for (const lvl of ['starter', 'large'] as DemoLevel[]) runPlain(`demo-${lvl} 64/${seed}`, () => { const s = createSim({ size: 64, seed, mode: 'sandbox', now: () => 0 }); buildDemoResort(s, lvl); return s; });
-  { const sim = createSim({ size: 64, seed, now: () => 0 }), bot = new Bot(sim, { staffUpgrades: process.env.UPG === '1', greenEnergy: process.env.GREEN === '1' }), a = mk();
+  runPlain(`starter 64/${seed}`, () => createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', ...CMF, now: () => 0 }));
+  for (const lvl of ['starter', 'large'] as DemoLevel[]) runPlain(`demo-${lvl} 64/${seed}`, () => { const s = createSim({ size: 64, seed, mode: 'sandbox', ...CMF, now: () => 0 }); buildDemoResort(s, lvl); return s; });
+  { const sim = createSim({ size: 64, seed, ...CMF, now: () => 0 }), bot = new Bot(sim, { staffUpgrades: process.env.UPG === '1', greenEnergy: process.env.GREEN === '1' }), a = mk();
     runBot(sim, bot, 2 * 180, () => { if (sim.game.date.year >= 1 || sim.game.date.day > 10) sample(sim, a); });
     show(`bot 64/${seed}${process.env.UPG === '1' ? ' +upgrades' : ''}${process.env.GREEN === '1' ? ' +solar' : ''}`, a); console.log(raw(sim));
     console.log(`   y2 net ${Math.round(bot.rows.filter((r) => r.year === 2).reduce((s, r) => s + r.net, 0))}`); }

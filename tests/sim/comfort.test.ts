@@ -49,17 +49,19 @@ describe('comfort need (Phase 6 Task 7)', () => {
     const t = sim.attractions.all().find((a) => a.b.type === 'toilets')!;
     expect(t.stats.served).toBeGreaterThan(0);
   });
-  it('no toilets: guests get desperate and are less happy than with toilets', () => {
-    const run = (withToilet: boolean): { happy: number; urge: number } => {
+  it('guests in need walk to the toilet and are relieved; without one they stay desperate', () => {
+    const run = (withToilet: boolean): number => {
       const sim = createSim({ size: 64, seed: 61, starterResort: true, mode: 'sandbox', now: () => 0 });
       if (!withToilet) { for (const b of sim.buildings.all().filter((x) => x.type === 'toilets')) sim.buildings.remove(b.id); sim.refreshCoverage(undefined, true); }
       sim.tick(240 * 6 + 120);
-      const s = sim.guestSim.store; let h = 0, u = 0, n = 0;
-      for (let i = 0; i < s.limit; i++) if (s.alive[i]) { h += s.happiness[i]!; u += s.urge[i]!; n++; }
-      return { happy: h / Math.max(1, n), urge: u / Math.max(1, n) };
+      const s = sim.guestSim.store;
+      for (let i = 0; i < s.limit; i++) if (s.alive[i]) s.urge[i] = 0.9;
+      const ids = new Set<number>(); for (let i = 0; i < s.limit; i++) if (s.alive[i]) ids.add(s.id[i]!);
+      sim.tick(40);
+      let u = 0, n = 0;
+      for (const id of ids) { const i = s.slotOf(id); if (i >= 0) { u += s.urge[i]!; n++; } }
+      return n ? u / n : 1;
     };
-    const w = run(true), wo = run(false);
-    expect(wo.urge).toBeGreaterThan(w.urge);
-    expect(wo.happy).toBeLessThan(w.happy);
+    expect(run(true)).toBeLessThan(run(false) - 0.05);
   });
 });

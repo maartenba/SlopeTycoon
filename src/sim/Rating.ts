@@ -29,10 +29,12 @@ export interface RatingInput {
   debt?: number;
   /** Sustainability facet (Task 23): score 0..100 + the hint of its weakest part. Absent (older tests, headless snapshots) = the facet is left out and the other weights are renormalised. */
   sustainability?: { score: number; hint: string };
+  /** Facilities facet (Task 8): toilet cover + comfort satisfaction, 0..100 + hint. Absent (comfort need off, older tests) = left out and the other weights renormalised. */
+  facilities?: { score: number; hint: string };
 }
 
 /** Component hints that are good news, not advice (the advisor never shows them as a to-do). */
-export const POSITIVE_HINTS: ReadonlySet<string> = new Set(['Guests are happy', 'Safe resort', 'Great variety', 'Pistes in good shape', 'Short queues', 'Comfortable', 'Fair prices', 'Gentle on the mountain']);
+export const POSITIVE_HINTS: ReadonlySet<string> = new Set(['Guests are happy', 'Safe resort', 'Great variety', 'Pistes in good shape', 'Short queues', 'Comfortable', 'Fair prices', 'Gentle on the mountain', 'Well equipped']);
 
 export interface RatingComponent { id: string; label: string; score: number; weight: number; hint: string }
 export interface RatingBreakdown { score: number; stars: number; components: RatingComponent[]; bonus: number; bonusHints: string[]; hints: string[] }
@@ -40,10 +42,12 @@ export interface RatingBreakdown { score: number; stars: number; components: Rat
 const clamp = (v: number, lo = 0, hi = 1): number => Math.min(hi, Math.max(lo, v));
 /**
  * Component weights (sum 1). Task 23 added `sustainability` (8 %) and renormalised the rest: old x 0.92 rounded to hundredths
- * (happiness .25 -> .23, safety .20 -> .18, variety .15 -> .14, pisteQuality .12 -> .11, queues .12 -> .11, crowding .04, value .12 -> .11). See docs/rating.md.
+ * (happiness .25 -> .23, safety .20 -> .18, variety .15 -> .14, pisteQuality .12 -> .11, queues .12 -> .11, crowding .04, value .12 -> .11).
+ * Phase 6 Task 8 added `facilities` (6 %) and scaled the rest by 0.94, rounded to hundredths (happiness .22, safety .17, variety .13, pisteQuality .10,
+ * queues .10, crowding .04, value .10, sustainability .08). See docs/rating.md.
  */
-export const WEIGHTS = { happiness: 0.23, safety: 0.18, variety: 0.14, pisteQuality: 0.11, queues: 0.11, crowding: 0.04, value: 0.11, sustainability: 0.08 } as const;
-/** Weighted sum of component scores, renormalised over the components that are present (all 8 normally; 7 when the facet is not measured). */
+export const WEIGHTS = { happiness: 0.22, safety: 0.17, variety: 0.13, pisteQuality: 0.10, queues: 0.10, crowding: 0.04, value: 0.10, sustainability: 0.08, facilities: 0.06 } as const;
+/** Weighted sum of component scores, renormalised over the components that are present (all 9 normally; fewer when a facet is not measured). */
 export function weightedSum(comps: ReadonlyArray<{ score: number; weight: number }>): number {
   let s = 0, w = 0;
   for (const c of comps) { s += c.score * c.weight; w += c.weight; }
@@ -106,6 +110,8 @@ export function scoreInput(i: RatingInput): RatingBreakdown {
   add('value', 'Value for money', 100 * clamp(i.value), i.value < 0.4 ? 'Prices are high for the quality' : 'Fair prices');
 
   if (i.sustainability) add('sustainability', 'Sustainability', i.sustainability.score, i.sustainability.hint);
+
+  if (i.facilities) add('facilities', 'Facilities', i.facilities.score, i.facilities.hint);
 
   let score = weightedSum(out);
 
