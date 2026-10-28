@@ -10,6 +10,8 @@ import { NetworkMeshes } from '../render/meshes/Paths';
 import { PathTool, type DragToolOptions } from './PathTool';
 import { RoadTool, RailTool } from './RoadTool';
 import { PisteTool } from './PisteTool';
+import { BridgeTool } from './BridgeTool';
+import type { BridgeKind } from '../config/bridges';
 import { StrokeHistory } from './StrokeHistory';
 import type { Undo } from './UndoActions';
 
@@ -66,6 +68,8 @@ export interface NetworkTools {
   setBrush(n: number): void;
   /** Toggle erase mode for piste/trail tools (Shift-drag also erases). */
   setErase(on: boolean): void;
+  /** Start the bridge tool (drag bank to bank) for a bridge kind; starting it again stops it. */
+  startBridge(kind: BridgeKind): void;
   /** Footpath strokes over a rail line become footbridges (no waiting) instead of level crossings. */
   setOverRail(on: boolean): void;
   /** Undo the latest stroke (of the active tool's group, else any); false if nothing to undo. */
@@ -119,11 +123,11 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     },
     onError: (m) => ctx.toast(m, 'error'),
     history, refund: (n) => economy.refund(n), onInfo: (m) => ctx.toast(m, 'info'),
-    record: ctx.undo ? (group, diff, cost, erase) => ctx.undo!.recordNetwork(group === 'piste' ? 'Piste' : group === 'road' ? 'Road' : group === 'rail' ? 'Rail' : 'Footpath', erase ? 'bulldozed' : 'painted', diff, cost) : undefined,
+    record: ctx.undo ? (group, diff, cost, erase) => ctx.undo!.recordNetwork(group === 'piste' ? 'Piste' : group === 'road' ? 'Road' : group === 'rail' ? 'Rail' : group === 'bridge' ? 'Bridge' : 'Footpath', erase ? 'bulldozed' : 'painted', diff, cost) : undefined,
     onProfile: ctx.onProfile,
     onDone: () => { ctx.onToolActive(false); setActive(null); },
   };
-  const path = new PathTool(opts), road = new RoadTool(opts), rail = new RailTool(opts), piste = new PisteTool(opts);
+  const path = new PathTool(opts), road = new RoadTool(opts), rail = new RailTool(opts), piste = new PisteTool(opts), bridge = new BridgeTool(opts);
   piste.snowlineM = ctx.snowlineM;
 
   // Palette
@@ -134,7 +138,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     ctx.onActiveChange?.(k);
     for (const [key, b] of buttons) b.classList.toggle('active', key === k);
   };
-  const stopAll = (): void => { path.stop(); road.stop(); rail.stop(); piste.stop(); };
+  const stopAll = (): void => { path.stop(); road.stop(); rail.stop(); piste.stop(); bridge.stop(); };
   const start = (key: string, fn: () => void): void => {
     if (activeKey === key) { stopAll(); return; }
     stopAll();
@@ -202,19 +206,20 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
   const bulldozeAt = (x: number, y: number): boolean => {
     if (!grid.inBounds(x, y)) return false;
     if (grid.occupancy.has(x, y, OccFlag.Building)) return false; // rail under a station stays until the station goes
+    const br = networks.bridgeAt(x, y); // a player-built bridge goes whole and refunds half of what it cost
     networks.beginJournal();
     const k = networks.unbuild(x, y);
     if (k) {
-      const refund = Math.round(networks.costOf(k) * REFUND);
+      const refund = Math.round((br ? br.cost : networks.costOf(k)) * REFUND);
       economy.refund(refund);
-      ctx.undo?.recordNetworkBulldoze(k === 1 ? 'Footpath' : k === 2 ? 'Road' : 'Rail', networks.endJournal(), refund);
+      ctx.undo?.recordNetworkBulldoze(br ? 'Bridge' : k === 1 ? 'Footpath' : k === 2 ? 'Road' : 'Rail', networks.endJournal(), refund);
       afterChange();
       return true;
     }
     if (networks.clearLayers(x, y)) {
-      const refund = Math.round(PISTE_COST_PER_TILE * REFUND);
+      const refund = Math.round((br ? br.cost : PISTE_COST_PER_TILE) * REFUND);
       economy.refund(refund);
-      ctx.undo?.recordNetworkBulldoze('Piste', networks.endJournal(), refund);
+      ctx.undo?.recordNetworkBulldoze(br ? 'Bridge' : 'Piste', networks.endJournal(), refund);
       afterChange();
       return true;
     }
@@ -233,6 +238,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     setBrush: (n) => { piste.brush = n; },
     setErase: (on) => { eraseOn = on; piste.setErase(on); },
     setOverRail: (on) => { path.overRail = on; },
+    startBridge: (kind) => { const key = `bridge:${kind}`; if (activeKey === key) { stopAll(); return; } stopAll(); ctx.onToolActive(true); bridge.startTool(kind); setActive(key); },
     undo,
     redo: () => ctx.performRedo?.() ?? false,
     refresh: afterChange,

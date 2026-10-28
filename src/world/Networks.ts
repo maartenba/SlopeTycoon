@@ -4,7 +4,12 @@ import { OccFlag } from './Occupancy';
 import type { Pt } from '../sim/Dependencies';
 import { HEIGHT_UNIT } from '../config/balance';
 import { CROSSING } from '../config/crossings';
+import { BRIDGES, type BridgeKind } from '../config/bridges';
+import type { Bridge, BridgePlan } from './Bridges';
 import { accessProblem, suppliedOnFootOnly, type NetworkAccess, type ServedKind } from '../sim/PlacementRules';
+
+/** Plain-data copy of a bridge record (saves hand back JSON). */
+function structuredCloneBridge(b: Bridge): Bridge { return { ...b, a: { ...b.a }, b: { ...b.b }, span: b.span.map((t) => ({ ...t })) }; }
 
 export const NetKind = { None: 0, Path: 1, Road: 2, Rail: 3 } as const;
 export type NetKindId = 1 | 2 | 3;
@@ -117,7 +122,7 @@ export function sweepBrush(stroke: ReadonlyArray<Pt>, brush: number, size: numbe
 }
 
 /** Snapshot of one tile's mutable state (for stroke undo). */
-export interface TileSnap { i: number; kind: number; bridge: number; cross?: number; layers: number; difficulty: number; quality: number }
+export interface TileSnap { i: number; kind: number; bridge: number; cross?: number; bid?: number; layers: number; difficulty: number; quality: number }
 
 export interface PisteComponent {
   id: number;
@@ -191,6 +196,12 @@ export class Networks {
   readonly cross: Uint8Array;
   /** Number of tiles with cross > 0 (0 = every crossing system is inert). */
   crossCount = 0;
+  /** Bridge id per tile (0 = none) for the SPAN tiles of a player-built bridge (Phase 6 Task 45; legacy stream crossings keep only the `bridge` flag). */
+  readonly bid: Uint16Array;
+  /** Number of span tiles with a bridge id (0 = every bridge system is inert). */
+  bridgeTiles = 0;
+  private bridgeDefs = new Map<number, Bridge>();
+  private nextBridge = 1;
   /** Piste layer bits per tile. */
   readonly layers: Uint8Array;
   /** Difficulty 0..3 per tile (valid where Ski/Mtb/Hike layer set). */
@@ -212,14 +223,19 @@ export class Networks {
     this.conn = new Uint8Array(n);
     this.bridge = new Uint8Array(n);
     this.cross = new Uint8Array(n);
+    this.bid = new Uint16Array(n);
     this.layers = new Uint8Array(n);
     this.difficulty = new Uint8Array(n);
     this.quality = new Uint8Array(n);
   }
 
   /** Save/load (Task 33): replace all per-tile state; invalidates every cache and marks every chunk dirty. */
-  restoreAll(d: { kind: ArrayLike<number>; conn: ArrayLike<number>; bridge: ArrayLike<number>; cross?: ArrayLike<number>; layers: ArrayLike<number>; difficulty: ArrayLike<number>; quality: ArrayLike<number>; roadEntry: Pt | null; railEntry: Pt | null; version: number }): void {
-    this.kind.set(d.kind); this.conn.set(d.conn); this.bridge.set(d.bridge); if (d.cross) this.cross.set(d.cross); else this.cross.fill(0); this.recountCross(); this.layers.set(d.layers); this.difficulty.set(d.difficulty); this.quality.set(d.quality);
+  restoreAll(d: { kind: ArrayLike<number>; conn: ArrayLike<number>; bridge: ArrayLike<number>; cross?: ArrayLike<number>; bid?: ArrayLike<number>; bridges?: Bridge[]; layers: ArrayLike<number>; difficulty: ArrayLike<number>; quality: ArrayLike<number>; roadEntry: Pt | null; railEntry: Pt | null; version: number }): void {
+    this.kind.set(d.kind); this.conn.set(d.conn); this.bridge.set(d.bridge); if (d.cross) this.cross.set(d.cross); else this.cross.fill(0); this.recountCross();
+    this.bridgeDefs.clear(); this.nextBridge = 1; this.bid.fill(0);
+    if (d.bid && d.bridges) { this.bid.set(d.bid); for (const b of d.bridges) { this.bridgeDefs.set(b.id, structuredCloneBridge(b)); this.nextBridge = Math.max(this.nextBridge, b.id + 1); } }
+    this.recountBridges();
+    this.layers.set(d.layers); this.difficulty.set(d.difficulty); this.quality.set(d.quality);
     this.roadEntry = d.roadEntry ? { ...d.roadEntry } : null; this.railEntry = d.railEntry ? { ...d.railEntry } : null;
     this.pisteCache = null; this.cache = { v: -1 }; this.journal = null;
     this.version = d.version + 1;
@@ -398,6 +414,153 @@ export class Networks {
     return true;
   }
 
+  // ---------- bridges (Phase 6 Task 45, docs/bridges.md) ----------
+
+  private recountBridges(): void { let n = 0; for (let i = 0; i < this.bid.length; i++) if (this.bid[i]) n++; this.bridgeTiles = n; }
+
+  /** Build a validated bridge (`planBridge`): bank tiles as ordinary network tiles, the span tiles carry the layer + bridge flag + id. Returns the record. */
+  buildBridge(plan: BridgePlan): Bridge | null {
+    if (!plan.ok || plan.kind === 'rail') return null;
+    const spec = BRIDGES[plan.kind];
+    for (const t of plan.newBanks) {
+      if (spec.layer === 'path' || spec.layer === 'road') this.build(spec.layer === 'path' ? NetKind.Path : NetKind.Road, t.x, t.y);
+      else this.paint(spec.layer === 'hike' ? Layer.Hike : Layer.Mtb, [t], 0);
+    }
+    const id = this.nextBridge++;
+    for (const t of plan.span) {
+      const i = this.idx(t.x, t.y);
+      this.note(i);
+      this.bid[i] = id; this.bridgeTiles++;
+      this.bridge[i] = 1;
+      if (spec.layer === 'path' || spec.layer === 'road') {
+        this.kind[i] = spec.layer === 'path' ? NetKind.Path : NetKind.Road;
+        this.grid.occupancy.set(t.x, t.y, spec.layer === 'path' ? OccFlag.Path : OccFlag.Road);
+      } else {
+        this.layers[i]! |= spec.layer === 'hike' ? Layer.Hike : Layer.Mtb;
+        this.difficulty[i] = 0; this.quality[i] = 128;
+      }
+    }
+    const def: Bridge = { id, kind: plan.kind, a: { ...plan.a }, b: { ...plan.b }, span: plan.span.map((t) => ({ ...t })), deck: plan.deck, cost: plan.cost };
+    this.bridgeDefs.set(id, def);
+    for (const t of [plan.a, ...plan.span, plan.b]) { if (spec.layer === 'path' || spec.layer === 'road') this.refreshConn(t.x, t.y); else this.markDirty(t.x, t.y); }
+    return def;
+  }
+
+  /** The player-built bridge a tile belongs to (span tile), if any. */
+  bridgeAt(x: number, y: number): Bridge | null {
+    if (!this.inb(x, y) || this.bridgeTiles === 0) return null;
+    const id = this.bid[this.idx(x, y)]!;
+    return id ? this.bridgeDefs.get(id) ?? null : null;
+  }
+
+  /** Remove a bridge's span tiles (the banks stay as ordinary tiles). Returns the removed NetKind (path / road) or 0 for a trail bridge. */
+  removeBridge(id: number): number {
+    const def = this.bridgeDefs.get(id);
+    if (!def) return 0;
+    const spec = BRIDGES[def.kind];
+    let removed = 0;
+    for (const t of def.span) {
+      const i = this.idx(t.x, t.y);
+      if (this.bid[i] !== id) continue;
+      this.note(i);
+      this.bid[i] = 0; this.bridgeTiles--;
+      this.bridge[i] = 0;
+      if (spec.layer === 'path' || spec.layer === 'road') {
+        const k = this.kind[i]!;
+        this.kind[i] = 0;
+        this.grid.occupancy.clear(t.x, t.y, k === NetKind.Path ? OccFlag.Path : OccFlag.Road);
+        removed = k;
+      } else {
+        this.layers[i]! &= ~(spec.layer === 'hike' ? Layer.Hike : Layer.Mtb) & 0xff;
+        if (!this.layers[i]) { this.difficulty[i] = 0; this.quality[i] = 0; }
+      }
+    }
+    for (const t of [def.a, ...def.span, def.b]) { if (spec.layer === 'path' || spec.layer === 'road') this.refreshConn(t.x, t.y); else this.markDirty(t.x, t.y); }
+    return removed;
+  }
+
+  /** Live player-built bridges, ascending id. */
+  liveBridges(): Bridge[] {
+    const out: Bridge[] = [];
+    for (const d of this.bridgeDefs.values()) if (d.span.length && this.bid[this.idx(d.span[0]!.x, d.span[0]!.y)] === d.id) out.push(d);
+    return out.sort((p, q) => p.id - q.id);
+  }
+
+  /**
+   * Old per-tile stream crossings (the `bridge` flag without a record) as zero-cost auto records, so every crossing has a record to list / inspect
+   * (docs/bridges.md "Migration"). Nothing is stored: the flags themselves keep the crossing and the connectivity of old saves exactly as before.
+   */
+  legacyBridges(): Bridge[] {
+    const out: Bridge[] = [], n = this.size, seen = new Uint8Array(n * n);
+    const kindOf = (i: number): BridgeKind | null => this.kind[i] === NetKind.Road ? 'roadBridge' : this.kind[i] === NetKind.Path ? 'footbridge' : (this.layers[i]! & Layer.Hike) ? 'hikeBridge' : (this.layers[i]! & Layer.Mtb) ? 'mtbBridge' : null;
+    for (let i = 0; i < n * n; i++) {
+      if (this.bridge[i] !== 1 || this.bid[i] !== 0 || seen[i]) continue;
+      const k = kindOf(i);
+      if (!k) continue;
+      const x = i % n, y = (i / n) | 0;
+      // run along the axis with more flagged neighbours (streams are one tile wide; a diagonal stream gives one-tile runs)
+      const flagged = (tx: number, ty: number): boolean => this.inb(tx, ty) && this.bridge[this.idx(tx, ty)] === 1 && this.bid[this.idx(tx, ty)] === 0 && kindOf(this.idx(tx, ty)) === k;
+      const horizontal = flagged(x - 1, y) || flagged(x + 1, y);
+      const dx = horizontal ? 1 : 0, dy = horizontal ? 0 : 1;
+      let sx = x, sy = y;
+      while (flagged(sx - dx, sy - dy)) { sx -= dx; sy -= dy; }
+      const span: Pt[] = [];
+      for (let tx = sx, ty = sy; flagged(tx, ty); tx += dx, ty += dy) { span.push({ x: tx, y: ty }); seen[this.idx(tx, ty)] = 1; }
+      out.push({ id: -(out.length + 1), kind: k, a: { x: sx - dx, y: sy - dy }, b: { x: sx + dx * span.length, y: sy + dy * span.length }, span, deck: 0, cost: 0, auto: true });
+    }
+    return out;
+  }
+
+  /** Every bridge: player-built records first, then the auto records of the old stream crossings. */
+  allBridges(): Bridge[] { return [...this.liveBridges(), ...this.legacyBridges()]; }
+
+  /** The bridge whose bank tile this is (the tile next to its span, at either end), with the end; null when none. */
+  bankOf(x: number, y: number): { br: Bridge; end: 'a' | 'b' } | null {
+    if (this.bridgeTiles === 0 || !this.inb(x, y)) return null;
+    for (let d = 0; d < 4; d++) {
+      const nx = x + DX[d]!, ny = y + DY[d]!;
+      if (!this.inb(nx, ny)) continue;
+      const nb = this.bid[this.idx(nx, ny)]!;
+      if (!nb) continue;
+      const def = this.bridgeDefs.get(nb);
+      if (!def) continue;
+      if (def.a.x === x && def.a.y === y) return { br: def, end: 'a' };
+      if (def.b.x === x && def.b.y === y) return { br: def, end: 'b' };
+    }
+    return null;
+  }
+
+  /** Mean surface height (world units) of a tile. */
+  private tileY(p: Pt): number { const c = this.grid.getCorners(p.x, p.y); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; }
+
+  /**
+   * Deck height (world units) at distance `s` tiles along the bridge, measured from the centre of bank a (0) to the centre of bank b (n + 1): the deck is
+   * flat at its level across the span (0.5 .. n + 0.5) and ramps linearly from the bank surface over the half tile next to each bank.
+   */
+  deckAlong(br: Bridge, s: number): number {
+    const n = br.span.length, L = br.deck * HEIGHT_UNIT;
+    if (s <= 0.5) { const ya = this.tileY(br.a); return ya + (L - ya) * (Math.max(0, s) / 0.5); }
+    if (s >= n + 0.5) { const yb = this.tileY(br.b); return L + (yb - L) * ((Math.min(n + 1, s) - (n + 0.5)) / 0.5); }
+    return L;
+  }
+
+  /**
+   * World height (units) of the deck at a world position, or null when it is not on a bridge deck / on the half of a bank tile that ramps up to it.
+   * Guests and cars use it for their z (createSim.groundAt, main's vehicle height).
+   */
+  deckY(x: number, y: number): number | null {
+    if (this.bridgeTiles === 0) return null;
+    const tx = Math.floor(x), ty = Math.floor(y);
+    if (!this.inb(tx, ty)) return null;
+    const br: Bridge | undefined = this.bid[this.idx(tx, ty)] ? this.bridgeDefs.get(this.bid[this.idx(tx, ty)]!) : this.bankOf(tx, ty)?.br;
+    if (!br) return null;
+    const horizontal = br.a.y === br.b.y, n = br.span.length;
+    const sign = horizontal ? Math.sign(br.b.x - br.a.x) : Math.sign(br.b.y - br.a.y);
+    const s = (horizontal ? x - (br.a.x + 0.5) : y - (br.a.y + 0.5)) * sign;
+    if (s < 0 || s > n + 1) return null;
+    return this.deckAlong(br, s);
+  }
+
   private recountCross(): void { let n = 0; for (let i = 0; i < this.cross.length; i++) if (this.cross[i]) n++; this.crossCount = n; }
 
   /** Build a validated segment atomically. Returns tiles added (empty if invalid). */
@@ -414,6 +577,7 @@ export class Networks {
     if (!this.inb(x, y)) return 0;
     const i = this.idx(x, y), k = this.kind[i]!;
     if (!k) return 0;
+    if (this.bid[i]) return this.removeBridge(this.bid[i]!); // a bridge goes whole (banks stay)
     this.note(i);
     if (this.cross[i]) { // bulldozing a level crossing / rail footbridge reverts the tile to plain rail; the path / road is cut (docs/crossings.md)
       const was = this.cross[i]!;
@@ -505,6 +669,7 @@ export class Networks {
     if (!this.inb(x, y)) return false;
     const i = this.idx(x, y);
     if (!(this.layers[i]! & layer)) return false;
+    if (this.bid[i]) { this.removeBridge(this.bid[i]!); return true; } // a trail bridge goes whole
     this.note(i);
     this.layers[i]! &= ~layer & 0xff;
     if (!this.layers[i]) { this.difficulty[i] = 0; this.quality[i] = 0; if (!this.kind[i]) this.bridge[i] = 0; }
@@ -523,7 +688,7 @@ export class Networks {
   // ---------- undo journal ----------
 
   private snap(i: number): TileSnap {
-    return { i, kind: this.kind[i]!, bridge: this.bridge[i]!, cross: this.cross[i]!, layers: this.layers[i]!, difficulty: this.difficulty[i]!, quality: this.quality[i]! };
+    return { i, kind: this.kind[i]!, bridge: this.bridge[i]!, cross: this.cross[i]!, bid: this.bid[i]!, layers: this.layers[i]!, difficulty: this.difficulty[i]!, quality: this.quality[i]! };
   }
   /** Snapshots of the CURRENT state of the given tiles (redo of a stroke replays the post-state). */
   snapshotTiles(idx: ReadonlyArray<number>): TileSnap[] { return idx.map((i) => this.snap(i)); }
@@ -542,6 +707,7 @@ export class Networks {
       const old = this.kind[s.i]!;
       if (old) this.grid.occupancy.clear(x, y, old === NetKind.Path ? OccFlag.Path : OccFlag.Road);
       this.kind[s.i] = s.kind; this.bridge[s.i] = s.bridge;
+      { const b = s.bid ?? 0; if (b && !this.bid[s.i]) this.bridgeTiles++; else if (!b && this.bid[s.i]) this.bridgeTiles--; this.bid[s.i] = b; }
       { const c = s.cross ?? 0; if (c && !this.cross[s.i]) this.crossCount++; else if (!c && this.cross[s.i]) this.crossCount--; this.cross[s.i] = c; }
       if (s.kind) this.grid.occupancy.set(x, y, s.kind === NetKind.Path ? OccFlag.Path : OccFlag.Road);
       this.layers[s.i] = s.layers; this.difficulty[s.i] = s.difficulty; this.quality[s.i] = s.quality;

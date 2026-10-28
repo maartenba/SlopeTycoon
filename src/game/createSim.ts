@@ -326,14 +326,14 @@ export function createSim(opts: SimOptions) {
   openStatus.evaluate();
 
   // ---- Guests: navigation view = live arrays of Networks / Grid / TileConditions + the lift store ----
+  // Rail level crossings (Phase 6 Task 10, docs/crossings.md): pure derivation from the train polylines; inert (no work, no state) while the world has none.
+  const crossings = new RailCrossings(networks);
   const navWorld: NavWorld = {
     size, kind: networks.kind, layers: networks.layers, difficulty: networks.difficulty, occ: grid.occupancy.flags, tileType: grid.tileType,
     skiOpen: cond.skiOpen, hikeOk: cond.hikeOk, snow: grid.snowDepth, closed: openStatus.closedMask, bridge: networks.bridge,
+    cross: networks.cross, crossClosed: (t) => crossings.isClosed(t), onCrossingWait: (t) => crossings.noteWait(t),
     networkVersion: () => networks.version,
     terrainVersion: () => grid.terrainVersion,
-    cross: networks.cross, crossClosed: (t) => crossings.isClosed(t), onCrossingWait: (t) => crossings.noteWait(t),
-  // Rail level crossings (Phase 6 Task 10, docs/crossings.md): pure derivation from the train polylines; inert (no work, no state) while the world has none.
-  const crossings = new RailCrossings(networks);
     tileAlt: (x, y) => cond.altitude(x, y),
     isBikeable: (x, y) => cond.isBikeable(x, y),
     lifts: () => lifts.all(),
@@ -351,7 +351,12 @@ export function createSim(opts: SimOptions) {
     networkVersion: () => networks.version,
     route: (k, from, to) => routeOnKind(networks.kind, size, k === 'road' ? 2 : 3, from, to, networks.cross),
     walkNet: () => networks,
-    groundAt: (x, y) => groundHeight(grid, x, y) + (networks.crossCount > 0 ? networks.footLift(x, y) * CROSSING.footbridge.deck : 0), // guests climb the rail footbridge stairs
+    groundAt: (x, y) => { // guests climb the rail footbridge stairs and walk on bridge decks
+      const g = groundHeight(grid, x, y) + (networks.crossCount > 0 ? networks.footLift(x, y) * CROSSING.footbridge.deck : 0);
+      if (networks.bridgeTiles === 0) return g;
+      const d = networks.deckY(x, y);
+      return d !== null && d > g ? d : g;
+    },
     stats: () => {
       let openLifts = 0, openPisteTiles = 0, attractions = 0;
       const cats = new Set<string>();
@@ -377,12 +382,12 @@ export function createSim(opts: SimOptions) {
   };
   const guestSim = new GuestSim(guestWorld, size, bus);
   guestSim.spawner.rateMult = diff.spawn; guestSim.patienceMult = diff.patience; guestSim.injuryMult = diff.incidents * (mods.eventBias?.incidents ?? 1);
+  guestSim.spawner.crossings = crossings;
   guestSim.comfortNeed = opts.comfortNeed !== false; // default ON like the real game (tests that need the old needs opt out)
   guestSim.spawner.typesV2 = true; // extra guest types of config/guestTypes.ts (the game always draws them; list is empty today)
   guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   if (mods.guestMix) guestSim.spawner.mixBias = GUEST_TYPE_NAMES.map((n) => mods.guestMix?.[n] ?? 1);
   registerGuestSystems(registry, guestSim);
-  guestSim.spawner.crossings = crossings;
 
   // ---- Operations AI: piste quality, nightly grooming, hourly snowmaking ----
   const ops: Ops = createOps({
@@ -1096,6 +1101,7 @@ export function createSim(opts: SimOptions) {
   });
   const sim = {
     tours, achievements, rivals, sustain, energy, landscape, landscapeEnv,
+    crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
@@ -1125,7 +1131,6 @@ export function createSim(opts: SimOptions) {
             const b = kit.placeConnected('alpineFarm', kit.lc.x + [-8, 8, 0, -12][k]!, kit.lc.y + [6, 6, 12, -4][k]!, 30, true);
             if (!b) return;
             if (!b.active) { kit.ensureRoad(b); kit.settle(); }
-    crossings,
             if (b.active) return;
             buildings.remove(b.id); kit.report.placed['alpineFarm'] = Math.max(0, (kit.report.placed['alpineFarm'] ?? 1) - 1); kit.settle();
           }

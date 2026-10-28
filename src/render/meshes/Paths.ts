@@ -4,6 +4,7 @@ import { Conn, Layer, type Networks } from '../../world/Networks';
 import { HEIGHT_UNIT } from '../../config/balance';
 import { diagonalNS } from '../TerrainGeometry';
 import { footbridgeDeck, footbridgeStairs } from './footbridge';
+import { bridgeTileGeometry } from './bridges';
 
 const NET_LIFT = 0.06;
 /** Shared 0..1 night factor for the road / path / rail material (set by main with Lighting.nightUniform): lifts dark asphalt out of near-black. */
@@ -382,7 +383,9 @@ export function crossingDeck(d: GeoData, grid: Grid, x: number, y: number, m: nu
 /** Geometry for one tile of network (auto-tiled: centre + arms by connection mask). */
 export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y: number): void {
   const i = y * net.size + x, k = net.kind[i]!;
+  if (net.bridgeTiles > 0) bridgeTileGeometry(d, grid, net, (px, pz) => surfaceHeightAt(grid, px, pz), x, y); // Phase 6 bridges: span deck / bank ramp (docs/bridges.md)
   if (!k) return;
+  if (net.bid[i]) return; // a bridge span tile: the bridge mesh replaces the plain deck
   const m = net.conn[i]!;
   const hw = HALF_W[k]!;
   const cell = CELL[k]!;
@@ -419,7 +422,7 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
 export function tileDecal(d: GeoData, grid: Grid, net: Networks, x: number, y: number): void {
   const i = y * net.size + x, l = net.layers[i]!;
   if (!l) return;
-  if (net.bridge[i] === 1 && net.kind[i] === 0 && (l & (Layer.Mtb | Layer.Hike))) {
+  if (net.bridge[i] === 1 && net.bid[i] === 0 && net.kind[i] === 0 && (l & (Layer.Mtb | Layer.Hike))) {
     // Trail crossing a stream: reuse the footpath bridge deck look.
     pushQuad(d, grid, x + 0.25, y + 0.05, x + 0.75, y + 0.95, BRIDGE_LIFT, 0, true, 0xc9a37a, Math.max(...grid.getCorners(x, y)) * HEIGHT_UNIT);
   }

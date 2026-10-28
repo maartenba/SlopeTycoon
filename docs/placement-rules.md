@@ -167,9 +167,10 @@ Buildings, Lifts and Pistes & Trails drawers sort their cards by relevance to th
 * **Train Station**: `rail+path`, may stand on the END of a rail line (`overRail`); ghost tip "Place the station on the end of a rail line, with a footpath next to it".
 * New **energy** category: Solar Array / Plant (slope <= 2, optional flatten), Wind Turbine (exposed ground only: mean corner height >= 20), Small Hydro (`streamAdjacent`), Biomass (road), Tree Nursery, Recycling Centre. Details in docs/energy.md.
 
-## Phase 6: trail access
 ## Phase 6: rail level crossings
 The "no path / road on rail" rule is lifted for valid crossings only: a straight rail tile crossed at a right angle (stroke tile on both sides), no station, no bridge, at least 3 tiles from another crossing. Reasons and costs, the closing logic and the safety argument are in [crossings.md](crossings.md). A building never stands on a crossing (`Cannot build on a level crossing`).
+
+## Phase 6: trail access
 `trail` access kind, approved rows (Mountain Hut, Ranger Station, Adventure Park, Alpine Farm + trail; Café and Stunt Park already accepted `pisteEdge`) and the +25% remote-supply upkeep: see [trails-access.md](trails-access.md). Reason text order: footpath, road, hiking trail, piste (`Needs a footpath, road, hiking trail or piste next to it`).
 
 ## Access adjacency, exactly (ghost = placed verdict)
@@ -178,5 +179,6 @@ The "no path / road on rail" rule is lifted for valid crossings only: a straight
 - The touching `path` / `road` / `rail` tile must also be in the component **linked to the road / rail entry** (`Networks.comps`). A painted but unlinked footpath does not serve.
 - The ghost (`validatePlacement`) and the placed building (`evaluateStatus`) use the same `accessSatisfied`; both read `Networks.version`-cached components, so they cannot disagree (property test `tests/build/placementPreviewAgrees.test.ts`: random placements, preview warning == `active`/`reason` after placement; same result at HEAD).
 - When access is missing the ghost adds one precise line from `accessHint` (`Networks.diagnose`): *Needs a connected footpath: the one next to it isn't linked to the road entrance* (edge touches an unlinked network), *The footpath touches only the corner: move it one tile (it must share a side)*, *The footpath is one tile away: ...*; otherwise the building's `placeTip` / plain text.
+
 
 **Free starter toilet** (Phase 6 Task 7): `buildStarterResort` (the pre-built resort of the sandbox, the demo towns and the balance bot) places ONE Toilets block by the village footpath at no charge (it runs through `withBypass`, the whole chain is a gift) whenever the comfort need is on (`createSim` default; `StarterOptions.toilet: false` skips it). A career game still starts with just the Base Lodge. See [comfort.md](comfort.md).

@@ -63,6 +63,7 @@ import { WalkDropMarker, DROP_HINT } from '@/ui/walkDropMarker';
 import { yawOfHeading } from '@/render/view/ViewCameraRig';
 import { surfaceHeightAt, NET_NIGHT } from '@/render/meshes/Paths';
 import { RailCrossingsView } from '@/render/RailCrossings';
+import { planBridge } from '@/world/Bridges';
 import { liftStats } from '@/sim/Lift';
 import { PhotoStore } from '@/persist/PhotoStore';
 import { YearReportGate } from '@/ui/yearReportFormat';
@@ -1093,7 +1094,7 @@ const activityViews = (): ActivityView[] => {
 const activity = new AttractionActivity(activityViews, (x, y) => heightAt(grid, x, y));
 renderer.scene.add(activity.group);
 const guestRenderer = new GuestRenderer(guestSim.store);
-const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => heightAt(grid, x, y));
+const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => { const g = heightAt(grid, x, y), d = sim.networks.deckY(x, y); return d !== null && d > g ? d : g; }); // cars cross road bridges on the deck
 renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
 // Rail level crossings (Phase 6 Task 10, docs/crossings.md): barriers / lamps animate from the sim's closed state; the bell is quiet and fades with camera distance.
 const crossingsView = new RailCrossingsView(grid, sim.crossings);
@@ -2419,6 +2420,7 @@ if (ui && !DEMO) {
       setBrush: (n) => netTools?.setBrush(n),
       setErase: (on) => netTools?.setErase(on),
       setOverRail: (on) => netTools?.setOverRail(on),
+      startBridge: (k) => netTools?.startBridge(k),
       undo: () => netTools?.undo() ?? false,
       redo: () => netTools?.redo() ?? false,
       suggest: (w) => suggestRun(w),
@@ -2840,7 +2842,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { select, selectPiste, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 
