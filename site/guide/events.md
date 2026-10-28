@@ -48,6 +48,10 @@ You are not alone in the valley. Two or three **neighbouring resorts** compete f
 - The news mentions it only when the leader changes.
 - The **year report** has a **The region** row: how you ranked and a bar for each resort.
 
+### Facilities
+
+The rating's **Facilities** bar is worth 6 % of your score and measures comfort: how few guests are desperate for a toilet (45 %), how well toilets cover the open pistes (25 %) and the Base Lodge (15 %), and how many blocks you have per guest, about one per 40 (15 %). The panel's hint says what to fix: *Build toilets near the village and the busy pistes*, *Toilets are overrun: add more* and so on. The other bars were scaled down a little to make room (see [Guests & seasons](page:guests-seasons) for the need itself).
+
 ### Sustainability and the Green Resort
 
 The rating has one more bar: **sustainability**, worth 8 % of your score. It rewards three things:

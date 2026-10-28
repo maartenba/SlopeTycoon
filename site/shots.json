@@ -102,8 +102,7 @@
    "id": "night-village",
    "alt": "The village at night with warm lit windows and lamp posts.",
    "pages": [
-    "landing",
-    "guests-seasons"
+    "landing"
    ],
    "kind": "harness",
    "caption": "After dark the windows light up.",
@@ -355,24 +354,6 @@
     "extra": "starter=1&mode=career",
     "viewport": "1280x800",
     "steps": "click:button[data-drawer=pricing]"
-   }
-  },
-  {
-   "id": "ui-marketing",
-   "alt": "The Marketing drawer listing campaigns and their requirements.",
-   "pages": [
-    "money"
-   ],
-   "kind": "harness",
-   "caption": "Marketing campaigns and what each one needs.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=marketing]"
    }
   },
   {
@@ -1144,7 +1125,7 @@
   },
   {
    "id": "ui-loading",
-   "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
+   "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts\u2026'.",
    "pages": [
     "troubleshooting",
     "getting-started"
@@ -1152,6 +1133,113 @@
    "kind": "copy",
    "caption": "The loading splash shows real boot stages.",
    "source": "docs/img/loading-splash.webp"
+  },
+  {
+   "id": "crossing-closed",
+   "alt": "A footpath level crossing with its barriers down while a train approaches the station.",
+   "pages": [
+    "rails-bridges"
+   ],
+   "kind": "harness",
+   "caption": "A level crossing: the barriers close for the train and guests wait.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "summer",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 8,
+    "target": "lodge",
+    "pre": "(async()=>{const s=__slope,sim=s.sim,imp=new Function('u','return import(u)');const N=await imp('/src/world/Networks.ts');const SP=await imp('/src/sim/guests/Spawner.ts');const {NetKind,lineTiles}=N;const n=sim.networks;\nn.buildSegment(NetKind.Rail,lineTiles({x:38,y:57},{x:38,y:50}));s.debugPlace('trainStation',37,50,1);s.debugPlace('shuttleDepot',27,57,0);\nn.buildSegment(NetKind.Path,lineTiles({x:27,y:60},{x:36,y:60}));n.buildSegment(NetKind.Path,lineTiles({x:36,y:59},{x:36,y:52}));n.buildSegment(NetKind.Path,lineTiles({x:34,y:54},{x:36,y:54}));\nn.buildSegment(NetKind.Path,lineTiles({x:36,y:57},{x:42,y:57}));s.debugPlace('cafe',41,58,0);n.buildSegment(NetKind.Road,lineTiles({x:26,y:62},{x:50,y:62}));s.debugPlace('parking',47,58,0);sim.buildings.reevaluate();\nsim.guestSim.spawner.marketingFn=()=>({...SP.defaultMarketing(),railBias:0.9});\nconst t=57*sim.size+38;const loop=s.loop;if(loop.paused)loop.setSpeed(1);let g=0;\nwhile(!sim.crossings.isClosed(t)&&g++<60000)loop.advance(1);\nfor(let k=0;k<2;k++)loop.advance(1);loop.setSpeed(0);const c=s.renderer.controls;c.target.set(38.5,s.grid.getCorner(38,58)*0.5,59.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({closed:sim.crossings.isClosed(t),g,cross:n.cross[t]});})()",
+    "steps": "wait:3000"
+   }
+  },
+  {
+   "id": "footbridge-rail",
+   "alt": "A timber footbridge with stairs spanning the railway while a train passes underneath.",
+   "pages": [
+    "rails-bridges"
+   ],
+   "kind": "harness",
+   "caption": "A footbridge over the rail: guests never wait for the train.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "summer",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 8,
+    "target": "lodge",
+    "pre": "(async()=>{const s=__slope,sim=s.sim,imp=new Function('u','return import(u)');const N=await imp('/src/world/Networks.ts');const SP=await imp('/src/sim/guests/Spawner.ts');const {NetKind,lineTiles}=N;const n=sim.networks;\nn.buildSegment(NetKind.Rail,lineTiles({x:38,y:57},{x:38,y:50}));s.debugPlace('trainStation',37,50,1);s.debugPlace('shuttleDepot',27,57,0);\nn.buildSegment(NetKind.Path,lineTiles({x:27,y:60},{x:36,y:60}));n.buildSegment(NetKind.Path,lineTiles({x:36,y:59},{x:36,y:52}));n.buildSegment(NetKind.Path,lineTiles({x:34,y:54},{x:36,y:54}));\nn.buildSegment(NetKind.Path,lineTiles({x:36,y:57},{x:42,y:57}),true);s.debugPlace('cafe',41,58,0);sim.buildings.reevaluate();\nsim.guestSim.spawner.marketingFn=()=>({...SP.defaultMarketing(),railBias:0.9});\nconst t=57*sim.size+38;const loop=s.loop;if(loop.paused)loop.setSpeed(1);let g=0;\nconst near=()=>{for(const v of sim.guestSim.spawner.vehicles){if(v.kind!==undefined&&v.pts){let k=0;while(k*2+3<v.pts.length&&v.cum[k+1]<=v.dist)k++;const x=v.pts[k*2],y=v.pts[k*2+1];if(Math.hypot(x-38.5,y-57.5)<1.2&&v.pts.length>8&&v.mode!==undefined&&v.riders!==undefined&&v.group!==undefined&&v.speed>3)return true;}}return false};\nwhile(!near()&&g++<60000)loop.advance(1);loop.setSpeed(0);const c=s.renderer.controls;c.target.set(38.5,s.grid.getCorner(38,58)*0.5,58.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({g,cross:n.cross[t]});})()",
+    "steps": "wait:2000"
+   }
+  },
+  {
+   "id": "bridges-stream",
+   "alt": "A footbridge, a hiking bridge, an MTB bridge and a road bridge over a mountain stream.",
+   "pages": [
+    "rails-bridges"
+   ],
+   "kind": "harness",
+   "caption": "Bridges over a stream: footbridge, hiking, MTB and road.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "summer",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 6,
+    "target": "lodge",
+    "pre": "(async()=>{const s=__slope,sim=s.sim,n=sim.networks,g=s.grid;const N=await new Function('u','return import(u)')('/src/world/Networks.ts');\nconst R=[];{const t=[];s.props.removeInRect(33,1,50,16,t);s.refreshProps(t);}\nconst tryb=(kind,ay)=>{const a={x:41,y:ay},b={x:43,y:ay};s.debugPlace('toilets',40,ay,0,true);const p=s.planBridge(n,g,kind,a,b);R.push(kind+ay+':'+(p.ok?'ok':p.reason));if(p.ok)n.buildBridge(p);};\ntryb('footbridge',4);tryb('hikeBridge',6);tryb('mtbBridge',8);\nconst h=Math.max(...g.getCorners(39,10));for(let vy=10;vy<=11;vy++)for(let vx=35;vx<=46;vx++){if(vx===41||vx===42)continue;g.setCornerUnchecked(vx,vy,h);}\nn.roadEntry={x:36,y:10};R.push('rd:'+n.buildSegment(N.NetKind.Road,N.lineTiles({x:36,y:10},{x:39,y:10})).length);\n{const p=s.planBridge(n,g,'roadBridge',{x:39,y:10},{x:43,y:10});R.push('road:'+(p.ok?'ok':p.reason));if(p.ok)n.buildBridge(p);}\nsim.buildings.reevaluate();\nconst c=s.renderer.controls;c.target.set(41.5,s.grid.getCorner(42,9)*0.5,9.5);const u=document.getElementById('ui');if(u)u.style.display='none';console.log('BR4 '+R.join(' '));return 1})()",
+    "steps": "wait:1500"
+   }
+  },
+  {
+   "id": "toilets-hut",
+   "alt": "A small toilet hut with a red roof between the car park and the road, close to the base lodge.",
+   "pages": [
+    "guests-seasons"
+   ],
+   "kind": "harness",
+   "caption": "A toilet hut by the path: guests with an urge walk to it.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "summer",
+    "hour": 12,
+    "extra": "starter=1&mode=career&hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 6.5,
+    "target": "lodge",
+    "pre": "__slope.spawnGuests(150,'mixed')",
+    "ticks": 900,
+    "evalJs": "(()=>{const s=__slope,b=s.buildings.all().find(q=>q.type==='toilets');if(b){const g=s.buildingsView.get(b.id);s.renderer.controls.target.set(b.x+b.w/2,g?g.position.y:0,b.y+b.h/2);}const u=document.getElementById('ui');if(u)u.style.display='none';})()"
+   }
+  },
+  {
+   "id": "ui-marketing-campaigns",
+   "alt": "The Marketing drawer scrolled to the new campaigns: Come by Train, Snowboard Park Jam and Hike & Bike Weekends, with their requirements.",
+   "pages": [
+    "money"
+   ],
+   "kind": "harness",
+   "caption": "New campaigns: Come by Train, Snowboard Park Jam, Hike & Bike Weekends.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career",
+    "viewport": "1920x1080",
+    "steps": "click:button[data-drawer=marketing];wait:600;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Train'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600"
+   }
   }
  ]
 }

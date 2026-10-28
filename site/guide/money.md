@@ -3,7 +3,7 @@ title: "Money"
 order: 8
 summary: "Prices, passes, seasonal pricing, marketing campaigns and their prerequisites, loans, debt and difficulty."
 description: "Slope Tycoon money guide: set day-pass and season prices, run marketing campaigns, take loans, manage debt and choose a difficulty that suits you."
-screenshots: [ui-finance, ui-stats, ui-pricing, ui-marketing]
+screenshots: [ui-finance, ui-stats, ui-pricing, ui-marketing-campaigns]
 ---
 {{fig:ui-finance}}
 
@@ -29,11 +29,20 @@ You can price by weekday and season too. **Peak days** are real weekends (Saturd
 
 ## Marketing campaigns
 
-{{fig:ui-marketing}}
+{{fig:ui-marketing-campaigns}}
 
 Campaigns raise arrivals of certain guests for a while. Each has **prerequisites** that the panel lists (and tells you what to build): a ski school, a kids area, an open lift, an open piste, parking, a restaurant, enough rating, summer attractions and so on. A running campaign pauses if its requirements vanish and is cancelled after a short grace period.
 
 {{gen:campaigns}}
+
+Four campaigns are newer and tell you what to build:
+
+- **Come by Train** needs a **Train Station** on a rail line that reaches the valley, within walking distance of the lodge (or served by a Shuttle Depot). It moves part of the road arrivals onto the train, up to the station's capacity of 150 guests, so the car park empties, and a small, capped bonus for the share arriving by train feeds your sustainability score.
+- **Snowboard Park Jam** needs an open **Stunt Park** and brings the freestyle crowd.
+- **Hike & Bike Weekends** pulls couples and walkers to your trails, but only on peak days (weekends and holidays): weekdays are weak.
+- **Festival Season** needs a booked festival running or starting within a week and works only around the festival dates; outside them it is weak. Book the festival first, then the campaign.
+
+Each card shows a **Show me** button for a missing requirement: it opens the right building card, pans to the station or scrolls to the Events calendar.
 
 Festivals have their own cards just below the campaigns: see [Events, stories & the region](page:events).
 

@@ -17,6 +17,8 @@ screenshots: []
 
 **Clearance** Free air under a lift cable above trees, roofs and other lifts.
 
+**Comfort** The need for a toilet: an urge that grows while guests are out; it feeds the Facilities bar of the rating.
+
 **Crew** One of the four staff groups: instructors, patrol, groomers and lift operators.
 
 **Date chip** The date, season and year shown in the top bar.
@@ -29,9 +31,13 @@ screenshots: []
 
 **Events strip** The January to December overview in the Events calendar.
 
+**Facilities** The rating bar (6 %) for toilets: comfort satisfaction, coverage of pistes and village, blocks per guest.
+
 **Fair price** The price the game considers reasonable for a ticket at your star rating.
 
 **Fast nights** An option that makes nights pass faster.
+
+**Footbridge** A raised timber crossing for footpaths: over a rail line (no waiting for trains) or over a stream (Bridge tool).
 
 **Green Resort** A year-report award for a resort that is gentle on forest, wildlife and energy.
 
@@ -42,6 +48,8 @@ screenshots: []
 **Inspector** The panel that opens when you click a building, lift, piste or guest.
 
 **Level** Career progress from 1 to 6.
+
+**Level crossing** A footpath or road crossing a rail line on the level; barriers close for trains and guests wait.
 
 **Mothballed** A snow cannon that is switched off: no energy, no water, 15 % of its upkeep.
 
@@ -76,3 +84,5 @@ screenshots: []
 **Story guest** A guest with a name and one wish.
 
 **Tile** One square of the map (about 10 m).
+
+**Toilets** A free-to-use hut that eases the comfort need; stands on a footpath, a trail or a piste edge.

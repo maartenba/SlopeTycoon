@@ -25,7 +25,11 @@ Most buildings need level ground. With auto-flatten on, the game plans a tidy cu
 
 ## Access: “Not connected”
 
-A building can always be *placed*, but it only *works* when it is reachable. Depending on the building it needs a footpath, a road (**shops, chalets and apartments** accept either; a café and the stunt park also accept a piste edge), a rail line (the **Train Station** can stand on the end of a rail line, with a footpath next to it), or to sit beside a piste (a hut, for instance, wants *a footpath, road or piste next to it*). If it isn't, the inspector says **Not connected: needs …** and, for roads, points at the nearest road end. Ranger Rudi will also nag about it.
+A building can always be *placed*, but it only *works* when it is reachable. Depending on the building it needs a footpath, a road (**shops, chalets and apartments** accept either; a café and the stunt park also accept a piste edge), a rail line (the **Train Station** can stand on the end of a rail line, with a footpath next to it), a **hiking or MTB trail** that is connected to the village (the Mountain Hut, Ranger Station, Adventure Park and Alpine Farm accept this; a building reached only on foot, by trail or piste edge, pays **25 % more upkeep** because supplies must be carried in), or to sit beside a piste (a hut, for instance, wants *a footpath, road or piste next to it*). If it isn't, the inspector says **Not connected: needs …** and, for roads, points at the nearest road end. Ranger Rudi will also nag about it.
+
+## Rails, crossings & bridges
+
+Level crossings, the footbridge over the rail and bridges over streams have their own page: [Rails, crossings & bridges](page:rails-bridges).
 
 ## Undo and bulldoze
 

@@ -3,7 +3,7 @@ title: "Guests & seasons"
 order: 5
 summary: "Who visits, how the snowline and the seasons change your job, day and night, and how to control time."
 description: "Guests and seasons in Slope Tycoon: who visits your resort, how the snowline changes your job through the year, day and night, and how to control time."
-screenshots: [slope-guests, season-spring, season-summer, night-village]
+screenshots: [slope-guests, season-spring, season-summer, toilets-hut]
 ---
 ## Your guests
 
@@ -11,7 +11,13 @@ screenshots: [slope-guests, season-spring, season-summer, night-village]
 
 Guests come as **solo** travellers, **couples**, **families**, **budget** skiers, **VIPs** and **adventurers**. Each type has its own taste in prices, its own patience and its own favourite things to do. In winter they ski or snowboard (roughly one in three boards), in summer they hike or ride mountain bikes, and some just relax at the lake or the rink.
 
-Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt. When they leave they judge the resort, and the average becomes your **star rating**.
+Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt, and sooner or later they need a toilet. When they leave they judge the resort, and the average becomes your **star rating**.
+
+### Toilets and the comfort need
+
+{{fig:toilets-hut}}
+
+Every guest has an **urge** that grows while they are out and about (a bit faster when walking than when standing still). Above about half, the guest looks for the nearest open **Toilets** (Buildings drawer, $600, $3 a day, no staff, free to use) and walks there; eating at a café, hut or restaurant also eases it. A guest who cannot find one never leaves or gets hurt, but their mood sags a little and a review may say so ("Not a toilet in sight"). Put toilets where people are: beside the village footpath, near the base lodge and next to busy pistes (a toilet may stand at a **piste edge** or on a hiking trail as well as on a footpath). One block serves about 70 guests a day; past that it is *overrun*, stays unpleasant and counts for nothing. A career game starts with one free toilet near the village, and Ranger Rudi nags when there are none or when too many guests are desperate. How well you do is the **Facilities** bar of your rating (below, and in [Events & the region](page:events)).
 
 ### Reviews
 
@@ -55,8 +61,6 @@ Hikers get hungry too. Before a trip they eat if they can, about four in ten bri
 ## Day and night
 
 Guests ski between morning and the late afternoon. At night windows glow, lamp posts light and **groomers** go to work. The moon button on the speed controls makes nights pass about three times faster; while it is on, a small badge sits on the moon button.
-
-{{fig:night-village}}
 
 ## Time controls
 
