@@ -25,6 +25,8 @@ p{margin:0 0 1em}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font:800 1.05rem Nunito,sans-serif;text-decoration:none;border:2px solid transparent;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .btn.primary{background:linear-gradient(180deg,#ffc666,var(--accent2));color:#2a1604;box-shadow:0 6px 24px rgba(255,138,61,.35)}.btn.primary:hover{transform:translateY(-2px);color:#2a1604;box-shadow:0 10px 30px rgba(255,138,61,.5)}
 .btn.ghost{background:var(--glass);color:var(--text);border-color:var(--line)}.btn.ghost:hover{border-color:var(--accent);color:var(--text)}
+.sponsor-mini,.sponsor-foot,.sponsor-inline{color:#ff8fb1;font-weight:800;text-decoration:none}.sponsor-mini:hover,.sponsor-foot:hover,.sponsor-inline:hover{color:#ffc2d4;text-decoration:underline}.sponsor-mini{display:inline-flex;align-items:center;gap:5px;padding:6px 8px}.heart{vertical-align:-2px;margin-right:4px}.sponsor-foot{display:inline-flex;align-items:center}
+.btn.sponsor{color:#ff8fb1;border-color:rgba(255,143,177,.5)}.btn.sponsor:hover{border-color:#ff8fb1;color:#ffc2d4}.support-line{margin:22px 0 0;color:var(--muted)}
 .nav .btn{padding:7px 16px;font-size:.95rem;color:#2a1604}.nav .btn:hover{background:linear-gradient(180deg,#ffc666,var(--accent2))}
 .big{padding:16px 34px;font-size:1.25rem}
 /* hero */
@@ -111,7 +113,7 @@ table{border-collapse:collapse;width:100%;font-size:.93rem}th,td{padding:8px 12p
 @media (max-width:860px){
  body{font-size:16px}section{padding:52px 0}
  .feature,.feature.flip{grid-template-columns:1fr;gap:20px}.feature.flip .txt{order:0}
- .nav a:not(.btn){display:none}.nav a.keep{display:inline-block}
+ .nav a:not(.btn){display:none}.nav a.keep{display:inline-block}.nav .sponsor-mini span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
  .gwrap{grid-template-columns:1fr;gap:0}.gnav{display:none}.mnav{display:block;margin:14px 0}.mnav summary{padding:10px 0}.mnav a{display:block;padding:8px 0;color:var(--muted);text-decoration:none}.mnav a[aria-current=page]{color:var(--accent);font-weight:800}
  .hero{min-height:620px}.hero .wrap{padding-top:70px}
 }

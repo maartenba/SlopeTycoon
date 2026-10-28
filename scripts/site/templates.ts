@@ -4,6 +4,10 @@ import { esc, type PageMeta, type TocItem, prevNext, sortPages } from './md';
 export interface SiteEnv { siteUrl: string; repo: string; repoUrl: string; version: string }
 export const SITE_NAME = 'Slope Tycoon';
 export const AUTHOR = { name: 'Maarten Balliauw', url: 'https://github.com/maartenba' } as const;
+export const SPONSOR_URL = 'https://github.com/sponsors/maartenba';
+const HEART = '<svg class="heart" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 2.9 5 6.3 5c2.1 0 3.9 1.2 5.7 3.3C13.8 6.2 15.6 5 17.7 5c3.4 0 5.3 3.6 3.9 6.8C19.5 16.4 12 21 12 21z"/></svg>';
+/** Sponsor button / link: plain anchor, opens on click only (no embed, no script, no request before the click). */
+export const sponsorLink = (cls = 'btn ghost sponsor', label = 'Sponsor on GitHub'): string => `<a class="${cls}" href="${SPONSOR_URL}" target="_blank" rel="noopener" data-sponsor>${HEART}<span>${label}</span></a>`;
 export const GA_HOSTS = ['www.googletagmanager.com', 'www.google-analytics.com'] as const;
 export const DESC = 'Build your own ski and mountain resort in the browser: shape terrain, build lifts, groom pistes and run it through all four seasons. Free, plays offline.';
 export const LANDING_TITLE = 'Slope Tycoon – Ski & mountain resort tycoon game';
@@ -65,7 +69,7 @@ export const scripts = (rel: string): string => `<script src="${rel}assets/conse
 
 export function header(rel: string, markSvg: string): string {
   return `<header class="top"><div class="wrap"><a class="brand" href="${rel || './'}" aria-label="Slope Tycoon home">${markSvg}<span>Slope Tycoon</span></a>
-<nav class="nav" aria-label="Main">${rel ? '' : '<a href="#what">The game</a><a href="#unique">Why it’s different</a><a href="#modes">Modes</a><a href="#gallery">Gallery</a><a href="#faq">FAQ</a>'}<a class="keep" href="${rel}guide/">Guide</a><a class="keep" href="${rel}about/">About</a><a class="btn primary" href="${rel}play/">Play</a></nav></div></header>`;
+<nav class="nav" aria-label="Main">${rel ? '' : '<a href="#what">The game</a><a href="#unique">Why it’s different</a><a href="#modes">Modes</a><a href="#gallery">Gallery</a><a href="#faq">FAQ</a>'}<a class="keep" href="${rel}guide/">Guide</a><a class="keep" href="${rel}about/">About</a><a class="btn primary" href="${rel}play/">Play</a>${sponsorLink('sponsor-mini', 'Sponsor')}</nav></div></header>`;
 }
 
 export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = []): string {
@@ -73,7 +77,7 @@ export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = [
   return `<footer><div class="wrap"><div><b>Slope Tycoon</b> v${env.version} (pre-release). Everything procedural. ${esc(PRIVACY_CLAIM)}<br>Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT).</div>
 <div class="fcols"><nav aria-label="Footer: the game"><b>The game</b><a href="${rel}play/">Play</a><a href="${rel || './'}">Home</a><a href="${rel}about/">About / why I built this</a></nav>
 <nav aria-label="Footer: guide"><b>Player guide</b><a href="${rel}guide/">All guide pages</a>${top.map((p) => `<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`).join('')}</nav>
-<nav aria-label="Footer: project"><b>Project</b><a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a><a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a><a href="${env.repoUrl}/tree/main/docs">Developer docs</a><a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a></nav>
+<nav aria-label="Footer: project"><b>Project</b><a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a><a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>${sponsorLink('sponsor-foot', 'Sponsor on GitHub')}<a href="${env.repoUrl}/tree/main/docs">Developer docs</a><a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a></nav>
 <nav aria-label="Footer: privacy"><b>Privacy</b><a href="${rel}privacy/">Privacy &amp; analytics</a><a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a></nav></div></div></footer>`;
 }
 
@@ -132,6 +136,7 @@ export function infoPage(env: SiteEnv, o: InfoPage & { markSvg: string; pages: r
 ${header(rel, o.markSvg)}
 <main id="main" class="info"><article>${crumbsHtml(rel, [{ name: 'Home', href: '' }, { name: o.heading }])}<h1>${esc(o.heading)}</h1>
 ${o.html}
+${o.slug === 'about' ? `<h2 id="support">Support the game</h2><p>If you enjoy the game, you can support its development on GitHub Sponsors. The game stays free, no ads.</p><p>${sponsorLink()}</p>` : ''}
 <p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> <a class="btn ghost" href="${rel}guide/">Read the player guide</a></p></article></main>
 ${footer(env, rel, o.pages)}
 ${scripts(rel)}</body></html>\n`;

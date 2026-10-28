@@ -4,6 +4,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Update card + What's new**: when a new version is waiting, a small non-blocking card (no dialog, nothing is paused) says *A new version is available: 0.2.4* with a few plain-language highlights of what changed (read from the new build's `whats-new.json`; offline it just says *A new version is ready*), with *Reload now* (autosaves first) and *Later* (no reminder for an hour). The first launch of a new version shows a one-time *What's new* card, and the About dialog has a *What's new* button. Highlights come from a `### Highlights` block in each CHANGELOG release (`npm run whats-new`). `docs/pwa.md`.
+- **Sponsor link**: a discreet *Sponsor on GitHub* heart link in the website header and footer, the About page (with a short support note) and the landing page, plus *Support the game ♥* in the game's About dialog and menu footer. Plain links to <https://github.com/sponsors/maartenba> that open only on click; the game stays free, no ads, nothing nags.
+
 - **Easier money (Career)**: starting cash $130,000 -> $150,000 (Relaxed $225,000, Challenging $112,500), the first four goals pay $2,000 more in total, the quiet months cost less (idle lifts draw 25 % energy, closed winter venues 15 % upkeep, furloughed staff 35 % wages) and autumn brings more day guests (0.4 -> 0.5). Ranger Rudi's *In debt* advice now lists concrete options and a new *Cash tips* card appears when cash is thin in the first two years. See docs/money-tips.md, docs/balance.md "Money pass".
 
 - **Bridges are part of drawing a path**: the separate Bridge tool, bridge-type select and *Build bridge* button are gone. Drag a footpath, road, hiking trail or MTB trail across a pond or gap and the matching bridge (footbridge, road bridge, wooden hiking bridge, MTB bridge) is built as part of the stroke; the ghost shows the raised deck, span and price, or why not (*Span too long: max 3 tiles*, *Keep dragging to the far bank...*). Rail still cannot cross water. `docs/bridges.md`.
@@ -15,6 +18,16 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 ## [0.2.3] - 2026-10-28 (pre-release)
 
 Changes since 0.2.2: toilets and a comfort need, level crossings, footbridges and bridges, trail access, four new marketing campaigns, plus the inert frameworks (tours, viewpoints, lodging tiers, guest types) that the next content builds on. Still a pre-release; not 1.0. Guide, landing page, screenshots (toilets, level crossing, footbridge, bridges, the new campaign cards) and developer docs were updated; the staff / year-report goldens were re-recorded (`docs/balance.md`, "M6.1 re-record").
+
+### Highlights
+
+- Toilets are here: guests get an urge, and an unmet one costs a little mood. Build a few.
+- Trains and cars can cross safely: level crossings, footbridges over the rail and real bridges over water.
+- Four new marketing campaigns, including Come by Train and the Snowboard Park Jam.
+- Hiking and MTB trails can now serve buildings such as the Mountain Hut and Ranger Station.
+- Ranger Rudi explains himself better, with full advice text and clearer "why can't I build here" messages.
+
+### Changes
 
 - **Rail level crossings**: footpaths and roads can now cross a straight rail line at a right angle (drag across the rail with the Footpath or Road tool; the tooltip shows the crossing and its cost: $150 / $400). The barriers come down, a quiet bell rings and red lamps blink a few seconds before a train arrives; guests and cars always wait, trains never stop, and nobody is ever on the crossing when a train passes. Rail laid across a footpath or road makes a crossing too; bulldozing a crossing turns the tile back into plain rail. `docs/crossings.md`.
 - **Bridges**: a Bridge tool in the Paths drawer builds a footbridge (footpath), a wooden hiking bridge, an MTB bridge or a one-lane road bridge from one bank across a stream, pond or gap to the other (spans up to 4, road 3; the preview shows span, deck height, supports and price, or why not: too long, solid ground needed at both ends, too low over the water, something in the way). Guests and cars walk and drive on the raised deck, a bridge is removed whole with the Bulldozer and undoes in one step; old stream crossings keep working. Rail still cannot cross water. `docs/bridges.md`.
@@ -35,6 +48,16 @@ Changes since 0.2.2: toilets and a comfort need, level crossings, footbridges an
 
 Changes since 0.2.1: a real calendar, runs, energy, maintenance, snowmaking control and a lot of polish. Still a pre-release; not 1.0. The website, player guide and developer docs were brought up to date (new guide sections *Calendar & seasons*, *Runs*, *Planned maintenance*, *Snowmaking*, *Energy and sustainability*, a loading-screen entry in Troubleshooting, new screenshots `ui-runs-tab`, `runs-overlay`, `ui-maintenance`, `ui-snowmaking`, `ui-energy-tab`, `energy-solar-wind`, `ui-loading`, and a re-shoot of every picture with the date chip).
 
+### Highlights
+
+- The game now has a real calendar: winter is December to March, and festivals sit in their proper months.
+- Pistes are split into named runs that you can open, groom and rename one by one.
+- Green energy: solar, wind, hydro and biomass take a bite out of the lift power bill.
+- Lifts get a yearly service, and snow cannons get an on/off switch (or Auto).
+- Hungry hikers are fed better, and the loading screen now shows what it is doing.
+
+### Changes
+
 - **Energy grid + green buildings**: a new Energy tab in the Buildings drawer with a Solar Array, a Solar Plant (level 3), a Wind Turbine (level 2; exposed ground only, shuts down in storms, spinning rotor), Small Hydro (on a stream bank), Biomass Heating, a Tree Nursery and a Recycling & Compost Centre. Generators take a capped share (at most 60 % of the day's demand) off the lift energy bill, surplus is not sold, so energy is never free; typical payback 2.5-4 game years (biomass is the slow one). The sustainability facet now counts net grid purchase per guest (+4 points for recycling, nursery saplings count against the forest you cleared); Ranger Rudi suggests a Solar Array when energy is your weakest green spot; inspectors show output now, today / yesterday and the share of the bill each unit offsets. Games without generators are unchanged. `docs/energy.md`.
 - **Pistes are runs**: painted strokes that touch no longer count as ONE piste. The network is split at junctions and lift stations into runs, each with its own name, difficulty (from its own tiles), length, drop and slope; wide pistes stay one run. New *Runs* map overlay with a label per run. See `docs/runs.md`.
 - **Planned lift maintenance**: every lift now has an annual service. By default (Operations > Maintenance: Auto) winter lifts are serviced in April and summer-only lifts in October, or in a month you pick per lift; a service closes the lift for 2-3 days (basic) or 5-7 days (thorough, when its inspection level is thorough) but only once it is empty, is announced in the news the day before, bills 'maintenance' (cheaper with a Lift Workshop, shorter and cheaper with crew morale and the Lift mechanics course), restores condition, partly resets age and lowers the breakdown risk until the next one. Skipping it (Manual policy or a missed window) makes the lift 'service overdue' and raises its breakdown risk, escalating (x2.1 after 90 days); Ranger Rudi warns before winter. Inspector: last / next service, window, Service now, cost and risk text. Old saves load as Auto with the service clock starting at load. See `docs/lift-ops-and-debt.md`.
@@ -49,6 +72,12 @@ Changes since 0.2.1: a real calendar, runs, energy, maintenance, snowmaking cont
 ## [0.2.1] - 2026-10-27 (pre-release)
 
 Changes since 0.2.0. Still a pre-release; not 1.0.
+
+### Highlights
+
+- All-new music: nine procedural tracks, a Music style picker and a Next track button.
+- Calmer ambience, a bit quieter by default.
+- Lift towers are shorter and sturdier, with more of them where the ground is steep.
 
 ### Audio: rewritten music and calmer ambience
 - **Nine procedural tracks** (Morning Snow, Alpine Noon, Après, Starlight, Summer Meadow, Autumn Gold, Blizzard, Title Theme, Festival) with harmonic instruments (pad, harp, guitar, electric piano, flute, strings; the bell sounds are gone), scale-correct voice leading and a pentatonic lead. Tracks are chosen to fit season, time of day, weather and busyness, never repeat back to back, and crossfade.

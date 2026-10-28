@@ -48,6 +48,18 @@ describe('main menu + new game dialog', () => {
     h.dispose(); ui.remove();
   });
 
+  it('shows a plain Sponsor link in the menu footer and the About dialog (no nagging, no share wording)', async () => {
+    const ui = document.createElement('div'); document.body.append(ui);
+    const h = mountMainMenu({ ui, saves: null, go: () => {}, version: '9.9.9' });
+    await Promise.resolve(); await Promise.resolve();
+    const links = [...root(h.menu).querySelectorAll<HTMLAnchorElement>('a[data-sponsor-link]')];
+    expect(links.length).toBeGreaterThanOrEqual(2);
+    for (const a of links) { expect(a.href).toBe('https://github.com/sponsors/maartenba'); expect(a.target).toBe('_blank'); expect(a.rel).toContain('noopener'); }
+    expect(root(h.menu).textContent).toContain('Support the game');
+    expect(root(h.menu).textContent?.toLowerCase()).not.toMatch(/\bshare\b/);
+    h.dispose(); ui.remove();
+  });
+
   it('New Game dialog: per-size hints, seed names, presets; Start goes through the URL boot path; no blocking overlay remains', () => {
     const ui = document.createElement('div'); document.body.append(ui);
     const went: string[] = [];

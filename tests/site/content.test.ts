@@ -4,7 +4,7 @@ import { loadManifest, validateManifest } from '../../scripts/site/manifest';
 import { parseFrontMatter, renderMarkdown, type ShotInfo } from '../../scripts/site/md';
 import { allGenerated } from '../../scripts/site/generated';
 import { buildLanding, siteEnv } from '../../scripts/site/build';
-import { guidePage } from '../../scripts/site/templates';
+import { guideIndex, guidePage, infoPage } from '../../scripts/site/templates';
 
 const man = loadManifest();
 const fake: Record<string, ShotInfo> = Object.fromEntries(man.shots.map((s) => [s.id, { id: s.id, alt: s.alt, caption: s.caption, w: 1280, h: 800, files: [{ w: 640, file: `${s.id}-640.webp` }, { w: 1280, file: `${s.id}-1280.webp` }] }]));
@@ -31,6 +31,22 @@ describe('site content', () => {
       const html = guidePage(siteEnv({}), { rel: '../../', markSvg: '<svg/>', pages: pages.map((q) => ({ slug: q.slug, title: q.data.title, order: q.data.order })), slug: p.slug, title: p.data.title, description: p.data.description, html: r.html, toc: r.toc });
       expect(html).toContain('<h1>');
     }
+  });
+  it('every page carries a plain Sponsor link (new tab, noopener, exact URL) and About has the support note', () => {
+    const env = siteEnv({ SITE_REPO: 'me/slopes' }), pg = pages.map((q) => ({ slug: q.slug, title: q.data.title, order: q.data.order }));
+    const all = [
+      buildLanding(readFileSync('site/index.html', 'utf8'), env, fake, '<svg/>', '<svg/>', man.shots.map((s) => s.id)),
+      guideIndex(env, { rel: '../', markSvg: '<svg/>', pages: pg }),
+      infoPage(env, { slug: 'about', title: 'About', description: 'd', heading: 'Why', html: '<p>x</p>', og: 'about', markSvg: '<svg/>', pages: pg }),
+      infoPage(env, { slug: 'privacy', title: 'P', description: 'd', heading: 'Privacy', html: '<p>x</p>', og: 'privacy', markSvg: '<svg/>', pages: pg }),
+    ];
+    for (const html of all) {
+      const tags = html.match(/<a [^>]*data-sponsor[^>]*>/g) ?? [];
+      expect(tags.length).toBeGreaterThanOrEqual(2);
+      for (const t of tags) { expect(t).toContain('href="https://github.com/sponsors/maartenba"'); expect(t).toContain('rel="noopener"'); expect(t).toContain('target="_blank"'); }
+      expect(html).not.toMatch(/<(iframe|embed)\b/i); expect(tags.join(' ').toLowerCase()).not.toContain('share');
+    }
+    expect(all[2]).toContain('The game stays free, no ads.'); expect(all[0]).toContain('Sponsor on GitHub');
   });
   it('guide text avoids dev jargon', () => {
     for (const p of pages) expect(p.body, p.slug).not.toMatch(/\b(sim tick|ECS|shader|vitest|Three\.js|npm run)\b/i);
