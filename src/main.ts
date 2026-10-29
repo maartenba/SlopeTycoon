@@ -1036,7 +1036,7 @@ renderer.onFrame = (dt): void => {
 };
 
 // Paths, roads, rail, pistes (own module/palette)
-netTools = safely('Paths/roads/pistes', () => registerNetworkTools({ networks,
+netTools = safely('Paths/roads/pistes', () => registerNetworkTools({ networks, suspensionLocked: () => sim.gate.locked('landscape', 'suspension'),
   grid, buildings, economy, scene: renderer.scene, camera: renderer.controls.camera, dom: renderer.webgl.domElement, uiRoot: null,
   roadEntry: terrainInfo.roadEntry, railEntry: terrainInfo.railEntry, village: terrainInfo.villageAnchor,
   onFrame: (fn) => { const prev = renderer.onFrame; renderer.onFrame = (dt) => { prev?.(dt); fn(); }; },

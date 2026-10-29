@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BRIDGES, type BridgeKind } from '../../config/bridges';
+import { BRIDGES, SUSPENSION, type BridgeKind } from '../../config/bridges';
 import { bridgeSupports } from '../../world/Bridges';
 import { HEIGHT_UNIT } from '../../config/balance';
 import type { Grid } from '../../world/Grid';
@@ -19,13 +19,57 @@ export const BRIDGE_SNOW_U = 0.93;
 const WHITE_CELL_U = 3.5 / 4; // Paths atlas: cell 3 = plain white
 const THICK = 0.07;
 
-interface Look { deck: number; deckAlt: number; rail: number; railH: number; railW: number; post: number; hand: number | null }
+interface Look { deck: number; deckAlt: number; rail: number; railH: number; railW: number; post: number; hand: number | null; /** Suspension rig colours: cable + tower. */ cable?: number }
 const LOOK: Record<BridgeKind, Look> = {
   footbridge: { deck: 0xa4834f, deckAlt: 0x96774a, rail: 0x8a6b43, railH: 0.2, railW: 0.03, post: 0x6e5636, hand: 0x6e5636 },
   hikeBridge: { deck: 0x7a5a3a, deckAlt: 0x68492e, rail: 0x6b4e30, railH: 0.11, railW: 0.025, post: 0x5a4228, hand: null },
   mtbBridge: { deck: 0xb89868, deckAlt: 0xa98a5c, rail: 0, railH: 0, railW: 0, post: 0x6e5636, hand: null },
   roadBridge: { deck: 0x5a5e66, deckAlt: 0x5a5e66, rail: 0x9a9a94, railH: 0.15, railW: 0.07, post: 0x8a8a84, hand: null },
+  // suspension footbridges: planks + steel cables (footpath) / rope + timber towers (hiking trail); the rails ARE the cables (rig below)
+  suspensionFoot: { deck: 0x9a7b4a, deckAlt: 0x8a6c40, rail: 0, railH: 0, railW: 0, post: 0x5d636b, hand: null, cable: 0x7b8088 },
+  suspensionHike: { deck: 0x8a6c40, deckAlt: 0x78593a, rail: 0, railH: 0, railW: 0, post: 0x5a4228, hand: null, cable: 0x9a8760 },
 };
+
+/** Flat ribbon (2 triangles) between two world points: vertical (a hanging rope seen from the side) or horizontal (seen from above) of the given thickness. */
+function ribbon(d: GeoData, p0: [number, number, number], p1: [number, number, number], size: number, vertical: boolean, rgb: number, lateral: 'x' | 'z'): void {
+  const c = new THREE.Color(rgb), base = d.positions.length / 3;
+  const off = (sgn: number): [number, number, number] => (vertical ? [0, sgn * size, 0] : lateral === 'x' ? [sgn * size, 0, 0] : [0, 0, sgn * size]);
+  const pts = [[p0, -1], [p1, -1], [p1, 1], [p0, 1]] as const;
+  pts.forEach(([p, sg], k) => { const o = off(sg); d.positions.push(p[0] + o[0], p[1] + o[1], p[2] + o[2]); d.uvs.push(WHITE_CELL_U, k < 2 ? 0.25 : 0.75); d.colors.push(c.r * 0.9, c.g * 0.9, c.b * 0.9); });
+  d.indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
+}
+
+/**
+ * The cable rig of one suspension span tile: per side a main cable (ribbon, parabola from the tower tops down to just above the deck at mid-span), a
+ * hand rope along the deck, one hanger; the first / last span tile adds the two towers (posts + cross beam) and the back-stays to the banks. About 24 triangles
+ * per span tile + 100 per bridge (a 12-tile bridge stays under 400 incl. the bank ramps). World-space geometry only: no shader tricks, nothing that crawls.
+ */
+function suspensionRig(d: GeoData, grid: Grid, net: Networks, h: HeightFn, br: NonNullable<ReturnType<Networks['bridgeAt']>>, look: Look, spanIdx: number, hw: number, at: (s: number) => [number, number]): void {
+  const n = br.span.length, L = br.deck * HEIGHT_UNIT, top = L + SUSPENSION.towerH, mid = L + 0.16, cable = look.cable ?? look.post;
+  const horizontal = br.a.y === br.b.y, lat = horizontal ? 'z' : 'x', axis = horizontal ? 'x' : 'z';
+  const side = (s: number, sg: number): [number, number] => { const [x, z] = at(s); return horizontal ? [x, z + sg * (hw + 0.02)] : [x + sg * (hw + 0.02), z]; };
+  const cableY = (s: number): number => { const u = (s - 0.5) / n; return mid + (top - mid) * (2 * u - 1) * (2 * u - 1); };
+  const s0 = spanIdx + 0.5, s1 = spanIdx + 1.5, sm = spanIdx + 1;
+  const bankLow = (t: { x: number; y: number }): number => Math.min(...grid.getCorners(t.x, t.y)) * HEIGHT_UNIT;
+  for (const sg of [-1, 1]) {
+    const [ax, az] = side(s0, sg), [bx, bz] = side(s1, sg);
+    ribbon(d, [ax, cableY(s0), az], [bx, cableY(s1), bz], 0.026, true, cable, lat); // main cable: a vertical ribbon (double-sided material)
+    ribbon(d, [ax, net.deckAlong(br, s0) + 0.13, az], [bx, net.deckAlong(br, s1) + 0.13, bz], 0.03, true, cable, lat); // hand rope along the deck
+    const [mx, mz] = side(sm, sg); // hanger from the cable down to the hand rope
+    ribbon(d, [mx, cableY(sm), mz], [mx, net.deckAlong(br, sm) + 0.13, mz], 0.012, false, cable, axis);
+    const towerEnd = (s: number, bank: { x: number; y: number }, back: number): void => {
+      const [tx, tz] = side(s, sg), bed = Math.min(h(tx, tz), bankLow(bank)) - 0.08;
+      post(d, tx, tz, 0.04, 0.04, bed, top + 0.04, look.post); // tower post
+      const [kx, kz] = side(back, sg); // back-stay to the anchor on the bank
+      ribbon(d, [tx, top, tz], [kx, net.deckAlong(br, back) + 0.05, kz], 0.014, true, cable, lat);
+    };
+    if (spanIdx === 0) towerEnd(0.5, br.a, 0);
+    if (spanIdx === n - 1) towerEnd(n + 0.5, br.b, n + 1);
+  }
+  const tower = (s: number): void => { const [x0, z0] = side(s, -1), [x1, z1] = side(s, 1); ribbon(d, [x0, top, z0], [x1, top, z1], 0.03, true, look.post, lat); }; // cross beam
+  if (spanIdx === 0) tower(0.5);
+  if (spanIdx === n - 1) tower(n + 0.5);
+}
 
 /** Box between world points p0 -> p1 (axis-aligned run along x or z) with sloped top heights and per-face flat vertices. */
 function slab(d: GeoData, x0: number, z0: number, x1: number, z1: number, hw: number, yTop0: number, yTop1: number, thick: number, rgb: number, lift = 0): void {
@@ -90,6 +134,7 @@ export function bridgeTileGeometry(d: GeoData, grid: Grid, net: Networks, h: Hei
       }
     }
   });
+  if (spec.suspension) { if (spanIdx >= 0) suspensionRig(d, grid, net, h, br, look, spanIdx, hw, at); return; } // hung deck: no piers
   if (spanIdx >= 0 && bridgeSupports(br.span.length).includes(spanIdx)) {
     const [cx, cz] = at(spanIdx + 1);
     const c = grid.getCorners(x, y);

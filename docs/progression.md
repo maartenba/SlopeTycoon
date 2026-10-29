@@ -80,7 +80,7 @@ Open question for the playtest: is that pacing right? (`docs/playtest-m53.md`.) 
 
 ## Unlock list (src/config/unlocks.ts)
 
-Only 9 buildings / lifts / campaigns are gated, plus two landscape items: **digging ponds** and **digging rivers / placing springs** (Landscape drawer > Water) unlock at resort level 2 (`kind: 'landscape'`, `src/config/unlocks.ts`). **Everything not listed is always available**: roads, footpaths, pistes, basic terraforming (Terrain drawer), tree planting and clearing, boulders and decor (Landscape drawer), T-bar, chair2 / chair4 / chair4d, Base Lodge, Lodge, Café, Mountain Hut, Ski School, Ticket Office, Parking, **Ski Patrol Hub, First-Aid Hut, Ranger Station**, grooming, snowmaking, rental, shop, lodging, summer attractions, and the Families / Budget / Summer / Brand campaigns.
+Only 9 buildings / lifts / campaigns are gated, plus three landscape-kind items: **digging ponds** and **digging rivers / placing springs** (Landscape drawer > Water) unlock at resort level 2, the **suspension footbridge** (drag a footpath / hiking trail over a 5-12 tile span) at level 3 (`kind: 'landscape'`, `src/config/unlocks.ts`). **Everything not listed is always available**: roads, footpaths, pistes, basic terraforming (Terrain drawer), tree planting and clearing, boulders and decor (Landscape drawer), T-bar, chair2 / chair4 / chair4d, Base Lodge, Lodge, Café, Mountain Hut, Ski School, Ticket Office, Parking, **Ski Patrol Hub, First-Aid Hut, Ranger Station**, grooming, snowmaking, rental, shop, lodging, summer attractions, and the Families / Budget / Summer / Brand campaigns.
 
 | level | item | why there |
 |---|---|---|

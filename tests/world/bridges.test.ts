@@ -28,7 +28,7 @@ describe('planBridge: each kind places within its limits and fails with the righ
         expect(p.reason, `${kind} span ${w}`).toBeUndefined();
         expect(p.ok).toBe(true);
         expect(p.span.length).toBe(w);
-        expect(p.spanCost).toBe(w * spec.costPerTile);
+        expect(p.spanCost).toBe(w * spec.costPerTile + (spec.baseCost ?? 0));
         expect(p.deck).toBe(spec.clearance); // flat world: the deck floats `clearance` half-steps over the water
         expect(p.supports).toEqual(bridgeSupports(w));
       }

@@ -104,7 +104,7 @@ describe('footpath and road: a bridge of the matching type appears when the drag
 
 describe('hiking and MTB trails: a wooden / MTB bridge over a pond', () => {
   for (const [layer, label, per] of [[Layer.Hike, 'Wooden hiking bridge', 120], [Layer.Mtb, 'MTB bridge', 140]] as Array<[LayerBit, string, number]>) {
-    it(`${label}: drag across the pond, ghost + price, built; width 5 refuses`, () => {
+    it(`${label}: drag across the pond, ghost + price, built; width 5: MTB refuses, hiking goes suspension`, () => {
       const { grid, net, o } = setup(); pond(grid, 2);
       net.build(NetKind.Path, 17, 30);
       const tool = new PisteTool(o); tool.layer = layer;
@@ -122,7 +122,9 @@ describe('hiking and MTB trails: a wooden / MTB bridge over a pond', () => {
       tool.dispose();
       const w = setup(); pond(w.grid, 5); w.net.build(NetKind.Path, 17, 30);
       const t2 = new PisteTool(w.o); t2.layer = layer; h = drag(t2, [{ x: 18, y: 30 }, { x: 27, y: 30 }]);
-      expect(h.evaluate(h.tiles())).toMatchObject({ ok: false, text: `Blocked: ${BRIDGE_MSG.tooLong(4)}` });
+      // width 5: the MTB bridge refuses (max 4, no bikes on a suspension bridge); the hiking trail takes the suspension footbridge instead (Task 46)
+      if (layer === Layer.Mtb) expect(h.evaluate(h.tiles())).toMatchObject({ ok: false, text: `Blocked: ${BRIDGE_MSG.tooLong(4)}` });
+      else expect(h.evaluate(h.tiles())).toMatchObject({ ok: true });
       t2.dispose();
     });
   }

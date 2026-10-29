@@ -73,6 +73,9 @@ Developer notes for dug rivers and spring sites. Status: **data model + planner 
 - **Save**: `{ frozen, cold, warm }` is written as `ice` inside the `rivers` module (absent without rivers / springs, so goldens are unchanged); old saves load thawed.
 - Tests: `tests/sim/nature/riverIce.test.ts` (hysteresis, a real Dec-Apr season with a dug river, save / load, jump), `tests/render/waterRivers.test.ts` (mesh ranges, per-tile flow, easing, one draw call, splash cap).
 
+## Bridges
+Dug rivers are bridged like streams by all four path kinds, plus the suspension footbridge for wide reaches; a river cannot be filled in under a bridge. See [bridges.md](bridges.md).
+
 ## Not yet (later tasks)
 
-Flow `Q` / speed (15), Water.ts rendering of dug rivers and spring markers (16), ice (17), river bridges + suspension footbridge (46), rafting / canyoning, snowmaking from rivers, sustainability bonus.
+Flow `Q` / speed (15), Water.ts rendering of dug rivers and spring markers (16), ice (17), rafting / canyoning, snowmaking from rivers, sustainability bonus.

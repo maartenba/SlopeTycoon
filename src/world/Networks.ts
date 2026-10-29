@@ -4,7 +4,7 @@ import { OccFlag } from './Occupancy';
 import type { Pt } from '../sim/Dependencies';
 import { HEIGHT_UNIT } from '../config/balance';
 import { CROSSING } from '../config/crossings';
-import { BRIDGES, BRIDGE_MAX_RISE, type BridgeKind } from '../config/bridges';
+import { BRIDGES, BRIDGE_MAX_RISE, SUSPENSION, type BridgeKind } from '../config/bridges';
 import type { Bridge, BridgePlan } from './Bridges';
 import { accessProblem, suppliedOnFootOnly, type NetworkAccess, type ServedKind } from '../sim/PlacementRules';
 
@@ -573,6 +573,7 @@ export class Networks {
     const n = br.span.length, L = br.deck * HEIGHT_UNIT;
     if (s <= 0.5) { const ya = this.tileY(br.a); return ya + (L - ya) * (Math.max(0, s) / 0.5); }
     if (s >= n + 0.5) { const yb = this.tileY(br.b); return L + (yb - L) * ((Math.min(n + 1, s) - (n + 0.5)) / 0.5); }
+    if (BRIDGES[br.kind].suspension) { const u = (s - 0.5) / n; return L - Math.min(SUSPENSION.sagMax, SUSPENSION.sagPerTile * n) * 4 * u * (1 - u); } // a hung deck sags a little mid-span
     return L;
   }
 

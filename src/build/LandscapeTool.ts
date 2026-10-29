@@ -227,7 +227,7 @@ export class LandscapeTool {
       default: {
         const rec = rivers.riverAt(tile.x, tile.y);
         if (rec) {
-          const plan = planFillRiver(rivers, rec.id);
+          const plan = planFillRiver(rivers, rec.id, this.o.riverEnv?.());
           ov.setRiverGhost(rec.path, rec.path.map(() => 0), []);
           tip(0, plan.ok, plan.ok ? `Fill in this river (${rec.path.length} tiles) · restores the ground · no refund` : `Blocked: ${plan.reason}`, plan.ok ? 0xffaa44 : 0xff4444);
         } else if (rivers.isPlacedSpring(tile.x, tile.y)) {
@@ -284,7 +284,7 @@ export class LandscapeTool {
     if (!rivers || !env) return false;
     const rec = rivers.riverAt(x, y);
     if (rec) {
-      const plan = planFillRiver(rivers, rec.id);
+      const plan = planFillRiver(rivers, rec.id, this.o.riverEnv?.());
       if (!plan.ok) { this.refuse(plan.reason ?? 'Blocked'); return false; }
       const g = this.o.grid, r = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
       const grow = (px: number, py: number): void => { r.x0 = Math.min(r.x0, px); r.y0 = Math.min(r.y0, py); r.x1 = Math.max(r.x1, px); r.y1 = Math.max(r.y1, py); };

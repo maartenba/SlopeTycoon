@@ -16,6 +16,8 @@ import { Eco } from '../sim/meta/Eco';
 import { BUILDINGS } from '../config/buildings';
 import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, REMOTE_SUPPLY_MULT, oldDays } from '../config/balance';
 import { LIFTS } from '../config/lifts';
+import { SUSPENSION } from '../config/bridges';
+import type { ViewpointSite } from '../sim/attractions/Viewpoint';
 import { Buildings } from '../sim/Buildings';
 import { Names } from '../sim/Names';
 import { pisteReport, type PisteReport } from '../sim/PisteStats';
@@ -496,6 +498,17 @@ export function createSim(opts: SimOptions) {
   };
   guestSim.decider.hikePenalty = (t) => (coverage.map('warning')[t]! > 0 ? 0.3 : 0);
   guestSim.decider.avoidTile = (t) => safety.wildlife.avoidance(t);
+  // Suspension footbridges on hiking trails are viewpoints at mid-span (Phase 6 Task 46, docs/bridges.md); nothing exists without one (inert, hash untouched)
+  guestSim.decider.bridgeViews = () => {
+    if (networks.bridgeTiles === 0) return [];
+    const out: ViewpointSite[] = [];
+    for (const b of networks.liveBridges()) {
+      if (b.kind !== 'suspensionHike') continue;
+      const m = b.span[b.span.length >> 1]!;
+      out.push({ id: -b.id, x: m.x, y: m.y, w: 1, h: 1, spec: SUSPENSION.viewpoint, alt: b.deck * HEIGHT_UNIT });
+    }
+    return out;
+  };
 
   // ---- Attractions & commercial buildings ----
   const SOLID = OccFlag.Building | OccFlag.Lift | OccFlag.Water;

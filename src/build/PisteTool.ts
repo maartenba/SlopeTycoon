@@ -61,7 +61,7 @@ export class PisteTool extends DragTool {
 
   protected tiles(): Pt[] {
     if (this.trail && !this.erasing && this.start) { // the stroke line without the bridge spans (banks and crossing tiles included); the plan decides what is built
-      const plan = planTrailStroke(this.o.networks, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode);
+      const plan = planTrailStroke(this.o.networks, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode, this.o.suspensionLocked?.() ?? null);
       return plan.ok ? plan.line : this.strokeLine();
     }
     const swept = sweepBrush(this.strokeLine(), this.effectiveBrush, this.o.grid.size);
@@ -76,7 +76,7 @@ export class PisteTool extends DragTool {
     if (this.erasing) return { ok: true, cost: 0, text: `Erase ${tiles.length} tiles` };
     const net = this.o.networks;
     if (this.trail && this.start) { // bridges over lakes and rail crossings are part of the stroke
-      const plan = planTrailStroke(net, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode);
+      const plan = planTrailStroke(net, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode, this.o.suspensionLocked?.() ?? null);
       if (!plan.ok) return { ok: false, cost: 0, text: plan.reason === TRAIL_ORPHAN_MSG ? TRAIL_ORPHAN_MSG : `Blocked: ${plan.reason}` };
       const a = net.autoDifficulty(plan.newTiles), dd = this.override ?? [...a.values()][0] ?? 0, extras = describeExtras(plan);
       this.emitProfile();
@@ -115,7 +115,7 @@ export class PisteTool extends DragTool {
     if (this.erasing) {
       for (const t of tiles) net.unpaint(this.layer, t.x, t.y);
     } else if (this.trail) {
-      const plan = planTrailStroke(net, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode);
+      const plan = planTrailStroke(net, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode, this.o.suspensionLocked?.() ?? null);
       if (plan.ok) buildTrailStroke(net, this.trail, plan, this.override ?? undefined);
     } else {
       net.paint(this.layer, tiles, this.override ?? undefined);

@@ -54,7 +54,10 @@ describe('trails bridge ponds, whatever the wobble of the drag', () => {
       expect(plan.bridges[0]!.span).toHaveLength(3);
       const w = world(); pond(w.grid, 20, 6); w.net.build(NetKind.Path, 17, 30);
       const wide = planTrailStroke(w.net, w.grid, kind, row(18, 28), 1, 'level');
-      expect(wide).toMatchObject({ ok: false, reason: BRIDGE_MSG.tooLong(4) });
+      if (kind === 'mtb') expect(wide).toMatchObject({ ok: false, reason: BRIDGE_MSG.tooLong(4) });
+      else { expect(wide.ok, wide.reason).toBe(true); expect(wide.bridges[0]!.kind).toBe('suspensionHike'); } // hikers take the suspension footbridge (Task 46)
+      const huge = world(); pond(huge.grid, 20, 13); huge.net.build(NetKind.Path, 17, 30);
+      expect(planTrailStroke(huge.net, huge.grid, kind, row(18, 36), 1, 'level')).toMatchObject({ ok: false, reason: BRIDGE_MSG.tooLong(kind === 'mtb' ? 4 : 12) });
       // starting in the water has no near bank
       const s = planTrailStroke(net, grid, kind, row(20, 25), 1, 'level');
       expect(s).toMatchObject({ ok: false });

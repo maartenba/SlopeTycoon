@@ -15,6 +15,8 @@ import { StrokeHistory } from './StrokeHistory';
 import type { Undo } from './UndoActions';
 
 export interface NetworkToolsCtx {
+  /** Career lock of the suspension footbridge (Phase 6 Task 46): a reason, or null when available. */
+  suspensionLocked?: () => string | null;
   grid: Grid;
   buildings: Buildings;
   economy: Economy;
@@ -115,6 +117,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     grid, networks, camera: ctx.camera, dom: ctx.dom, scene: ctx.scene,
     charge: (c) => economy.charge(c),
     multiplier: () => economy.constructionMultiplier(),
+    suspensionLocked: ctx.suspensionLocked,
     onChanged: afterChange,
     onStroke: (group, tiles, erase, layer) => {
       if (group === 'piste') ctx.bus?.emit('piste:painted', { layer: layer === Layer.Mtb ? 'mtb' : layer === Layer.Hike ? 'hike' : 'ski', tiles, erase });

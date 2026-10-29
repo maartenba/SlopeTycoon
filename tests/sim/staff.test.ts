@@ -68,10 +68,11 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '137b8822',
   'yearReports': '102ceb83',
   'advisor': 'ca063e92',
-  'progression': '7e176510',
+  'progression': 'c1c20eb0',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
+// RE-RECORDED (Suspension footbridge unlock, Phase 6 Task 46: ONLY `progression` moved (7e176510 -> c1c20eb0): the unlock snapshot gained landscape:suspension at level 3; everything else is byte-identical).
 // RE-RECORDED (Dig river unlock, Phase 6 Task 14: ONLY `progression` moved (8e20e249 -> 7e176510): the unlock snapshot gained landscape:river at level 2 and lift:chair6d at level 3; everything else is byte-identical).
 // RE-RECORDED (Eco Centre, docs/eco.md: ONLY `progression` moved (71be28b7 -> 8e20e249): the unlock snapshot gained building:ecoCentre at level 4; money, guests, rating and every other part are byte-identical, and the `eco` module is omitted while untouched).
 // RE-RECORDED (tower height caps / denser towers change the bot's lift layouts; docs/lifts-clearance.md).

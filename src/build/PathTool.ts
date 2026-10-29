@@ -17,6 +17,8 @@ export interface DragToolOptions {
   scene: THREE.Scene;
   charge: (cost: number) => boolean;
   multiplier: () => number;
+  /** Career lock reason of the suspension footbridge (`gate.locked('landscape', 'suspension')`), null = available. */
+  suspensionLocked?: () => string | null;
   /** Called after tiles were added/removed (reevaluate deps, refresh UI). */
   onChanged: () => void;
   /** A stroke was committed: group is the tool's undo group ('path'|'road'|'rail'|'piste'), layer for pistes. */
@@ -275,13 +277,13 @@ export class SegmentTool extends DragTool {
     return this.start && this.cur ? lineTiles(this.start, this.cur, this.vFirst) : [];
   }
   protected evaluate(tiles: Pt[]): Evaluation {
-    const plan = planStroke(this.o.networks, this.o.grid, this.sk, tiles, this.o.multiplier(), this.mode);
+    const plan = planStroke(this.o.networks, this.o.grid, this.sk, tiles, this.o.multiplier(), this.mode, this.o.suspensionLocked?.() ?? null);
     if (!plan.ok) return { ok: false, cost: 0, text: `Blocked: ${plan.reason}` };
     const extras = describeExtras(plan);
     return { ok: true, cost: plan.cost, text: `Cost: $${Math.round(plan.cost)} (${plan.newTiles.length} tile${plan.newTiles.length === 1 ? '' : 's'}${extras ? ` + ${extras}` : ''})`, ghost: ghostOf(plan) };
   }
   protected commit(tiles: Pt[]): void {
-    const plan = planStroke(this.o.networks, this.o.grid, this.sk, tiles, this.o.multiplier(), this.mode);
+    const plan = planStroke(this.o.networks, this.o.grid, this.sk, tiles, this.o.multiplier(), this.mode, this.o.suspensionLocked?.() ?? null);
     if (plan.ok) buildStroke(this.o.networks, this.sk, plan, this.mode);
   }
 }

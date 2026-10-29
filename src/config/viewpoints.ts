@@ -10,6 +10,8 @@ export interface ViewpointSpec {
   weight?: number;
   /** Extra stop at the goal in hours (scaled by the view score). Default VIEWPOINT.dwellH. */
   dwellH?: number;
+  /** Lowest view score (a bridge hangs in open air, so it always sees something). Default 0. */
+  floor?: number;
   /** Listed as a photo-mode spot (default true). */
   photo?: boolean;
 }

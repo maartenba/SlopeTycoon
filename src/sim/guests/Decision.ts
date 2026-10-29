@@ -89,6 +89,8 @@ export class Decider {
   huts: WorldBuilding[] = [];
   /** Buildings with `def.viewpoint` (Phase 6 Task 6): hiker goals with a view score. */
   viewSites: ViewpointSite[] = [];
+  /** Extra viewpoint sites that are not buildings (suspension bridges, Phase 6 Task 46); ids are negative. Wired by createSim. */
+  bridgeViews: (() => ViewpointSite[]) | null = null;
   rest: WorldBuilding[] = [];
   shop: WorldBuilding[] = [];
   activity: WorldBuilding[] = [];
@@ -225,7 +227,8 @@ export class Decider {
     }
     const sample = (a: number[]): number[] => { if (a.length <= 48) return a; const step = a.length / 48; return Array.from({ length: 48 }, (_, i) => a[Math.floor(i * step)]!); };
     this.hikeTiles = sample(hike); this.mtbTiles = sample(mtb); this.skiOpenTiles = ski;
-    this.goals.build(nav, hike, mtb, this.huts.map((b) => ({ id: b.id, x: Math.floor(b.x + b.w / 2), y: Math.floor(b.y + b.h / 2) })), this.viewSites);
+    const bv = this.bridgeViews?.() ?? [];
+    this.goals.build(nav, hike, mtb, this.huts.map((b) => ({ id: b.id, x: Math.floor(b.x + b.w / 2), y: Math.floor(b.y + b.h / 2) })), bv.length ? [...this.viewSites, ...bv] : this.viewSites);
   }
 
   /** Nearest of the given buildings to (x,y), choosing randomly among the two closest. */

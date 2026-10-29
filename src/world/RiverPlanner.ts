@@ -360,9 +360,12 @@ export function applyRiver(env: RiverEnv, rivers: Rivers, plan: RiverPlan): Rive
 export interface RiverFillPlan { ok: boolean; reason?: string; rec?: RiverRec; cost: number }
 
 /** Fill a river back in (bulldoze: refund 0, no fee). Refused while another river is fed by it. */
-export function planFillRiver(rivers: Rivers, riverId: number): RiverFillPlan {
+export const UNDER_BRIDGE_MSG = 'A bridge crosses the river: remove the bridge first';
+
+export function planFillRiver(rivers: Rivers, riverId: number, env?: Pick<RiverEnv, 'netAt'>): RiverFillPlan {
   const rec = rivers.rivers.find((r) => r.id === riverId);
   if (!rec) return { ok: false, reason: 'No river here', cost: 0 };
+  if (env?.netAt && rec.path.some((p) => env.netAt!(p.y * rivers.grid.size + p.x) !== 0)) return { ok: false, reason: UNDER_BRIDGE_MSG, rec, cost: 0 }; // a deck stands over the channel (Task 46)
   const mine = new Set(rec.path.map((p) => p.y * rivers.grid.size + p.x));
   for (const o of rivers.rivers) {
     if (o.id === rec.id) continue;

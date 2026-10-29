@@ -1,4 +1,4 @@
-import { BRIDGES, BRIDGE_MSG, GAP_MIN_DROP, type BridgeKind } from '../config/bridges';
+import { BRIDGES, BRIDGE_MSG, GAP_MIN_DROP, REGULAR_MAX_SPAN, type BridgeKind } from '../config/bridges';
 import { CROSSING } from '../config/crossings';
 import { TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
@@ -17,6 +17,9 @@ export type CrossMode = 'level' | 'bridge';
 
 /** Bridge type that matches each drawable kind (rail never bridges). */
 export const BRIDGE_OF: Record<Exclude<StrokeKind, 'rail'>, BridgeKind> = { path: 'footbridge', road: 'roadBridge', hike: 'hikeBridge', mtb: 'mtbBridge' };
+
+/** Longer than a regular bridge carries: a footpath / hiking trail drag becomes a suspension footbridge (docs/bridges.md). */
+export const SUSPENSION_OF = { path: 'suspensionFoot', hike: 'suspensionHike' } as const satisfies Partial<Record<StrokeKind, BridgeKind>>;
 
 export type StrokeStep = { type: 'seg'; tiles: Pt[] } | { type: 'bridge'; plan: BridgePlan };
 
@@ -89,7 +92,7 @@ export function straightenRuns(net: Networks, grid: Grid, kind: StrokeKind, line
     const a = cur[r.s - 1]!, dx = cur[r.s]!.x - a.x, dy = cur[r.s]!.y - a.y;
     const walk: Pt[] = [];
     let x = a.x + dx, y = a.y + dy;
-    while (water(x, y) && walk.length < 12) { walk.push({ x, y }); x += dx; y += dy; }
+    while (water(x, y) && walk.length < 13) { walk.push({ x, y }); x += dx; y += dy; }
     if (!net.inBounds(x, y) || water(x, y)) break;
     walk.push({ x, y }); // the far bank
     let rest = cur.slice(r.e + 1);
@@ -109,14 +112,17 @@ export function straightenRuns(net: Networks, grid: Grid, kind: StrokeKind, line
 }
 
 /** Validate a run: banks exist, the run is one straight line, then `planBridge` (spans, clearance, cost). */
-function planRun(net: Networks, grid: Grid, kind: Exclude<StrokeKind, 'rail'>, line: Pt[], r: Run, mult: number, planned: ReadonlySet<number>): BridgePlan | { reason: string } {
+function planRun(net: Networks, grid: Grid, kind: Exclude<StrokeKind, 'rail'>, line: Pt[], r: Run, mult: number, planned: ReadonlySet<number>, suspensionLock: string | null = null): BridgePlan | { reason: string } {
   if (r.s < 1) return { reason: BRIDGE_MSG.nearBank };
   if (r.e >= line.length - 1) return { reason: BRIDGE_MSG.farBank };
   const a = line[r.s - 1]!, b = line[r.e + 1]!;
   const horizontal = a.y === b.y, vertical = a.x === b.x;
   if (!horizontal && !vertical) return { reason: BRIDGE_MSG.straight };
   for (let k = r.s - 1; k <= r.e + 1; k++) if (horizontal ? line[k]!.y !== a.y : line[k]!.x !== a.x) return { reason: BRIDGE_MSG.straight };
-  const plan = planBridge(net, grid, BRIDGE_OF[kind], a, b, mult, { planned, skipLink: true });
+  const len = r.e - r.s + 1;
+  const bk: BridgeKind = (kind === 'path' || kind === 'hike') && len > REGULAR_MAX_SPAN ? SUSPENSION_OF[kind] : BRIDGE_OF[kind]; // the suspension footbridge takes over where regular bridges max out
+  if (suspensionLock && BRIDGES[bk].suspension) return { reason: suspensionLock }; // career lock of the suspension footbridge (null = available)
+  const plan = planBridge(net, grid, bk, a, b, mult, { planned, skipLink: true });
   if (plan.ok) return plan;
   // a steep slope is not a gap: say 'Too steep', not 'Bridges only cross water or a gap'
   if (!r.water && (kind === 'path' || kind === 'road') && (plan.reason === BRIDGE_MSG.notGap || plan.reason === BRIDGE_MSG.nothing || plan.reason?.startsWith('Span too long'))) {
@@ -134,7 +140,7 @@ export function overFor(kind: StrokeKind, mode: CrossMode): boolean | number {
 }
 
 /** Plan a footpath / road / rail stroke (tiles in drag order). Rail never bridges; trails go through `planTrailStroke`. */
-export function planStroke(net: Networks, grid: Grid, kind: 'path' | 'road' | 'rail', line: Pt[], mult = 1, mode: CrossMode = 'level'): StrokePlan {
+export function planStroke(net: Networks, grid: Grid, kind: 'path' | 'road' | 'rail', line: Pt[], mult = 1, mode: CrossMode = 'level', suspensionLock: string | null = null): StrokePlan {
   const nk = (kind === 'path' ? NetKind.Path : kind === 'road' ? NetKind.Road : NetKind.Rail) as NetKindId;
   const over = overFor(kind, mode);
   const runs = kind === 'rail' ? [] : findRuns(net, grid, kind, line);
@@ -154,7 +160,7 @@ export function planStroke(net: Networks, grid: Grid, kind: 'path' | 'road' | 'r
   for (const r of runs) {
     const e = seg(line.slice(from, Math.max(from, r.s - 1)));
     if (e) return failed(e, line);
-    const bp = planRun(net, grid, kind as Exclude<StrokeKind, 'rail'>, line, r, mult, planned);
+    const bp = planRun(net, grid, kind as Exclude<StrokeKind, 'rail'>, line, r, mult, planned, suspensionLock);
     if (!('ok' in bp)) return failed(bp.reason, line);
     bridges.push(bp); steps.push({ type: 'bridge', plan: bp }); cost += bp.cost;
     for (const t of [bp.a, ...bp.span, bp.b]) planned.add(net.idxOf(t.x, t.y));
@@ -181,16 +187,16 @@ const LAYER_OF = { hike: Layer.Hike, mtb: Layer.Mtb } as const;
  * Plan a hiking / MTB trail stroke (the 4-connected centre line of the freehand drag): lake tiles become a wooden hiking / MTB bridge, rail tiles a level
  * crossing or the (ramp) bridge over the rail, everything else paints as before. Trails need no bridge over gaps (they simply follow the ground).
  */
-export function planTrailStroke(net: Networks, grid: Grid, kind: 'hike' | 'mtb', line: Pt[], mult = 1, mode: CrossMode = 'level'): StrokePlan {
+export function planTrailStroke(net: Networks, grid: Grid, kind: 'hike' | 'mtb', line: Pt[], mult = 1, mode: CrossMode = 'level', suspensionLock: string | null = null): StrokePlan {
   const layer: LayerBit = LAYER_OF[kind];
   line = straightenRuns(net, grid, kind, line);
   // runs a bridge cannot serve: a dip that is no gap (steep ground) is simply painted as before; water always needs its bridge or a clear refusal
-  const runs = findRuns(net, grid, kind, line).filter((r) => r.water || 'ok' in planRun(net, grid, kind, line, r, mult, new Set()));
+  const runs = findRuns(net, grid, kind, line).filter((r) => r.water || 'ok' in planRun(net, grid, kind, line, r, mult, new Set(), suspensionLock));
   const inRun = (k: number): boolean => runs.some((r) => k >= r.s && k <= r.e);
   const steps: StrokeStep[] = [], bridges: BridgePlan[] = [], crossings: Array<Pt & { cross: number }> = [];
   let cost = 0;
   for (const r of runs) {
-    const bp = planRun(net, grid, kind, line, r, mult, new Set());
+    const bp = planRun(net, grid, kind, line, r, mult, new Set(), suspensionLock);
     if (!('ok' in bp)) return failed(bp.reason, line);
     bridges.push(bp); steps.push({ type: 'bridge', plan: bp }); cost += bp.cost;
   }
@@ -229,7 +235,7 @@ export function buildTrailStroke(net: Networks, kind: 'hike' | 'mtb', plan: Stro
 /** One line for the tooltip: what this stroke adds besides plain tiles. */
 export function describeExtras(plan: StrokePlan): string {
   const out: string[] = [];
-  for (const b of plan.bridges) out.push(`${BRIDGES[b.kind as BridgeKind].label}${b.overStream ? ' over stream' : ''}: span ${b.span.length} tile${b.span.length === 1 ? '' : 's'}, $${Math.round(b.spanCost)}`);
+  for (const b of plan.bridges) out.push(`${BRIDGES[b.kind as BridgeKind].label}${b.overStream ? ' over stream' : ''}: span ${b.span.length} tile${b.span.length === 1 ? '' : 's'}${BRIDGES[b.kind as BridgeKind].suspension ? `, deck level ${b.deck}` : ''}, $${Math.round(b.spanCost)}`);
   const by = (c: number): number => plan.crossings.filter((x) => x.cross === c).length;
   const n1 = by(Cross.Path) + by(Cross.Road);
   if (n1) out.push(n1 === 1 ? 'level crossing: guests wait for trains' : `${n1} level crossings`);

@@ -22,6 +22,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'landscape', id: 'pond', level: 2 },
   // Level 2: digging rivers + placing springs (Phase 6, like ponds; no goal or Advisor rule needs a river).
   { kind: 'landscape', id: 'river', level: 2 },
+  // Level 3: the suspension footbridge (Phase 6 Task 46; a hiker attraction, nothing a goal or Advisor rule needs; regular bridges are always available).
+  { kind: 'landscape', id: 'suspension', level: 3 },
   // Level 3 (Regional name): the heavy transport.
   { kind: 'lift', id: 'funicular', level: 3 },
   // Level 3: the high-speed six-seat chair (Phase 6, Task 47; no goal or Advisor rule needs it).
@@ -51,7 +53,7 @@ export const unlocksAt = (level: number): UnlockDef[] => UNLOCKS.filter((u) => u
 export function unlockName(kind: UnlockKind, id: string): string {
   if (kind === 'building') return BUILDINGS[id]?.name ?? id;
   if (kind === 'lift') return LIFTS[id as LiftKind]?.name ?? id;
-  if (kind === 'landscape') return id === 'pond' ? 'Ponds & lakes (Landscape)' : id === 'river' ? 'Rivers & springs (Landscape)' : id;
+  if (kind === 'landscape') return id === 'pond' ? 'Ponds & lakes (Landscape)' : id === 'river' ? 'Rivers & springs (Landscape)' : id === 'suspension' ? 'Suspension footbridges (Paths & trails)' : id;
   return CAMPAIGNS.find((c) => c.id === id)?.name ?? id;
 }
 export const unlockIcon = (kind: UnlockKind, id: string): string => (kind === 'campaign' ? CAMPAIGNS.find((c) => c.id === id)?.icon ?? '📣' : kind === 'lift' ? '🚡' : kind === 'landscape' ? '💧' : '🏗️');

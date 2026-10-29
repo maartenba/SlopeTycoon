@@ -128,16 +128,17 @@ export function planBridge(net: Networks, grid: Grid, kind: BridgeKind | 'rail',
   let gap = false;
   for (const t of span) {
     if (isWaterTile(grid, t.x, t.y)) continue;
-    if (bankLow - minCorner(grid, t.x, t.y) < GAP_MIN_DROP) return fail(kind, a, b, water ? BRIDGE_MSG.notGap : BRIDGE_MSG.nothing);
+    if (bankLow - minCorner(grid, t.x, t.y) < (spec.gapDrop ?? GAP_MIN_DROP)) return fail(kind, a, b, water ? BRIDGE_MSG.notGap : BRIDGE_MSG.nothing);
     gap = true;
   }
   if (!water && !gap) return fail(kind, a, b, BRIDGE_MSG.nothing);
   const rise = deck - Math.min(minCorner(grid, a.x, a.y), minCorner(grid, b.x, b.y));
   // a bank whose lowest corner is too far below the deck cannot be reached (the stairs would be a wall)
-  if (deck - maxCorner(grid, a.x, a.y) > BRIDGE_MAX_RISE || deck - maxCorner(grid, b.x, b.y) > BRIDGE_MAX_RISE) return fail(kind, a, b, BRIDGE_MSG.low);
+  const maxRise = spec.maxRise ?? BRIDGE_MAX_RISE;
+  if (deck - maxCorner(grid, a.x, a.y) > maxRise || deck - maxCorner(grid, b.x, b.y) > maxRise) return fail(kind, a, b, spec.suspension ? BRIDGE_MSG.uneven : BRIDGE_MSG.low);
 
   if (!anyAnchored && !opts.skipLink) return fail(kind, a, b, spec.layer === 'road' ? ROAD_START_MSG : spec.layer === 'path' ? 'Paths must connect to a path, road or building' : TRAIL_ORPHAN_MSG);
-  const spanCost = len * spec.costPerTile * mult;
+  const spanCost = (len * spec.costPerTile + (spec.baseCost ?? 0)) * mult;
   const bankUnit = spec.layer === 'road' ? NET_COST[NetKind.Road] : spec.layer === 'path' ? NET_COST[NetKind.Path] : PISTE_COST_PER_TILE;
   return { ok: true, kind, a, b, span, deck, rise, supports: bridgeSupports(len), newBanks, cost: spanCost + newBanks.length * bankUnit * mult, spanCost, overStream: span.every((t) => grid.tileType[grid.tileIndex(t.x, t.y)] === TileType.Stream) };
 }
