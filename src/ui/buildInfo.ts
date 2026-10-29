@@ -24,7 +24,7 @@ const CATEGORY_TAB: Record<string, BuildingTab> = {
   transport: 'transport', snow: 'utilities', misc: 'utilities', energy: 'energy',
 };
 /** Per-id overrides of the category mapping (kept minimal). */
-const ID_TAB: Record<string, BuildingTab> = { parking: 'transport', shuttleDepot: 'transport' };
+const ID_TAB: Record<string, BuildingTab> = { parking: 'transport', shuttleDepot: 'transport', campground: 'recreation' };
 
 /** Every catalog id maps to exactly one tab (override, else its category, else utilities). */
 export function buildingTab(def: Pick<BuildingDef, 'id' | 'category'>): BuildingTab {
@@ -39,7 +39,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  campground: '⛺', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -71,6 +71,7 @@ const DESCRIPTIONS: Record<string, string> = {
   stuntPark: 'Jumps and rails on snow.',
   adventurePark: 'Summer ropes course and zip-lines.',
   alpineFarm: 'Cows, sheep and goats graze the alpine pastures in summer; the farm shop attracts families; restaurants near farms earn more.',
+  campground: 'Summer only: 16 tent and caravan pitches around a campfire. Cheap nights for budget and adventure guests; toilets nearby make a better evening. Reached by a footpath or hiking trail.',
   boatRental: 'Summer lake boats; must touch a lake.',
   beach: 'Summer lakeside beach; must touch a lake.',
   trainStation: 'Brings guests by rail.',

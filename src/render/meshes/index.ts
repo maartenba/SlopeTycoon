@@ -17,6 +17,7 @@ import * as F from './buildings/farm';
 import * as W from './buildings/ranger';
 import * as G from './buildings/energy';
 import { TURBINE_HUB } from './buildings/energy';
+import { campground, campfireGlowGeometry } from './campground';
 
 const e = (build: BuildFn, foundation = true): BuilderEntry => ({ build, foundation });
 
@@ -32,6 +33,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   stuntPark: e(R.stuntPark, false), adventurePark: e(R.adventurePark, false),
   alpineFarm: e(F.alpineFarm, false), trainStation: e(T.trainStation), altiport: e(T.altiport), parking: e(T.parking, false),
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
+  campground: e(campground, false),
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 
@@ -136,8 +138,11 @@ export class BuildingMeshes {
     if (p) this.nearHide.value.set(p.x, p.y, p.z, radius); else this.nearHide.value.w = 0;
   }
 
+  /** Campfire glow (additive, world-space radial falloff baked in vertex colours: no noise, flicker-safe): shared by every campground, opacity follows the night factor. */
+  private fireGlowGeo: THREE.BufferGeometry | null = null;
+  private readonly fireGlowMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, toneMapped: false });
   /** 0..1 snow cover on upward-facing roof surfaces. */
-  setNight(v: number): void { this.night.value = Math.min(1, Math.max(0, v)); }
+  setNight(v: number): void { this.night.value = Math.min(1, Math.max(0, v)); this.fireGlowMat.opacity = this.night.value * 0.95; }
   setSnow(amount: number): void { this.snow.value = Math.min(1, Math.max(0, amount)); }
 
   private mat(layer: 'wood' | 'stone' | 'roof', variant: number | string = 0): THREE.Material {
@@ -214,10 +219,16 @@ export class BuildingMeshes {
       if (rp.stone) rotor.add(new THREE.Mesh(rp.stone, this.mat('stone', variant)));
       g.add(rotor);
     }
+    if (id === 'campground') {
+      const glow = new THREE.Mesh(this.fireGlowGeo ??= campfireGlowGeometry(), this.fireGlowMat);
+      glow.name = 'fireGlow'; glow.renderOrder = 4;
+      g.add(glow);
+    }
     return g;
   }
 
   dispose(): void {
+    this.fireGlowGeo?.dispose(); this.fireGlowMat.dispose();
     for (const p of this.geoCache.values()) { p.wood?.dispose(); p.stone?.dispose(); p.roof?.dispose(); p.sign?.geometry.dispose(); }
     for (const m of this.mats.values()) m.dispose();
     for (const t of this.textures) t.dispose();

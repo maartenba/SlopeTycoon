@@ -99,7 +99,7 @@ const FLAT: SiteRule = { maxSlope: 1, slopeKind: 'flat', autoFlatten: 'default',
 /** Season relevance per id where the needs don't say it (winter operations, summer attractions); else derived from `needs`. */
 const SEASON_OVERRIDE: Record<string, SeasonUse> = {
   apresBar: 'winter', skiSchoolHQ: 'winter', groomerGarage: 'winter', snowcatOutpost: 'winter',
-  playground: 'shoulder',
+  playground: 'shoulder', campground: 'summer',
 };
 function seasonFor(id: string, needs: NeedCondition[] | undefined): SeasonUse {
   const o = SEASON_OVERRIDE[id];
@@ -178,5 +178,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('ecoCentre', 'Eco Centre', 'energy', 4, 3, 20000, 18, { access: 'road', altAccess: ['path'], maxCount: 1, site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, {}),
   // Toilets (Phase 6 Task 7, docs/comfort.md): 1x1 hut on a path, a trail or beside a piste; free to use, small upkeep. Restores the comfort need.
   b('toilets', 'Toilets', 'services', 1, 1, 600, 3, { access: 'path', altAccess: ['trail', 'pisteEdge'], pisteRule: 'edge', site: HUT }, { capacity: 4, placeTip: 'Place toilets beside a path, a trail or a piste' }),
+  // Campground (Phase 6 Task 19, docs/campground.md): budget summer lodging with a campfire as the centrepiece. Hikers pitch tents: footpath or trail (+25% upkeep when supplied on foot only). Lodging v2: seasonOpen summer, tier budget.
+  b('campground', 'Campground', 'lodging', 5, 4, 3500, 8, { access: 'path', altAccess: ['trail'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { capacity: 16, chimney: { x: 0.05, y: 0.42, z: 0.17 }, placeTip: 'Place the campground beside a footpath or hiking trail, on gentle ground' }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

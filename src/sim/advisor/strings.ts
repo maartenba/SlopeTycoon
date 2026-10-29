@@ -49,6 +49,9 @@ export const TEXT = {
   runway: (days: number): Text => ({ title: S('Low cash'), why: S(`Cash covers about ${days} days of upkeep. Hold off construction and check prices.`) }),
   winterComing: (days: number, hasReservoir: boolean): Text => ({ title: S('Winter is coming'), why: S(`Winter starts in ${days} days. ${hasReservoir ? `Add a ${B('snowCannon')} on your main piste.` : `Build a ${B('reservoir')} first, then ${B('snowCannon')}s.`}`) }),
   summerComing: (days: number): Text => ({ title: S('Summer is coming'), why: S(`Summer starts in ${days} days and there are no bike or hike trails. Paint a trail and set the summer lift schedule.`) }),
+  summerCamp: (needsToilets: boolean): Text => needsToilets
+    ? ({ title: S('Campers want toilets'), why: S(`Your ${B('campground')} has no ${B('toilets')} within 10 tiles. Campers enjoy the evening fire more with toilets nearby.`) })
+    : ({ title: S('Summer nights: a campground'), why: S(`Summer is the quiet season. A ${B('campground')} beside a footpath sells cheap nights to budget and adventure guests, and its campfire cheers everybody up.`) }),
   summerBuffer: (days: number, save: string, have: string, runwayDays: number): Text => ({ title: S('Summer is coming: save up'), why: S(`Summer starts in ${days} days and income drops without snow. Cash covers about ${runwayDays} days of upkeep (${have}). Aim for ${save}, add summer attractions, or rest the lifts you will not need.`) }),
   snowGaps: (tiles: number): Text => ({ title: S('Snow gaps on your pistes'), why: S(`${tiles} piste tiles are out of reach of any ${B('snowCannon')}. Place a cannon beside the bare stretch (it throws about 10 tiles) within pipe range of a ${B('reservoir')}.`) }),
   snowWaste: (lineM: number): Text => ({ title: S('Snowmaking is wasting money'), why: S(`The snowline (${lineM.toLocaleString('en-US')} m) is above your pistes: snowmaking is wasting money. Switch to Auto or turn the cannons off in Operations.`) }),

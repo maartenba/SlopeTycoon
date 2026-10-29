@@ -22,6 +22,7 @@ import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { ENERGY } from '../../config/energy';
 import { CROSSING } from '../../config/crossings';
+import { CAMP } from '../attractions/Campground';
 import { TEXT, FRIENDLY } from './strings';
 
 export interface Pt { x: number; y: number }
@@ -355,6 +356,22 @@ export const RULES: readonly Rule[] = [
     const a = c.sim.networks.layers;
     for (let i = 0; i < a.length; i++) if (a[i]! & (Layer.Hike | Layer.Mtb)) return null;
     return { id: 'season.summer', severity: 'info', ...TEXT.summerComing(sp.daysLeft), panel: { drawer: 'pistes', item: 'mtb' } };
+  }),
+  // Campground (docs/campground.md): a quiet summer gets a campground suggestion; a camp without toilets within reach gets a toilets suggestion
+  rule('summer.camp', 1, (c) => {
+    const sim = c.sim;
+    if (c.season !== 'summer' || sim.guestSim.store.count < 12 || !sim.progression.isUnlocked('building', 'campground')) return null;
+    const camp = sim.buildings.all().filter((b) => b.type === 'campground').sort((a, z) => a.id - z.id)[0];
+    if (!camp) {
+      if (!has(sim, 'baseLodge', 'lodge')) return null;
+      const s = near(c, 'summer.camp', 'campground', anchors(sim).lodge, 22);
+      return { id: 'summer.camp', severity: 'info', ...TEXT.summerCamp(false), action: build('campground', s), target: siteTarget(s) };
+    }
+    if (!camp.active) return null;
+    const cx = camp.x + camp.w / 2, cy = camp.y + camp.h / 2;
+    if (sim.buildings.all().some((b) => b.type === 'toilets' && b.active && Math.hypot(b.x + b.w / 2 - cx, b.y + b.h / 2 - cy) <= CAMP.toiletRadius)) return null;
+    const s = c.site('summer.camp.wc', 'toilets', () => findSite(sim, 'toilets', { x: cx, y: cy }, { rmax: 8, route: 'path' }));
+    return { id: 'summer.camp', severity: 'info', ...TEXT.summerCamp(true), action: build('toilets', s), target: s ? siteTarget(s) : { x: cx - 0.5, y: cy - 0.5, kind: 'building', id: camp.id } };
   }),
   rule('cash.summerBuffer', 2, (c) => {
     const sp = seasonProgress(c.sim.game.date);

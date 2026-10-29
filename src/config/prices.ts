@@ -23,6 +23,8 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   rental: { price: 20, max: 80, billing: 'perUse', category: 'rental' },
   chalet: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
   apartment: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
+  /** Campground: nightly pitch fee only (NIGHTLY_RATE); free to walk into. */
+  campground: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
   iceRink: { price: 6, max: 25, billing: 'perHour', category: 'recreation' },
   stuntPark: { price: 10, max: 40, billing: 'perUse', category: 'recreation' },
   adventurePark: { price: 18, max: 60, billing: 'perUse', category: 'recreation' },
@@ -50,6 +52,8 @@ export const NIGHTLY_RATE: Record<string, { price: number; max: number }> = {
   baseLodge: { price: 50, max: 150 },
   chalet: { price: 40, max: 150 },
   apartment: { price: 30, max: 120 },
+  /** Campground (Lodging v2, budget tier): standard rate 40 x 0.6 = $24 a night, cap $90. */
+  campground: tieredNightly({ price: 40, max: 150 }, 'budget'),
   /** Mountain Hut bed + half-board for trekkers. */
   mountainHut: { price: 45, max: 120 },
 };

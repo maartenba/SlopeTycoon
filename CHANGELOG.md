@@ -6,6 +6,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ### Added
 
+- **Campground** (summer lodging, level 1): 16 tent and caravan pitches around a campfire, $24 a night (budget tier), open in summer only. Budget and adventure guests pitch their tent first, the evening fire cheers campers up (more with toilets within 10 tiles), the fire glows and smokes at night. Footpath or hiking trail access; an Advisor tip for quiet summers (`docs/campground.md`).
 - **Mountain bikers** (new guest type, summer only): they arrive in about 10-20 % of the summer crowd once the resort has a rideable MTB trail and an open bike-capable lift, mostly ride the trails, rent bikes, wear a lime shirt and a helmet, and count as Adventure guests for campaigns (`docs/guest-types.md`).
 ### Fixes
 

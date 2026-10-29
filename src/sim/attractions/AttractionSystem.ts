@@ -18,6 +18,7 @@ import { ATTRACTION_SPECS } from './registry';
 import { eveningPremium, venueServing } from '../Evening';
 import type { TourSystem } from './Tour';
 import { GRUBBY_URGE, TOILET_USES_PER_DAY } from './Toilets';
+import { CAMP, campFireHappiness } from './Campground';
 
 export interface AttractionDeps {
   buildings: () => Iterable<WorldBuilding>;
@@ -64,6 +65,8 @@ export class AttractionSystem implements GuestAttractionPort {
   /** Guests that rented gear (ids). */
   private rented = new Set<number>();
   private lastCheckDay = -1;
+  /** Campfire evening (Campground): the absolute day the last gathering ran; -1 = never. Saved only once a campfire has burned (older saves / worlds without a campground hash exactly as before). */
+  private lastGatherDay = -1;
   /** Guests that already took a room tonight. */
   nightsSold = 0;
   private tick = 0;
@@ -302,6 +305,7 @@ export class AttractionSystem implements GuestAttractionPort {
     const hour = hourOfDay(state.date);
     const absDay = state.date.year * DAYS_PER_YEAR + state.date.day;
     if (hour >= CHECK_IN_HOUR && this.lastCheckDay !== absDay) { this.lastCheckDay = absDay; this.checkIn(); }
+    if (hour >= CAMP.gatherFrom && this.lastGatherDay !== absDay && [...this.items.values()].some((a) => a.spec.campfire)) { this.lastGatherDay = absDay; this.campfire(); }
   }
 
   /** Safety net: Using guests no attraction knows about (after load, building removal) go back to wandering. */
@@ -320,6 +324,7 @@ export class AttractionSystem implements GuestAttractionPort {
     this.rooms.purge((g) => s.slotOf(g) >= 0, (id) => this.items.has(id));
     const lodgings = [...this.items.values()].filter((a) => a.spec.rooms && a.open).sort((a, b) => a.id - b.id);
     if (!lodgings.length) return;
+    const tiered = lodgings.some((a) => a.spec.tier !== undefined);
     for (let i = 0; i < s.limit; i++) {
       if (!s.alive[i] || !s.overnight[i]) continue;
       const gid = s.id[i]!;
@@ -329,13 +334,51 @@ export class AttractionSystem implements GuestAttractionPort {
         if (a && a.open) this.chargeNight(a, i);
         continue;
       }
-      for (const a of lodgings) {
+      for (const a of tiered ? this.byPreference(lodgings, s.type[i]!) : lodgings) {
         if (this.rooms.occupied(a.id) >= (a.spec.rooms ?? 0)) continue;
         if (!this.chargeNight(a, i)) continue;
         this.rooms.assign(gid, a.id);
         break;
       }
     }
+  }
+
+  /**
+   * Lodging v2 order for ONE guest type (only used while a tiered house exists, so worlds without one keep the plain id order): a tiered house the type likes
+   * (appeal >= `CAMP.likes`) comes first, untiered houses next, then the tiered houses the type is lukewarm about; a type that has no appetite for it (appeal <= `CAMP.avoids`, i.e. 0 after the tier shift) never takes it.
+   */
+  private byPreference(lodgings: Attraction[], type: number): Attraction[] {
+    const rank = (a: Attraction): number => { if (!a.spec.tier) return 1; const ap = this.appeal(a.id, type); return ap >= CAMP.likes ? 0 : ap <= CAMP.avoids ? 9 : 2; };
+    return lodgings.map((a, i) => ({ a, i, r: rank(a) })).filter((x) => x.r < 9).sort((p, q) => p.r - q.r || p.i - q.i).map((x) => x.a);
+  }
+
+  /** Evening campfire (19:00+): campers at an open campground gain happiness; toilets within `CAMP.toiletRadius` tiles double it. */
+  private campfire(): void {
+    const s = this.d.store;
+    const loos: WorldBuilding[] = [];
+    for (const b of this.d.buildings()) if (b.type === 'toilets' && b.active) loos.push(b);
+    for (const a of this.items.values()) {
+      if (!a.spec.campfire || !a.open) continue;
+      const cx = a.b.x + a.b.w / 2, cy = a.b.y + a.b.h / 2;
+      const toilets = loos.some((t) => Math.hypot(t.x + t.w / 2 - cx, t.y + t.h / 2 - cy) <= CAMP.toiletRadius);
+      const dh = campFireHappiness(toilets);
+      for (const [gid] of this.roomGuests(a.id)) {
+        const slot = s.slotOf(gid);
+        if (slot >= 0) s.happiness[slot] = Math.min(1, s.happiness[slot]! + dh);
+      }
+      a.stats.fires = (a.stats.fires ?? 0) + 1;
+    }
+  }
+  private roomGuests(id: number): Array<[number]> { return this.rooms.guestsOf(id).map((g) => [g] as [number]); }
+
+  /** Campground inspector data (pitches, campers tonight, toilets nearby). */
+  campInfo(id: number): { pitches: number; used: number; toilets: boolean; fires: number } | undefined {
+    const a = this.items.get(id);
+    if (!a || !a.spec.campfire) return undefined;
+    const cx = a.b.x + a.b.w / 2, cy = a.b.y + a.b.h / 2;
+    let toilets = false;
+    for (const b of this.d.buildings()) if (b.type === 'toilets' && b.active && Math.hypot(b.x + b.w / 2 - cx, b.y + b.h / 2 - cy) <= CAMP.toiletRadius) { toilets = true; break; }
+    return { pitches: a.spec.rooms ?? 0, used: this.rooms.occupied(id), toilets, fires: a.stats.fires ?? 0 };
   }
 
   private chargeNight(a: Attraction, slot: number): boolean {
@@ -376,14 +419,14 @@ export class AttractionSystem implements GuestAttractionPort {
     return {
       id: 'attractions',
       update: (state, tick) => this.update(state, tick),
-      serialize: () => ({ items: this.all().map((a) => a.save()), trails: this.trails.serialize(), last: this.lastCheckDay, rented: [...this.rented], nights: this.nightsSold, beds: this.beds.serialize(), trekNights: this.trekNights, hour: this.hour, day: this.day }),
+      serialize: () => ({ items: this.all().map((a) => a.save()), trails: this.trails.serialize(), last: this.lastCheckDay, rented: [...this.rented], nights: this.nightsSold, ...(this.lastGatherDay >= 0 ? { gather: this.lastGatherDay } : {}), beds: this.beds.serialize(), trekNights: this.trekNights, hour: this.hour, day: this.day }),
       load: (data) => {
-        const d = data as { items: InstanceSave[]; trails: ReturnType<TrailUsage['serialize']>; last: number; rented: number[]; nights?: number; beds?: Array<[number, number[]]>; trekNights?: number; hour?: number; day?: number };
+        const d = data as { items: InstanceSave[]; trails: ReturnType<TrailUsage['serialize']>; last: number; rented: number[]; nights?: number; gather?: number; beds?: Array<[number, number[]]>; trekNights?: number; hour?: number; day?: number };
         this.items.clear(); this.nightsSold = d.nights ?? 0;
         this.sync();
         for (const it of d.items) this.items.get(it.id)?.load(it);
         this.trails.load(d.trails); this.lastCheckDay = d.last; this.rented = new Set(d.rented);
-        this.rooms.clear(); this.beds.load(d.beds); this.trekNights = d.trekNights ?? 0; this.hour = d.hour ?? 12; this.day = d.day ?? 0;
+        this.lastGatherDay = d.gather ?? -1; this.rooms.clear(); this.beds.load(d.beds); this.trekNights = d.trekNights ?? 0; this.hour = d.hour ?? 12; this.day = d.day ?? 0;
       },
     };
   }

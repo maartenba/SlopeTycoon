@@ -302,6 +302,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'summer.camp', daily: true,
+    setup: (s) => { guests(s, 40); s.game.date.day = seasonStartDay('summer') + 5; },
+    fixes: [
+      { name: 'a campground with toilets stands', apply: (s) => { const c = buildAt(s, 'campground', lodge(s), { rmax: 22 }); buildAt(s, 'toilets', { x: c.x + 2, y: c.y + 2 }, { rmax: 6 }); } },
+      { name: 'winter comes', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 5; } },
+    ],
+  },
+  {
     id: 'piste.disconnected', daily: true,
     setup: (s) => { let t = 0; for (let i = 0; i < s.size * s.size; i++) if (s.ops.quality.isPiste(i)) { t = i; break; } const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => [...real(), { disconnected: true, count: 9, tiles: [t] }] as never; },
     fixes: [

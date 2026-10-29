@@ -1,6 +1,7 @@
 import { BUILDINGS } from '../config/buildings';
 import type { GameBus, SeasonId } from '../core/events';
 import type { RatingInput } from './Rating';
+import { takesGuestsIn } from './attractions/Lodging';
 
 /** Food venues that count as restaurants. */
 const FOOD_TYPES = new Set(['lodge', 'cafe', 'mountainHut', 'baseLodge', 'apresBar']);
@@ -54,7 +55,7 @@ export function gatherRatingInput(s: RatingSources): RatingInput {
     if (!d) continue;
     if (d.category === 'recreation' || d.category === 'kids' || d.category === 'water') types.add(b.type);
     if (FOOD_TYPES.has(b.type)) restaurants++;
-    if (d.category === 'lodging') lodging += d.capacity;
+    if (d.category === 'lodging' && takesGuestsIn(b.type, s.season())) lodging += d.capacity;
     if (b.type === 'patrolHub') patrol++;
   }
   let openLifts = 0, waitSum = 0, worst: { name: string; waitTicks: number } | null = null;

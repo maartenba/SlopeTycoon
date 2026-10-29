@@ -33,6 +33,8 @@ export interface AttractionSpec {
   amenity?: 'pool';
   poolSlots?: number;
   poolHappiness?: number;
+  /** Campground: an evening campfire gathering (happiness for the campers, better with toilets nearby; the render burns a fire). */
+  campfire?: boolean;
   /** Trekker beds (Mountain Hut): booked by multi-day hikers, separate from `rooms` (overnight resort guests). */
   beds?: number;
   /** Food / drink venue with evening opening hours (serves 08:00 - 23:00 winter / 22:30 summer; evening shift costs extra staff). */
@@ -43,7 +45,7 @@ export interface AttractionSpec {
   tour?: string;
 }
 
-export interface AttractionStats { /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
+export interface AttractionStats { /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
 
 /** Plain data for the inspector / reports. */
 export interface AttractionInfo {
@@ -56,6 +58,8 @@ export interface AttractionInfo {
   staff: number; staffRequired: number; upkeepPerDay: number;
   /** Trekker beds (Mountain Hut): capacity, booked tonight, nights sold so far. */
   beds?: { total: number; used: number; sold: number };
+  /** Campground: pitches, campers tonight, toilets within reach, evenings of fire. */
+  camp?: { pitches: number; used: number; toilets: boolean; fires: number };
   /** Tour base: departures today, riders, next departure, route (TourSystem.info). */
   tour?: TourInfo;
   /** Toilets (comfort need): guests served today and the per-day figure above which the block is overrun. */

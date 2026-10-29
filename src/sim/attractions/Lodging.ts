@@ -1,11 +1,6 @@
 import type { AttractionSpec, Appeal } from './Attraction';
 import type { LodgingTier } from '../../config/prices';
-
-/** Chalet / Apartment: overnight guests only (rooms = catalog capacity); Base Lodge rooms live on its restaurant spec. */
-export const LODGING_SPECS: Record<string, AttractionSpec> = {
-  chalet: { kind: 'lodging', serviceTicks: 8, slots: 4, effects: { fatigue: -0.4, happiness: 0.05 }, appeal: [0.1, 0.4, 0.4, 0.5, 0.1, 0.2], overnightOnly: true, rooms: 12 },
-  apartment: { kind: 'lodging', serviceTicks: 8, slots: 8, effects: { fatigue: -0.4, happiness: 0.03 }, appeal: [0.1, 0.3, 0.4, 0.2, 0.3, 0.2], overnightOnly: true, rooms: 40 },
-};
+import type { SeasonId } from '../../core/events';
 
 /**
  * Lodging v2: appeal shift per tier, [solo, couple, family, vip, budget, adventure]. Budget houses draw budget guests and put VIPs off;
@@ -21,12 +16,28 @@ export function tierAppeal(base: Appeal, tier: LodgingTier): Appeal {
   return base.map((v, i) => Math.max(0, Math.min(1, +(v + d[i]!).toFixed(3)))) as unknown as Appeal;
 }
 
+/** Chalet / Apartment: overnight guests only (rooms = catalog capacity); Base Lodge rooms live on its restaurant spec. */
+export const LODGING_SPECS: Record<string, AttractionSpec> = {
+  chalet: { kind: 'lodging', serviceTicks: 8, slots: 4, effects: { fatigue: -0.4, happiness: 0.05 }, appeal: [0.1, 0.4, 0.4, 0.5, 0.1, 0.2], overnightOnly: true, rooms: 12 },
+  apartment: { kind: 'lodging', serviceTicks: 8, slots: 8, effects: { fatigue: -0.4, happiness: 0.03 }, appeal: [0.1, 0.3, 0.4, 0.2, 0.3, 0.2], overnightOnly: true, rooms: 40 },
+  // Campground (Phase 6 Task 19, docs/campground.md): 16 pitches, summer only, budget tier. A little less rest than a bed, a nicer evening (campfire).
+  campground: { kind: 'lodging', serviceTicks: 8, slots: 4, effects: { fatigue: -0.3, happiness: 0.06 }, appeal: tierAppeal([0.3, 0.4, 0.6, 0.1, 0.5, 0.7], 'budget'), overnightOnly: true, rooms: 16, tier: 'budget', seasonOpen: ['summer'], campfire: true },
+};
+
+/** Lodging v2: does this building type take overnight guests in `season`? Types without `seasonOpen` (chalet, apartment, base lodge) always do. Spawner / Rating room counts use it so a closed campground adds no phantom rooms. */
+export function takesGuestsIn(type: string, season: SeasonId): boolean {
+  const open = LODGING_SPECS[type]?.seasonOpen;
+  return !open || open.includes(season);
+}
+
 /** Who sleeps where. Guests are tracked by id; stale ones (left the resort) are purged before each check-in. */
 export class RoomBook {
   private rooms = new Map<number, Set<number>>();
   private of = new Map<number, number>();
 
   occupied(buildingId: number): number { return this.rooms.get(buildingId)?.size ?? 0; }
+  /** Guest ids sleeping in a building, ascending (deterministic). */
+  guestsOf(buildingId: number): number[] { return [...(this.rooms.get(buildingId) ?? [])].sort((a, b) => a - b); }
   roomOf(guestId: number): number | undefined { return this.of.get(guestId); }
   assign(guestId: number, buildingId: number): void {
     let s = this.rooms.get(buildingId);

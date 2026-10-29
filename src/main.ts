@@ -729,7 +729,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   const w = weather.current.wind;
   smoke.setWind(w * 0.5, w * 0.25);
   smoke.update(dt, cam, vh, smokeSources, {
-    hour: currentHour(), overnight: lodgeCap > 0 ? Math.min(1, guestSim.store.overnightCount / lodgeCap) : 0,
+    hour: currentHour(), overnight: lodgeCap > 0 ? Math.min(1, guestSim.store.overnightCount / lodgeCap) : 0, season: seasonOf(game.date),
     tempAt: (c) => weather.temperatureAt(cond.altitude(Math.floor(c.cx), Math.floor(c.cy)), currentHour()),
   }, (s, spec, out) => {
     const g = buildingsView.get(s.id);
@@ -790,7 +790,7 @@ const refreshUi = (): void => {
   dockRef?.refresh();
   const b = selectedId === null ? undefined : buildings.get(selectedId);
   if (!pisteInspectorRef?.busy) showPisteInspector();
-  inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), onFoot: !DEMO && sim.networks.suppliedOnFootOnly(b.id), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; if (i && a?.spec.kind === 'toilet') i.toilet = { usesToday: attractionsRef!.usesToday(a), perDay: TOILET_USES_PER_DAY }; return i; })() } : null);
+  inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), onFoot: !DEMO && sim.networks.suppliedOnFootOnly(b.id), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; if (i && a?.spec.kind === 'toilet') i.toilet = { usesToday: attractionsRef!.usesToday(a), perDay: TOILET_USES_PER_DAY }; if (i && a?.spec.campfire) i.camp = attractionsRef!.campInfo(b.id); return i; })() } : null);
 };
 const showPisteInspector = (): void => {
   if (!pisteInspectorRef) return;

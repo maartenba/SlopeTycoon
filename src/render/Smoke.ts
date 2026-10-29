@@ -24,20 +24,26 @@ export interface SmokeCtx {
   overnight: number;
   /** 0..1 how busy food venues are (open guests). */
   dining?: number;
+  /** Current season (campfires only burn in summer). */
+  season?: string;
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
-export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace';
+export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace' | 'camp';
 const KIND: Record<string, SmokeKind> = {
-  chalet: 'lodging', apartment: 'lodging', baseLodge: 'dining', lodge: 'dining', cafe: 'dining', mountainHut: 'dining', heatedTerrace: 'terrace', apresBar: 'dining', alpineFarm: 'farm', rangerStation: 'farm',
+  chalet: 'lodging', apartment: 'lodging', baseLodge: 'dining', lodge: 'dining', cafe: 'dining', mountainHut: 'dining', heatedTerrace: 'terrace', apresBar: 'dining', alpineFarm: 'farm', rangerStation: 'farm', campground: 'camp',
 };
 export const smokeKindOf = (type: string): SmokeKind | null => KIND[type] ?? null;
 const inHours = (h: number, a: number, b: number): boolean => (a <= b ? h >= a && h < b : h >= a || h < b);
 
 /** Pure: 0..1 chimney strength of one building. 0 = no smoke. */
-export function smokeIntensity(type: string, active: boolean, temp: number, hour: number, overnight: number, dining = 0.5): number {
+export function smokeIntensity(type: string, active: boolean, temp: number, hour: number, overnight: number, dining = 0.5, season?: string): number {
   const kind = smokeKindOf(type);
   if (!kind || !active || !BUILDINGS[type]?.chimney) return 0;
+  if (kind === 'camp') { // campfire (Phase 6 Task 19): independent of the cold; evening and a faint breakfast fire, only while the campground is open (summer)
+    if (season !== undefined && season !== 'summer') return 0;
+    return clamp01((inHours(hour, 18.5, 22.5) ? 0.6 : inHours(hour, 6.5, 8.5) ? 0.25 : 0) * (0.5 + 0.5 * clamp01(overnight)));
+  }
   const cold = clamp01((SMOKE.tempMax - temp) / (SMOKE.tempMax - SMOKE.tempFull));
   if (cold <= 0) return 0;
   const night = inHours(hour, 22, 6), morning = inHours(hour, 6, 9), evening = inHours(hour, 16, 22);
@@ -60,7 +66,7 @@ export function selectEmitters(cands: readonly SmokeCandidate[], ctx: SmokeCtx, 
   const out: SmokeEmitter[] = [];
   for (const c of cands) {
     const k = smokeKindOf(c.type);
-    const v = smokeIntensity(c.type, c.active, ctx.tempAt(c), ctx.hour, k === 'lodging' ? ctx.overnight : 1, ctx.dining ?? 0.5);
+    const v = smokeIntensity(c.type, c.active, ctx.tempAt(c), ctx.hour, k === 'lodging' || k === 'camp' ? ctx.overnight : 1, ctx.dining ?? 0.5, ctx.season);
     if (v >= minIntensity) out.push({ id: c.id, intensity: v });
   }
   out.sort((a, b) => b.intensity - a.intensity || a.id - b.id);
