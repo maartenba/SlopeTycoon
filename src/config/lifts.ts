@@ -31,6 +31,8 @@ export interface LiftDef {
   reversible: boolean;
   /** Detachable grips: carriers slow down in stations => easier boarding, faster line speed. Fixed-grip: false. */
   detachable: boolean;
+  /** May have 1-2 intermediate stations (N-station lifts, docs/mid-stations.md): gondolas, cable cars and detachable chairs. Derived in `mk`. */
+  midStations: boolean;
   /** Weather bubble / enclosed cabin. */
   bubble: boolean;
   /** Ride comfort 0..1 (guest happiness while riding). */
@@ -56,9 +58,9 @@ export interface LiftDef {
   stationAutoFlatten: 'default';
 }
 
-type Row = Omit<LiftDef, 'id' | 'name' | 'bottomAccess' | 'topAccess' | 'stationPiste' | 'towerPiste' | 'stationAutoFlatten' | 'reversible' | 'family'>;
+type Row = Omit<LiftDef, 'id' | 'name' | 'bottomAccess' | 'topAccess' | 'stationPiste' | 'towerPiste' | 'stationAutoFlatten' | 'reversible' | 'family' | 'midStations'>;
 const mk = (id: LiftKind, name: string, family: LiftFamily, r: Row, reversible = false): LiftDef => ({
-  id, name, family, ...r, reversible, bottomAccess: 'path', topAccess: 'none', stationPiste: 'allow', towerPiste: 'allow', stationAutoFlatten: 'default',
+  id, name, family, ...r, reversible, midStations: family === 'gondola' || family === 'cablecar' || (family === 'chair' && r.detachable), bottomAccess: 'path', topAccess: 'none', stationPiste: 'allow', towerPiste: 'allow', stationAutoFlatten: 'default',
 });
 
 export const LIFTS: Record<LiftKind, LiftDef> = {

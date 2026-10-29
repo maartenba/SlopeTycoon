@@ -3,7 +3,7 @@ import type { AccessKind, BuildingDef } from '../config/buildings';
 import { accessSatisfied, type NetworkAccess } from './PlacementRules';
 import { networkSpreadViolations } from '../world/Networks';
 import {
-  HEIGHT_UNIT, LIFT_DWELL_S, LIFT_FUNI_CUT_MAX, LIFT_FUNI_TRESTLE_MAX, LIFT_MIN_LENGTH, LIFT_MIN_SPEED, LIFT_STATION_HEAD,
+  HEIGHT_UNIT, LIFT_DWELL_S, LIFT_MAX_STATIONS, LIFT_MID_LINE_TOL, LIFT_MID_STATION_DWELL_S, LIFT_MID_TOWER_GAP, LIFT_FUNI_CUT_MAX, LIFT_FUNI_TRESTLE_MAX, LIFT_MIN_LENGTH, LIFT_MIN_SPEED, LIFT_STATION_HEAD,
   LIFT_STATION_SIZE, LIFT_TOWER_COST_FACTOR, LIFT_TRESTLE_COST_FACTOR, LIFT_ECO_FACTOR, LIFT_UPKEEP_PER_METRE_DAY, TERRAFORM_DEFAULT_MAX_EDGE_DELTA, TILE_METRES,
 } from '../config/balance';
 import { OccFlag } from '../world/Occupancy';
@@ -81,6 +81,11 @@ export interface LiftData {
   bottom: { x: number; y: number; ground: number };
   top: { x: number; y: number; ground: number };
   towers: TowerData[];
+  /**
+   * N-station lifts (docs/mid-stations.md): ALL stations bottom -> top (3 or 4 entries). ABSENT for ordinary 2-station lifts (the common case:
+   * saves and hashes of such lifts are unchanged); use `liftStations(l)` which derives [bottom, top] when absent.
+   */
+  stations?: StationRef[];
   /** Cable/track support points bottom -> top (heads, tower heads; funicular: track points). */
   nodes: V3[];
   /** Tile indices occupied (stations, towers, funicular track). */
@@ -109,6 +114,16 @@ export interface LiftData {
   ecoActive?: boolean;
   /** Set by LiftOps when stranded riders are evacuated: queues drop them at the bottom station. */
   evac?: boolean;
+}
+
+/** One station of an N-station lift. Mid-stations lie on the line between the terminals; their cable node is part of `LiftData.nodes`. */
+export interface StationRef {
+  /** Top-left tile of the 2x2 footprint and ground height (world y). */
+  x: number; y: number; ground: number;
+  /** Index of the station's support point in `LiftData.nodes`. */
+  node: number;
+  /** Guests may board / alight here (absent = both). */
+  board?: boolean; alight?: boolean;
 }
 
 export type LiftHold = 'manual' | 'hours' | 'season' | 'wind' | 'fault' | 'inspection' | 'service';
@@ -233,6 +248,47 @@ export function requiredClearance(minClearance: number, d: number, total: number
   return minClearance * Math.max(0, Math.min(1, d / 2, (total - d) / 2));
 }
 
+// ---------- stations (N-station lifts) ----------
+
+/** Kinds that may have mid-stations: gondolas, cable cars, detachable chairs (config `LiftDef.midStations`). */
+export const midStationsAllowed = (kind: LiftKind): boolean => LIFTS[normalizeLiftKind(kind)].midStations;
+/** All stations bottom -> top (2 for an ordinary lift). Allocates for 2-station lifts: keep it out of per-guest hot paths. */
+export function liftStations(l: Pick<LiftData, 'bottom' | 'top' | 'nodes' | 'stations'>): StationRef[] {
+  return l.stations ?? [{ x: l.bottom.x, y: l.bottom.y, ground: l.bottom.ground, node: 0 }, { x: l.top.x, y: l.top.y, ground: l.top.ground, node: l.nodes.length - 1 }];
+}
+export const stationCount = (l: Pick<LiftData, 'stations'>): number => l.stations?.length ?? 2;
+export const isMultiStation = (l: Pick<LiftData, 'stations'>): boolean => (l.stations?.length ?? 2) > 2;
+/** Number of intermediate stations. */
+export const midCount = (l: Pick<LiftData, 'stations'>): number => Math.max(0, stationCount(l) - 2);
+/** Station (index) whose 2x2 footprint contains tile (x, y), or -1. */
+export function stationIndexAt(l: Pick<LiftData, 'bottom' | 'top' | 'nodes' | 'stations'>, x: number, y: number): number {
+  const st = liftStations(l);
+  for (let i = 0; i < st.length; i++) { const s = st[i]!; if (x >= s.x && x < s.x + LIFT_STATION_SIZE && y >= s.y && y < s.y + LIFT_STATION_SIZE) return i; }
+  return -1;
+}
+/** Segments between consecutive stations (index k = station k -> k + 1). */
+export function liftSegments(l: Pick<LiftData, 'bottom' | 'top' | 'nodes' | 'stations'>): Array<{ from: StationRef; to: StationRef; index: number }> {
+  const st = liftStations(l);
+  const out: Array<{ from: StationRef; to: StationRef; index: number }> = [];
+  for (let i = 0; i + 1 < st.length; i++) out.push({ from: st[i]!, to: st[i + 1]!, index: i });
+  return out;
+}
+/** Index of the cable `pts` entry of each node (mirrors buildPath). */
+function nodePointIndex(nodes: V3[], sag: number): number[] {
+  const idx = [0];
+  for (let i = 1; i < nodes.length; i++) {
+    const a = nodes[i - 1]!, b = nodes[i]!;
+    const len = Math.hypot(b.x - a.x, b.z - a.z);
+    idx.push(idx[i - 1]! + (sag > 0 ? Math.max(4, Math.ceil(len / 0.5)) : 1));
+  }
+  return idx;
+}
+/** Slant (cable) distance bottom -> each station, tiles. [0, ..., total]. */
+export function stationDistances(l: Pick<LiftData, 'kind' | 'nodes' | 'bottom' | 'top' | 'stations'>): number[] {
+  const path = liftPath(l), pi = nodePointIndex(l.nodes, LIFT_PARAMS[l.kind].sag);
+  return liftStations(l).map((s) => path.cum[Math.min(path.cum.length - 1, pi[s.node]!)]!);
+}
+
 // ---------- stats ----------
 
 export interface LiftStats {
@@ -255,14 +311,14 @@ export function kindDef(kind: LiftKind): LiftDef { return LIFTS[normalizeLiftKin
 
 export function liftPath(l: Pick<LiftData, 'kind' | 'nodes'>): CablePath { return buildPath(l.nodes, LIFT_PARAMS[l.kind].sag); }
 
-export function computeStats(kindIn: LiftKind, nodes: V3[], speedFrac = 1): LiftStats {
+export function computeStats(kindIn: LiftKind, nodes: V3[], speedFrac = 1, mids = 0): LiftStats {
   const kind = normalizeLiftKind(kindIn);
   const def = LIFTS[kind];
   const path = buildPath(nodes, LIFT_PARAMS[kind].sag);
   const a = nodes[0]!, b = nodes[nodes.length - 1]!;
   const horiz = Math.hypot(b.x - a.x, b.z - a.z);
   const v = def.speed * Math.max(LIFT_MIN_SPEED, Math.min(1, speedFrac));
-  const rideTimeS = path.length / v;
+  const rideTimeS = path.length / v + mids * (def.reversible ? LIFT_DWELL_S : LIFT_MID_STATION_DWELL_S);
   let cph: number, carriers: number;
   if (def.reversible) {
     carriers = 2;
@@ -278,7 +334,7 @@ export function computeStats(kindIn: LiftKind, nodes: V3[], speedFrac = 1): Lift
   };
 }
 
-export const liftStats = (l: LiftData): LiftStats => computeStats(l.kind, l.nodes, l.speed * (l.ecoActive ? LIFT_ECO_FACTOR : 1));
+export const liftStats = (l: LiftData): LiftStats => computeStats(l.kind, l.nodes, l.speed * (l.ecoActive ? LIFT_ECO_FACTOR : 1), midCount(l));
 /** Full-schedule upkeep per day (dollars) at the lift's speed setting. LiftOps scales it down for closed time. */
 export const upkeepPerDay = (l: LiftData): number => liftStats({ ...l, ecoActive: false }).lengthM * LIFT_UPKEEP_PER_METRE_DAY * (0.4 + 0.6 * l.speed) * LIFTS[normalizeLiftKind(l.kind)].upkeepFactor;
 
@@ -336,7 +392,7 @@ export interface LiftEnv {
   gate?: UnlockGate;
 }
 export interface StationSite { x: number; y: number }
-export interface FlattenPlan { site: StationSite; target: number; edge: 1 | 2 }
+export interface FlattenPlan { site: StationSite; target: number; edge: 1 | 2; /** Preview cost of this pad (dollars, before nothing else); lets N-station validation count a shared mid pad once. */ cost?: number }
 export interface LiftCheck {
   ok: boolean;
   reasons: string[];
@@ -426,10 +482,15 @@ export interface ValidateOpts {
   autoFlatten?: boolean; skipFunds?: boolean;
   /** Cut the trees the cable would hit when towers cannot clear them (default true; needs env.props). */
   clearLane?: boolean;
+  /** Mid-stations (1 or 2 sites, any order: sorted along the line). Each segment is validated on its own (docs/mid-stations.md). */
+  mids?: StationSite[];
+  /** Internal: min distance (tiles, from the station centre) of the first / last tower from each end (default 1.5). */
+  endClear?: [number, number];
 }
 
 /** Pure validation (flatten is previewed and rolled back). */
 export function validateLift(env: LiftEnv, kindIn: LiftKind, bottomSite: StationSite, topSite: StationSite, opts: ValidateOpts = {}): LiftCheck {
+  if (opts.mids && opts.mids.length) return validateMulti(env, normalizeLiftKind(kindIn), bottomSite, topSite, opts);
   const kind = normalizeLiftKind(kindIn);
   const { grid } = env;
   const def = LIFTS[kind];
@@ -465,7 +526,7 @@ export function validateLift(env: LiftEnv, kindIn: LiftKind, bottomSite: Station
     if (sp.max - sp.min > FLAT_TOL) {
       if (opts.autoFlatten !== false && !occupied && !water) {
         const plan = bestFlatten(env, s.x, s.y, sp);
-        if (plan) { out.flatten = true; out.flattenCost += plan.cost; out.flattenPlan.push({ site: plan.site, target: plan.target, edge: plan.edge }); planChanged.push(plan.changed); stationGround.push(plan.target * HEIGHT_UNIT); }
+        if (plan) { out.flatten = true; out.flattenCost += plan.cost; out.flattenPlan.push({ site: plan.site, target: plan.target, edge: plan.edge, cost: plan.cost }); planChanged.push(plan.changed); stationGround.push(plan.target * HEIGHT_UNIT); }
         else { bad(`Cannot flatten ${label.toLowerCase()} station site (water, buildings or the map edge too close) \u2014 try a nearby spot`); anyStationFail = true; stationGround.push(sp.min * HEIGHT_UNIT); }
       } else if (opts.autoFlatten === false) { bad(`${label} station site too steep \u2014 enable auto-flatten (F)`); anyStationFail = true; stationGround.push(sp.min * HEIGHT_UNIT); }
       else stationGround.push(sp.min * HEIGHT_UNIT);
@@ -494,7 +555,7 @@ export function validateLift(env: LiftEnv, kindIn: LiftKind, bottomSite: Station
             const plan = bestFlatten(env, st.x, st.y, sp2);
             if (!plan) { again = false; round = 99; break; }
             apply(plan);
-            out.flattenPlan.push({ site: plan.site, target: plan.target, edge: plan.edge });
+            out.flattenPlan.push({ site: plan.site, target: plan.target, edge: plan.edge, cost: plan.cost });
             out.flattenCost += plan.cost;
             stationGround[si] = plan.target * HEIGHT_UNIT;
             again = true;
@@ -570,7 +631,7 @@ export function validateLift(env: LiftEnv, kindIn: LiftKind, bottomSite: Station
       // layouts take the first under it, else the one with the lowest tallest tower (ties -> fewer towers).
       let best: { towers: TowerData[]; nodes: V3[]; maxH: number } | null = null;
       for (const mult of TOWER_DENSITY_STEPS) {
-        const r = planTowers(env, kind, prm, def, bc, dx, dz, L, hB, hT, tiles, mult, obs);
+        const r = planTowers(env, kind, prm, def, bc, dx, dz, L, hB, hT, tiles, mult, obs, opts.endClear ?? [1.5, 1.5]);
         if (r.ok) {
           let seg = 0;
           for (let i = 1; i < r.nodes.length; i++) { const a = r.nodes[i - 1]!, b = r.nodes[i]!; seg = Math.max(seg, Math.abs(b.y - a.y) / (Math.hypot(b.x - a.x, b.z - a.z) || 1)); }
@@ -641,6 +702,105 @@ export function validateLift(env: LiftEnv, kindIn: LiftKind, bottomSite: Station
   return out;
 }
 
+/** Perpendicular distance (tiles) of point p from the infinite line a-b, and its parameter u along a->b (0..1 between the ends). */
+function lineFit(a: { x: number; z: number }, b: { x: number; z: number }, p: { x: number; z: number }): { dist: number; u: number } {
+  const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1;
+  const u = ((p.x - a.x) * dx + (p.z - a.z) * dz) / L2;
+  return { dist: Math.hypot(p.x - (a.x + dx * u), p.z - (a.z + dz * u)), u };
+}
+
+/**
+ * N-station validation: every segment (station k -> k + 1) goes through the ordinary single-segment validator (tower spacing, clearance,
+ * max span, slope, length ...); the results are merged. Mid-stations need the same flat pad as terminals (auto-flatten), lie within
+ * LIFT_MID_LINE_TOL of the straight terminal line, and keep every tower LIFT_MID_TOWER_GAP tiles clear of their footprint.
+ * Cost = every segment's cable and towers + one station price per station (a mid-station costs as much as a terminal).
+ */
+function validateMulti(env: LiftEnv, kind: LiftKind, bottom: StationSite, top: StationSite, opts: ValidateOpts): LiftCheck {
+  const def = LIFTS[kind];
+  const out: LiftCheck = { ok: false, reasons: [], cost: 0, flattenCost: 0, flatten: false, flattenPlan: [], supportCost: 0, stats: null, warnings: [], data: null };
+  const bad = (r: string): void => { if (!out.reasons.includes(r)) out.reasons.push(r); };
+  const lock = env.gate?.locked('lift', kind);
+  if (lock) { out.locked = lock; bad(lock); }
+  const mids = opts.mids!;
+  if (!def.midStations) { bad(`A ${def.name} cannot have mid-stations (gondolas, cable cars and detachable chairs only)`); return out; }
+  if (mids.length + 2 > LIFT_MAX_STATIONS) { bad(`At most ${LIFT_MAX_STATIONS - 2} mid-stations per lift`); return out; }
+  const bc = { x: bottom.x + S / 2, z: bottom.y + S / 2 }, tc = { x: top.x + S / 2, z: top.y + S / 2 };
+  const fits = mids.map((m) => ({ site: m, ...lineFit(bc, tc, { x: m.x + S / 2, z: m.y + S / 2 }) })).sort((a, b) => a.u - b.u);
+  for (const f of fits) {
+    if (f.dist > LIFT_MID_LINE_TOL) bad(`Mid-station must lie on the straight line between the end stations (${f.dist.toFixed(1)} tiles off, max ${LIFT_MID_LINE_TOL})`);
+    if (f.u <= 0 || f.u >= 1) bad('Mid-station must be between the end stations');
+  }
+  const sites = [bottom, ...fits.map((f) => f.site), top];
+  const centre = (p: StationSite): { x: number; z: number } => ({ x: p.x + S / 2, z: p.y + S / 2 });
+  for (let i = 0; i + 1 < sites.length; i++) {
+    const a = centre(sites[i]!), b = centre(sites[i + 1]!);
+    if (Math.hypot(b.x - a.x, b.z - a.z) < LIFT_MIN_LENGTH) bad('Mid-station too close to the next station');
+  }
+  if (out.reasons.length) return out;
+  const segs: LiftCheck[] = [];
+  const nameOf = (i: number, upper: boolean): string => (upper ? (i === sites.length - 2 ? 'Top station' : 'Mid-station') : (i === 0 ? 'Bottom station' : 'Mid-station'));
+  for (let i = 0; i + 1 < sites.length; i++) {
+    const c = validateLift(env, kind, sites[i]!, sites[i + 1]!, {
+      ...opts, mids: undefined, skipFunds: true,
+      endClear: [i === 0 ? 1.5 : LIFT_MID_TOWER_GAP + S / 2, i === sites.length - 2 ? 1.5 : LIFT_MID_TOWER_GAP + S / 2],
+    });
+    segs.push(c);
+    for (const r of c.reasons) {
+      let m = r.replace(/\bBottom station/, nameOf(i, false)).replace(/\bTop station/, nameOf(i, true)).replace(/\bbottom station/, nameOf(i, false).toLowerCase()).replace(/\btop station/, nameOf(i, true).toLowerCase());
+      if (m === r && !/^(Not enough funds|Out of bounds|Too close to the map edge|Stations overlap|Unlocks)/.test(r)) m = `Segment ${i + 1}: ${r}`;
+      bad(m);
+    }
+  }
+  if (i0Warn(segs[0])) out.warnings.push(...segs[0]!.warnings);
+  // the mid-stations' two pads must agree (each segment levels its own copy of the shared pad)
+  for (let i = 0; i + 1 < segs.length; i++) {
+    const a = segs[i]!.data, b = segs[i + 1]!.data;
+    if (a && b && Math.abs(a.top.ground - b.bottom.ground) > 1e-6) bad('Mid-station pad cannot be levelled consistently: pick a nearby spot');
+  }
+  const mult = env.economy.constructionMultiplier();
+  const seen = new Set<string>();
+  for (const c of segs) {
+    out.cost += c.cost; out.supportCost += c.supportCost;
+    for (const p of c.flattenPlan) {
+      const key = `${p.site.x},${p.site.y}`;
+      if (seen.has(key)) continue; // the shared mid-station pad is levelled once
+      seen.add(key); out.flattenPlan.push(p); out.flattenCost += p.cost ?? 0; out.flatten = true;
+    }
+  }
+  out.cost -= (sites.length - 2) * def.stationCost * mult;
+  const datas = segs.map((c) => c.data);
+  if (datas.some((d) => !d)) return out;
+  const towers: TowerData[] = [], nodes: V3[] = [], tiles = new Set<number>();
+  const stations: StationRef[] = [];
+  datas.forEach((d, i) => {
+    towers.push(...d!.towers);
+    if (i === 0) { nodes.push(...d!.nodes); stations.push({ x: d!.bottom.x, y: d!.bottom.y, ground: d!.bottom.ground, node: 0 }); } else nodes.push(...d!.nodes.slice(1));
+    stations.push({ x: d!.top.x, y: d!.top.y, ground: d!.top.ground, node: nodes.length - 1 });
+    for (const t of d!.tiles) tiles.add(t);
+  });
+  // towers keep clear of every mid-station footprint (the per-segment end margin covers its own line; check the other segment's too)
+  for (const st of stations.slice(1, -1)) {
+    for (const t of towers) {
+      const gx = Math.max(st.x - t.tileX, t.tileX - (st.x + S - 1), 0), gy = Math.max(st.y - t.tileY, t.tileY - (st.y + S - 1), 0);
+      if (Math.max(gx, gy) < LIFT_MID_TOWER_GAP) bad('A tower would stand too close to a mid-station');
+    }
+  }
+  const lane = segs.filter((c) => c.lane).map((c) => c.lane!);
+  if (lane.length) {
+    const uniq = new Map<string, LanePlan['trees'][number]>();
+    for (const l of lane) for (const t of l.trees) uniq.set(`${t.ci}:${t.i}`, t);
+    out.lane = { trees: [...uniq.values()], count: lane.reduce((a, l) => a + l.count, 0), mature: lane.reduce((a, l) => a + l.mature, 0), cost: lane.reduce((a, l) => a + l.cost, 0), laneCost: lane.reduce((a, l) => a + l.laneCost, 0) };
+  }
+  out.data = {
+    kind, bottom: datas[0]!.bottom, top: datas[datas.length - 1]!.top, towers, stations, nodes, tiles: [...tiles], open: true, speed: 1, cost: out.cost + out.flattenCost,
+  };
+  out.stats = computeStats(kind, nodes, 1, stations.length - 2);
+  if (!opts.skipFunds && !env.economy.canAfford(out.cost + out.flattenCost)) bad(`Not enough funds ($${Math.ceil(out.cost + out.flattenCost)})`);
+  out.ok = out.reasons.length === 0;
+  return out;
+}
+const i0Warn = (c: LiftCheck | undefined): boolean => !!c && c.warnings.length > 0;
+
 interface ObsMode { trees: boolean; buildings: boolean }
 
 /** Name of the first building / lift structure straight under the line (for the 'Cable would hit X' reason). */
@@ -655,7 +815,7 @@ interface TowerPlan { ok: boolean; reason: string; retry: boolean; towers: Tower
 
 function planTowers(
   env: LiftEnv, kind: LiftKind, prm: LiftParams, def: LiftDef, bc: { x: number; z: number },
-  dx: number, dz: number, L: number, hB: number, hT: number, reserved: Set<number>, mult: number, obsMode: ObsMode = { trees: false, buildings: false },
+  dx: number, dz: number, L: number, hB: number, hT: number, reserved: Set<number>, mult: number, obsMode: ObsMode = { trees: false, buildings: false }, endClear: [number, number] = [1.5, 1.5],
 ): TowerPlan {
   const { grid } = env;
   const fail = (reason: string, retry: boolean): TowerPlan => ({ ok: false, reason, retry, towers: [], nodes: [], maxH: 0 });
@@ -672,7 +832,7 @@ function planTowers(
     let best: { d: number; x: number; z: number; tx: number; ty: number; g: number; score: number } | null = null;
     for (let off = -reach; off <= reach + 1e-9; off += 0.5) {
       const d = base + off;
-      if (d <= 1.5 || d >= L - 1.5 || d <= ds[ds.length - 1]! + 1) continue;
+      if (d <= endClear[0] || d >= L - endClear[1] || d <= ds[ds.length - 1]! + 1) continue;
       const x = bc.x + dx * d, z = bc.z + dz * d;
       const tx = Math.floor(x), ty = Math.floor(z);
       const idx = grid.tileIndex(tx, ty);
@@ -828,11 +988,11 @@ export class LiftStore {
 export interface LiftPlaceOutcome { ok: boolean; reasons: string[]; lift?: LiftData; cost: number; touchedChunks: number[] }
 
 export function placeLift(
-  env0: LiftEnv, props: PropStore | undefined, kindIn: LiftKind, bottom: StationSite, top: StationSite, autoFlatten = true, clearLane = true,
+  env0: LiftEnv, props: PropStore | undefined, kindIn: LiftKind, bottom: StationSite, top: StationSite, autoFlatten = true, clearLane = true, mids?: StationSite[],
 ): LiftPlaceOutcome {
   const kind = normalizeLiftKind(kindIn);
   const env: LiftEnv = env0.props || !props ? env0 : { ...env0, props };
-  const chk = validateLift(env, kind, bottom, top, { autoFlatten, clearLane });
+  const chk = validateLift(env, kind, bottom, top, { autoFlatten, clearLane, mids });
   if (!chk.ok || !chk.data) return { ok: false, reasons: chk.reasons, cost: 0, touchedChunks: [] };
   const total = chk.cost + chk.flattenCost;
   if (!env.economy.charge(total)) return { ok: false, reasons: ['Not enough funds'], cost: 0, touchedChunks: [] };
@@ -845,7 +1005,7 @@ export function placeLift(
   }
   // Re-validate against the (now flattened) real terrain. On failure undo the flatten (newest first) and
   // only then refund, so the player is never left with altered terrain for free.
-  const fin = validateLift(env, kind, bottom, top, { autoFlatten: false, skipFunds: true, clearLane });
+  const fin = validateLift(env, kind, bottom, top, { autoFlatten: false, skipFunds: true, clearLane, mids });
   if (!fin.ok || !fin.data) {
     for (let i = applied.length - 1; i >= 0; i--) { const c = applied[i]!; env.grid.setCornerUnchecked(c.vx, c.vy, c.from); }
     env.economy.refund(total);
@@ -906,6 +1066,7 @@ export function liftClearanceViolations(grid: Grid, lifts: LiftStore, changed: C
     let violated = false;
     const first = l.nodes[0]!, last = l.nodes[l.nodes.length - 1]!;
     const total = Math.hypot(last.x - first.x, last.z - first.z);
+    const midD = isMultiStation(l) ? liftStations(l).slice(1, -1).map((st) => Math.hypot(l.nodes[st.node]!.x - first.x, l.nodes[st.node]!.z - first.z)) : [];
     for (let i = 0; i + 1 < l.nodes.length && !violated; i++) {
       const a = l.nodes[i]!, b = l.nodes[i + 1]!;
       const len = Math.hypot(b.x - a.x, b.z - a.z);
@@ -913,7 +1074,10 @@ export function liftClearanceViolations(grid: Grid, lifts: LiftStore, changed: C
       for (let k = 1; k < Math.ceil(len / 0.25); k++) {
         const u = (k * 0.25) / len;
         const y = a.y + (b.y - a.y) * u + sagOffset(u, len, prm.sag);
-        if (y - heightAt(grid, a.x + (b.x - a.x) * u, a.z + (b.z - a.z) * u) < requiredClearance(prm.minClearance, d0 + len * u, total) - 1e-6) { violated = true; break; }
+        const dd = d0 + len * u;
+        let req = requiredClearance(prm.minClearance, dd, total);
+        if (midD.length) for (const m of midD) req = Math.min(req, prm.minClearance * Math.max(0, Math.min(1, Math.abs(dd - m) / 2))); // the cable also lands in each mid-station
+        if (y - heightAt(grid, a.x + (b.x - a.x) * u, a.z + (b.z - a.z) * u) < req - 1e-6) { violated = true; break; }
       }
     }
     if (violated) bad++;

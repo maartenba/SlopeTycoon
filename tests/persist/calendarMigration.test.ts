@@ -52,7 +52,7 @@ describe('calendar compression save migration (v1 -> v2)', () => {
   });
   it('remaps every stored absolute-day field of a synthetic v1 blob; month counters and durations stay', () => {
     const { env: e, applied } = migrate(oldSave());
-    expect(applied).toEqual([1]); expect(e.version).toBe(SAVE_FORMAT_VERSION);
+    expect(applied).toEqual([1, 2]); expect(e.version).toBe(SAVE_FORMAT_VERSION);
     const m = e.modules as Record<string, { data: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
     const A = (n: number): number => mapAbsDay(n), T = 360 + 275, N = A(T); // "today" in the new calendar (year 2, day 137)
     expect(N).toBe(180 + 137);

@@ -9,7 +9,7 @@
 import type { SaveModules } from '../game/saveState';
 
 /** Current save-format version. */
-export const SAVE_FORMAT_VERSION = 2;
+export const SAVE_FORMAT_VERSION = 3;
 
 export interface RawEnvelope {
   magic: string;
@@ -124,7 +124,25 @@ function v1to2(env: RawEnvelope): RawEnvelope {
   if (adv) adv.snooze = mapPairs(adv.snooze, mapAbsDay);
   return env;
 }
-export const MIGRATIONS: Record<number, Migration> = { 1: v1to2 };
+
+// ---------------------------------------------------------------- v2 -> v3: N-station lifts, docs/mid-stations.md
+/**
+ * Lifts gain an optional `stations` list (3 or 4 entries for a lift with mid-stations). Every pre-v3 lift is a 2-station lift: it stays WITHOUT
+ * the field (absence = [bottom, top], see `liftStations()`), so its serialisation, behaviour and stateHash are byte-identical. The migration
+ * only guarantees the invariant for the new field: a `stations` list that is malformed (fewer than 3 or more than 4 entries, or ends that do not
+ * match the terminals) is dropped, i.e. the lift is read as an ordinary 2-station lift.
+ */
+function v2to3(env: RawEnvelope): RawEnvelope {
+  const lifts = (env.modules as Record<string, { data?: Obj } | undefined>).lifts?.data;
+  for (const l of lifts?.items ?? []) {
+    const st = l?.stations;
+    if (st === undefined) continue;
+    const ok = Array.isArray(st) && st.length >= 3 && st.length <= 4 && st[0]?.x === l.bottom?.x && st[0]?.y === l.bottom?.y && st[st.length - 1]?.x === l.top?.x && st[st.length - 1]?.y === l.top?.y;
+    if (!ok) delete l.stations;
+  }
+  return env;
+}
+export const MIGRATIONS: Record<number, Migration> = { 1: v1to2, 2: v2to3 };
 
 export class MigrationError extends Error {}
 
