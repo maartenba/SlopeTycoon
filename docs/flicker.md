@@ -66,3 +66,18 @@ Root causes:
 Checked, not the cause: ground mask (already LINEAR sampled), terrace slab, snow shader on roofs (osc unchanged with snow off), shadow maps (disabled).
 
 Numbers (lodge, 64-winter seed 61, T 8): small region 300x220 at zoom 2 / 3.5 / 6: 358.6 / 162.1 / 9.1 -> 257.2 / 78.3 / 9.1 osc px per window (sum 529.8 -> ~296); whole frame at zoom 4: 3485 -> 2956 (the rest is terrain texture shimmer on the dark cliff skirt at the bottom of the frame, not the building).
+
+## Phase 6 scenes (0.2.6): river water and mid-station
+
+`npm run flicker -- --only 64-summer-river,64-winter-mid --kinds rotfine,zoompop,jitter,still` (new scenarios; the river scene digs the best natural spring through the real tool, the mid scene rebuilds the starter gondola with a mid-station and looks at it). Same harness, 960 x 600, SwiftShader; baselines run in the same session with the same kinds:
+
+| scenario | rotfine osc px/frame | zoompop pops | LOD flips (jitter) | still px/frame |
+|---|---|---|---|---|
+| 64-summer-day (baseline) | 748.2 | 0 | 0 | 622.6 |
+| 64-summer-river | 318.3 | 0 | 0 | 517 (water animation) |
+| 64-winter-day (baseline) | 3237.8 | 0 | 0 | 1052.7 |
+| 64-winter-mid | 2189.5 | 0 | 0 | 2098.7 |
+
+Reading: no pop events and no LOD flips in either new scene. The river's `still` figure (54 px of oscillation per frame, 0.009 % of the frame, against 10 for the bare summer scene) is the water's own animated texture and splash, not camera shimmer; its rotation oscillation is lower than the baseline because the view is mostly water and bare slope. The mid-station scene is in the same range as the winter baseline (the cable, the hall and the carriers add thin geometry; the heatmap offenders are the trees as before).
+
+Note: `flicker-test.ts` and `flicker-building.ts` used `populateDemo('Medium')`, which builds nothing (the level is lowercase); the numbers above are the first with the demo resort really present, the tables further up were taken on the bare village.

@@ -108,7 +108,7 @@ try {
   await page.waitForFunction(() => !!(window as any).__slope, { timeout: 90000 });
   await page.evaluate(() => {
     const s = (window as any).__slope;
-    s.populateDemo('Medium');
+    s.populateDemo('medium');
     const loop = s.loop; if (loop.paused) loop.setSpeed(1);
     const t = loop.tickCount + 1500; let g = 0; while (loop.tickCount < t && g++ < 1e6) loop.advance(1);
     s.setHour(12);

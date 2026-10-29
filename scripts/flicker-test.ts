@@ -8,7 +8,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { launch, startServer } from './lib/harness';
 
-interface Scenario { id: string; size: number; start: 'winter' | 'summer'; hour: number; seed: number }
+interface Scenario { id: string; size: number; start: 'winter' | 'summer'; hour: number; seed: number; /** Phase 6: `river` digs a river from the best natural spring, `mid` rebuilds the first lift with a mid-station; the camera then looks at it. */ extra?: 'river' | 'mid' }
 const SCENARIOS: Scenario[] = [
   { id: '64-winter-day', size: 64, start: 'winter', hour: 12, seed: 61 },
   { id: '64-summer-day', size: 64, start: 'summer', hour: 12, seed: 61 },
@@ -16,6 +16,8 @@ const SCENARIOS: Scenario[] = [
   { id: '128-summer-day', size: 128, start: 'summer', hour: 12, seed: 7 },
   { id: '256-winter-day', size: 256, start: 'winter', hour: 12, seed: 5 },
   { id: '256-summer-day', size: 256, start: 'summer', hour: 14, seed: 5 },
+  { id: '64-summer-river', size: 64, start: 'summer', hour: 12, seed: 61, extra: 'river' },
+  { id: '64-winter-mid', size: 64, start: 'winter', hour: 12, seed: 5, extra: 'mid' },
 ];
 
 function parseArgs(): Record<string, string> {
@@ -173,16 +175,45 @@ try {
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); else if (m.text().startsWith('SCENE')) console.log(m.text()); });
     await page.goto(`${srv.url}?${new URLSearchParams({ size: String(sc.size), seed: String(sc.seed), start: sc.start, hints: '0' })}`, { waitUntil: 'load', timeout: 90000 });
     await page.waitForFunction(() => !!(window as any).__slope, { timeout: 90000 });
-    await page.evaluate((o) => {
+    await page.evaluate(async (o) => {
       const s = (window as any).__slope;
-      s.populateDemo('Medium'); s.spawnGuests(150, 'skiers');
+      s.populateDemo(o.extra === 'mid' ? 'starter' : 'medium'); s.spawnGuests(150, 'skiers');
+      let focus: { x: number; y: number } | null = null;
+      if (o.extra === 'river') { // the best natural spring, dug through the real tool path (level gate bypassed)
+        const sim = s.sim; sim.progression.bypass++;
+        const sites = sim.rivers.natural as Array<{ x: number; y: number }>;
+        const PL = await (new Function('u', 'return import(u)') as any)('/src/world/RiverPlanner.ts');
+        const best = sites.map((p) => ({ p, pl: PL.planRiver(sim.riverEnv(), p, null) })).filter((q) => q.pl.ok).sort((a, b) => b.pl.path.length - a.pl.path.length)[0];
+        if (best && s.riverDebug.dig(best.p.x, best.p.y)) { const path = best.pl.path; focus = path[path.length >> 1]; }
+        sim.progression.bypass--;
+        console.log(`SCENE river ${best ? best.pl.path.length + ' tiles from ' + best.p.x + ',' + best.p.y : 'none'}`);
+      }
+      if (o.extra === 'mid') { // the first lift rebuilt with a mid-station (same terminals), like the sanity script
+        const sim = s.sim, g = sim.grid, Lift = await (new Function('u', 'return import(u)') as any)('/src/sim/Lift.ts'), lt = s.liftTools.tool.o;
+        const l0 = sim.lifts.all()[0];
+        if (l0) {
+          const bot = { x: l0.bottom.x, y: l0.bottom.y }, top = { x: l0.top.x, y: l0.top.y }, snap = structuredClone(l0), idx = sim.lifts.indexOf(l0.id);
+          sim.progression.bypass++;
+          Lift.demolishLift(sim.lifts, sim.economy, l0.id); s.liftTools.view.remove(l0.id);
+          let ok = false;
+          for (const u of [0.5, 0.45, 0.55, 0.4, 0.6, 0.35, 0.65]) {
+            const mid = Lift.midSiteOnLine(g, bot, top, bot.x + 1 + (top.x - bot.x) * u, bot.y + 1 + (top.y - bot.y) * u);
+            const out = Lift.placeLift({ ...lt.env, props: sim.props }, sim.props, 'gondola6', bot, top, true, true, [mid]);
+            if (out.ok) { lt.onPlaced(out); focus = { x: mid.x, y: mid.y }; ok = true; break; }
+          }
+          if (!ok) { sim.lifts.reinsert(snap, idx); s.liftTools.view.add(sim.lifts.get(l0.id)); }
+          sim.progression.bypass--;
+          console.log(`SCENE mid-station ${ok ? 'built' : 'NOT built'}`);
+        }
+      }
+      o.focus = focus;
       const loop = s.loop; if (loop.paused) loop.setSpeed(1);
       const t = loop.tickCount + 1500; let g = 0; while (loop.tickCount < t && g++ < 1e6) loop.advance(1);
       s.setHour(o.hour);
       const b = s.buildings.all().find((q: any) => q.type === 'baseLodge');
       const c = s.renderer.controls;
-      if (b) c.target.set(b.x + b.w / 2, 0, b.y + b.h / 2);
-    }, { hour: sc.hour });
+      if (o.focus) c.target.set(o.focus.x, 0, o.focus.y); else if (b) c.target.set(b.x + b.w / 2, 0, b.y + b.h / 2);
+    }, { hour: sc.hour, extra: sc.extra ?? null, focus: null as { x: number; y: number } | null });
     await new Promise((r) => setTimeout(r, 2500));
     const minZoom = await page.evaluate(() => (window as any).__slope.renderer.controls.minZoom as number);
     const maxZoom = await page.evaluate(() => (window as any).__slope.renderer.controls.maxZoom as number);

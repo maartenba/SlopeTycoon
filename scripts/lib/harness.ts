@@ -18,7 +18,7 @@ export interface ShotOpts {
   /** localStorage entries set before the game boots (e.g. `{ "slope.a11y.v1": "{\"palette\":\"cbsafe\"}" }`). */
   local?: Record<string, string>;
   steps?: string; viewport?: string; overlap?: boolean; bare?: boolean;
-  /** JS run in the page BEFORE `ticks` (e.g. `__slope.populateDemo('Medium'); __slope.spawnGuests(150,'skiers')`). */
+  /** JS run in the page BEFORE `ticks` (e.g. `__slope.populateDemo('medium'); __slope.spawnGuests(150,'skiers')`). */
   pre?: string;
   /** Ground-level view after the ticks/eval: `ride` (skier POV), `lift` (first lift rider). `guest`: 'auto' (default) or a guest id. `vticks`: extra sim ticks AFTER entering the view. */
   view?: string; guest?: string; vticks?: number; freeze?: boolean; /** JS run in the page after entering the view (e.g. `__slope.view.freeCam(x,y,z,yaw,pitch)`), before the screenshot. */ vjs?: string;
