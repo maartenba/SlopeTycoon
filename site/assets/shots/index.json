@@ -22,12 +22,12 @@
    {
     "w": 640,
     "file": "ui-hud-640.webp",
-    "bytes": 40988
+    "bytes": 40274
    },
    {
     "w": 1280,
     "file": "ui-hud-1280.webp",
-    "bytes": 109690
+    "bytes": 108436
    }
   ]
  },
@@ -198,12 +198,12 @@
    {
     "w": 640,
     "file": "ui-buildings-drawer-640.webp",
-    "bytes": 45492
+    "bytes": 42314
    },
    {
     "w": 1280,
     "file": "ui-buildings-drawer-1280.webp",
-    "bytes": 120622
+    "bytes": 113788
    }
   ]
  },
@@ -230,12 +230,12 @@
    {
     "w": 640,
     "file": "ui-pistes-drawer-640.webp",
-    "bytes": 41528
+    "bytes": 39978
    },
    {
     "w": 1280,
     "file": "ui-pistes-drawer-1280.webp",
-    "bytes": 111088
+    "bytes": 106026
    }
   ]
  },
@@ -534,12 +534,12 @@
    {
     "w": 640,
     "file": "events-calendar-640.webp",
-    "bytes": 53488
+    "bytes": 53714
    },
    {
     "w": 1280,
     "file": "events-calendar-1280.webp",
-    "bytes": 115870
+    "bytes": 148386
    }
   ]
  },
@@ -630,12 +630,12 @@
    {
     "w": 640,
     "file": "ui-landscape-640.webp",
-    "bytes": 46436
+    "bytes": 45626
    },
    {
     "w": 1280,
     "file": "ui-landscape-1280.webp",
-    "bytes": 93586
+    "bytes": 121626
    }
   ]
  },
@@ -694,12 +694,12 @@
    {
     "w": 640,
     "file": "ui-stats-640.webp",
-    "bytes": 27308
+    "bytes": 26008
    },
    {
     "w": 1280,
     "file": "ui-stats-1280.webp",
-    "bytes": 71858
+    "bytes": 68002
    }
   ]
  },
@@ -710,12 +710,12 @@
    {
     "w": 390,
     "file": "touch-phone-hud-640.webp",
-    "bytes": 45046
+    "bytes": 45568
    },
    {
     "w": 390,
     "file": "touch-phone-hud-1280.webp",
-    "bytes": 45046
+    "bytes": 45568
    }
   ]
  },
@@ -726,12 +726,12 @@
    {
     "w": 390,
     "file": "touch-phone-place-640.webp",
-    "bytes": 44822
+    "bytes": 44928
    },
    {
     "w": 390,
     "file": "touch-phone-place-1280.webp",
-    "bytes": 44822
+    "bytes": 44928
    }
   ]
  },
@@ -742,12 +742,12 @@
    {
     "w": 640,
     "file": "touch-tablet-640.webp",
-    "bytes": 46650
+    "bytes": 38634
    },
    {
     "w": 1024,
     "file": "touch-tablet-1280.webp",
-    "bytes": 88934
+    "bytes": 72956
    }
   ]
  },
@@ -934,12 +934,12 @@
    {
     "w": 640,
     "file": "bridges-stream-640.webp",
-    "bytes": 13180
+    "bytes": 12174
    },
    {
     "w": 1280,
     "file": "bridges-stream-1280.webp",
-    "bytes": 30796
+    "bytes": 29846
    }
   ]
  },
@@ -977,17 +977,17 @@
  },
  "ui-crossings": {
   "w": 1280,
-  "h": 720,
+  "h": 800,
   "files": [
    {
     "w": 640,
     "file": "ui-crossings-640.webp",
-    "bytes": 23590
+    "bytes": 43374
    },
    {
     "w": 1280,
     "file": "ui-crossings-1280.webp",
-    "bytes": 64784
+    "bytes": 117036
    }
   ]
  },
@@ -998,12 +998,12 @@
    {
     "w": 640,
     "file": "ui-update-card-640.webp",
-    "bytes": 33230
+    "bytes": 41952
    },
    {
     "w": 1280,
     "file": "ui-update-card-1280.webp",
-    "bytes": 103486
+    "bytes": 112788
    }
   ]
  },
@@ -1014,12 +1014,12 @@
    {
     "w": 640,
     "file": "ui-eco-programme-640.webp",
-    "bytes": 22392
+    "bytes": 22788
    },
    {
     "w": 1280,
     "file": "ui-eco-programme-1280.webp",
-    "bytes": 67688
+    "bytes": 68610
    }
   ]
  }

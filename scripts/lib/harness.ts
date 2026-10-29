@@ -9,6 +9,8 @@ import puppeteer, { type Browser } from 'puppeteer-core';
 
 export interface ShotOpts {
   size?: number; seed?: number; start?: string; hour?: number; zoom?: number; target?: string; out?: string; yaw?: number;
+  /** Keep the toast stack visible (default: hidden so seasonal closure toasts etc. never clutter documentation shots). */
+  toasts?: boolean;
   w?: number; h?: number; extra?: string; ticks?: number; evalJs?: string; days?: number;
   /** Steps run after boot, ';'-separated: `key:F3`, `type:text` (keyboard), `mouse:x,y` (click), `move:x,y` (hover), `wheel:dy`, `click:<text of a button or css>`, `wait:ms`, `eval:js` (result logged). Clicks pierce shadow roots (innermost match by css, or button whose text/title/aria-label contains the text). */
   /** Touch emulation (hasTouch + isMobile + `?touch=1`): steps `tap:x,y`, `tdrag:x1,y1,x2,y2`, `pinch:cx,cy,d1,d2` (two fingers, distances in px), `hold:x,y,ms` (long press). */
@@ -75,6 +77,7 @@ export async function shot(browser: Browser, base: string, o: ShotOpts): Promise
   page.on('console', (m) => { const t = `[${m.type()}] ${m.text()}`; logs.push(t); if (m.type() === 'error' || /shader|webgl|THREE\./i.test(m.text()) && m.type() !== 'log') errors.push(t); });
   page.on('pageerror', (e) => errors.push(`[pageerror] ${String(e)}`));
   page.on('requestfailed', (r) => errors.push(`[requestfailed] ${r.url()}`));
+  if (!o.toasts) await page.evaluateOnNewDocument(() => { const add = (): void => { const st = document.createElement('style'); st.textContent = 'st-toast{display:none!important}'; document.head.appendChild(st); }; if (document.head) add(); else document.addEventListener('DOMContentLoaded', add); });
   await page.goto(`${base}?${q}`, { waitUntil: 'load', timeout: 90000 });
   const gl = await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'));
   if (!gl) errors.push('[harness] WebGL2 context could not be created');

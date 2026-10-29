@@ -201,3 +201,5 @@ New Game with Career preselected: `npm run shot -- --bare 1 --viewport 1280x800 
 ![Family, winter](img/rich-family-winter.webp)
 ![Big mountain, winter](img/rich-bigmountain.webp)
 ![Alpine, winter](img/rich-alpine-winter.webp)
+
+- The harness hides `st-toast` in every shot (`ShotOpts.toasts: true` keeps them), so seasonal closure toasts never end up in documentation screenshots.
