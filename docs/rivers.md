@@ -1,6 +1,6 @@
 # Rivers and springs (Phase 6, M6.2)
 
-Developer notes for dug rivers and spring sites. Status: **data model + planner + saves + spring sites** (Tasks 13 and 44). The Landscape-drawer tool (Task 14), flow model (15), rendering (16) and ice (17) build on this; nothing here has a UI yet. Owner decisions: rivers are **1 tile wide**, carved **at most 6 half-steps per tile**, **no upkeep**; a spring costs **$250**.
+Developer notes for dug rivers and spring sites. Status: **data model + planner + saves + spring sites** (Tasks 13 and 44) and the **Landscape-drawer tool** (Task 14, see "Tool"). Flow model (15), rendering (16) and ice (17) build on this. Owner decisions: rivers are **1 tile wide**, carved **at most 6 half-steps per tile**, **no upkeep**; a spring costs **$250**.
 
 ## Model
 
@@ -29,9 +29,22 @@ Developer notes for dug rivers and spring sites. Status: **data model + planner 
 - A natural site gives **no water** until a river is dug from it; it stays a valid source while its tile is dry and free (building on it retires it for the planner).
 - **Player springs**: `planSpring` / `applySpring` — dry, unoccupied, ≥ 2 higher neighbours; fee `SPRING.cost` ($250 x construction multiplier, **the caller charges it**, e.g. `economy.charge(plan.cost)` as the other Landscape tools do); the tile is marked `OccFlag.Decor` so nothing is built there; saved in `rivers.springs`; `planRemoveSpring` / `applyRemoveSpring` bulldoze it (refund 0), refused while a river starts there. A river from a spring converts the spring tile itself to stream; filling the river back in restores the marker.
 
+## Tool (Task 14): Landscape drawer > Water
+
+`LandscapeTool` modes `river`, `spring`, `riverFill` (`src/build/LandscapeTool.ts`; the tool takes `rivers`, `riverEnv`, `beginRiverStroke`, `locked`, `confirmFirst`, `onSprings` as options, so every older construction still works). Cards in the Water tab (shared card grid): **Dig river** (key 7, `$30/tile` + earthworks), **Place spring** (8, $250; also a *Spring* card in the Terrain drawer under "Water", same tool and mode), **Fill in river** (9, free, refund 0; also removes a placed spring). A **Springs** button in the tab's side controls toggles the markers.
+
+- **Dig river**: press on a source, drag, release. The source must be a spring (natural site or placed), or a dry tile beside a lake / stream (`sourceLike`). The end is the tile under the cursor when it is a lake / stream tile or on the map edge; any other dry tile means "cheapest outlet" (the planner's `to = null`). A plain click on a spring digs the cheapest route; **hovering** a spring already previews it (no drag needed). Re-planning is cached by (start, end, `rivers.version`, `terrainVersion`).
+- **Ghost** (`Overlays.setRiverGhost`, shares the existing preview line buffer: no extra draw call): the channel tiles outlined with a cross each, coloured by carve depth (blue = no cut, orange = 6 half-steps), plus a tick per corner the dig moves. Tip: `Dig river . N tiles . drop D . deepest cut M . $cost`; refusals list up to three planner reasons as error lines (`Water can't flow uphill here`, `Too deep to dig (max 6 per tile)`, `Blocked by ...`, the start-on-a-source message, lift clearance, lake bank).
+- **Spring markers** (`src/render/SpringMarkers.ts`): ONE `InstancedMesh` (ring + dot, < 100 triangles, flat, unlit, no depth test so nothing crawls), cyan = natural, green = placed, grey-blue = a river already starts there. Shown while the tool is active in a Water-tab mode (pond, fill, river, spring, fill river) and the toggle is on; rebuilt only when `rivers.version` / `terrainVersion` change; nothing is built while hidden.
+- **Undo**: `Undo.riverStroke(label)`, one step per river / spring / fill (the stroke rect covers the plan's bbox + every path tile; a fill covers the path and the carved corners). Charge happens inside the stroke, so undo refunds.
+- **Unlock**: `{ kind: 'landscape', id: 'river', level: 2 }` in `config/unlocks.ts` (like ponds; nothing a goal or Advisor rule needs). Dig river and Place spring are locked below level 2 (the cards show the lock, the tip says `Unlocks at level 2: ...`); Fill in river is never locked.
+- **Touch**: the tool never forks by pointer type. When touch controls are on (`confirmFirst`), releasing arms the river / spring (ghost and a "tap the end again (or Place) to confirm" tip stay); tapping the start / end tile again, **Enter**, or the touch bar's Confirm (`landscapeTool.confirm()`, wired in `confirmPlacement`) commits; any other tap or Esc drops it. The plan is re-run at commit time.
+- Keys while the landscape tool is active: 1 pond, 2 fill pond, 3-6 boulders / decor, **7 river, 8 spring, 9 fill in river**, Esc cancel, Enter confirm.
+- Harness: `__slope.riverDebug.{plan,ghost,dig}(x, y[, tx, ty])` (ghost / dig without a mouse), `__slope.springMarkers`. Shots `riv-*` (`.weave/shots`, not committed).
+
 ## Tests
 
-`tests/world/riverPlanner.test.ts` (synthetic slopes: fall line, ridge carve, deep refusal, uphill, blockers, detour, endpoints, merge, lake outlet / sink, branch, lift veto, fill-in; seeds 61 / 7 / 5 on 128: spring → lake; `[perf]` 256), `tests/world/springSites.test.ts` (determinism, no writes, rule, ≥ 90 % coverage, inert hash, player springs), `tests/world/terrainGolden.test.ts` (**byte-identical terrain for seeds 1-20 x 64 / 128 / 256**, recorded before this work, also after deriving sites), `tests/persist/rivers.test.ts` (save / load / in-place hash equality, old saves, undo / redo).
+`tests/world/riverPlanner.test.ts` (synthetic slopes: fall line, ridge carve, deep refusal, uphill, blockers, detour, endpoints, merge, lake outlet / sink, branch, lift veto, fill-in; seeds 61 / 7 / 5 on 128: spring → lake; `[perf]` 256), `tests/world/springSites.test.ts` (determinism, no writes, rule, ≥ 90 % coverage, inert hash, player springs), `tests/world/terrainGolden.test.ts` (**byte-identical terrain for seeds 1-20 x 64 / 128 / 256**, recorded before this work, also after deriving sites), `tests/persist/rivers.test.ts` (save / load / in-place hash equality, old saves, undo / redo), `tests/build/riverTool.test.ts` (tool flow with the planner: hover preview, drag, click, undo / redo, refusals, funds, lock, keys, fill in, touch two-step), `tests/render/springMarkers.test.ts` (one draw call, rebuild, ghost buffer), `tests/ui-dom/landscapeDrawer.test.ts` (river cards, key badges, lock, Terrain shortcut).
 
 ## Flow (`src/sim/nature/Flow.ts`, Task 15; constants `FLOW` in `config/rivers.ts`)
 
@@ -62,4 +75,4 @@ Developer notes for dug rivers and spring sites. Status: **data model + planner 
 
 ## Not yet (later tasks)
 
-Tool + preview + spring placement UI (14), flow `Q` / speed (15), Water.ts rendering of dug rivers and spring markers (16), ice (17), river bridges + suspension footbridge (46), rafting / canyoning, snowmaking from rivers, sustainability bonus.
+Flow `Q` / speed (15), Water.ts rendering of dug rivers and spring markers (16), ice (17), river bridges + suspension footbridge (46), rafting / canyoning, snowmaking from rivers, sustainability bonus.

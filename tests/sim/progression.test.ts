@@ -113,7 +113,7 @@ describe('unlock table (config/unlocks.ts)', () => {
   it('is short (8 to 16 items), every id exists in its catalogue, levels are 2..6', () => {
     expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(16);
     for (const u of UNLOCKS) {
-      const exists = u.kind === 'landscape' ? u.id === 'pond' : u.kind === 'building' ? !!BUILDINGS[u.id] : u.kind === 'lift' ? !!LIFTS[u.id as keyof typeof LIFTS] : CAMPAIGNS.some((c) => c.id === u.id);
+      const exists = u.kind === 'landscape' ? u.id === 'pond' || u.id === 'river' : u.kind === 'building' ? !!BUILDINGS[u.id] : u.kind === 'lift' ? !!LIFTS[u.id as keyof typeof LIFTS] : CAMPAIGNS.some((c) => c.id === u.id);
       expect(exists, `${u.kind}:${u.id}`).toBe(true);
       expect(u.level).toBeGreaterThanOrEqual(2); expect(u.level).toBeLessThanOrEqual(MAX_LEVEL);
       expect(unlockName(u.kind, u.id).length).toBeGreaterThan(0);

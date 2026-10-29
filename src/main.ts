@@ -44,6 +44,8 @@ import { PlantTool } from '@/build/PlantTool';
 import { LandscapeTool } from '@/build/LandscapeTool';
 import { applyDecor, applyPond, applyRocks, planDecor, planPond, planRocks, pondRectAround } from '@/sim/landscape/Landscape';
 import { LandscapeDecorView } from '@/render/LandscapeDecor';
+import { SpringMarkers } from '@/render/SpringMarkers';
+import { planRiver } from '@/world/RiverPlanner';
 import { PLANT_GROUPS, PLANT_GROUP_IDS, type PlantGroup } from '@/sim/nature/Planting';
 import { DAYS_PER_YEAR, SPEED_MULTIPLIERS, TICKS_PER_SECOND, TILE_METRES } from '@/config/balance';
 import { AchievementAnnouncer } from '@/ui/achievementToasts';
@@ -376,7 +378,7 @@ const demoBag = new DisposeBag(); // everything the title-screen demo owns (time
 // Touch input (docs/touch.md): registered FIRST so its window-capture listeners see touch pointers before any tool; tools/placement are only read lazily.
 const touchWire = wireTouch({
   dom: renderer.webgl.domElement, camera: renderer.controls, toolId: () => tools.current, cancelTool: () => tools.reset(),
-  confirmPlacement: () => (tools.current === 'lift' ? (liftToolsRef?.tool.confirm() ?? false) : placement.confirm()), rotateGhost: (d) => placement.rotate(d), togglePause: () => loop.togglePause(),
+  confirmPlacement: () => (tools.current === 'landscape' ? landscapeTool.confirm() : tools.current === 'lift' ? (liftToolsRef?.tool.confirm() ?? false) : placement.confirm()), rotateGhost: (d) => placement.rotate(d), togglePause: () => loop.togglePause(),
   ghostText: () => { if (tools.current === 'lift') return liftToolsRef?.tool.touchHint() ?? ''; const g = placement.ghostInfo(); return !g ? 'Not on the map: tap the ground' : g.valid ? `$${Math.round(g.totalCost).toLocaleString('en-US')} · tap again to place` : `\u2716 ${g.reasons[0] ?? 'cannot build here'}`; },
   undo: () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })),
 });
@@ -675,7 +677,11 @@ const allDecorItems = (): readonly import('@/render/VillageDecor').DecorItem[] =
   if (landscapeWalkKey[0] !== villageDecor.items || landscapeWalkKey[1] !== landscapeDecor.items) { landscapeWalkKey = [villageDecor.items, landscapeDecor.items]; landscapeWalkItems = [...villageDecor.items, ...landscapeDecor.items]; }
   return landscapeWalkItems;
 };
+const springMarkers = new SpringMarkers(grid, sim.rivers); // Phase 6 Task 14: one instanced ring per spring site, shown on the Landscape > Water tab
+renderer.scene.add(springMarkers.group);
 const landscapeTool = new LandscapeTool({
+  rivers: sim.rivers, riverEnv: () => sim.riverEnv(), beginRiverStroke: (label) => undo.riverStroke(label),
+  locked: () => sim.gate.locked('landscape', 'river'), confirmFirst: () => touchWire.enabled(), onSprings: (v) => springMarkers.setVisible(v),
   grid, props, ls: sim.landscape, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays,
   env: () => sim.landscapeEnv(),
   now: () => game.date.year * DAYS_PER_YEAR + game.date.day,
@@ -701,6 +707,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   { const dw = Math.abs(st - 0.875); natureView.setWinter(Math.max(0, 1 - Math.min(dw, 1 - dw) * 6)); }
   updateVillageDecor(dt);
   updateLandscapeView();
+  springMarkers.update();
   updateFestival(dt);
   tourVehicles.update(sim.loop.tickCount);
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
@@ -2461,6 +2468,7 @@ if (ui && !DEMO) {
       activate: (m) => { tools.activate('landscape'); if (m) landscapeTool.setMode(m); dockRef?.syncLandscape(); },
       setMode: (m) => { tools.activate('landscape'); landscapeTool.setMode(m); }, setDecor: (k) => { tools.activate('landscape'); landscapeTool.setDecor(k); },
       setBrush: (n) => landscapeTool.setBrush(n), setRot: (r) => landscapeTool.setRot(r), state: () => landscapeTool.state(),
+      riverLocked: () => sim.gate.locked('landscape', 'river'), setShowSprings: (v) => landscapeTool.setShowSprings(v),
       pondLocked: () => sim.gate.locked('landscape', 'pond'), multiplier: () => economy.constructionMultiplier(),
     },
     nature: {
@@ -2903,7 +2911,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

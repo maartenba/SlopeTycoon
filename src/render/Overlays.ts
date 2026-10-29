@@ -16,7 +16,8 @@ export interface TooltipData {
 
 const LIFT = 0.06;
 const MAX_POINTS = 4 * (5 + 1) * 8 + 64;
-const MAX_PREVIEW_POINTS = 6000;
+const MAX_PREVIEW_POINTS = 12000;
+const RIVER_COLD = new THREE.Color(0x4fc3ff), RIVER_HOT = new THREE.Color(0xff8a2a);
 const CUT_COLOR = new THREE.Color(0xff9a3c), FILL_COLOR = new THREE.Color(0x4fb4ff);
 
 /** Hover/brush outline draped on terrain heights. Uses grid data, so it works with any LOD. */
@@ -91,6 +92,44 @@ export class Overlays {
     }
     this.prevPos.needsUpdate = true; this.prevCol.needsUpdate = true;
     this.prev.geometry.setDrawRange(0, n);
+  }
+
+  /**
+   * River ghost (Phase 6 Task 14): outlines the channel tiles (edges shared with the next channel tile are skipped) coloured by cut depth (blue = no digging,
+   * orange = deepest cut) and ticks the corners the dig moves. Shares the preview line buffer, so it costs no extra draw call. `null` / empty clears.
+   */
+  setRiverGhost(path: ReadonlyArray<{ x: number; y: number }> | null, depth: ReadonlyArray<number> = [], changed: ReadonlyArray<{ vx: number; vy: number; from: number; to: number }> = [], maxDepth = 6): void {
+    const pos = this.prevPos.array as Float32Array, col = this.prevCol.array as Float32Array;
+    let n = 0;
+    const put = (x: number, y: number, z: number, c: THREE.Color): void => {
+      if (n >= MAX_PREVIEW_POINTS) return;
+      pos[n * 3] = x; pos[n * 3 + 1] = y; pos[n * 3 + 2] = z;
+      col[n * 3] = c.r; col[n * 3 + 1] = c.g; col[n * 3 + 2] = c.b;
+      n++;
+    };
+    if (path && path.length) {
+      const g = this.grid, have = new Set(path.map((p) => p.y * g.size + p.x)), c = new THREE.Color();
+      const P = (vx: number, vy: number): [number, number, number] => [vx, g.getCorner(vx, vy) * HEIGHT_UNIT + LIFT, vy];
+      const has = (tx: number, ty: number): boolean => have.has(ty * g.size + tx);
+      path.forEach((t, k) => {
+        c.copy(RIVER_COLD).lerp(RIVER_HOT, Math.max(0, Math.min(1, (depth[k] ?? 0) / Math.max(1, maxDepth))));
+        const seg = (a: [number, number, number], b: [number, number, number]): void => { put(...a, c); put(...b, c); };
+        if (!has(t.x, t.y - 1)) seg(P(t.x, t.y), P(t.x + 1, t.y));
+        if (!has(t.x, t.y + 1)) seg(P(t.x, t.y + 1), P(t.x + 1, t.y + 1));
+        if (!has(t.x - 1, t.y)) seg(P(t.x, t.y), P(t.x, t.y + 1));
+        if (!has(t.x + 1, t.y)) seg(P(t.x + 1, t.y), P(t.x + 1, t.y + 1));
+        // a cross through the tile centre so a one-tile-wide channel reads as a ribbon
+        const a = P(t.x, t.y), b = P(t.x + 1, t.y + 1), a2 = P(t.x + 1, t.y), b2 = P(t.x, t.y + 1);
+        put(...a, c); put(...b, c); put(...a2, c); put(...b2, c);
+      });
+      for (const ch of changed) {
+        const k = ch.to < ch.from ? CUT_COLOR : FILL_COLOR;
+        put(ch.vx, ch.from * HEIGHT_UNIT + LIFT, ch.vy, k); put(ch.vx, ch.to * HEIGHT_UNIT + LIFT, ch.vy, k);
+      }
+    }
+    this.prevPos.needsUpdate = true; this.prevCol.needsUpdate = true;
+    this.prev.geometry.setDrawRange(0, n);
+    if (n > 0) this.group.visible = true;
   }
 
   setColor(hex: number): void {

@@ -8,7 +8,7 @@ import { DECOR_IDS } from '../../src/config/landscape';
 
 registerComponents();
 
-function mount(opts: { locked?: string | null } = {}) {
+function mount(opts: { locked?: string | null; riverLocked?: string | null } = {}) {
   const log: string[] = [];
   let st: LandscapeState = { mode: 'pond', brush: 2, pondSize: 5, decor: 'bench', rot: 0 };
   const dock = el('st-dock') as StDock;
@@ -18,6 +18,7 @@ function mount(opts: { locked?: string | null } = {}) {
     terraform: { setMode: (m: string) => log.push(`terraform:${m}`), setTarget: () => {}, setBrush: () => {}, setMaxEdgeDelta: () => {}, state: () => ({ mode: 'raise', brush: 1, target: 'tile' }) },
     nature: { setMode: (m: string) => log.push(`plant:${m}`), setGroup: () => {}, setBrush: () => {}, setDensity: () => {}, state: () => ({ mode: 'plant', group: 'conifer', brush: 2, density: 0.6 }), groups: [{ id: 'conifer', label: 'Conifer mix' }] },
     landscape: {
+      riverLocked: () => opts.riverLocked ?? null, setShowSprings: (v: boolean) => { st = { ...st, showSprings: v }; log.push(`springs:${v}`); },
       activate: (m?: LandscapeMode) => { if (m) st = { ...st, mode: m }; log.push(`landscape:${m ?? '-'}`); dock.syncTool('landscape'); },
       setMode: (m: LandscapeMode) => { st = { ...st, mode: m }; log.push(`mode:${m}`); },
       setDecor: (k: never) => { st = { ...st, mode: 'decor', decor: k }; log.push(`decor:${k}`); dock.syncTool('landscape'); },
@@ -49,8 +50,8 @@ describe('Landscape drawer', () => {
     expect(dock.openDrawer).toBe('landscape');
     expect(log).toContain('landscape:pond');
     const text = root(dock).textContent ?? '';
-    expect(text).toContain('Dig pond'); expect(text).toContain('Fill in');
-    expect(cards(dock).map((c) => c.querySelector('.nm')?.textContent)).toEqual(['Dig pond', 'Fill in']);
+    expect(text).toContain('Dig pond'); expect(text).toContain('Fill in pond');
+    expect(cards(dock).map((c) => c.querySelector('.nm')?.textContent)).toEqual(['Dig pond', 'Fill in pond', 'Dig river', 'Place spring', 'Fill in river']);
     expect(card(dock, 'Dig pond').classList.contains('active')).toBe(true); // selected state = the shared card state
     expect(card(dock, 'Dig pond').querySelector('.num')?.textContent).toBe('1'); // key badge
     expect(card(dock, 'Dig pond').querySelector('.pr')?.textContent).toMatch(/\$\d+\/tile/);
@@ -64,6 +65,40 @@ describe('Landscape drawer', () => {
     const b = card(dock, 'Dig pond');
     expect(b.textContent).toContain('🔒'); expect(b.title).toMatch(/level 2/); expect(b.classList.contains('locked')).toBe(true);
     dock.remove();
+  });
+
+  it('Water tab river cards: key badges 7 / 8 / 9, prices, activate the river / spring / fill modes, springs toggle', () => {
+    const { dock, log } = mount();
+    dock.show('landscape');
+    expect(card(dock, 'Dig river').querySelector('.num')?.textContent).toBe('7');
+    expect(card(dock, 'Place spring').querySelector('.num')?.textContent).toBe('8');
+    expect(card(dock, 'Fill in river').querySelector('.num')?.textContent).toBe('9');
+    expect(card(dock, 'Place spring').querySelector('.pr')?.textContent).toBe('$250');
+    expect(card(dock, 'Dig river').querySelector('.pr')?.textContent).toMatch(/\$\d+\/tile/);
+    card(dock, 'Dig river').click(); expect(log).toContain('landscape:river'); expect(card(dock, 'Dig river').classList.contains('active')).toBe(true);
+    card(dock, 'Place spring').click(); expect(log).toContain('landscape:spring');
+    card(dock, 'Fill in river').click(); expect(log).toContain('landscape:riverFill');
+    const sp = Array.from(root(dock).querySelectorAll<HTMLButtonElement>('.body .pc button')).find((b) => /Springs/.test(b.textContent ?? ''))!;
+    expect(sp).toBeTruthy(); sp.click(); expect(log).toContain('springs:false');
+    tab(dock, 'nature').click(); tab(dock, 'water').click();
+    expect(log.filter((l) => l === 'landscape:riverFill').length).toBeGreaterThanOrEqual(2); // the tab keeps the last Water mode
+    dock.remove();
+  });
+
+  it('river cards show the career lock (level 2) and the Terrain drawer has a Spring shortcut that starts the same tool', () => {
+    const { dock, log } = mount({ riverLocked: 'Unlocks at level 2: Local favourite' });
+    dock.show('landscape');
+    for (const n of ['Dig river', 'Place spring']) { const b = card(dock, n); expect(b.classList.contains('locked'), n).toBe(true); expect(b.title).toMatch(/level 2/); }
+    expect(card(dock, 'Fill in river').classList.contains('locked')).toBe(false);
+    dock.remove();
+    const m = mount();
+    m.dock.show('terrain');
+    expect(cards(m.dock).map((c) => c.querySelector('.nm')?.textContent)).toEqual(['Raise', 'Lower', 'Flatten', 'Smooth', 'Spring']);
+    card(m.dock, 'Spring').click();
+    expect(m.log).toContain('landscape:spring');
+    expect(card(m.dock, 'Spring').querySelector('.pr')?.textContent).toBe('$250');
+    m.dock.remove();
+    void log;
   });
 
   it('there is no Terrain tab here (the Terrain drawer owns terraforming); Nature tab has trees + boulders; Decor tab lists every piece', () => {

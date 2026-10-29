@@ -22,6 +22,7 @@ import { TERRAIN_ICONS, VIEW_ICONS, overlayIcon } from '../dockIcons';
 import { relevance, seasonBadge, seasonSort, type SeasonMode, type SeasonTag } from '../seasonOrder';
 import type { LandscapeMode, LandscapeState } from '@/build/LandscapeTool';
 import { DECOR, DECOR_IDS, LANDSCAPE, type DecorKind } from '@/config/landscape';
+import { RIVER, SPRING } from '@/config/rivers';
 import { StElement } from './StElement';
 
 export interface DockApi {
@@ -50,6 +51,10 @@ export interface DockApi {
     state(): LandscapeState;
     /** Career lock reason for digging ponds, or null. */
     pondLocked(): string | null;
+    /** Career lock reason for rivers + springs (Phase 6), or null. */
+    riverLocked?(): string | null;
+    /** Spring markers on / off (they show while a Water-tab mode is active). */
+    setShowSprings?(v: boolean): void;
     /** Multiplier applied to every landscaping price (summer discount). */
     multiplier(): number;
   };
@@ -955,6 +960,7 @@ export class StDock extends StElement {
         mk('lower', 'Lower', '2', 'Dig the ground down under the brush.', ['Drag to cut a gully or a bowl', 'Not under buildings, lift towers or water']),
         mk('flatten', 'Flatten', '3', 'Level everything under the brush to the height of the first tile you press on.', ['Press on the height you want, then drag', 'Handy for building plots']),
         mk('smooth', 'Smooth', '4', 'Blend rough ground into gentle slopes under the brush.', ['Good for taking the bumps out of a piste line', 'Respects the max slope setting']),
+        ...(api.landscape?.setShowSprings ? [this.springShortcut()] : []),
       ];
     }
     const v = api.view;
@@ -1010,7 +1016,7 @@ export class StDock extends StElement {
     const api = this.api;
     if (!api) return;
     switch (this.landTab) {
-      case 'water': api.landscape?.activate(api.landscape.state().mode === 'fill' ? 'fill' : 'pond'); break;
+      case 'water': { const m = api.landscape?.state().mode; api.landscape?.activate(m === 'fill' || m === 'river' || m === 'spring' || m === 'riverFill' ? m : 'pond'); break; }
       case 'nature': { const m = api.landscape?.state().mode; if (m === 'rock' || m === 'rockClear') api.landscape?.activate(m); else api.nature?.setMode(api.nature.state().mode); break; }
       case 'decor': { const m = api.landscape?.state().mode; api.landscape?.activate(m === 'decorClear' ? 'decorClear' : 'decor'); break; }
     }
@@ -1027,7 +1033,8 @@ export class StDock extends StElement {
       case 'water': return [
         { id: 'pond', name: 'Dig pond', icon: '💧', price: `${usd(LANDSCAPE.pond.costPerTile)}/tile`, key: '1', desc: 'Dig a pond: drag a rectangle (3–11 tiles) or click for the default size.', stats: [['Cost', `${usd(LANDSCAPE.pond.costPerTile)}/tile + earthworks`], ['Size', '3–11 tiles']],
           rules: [`Nearly level ground, ${LANDSCAPE.pond.waterGap}+ tiles from other water, buildings, pistes and lifts`, 'Freezes over in winter; counts as a lake for beaches and boat rentals'], lock: () => ls.pondLocked(), run: () => ls.activate('pond'), on: () => onLand('pond') && !ls.pondLocked() },
-        { id: 'fill', name: 'Fill in', icon: '🪣', price: `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`, key: '2', desc: 'Fill a pond you dug back in to ground level.', stats: [['Cost', `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`]], rules: ['Click a pond you dug', 'Natural lakes cannot be filled'], run: () => ls.activate('fill'), on: () => onLand('fill') },
+        { id: 'fill', name: 'Fill in pond', icon: '🪣', price: `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`, key: '2', desc: 'Fill a pond you dug back in to ground level.', stats: [['Cost', `${usd(LANDSCAPE.pond.fillCostPerTile)}/tile`]], rules: ['Click a pond you dug', 'Natural lakes cannot be filled'], run: () => ls.activate('fill'), on: () => onLand('fill') },
+        ...this.riverItems(),
       ];
       case 'nature': return [
         ...(nat ? (['plant', 'clear'] as const).map((md, i) => ({
@@ -1049,6 +1056,26 @@ export class StDock extends StElement {
       ];
     }
   }
+  /** Terrain drawer shortcut to the Landscape > Water "Place spring" tool (same tool, same mode; R2-3). */
+  private springShortcut(): LandItem {
+    const ls = this.api!.landscape!, usd = (n: number): string => `$${Math.round(n * ls.multiplier())}`;
+    return { group: 'Water', id: 'spring', name: 'Spring', icon: '⛲', price: usd(SPRING.cost), desc: 'Place a spring: the start of a river (Landscape > Water > Dig river). Same tool as in the Landscape drawer.', stats: [['Cost', usd(SPRING.cost)]], rules: ['Dry, free ground that rises on two sides'],
+      lock: () => ls.riverLocked?.() ?? null, run: () => { ls.activate('spring'); this.updateCards(); }, on: () => this.tool === 'landscape' && ls.state().mode === 'spring' && !(ls.riverLocked?.() ?? null) };
+  }
+  /** River cards of the Water tab (Phase 6 Task 14, docs/rivers.md). */
+  private riverItems(): LandItem[] {
+    const ls = this.api!.landscape!, m = ls.multiplier(), usd = (n: number): string => `$${Math.round(n * m)}`;
+    const onLand = (mode: LandscapeMode): boolean => this.tool === 'landscape' && ls.state().mode === mode;
+    const lock = (): string | null => ls.riverLocked?.() ?? null;
+    return [
+      { id: 'river', name: 'Dig river', icon: '🏞️', price: `${usd(RIVER.costPerTile)}/tile`, key: '7', desc: 'Dig a 1-tile-wide river: drag from a source (a spring, a lake shore or a stream bank) to a lake, a stream or the map edge. The route follows the fall line.', stats: [['Cost', `${usd(RIVER.costPerTile)}/tile + earthworks`], ['Deepest cut', `${RIVER.maxCarve} half-steps per tile`], ['Length', `${RIVER.minTiles}–${RIVER.maxTiles} tiles`]],
+        rules: ['Hover a spring to preview the cheapest route; drag onto water or the map edge to choose the end', 'Never through buildings, lifts, rail, paths or pistes', 'Paths and trails bridge it; no upkeep'], lock, run: () => ls.activate('river'), on: () => onLand('river') && !lock() },
+      { id: 'spring', name: 'Place spring', icon: '⛲', price: usd(SPRING.cost), key: '8', desc: 'A spring is where a river can start. Place one on ground that rises on at least two sides (also in the Terrain drawer).', stats: [['Cost', usd(SPRING.cost)], ['Refund', 'none']],
+        rules: ['Dry, free ground that rises on two sides', 'The cyan rings on the map are natural springs: easy places to start'], lock, run: () => ls.activate('spring'), on: () => onLand('spring') && !lock() },
+      { id: 'riverFill', name: 'Fill in river', icon: '🧱', price: 'free', key: '9', desc: 'Fill a river you dug back in and restore the ground. Click the river (or a spring you placed to remove it).', stats: [['Cost', 'free'], ['Refund', 'none']],
+        rules: ['Refused while another river flows into it or branches off it', 'Natural streams cannot be filled'], run: () => ls.activate('riverFill'), on: () => onLand('riverFill') },
+    ];
+  }
   private landItem(id: string): LandItem | undefined {
     if (this.state.open === 'terrain' || this.state.open === 'view') return this.tvItems(this.state.open).find((x) => x.id === id);
     for (const t of LAND_TABS) { const i = this.landItems(t.id).find((x) => x.id === id); if (i) return i; }
@@ -1069,6 +1096,11 @@ export class StDock extends StElement {
     if (tab === 'water') {
       const lo = LANDSCAPE.pond.minExtent, hi = LANDSCAPE.pond.maxExtent;
       brushSel(lo, hi, 'Pond size', () => ls.state().pondSize, (n) => { if (ls.state().mode !== 'pond') ls.activate('pond'); ls.setBrush(n); });
+      if (ls.setShowSprings) {
+        const sp = this.btn('◎ Springs', 'Show or hide the natural spring sites: easy places to start a river', () => { ls.setShowSprings!(!(ls.state().showSprings ?? true)); this.landSync?.(); });
+        marks.push(() => { sp.classList.toggle('on', ls.state().showSprings ?? true); sp.setAttribute('aria-pressed', String(ls.state().showSprings ?? true)); });
+        side.appendChild(sp);
+      }
     } else if (tab === 'nature') {
       if (nat) {
         const sp = makeSelect(nat.groups.map((g) => ({ value: g.id, label: g.label })), nat.state().group, 'Species group (G cycles)', (v) => { nat.setGroup(v); this.landSync?.(); });
@@ -1087,7 +1119,7 @@ export class StDock extends StElement {
     }
     const hint = el('div', 'trailnote');
     hint.textContent = ({
-      water: 'Drag a rectangle on level ground; [ ] changes the default size. Streams: not available yet.',
+      water: 'Pond: drag a rectangle on level ground ([ ] size). River: hover a spring (cyan ring) or a lake / stream bank, drag to the end; keys 7 river · 8 spring · 9 fill in.',
       nature: 'Trees: 1 plant / 2 clear, G species. Boulders: 3 / 4, drag to scatter. [ ] brush.',
       decor: 'Click to place, drag to draw a row; hedges, fences and walls follow the drag. R turns a piece.',
     } as const)[tab];

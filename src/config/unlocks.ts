@@ -20,10 +20,10 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'windTurbine', level: 2 },
   // Level 2: digging ponds (the rest of the Landscape drawer is always available).
   { kind: 'landscape', id: 'pond', level: 2 },
+  // Level 2: digging rivers + placing springs (Phase 6, like ponds; no goal or Advisor rule needs a river).
+  { kind: 'landscape', id: 'river', level: 2 },
   // Level 3 (Regional name): the heavy transport.
   { kind: 'lift', id: 'funicular', level: 3 },
-  // Level 3: the high-speed six-seat chair (Phase 6, Task 47; no goal or Advisor rule needs it).
-  { kind: 'lift', id: 'chair6d', level: 3 },
   // Level 3: the big solar plant (small hydro needs a stream and $11k: self-limiting, always open).
   { kind: 'building', id: 'solarPlant', level: 3 },
   // Level 4 (Alpine destination): rescue by air and the biggest cabins / chairs.
@@ -49,7 +49,7 @@ export const unlocksAt = (level: number): UnlockDef[] => UNLOCKS.filter((u) => u
 export function unlockName(kind: UnlockKind, id: string): string {
   if (kind === 'building') return BUILDINGS[id]?.name ?? id;
   if (kind === 'lift') return LIFTS[id as LiftKind]?.name ?? id;
-  if (kind === 'landscape') return id === 'pond' ? 'Ponds & lakes (Landscape)' : id;
+  if (kind === 'landscape') return id === 'pond' ? 'Ponds & lakes (Landscape)' : id === 'river' ? 'Rivers & springs (Landscape)' : id;
   return CAMPAIGNS.find((c) => c.id === id)?.name ?? id;
 }
 export const unlockIcon = (kind: UnlockKind, id: string): string => (kind === 'campaign' ? CAMPAIGNS.find((c) => c.id === id)?.icon ?? '📣' : kind === 'lift' ? '🚡' : kind === 'landscape' ? '💧' : '🏗️');
