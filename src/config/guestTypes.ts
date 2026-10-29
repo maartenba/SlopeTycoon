@@ -25,6 +25,12 @@ export interface TypeLook {
   gear?: TypeGear;
   /** Forced outfit regardless of season (0 warm, 1 summer, 2 swim); undefined = by season / state. */
   outfit?: number;
+  /** Always a helmet (any season): mountain bikers. */
+  helmet?: boolean;
+  /** Carries a fishing rod (view-only prop): anglers. */
+  rod?: boolean;
+  /** Head-wear forced for the type (HairStyle value); anglers favour caps / sun hats. */
+  hat?: number;
 }
 
 export interface GuestTypeDef {
@@ -53,10 +59,33 @@ export interface GuestTypeDef {
   /** Skill distribution [beginner, intermediate, advanced, expert] (sums to 1); omitted = the fallback type's. */
   skill?: readonly [number, number, number, number];
   look?: TypeLook;
+  /** Activity preference in percent [hike, bike]; the rest skis. Omitted = the fallback type's (`prefFor`). */
+  pref?: readonly [number, number];
 }
 
-/** Extra types, in index order (index = CORE_TYPE_COUNT + position). EMPTY until a milestone adds a type (Snowboarder: M6.5 ...). */
-export const GUEST_TYPE_DEFS: GuestTypeDef[] = [];
+/**
+ * Pseudo building ids a type may list in `requires` (conditions the spawner computes from the world, not placed buildings):
+ * `@mtbBikeLift` = a rideable MTB trail AND an open bike-capable lift (Mountain biker).
+ */
+export const COND_MTB_BIKE_LIFT = '@mtbBikeLift';
+
+/**
+ * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
+ * 6 = Mountain biker (Phase 6 Task 25).
+ */
+export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
+  {
+    id: 'mtb', label: 'Mountain biker', seasons: { summer: 0.18 }, minLevel: 1, requires: [COND_MTB_BIKE_LIFT], fallback: 'adventure', segment: 'adventure',
+    weather: { rain: 0.4, storm: 0.1, cloudy: 0.9 },
+    // Loves the bike park and the MTB trails (trail goals come from `pref`), rents gear, eats out; ignores snow-only and lodging-heavy things.
+    appeal: { adventure: 1.3, rental: 0.9, restaurant: 0.7, bar: 0.8, terrace: 0.7, hike: 0.5, shop: 0.4, kidsGround: 0.1, playground: 0.1, carpet: 0.05, rink: 0.1, stunt: 0.2, beach: 0.5, boats: 0.4 },
+    group: [1, 3], budget: [220, 420], overnight: 0.35, skill: [0.05, 0.3, 0.45, 0.2], pref: [5, 88],
+    look: { top: 3, colour: 0x9acd32, helmet: true, outfit: 1 },
+  },
+];
+
+/** Extra types, in index order (index = CORE_TYPE_COUNT + position). Starts as the shipped list; tests may reset / register more. */
+export const GUEST_TYPE_DEFS: GuestTypeDef[] = [...SHIPPED_TYPES];
 
 /** Register an extra type (tests, mods, later milestones that prefer code over the table). Returns its type index. */
 export function registerGuestType(def: GuestTypeDef): number {
@@ -67,6 +96,8 @@ export function registerGuestType(def: GuestTypeDef): number {
 }
 /** Remove every extra type again (test hygiene). */
 export function resetGuestTypes(): void { GUEST_TYPE_DEFS.length = 0; }
+/** Back to the shipped list (test hygiene after `resetGuestTypes`). */
+export function restoreShippedTypes(): void { GUEST_TYPE_DEFS.length = 0; GUEST_TYPE_DEFS.push(...SHIPPED_TYPES); }
 
 export const guestTypeCount = (): number => CORE_TYPE_COUNT + GUEST_TYPE_DEFS.length;
 export const extraDef = (type: number): GuestTypeDef | undefined => (type >= CORE_TYPE_COUNT ? GUEST_TYPE_DEFS[type - CORE_TYPE_COUNT] : undefined);

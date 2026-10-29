@@ -2,6 +2,7 @@ import { BUILDINGS } from '../../config/buildings';
 import { LIFTS } from '../../config/lifts';
 import { Layer } from '../../world/Networks';
 import type { LiftData } from '../Lift';
+import { extraDef } from '../../config/guestTypes';
 import { coreOf, GuestType, type GuestStore } from './Guest';
 import type { WorldBuilding } from './GuestWorld';
 import { NavMode, type NavGraph } from './NavGraph';
@@ -29,7 +30,7 @@ export const EVENING_VENUES: readonly string[] = [...FOOD, ...BAR];
 export const REST = new Set(['baseLodge', 'lodge', 'chalet', 'apartment']);
 export const SHOP = new Set(['shop', 'rental']);
 /** Real attractions (activity goals); everything else visitable counts as generic wandering. */
-export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet']);
+export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet', 'quadBase']);
 export const LESSON = new Set(['skiSchoolHQ']);
 /** Comfort need (docs/comfort.md): buildings a guest walks to on purpose when the urge is high. */
 export const RELIEF = new Set(['toilets']);
@@ -69,7 +70,8 @@ export function snowPreference(skill: number, depth: number): number {
 export function prefFor(id: number, type: number): number {
   const h = (Math.imul(id, 2654435761) >>> 0) % 100;
   const ct = coreOf(type);
-  const [hike, bike] = ct === GuestType.Adventure ? [5, 15] : ct === GuestType.Family ? [30, 20] : [15, 15];
+  const own = type >= 6 ? extraDef(type)?.pref : undefined;
+  const [hike, bike] = own ?? (ct === GuestType.Adventure ? [5, 15] : ct === GuestType.Family ? [30, 20] : [15, 15]);
   return h < hike ? Pref.Hike : h < hike + bike ? Pref.Bike : Pref.Ski;
 }
 

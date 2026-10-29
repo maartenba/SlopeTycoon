@@ -6,6 +6,7 @@ import { hourOfDay, seasonOf } from '../Clock';
 import { arrivalWindow } from '../Daylight';
 import type { SimSystem } from '../Systems';
 import type { RailCrossings } from '../RailCrossings';
+import { takesGuestsIn } from '../attractions/Lodging';
 import {
   evaluateArrivals, makeCum, tripPlan, VEHICLE_SPEED, VehicleKind, centre, vehiclePose, type ArrivalPoint, type ArrivalReport, type Vehicle,
 } from './Arrivals';
@@ -107,6 +108,8 @@ export class Spawner {
   typesV2 = false;
   /** Career level for the extra types' `minLevel` (createSim wires the progression; default = max, i.e. no gate). */
   levelFn: () => number = () => 99;
+  /** World conditions the extra types may require (`config/guestTypes` pseudo ids such as `@mtbBikeLift`); createSim wires it. Read every 10 ticks. */
+  flagsFn: (() => readonly string[]) | null = null;
   /** Live marketing provider (campaigns); default = the `marketing` field. */
   marketingFn: (() => MarketingState) | null = null;
   /** Price elasticity + calendar demand (replaces the fixed-ticket stub when set). */
@@ -121,6 +124,8 @@ export class Spawner {
   private report: ArrivalReport | null = null;
   private stats: ResortStats = { openLifts: 0, openPisteTiles: 0, attractions: 0, amenityVariety: 0 };
   private lodging = 0;
+  /** Season of the last update (seasonal lodging such as the campground only counts while open). */
+  private seasonNow: SeasonId = 'winter';
   private placed = new Set<string>();
   private modeLoad = [0, 0, 0];
   private lastRate = 0;
@@ -147,9 +152,10 @@ export class Spawner {
     this.placed.clear();
     const wantIds = this.typesV2 && GUEST_TYPE_DEFS.length > 0;
     for (const b of this.world.buildings()) {
-      if (b.active && BUILDINGS[b.type]?.category === 'lodging') this.lodging += BUILDINGS[b.type]!.capacity;
+      if (b.active && BUILDINGS[b.type]?.category === 'lodging' && takesGuestsIn(b.type, this.seasonNow)) this.lodging += BUILDINGS[b.type]!.capacity;
       if (wantIds && b.active) this.placed.add(b.type);
     }
+    if (wantIds && this.flagsFn) for (const f of this.flagsFn()) this.placed.add(f);
     this.modeLoad = [0, 0, 0];
     const s = this.store;
     for (let i = 0; i < s.limit; i++) if (s.alive[i]) this.modeLoad[s.mode[i]!]!++;
@@ -157,6 +163,7 @@ export class Spawner {
   }
 
   update(state: GameState, tick: number): void {
+    this.seasonNow = seasonOf(state.date);
     if (tick % 10 === 0 || !this.report) this.refresh();
     this.advanceVehicles(state);
     const hour = hourOfDay(state.date);

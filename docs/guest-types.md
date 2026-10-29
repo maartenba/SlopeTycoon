@@ -1,6 +1,6 @@
 # Guest types (framework)
 
-Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventure; indices 0-5) keep their hand-tuned tables. **Extra** types (index 6+) are data rows in `src/config/guestTypes.ts` (`GUEST_TYPE_DEFS`), so Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler arrive as data plus a few hooks. The table is **empty today**: no new type is active, and the golden hashes are unchanged.
+Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventure; indices 0-5) keep their hand-tuned tables. **Extra** types (index 6+) are data rows in `src/config/guestTypes.ts` (`GUEST_TYPE_DEFS`), so Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler arrive as data plus a few hooks. The shipped list is `SHIPPED_TYPES` (never reorder, append only): **6 = Mountain biker** (Task 25). Types that become active move the golden hashes (re-recorded at the milestone STOP).
 
 ## A type row (`GuestTypeDef`)
 | Field | Meaning |
@@ -32,3 +32,10 @@ Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventur
 2. Add specific attraction appeal under `appeal` if the fallback column is not right.
 3. If behaviour differs from the fallback (e.g. snowboarders and flats), add a `coreOf`-style hook at that single decision site.
 4. Re-record goldens in that milestone's STOP task (the framework is already live; the list is empty today so it is a no-op), add tests.
+
+## Shipped extra types
+| Index | Id | Seasons | Gate | Notes |
+|---|---|---|---|---|
+| 6 | `mtb` Mountain biker | summer 0.18 (~15 % of the summer arrivals) | level 1; `requires: ['@mtbBikeLift']` | segment adventure (Hike & Bike Weekends, Summer Adventure); `pref: [5, 88]` (hike %, bike %: nearly always the MTB trails); appeal adventure park 1.3, rental 0.9, bars / restaurants 0.7-0.8; look: lime top, helmet in every season, forced summer outfit; rain x0.4 |
+
+`requires` also accepts **pseudo ids** computed by the spawner from the world (`Spawner.flagsFn`, wired in `createSim`): `@mtbBikeLift` = the decider knows a rideable MTB trail tile AND at least one open lift that `carriesBikes`. `GuestTypeDef.pref` overrides the hike / bike activity split in `prefFor`; `look.helmet` / `look.hat` / `look.rod` are the head-wear and prop hooks.

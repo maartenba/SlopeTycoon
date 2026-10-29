@@ -96,6 +96,9 @@ export function appearanceOf(id: number, type: number, winter: boolean, kid?: bo
   out.female = female; out.age = age; out.skin = skin; out.hair = hair;
   out.build = age === Age.Child ? 1 : pick(rand01(id, 7), [0.3, 0.5, 0.2]);
   out.hairStyle = hairStyleFor(id, female, age, winter);
+  const lk = type >= 6 ? extraDef(type)?.look : undefined;
+  if (lk?.helmet) out.hairStyle = HairStyle.Helmet; // mountain bikers: a helmet in every season
+  else if (lk?.hat !== undefined && age !== Age.Child) out.hairStyle = lk.hat; // anglers: cap / sun hat
   out.top = top;
   out.bottom = Math.floor(rand01(id, 8) * 8);
   out.hat = (top + 3 + Math.floor(rand01(id, 9) * 9)) % 16;

@@ -96,6 +96,7 @@ import { TREE_KINDS } from '../world/Props';
 import { ScenarioRunner, type ScenarioWorld } from '../sim/scenario/ScenarioRunner';
 import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
+import { COND_MTB_BIKE_LIFT } from '../config/guestTypes';
 import { DAYS_PER_YEAR } from '../config/balance';
 import { Landscape, type LandscapeEnv } from '../sim/landscape/Landscape';
 import { Rivers } from '../world/Rivers';
@@ -407,7 +408,7 @@ export function createSim(opts: SimOptions) {
   guestSim.spawner.rateMult = diff.spawn; guestSim.patienceMult = diff.patience; guestSim.injuryMult = diff.incidents * (mods.eventBias?.incidents ?? 1);
   guestSim.spawner.crossings = crossings;
   guestSim.comfortNeed = opts.comfortNeed !== false; // default ON like the real game (tests that need the old needs opt out)
-  guestSim.spawner.typesV2 = true; // extra guest types of config/guestTypes.ts (the game always draws them; list is empty today)
+  guestSim.spawner.typesV2 = true; // extra guest types of config/guestTypes.ts (the game always draws them; shipped rows: mtb)
   guestSim.spawner.levelFn = (): number => (progressionRef && !progressionRef.open ? progressionRef.level : 99);
   if (mods.guestMix) guestSim.spawner.mixBias = GUEST_TYPE_NAMES.map((n) => mods.guestMix?.[n] ?? 1);
   registerGuestSystems(registry, guestSim);
@@ -758,6 +759,12 @@ export function createSim(opts: SimOptions) {
   bus.on('guest:arrived', (e) => { const sl = guestSim.store.slotOf(e.id); if (sl >= 0) marketing.recordArrival(guestSim.store.type[sl]!, guestSim.store.mode[sl]); });
   bus.on('day:changed', () => { pricing.newDay(); marketing.update(); });
   guestSim.spawner.marketingFn = () => marketing.effect();
+  // World conditions for the extra guest types (config/guestTypes.ts pseudo ids; Phase 6 Task 25): a rideable MTB trail AND an open bike-capable lift.
+  guestSim.spawner.flagsFn = (): string[] => {
+    const f: string[] = [];
+    if (guestSim.decider.mtbTiles.length > 0 && lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes)) f.push(COND_MTB_BIKE_LIFT);
+    return f;
+  };
   guestSim.spawner.pricingDemand = {
     volume: (mix) => mixVolume(mix, pricing.ratioOf('dayPass'), diff.priceSens) * pricing.dayDemand() * (1 - SHOCK.volumePenalty * pricing.shock),
     typeWeight: (k) => demandMultiplier(k, pricing.ratioOf('dayPass'), diff.priceSens),

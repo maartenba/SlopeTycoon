@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  CORE_TYPE_COUNT, appealFor, coreOf, extraWeight, guestTypeCount, registerGuestType, resetGuestTypes, segmentIndex, typeKey, typeLabel, type GuestTypeDef,
+  CORE_TYPE_COUNT, appealFor, coreOf, extraWeight, guestTypeCount, registerGuestType, resetGuestTypes, restoreShippedTypes, segmentIndex, typeKey, typeLabel, type GuestTypeDef,
 } from '../../../src/config/guestTypes';
 import { seasonStartDay } from '../../../src/sim/Clock';
 import { demandMultiplier } from '../../../src/sim/Elasticity';
@@ -18,7 +18,9 @@ const DUMMY: GuestTypeDef = {
 };
 const DUMMY_IDX = CORE_TYPE_COUNT;
 
-afterEach(() => resetGuestTypes());
+// the framework tests run on an empty table (the shipped rows are covered by their own tests, e.g. mtbType.test.ts)
+beforeEach(() => resetGuestTypes());
+afterEach(() => restoreShippedTypes());
 
 const mkRig = (season: 'winter' | 'summer', v2: boolean, level = 99) => {
   resetIds();

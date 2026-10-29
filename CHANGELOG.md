@@ -4,6 +4,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Added
+
+- **Mountain bikers** (new guest type, summer only): they arrive in about 10-20 % of the summer crowd once the resort has a rideable MTB trail and an open bike-capable lift, mostly ride the trails, rent bikes, wear a lime shirt and a helmet, and count as Adventure guests for campaigns (`docs/guest-types.md`).
 ### Fixes
 
 - **Dug rivers on slopes**: the channel bed now descends continuously (both corners of every tile edge are cut to one level that never rises along the flow), so a river no longer shows a saw-tooth of tilted water sheets, single-corner pits, or a surface that seems to climb the hillside; the water surface of a bend can never rise above its entry level. Flow animation direction is pinned downstream by a test (`docs/rivers.md`, "Bed and flow direction").
