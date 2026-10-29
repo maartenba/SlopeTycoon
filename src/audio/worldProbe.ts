@@ -13,6 +13,8 @@ export interface ProbeDeps {
   cows: () => Array<{ x: number; y: number }>;
   cats: () => Array<{ x: number; y: number }>;
   helis: () => Array<{ x: number; y: number }>;
+  /** Quad tour carriers out on their ride (optional: absent = none). */
+  quads?: () => Array<{ x: number; y: number }>;
   /** Tree trunks within r tiles of (x, z) (walk-mode wind shelter; optional). */
   trunks?: (x: number, z: number, r: number) => number;
   /** World height (render units) at a tile. */
@@ -56,6 +58,7 @@ export class WorldProbe {
     o.cows = cows;
     const cat = nearestSource(l, d.cats()); o.snowcat = cat ? 0.3 + 0.7 * proximity(cat.dist, 60) : 0;
     const heli = nearestSource(l, d.helis()); o.heli = heli ? 0.4 + 0.6 * proximity(heli.dist, 80) : 0;
+    const quad = d.quads ? nearestSource(l, d.quads()) : null; o.quad = quad ? 0.3 + 0.7 * proximity(quad.dist, 40) : 0;
     return o;
   }
 }

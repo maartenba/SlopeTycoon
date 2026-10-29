@@ -182,5 +182,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('campground', 'Campground', 'lodging', 5, 4, 3500, 8, { access: 'path', altAccess: ['trail'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { capacity: 16, chimney: { x: 0.05, y: 0.42, z: 0.17 }, placeTip: 'Place the campground beside a footpath or hiking trail, on gentle ground' }),
   // Petting zoo (Phase 6 Task 20, docs/petting-zoo.md): 3x3 fenced pen with goats, sheep, rabbits and a donkey; a summer family attraction on a footpath. Standalone (no farm needed).
   b('pettingZoo', 'Petting Zoo', 'recreation', 3, 3, 3000, 10, { access: 'path', site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { needs: ['snowFree'], staff: 1, capacity: 20 }),
+  // Quad Base (Phase 6 Task 22, docs/quads.md): garage + fuel pump + staging yard of the guided summer quad tours. The ride runs on the attached road / footpath tiles (config/tours.ts).
+  b('quadBase', 'Quad Base', 'recreation', 3, 2, 6500, 25, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default' }, placeTip: 'Place the quad base beside a road or footpath: the tour rides out along it' }, { needs: ['snowFree'], staff: 2, capacity: 8 }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

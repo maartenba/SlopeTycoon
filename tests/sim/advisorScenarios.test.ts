@@ -310,6 +310,15 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'tour.quad', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 40); s.game.date.day = seasonStartDay('summer') + 5; },
+    fixes: [
+      { name: 'a quad base stands', apply: (s) => { buildAt(s, 'quadBase', lodge(s), { rmax: 14 }); } },
+      { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
+      { name: 'winter comes', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 5; } },
+    ],
+  },
+  {
     id: 'piste.disconnected', daily: true,
     setup: (s) => { let t = 0; for (let i = 0; i < s.size * s.size; i++) if (s.ops.quality.isPiste(i)) { t = i; break; } const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => [...real(), { disconnected: true, count: 9, tiles: [t] }] as never; },
     fixes: [

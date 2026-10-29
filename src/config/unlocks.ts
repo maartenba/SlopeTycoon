@@ -18,6 +18,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'lift', id: 'gondola6', level: 2 },
   // Level 2: wind power (the solar array, nursery, recycling and biomass are always open; the Advisor suggests the solar array).
   { kind: 'building', id: 'windTurbine', level: 2 },
+  // Level 2: the summer quad tours (Phase 6 Task 22; an optional motorised extra: no goal or Advisor rule needs it).
+  { kind: 'building', id: 'quadBase', level: 2 },
   // Level 2: digging ponds (the rest of the Landscape drawer is always available).
   { kind: 'landscape', id: 'pond', level: 2 },
   // Level 2: digging rivers + placing springs (Phase 6, like ponds; no goal or Advisor rule needs a river).

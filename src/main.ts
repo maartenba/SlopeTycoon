@@ -33,6 +33,7 @@ import { ECO_POLICY_BY_ID } from '@/config/eco';
 import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import { TourVehicles } from '@/render/TourVehicles';
+import type { Carrier } from '@/sim/attractions/Tour';
 import type { DressingWorld } from '@/render/festival/placeDressing';
 import { dressingWorldOf } from '@/render/festival/dressingWorld';
 import { almabtriebWindow } from '@/sim/events/EventCalendar';
@@ -1237,6 +1238,7 @@ let settingsRef: StSettings | null = null;
 let saveLoadRef: StSaveLoad | null = null;
 try {
   if (DEMO) throw new Error('no audio in the title-screen demo');
+  const quadBuf: Carrier[] = [];
   let maxH = 1;
   for (let i = 0; i < grid.heights.length; i++) if (grid.heights[i]! * 0.5 > maxH) maxH = grid.heights[i]! * 0.5;
   const cc = renderer.controls;
@@ -1252,6 +1254,7 @@ try {
       cows: () => sim.nature.livestock.animals.filter((a) => a.species === 'cow' && !a.hidden),
       cats: () => (opsRef?.grooming.nightActive ? opsRef.grooming.cats : []),
       helis: () => safetyRef?.heli.helis ?? [],
+      quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
       env: () => ({ season: seasonOf(game.date), weather: weather.current.kind, hour: currentHour(), wind: weather.current.wind, ...sunTimes(game.date.day), guests: guestSim.store.count, festival: sim.events.active().length > 0 }),
     },

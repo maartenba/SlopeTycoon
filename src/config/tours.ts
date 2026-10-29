@@ -4,8 +4,7 @@ import type { Appeal } from '../sim/attractions/Attraction';
 /**
  * Tour attractions (Phase 6 Task 5; docs/tours.md): guided rides / hikes along a route that the planner finds from the base building over
  * attached network tiles. A tour def is keyed by the id of its BASE BUILDING (config/buildings.ts); price, upkeep and staff live in the usual
- * building / price tables. The catalogue below is intentionally EMPTY until the content tasks (sleigh, snowshoe, scooter, quad, canyoning, rafting)
- * add rows, so the whole system is inert in the real game.
+ * building / price tables. Content tasks (sleigh, snowshoe, scooter, quad, canyoning, rafting) add rows; quads were the first.
  */
 export type TourRouteKind = 'road' | 'path' | 'trail' | 'piste' | 'water';
 export type TourVehicleKind = 'sleigh' | 'walkers' | 'scooter' | 'quad' | 'raft';
@@ -47,8 +46,20 @@ export interface TourDef {
   vehicles: number;
 }
 
-/** The tour catalogue (empty until the content tasks). Tests register a dummy def here and remove it again. */
-export const TOUR_DEFS: Record<string, TourDef> = {};
+/**
+ * The tour catalogue. Tests register a dummy def here and remove it again.
+ * Quad Base (Phase 6 Task 22, docs/quads.md): summer guided quad rides out and back along attached ROAD / FOOTPATH tiles (never trails or pistes), 8 seats
+ * (4 quads x 2), 10 to 16 h every 2 h, 1.5 h rides. Motorised: scares wildlife and books a small, capped sustainability penalty.
+ */
+export const TOUR_DEFS: Record<string, TourDef> = {
+  quadBase: {
+    id: 'quadBase', routes: ['road', 'path'], motorised: true, minLen: 8, maxLen: 26,
+    durationTicks: 15, intervalTicks: 20, firstHour: 10, lastHour: 16, seats: 8, minRiders: 2,
+    seasons: ['summer'], maxWind: 0.7, maxInstability: 0.8,
+    appeal: [0.35, 0.5, 0.3, 0.3, 0.1, 1], happiness: 0.2,
+    sustainPerDeparture: 0.35, noiseRadius: 9, vehicle: 'quad', vehicles: 4,
+  },
+};
 
 export const TOURS = {
   /** Total sustainability facet points all motorised tours can ever take (D-P8: small). */

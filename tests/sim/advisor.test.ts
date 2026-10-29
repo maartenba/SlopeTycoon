@@ -61,6 +61,7 @@ const CASES: Case[] = [
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
   { id: 'season.summer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.networks.layers[100] = (s.networks.layers[100]! | Layer.Hike) as never; } },
   { id: 'summer.camp', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { guests(s, 20); /* winter */ } },
+  { id: 'tour.quad', trigger: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 10); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'cash.summerBuffer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 800; }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 5_000_000; } },
   { id: 'snow.gaps', trigger: (s) => removeTypes(s, 'snowCannon'), calm: (s) => { s.coverage.map('snowmaking').fill(1); } },
   { id: 'snow.mode', trigger: (s) => { s.weather.current.snowline = 1e6; }, calm: (s) => { s.weather.current.snowline = 1e6; s.ops.snowmaking.setMode('auto'); } },

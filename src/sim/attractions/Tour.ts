@@ -99,7 +99,7 @@ export interface TourInfo {
   totalDepartures: number; totalRiders: number; totalRevenue: number;
 }
 
-export interface Carrier { kind: TourDef['vehicle']; x: number; y: number; heading: number; seats: number }
+export interface Carrier { kind: TourDef['vehicle']; x: number; y: number; heading: number; seats: number; /** Route length (tiles) behind the vehicle in its direction of travel (dust trails stop at the route ends). */ back: number }
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
@@ -274,7 +274,7 @@ export class TourSystem {
           const u = p < 0.5 ? p * 2 : 2 - p * 2, f = u * (L - 1), i0 = Math.min(L - 2, Math.floor(f)), k = f - i0;
           const ax = (t[i0]! % n) + 0.5, ay = ((t[i0]! / n) | 0) + 0.5, bx = (t[i0 + 1]! % n) + 0.5, by = ((t[i0 + 1]! / n) | 0) + 0.5;
           const dir = p < 0.5 ? 1 : -1;
-          out.push({ kind: s.def.vehicle, x: ax + (bx - ax) * k, y: ay + (by - ay) * k, heading: Math.atan2((by - ay) * dir, (bx - ax) * dir), seats: per });
+          out.push({ kind: s.def.vehicle, x: ax + (bx - ax) * k, y: ay + (by - ay) * k, heading: Math.atan2((by - ay) * dir, (bx - ax) * dir), seats: per, back: p < 0.5 ? f : L - 1 - f });
         }
       }
     }

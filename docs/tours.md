@@ -1,6 +1,6 @@
 # Tour attractions (Phase 6 Task 5)
 
-A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, snowscooter, quad, and later canyoning and rafting. The system is generic and config driven; the catalogue (`TOUR_DEFS` in `src/config/tours.ts`) is **empty** until the content tasks add rows, so nothing changes in the real game yet.
+A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, snowscooter, quad, and later canyoning and rafting. The system is generic and config driven; the catalogue (`TOUR_DEFS` in `src/config/tours.ts`) grows with the content tasks. First row: the Quad Base (`docs/quads.md`). Without a tour base the system is inert.
 
 ## Pieces
 
@@ -46,8 +46,8 @@ Save module `tours` v1: per-tour counters, `lastKey`, day stats. **It serialises
 
 ## Flag
 
-`createSim` always wires the system; with an empty catalogue it is inert (no flag needed). The M6.x STOP tasks re-record goldens when content lands.
+`createSim` always wires the system; it is inert until a tour base is built (no flag needed). The M6.x STOP tasks re-record goldens when content lands.
 
 ## Not done here
 
-No route tool (the planner derives the route from the attached network, so the player just builds paths / roads / trails next to the base), no catalogue buildings, no water validator (Task 24).
+No route tool (the planner derives the route from the attached network, so the player just builds paths / roads / trails next to the base), no water validator (Task 24).

@@ -6,7 +6,7 @@ import { GState } from '../../../src/sim/guests/Guest';
 import { seasonOf } from '../../../src/sim/Clock';
 import { harness } from './harness';
 
-const SERVED = Object.keys(ATTRACTION_SPECS).filter((t) => !ATTRACTION_SPECS[t]!.overnightOnly && t !== 'toilets'); // toilets are free (own tests in tests/sim/comfort.test.ts)
+const SERVED = Object.keys(ATTRACTION_SPECS).filter((t) => !ATTRACTION_SPECS[t]!.overnightOnly && t !== 'toilets' && !ATTRACTION_SPECS[t]!.tour); // toilets are free (own tests in tests/sim/comfort.test.ts); tour bases board in scheduled departures (tests/sim/attractions/tour.test.ts, quadTour.test.ts)
 
 describe('registry covers the catalog', () => {
   it('every restaurant/shop/rental/lodging/recreation/kids/water item has a spec and a price entry', () => {
