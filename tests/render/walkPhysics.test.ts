@@ -352,3 +352,18 @@ describe('walk mode never touches the sim', () => {
     expect(on.hash).toBe(off.hash);
   }, 90000);
 });
+
+describe('walkPhysics: bridge decks are stairs, not a wall (suspension ramp, Task 46)', () => {
+  // A deck ramp rising 0.5 over half a tile (gradient 1.0 > tan 40 deg) next to a bank, then a flat deck: x 10..10.5 ramp, 10.5+ deck.
+  const ramp = (x: number): number => (x < 10 ? 0 : x < 10.5 ? (x - 10) * 1.0 : 0.5);
+  it('a walker is stopped by the steep ramp without the deck flag and walks over it with it', () => {
+    const base = world({ ground: ramp }), blocked = makeWalker(8, 20, Math.PI * 1.5, 0); // yaw 270 deg = east (+x)
+    run(blocked, fwd, 3, base);
+    expect(blocked.x).toBeLessThan(10.4);
+    const deck: WalkWorld = { ...base, onDeck: (x) => x >= 9.8 }; // the ramp half tile and the deck
+    const s = makeWalker(8, 20, Math.PI * 1.5, 0);
+    run(s, fwd, 3, deck);
+    expect(s.x).toBeGreaterThan(12);
+    expect(s.ground).toBeCloseTo(0.5, 2);
+  });
+});

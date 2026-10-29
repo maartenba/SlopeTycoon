@@ -64,7 +64,7 @@ export class TerrainWalkWorld implements WalkWorld {
   private tiles = new Map<number, number[]>();
   private version = -1;
   private decorRef: readonly DecorItem[] | null = null;
-  constructor(private grid: Grid, private nets: Pick<Networks, 'kind' | 'bridge'> | null, private props: PropStore | null, readonly ground: (x: number, z: number) => number, private decor: (() => readonly DecorItem[]) | null = null) { this.size = grid.size; }
+  constructor(private grid: Grid, private nets: (Pick<Networks, 'kind' | 'bridge'> & Partial<Pick<Networks, 'deckY'>>) | null, private props: PropStore | null, readonly ground: (x: number, z: number) => number, private decor: (() => readonly DecorItem[]) | null = null) { this.size = grid.size; }
 
   solid(tx: number, ty: number): boolean {
     const g = this.grid;
@@ -76,6 +76,7 @@ export class TerrainWalkWorld implements WalkWorld {
     return false;
   }
   circles(tx: number, ty: number): ArrayLike<number> | null { return this.tiles.get(ty * this.size + tx) ?? null; }
+  onDeck(x: number, z: number): boolean { return !!this.nets?.deckY && this.nets.deckY(x, z) !== null; }
 
   /** Rebuild the circle index when the prop chunks changed (cheap check, call every frame). */
   refresh(): void {
@@ -105,7 +106,7 @@ export class TerrainWalkWorld implements WalkWorld {
 }
 
 /** The ONE place collision data is assembled: Occupancy (buildings / lifts), water + bridges, prop trunks / rocks and village decor (lamps, benches, planters, hedges). */
-export function buildWalkWorld(grid: Grid, nets: Pick<Networks, 'kind' | 'bridge'> | null, props: PropStore | null, ground: (x: number, z: number) => number, decor: (() => readonly DecorItem[]) | null = null): TerrainWalkWorld {
+export function buildWalkWorld(grid: Grid, nets: (Pick<Networks, 'kind' | 'bridge'> & Partial<Pick<Networks, 'deckY'>>) | null, props: PropStore | null, ground: (x: number, z: number) => number, decor: (() => readonly DecorItem[]) | null = null): TerrainWalkWorld {
   const w = new TerrainWalkWorld(grid, nets, props, ground, decor);
   w.refresh();
   return w;

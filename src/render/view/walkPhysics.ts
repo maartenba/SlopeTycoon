@@ -76,6 +76,8 @@ export interface WalkWorld {
   solid(tx: number, ty: number): boolean;
   /** Flat [cx, cz, r, ...] circles of the trunks / rocks standing on a tile, or null. Must return a stable array (no per-call allocation). */
   circles(tx: number, ty: number): ArrayLike<number> | null;
+  /** True where (x, z) is on a bridge deck or on the half of a bank tile that ramps up to it: that surface is stairs / a ramp, never judged against the slope limit (Task 46: a suspension deck can sit up to 3 half-steps above the bank, a 1.0 gradient ramp was a wall). */
+  onDeck?(x: number, z: number): boolean;
 }
 
 export const NO_INPUT: WalkInput = { fwd: 0, strafe: 0, run: false, jump: false };
@@ -154,6 +156,7 @@ export const standable = (world: WalkWorld, x: number, z: number): boolean => se
 function climbable(world: WalkWorld, x: number, z: number, g0: number, mx: number, mz: number, tanL: number): boolean {
   const d = Math.hypot(mx, mz);
   if (d < 1e-9) return true;
+  if (world.onDeck && world.onDeck(x, z) && world.onDeck(x + (mx / d) * WALK.slopeProbe, z + (mz / d) * WALK.slopeProbe)) return true;
   return world.ground(x + (mx / d) * WALK.slopeProbe, z + (mz / d) * WALK.slopeProbe) - g0 <= tanL * WALK.slopeProbe + 1e-9;
 }
 
@@ -194,7 +197,7 @@ export function stepWalker(s: WalkerState, input: WalkInput, dt: number, world: 
     // slide on too-steep ground
     let sx = 0, sz = 0;
     const g = out.grounded ? gradientAt(world, out.x, out.z, _g) : 0;
-    out.sliding = out.grounded && g > tanL;
+    out.sliding = out.grounded && g > tanL && !(world.onDeck && world.onDeck(out.x, out.z)); // a deck ramp is stairs: no sliding
     if (out.sliding) { sx = (-_g.x / g) * WALK.slideSpeed * h; sz = (-_g.z / g) * WALK.slideSpeed * h; }
     let dx = out.vx * h + sx, dz = out.vz * h + sz;
     // slope gate on the intended move (uphill only; downhill is always allowed): try the full move, then each axis (slide along the slope contour)
