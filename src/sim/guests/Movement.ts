@@ -138,6 +138,8 @@ export class NavMovement implements Movement {
   private gkey: string[]; private gmode: Uint8Array;
   /** Lift tag (liftId*2 + dir) of the ride requested by the last 'lift' result per slot. */
   readonly liftTag: Int32Array;
+  /** Station tiles (path nodes a -> b) of the ride requested by the last 'lift' result: tells an N-station lift which stations the guest boards / alights at. */
+  readonly liftFrom: Int32Array; readonly liftTo: Int32Array;
   private budget = NAV_MAX_QUERIES_PER_TICK;
   /** Diagnostics: uncached queries answered, pending answers. */
   queries = 0; pendings = 0;
@@ -147,13 +149,14 @@ export class NavMovement implements Movement {
     this.idx = new Int32Array(capacity); this.epoch = new Int32Array(capacity); this.owner = new Int32Array(capacity);
     this.pend = new Uint16Array(capacity); this.gkey = new Array<string>(capacity).fill(''); this.gmode = new Uint8Array(capacity).fill(255);
     this.liftTag = new Int32Array(capacity).fill(-1);
+    this.liftFrom = new Int32Array(capacity).fill(-1); this.liftTo = new Int32Array(capacity).fill(-1);
   }
 
   beginTick(): void { this.budget = this.maxQueries; this.graph()?.pf.beginTick(); }
   invalidate(): void { /* the graph diffs the networks itself; guests re-validate lazily via the epoch */ }
   /** Forget every path / pending query (save load: the nav graph is rebuilt lazily from the restored world). */
   resetAll(): void {
-    this.paths.fill(null); this.gkey.fill(''); this.pend.fill(0); this.idx.fill(0); this.epoch.fill(0); this.owner.fill(0); this.gmode.fill(255); this.liftTag.fill(-1);
+    this.paths.fill(null); this.gkey.fill(''); this.pend.fill(0); this.idx.fill(0); this.epoch.fill(0); this.owner.fill(0); this.gmode.fill(255); this.liftTag.fill(-1); this.liftFrom.fill(-1); this.liftTo.fill(-1);
     this.budget = this.maxQueries;
   }
   /** Forget a guest's path (activity changed). */
@@ -251,7 +254,7 @@ export class NavMovement implements Movement {
       const ax = a % n, ay = (a / n) | 0, bx = b % n, by = (b / n) | 0;
       if (Math.abs(ax - bx) > 1 || Math.abs(ay - by) > 1) {
         s.x[i] = x; s.y[i] = y; this.idx[i] = j;
-        this.liftTag[i] = g.liftTag(mode, a, b);
+        this.liftTag[i] = g.liftTag(mode, a, b); this.liftFrom[i] = a; this.liftTo[i] = b;
         return 'lift';
       }
       const v = g.speed(mode, a, b, skill);

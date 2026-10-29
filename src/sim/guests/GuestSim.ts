@@ -157,7 +157,7 @@ export class GuestSim {
 
   private attach(g: NavGraph): void {
     this.navG = g;
-    g.waitTicks = (id, d) => this.queues.waitTicks(id, d);
+    g.waitTicks = (id, d, st) => this.queues.waitTicks(id, d, st);
     g.qualityFactor = this.pisteSpeedFactor ? (t) => this.pisteSpeedFactor!(t) : null;
   }
 
@@ -327,17 +327,18 @@ export class GuestSim {
   }
 
   private queueCallbacks = {
-    done: (slot: number, liftId: number, dir: 0 | 1): void => {
+    done: (slot: number, liftId: number, dir: 0 | 1, station?: number): void => {
       const s = this.store, l = this.liftData(liftId);
       if (!l || s.state[slot] !== GState.Riding) return;
-      const p = dir === 0 ? l.top : l.bottom;
+      const mid = station !== undefined && l.stations !== undefined && station > 0 && station < l.stations.length - 1; // alighted at a mid-station
+      const p = station !== undefined && l.stations ? l.stations[station]! : dir === 0 ? l.top : l.bottom;
       s.px[slot] = s.x[slot]!; s.py[slot] = s.y[slot]!; s.pz[slot] = s.z[slot]!;
       this.moveSlot(slot, p.x + 0.5, p.y + 0.5, p.ground);
       s.state[slot] = GState.Walking; s.actTick[slot] = this.tick;
       if (s.rideRun[slot]) {
         s.act[slot] = Act.SkiDown; s.runMax[slot] = 0; s.rideRun[slot] = 0;
         this.exploration.remember(s, slot, liftId); // skiers only: pick the line for this run
-        if (dir === 0 && isSkiMode(s.moveMode[slot]!)) s.via[slot] = this.exploration.pickVia(s, slot, l, this.rng);
+        if (dir === 0 && !mid && isSkiMode(s.moveMode[slot]!)) s.via[slot] = this.exploration.pickVia(s, slot, l, this.rng); // (from a mid-station: the plain way down)
       }
       this.nm?.reset(slot);
     },
@@ -570,16 +571,41 @@ export class GuestSim {
     if (tag < 0) { this.abort(i); return; }
     const liftId = tag >> 1, dir = (tag & 1) as 0 | 1;
     if (this.world.canRide && !this.world.canRide(s.id[i]!, this.rideKind(i) !== 'ski')) { this.abort(i, 30); return; } // no pass / can't afford one
-    const res = this.queues.join(liftId, dir, i, this.rideKind(i), this.tick, this.patienceOf(i));
+    const l = this.liftData(liftId);
+    // N-station lift: the path edge names the station the guest boards at and the one it alights at (links exist for every ordered pair)
+    let from: number | undefined, to: number | undefined;
+    if (l?.stations && nm) {
+      const g = this.graph();
+      from = g?.stationAt(nm.liftFrom[i]!)?.index; to = g?.stationAt(nm.liftTo[i]!)?.index;
+      if (from === undefined || to === undefined) { this.abort(i); return; }
+    }
+    const res = this.queues.join(liftId, dir, i, this.rideKind(i), this.tick, this.patienceOf(i), from, to);
     if (res === 'ok') {
       s.state[i] = GState.Queueing; s.liftId[i] = liftId; s.rideRun[i] = 0;
-      const l = this.liftData(liftId);
-      if (l) this.moveSlot(i, (dir === 0 ? l.bottom.x : l.top.x) + 0.5, (dir === 0 ? l.bottom.y : l.top.y) + 0.5, this.world.groundAt(l.bottom.x, l.bottom.y));
+      if (l) {
+        const sp = from !== undefined ? l.stations![from]! : dir === 0 ? l.bottom : l.top;
+        this.moveSlot(i, sp.x + 0.5, sp.y + 0.5, this.world.groundAt(l.bottom.x, l.bottom.y));
+      }
       return;
     }
     if (res === 'balk') { this.balks++; s.happiness[i] = Math.max(0, s.happiness[i]! - 0.02); }
     if (s.state[i] === GState.Leaving && !rideLinks) { s.timer[i]!++; return; }
     this.abort(i, 10);
+  }
+
+  /**
+   * N-station lift, a skier heading up from the bottom: about a third of the rides get off at a mid-station instead of the top (which run they
+   * fancy this time; stateless hash of guest id and runs so far, nothing saved, no RNG). undefined = the top (every ordinary lift).
+   */
+  private midAlight(i: number): number | undefined {
+    const s = this.store, l = this.liftData(s.liftId[i]!);
+    if (!l?.stations || l.stations.length < 3 || !isSkiMode(s.moveMode[i]!)) return undefined;
+    const mids: number[] = [];
+    for (let k = 1; k < l.stations.length - 1; k++) if (l.stations[k]!.alight !== false) mids.push(k);
+    if (!mids.length) return undefined;
+    const h = Math.imul(s.id[i]! ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(s.runs[i]! + 1, 0xc2b2ae35);
+    const u = ((h ^ (h >>> 15)) >>> 0) % 100;
+    return u < 35 ? mids[u % mids.length]! : undefined;
   }
 
   private arrived(i: number, rng: GameState['rng']): void {
@@ -595,7 +621,7 @@ export class GuestSim {
       }
       case Act.ToLift: {
         if (this.world.canRide && !this.world.canRide(s.id[i]!, this.rideKind(i) !== 'ski')) { this.abort(i, 30); return; }
-        const res = this.queues.join(s.liftId[i]!, 0, i, this.rideKind(i), this.tick, this.patienceOf(i));
+        const res = this.queues.join(s.liftId[i]!, 0, i, this.rideKind(i), this.tick, this.patienceOf(i), undefined, this.midAlight(i));
         if (res === 'ok') { s.state[i] = GState.Queueing; s.rideRun[i] = 1; s.act[i] = Act.Queue; const l = this.liftData(s.liftId[i]!); if (l) this.moveSlot(i, l.bottom.x + 0.5, l.bottom.y + 0.5, this.world.groundAt(l.bottom.x, l.bottom.y)); return; }
         if (res === 'balk') { this.balks++; s.happiness[i] = Math.max(0, s.happiness[i]! - 0.02); }
         this.abort(i, 8);

@@ -4,7 +4,10 @@ import { NAV_MAX_BUILDS_PER_TICK, NAV_SPEED, walkSizeScale } from '../../config/
 import { Layer } from '../../world/Networks';
 import { OccFlag } from '../../world/Occupancy';
 import { octile, Pathfinder, type Link, type PathGraph } from '../../world/Pathfinding';
-import type { LiftData } from '../Lift';
+import { liftStations, stationCount, type LiftData } from '../Lift';
+
+/** Extra link cost per intermediate stop of a ride through a mid-station (carriers slow down in the station). */
+const MID_STOP_COST = 1.5;
 
 /** Movement modes (also the pathfinding cache/abstract-graph key). Ski0..Ski3 = skis with max piste difficulty 0..3 (= skill+1, capped). */
 export const NavMode = { Walk: 0, Hike: 1, Bike: 2, Ski0: 3, Ski1: 4, Ski2: 5, Ski3: 6, SkiOff: 7 } as const;
@@ -55,7 +58,8 @@ const EPS = 1e-6;
 const MODES = 8;
 export const QUEUE_BUCKET_TICKS = 10;
 
-export interface StationInfo { lift: number; end: 0 | 1 }
+/** `end`: 0 bottom terminal, 1 top terminal, 2 mid-station; `index`: position in the lift's station list (bottom = 0). */
+export interface StationInfo { lift: number; end: 0 | 1 | 2; index: number }
 
 /**
  * Combined navigation graph over tiles. Edge costs are computed on demand per mode from the live world arrays (so traversability
@@ -70,7 +74,7 @@ export class NavGraph implements PathGraph {
   /** Structural epoch: bumped whenever traversability or lift availability changed (guests re-validate their paths). */
   epoch = 1;
   /** Expected wait (ticks) at a lift station for link costs; set by LiftQueues. */
-  waitTicks: (liftId: number, dir: 0 | 1) => number = () => 0;
+  waitTicks: (liftId: number, dir: 0 | 1, station?: number) => number = () => 0;
   private alt: Float32Array;
   private stationMask: Uint8Array;
   private stations = new Map<number, StationInfo>();
@@ -233,6 +237,7 @@ export class NavGraph implements PathGraph {
     for (const l of this.world.lifts()) {
       mix(l.id); mix(l.open ? 1 : 0); mix(Math.round(l.speed * 100));
       mix(l.bottom.x); mix(l.bottom.y); mix(l.top.x); mix(l.top.y);
+      if (l.stations && l.stations.length > 2) for (const st of l.stations) { mix(st.x); mix(st.y); mix(st.board === false ? 0 : 1); mix(st.alight === false ? 0 : 1); }
       const m = l.activeMode ?? 'none';
       for (let i = 0; i < m.length; i++) mix(m.charCodeAt(i));
       mix(l.kind.length);
@@ -274,9 +279,11 @@ export class NavGraph implements PathGraph {
     if (structural || tick % QUEUE_BUCKET_TICKS === 0) this.syncLifts(structural);
   }
 
-  private bucket(liftId: number, dir: 0 | 1): number {
-    return Math.min(30, Math.round(this.waitTicks(liftId, dir) / QUEUE_BUCKET_TICKS));
+  private bucket(liftId: number, dir: 0 | 1, station?: number): number {
+    return Math.min(30, Math.round(this.waitTicks(liftId, dir, station) / QUEUE_BUCKET_TICKS));
   }
+  /** Bucket signature key of the queue at station `idx` for direction `d`. */
+  private bkey(liftId: number, idx: number, d: 0 | 1): number { return (liftId * 8 + idx) * 2 + d; }
 
   /** Rebuild lift station masks and link tables. `structural` = lifts changed; otherwise only queue-time buckets may have moved. */
   private syncLifts(structural: boolean): void {
@@ -284,7 +291,11 @@ export class NavGraph implements PathGraph {
     if (!structural) {
       let costChanged = false;
       for (const l of w.lifts()) {
-        for (const d of [0, 1] as const) if (this.bucketSig.get(l.id * 2 + d) !== this.bucket(l.id, d)) costChanged = true;
+        const n = stationCount(l);
+        for (const d of [0, 1] as const) for (let k = 0; k < n; k++) {
+          if (n === 2 && k !== (d === 0 ? 0 : 1)) continue; // ordinary lift: one queue per direction (bottom up, top down)
+          if (this.bucketSig.get(this.bkey(l.id, k, d)) !== this.bucket(l.id, d, n === 2 ? undefined : k)) costChanged = true;
+        }
       }
       if (!costChanged) return;
     }
@@ -294,25 +305,26 @@ export class NavGraph implements PathGraph {
     this.bucketSig.clear();
     for (const l of w.lifts()) {
       this.liftsById.set(l.id, l);
-      const ends = [l.bottom, l.top] as const;
-      const tl: number[][] = [[], []];
-      for (let e = 0; e < 2; e++) {
+      const ends = liftStations(l);
+      const NS = ends.length;
+      const tl: number[][] = ends.map(() => []);
+      for (let e = 0; e < NS; e++) {
         for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
           const x = ends[e]!.x + dx, y = ends[e]!.y + dy;
           if (x < 0 || y < 0 || x >= n || y >= n) continue;
           const t = y * n + x;
-          this.stationMask[t] = 1; this.stations.set(t, { lift: l.id, end: e as 0 | 1 });
+          this.stationMask[t] = 1; this.stations.set(t, { lift: l.id, end: e === 0 ? 0 : e === NS - 1 ? 1 : 2, index: e });
           tl[e]!.push(t);
         }
       }
-      for (const d of [0, 1] as const) this.bucketSig.set(l.id * 2 + d, this.bucket(l.id, d));
-      if (structural) for (const t of [...tl[0]!, ...tl[1]!]) this.pf.markDirty(t);
+      for (const d of [0, 1] as const) for (let k = 0; k < NS; k++) {
+        if (NS === 2 && k !== (d === 0 ? 0 : 1)) continue;
+        this.bucketSig.set(this.bkey(l.id, k, d), this.bucket(l.id, d, NS === 2 ? undefined : k));
+      }
+      if (structural) for (const list of tl) for (const t of list) this.pf.markDirty(t);
       const am = l.activeMode ?? (l.kind === 'tbar' ? 'ski' : 'mixed');
-      if (!l.open || !am || !tl[0]!.length || !tl[1]!.length) continue;
+      if (!l.open || !am || tl.some((x) => !x.length)) continue;
       const def = LIFTS[l.kind];
-      const bAnchor = tl[0]![0]!, tAnchor = tl[1]![0]!;
-      const base = 0.5 * octile(n, bAnchor, tAnchor) + 2;
-      const up = base + this.waitTicks(l.id, 0) * NAV_SPEED.walk * this.walkScale;
       const skiOk = am === 'ski' || am === 'mixed', footOk = (am === 'foot' || am === 'mixed') && l.kind !== 'tbar';
       const add = (mode: number, from: number[], to: number, cost: number, tag: number): void => {
         const m = this.linkMaps[mode]!;
@@ -322,8 +334,16 @@ export class NavGraph implements PathGraph {
         const ski = mode >= NavMode.Ski0;
         const upOk = ski ? skiOk : mode === NavMode.Bike ? footOk && def.carriesBikes : footOk;
         const downOk = !ski && footOk && (mode !== NavMode.Bike || def.carriesBikes); // skiers never ride down by choice
-        if (upOk) add(mode, tl[0]!, tAnchor, up, l.id * 2);
-        if (downOk) add(mode, tl[1]!, bAnchor, base, l.id * 2 + 1);
+        // every ordered pair of stations is a link (a guest may ride through, or alight at the station nearest the goal)
+        for (let i = 0; i < NS; i++) for (let j = 0; j < NS; j++) {
+          if (i === j) continue;
+          const upward = j > i;
+          if (upward ? !upOk : !downOk) continue;
+          if (ends[i]!.board === false || ends[j]!.alight === false) continue;
+          const base = 0.5 * octile(n, tl[i]![0]!, tl[j]![0]!) + 2 + Math.max(0, Math.abs(j - i) - 1) * MID_STOP_COST;
+          const cost = upward ? base + this.waitTicks(l.id, 0, NS === 2 ? undefined : i) * NAV_SPEED.walk * this.walkScale : base;
+          add(mode, tl[i]!, tl[j]![0]!, cost, l.id * 2 + (upward ? 0 : 1));
+        }
       }
     }
     const keys = new Set<number>();
@@ -340,6 +360,8 @@ export class NavGraph implements PathGraph {
     return { x: p.x, y: p.y, w: 2, h: 2 };
   }
   stationAnchor(l: LiftData, end: 0 | 1): number { const p = end === 0 ? l.bottom : l.top; return p.y * this.size + p.x; }
+  /** Anchor tile of station `index` of the lift's station list (0 = bottom). */
+  stationAnchorAt(l: LiftData, index: number): number { const p = liftStations(l)[index]!; return p.y * this.size + p.x; }
 
   /** Whether the remaining path from index `from` is still traversable (cheap re-validation after structural changes). */
   pathStillValid(mode: number, nodes: Int32Array, from: number): boolean {

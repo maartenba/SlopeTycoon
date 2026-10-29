@@ -8,6 +8,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 - **Rivers, groundwork** (no tool yet): the data model and planner for digging a river from a spring, lake shore or stream down to a lake, a stream or the map edge (1 tile wide, cut at most 6 steps deep per tile, cost and plain-language refusals), saves, undo, and 1-3 natural spring sites per map derived from the seed without changing the terrain. Nothing changes in existing games until a river is dug (`docs/rivers.md`).
 
+- **N-station lifts, groundwork** (no tool yet): a gondola, cable car or detachable chair can now have one or two mid-stations in the model. Every segment is checked on its own, the mid-station gets a flat pad and towers keep 2 tiles away, guests can ride between any two stations and get off nearest their goal, no carrier ever exceeds its capacity, and saves gain an optional station list (format 3; every existing lift stays a plain two-station lift). Nothing changes in existing games (`docs/mid-stations.md`).
+
 ### Changed
 
 - **Quiet seasonal closures**: when several attractions close for the same seasonal reason within a few seconds (no snow, too warm, out of season) the game shows ONE toast (*3 winter attractions closed for summer: Magic Carpet, Ice Rink, Heated Terrace*, with a *Go to* for the first) instead of a stack; each attraction toasts once per season, and the News keeps one row per reason and day. Breakdowns, storms, avalanches and other surprises still get their own toast.
