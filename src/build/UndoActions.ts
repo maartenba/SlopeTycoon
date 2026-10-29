@@ -15,7 +15,7 @@ import { bulldoze, type BulldozeResult } from './Bulldoze';
 import { UndoStack, type UndoApplied, type UndoCommand, type UndoReport } from './UndoStack';
 
 /** The slice of the sim that undo needs (headless-friendly: no DOM, no three). */
-export type UndoEnv = Pick<Sim, 'grid' | 'props' | 'buildings' | 'lifts' | 'networks' | 'economy' | 'names' | 'attractions' | 'guestSim' | 'game'> & { gate?: Sim['gate']; landscape?: Sim['landscape'] };
+export type UndoEnv = Pick<Sim, 'grid' | 'props' | 'buildings' | 'lifts' | 'networks' | 'economy' | 'names' | 'attractions' | 'guestSim' | 'game'> & { gate?: Sim['gate']; landscape?: Sim['landscape']; rivers?: Sim['rivers'] };
 
 interface Rect { x0: number; y0: number; x1: number; y1: number }
 const MARGIN = 10; // auto-flatten reaches ~10 tiles beyond the footprint (FlattenPlanner margin)
@@ -442,9 +442,18 @@ export class Undo {
    * besides heights and props: tile types, occupancy bits and the Landscape lists (ponds, decor). `rect` is in TILES (inclusive); `run` does charge + commit.
    */
   landscapeStroke(label: string): { stamp(rect: Rect, run: () => { ok: boolean; flow: number }): boolean } {
-    const { grid, props, networks, economy, landscape } = this.env;
-    if (!landscape) throw new Error('Undo.landscapeStroke needs env.landscape');
-    const ls = landscape;
+    if (!this.env.landscape) throw new Error('Undo.landscapeStroke needs env.landscape');
+    return this.worldStroke(label, this.env.landscape);
+  }
+
+  /** One undo step for digging a river / placing a spring (Phase 6): the same snapshot undo as a landscaping drag, with the `Rivers` record as the saved list. `rect` = the plan's changed bbox. */
+  riverStroke(label: string): { stamp(rect: Rect, run: () => { ok: boolean; flow: number }): boolean } {
+    if (!this.env.rivers) throw new Error('Undo.riverStroke needs env.rivers');
+    return this.worldStroke(label, this.env.rivers);
+  }
+
+  private worldStroke(label: string, ls: { serialize(): unknown; load(d: unknown): void }): { stamp(rect: Rect, run: () => { ok: boolean; flow: number }): boolean } {
+    const { grid, props, networks, economy } = this.env;
     type Tile = { tt: number; f: number; id: number; sn: number };
     const preTiles = new Map<number, Tile>();
     const snap = (i: number): Tile => ({ tt: grid.tileType[i]!, f: grid.occupancy.flags[i]!, id: grid.occupancy.entityId[i]!, sn: grid.snowDepth[i]! });

@@ -95,6 +95,9 @@ import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
 import { DAYS_PER_YEAR } from '../config/balance';
 import { Landscape, type LandscapeEnv } from '../sim/landscape/Landscape';
+import { Rivers } from '../world/Rivers';
+import { deriveSpringSites } from '../world/SpringSites';
+import type { RiverEnv } from '../world/RiverPlanner';
 import { Layer } from '../world/Networks';
 import { key as unlockKey, isGated } from '../config/unlocks';
 import type { TerrainPresetId } from '../world/TerrainPresets';
@@ -269,6 +272,19 @@ export function createSim(opts: SimOptions) {
       }
       return null;
     },
+    multiplier: () => economy.constructionMultiplier(),
+  });
+
+  // ---- Dug rivers + springs (Phase 6 M6.2, docs/rivers.md). Inert until the player digs one: no state, no save data, no hash part. Natural spring sites are
+  // derived from the GENERATED map (before any save is applied) on their own RNG stream and are never saved. ----
+  const rivers = new Rivers(grid);
+  rivers.natural = deriveSpringSites(grid, { lakes: terrainInfo.lakes, streams: terrainInfo.streams, villageAnchor: terrainInfo.villageAnchor }, seed);
+  rivers.onChange(() => buildings.reevaluate()); // hydro buildings read stream tiles
+  const riverEnv = (): RiverEnv => ({
+    grid, props, isSpring: (x, y) => rivers.isSource(x, y),
+    lakes: terrainInfo.lakes.concat(landscape.ponds),
+    netAt: (i) => (networks.layers[i] ?? 0) | (networks.kind[i] ?? 0),
+    liftClearanceViolations: (c) => liftClearanceViolations(grid, lifts, c),
     multiplier: () => economy.constructionMultiplier(),
   });
 
@@ -1115,7 +1131,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    tours, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv,
+    tours, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,

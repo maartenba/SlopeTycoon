@@ -23,7 +23,7 @@ export interface StreamContext {
 const FALL_LINE_K = 4;
 const DIRS: ReadonlyArray<readonly [number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
-class MinHeap {
+export class MinHeap {
   private k: number[] = [];
   private v: number[] = [];
   get size(): number { return this.k.length; }
@@ -221,4 +221,21 @@ export function generateStreams(grid: Grid, rng: Rng, ctx: StreamContext): Strea
     for (const s of streams) s.level = s.path.map((p) => tileLevel(p.x, p.y));
   }
   return streams;
+}
+
+/** One read model for every channel of flowing water: natural streams (generated) + rivers the player dug (world/Rivers.ts). Flow Q / speed are layered on top in Phase 6 Task 15. */
+export interface Waterway {
+  /** 'n<index>' for a natural stream, 'r<id>' for a dug river. */
+  id: string;
+  kind: 'natural' | 'dug';
+  path: Array<{ x: number; y: number }>;
+  level: number[];
+  end: Stream['end'];
+}
+
+export function waterways(natural: ReadonlyArray<Stream>, dug: ReadonlyArray<{ id: number; path: Array<{ x: number; y: number }>; level: number[]; end: Stream['end'] }> = []): Waterway[] {
+  return [
+    ...natural.map((s, i): Waterway => ({ id: `n${i}`, kind: 'natural', path: s.path, level: s.level, end: s.end })),
+    ...dug.map((r): Waterway => ({ id: `r${r.id}`, kind: 'dug', path: r.path, level: r.level, end: r.end })),
+  ];
 }

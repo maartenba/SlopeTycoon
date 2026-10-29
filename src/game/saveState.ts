@@ -66,6 +66,8 @@ export const SAVE_MODULES: SaveModule[] = [
   // Player landscaping: ponds (level + tiles) and garden decor. Observer: the grid / props modules already carry every effect on the simulation (tile types, heights, rocks);
   // the pond list and decor map only drive rendering and the lake-tile lookup. Additive: old saves have none.
   { key: 'landscape', version: 1, observer: true, serialize: (sim) => sim.landscape.serialize(), load: (sim, d) => sim.landscape.load(d), reset: (sim) => sim.landscape.reset() },
+  // Dug rivers (record + exact carve diff) and player springs (Phase 6 M6.2). null while the player has dug / placed none: absent from the save and from stateHash (older goldens identical). The carved heights / stream tiles themselves are in `grid`.
+  { key: 'rivers', version: 1, omitWhenNull: true, serialize: (sim) => sim.rivers.serialize(), load: (sim, d) => sim.rivers.load(d), reset: (sim) => sim.rivers.reset() },
   {
     key: 'props', version: 1,
     // Props dominate save size (~100k on a 256 map): sub-tile jitter / scale / rotation are quantised (8-16 bit, idempotent: re-saving a
