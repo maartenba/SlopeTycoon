@@ -1,6 +1,6 @@
 # M6.1 human playtest checklist (Phase 6, Task 12 STOP)
 
-Version 0.2.3. Play a normal Career game (`npm run dev`, or the build) for 20-30 minutes; tick what you see. Anything that feels wrong: note the seed, what you did and a screenshot.
+Version 0.2.5. Play a normal Career game (`npm run dev`, or the build) for 20-30 minutes; tick what you see. Anything that feels wrong: note the seed, what you did and a screenshot.
 
 ## Toilets and urges
 - [ ] A new career game has one free toilet near the village footpath.

@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.2.5",
+    "date": "2026-10-29",
+    "highlights": [
+      "Easier money: you start with $150,000, the quiet months cost less, and Ranger Rudi has cash tips when you run thin.",
+      "Bridges are part of drawing: drag a path, road or trail across a pond, gap or stream and the bridge is built for you, with a clear Crossings choice…",
+      "The new Eco Centre opens an Eco programme: five policies and a carbon-neutral certificate for a greener resort.",
+      "Generated towns have tidy footpaths, and Rudi's advice now shows in full.",
+      "A small card tells you when a new version is ready and what is new in it."
+    ]
+  },
+  {
     "version": "0.2.3",
     "date": "2026-10-28",
     "highlights": [
@@ -22,15 +33,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Green energy: solar, wind, hydro and biomass take a bite out of the lift power bill.",
       "Lifts get a yearly service, and snow cannons get an on/off switch (or Auto).",
       "Hungry hikers are fed better, and the loading screen now shows what it is doing."
-    ]
-  },
-  {
-    "version": "0.2.1",
-    "date": "2026-10-27",
-    "highlights": [
-      "All-new music: nine procedural tracks, a Music style picker and a Next track button.",
-      "Calmer ambience, a bit quieter by default.",
-      "Lift towers are shorter and sturdier, with more of them where the ground is steep."
     ]
   }
 ];

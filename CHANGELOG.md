@@ -2,10 +2,22 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.2.5] - 2026-10-29 (pre-release)
+
+Version 0.2.4 was skipped (it was never released); 0.2.5 follows 0.2.3 directly. Changes since 0.2.3: an easier first year, tidier towns, bridges built as part of drawing, the Eco programme, an update card with What's new, and Sponsor links. Still a pre-release; not 1.0.
+
+### Highlights
+
+- Easier money: you start with $150,000, the quiet months cost less, and Ranger Rudi has cash tips when you run thin.
+- Bridges are part of drawing: drag a path, road or trail across a pond, gap or stream and the bridge is built for you, with a clear Crossings choice over the rail.
+- The new Eco Centre opens an Eco programme: five policies and a carbon-neutral certificate for a greener resort.
+- Generated towns have tidy footpaths, and Rudi's advice now shows in full.
+- A small card tells you when a new version is ready and what is new in it.
+
+### Changes
 
 - **Website footer**: tidy four-column footer (heading above a vertical link list, aligned columns, 2 columns on phones, underline only on hover).
-- **Update card + What's new**: when a new version is waiting, a small non-blocking card (no dialog, nothing is paused) says *A new version is available: 0.2.4* with a few plain-language highlights of what changed (read from the new build's `whats-new.json`; offline it just says *A new version is ready*), with *Reload now* (autosaves first) and *Later* (no reminder for an hour). The first launch of a new version shows a one-time *What's new* card, and the About dialog has a *What's new* button. Highlights come from a `### Highlights` block in each CHANGELOG release (`npm run whats-new`). `docs/pwa.md`.
+- **Update card + What's new**: when a new version is waiting, a small non-blocking card (no dialog, nothing is paused) says *A new version is available: 0.2.5* with a few plain-language highlights of what changed (read from the new build's `whats-new.json`; offline it just says *A new version is ready*), with *Reload now* (autosaves first) and *Later* (no reminder for an hour). The first launch of a new version shows a one-time *What's new* card, and the About dialog has a *What's new* button. Highlights come from a `### Highlights` block in each CHANGELOG release (`npm run whats-new`). `docs/pwa.md`.
 - **Sponsor link**: a discreet *Sponsor on GitHub* heart link in the website header and footer, the About page (with a short support note) and the landing page, plus *Support the game ♥* in the game's About dialog and menu footer. Plain links to <https://github.com/sponsors/maartenba> that open only on click; the game stays free, no ads, nothing nags.
 
 - **Easier money (Career)**: starting cash $130,000 -> $150,000 (Relaxed $225,000, Challenging $112,500), the first four goals pay $2,000 more in total, the quiet months cost less (idle lifts draw 25 % energy, closed winter venues 15 % upkeep, furloughed staff 35 % wages) and autumn brings more day guests (0.4 -> 0.5). Ranger Rudi's *In debt* advice now lists concrete options and a new *Cash tips* card appears when cash is thin in the first two years. See docs/money-tips.md, docs/balance.md "Money pass".
@@ -18,6 +30,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Cleaner footpaths in generated towns**: leftover strokes from rejected building sites, ladders and double-width bands are gone; towns now get a tidy street network (short single-tile spurs to doors, no parallel runs, no pinholes). The player's path tool is unchanged.
 - **Ranger Rudi's advice shows full messages**: advice text is no longer cut with an ellipsis; the card grows to a maximum height and the list scrolls, and Show me / Dismiss sit beside or under the title. Goal names in the Goals card wrap instead of being clipped.
 - **Eco Centre and Eco programme**: a level-4 building (green roof, solar canopy, small turbine) that opens an *Eco programme*: five funded policies (electric groomers, a car-free village, habitat corridors, local produce, smart snowmaking) with a start fee, a daily running cost and a trade-off each, plus a carbon-neutral certificate (three policies and renewable power) that brings a lasting arrivals boost. Together they can lift the Sustainability score by up to 29 points; they cost about $77 a day and are roughly profit-neutral, so it is a strategic choice. Ranger Rudi suggests it when Sustainability is your weakest area; the year report lists the programme (`docs/eco.md`).
+- **Developer: `createSim` defaults equal the real game** (events, stories, remote supply and campaigns v2 are on by default; callers only opt out). `docs/balance.md`.
 
 ## [0.2.3] - 2026-10-28 (pre-release)
 

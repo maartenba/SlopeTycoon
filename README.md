@@ -5,9 +5,9 @@ through winter *and* summer. Three.js + TypeScript, no backend, no external asse
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/maartenba)
 
-**Version 0.2.3** (pre-release)
+**Version 0.2.5** (pre-release)
 
-Status: pre-release (0.2.3) — playtest feedback welcome.
+Status: pre-release (0.2.5) — playtest feedback welcome.
 
 ## Features
 
