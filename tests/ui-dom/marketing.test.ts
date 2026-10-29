@@ -100,6 +100,35 @@ describe('st-pricing', () => {
   });
 });
 
+describe('slider steppers (pricing)', () => {
+  const mkApi = (pricing: Pricing) => ({ pricing, set: vi.fn((k: string, v: number) => pricing.set(k, v)), setFree: vi.fn(), reset: vi.fn(), resetAll: vi.fn(), preset: vi.fn(), setSchedule: vi.fn(), setPowder: vi.fn() });
+  it('puts [-] [slider] [+] on one row, in that order, with aria labels', () => {
+    const p = el('st-pricing'); document.body.append(p); p.bind(mkApi(new Pricing()));
+    const step = root(p).querySelector('.row .step')!;
+    expect([...step.children].map((c) => c.tagName + ((c as HTMLInputElement).type ?? ''))).toEqual(['BUTTON' + 'submit', 'INPUT' + 'range', 'BUTTON' + 'submit']);
+    expect(step.children[0]!.textContent).toBe('−'); expect(step.children[2]!.textContent).toBe('+');
+    expect(step.children[0]!.getAttribute('aria-label')).toMatch(/^Lower /);
+    expect(step.children[2]!.getAttribute('aria-label')).toMatch(/^Raise /);
+    expect(step.parentElement!.classList.contains('row')).toBe(true); // slider and steppers share the grid cell
+  });
+  it('steppers change the value by one step', () => {
+    const pr = new Pricing(), api = mkApi(pr);
+    const p = el('st-pricing'); document.body.append(p); p.bind(api);
+    const before = pr.get('dayPass');
+    (root(p).querySelectorAll('.row .step button')[1] as HTMLButtonElement).click();
+    expect(api.set).toHaveBeenLastCalledWith('dayPass', before + 1);
+    (root(p).querySelectorAll('.row .step button')[0] as HTMLButtonElement).click();
+    expect(api.set).toHaveBeenLastCalledWith('dayPass', before);
+  });
+  it('buttons are 28px, growing with --touch-min; the slider never wraps below them', () => {
+    const p = el('st-pricing'); document.body.append(p); p.bind(mkApi(new Pricing()));
+    const css = (p as unknown as { css(): string }).css();
+    expect(css).toMatch(/\.row \.step\{[^}]*flex-wrap:nowrap/);
+    expect(css).toMatch(/width:max\(28px,var\(--touch-min,0px\)\)/);
+    expect(css).toMatch(/height:max\(28px,var\(--touch-min,0px\)\)/);
+  });
+});
+
 describe('format helpers', () => {
   it('rows, gauge, demand and schedule', () => {
     const p = new Pricing();

@@ -207,6 +207,9 @@ type LandTab = 'water' | 'nature' | 'decor';
 const LAND_TABS: ReadonlyArray<{ id: LandTab; label: string; icon: string }> = [{ id: 'water', label: 'Water', icon: '💧' }, { id: 'nature', label: 'Nature', icon: '🌲' }, { id: 'decor', label: 'Decor', icon: '🪴' }];
 
 /** Bottom tool dock: category buttons; ONE drawer slides up above it. Absorbs the former toolbar/network/lift/build/overlay panels. */
+/** Card name; a break opportunity (<wbr>) after '/' so 'Lodge/Restaurant' wraps at the slash instead of mid-word (textContent unchanged). */
+const nameEl = (name: string): HTMLElement => { const e = el('span', 'nm'); name.split('/').forEach((part, i, all) => { e.append(part + (i < all.length - 1 ? '/' : '')); if (i < all.length - 1) e.append(document.createElement('wbr')); }); return e; };
+
 export class StDock extends StElement {
   private api: DockApi | null = null;
   private state: DrawerState = { open: null };
@@ -627,7 +630,7 @@ export class StDock extends StElement {
       const badge = el('span', 'sb'); badge.hidden = true;
       const bike = drawer === 'lifts' && LIFTS[id as LiftKind].carriesBikes ? el('span', 'sb bk') : null;
       if (bike) { bike.append(icon('bike', 11)); bike.title = 'Carries mountain bikes in summer'; }
-      b.append(lock, this.thumbEl(m.kind, id, m.icon, 96), el('span', 'nm', m.name), price, badge);
+      b.append(lock, this.thumbEl(m.kind, id, m.icon, 96), nameEl(m.name), price, badge);
       if (bike) b.appendChild(bike);
       b.addEventListener('click', () => this.choose(id));
       b.addEventListener('mouseenter', () => this.setHover(id, b));

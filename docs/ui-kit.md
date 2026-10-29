@@ -26,6 +26,9 @@ Everything below is shared by every `st-*` component through `BASE_CSS` (`src/ui
 | Sections | `.section > h3`, `.field > label` | used by Settings / New game |
 | Scrollbars | styled thin scrollbars everywhere | |
 
+### Slider with steppers (Pricing)
+One row, always `[−] [slider] [+]` (`.step` in `StPricing`: flex, no wrap, buttons `max(28px, var(--touch-min))` square, vertically centred, slider `flex:1; min-width:0`), so the stepper buttons never stack above / below the range input. The value label, demand gauge and reset / *free* controls are separate grid cells to the right and stay aligned; arrow keys and the range's own aria are unchanged, the buttons carry `aria-label` (*Lower / Raise <price>*). At <= 640 px the row becomes three lines (name + value + reset, the stepper row at full width, the gauge). Other sliders (Settings, lift inspector, Photo) have no steppers and keep a plain `label + range + value` row. Tests: `tests/ui-dom/marketing.test.ts` ("slider steppers"). Build card names break at `/` through `<wbr>` (`Lodge/` + `Restaurant`).
+
 ## Dialogs (`src/ui/modal.ts`, `StModal.ts`)
 
 One frame for every dialog: header (icon, title in the display font, ✕), scrolling body, footer actions. Widths **sm 420 / md 640 / lg 920**, centred with flex (no transforms, so fixed popups inside work), dimmed backdrop.

@@ -21,7 +21,10 @@ const css = `
 .wrap{display:flex;flex-direction:column;gap:4px;max-height:min(34vh,340px);overflow:auto}
 .tabs,.bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .row{display:grid;grid-template-columns:150px 1fr 70px 110px 90px;gap:6px;align-items:center;font-size:11px}
-.row input[type=range]{width:100%}
+.row .step{display:flex;gap:4px;flex-wrap:nowrap;align-items:center;min-width:0}
+.row .step input[type=range]{flex:1 1 auto;min-width:0;width:auto}
+.row .step button{flex:none;box-sizing:border-box;width:max(28px,var(--touch-min,0px));min-width:0;height:max(28px,var(--touch-min,0px));min-height:0;padding:0;line-height:1;font-size:15px}
+@media (max-width:640px){.row{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:'name val tail' 'ctl ctl ctl' 'gg gg gg';row-gap:4px;padding:3px 0}.row>:nth-child(1){grid-area:name}.row>:nth-child(2){grid-area:ctl}.row>:nth-child(3){grid-area:val}.row>:nth-child(4){grid-area:gg}.row>:nth-child(5){grid-area:tail}}
 .gauge{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,#4a8fd4,#6ac46a 35%,#6ac46a 55%,#d45a4a)}
 .gauge>i{position:absolute;top:-2px;width:3px;height:12px;background:#fff;border-radius:2px}
 .muted{color:#aab}.cheap{color:#7ab8ff}.fair{color:#8fe08f}.expensive{color:#ff9a8a}
@@ -59,9 +62,10 @@ export class StPricing extends StElement {
     slider.addEventListener('input', () => { val.textContent = formatPrice(Number(slider.value), r.percent); });
     slider.addEventListener('change', () => { a.set(r.key, Number(slider.value)); this.refresh(); });
     const minus = el('button', '', '−'), plus = el('button', '', '+');
+    minus.setAttribute('aria-label', `Lower ${r.label}`); plus.setAttribute('aria-label', `Raise ${r.label}`);
     minus.addEventListener('click', () => { step(-1); this.refresh(); });
     plus.addEventListener('click', () => { step(1); this.refresh(); });
-    const ctl = el('div', 'bar'); ctl.append(minus, slider, plus);
+    const ctl = el('div', 'step'); ctl.append(minus, slider, plus);
     const gauge = el('div', 'gauge'), mark = el('i'); mark.style.left = `${r.gauge}%`; gauge.appendChild(mark);
     const info = el('div', r.verdict);
     info.textContent = `${verdictLabel(r.verdict)} · demand ${r.demandPct}%`;

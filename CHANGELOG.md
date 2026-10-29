@@ -2,6 +2,15 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Quiet seasonal closures**: when several attractions close for the same seasonal reason within a few seconds (no snow, too warm, out of season) the game shows ONE toast (*3 winter attractions closed for summer: Magic Carpet, Ice Rink, Heated Terrace*, with a *Go to* for the first) instead of a stack; each attraction toasts once per season, and the News keeps one row per reason and day. Breakdowns, storms, avalanches and other surprises still get their own toast.
+- **Pricing sliders**: the − and + buttons now sit on the same row as the slider (− slider +, vertically centred, 28 px; 44 px on touch) instead of above and below it, and the Pricing rows fold into two tidy lines on phones.
+- **Build cards**: long names such as *Lodge/Restaurant* wrap at the slash instead of in the middle of a word.
+- **Website screenshots**: toasts are hidden in all screenshots; the bridges shot shows the four bridge kinds over a real one-tile stream without any stand-in markers; the update-card and crossings shots are closer.
+
 ## [0.2.5] - 2026-10-29 (pre-release)
 
 Version 0.2.4 was skipped (it was never released); 0.2.5 follows 0.2.3 directly. Changes since 0.2.3: an easier first year, tidier towns, bridges built as part of drawing, the Eco programme, an update card with What's new, and Sponsor links. Still a pre-release; not 1.0.
