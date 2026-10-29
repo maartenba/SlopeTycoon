@@ -37,7 +37,7 @@ import { dressingWorldOf } from '@/render/festival/dressingWorld';
 import { almabtriebWindow } from '@/sim/events/EventCalendar';
 import { Fireworks, fireworksAllowed } from '@/render/fx/Fireworks';
 import { isWaterType } from '@/world/Grid';
-import { SmokeView, type SmokeSource } from '@/render/Smoke';
+import { RapidsSplash, SmokeView, type SmokeSource } from '@/render/Smoke';
 import { SnowSprayView } from '@/render/SnowSpray';
 import { modalPause } from '@/ui/modalPauseGate';
 import { PlantTool } from '@/build/PlantTool';
@@ -659,6 +659,16 @@ const updateLandscapeView = (): void => {
   landscapeDecor.sync();
   covOverlay.invalidateHeights();
 };
+// ---- Dug rivers in the water mesh + flow (speed, rapids foam, ice) + rapids splash (Phase 6 Tasks 15-17). Cheap: three integer compares per frame. ----
+const rapidsSplash = new RapidsSplash();
+renderer.scene.add(rapidsSplash.group);
+let riverSeen = -1, flowSeen = -1;
+const updateRiverView = (dt: number, cam: THREE.Camera, viewHeight: number): void => {
+  if (riverSeen !== sim.rivers.version) { riverSeen = sim.rivers.version; flowSeen = -1; water.setRivers(sim.rivers.rivers.map((r) => ({ id: `r${r.id}`, path: r.path }))); }
+  const tbl = sim.flow.all();
+  if (flowSeen !== sim.flow.version) { flowSeen = sim.flow.version; water.applyFlow((id) => tbl.get(id)); }
+  rapidsSplash.update(dt, cam, viewHeight, water.rapids, lighting.nightUniform.value);
+};
 let landscapeWalkItems: readonly import('@/render/VillageDecor').DecorItem[] = [], landscapeWalkKey: readonly unknown[] = [];
 /** Walk mode collides with the village decor AND the player's decor (stable array identity while neither changes: the walk world caches on it). */
 const allDecorItems = (): readonly import('@/render/VillageDecor').DecorItem[] => {
@@ -1008,6 +1018,7 @@ renderer.onFrame = (dt): void => {
   if (opsRef && overlayMode === 'quality' && opsRef.quality.version !== lastQualityVersion) { lastQualityVersion = opsRef.quality.version; covOverlay.invalidate(); }
   if (netTools && netTools.networks.version !== lastNetVersion) { lastNetVersion = netTools.networks.version; covOverlay.invalidate(); }
   water.update(performance.now() / 1000);
+  updateRiverView(dt, cam, vh);
   flushSnow(dt);
   updatePrecip(dt);
   trees.update(cam, vh);

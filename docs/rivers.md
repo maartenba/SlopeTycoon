@@ -44,6 +44,22 @@ Developer notes for dug rivers and spring sites. Status: **data model + planner 
 - **Habitat**: `riverHabitatPoints` adds up to +2 sustainability points (+1 per 40 dug river tiles) through the existing `bonus` input; 0 without dug rivers.
 - **Hash**: the table is never saved or hashed. The only saved flow state is the ice of dug rivers (Task 17), written inside the `rivers` module, which is absent while no river / spring exists, so every world without dug rivers keeps its `stateHash`.
 
+## Rendering (`render/Water.ts`, `render/Smoke.ts`, Task 16)
+
+- Dug rivers go through the **same single water mesh** as lakes and natural streams (`Water.setRivers(dug)`, rebuilt only when `Rivers.version` changes; main.ts `updateRiverView`): **no extra draw call**. `buildWaterData(grid, lakes, streams, dug)` also returns `ranges` (`n<i>` / `r<id>`, 6 vertices per tile).
+- New per-vertex `aInfo` = (speed, rapids 0..1 = class / 2, river ice -1 | 0..1). `Water.applyFlow(lookup)` rewrites it in place from `sim.flow` whenever `FlowModel.version` moves (month, ice, river edits). Scroll rate = flow direction x model speed (world-space UVs, so it is flicker-safe), whitewater = world-space value noise advected along the flow x the rapids factor (**no `gl_FragCoord`**; a test greps for it), normals get a little choppier with the class.
+- **Splash**: `RapidsSplash` (Smoke.ts) reuses the chimney-smoke billboard shader: at most 18 evenly spaced rapids tiles, 72 puffs (`SPLASH.cap`), 0.9 s life, one instanced draw call, only below a view height of 70 tiles and never while frozen.
+- Natural streams get speed / foam from the model too (summer look changes slightly: brisk tiles show a little whitewater); their winter look is untouched (still the global `uFreeze`).
+- A shot of a dug river in spring (melt, brisk), summer and winter: `npm run shot -- ... --pre "<dig>; __slope.sim.jumpToDay(d, 11); __slope.trees.group.visible=false"` (see `.weave/shots/p6h-river4-*`).
+
+## Ice (Task 17)
+
+- `FlowModel.onDay(day, valleyT)` (called from the daily weather hook, after the weather rolled) counts days of the **daily mean valley temperature**: frozen after **3 days below -2 C**, thawed after **2 days above +1 C**, the grey zone in between resets both counts (no flapping). `settle()` (used by `jumpToDay`) goes straight to the state of today's temperature.
+- Frozen dug rivers: flow speed 0, `mouthQ` 0, class calm, water tours (`routes: water`) close with *Closed: the river is frozen* (`TourSystem.frozen` also reads `flow.anyDugFrozen()`); pistes stay refused on ice, no ice walking.
+- Render: dug rivers own their ice (`aInfo.z`), eased in about 1.5 s per river, plus their own never-frozen clock (the global water clock stops with the global freeze, which starts earlier than the 3-day rule). Natural streams, lakes and ponds keep the global `uFreeze` exactly as before.
+- **Save**: `{ frozen, cold, warm }` is written as `ice` inside the `rivers` module (absent without rivers / springs, so goldens are unchanged); old saves load thawed.
+- Tests: `tests/sim/nature/riverIce.test.ts` (hysteresis, a real Dec-Apr season with a dug river, save / load, jump), `tests/render/waterRivers.test.ts` (mesh ranges, per-tile flow, easing, one draw call, splash cap).
+
 ## Not yet (later tasks)
 
 Tool + preview + spring placement UI (14), flow `Q` / speed (15), Water.ts rendering of dug rivers and spring markers (16), ice (17), river bridges + suspension footbridge (46), rafting / canyoning, snowmaking from rivers, sustainability bonus.

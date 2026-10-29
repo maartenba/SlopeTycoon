@@ -114,7 +114,7 @@ export interface IceState { frozen: boolean; cold: number; warm: number }
 /** Flow table + ice tracker. Constructed by createSim; `update*` are called from the daily weather hook, everything else is a lazy read. */
 export class FlowModel {
   private table = new Map<string, WayFlow>();
-  private key = '';
+  private kv = -1; private km = -1; private kf = -1;
   private day = 0;
   /** Bumped when the table was recomputed (renderers refresh their per-tile speed / ice attributes). */
   version = 0;
@@ -143,9 +143,9 @@ export class FlowModel {
   /** The table, recomputed lazily when the rivers, the sim month or the ice state changed. */
   all(): Map<string, WayFlow> {
     const r = this.src.rivers();
-    const k = `${r.version}|${monthIndex({ day: this.day })}|${this.ice.frozen ? 1 : 0}`;
-    if (k !== this.key) {
-      this.key = k;
+    const m = monthIndex({ day: this.day }), f = this.ice.frozen ? 1 : 0;
+    if (r.version !== this.kv || m !== this.km || f !== this.kf) {
+      this.kv = r.version; this.km = m; this.kf = f;
       this.table = computeFlow(this.src.natural(), r.rivers, seasonFactor(this.day), () => this.ice.frozen);
       this.version++;
     }
@@ -165,7 +165,7 @@ export class FlowModel {
   loadIce(d: unknown): void {
     const o = (d ?? {}) as Partial<IceState>;
     this.ice = { frozen: !!o.frozen, cold: o.cold ?? 0, warm: o.warm ?? 0 };
-    this.key = '';
+    this.kv = -1;
   }
   resetIce(): void { this.loadIce(null); }
 }

@@ -205,3 +205,80 @@ export class SmokeView {
   get emitterCount(): number { return this.emitters.size; }
   dispose(): void { this.geo.dispose(); this.mat.dispose(); }
 }
+
+/** Rapids splash (Phase 6 Task 16): a few low, short-lived white puffs above rapids tiles. Reuses the smoke shader; one instanced draw call, hard cap `SPLASH.cap` puffs. */
+export const SPLASH = {
+  /** Puff slots (hard cap), spots used at once, puff life (s), spawn interval per spot (s). */
+  cap: 72, spots: 18, life: 0.9, every: 0.3,
+  /** Only when the camera is closer than this view height (tiles). */
+  lodFar: 70,
+} as const;
+
+export class RapidsSplash {
+  readonly group = new THREE.Group();
+  readonly mesh: THREE.Mesh;
+  private geo = new THREE.InstancedBufferGeometry();
+  private mat: THREE.ShaderMaterial;
+  private origin = new Float32Array(SPLASH.cap * 3);
+  private birth = new Float32Array(SPLASH.cap).fill(-1);
+  private time = 0; private ring = 0; private acc = 0;
+  /** Spots picked from the rapids tiles (evenly spaced, deterministic); refreshed when the list changes. */
+  private spots: Array<{ x: number; y: number; z: number }> = [];
+  private src: ReadonlyArray<{ x: number; y: number; z: number }> | null = null;
+
+  constructor() {
+    const quad = new THREE.PlaneGeometry(1, 1);
+    this.geo.index = quad.index;
+    this.geo.setAttribute('position', quad.getAttribute('position'));
+    const seed = new Float32Array(SPLASH.cap);
+    for (let i = 0; i < SPLASH.cap; i++) seed[i] = (i * 0.6180339) % 1;
+    this.geo.setAttribute('aOrigin', new THREE.InstancedBufferAttribute(this.origin, 3).setUsage(THREE.DynamicDrawUsage));
+    this.geo.setAttribute('aBirth', new THREE.InstancedBufferAttribute(this.birth, 1).setUsage(THREE.DynamicDrawUsage));
+    this.geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seed, 1));
+    this.geo.instanceCount = SPLASH.cap;
+    this.mat = new THREE.ShaderMaterial({
+      vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,
+      uniforms: { uTime: { value: 0 }, uWind: { value: new THREE.Vector2(0, 0) }, uLife: { value: SPLASH.life }, uScale: { value: 0.28 }, uColor: { value: new THREE.Color(0.96, 0.98, 1) }, uNight: { value: 0 } },
+    });
+    this.mesh = new THREE.Mesh(this.geo, this.mat);
+    this.mesh.frustumCulled = false; this.mesh.renderOrder = 6; this.mesh.visible = false;
+    this.group.add(this.mesh);
+  }
+
+  /** Pure pick: at most `n` evenly spaced spots of the list. */
+  static pick<T>(list: ReadonlyArray<T>, n: number): T[] {
+    if (list.length <= n) return [...list];
+    const out: T[] = [];
+    for (let i = 0; i < n; i++) out.push(list[Math.floor((i * list.length) / n)]!);
+    return out;
+  }
+
+  /** `rapids`: world positions of rapids tiles (stable array identity while unchanged). */
+  update(dt: number, _camera: THREE.Camera, viewHeight: number, rapids: ReadonlyArray<{ x: number; y: number; z: number }>, nightUniformValue = 0): void {
+    if (rapids !== this.src) { this.src = rapids; this.spots = RapidsSplash.pick(rapids, SPLASH.spots); }
+    const on = this.spots.length > 0 && viewHeight < SPLASH.lodFar;
+    this.mesh.visible = on;
+    if (!on) return;
+    this.time += dt;
+    this.mat.uniforms.uTime!.value = this.time;
+    this.mat.uniforms.uNight!.value = nightUniformValue;
+    this.acc += dt;
+    if (this.acc < SPLASH.every) return;
+    this.acc = 0;
+    let k = 0;
+    for (const s of this.spots) {
+      // two puffs per spot per interval, staggered slots; deterministic jitter from the ring counter (no Math.random in render either: stable)
+      const idx = this.ring++ % SPLASH.cap;
+      const j = ((this.ring * 0.754877666) % 1) - 0.5, j2 = ((this.ring * 0.569840291) % 1) - 0.5;
+      this.origin[idx * 3] = s.x + j * 0.6; this.origin[idx * 3 + 1] = s.y; this.origin[idx * 3 + 2] = s.z + j2 * 0.6;
+      this.birth[idx] = this.time;
+      k++;
+    }
+    if (k > 0) {
+      (this.geo.getAttribute('aOrigin') as THREE.BufferAttribute).needsUpdate = true;
+      (this.geo.getAttribute('aBirth') as THREE.BufferAttribute).needsUpdate = true;
+    }
+  }
+
+  dispose(): void { this.geo.dispose(); this.mat.dispose(); }
+}

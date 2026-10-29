@@ -10,6 +10,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 - **River flow, groundwork**: every stream and dug river now has a discharge (springs, lake outlets, branches and merging tributaries add up), a seasonal factor (snowmelt in spring, low water in late summer) and a calm / brisk / rapids class from its drop per tile. A river adds a little wildlife-habitat sustainability. Nothing changes in games without a dug river (`docs/rivers.md`).
 
+- **Rivers look alive, groundwork**: dug rivers are drawn by the water mesh with their own flow speed per tile, whitewater on rapids and a few capped splashes (no extra draw call), and a dug river freezes after three days below -2 C (flow stops, water tours close) and thaws after two days above +1 C. Natural streams, ponds and lakes keep their winter look (`docs/rivers.md`).
+
 - **N-station lifts, groundwork** (no tool yet): a gondola, cable car or detachable chair can now have one or two mid-stations in the model. Every segment is checked on its own, the mid-station gets a flat pad and towers keep 2 tiles away, guests can ride between any two stations and get off nearest their goal, no carrier ever exceeds its capacity, and saves gain an optional station list (format 3; every existing lift stays a plain two-station lift). Nothing changes in existing games (`docs/mid-stations.md`).
 
 ### Changed
