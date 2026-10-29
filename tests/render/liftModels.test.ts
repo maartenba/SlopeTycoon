@@ -14,8 +14,8 @@ const bbox = (g: THREE.BufferGeometry): THREE.Box3 => { g.computeBoundingBox(); 
 const info = (kind: LiftKind): { family: string; seats: number; bubble: boolean; cabinSize: number } => buildCarrierGeometry(kind).userData.meshInfo;
 
 describe('lift models', () => {
-  it('has 11 lift kinds, each with distinct bottom and top station geometry', () => {
-    expect(LIFT_KIND_IDS.length).toBe(11);
+  it('has 12 lift kinds, each with distinct bottom and top station geometry', () => {
+    expect(LIFT_KIND_IDS.length).toBe(12);
     const hashes = new Map<string, string>();
     for (const k of LIFT_KIND_IDS) {
       const bot = geometryHash(buildStationParts(k, false).geometry), top = geometryHash(buildStationParts(k, true).geometry);
@@ -66,7 +66,7 @@ describe('lift models', () => {
   });
 
   it('carriers report seat counts / bubble / cabin size and match their geometry', () => {
-    const seats: Partial<Record<LiftKind, number>> = { tbar: 2, chair2: 2, chair4: 4, chair4d: 4, chair6: 6, chair6b: 6, chair8b: 8 };
+    const seats: Partial<Record<LiftKind, number>> = { tbar: 2, chair2: 2, chair4: 4, chair4d: 4, chair6: 6, chair6d: 6, chair6b: 6, chair8b: 8 };
     for (const [k, n] of Object.entries(seats) as Array<[LiftKind, number]>) {
       expect(info(k).seats, k).toBe(n);
       expect(info(k).bubble, k).toBe(LIFTS[k].bubble);

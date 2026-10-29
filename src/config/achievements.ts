@@ -101,7 +101,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   // ---- tier 3: rare
   { id: 'roy-gold', title: 'Resort of the Year: Gold', description: 'Be named Resort of the Year with a gold headline.', tier: 3, icon: 'trophy', scope: 'career', tracker: { kind: 'report', metric: 'headline', min: 3 }, reward: 'flags:golden' },
   { id: 'level-6', title: 'Alpine destination', description: 'Reach resort level 6.', tier: 3, icon: 'mountain', scope: 'career', tracker: { kind: 'fact', fact: 'level', op: '>=', v: 6 } },
-  { id: 'all-lifts', title: 'Every kind of lift', description: 'Build every lift type in one game.', tier: 3, icon: 'lift', scope: 'any', tracker: { kind: 'distinct', event: 'lift:built', key: 'kind', n: 11 } },
+  { id: 'all-lifts', title: 'Every kind of lift', description: 'Build every lift type in one game.', tier: 3, icon: 'lift', scope: 'any', tracker: { kind: 'distinct', event: 'lift:built', key: 'kind', n: 12 } },
   { id: 'scenario-gold', title: 'Gold standard', description: 'Win any scenario with a gold medal.', tier: 3, icon: 'medal', scope: 'scenario', tracker: { kind: 'scenario', scenario: 'any', min: 3 }, reward: 'frame:gold' },
   { id: 'scenarios-gold', title: 'Grand slam', description: 'Win every scenario with a gold medal.', tier: 3, icon: 'trophy', scope: 'scenario', tracker: { kind: 'scenario', scenario: ALL, min: 3 } },
   { id: 'guests-100000', title: 'A hundred thousand', description: 'Welcome 100,000 guests, across all your games.', tier: 3, icon: 'guests', scope: 'any', tracker: { kind: 'event', event: 'guest:arrived', n: 100000, per: 'profile', counter: 'guests' }, reward: 'palette:alpine-red' },

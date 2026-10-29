@@ -271,3 +271,17 @@ describe('guests in a lift with a mid-station (Task 39)', () => {
     expect(t.dayPassesSold + t.hikerTickets, 'a pass is sold once per guest per day, not per boarding').toBeLessThanOrEqual(total);
   }, 240_000);
 });
+
+describe('chair6d with a mid-station in a real sim (Task 47)', () => {
+  it('builds with a mid-station, carries guests for 3 days, never overloads a carrier (6 seats)', () => {
+    const r = anyMidResort('chair6d');
+    expect(r, 'a seed where a chair6d line with a mid-station is valid').not.toBeNull();
+    const { sim, lift } = r!;
+    expect(lift.kind).toBe('chair6d');
+    expect(lift.stations).toHaveLength(3);
+    sim.liftOps.setHours(lift.id, 6, 22);
+    for (let t = 0; t < 3 * TICKS_PER_DAY; t++) sim.tick(1);
+    expect(sim.lifts.get(lift.id)!.riders?.total ?? 0).toBeGreaterThan(0);
+    expect(sim.guestSim.queues.maxCarrierLoad).toBeLessThanOrEqual(6);
+  }, 240_000);
+});

@@ -21,7 +21,7 @@ export function buildCarrierGeometry(kind: LiftKind, near = false, chairBody?: n
   const d = LIFTS[normalizeLiftKind(kind)];
   switch (d.family) {
     case 'tbar': return buildTBarGeometry();
-    case 'chair': return buildChairGeometry(d.capacityPerCarrier, d.bubble, d.detachable, near, chairBody);
+    case 'chair': return buildChairGeometry(d.capacityPerCarrier, d.bubble, d.detachable, near, chairBody ?? (d.id === 'chair6d' ? 0x1f7a6a : undefined), d.id === 'chair6d');
     case 'gondola': return buildGondolaGeometry(d.capacityPerCarrier, near);
     case 'cablecar': return buildTramGeometry(near);
     case 'funicular': return buildFunicularCarGeometry(near);

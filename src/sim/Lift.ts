@@ -50,7 +50,7 @@ const CHAIR_PRM: LiftParams = { minClearance: 0.5, minTowerHeight: 0.9, maxTower
 const GONDOLA_PRM: LiftParams = { minClearance: 0.6, minTowerHeight: 1.0, maxTowerHeight: GONDOLA_MAX_H, softTowerHeight: GONDOLA_SOFT_H, spanRatio: 1, sag: 0.012, hang: 0.5, drop: 0.95 };
 export const LIFT_PARAMS: Record<LiftKind, LiftParams> = {
   tbar: { minClearance: 0.1, minTowerHeight: 0.5, maxTowerHeight: TBAR_MAX_H, softTowerHeight: TBAR_SOFT_H, spanRatio: 1, sag: 0.01, hang: 0.25, drop: 0.65 },
-  chair2: CHAIR_PRM, chair4: CHAIR_PRM, chair4d: CHAIR_PRM, chair6: CHAIR_PRM,
+  chair2: CHAIR_PRM, chair4: CHAIR_PRM, chair4d: CHAIR_PRM, chair6: CHAIR_PRM, chair6d: CHAIR_PRM,
   chair6b: { ...CHAIR_PRM, minClearance: 0.55, hang: 0.45, drop: 0.6 }, chair8b: { ...CHAIR_PRM, minClearance: 0.55, hang: 0.45, drop: 0.6 },
   gondola6: GONDOLA_PRM, gondola10: { ...GONDOLA_PRM, minClearance: 0.65, hang: 0.55, drop: 1.0 },
   cablecar: { minClearance: 0.8, minTowerHeight: 1.5, maxTowerHeight: CABLECAR_MAX_H, softTowerHeight: CABLECAR_SOFT_H, spanRatio: 0.7, sag: 0.015, hang: 0.6, drop: 1.0 },

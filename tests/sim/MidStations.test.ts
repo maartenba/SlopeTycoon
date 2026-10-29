@@ -21,7 +21,7 @@ const A = (g: Grid, x: number, y: number) => stationAnchor(g, x, y);
 describe('N-station lifts: model (Task 36)', () => {
   it('only detachable chairs, gondolas and cable cars may have mid-stations', () => {
     const allowed = (Object.keys(LIFTS) as LiftKind[]).filter((k) => midStationsAllowed(k)).sort();
-    expect(allowed).toEqual(['cablecar', 'chair4d', 'chair6', 'chair6b', 'chair8b', 'gondola10', 'gondola6']);
+    expect(allowed).toEqual(['cablecar', 'chair4d', 'chair6', 'chair6b', 'chair6d', 'chair8b', 'gondola10', 'gondola6']);
     for (const k of ['tbar', 'chair2', 'chair4', 'funicular'] as LiftKind[]) expect(LIFTS[k].detachable && LIFTS[k].family !== 'funicular').toBe(false);
   });
 

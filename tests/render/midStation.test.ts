@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { LIFT_KIND_IDS, LIFTS, type LiftFamily, type LiftKind } from '../../src/config/lifts';
 import { buildMidStationParts } from '../../src/render/meshes/lifts/Station';
 import { MID_THEMES } from '../../src/render/meshes/lifts/midStation';
-import { LiftView } from '../../src/render/meshes/lifts';
+import { LiftView, buildCarrierGeometry } from '../../src/render/meshes/lifts';
+import { UNLOCKS } from '../../src/config/unlocks';
 import { geometryHash } from '../../src/render/meshes/lifts/geo';
 import {
   MID_SLOW_EXTRA, MID_SLOW_ZONE, carrierStates, liftPath, midDistancesOf, pathToRope, ropeToPath, computeStats, type LiftData, type V3,
@@ -152,5 +153,27 @@ describe('walk mode boards at the mid-station (Task 39)', () => {
     expect(nearestBoardable([lift], bot.x + 1, bot.y + 1)?.station).toBe(0);
     const plain = { ...lift, stations: undefined };
     expect(nearestBoardable([plain], bot.x + 1, bot.y + 1)?.station).toBe(0);
+  });
+});
+
+describe('chair6d, the detachable high-speed six-seat chair (Task 47)', () => {
+  const d = LIFTS.chair6d, q = LIFTS.chair4;
+  const nodes: V3[] = [{ x: 0, y: 0, z: 0 }, { x: 60, y: 10, z: 0 }];
+  it('carries more per carrier and more per hour than the fixed quad, but boards fewer carriers per hour (longer attach / detach cycle)', () => {
+    const s6 = computeStats('chair6d', nodes), s4 = computeStats('chair4', nodes);
+    expect(d.capacityPerCarrier).toBeGreaterThan(q.capacityPerCarrier);
+    expect(s6.throughputPerHour).toBeGreaterThan(s4.throughputPerHour);
+    expect(s6.carriersPerHour).toBeLessThan(s4.carriersPerHour);
+    expect(d.loadTimeS).toBeGreaterThan(LIFTS.chair6.loadTimeS); // slower loading than the plain detachable six-pack
+    expect(computeStats('chair6d', nodes).carriersPerHour).toBeLessThan(computeStats('chair6', nodes).carriersPerHour);
+  });
+  it('is a detachable chair in the chair family: mid-stations allowed, priced between the chairs, unlocked at level 3, own look', () => {
+    expect(d.detachable).toBe(true); expect(d.midStations).toBe(true); expect(d.family).toBe('chair'); expect(d.bubble).toBe(false);
+    expect(d.costPerMetre).toBeGreaterThan(LIFTS.chair4d.costPerMetre); expect(d.stationCost).toBeLessThan(LIFTS.gondola6.stationCost);
+    expect(LIFT_KIND_IDS).toContain('chair6d');
+    expect(UNLOCKS.find((u) => u.kind === 'lift' && u.id === 'chair6d')?.level).toBe(3);
+    expect(geometryHash(buildCarrierGeometry('chair6d'))).not.toBe(geometryHash(buildCarrierGeometry('chair6')));
+    expect(buildCarrierGeometry('chair6d').userData.meshInfo).toMatchObject({ seats: 6, bubble: false, detachable: true, visor: true });
+    expect(tris(buildCarrierGeometry('chair6d')), 'cheaper than the bubble six-seat (the base six-seat is already 324 triangles)').toBeLessThan(tris(buildCarrierGeometry('chair6b')));
   });
 });

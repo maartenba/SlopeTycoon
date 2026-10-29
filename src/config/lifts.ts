@@ -1,10 +1,10 @@
 import type { AccessKind, PisteRule } from './buildings';
 
-export type LiftKind = 'tbar' | 'chair2' | 'chair4' | 'chair4d' | 'chair6' | 'chair6b' | 'chair8b' | 'gondola6' | 'gondola10' | 'cablecar' | 'funicular';
+export type LiftKind = 'tbar' | 'chair2' | 'chair4' | 'chair4d' | 'chair6' | 'chair6d' | 'chair6b' | 'chair8b' | 'gondola6' | 'gondola10' | 'cablecar' | 'funicular';
 
 /** Old ids kept loadable (saves, tests): 'chairlift' -> 'chair4', 'gondola' -> 'gondola6'. */
 export const LIFT_ALIASES: Record<string, LiftKind> = { chairlift: 'chair4', gondola: 'gondola6' };
-export const LIFT_KIND_IDS: readonly LiftKind[] = ['tbar', 'chair2', 'chair4', 'chair4d', 'chair6', 'chair6b', 'chair8b', 'gondola6', 'gondola10', 'cablecar', 'funicular'];
+export const LIFT_KIND_IDS: readonly LiftKind[] = ['tbar', 'chair2', 'chair4', 'chair4d', 'chair6', 'chair6d', 'chair6b', 'chair8b', 'gondola6', 'gondola10', 'cablecar', 'funicular'];
 /** Map any (possibly legacy) id to a canonical LiftKind. */
 export function normalizeLiftKind(k: string): LiftKind { return (LIFT_ALIASES[k] ?? k) as LiftKind; }
 /** Visual family of a kind (mesh / station styling). */
@@ -69,6 +69,9 @@ export const LIFTS: Record<LiftKind, LiftDef> = {
   chair4: mk('chair4', 'Chairlift (4-seat, fixed)', 'chair', { speed: 4, capacityPerCarrier: 4, carrierSpacing: 8, maxLength: 80, maxGradient: 0.9, maxLocalGradient: 1.3, towerSpacing: 10, carriesBikes: true, costPerMetre: 90, stationCost: 6000, detachable: false, bubble: false, comfort: 0.5, windTolerance: 0.65, energyPerHour: 10, upkeepFactor: 1.0, wearRate: 1.0, loadTimeS: 4 }),
   chair4d: mk('chair4d', 'Chairlift (4-seat, detachable)', 'chair', { speed: 5, capacityPerCarrier: 4, carrierSpacing: 8, maxLength: 90, maxGradient: 0.95, maxLocalGradient: 1.4, towerSpacing: 11, carriesBikes: true, costPerMetre: 120, stationCost: 12000, detachable: true, bubble: false, comfort: 0.62, windTolerance: 0.7, energyPerHour: 14, upkeepFactor: 1.1, wearRate: 1.1, loadTimeS: 0 }),
   chair6: mk('chair6', 'Chairlift (6-seat, detachable)', 'chair', { speed: 5.5, capacityPerCarrier: 6, carrierSpacing: 9, maxLength: 100, maxGradient: 0.95, maxLocalGradient: 1.4, towerSpacing: 12, carriesBikes: true, costPerMetre: 150, stationCost: 18000, detachable: true, bubble: false, comfort: 0.7, windTolerance: 0.75, energyPerHour: 18, upkeepFactor: 1.2, wearRate: 1.15, loadTimeS: 0 }),
+  /** Detachable six-seat "HSC" chair (Task 47): carries more riders per carrier than the quad at a LOWER boarding cadence (carriers per hour at a station: the attach / detach dwell
+   *  needs a wide carrier spacing + a short dwell), so a 6d out-carries a chair4 / chair4d without being strictly better than the plain detachable chair6 (slower loading, shorter reach, no bubble). Mid-stations allowed. */
+  chair6d: mk('chair6d', 'Chairlift (6-seat, high-speed)', 'chair', { speed: 5, capacityPerCarrier: 6, carrierSpacing: 13, maxLength: 110, maxGradient: 0.95, maxLocalGradient: 1.4, towerSpacing: 12, carriesBikes: true, costPerMetre: 140, stationCost: 16000, detachable: true, bubble: false, comfort: 0.66, windTolerance: 0.74, energyPerHour: 16, upkeepFactor: 1.15, wearRate: 1.12, loadTimeS: 3 }),
   chair6b: mk('chair6b', 'Chairlift (6-seat, bubble)', 'chair', { speed: 5.5, capacityPerCarrier: 6, carrierSpacing: 9, maxLength: 100, maxGradient: 0.95, maxLocalGradient: 1.4, towerSpacing: 12, carriesBikes: true, costPerMetre: 180, stationCost: 22000, detachable: true, bubble: true, comfort: 0.85, windTolerance: 0.85, energyPerHour: 20, upkeepFactor: 1.3, wearRate: 1.2, loadTimeS: 0 }),
   chair8b: mk('chair8b', 'Chairlift (8-seat, bubble)', 'chair', { speed: 6, capacityPerCarrier: 8, carrierSpacing: 10, maxLength: 110, maxGradient: 1.0, maxLocalGradient: 1.45, towerSpacing: 13, carriesBikes: true, costPerMetre: 220, stationCost: 30000, detachable: true, bubble: true, comfort: 0.9, windTolerance: 0.88, energyPerHour: 26, upkeepFactor: 1.4, wearRate: 1.25, loadTimeS: 0 }),
   gondola6: mk('gondola6', 'Gondola (6-person)', 'gondola', { speed: 6, capacityPerCarrier: 6, carrierSpacing: 10, maxLength: 140, maxGradient: 1.1, maxLocalGradient: 1.6, towerSpacing: 14, carriesBikes: true, costPerMetre: 170, stationCost: 25000, detachable: true, bubble: true, comfort: 0.92, windTolerance: 0.9, energyPerHour: 24, upkeepFactor: 1.3, wearRate: 1.2, loadTimeS: 0 }),

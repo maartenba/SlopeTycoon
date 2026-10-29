@@ -41,7 +41,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
   solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
-export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
+export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
 const DESCRIPTIONS: Record<string, string> = {
   baseLodge: 'Resort core: tickets, lockers and the heart of the village.',
@@ -93,6 +93,7 @@ export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
   chair4: 'Workhorse fixed-grip quad; carries bikes in summer.',
   chair4d: 'Detachable quad: faster line, gentle loading.',
   chair6: 'Detachable six-pack: high capacity, quick and comfortable.',
+  chair6d: 'High-speed six-seat: more riders per chair than a quad, a longer loading cycle. Mid-stations allowed.',
   chair6b: 'Six-pack with a weather bubble: comfortable, copes with wind.',
   chair8b: 'Eight-seat bubble chair: top chairlift capacity.',
   gondola6: 'Fast enclosed 6-person cabins, long runs, wind tolerant.',

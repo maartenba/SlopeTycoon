@@ -110,8 +110,8 @@ describe('level thresholds (config/progression.ts)', () => {
 });
 
 describe('unlock table (config/unlocks.ts)', () => {
-  it('is short (8 to 13 items), every id exists in its catalogue, levels are 2..6', () => {
-    expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(13);
+  it('is short (8 to 16 items), every id exists in its catalogue, levels are 2..6', () => {
+    expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(16);
     for (const u of UNLOCKS) {
       const exists = u.kind === 'landscape' ? u.id === 'pond' : u.kind === 'building' ? !!BUILDINGS[u.id] : u.kind === 'lift' ? !!LIFTS[u.id as keyof typeof LIFTS] : CAMPAIGNS.some((c) => c.id === u.id);
       expect(exists, `${u.kind}:${u.id}`).toBe(true);

@@ -3,7 +3,7 @@
 All models are procedural low-poly geometry (`src/render/meshes/**`), vertex-coloured, merged into **≤ 4 meshes per building** (wood / stone / roof / sign).
 Window glass uses the exact `C.glass` vertex colour: those pixels glow warm at night (`BuildingMeshes.setNight`). Roof/ground faces turn white with the snow uniform.
 Each building instance gets one of 4 subtle material tints, seeded by building id (`tintVariant`).
-Press **B** in the game (debug) to see every building plus all 11 lift kinds in labelled rows (bottom station, top station, tower, carrier).
+Press **B** in the game (debug) to see every building plus all 12 lift kinds in labelled rows (bottom station, top station, tower, carrier).
 
 Budgets (asserted in `tests/render/buildings.test.ts`, `tests/render/liftModels.test.ts`): buildings ≤ 3,000 triangles for footprints ≤ 6 tiles, ≤ 9,000 for bigger ones
 (real counts: 242 – 1,920); lift stations < 3,500 (real: 352 – 1,284); everything fits its footprint + overhang tolerance and is deterministic.

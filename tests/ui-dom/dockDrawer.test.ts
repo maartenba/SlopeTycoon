@@ -60,7 +60,7 @@ describe('low-profile build drawer (DOM)', () => {
   it('lifts / paths drawers use the same rail and Escape closes', () => {
     const { dock } = mount();
     dock.show('lifts');
-    expect(q(dock, '.rail > .grid')!.querySelectorAll('.card').length).toBe(11);
+    expect(q(dock, '.rail > .grid')!.querySelectorAll('.card').length).toBe(12);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(dock.drawerOpen).toBe(false);
     dock.remove();

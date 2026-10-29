@@ -10,7 +10,7 @@ import type { LiftKind } from '../../../config/lifts';
 export interface StationSign { text: string; bg: string }
 export const STATION_SIGNS: Record<LiftKind, StationSign> = {
   tbar: { text: 'T-BAR', bg: '#e8a800' }, chair2: { text: 'CHAIR 2', bg: '#b03a2e' }, chair4: { text: 'CHAIR 4', bg: '#c0392b' },
-  chair4d: { text: 'EXPRESS 4', bg: '#c0392b' }, chair6: { text: 'EXPRESS 6', bg: '#a93226' }, chair6b: { text: 'BUBBLE 6', bg: '#5d6d7e' },
+  chair4d: { text: 'EXPRESS 4', bg: '#c0392b' }, chair6: { text: 'EXPRESS 6', bg: '#a93226' }, chair6d: { text: 'HSC 6', bg: '#1f7a6a' }, chair6b: { text: 'BUBBLE 6', bg: '#5d6d7e' },
   chair8b: { text: 'BUBBLE 8', bg: '#4a5a6a' }, gondola6: { text: 'GONDOLA', bg: '#2d5fa8' }, gondola10: { text: 'GONDOLA 10', bg: '#7b2d2d' },
   cablecar: { text: 'CABLE CAR', bg: '#a07a10' }, funicular: { text: 'FUNICULAR', bg: '#2e6b4a' },
 };
@@ -111,14 +111,14 @@ const chair4 = (detach: boolean): Design => (s) => {
 };
 
 // ---------------------------------------------------------------- Chair 6 / 6b / 8b: modern station, long curved glazed canopy tunnel where chairs park
-const chairBig = (bubble: boolean, seats: number): Design => (s) => {
+const chairBig = (bubble: boolean, seats: number, label?: { text: string; bg: string }, accent: number = C.red): Design => (s) => {
   const T = s.top;
   s.box(0, 0, 0, 1.96, 0.12, 1.96, CONCRETE);
   const R = seats >= 8 ? 0.96 : 0.9, yc = seats >= 8 ? 0.55 : 0.5;
   const u0 = T ? -0.35 : -0.95, u1 = T ? 0.95 : 0.35;
   archTunnel(s, u0, u1, R, yc, STEEL_DARK, bubble ? PANE : C.white, seats >= 8 ? 5 : 4);
   // end pylons with a red accent band
-  for (const u of [u0, u1]) s.box(0, 0.12, u, 2.0, 0.08, 0.1, C.red);
+  for (const u of [u0, u1]) s.box(0, 0.12, u, 2.0, 0.08, 0.1, accent);
   const wu = T ? 0.45 : -0.45;
   bullwheel(s, wu, 0.32, STEEL);
   wheelFrame(s, wu, 0.32, STEEL_DARK, 1.0);
@@ -128,10 +128,10 @@ const chairBig = (bubble: boolean, seats: number): Design => (s) => {
   const bu = T ? 0.65 : -0.62;
   s.box(-0.7, 0.12, bu, 0.5, 0.7, 0.55, STEEL);
   s.box(-0.7, 0.4, bu + (T ? -0.28 : 0.28), 0.4, 0.3, 0.03, C.glass);
-  s.box(-0.7, 0.82, bu, 0.56, 0.05, 0.6, C.red);
-  if (!T) { turnstiles(s, -0.05, [-0.25, 0.25], STEEL_DARK, C.red); s.box(0.7, 0.12, -0.4, 0.4, 0.5, 0.5, C.white); s.box(0.7, 0.4, -0.4, 0.42, 0.2, 0.3, C.glass); }
+  s.box(-0.7, 0.82, bu, 0.56, 0.05, 0.6, accent);
+  if (!T) { turnstiles(s, -0.05, [-0.25, 0.25], STEEL_DARK, accent); s.box(0.7, 0.12, -0.4, 0.4, 0.5, 0.5, C.white); s.box(0.7, 0.4, -0.4, 0.42, 0.2, 0.3, C.glass); }
   else { s.box(0.65, 0.12, 0.6, 0.5, 0.5, 0.6, C.grey); s.cyl(0.65, 0.62, 0.6, 0.08, 0.1, C.black, 8); s.ramp(0, 0.0, -0.7, 0.6, 0.12, 0.9, CONCRETE, -1); }
-  s.signs(seats >= 8 ? 'BUBBLE 8' : bubble ? 'BUBBLE 6' : 'EXPRESS 6', 0, 1.6, (T ? 0.95 : -0.95), 1.0, 0.32, bubble ? '#4a5a6a' : '#a93226');
+  s.signs(label?.text ?? (seats >= 8 ? 'BUBBLE 8' : bubble ? 'BUBBLE 6' : 'EXPRESS 6'), 0, 1.6, (T ? 0.95 : -0.95), 1.0, 0.32, label?.bg ?? (bubble ? '#4a5a6a' : '#a93226'));
   s.box(0, 1.35, T ? 0.95 : -0.95, 0.06, 0.2, 0.06, STEEL_DARK);
 };
 
@@ -246,7 +246,7 @@ const funicular: Design = (s) => {
 };
 
 export const STATION_DESIGNS: Record<LiftKind, Design> = {
-  tbar, chair2, chair4: chair4(false), chair4d: chair4(true), chair6: chairBig(false, 6), chair6b: chairBig(true, 6), chair8b: chairBig(true, 8),
+  tbar, chair2, chair4: chair4(false), chair4d: chair4(true), chair6: chairBig(false, 6), chair6d: chairBig(false, 6, STATION_SIGNS.chair6d, 0x1f7a6a), chair6b: chairBig(true, 6), chair8b: chairBig(true, 8),
   gondola6: gondola(false), gondola10: gondola(true), cablecar, funicular,
 };
 void PANE;

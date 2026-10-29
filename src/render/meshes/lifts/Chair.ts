@@ -11,7 +11,7 @@ export const chairWidth = (seats: number): number => 0.1 + seats * SEAT_PITCH;
  * (one pad + backrest section per seat); `bubble` adds a translucent weather hood (glass group). Detachable chairs get a
  * grip block with two wheels on the hanger. Footrest and safety bar on every chair; red for open chairs, grey-blue for bubbles.
  */
-export function buildChairGeometry(seats = 4, bubble = false, detachable = false, near = false, bodyColor?: number): THREE.BufferGeometry {
+export function buildChairGeometry(seats = 4, bubble = false, detachable = false, near = false, bodyColor?: number, visor = false): THREE.BufferGeometry {
   const b = new PartBuilder(1, 1);
   const w = chairWidth(seats);
   const body = bodyColor ?? (bubble ? 0x6c7a89 : C.red);
@@ -38,9 +38,14 @@ export function buildChairGeometry(seats = 4, bubble = false, detachable = false
     for (const x of [-w / 2 - 0.02, w / 2 + 0.02]) b.box(x, -0.4, 0.14, 0.03, 0.36, 0.03, C.dark); // hood posts
     b.box(0, -0.43, 0.14, w + 0.04, 0.03, 0.03, C.dark);
   }
+  if (visor) { // high-speed chair (chair6d): a slim wind visor in front of the riders + a white roof stripe, no hood
+    b.box(0, -0.4, 0.14, w + 0.04, 0.3, 0.02, 0xcfe4f4, 'glass');
+    for (const x of [-w / 2 - 0.02, w / 2 + 0.02]) b.box(x, -0.4, 0.14, 0.025, 0.3, 0.025, C.dark);
+    b.box(0, -0.1, -0.06, w * 0.7, 0.025, 0.2, C.white, 'roof');
+  }
   if (near) addChairNearDetail(b, seats, w, body, detachable);
   const g = finishGeometry(b);
-  g.userData.meshInfo = { family: 'chair', seats, bubble, detachable, cabinSize: 0, near };
+  g.userData.meshInfo = { family: 'chair', seats, bubble, detachable, cabinSize: 0, near, visor };
   return g;
 }
 

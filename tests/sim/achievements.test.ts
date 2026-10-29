@@ -200,12 +200,12 @@ describe('trackers: facts, streaks, windows, distinct sets, reports, scenarios',
   it('distinct: every lift type in one game (aliases collapse, per game)', () => {
     const { bus, a, got } = mk();
     const kinds = Object.keys(LIFTS);
-    expect(kinds.length).toBe(11);
-    for (const k of kinds.slice(0, 10)) bus.emit('lift:built', { id: 1, kind: k });
+    expect(kinds.length).toBe(12);
+    for (const k of kinds.slice(0, 11)) bus.emit('lift:built', { id: 1, kind: k });
     bus.emit('lift:built', { id: 2, kind: 'chairlift' }); // alias of chair4
     expect(got).not.toContain('all-lifts');
-    expect(a.progress(ACHIEVEMENT_BY_ID['all-lifts']!)!.value).toBe(10);
-    bus.emit('lift:built', { id: 3, kind: kinds[10]! });
+    expect(a.progress(ACHIEVEMENT_BY_ID['all-lifts']!)!.value).toBe(11);
+    bus.emit('lift:built', { id: 3, kind: kinds[11]! });
     expect(got).toContain('all-lifts');
   });
   it('report trackers: a full year in profit, the gold headline, the wildlife award; partial years never count', () => {
