@@ -5,6 +5,7 @@ import { TileType } from '@/world/Grid';
 import type { Lake, Stream } from '@/world/TerrainGen';
 import { HEIGHT_UNIT, TEXTURE_SEED } from '@/config/balance';
 import { diagonalNS } from './TerrainGeometry';
+import { riverEdges } from '@/world/RiverPlanner';
 import { createWaterNormalTexture } from './textures';
 
 const LIFT = 0.04;
@@ -34,6 +35,30 @@ export interface WayFlowLike { speed: number[]; cls: number[]; frozen: boolean }
 export interface DugWay { id: string; path: Array<{ x: number; y: number }> }
 /** Flow of one tile as the mesh needs it. */
 export interface TileFlowInfo { speed: number; rapids: number; ice: number }
+
+/**
+ * Unit flow direction (x, z) of tile `i` of a waterway path: toward the next tile (the last tile keeps the direction it was entered with, a one-tile way points +z).
+ * Always source -> sink, whatever the orientation of the way (the shader scrolls the texture along +flow, i.e. downstream).
+ */
+export function wayFlowDir(path: ReadonlyArray<{ x: number; y: number }>, i: number): [number, number] {
+  const last = i === path.length - 1, p = path[i]!;
+  const q = last ? path[Math.max(0, i - 1)]! : p;
+  const nx = last ? p : path[i + 1]!;
+  const dx = nx.x - q.x, dz = nx.y - q.y;
+  const l = Math.hypot(dx, dz) || 1;
+  return [dx / l, dz / l];
+}
+
+/**
+ * Water surface of a dug-river tile (n, e, s, w): the two corners of its entry edge and of its exit edge keep the carved bed height (a clean ramp down the
+ * flow); the outer corner of a bend never rises above the entry level, so the surface is never a sheet that climbs the bank. Pure.
+ */
+export function riverTileSurface(grid: Grid, p: { x: number; y: number }, entry: readonly [number, number], exit: readonly [number, number]): [number, number, number, number] {
+  const V = grid.vsize, raw = grid.getCorners(p.x, p.y);
+  const vi = [p.y * V + p.x, p.y * V + p.x + 1, (p.y + 1) * V + p.x + 1, (p.y + 1) * V + p.x];
+  const lvl = Math.min(grid.heights[entry[0]]!, grid.heights[entry[1]]!);
+  return raw.map((h, k) => (entry.includes(vi[k]!) || exit.includes(vi[k]!) ? h : Math.min(h, lvl))) as [number, number, number, number];
+}
 
 /** Pure builder: flat quads at lake level over lake tiles + terrain-draped decals over stream tiles. */
 export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug: ReadonlyArray<DugWay> = []): WaterGeometryData {
@@ -78,14 +103,13 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
   }
   const emitWay = (id: string, isDug: boolean, path: Array<{ x: number; y: number }>): void => {
     ranges.push({ id, dug: isDug, first: pos.length / 3, tiles: path.length });
+    const edges = isDug ? riverEdges(path, grid.vsize) : [];
     for (let i = 0; i < path.length; i++) {
       const p = path[i]!;
-      const last = i === path.length - 1;
-      const q = last ? path[Math.max(0, i - 1)]! : p;
-      const nx = last ? p : path[i + 1]!;
-      const dx = nx.x - q.x, dz = nx.y - q.y;
-      const l = Math.hypot(dx, dz) || 1;
-      emit(p.x, p.y, grid.getCorners(p.x, p.y), dx / l, dz / l, false);
+      const [fx, fz] = wayFlowDir(path, i);
+      let hs = grid.getCorners(p.x, p.y);
+      if (isDug) hs = riverTileSurface(grid, p, edges[i]!, edges[i + 1]!);
+      emit(p.x, p.y, hs, fx, fz, false);
     }
   };
   streams.forEach((s, i) => emitWay(`n${i}`, false, s.path));

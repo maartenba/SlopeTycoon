@@ -4,6 +4,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Fixes
+
+- **Dug rivers on slopes**: the channel bed now descends continuously (both corners of every tile edge are cut to one level that never rises along the flow), so a river no longer shows a saw-tooth of tilted water sheets, single-corner pits, or a surface that seems to climb the hillside; the water surface of a bend can never rise above its entry level. Flow animation direction is pinned downstream by a test (`docs/rivers.md`, "Bed and flow direction").
+
 ## [0.2.6] - 2026-10-29 (pre-release)
 
 Rivers and mid-stations, the second content wave of Phase 6 (milestones M6.2 and M6.6). Changes since 0.2.5: dig a river from a spring, a suspension footbridge, mid-stations on gondolas, cable cars and detachable chairs, the six-seat high-speed chair, quieter closure toasts, drawers that step aside on every touch screen.

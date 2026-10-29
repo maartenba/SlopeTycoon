@@ -73,6 +73,31 @@ const isWT = (t: number): boolean => t === TileType.Water || t === TileType.Stre
 
 const emptyPlan = (rect: TileRect, reason: string, reasons: string[] = [reason]): RiverPlan => ({ ok: false, reason, reasons, path: [], level: [], carveDepth: [], maxCarve: 0, changed: [], targets: new Map(), halfSteps: 0, cost: 0, earthCost: 0, rect });
 
+/**
+ * The channel edges of a path, as vertex-index pairs (vy * vsize + vx): edge 0 = the entry of tile 0 (the side facing away from tile 1), edge k + 1 = the side
+ * shared by tile k and tile k + 1, last edge = the exit of the last tile (continuing straight on). Tile k is the ramp between edges k and k + 1. Pure.
+ */
+export function riverEdges(path: ReadonlyArray<Pt>, V: number): Array<[number, number]> {
+  const n = path.length;
+  const side = (p: Pt, dx: number, dy: number): [number, number] => {
+    const a = p.y * V + p.x;
+    if (dx === 1) return [a + 1, a + V + 1];
+    if (dx === -1) return [a, a + V];
+    if (dy === 1) return [a + V, a + V + 1];
+    return [a, a + 1];
+  };
+  const dir = (k: number): [number, number] => {
+    const q = k < n - 1 ? path[k + 1]! : path[k]!, p = k < n - 1 ? path[k]! : path[k - 1] ?? path[k]!;
+    return [Math.sign(q.x - p.x), Math.sign(q.y - p.y)];
+  };
+  const out: Array<[number, number]> = [];
+  if (n === 0) return out;
+  const d0 = dir(0);
+  out.push(side(path[0]!, -d0[0], -d0[1]));
+  for (let k = 0; k < n; k++) { const d = dir(k); out.push(side(path[k]!, d[0], d[1])); }
+  return out;
+}
+
 export function tileMinCorner(g: Grid, x: number, y: number): number {
   const i = y * g.vsize + x, h = g.heights;
   return Math.min(h[i]!, h[i + 1]!, h[i + g.vsize]!, h[i + g.vsize + 1]!);
@@ -231,26 +256,29 @@ export function planRiver(env: RiverEnv, from: Pt, to: Pt | null = null): RiverP
   const path: Pt[] = tiles.map((t) => ({ x: t % N, y: (t - (t % N)) / N }));
 
   // ---- exact carve profile (corners shared by neighbouring tiles are lowered once) ----
-  const H = new Map<number, number>();
-  const hv = (v: number): number => H.get(v) ?? g.heights[v]!;
   const touchesWater = (vx: number, vy: number): boolean => {
     for (let ty = vy - 1; ty <= vy; ty++) for (let tx = vx - 1; tx <= vx; tx++) if (g.inBounds(tx, ty) && isWT(T[ty * N + tx]!)) return true;
     return false;
   };
   const targets = new Map<number, number>();
   const origLevel: number[] = [];
+  for (const p of path) origLevel.push(tileMinCorner(g, p.x, p.y));
+  // Channel BED: one level per tile EDGE along the path (entry edge of tile 0, then the edge between tile k and k + 1, then the exit of the last tile), never rising.
+  // Both corners of an edge are lowered to that edge's level, so every tile is a clean ramp from its entry edge to its exit edge (no saw-tooth, no tile whose
+  // surface climbs against the flow, no single-corner pit). A corner never rises; corners beside other water are left alone.
+  const edges = riverEdges(path, V);
   let runL = Infinity;
-  for (const p of path) {
-    const corners = [p.y * V + p.x, p.y * V + p.x + 1, (p.y + 1) * V + p.x, (p.y + 1) * V + p.x + 1];
-    origLevel.push(Math.min(...corners.map((c) => g.heights[c]!)));
-    const L = Math.min(...corners.map(hv));
-    if (L > runL) {
-      let best = -1, bh = Infinity;
-      for (const c of corners) { const vx = c % V, vy = (c - vx) / V; if (touchesWater(vx, vy)) continue; if (hv(c) < bh) { bh = hv(c); best = c; } }
-      if (best < 0) return { ...emptyPlan(rect, REASON.ripple), source };
-      if (bh - runL > RIVER.maxCarve) return { ...emptyPlan(rect, REASON.deep), source };
-      H.set(best, runL); targets.set(best, runL);
-    } else runL = L;
+  for (const e of edges) {
+    runL = Math.min(runL, g.heights[e[0]]!, g.heights[e[1]]!);
+    for (const c of e) {
+      const orig = g.heights[c]!;
+      if (orig <= runL) continue;
+      const vx = c % V, vy = (c - vx) / V;
+      if (touchesWater(vx, vy)) continue;
+      if (orig - runL > RIVER.maxCarve) return { ...emptyPlan(rect, REASON.deep), source };
+      const prevT = targets.get(c);
+      targets.set(c, prevT === undefined ? runL : Math.min(prevT, runL));
+    }
   }
 
   // ---- real terraform preview (ripple, occupancy, water, lift clearance) ----
