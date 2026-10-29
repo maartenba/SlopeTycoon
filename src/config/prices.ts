@@ -25,6 +25,8 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   apartment: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
   /** Campground: nightly pitch fee only (NIGHTLY_RATE); free to walk into. */
   campground: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
+  /** Petting zoo (docs/petting-zoo.md): small entry ticket, a family summer attraction. */
+  pettingZoo: { price: 8, max: 25, billing: 'perUse', category: 'recreation' },
   iceRink: { price: 6, max: 25, billing: 'perHour', category: 'recreation' },
   stuntPark: { price: 10, max: 40, billing: 'perUse', category: 'recreation' },
   adventurePark: { price: 18, max: 60, billing: 'perUse', category: 'recreation' },

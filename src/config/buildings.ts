@@ -99,7 +99,7 @@ const FLAT: SiteRule = { maxSlope: 1, slopeKind: 'flat', autoFlatten: 'default',
 /** Season relevance per id where the needs don't say it (winter operations, summer attractions); else derived from `needs`. */
 const SEASON_OVERRIDE: Record<string, SeasonUse> = {
   apresBar: 'winter', skiSchoolHQ: 'winter', groomerGarage: 'winter', snowcatOutpost: 'winter',
-  playground: 'shoulder', campground: 'summer',
+  playground: 'shoulder', campground: 'summer', pettingZoo: 'summer',
 };
 function seasonFor(id: string, needs: NeedCondition[] | undefined): SeasonUse {
   const o = SEASON_OVERRIDE[id];
@@ -180,5 +180,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('toilets', 'Toilets', 'services', 1, 1, 600, 3, { access: 'path', altAccess: ['trail', 'pisteEdge'], pisteRule: 'edge', site: HUT }, { capacity: 4, placeTip: 'Place toilets beside a path, a trail or a piste' }),
   // Campground (Phase 6 Task 19, docs/campground.md): budget summer lodging with a campfire as the centrepiece. Hikers pitch tents: footpath or trail (+25% upkeep when supplied on foot only). Lodging v2: seasonOpen summer, tier budget.
   b('campground', 'Campground', 'lodging', 5, 4, 3500, 8, { access: 'path', altAccess: ['trail'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { capacity: 16, chimney: { x: 0.05, y: 0.42, z: 0.17 }, placeTip: 'Place the campground beside a footpath or hiking trail, on gentle ground' }),
+  // Petting zoo (Phase 6 Task 20, docs/petting-zoo.md): 3x3 fenced pen with goats, sheep, rabbits and a donkey; a summer family attraction on a footpath. Standalone (no farm needed).
+  b('pettingZoo', 'Petting Zoo', 'recreation', 3, 3, 3000, 10, { access: 'path', site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { needs: ['snowFree'], staff: 1, capacity: 20 }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

@@ -176,6 +176,24 @@ export function createEagleGeometry(): THREE.BufferGeometry {
   return finish([box(0.09, 0.07, 0.3, c, 0, 0, 0), box(0.07, 0.07, 0.07, 0xf1e9d8, 0, 0.02, 0.2), box(0.03, 0.03, 0.05, 0xe0b030, 0, 0.03, 0.26), box(0.9, 0.015, 0.2, c, 0, 0.04, 0.02), box(0.08, 0.015, 0.14, c, 0, 0.03, -0.2)]);
 }
 
+/** Petting-zoo rabbit (forward = +z, ~0.2 tiles long): round body, head with long upright ears, cotton tail. Not a nature species: only the zoo view draws it. */
+export function createRabbitGeometry(): THREE.BufferGeometry {
+  const fur = 0xcbb79a, light = 0xf3ece0;
+  return finish([
+    box(0.1, 0.1, 0.16, fur, 0, 0.02, 0), box(0.075, 0.075, 0.08, fur, 0, 0.07, 0.11), box(0.02, 0.1, 0.02, fur, 0.025, 0.14, 0.1), box(0.02, 0.1, 0.02, fur, -0.025, 0.14, 0.1),
+    box(0.045, 0.045, 0.045, light, 0, 0.04, -0.1), box(0.03, 0.03, 0.03, 0x3a2c25, 0.03, 0.12, 0.15), box(0.03, 0.03, 0.03, 0x3a2c25, -0.03, 0.12, 0.15),
+  ]);
+}
+/** Petting-zoo donkey (forward = +z, ~0.5 tiles long): grey body, long head with big ears, pale muzzle and belly, tufted tail. */
+export function createDonkeyGeometry(): THREE.BufferGeometry {
+  const c = 0x8e8a84, light = 0xd8d2c6, dark = 0x4a4540;
+  return finish([
+    ...quad(0.42, 0.2, 0.14, 0.2, c, dark), box(0.06, 0.2, 0.09, c, 0, 0.34, 0.24), box(0.08, 0.1, 0.17, c, 0, 0.5, 0.29),
+    box(0.075, 0.07, 0.07, light, 0, 0.5, 0.4), box(0.035, 0.16, 0.025, c, 0.05, 0.58, 0.25), box(0.035, 0.16, 0.025, c, -0.05, 0.58, 0.25),
+    box(0.04, 0.12, 0.04, dark, 0, 0.3, -0.25), box(0.12, 0.05, 0.3, light, 0, 0.18, 0), box(0.03, 0.1, 0.2, dark, 0, 0.42, 0.14),
+  ]);
+}
+
 export type NatureSpecies = 'cow' | 'sheep' | 'goat' | 'deer' | 'ibex' | 'chamois' | 'marmot' | 'fox' | 'eagle';
 export const NATURE_GEOMETRY: Record<NatureSpecies, () => THREE.BufferGeometry> = {
   cow: createCowGeometry, sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,

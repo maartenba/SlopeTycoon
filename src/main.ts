@@ -22,6 +22,7 @@ import { seasonTerrain, seasonTerrainSim, freezeFromSnowline, seasonWeights } fr
 import { collectProtectedChunks } from '@/render/ProtectedChunks';
 import { Precipitation } from '@/render/Precipitation';
 import { NatureView } from '@/render/NatureView';
+import { PettingZooView } from '@/render/PettingZooView';
 import { VillageDecor } from '@/render/VillageDecor';
 import { buildEventsView } from '@/ui/eventsFormat';
 import { maintDate } from '@/ui/maintFormat';
@@ -449,6 +450,9 @@ const updateVillageDecor = (dt: number): void => {
 // Nature: livestock + wild fauna (instanced per species) and chimney smoke (1 draw call). Both are driven by sim state.
 const natureView = new NatureView((x, y) => surfaceHeight(grid, x, y));
 renderer.scene.add(natureView.group);
+// Petting-zoo animals: render only, wander inside their pen (docs/petting-zoo.md)
+const zooView = new PettingZooView();
+renderer.scene.add(zooView.group);
 
 // Tour carriers (Phase 6 Task 5): cosmetic sleighs / scooters / rafts on the rides in progress; instanced, capped, view only. Empty until a tour building exists.
 const tourVehicles = new TourVehicles((x, z) => surfaceHeight(grid, x, z), (t, out, max) => sim.tours.carriers(t, out, max));
@@ -711,6 +715,10 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   updateFestival(dt);
   tourVehicles.update(sim.loop.tickCount);
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
+  { // petting zoo animals (4 instanced draw calls; only open pens during the day)
+    const zoos = buildings.all().filter((b) => b.type === 'pettingZoo');
+    zooView.update(dt, zoos.map((b) => ({ id: b.id, open: !!attractions.get(b.id)?.open })), currentHour(), vh, (id, lx, lz, out) => { const g = buildingsView.get(id); if (!g) return false; out.set(lx, 0, lz); g.localToWorld(out); return true; }, tg.x, tg.z);
+  }
   { // snowmaking cannon spray (1 draw call; only running cannons near the view centre)
     const run = new Set(opsRef?.snowmaking.runningIds() ?? []);
     snowSpray.update(dt, vh, { x: tg.x, y: tg.z }, run.size ? buildings.all().filter((b) => b.type === 'snowCannon').map((b) => ({ id: b.id, x: b.x + b.w / 2, y: b.y + b.h / 2 })) : [], run, (id, o, d) => {

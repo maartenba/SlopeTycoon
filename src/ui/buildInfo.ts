@@ -39,7 +39,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  campground: '⛺', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  campground: '⛺', pettingZoo: '🐐', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -72,6 +72,7 @@ const DESCRIPTIONS: Record<string, string> = {
   adventurePark: 'Summer ropes course and zip-lines.',
   alpineFarm: 'Cows, sheep and goats graze the alpine pastures in summer; the farm shop attracts families; restaurants near farms earn more.',
   campground: 'Summer only: 16 tent and caravan pitches around a campfire. Cheap nights for budget and adventure guests; toilets nearby make a better evening. Reached by a footpath or hiking trail.',
+  pettingZoo: 'Summer family attraction: goats, sheep, rabbits and a donkey in a fenced pen. Small entry ticket; closed in snow. Needs a footpath.',
   boatRental: 'Summer lake boats; must touch a lake.',
   beach: 'Summer lakeside beach; must touch a lake.',
   trainStation: 'Brings guests by rail.',

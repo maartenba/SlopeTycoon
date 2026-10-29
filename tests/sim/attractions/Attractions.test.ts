@@ -3,6 +3,7 @@ import { ATTRACTION_SPECS } from '../../../src/sim/attractions';
 import { BUILDINGS } from '../../../src/config/buildings';
 import { PRICE_TABLE } from '../../../src/config/prices';
 import { GState } from '../../../src/sim/guests/Guest';
+import { seasonOf } from '../../../src/sim/Clock';
 import { harness } from './harness';
 
 const SERVED = Object.keys(ATTRACTION_SPECS).filter((t) => !ATTRACTION_SPECS[t]!.overnightOnly && t !== 'toilets'); // toilets are free (own tests in tests/sim/comfort.test.ts)
@@ -20,6 +21,8 @@ describe('registry covers the catalog', () => {
 describe.each(SERVED)('%s serves guests and earns revenue', (type) => {
   it('guest arrives, is served after the service time, pays in the right ledger category', () => {
     const h = harness();
+    const so = ATTRACTION_SPECS[type]!.seasonOpen;
+    if (so) for (let d = 0; d < 180; d++) if (so.includes(seasonOf({ day: d }))) { h.state.date.day = d + 2; break; } // seasonal attractions (petting zoo) are tested inside their season
     const b = h.add(type);
     h.run(1);
     const a = h.sys.get(b.id)!;
