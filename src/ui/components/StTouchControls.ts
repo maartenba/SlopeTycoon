@@ -65,9 +65,7 @@ button.t.primary{background:linear-gradient(#f2b43e,#dc9526);border-color:#ffd07
 .hint{max-width:150px;line-height:1.2}
 button.t.wide{padding:0 14px}
 [hidden]{display:none!important}
-.col [data-role=drawer]{display:none}
 @media (max-width:760px) and (min-height:521px){.views[data-view=photo]{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;flex-direction:row}.joy,.views:not([data-view=photo]){bottom:calc(164px + env(safe-area-inset-bottom,0px))}} /* portrait: the view HUD card (Exit) sits at the bottom centre: keep the stick and buttons above it */
-@media (max-width:760px),(max-height:520px){.col [data-role=drawer]{display:inline-flex}}
 @media (max-height:520px){.col{top:calc(72px + env(safe-area-inset-top,0px));left:calc(52px + env(safe-area-inset-left,0px));right:auto;flex-direction:row}.bar{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
 @media (max-height:520px) and (max-width:500px){.col{top:calc(112px + env(safe-area-inset-top,0px));left:calc(8px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px}}`;
   }

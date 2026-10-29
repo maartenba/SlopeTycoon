@@ -379,7 +379,7 @@ export function registerAll(reg: Reg): void {
       await r.check(`${c.id}: drawer card tap selects the tool`, ok && (await r.tool()) === c.tool, `tool ${await r.tool()}, tapped ${ok}, cards ${await r.page.evaluate(() => [...(document.querySelector('st-dock') as any).shadowRoot.querySelectorAll('.drawer .card')].map((b: any) => b.innerText.replace(/\\s+/g, ' ').slice(0, 14) + (b.classList.contains('active') ? '*' : '')).join('|'))}`);
       if (!ok) continue;
       const drawerShown = (): Promise<boolean> => r.page.evaluate(() => { const d = (document.querySelector('st-dock') as any).shadowRoot.querySelector('.drawer') as HTMLElement | null; return !!d && getComputedStyle(d).display !== 'none' && d.getBoundingClientRect().height > 10; });
-      if (h < 500) { // landscape: choosing a card tucks the drawer away (it would cover the map); the options button brings it back
+      { // every touch screen: choosing a card tucks the drawer away (it would cover the map); the options button brings it back
         await sleep(400);
         await r.check(`${c.id}: the drawer tucks away after choosing a card on a short screen`, !(await drawerShown()) && (await r.tool()) === c.tool, `shown ${await drawerShown()} tool ${await r.tool()}`);
         const ob = await r.rect({ css: '[data-role=drawer]', tag: 'st-touch-controls' });
@@ -434,7 +434,9 @@ export function registerAll(reg: Reg): void {
       const site = await r.s((s) => s.landscapeDebug.find(5));
       await r.s((s, a) => { const c = s.renderer.controls; c.target.set(a.x, s.grid.getCorner(a.x, a.y) * 0.5, a.y); c.yaw = 0.785398; c.zoom = 1; c.zoomBy(2.2); s.tools.activate('landscape'); s.landscapeTool.setMode('pond'); s.touch.controller.setMode('paint'); }, site);
       await sleep(600);
-      const pa = await r.project(site.x - 1.5, site.y - 1.5), pb = await r.project(site.x + 2.5, site.y + 2.5);
+      let pa = await r.project(site.x - 1.5, site.y - 1.5);
+      if (pa.y < h * 0.47) { await r.s((s, a) => s.renderer.controls.panPixels(0, a), h * 0.47 - pa.y); await sleep(500); pa = await r.project(site.x - 1.5, site.y - 1.5); } // phone portrait: the stats / goals cards cover the top 45 % of the screen; the rectangle must start clear of them
+      const pb = await r.project(site.x + 2.5, site.y + 2.5);
       const ponds = (): Promise<number> => r.s((s) => s.sim.landscape.ponds.length);
       const pn0 = await ponds();
       await r.drag(r.line(pa.x, pa.y, pb.x, pb.y, 14), 16);

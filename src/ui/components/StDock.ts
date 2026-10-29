@@ -187,13 +187,14 @@ const css = `
 .small{font-size:calc(11px * var(--ui-scale, 1));opacity:.85}
 @media (max-width:1099px){.dock{gap:2px;padding:5px 4px}.dock button{min-width:var(--touch-min,0px);padding:4px 3px;font-size:calc(11px * var(--ui-scale, 1))}}
 /* Phones / short landscape (docs/touch.md): the dock row scrolls sideways, the drawer spans the screen */
+/* touch: choosing a card or touching the map tucks the open drawer away on every screen size (main/touchWire toggles the class; the options button / a dock tap bring it back) */
+:host(.peek) .drawer{display:none}
 @media (max-width:760px),(max-height:520px){
 :host{--dl:8px;--dr:8px;left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);bottom:calc(6px + env(safe-area-inset-bottom,0px))}
 .drawer{min-width:0;width:calc(100% - 16px);margin-left:0;max-height:min(54vh,300px)}
 .wrap{align-items:stretch;padding:0 8px;box-sizing:border-box}
 .dock{max-width:100%;box-sizing:border-box;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x;justify-content:flex-start}
 .dock::-webkit-scrollbar{display:none}
-:host(.peek) .drawer{display:none} /* touch: while a building ghost is being aimed the open drawer steps aside (main/touchWire toggles the class) */
 .dock button{flex:0 0 auto;min-width:58px;min-height:var(--touch-min,0px)}
 .pc.one{width:148px}
 /* Pistes & Trails drawer on a narrow screen: the card rail gets the full width, the option grid goes below it and the body scrolls (the side-by-side layout left the cards a 50 px strip) */

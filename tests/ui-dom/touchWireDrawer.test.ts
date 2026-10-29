@@ -40,10 +40,11 @@ describe('touch: the drawer steps aside for map tools', () => {
     tool = 'lift'; wire!.toolChanged(); expect(dock.classList.contains('peek')).toBe(true);
     tool = 'select'; wire!.toolChanged(); expect(dock.classList.contains('peek')).toBe(false); expect(drawerBtn(bar).hidden).toBe(true);
   });
-  it('paint tools do not hide the drawer when they activate (opening Terrain activates the tool: the drawer must not vanish at once); a touch on the map tucks it away on a short screen only', () => {
+  it('paint tools do not hide the drawer when they activate (opening Terrain activates the tool: the drawer must not vanish at once); a touch on the map tucks it away on every screen size (the tall Pistes & Trails / Landscape drawers cover the middle of a phone or tablet map; phone-portrait and tablet strokes could not be painted)', () => {
     const canvas = document.createElement('canvas'); let s = setup(canvas);
     tool = 'terraform'; wire!.toolChanged(); expect(s.dock.classList.contains('peek')).toBe(false);
-    ptr(canvas, 'pointerdown'); expect(s.dock.classList.contains('peek')).toBe(false); // tall screen: the drawer stays
+    ptr(canvas, 'pointerdown', 'mouse'); expect(s.dock.classList.contains('peek')).toBe(false);
+    ptr(canvas, 'pointerdown'); expect(s.dock.classList.contains('peek')).toBe(true); // tall screen too (was: short screens only)
     wire!.dispose(); document.body.replaceChildren(); short = true; const c2 = document.createElement('canvas'); s = setup(c2);
     tool = 'terraform'; wire!.toolChanged(); expect(s.dock.classList.contains('peek')).toBe(false);
     ptr(c2, 'pointerdown', 'mouse'); expect(s.dock.classList.contains('peek')).toBe(false);
@@ -65,8 +66,8 @@ describe('touch: the drawer steps aside for map tools', () => {
     ptr(row, 'pointerdown', 'mouse'); expect(dock.classList.contains('peek')).toBe(true);
     ptr(row, 'pointerdown'); expect(dock.classList.contains('peek')).toBe(false);
   });
-  it('choosing a card on a short screen tucks the drawer away again (another brush, another piste kind)', () => {
-    const { dock } = setup(); short = true;
+  it('choosing a card tucks the drawer away again (another brush, another piste kind)', () => {
+    const { dock } = setup();
     tool = 'network'; wire!.toolChanged();
     const card = document.createElement('button'); card.className = 'card'; dock.shadowRoot!.append(card);
     card.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));

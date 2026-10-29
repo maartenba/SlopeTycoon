@@ -45,7 +45,8 @@ export function wireTouch(o: TouchWireOptions): TouchWire {
   let bar: StTouchControls | null = null;
   let drawerHidden = false;
   const dockEl = (): HTMLElement | null => document.querySelector('#ui > st-dock');
-  const shortScreen = (): boolean => typeof matchMedia === 'function' && matchMedia('(max-height: 520px)').matches;
+  /** Touch devices: the open drawer would cover the middle of the map you paint on (the drawers are as tall as a phone / tablet map), so choosing a card or touching the map tucks it away; the tool options button / a dock tap bring it back. (Was: short landscape screens only.) */
+  const shortScreen = (): boolean => true;
   /** Tools that tuck the open drawer away at once: the ghost tools (the ghost needs the map). Paint tools on a short screen tuck it when a card is chosen or the map is touched (the drawer itself activates Terrain: it must not vanish the moment it opens). */
   const wantsHidden = (tool: string): boolean => on && (tool === 'placement' || tool === 'lift');
   const setDrawerHidden = (v: boolean): void => { drawerHidden = v; dockEl()?.classList.toggle('peek', v); bar?.setState({ drawerHidden: v }); };

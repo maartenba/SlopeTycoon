@@ -48,7 +48,7 @@ export class StNewGame extends StElement {
 
   protected css(): string {
     return ':host{display:block;width:0;height:0}.prog{height:6px;background:#34465e;border-radius:3px;overflow:hidden}.prog>i{display:block;height:100%;width:40%;background:#e0a030;animation:p 1s infinite linear}@keyframes p{from{margin-left:-40%}to{margin-left:100%}}' +
-      '.err{color:#ff8a8a;min-height:0}.seg{display:flex;gap:4px;flex-wrap:wrap}.field>label,.field>.lbl{min-width:118px}.seed{width:210px}details{border-top:1px solid #34465e;padding-top:6px}summary{cursor:pointer;color:#cfe0f5;font-weight:700}' +
+      '.err{color:#ff8a8a;min-height:0}.seg{display:flex;gap:4px;flex-wrap:wrap}.field>label,.field>.lbl{min-width:118px}.seed{width:210px}details{border-top:1px solid #34465e;padding-top:6px}summary{display:flex;align-items:center;min-height:var(--touch-min,0px);cursor:pointer;color:#cfe0f5;font-weight:700}' +
       '@media (prefers-reduced-motion:reduce){.prog>i{animation:none;width:100%}}';
   }
 
