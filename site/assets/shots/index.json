@@ -27,7 +27,7 @@
    {
     "w": 1280,
     "file": "ui-hud-1280.webp",
-    "bytes": 108436
+    "bytes": 87392
    }
   ]
  },
@@ -43,7 +43,7 @@
    {
     "w": 1280,
     "file": "towns-sheet-1280.webp",
-    "bytes": 162550
+    "bytes": 131344
    }
   ]
  },
@@ -203,7 +203,7 @@
    {
     "w": 1280,
     "file": "ui-buildings-drawer-1280.webp",
-    "bytes": 113788
+    "bytes": 92804
    }
   ]
  },
@@ -214,12 +214,12 @@
    {
     "w": 640,
     "file": "ui-lifts-drawer-640.webp",
-    "bytes": 45736
+    "bytes": 43562
    },
    {
     "w": 1280,
     "file": "ui-lifts-drawer-1280.webp",
-    "bytes": 94606
+    "bytes": 96554
    }
   ]
  },
@@ -235,7 +235,7 @@
    {
     "w": 1280,
     "file": "ui-pistes-drawer-1280.webp",
-    "bytes": 106026
+    "bytes": 87510
    }
   ]
  },
@@ -294,12 +294,12 @@
    {
     "w": 640,
     "file": "ui-level-panel-640.webp",
-    "bytes": 43368
+    "bytes": 41638
    },
    {
     "w": 1280,
     "file": "ui-level-panel-1280.webp",
-    "bytes": 86984
+    "bytes": 90840
    }
   ]
  },
@@ -454,12 +454,12 @@
    {
     "w": 640,
     "file": "ui-menu-640.webp",
-    "bytes": 28696
+    "bytes": 24070
    },
    {
     "w": 1280,
     "file": "ui-menu-1280.webp",
-    "bytes": 71596
+    "bytes": 63394
    }
   ]
  },
@@ -539,7 +539,7 @@
    {
     "w": 1280,
     "file": "events-calendar-1280.webp",
-    "bytes": 148386
+    "bytes": 97154
    }
   ]
  },
@@ -555,7 +555,7 @@
    {
     "w": 1280,
     "file": "ui-staff-1280.webp",
-    "bytes": 117382
+    "bytes": 99826
    }
   ]
  },
@@ -571,7 +571,7 @@
    {
     "w": 1280,
     "file": "story-inspector-1280.webp",
-    "bytes": 119356
+    "bytes": 99512
    }
   ]
  },
@@ -587,7 +587,7 @@
    {
     "w": 1280,
     "file": "ui-rating-1280.webp",
-    "bytes": 121396
+    "bytes": 102072
    }
   ]
  },
@@ -619,7 +619,7 @@
    {
     "w": 1280,
     "file": "ui-profile-1280.webp",
-    "bytes": 145554
+    "bytes": 120672
    }
   ]
  },
@@ -630,12 +630,12 @@
    {
     "w": 640,
     "file": "ui-landscape-640.webp",
-    "bytes": 45626
+    "bytes": 47904
    },
    {
     "w": 1280,
     "file": "ui-landscape-1280.webp",
-    "bytes": 121626
+    "bytes": 96476
    }
   ]
  },
@@ -662,12 +662,12 @@
    {
     "w": 640,
     "file": "ui-terrain-drawer-640.webp",
-    "bytes": 43096
+    "bytes": 43360
    },
    {
     "w": 1280,
     "file": "ui-terrain-drawer-1280.webp",
-    "bytes": 86864
+    "bytes": 95572
    }
   ]
  },
@@ -710,12 +710,12 @@
    {
     "w": 390,
     "file": "touch-phone-hud-640.webp",
-    "bytes": 45568
+    "bytes": 45240
    },
    {
     "w": 390,
     "file": "touch-phone-hud-1280.webp",
-    "bytes": 45568
+    "bytes": 45240
    }
   ]
  },
@@ -726,12 +726,12 @@
    {
     "w": 390,
     "file": "touch-phone-place-640.webp",
-    "bytes": 44928
+    "bytes": 44682
    },
    {
     "w": 390,
     "file": "touch-phone-place-1280.webp",
-    "bytes": 44928
+    "bytes": 44682
    }
   ]
  },
@@ -742,12 +742,12 @@
    {
     "w": 640,
     "file": "touch-tablet-640.webp",
-    "bytes": 38634
+    "bytes": 38328
    },
    {
     "w": 1024,
     "file": "touch-tablet-1280.webp",
-    "bytes": 72956
+    "bytes": 72462
    }
   ]
  },
@@ -763,7 +763,7 @@
    {
     "w": 1280,
     "file": "cbsafe-pistes-1280.webp",
-    "bytes": 145572
+    "bytes": 120644
    }
   ]
  },
@@ -811,7 +811,7 @@
    {
     "w": 1280,
     "file": "ui-runs-tab-1280.webp",
-    "bytes": 108476
+    "bytes": 98644
    }
   ]
  },
@@ -827,7 +827,7 @@
    {
     "w": 1280,
     "file": "runs-overlay-1280.webp",
-    "bytes": 106780
+    "bytes": 96430
    }
   ]
  },
@@ -843,7 +843,7 @@
    {
     "w": 1280,
     "file": "ui-maintenance-1280.webp",
-    "bytes": 143282
+    "bytes": 120354
    }
   ]
  },
@@ -891,7 +891,7 @@
    {
     "w": 1280,
     "file": "ui-snowmaking-1280.webp",
-    "bytes": 146308
+    "bytes": 123498
    }
   ]
  },
@@ -987,7 +987,7 @@
    {
     "w": 1280,
     "file": "ui-crossings-1280.webp",
-    "bytes": 117036
+    "bytes": 94728
    }
   ]
  },
@@ -998,12 +998,12 @@
    {
     "w": 640,
     "file": "ui-update-card-640.webp",
-    "bytes": 41952
+    "bytes": 42044
    },
    {
     "w": 1280,
     "file": "ui-update-card-1280.webp",
-    "bytes": 112788
+    "bytes": 92088
    }
   ]
  },
@@ -1020,6 +1020,86 @@
     "w": 1280,
     "file": "ui-eco-programme-1280.webp",
     "bytes": 68610
+   }
+  ]
+ },
+ "river-rapids": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "river-rapids-640.webp",
+    "bytes": 19002
+   },
+   {
+    "w": 1280,
+    "file": "river-rapids-1280.webp",
+    "bytes": 43588
+   }
+  ]
+ },
+ "river-frozen": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "river-frozen-640.webp",
+    "bytes": 20308
+   },
+   {
+    "w": 1280,
+    "file": "river-frozen-1280.webp",
+    "bytes": 48132
+   }
+  ]
+ },
+ "bridge-suspension": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "bridge-suspension-640.webp",
+    "bytes": 7740
+   },
+   {
+    "w": 1280,
+    "file": "bridge-suspension-1280.webp",
+    "bytes": 18956
+   }
+  ]
+ },
+ "lift-midstation": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "lift-midstation-640.webp",
+    "bytes": 23076
+   },
+   {
+    "w": 1280,
+    "file": "lift-midstation-1280.webp",
+    "bytes": 55732
+   }
+  ]
+ },
+ "ui-river-tool": {
+  "w": 1280,
+  "h": 900,
+  "files": [
+   {
+    "w": 640,
+    "file": "ui-river-tool-640.webp",
+    "bytes": 50812
+   },
+   {
+    "w": 1280,
+    "file": "ui-river-tool-1280.webp",
+    "bytes": 101966
    }
   ]
  }

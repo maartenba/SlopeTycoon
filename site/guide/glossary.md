@@ -39,7 +39,9 @@ screenshots: []
 
 **Fast nights** An option that makes nights pass faster.
 
-**Footbridge** A raised timber crossing for footpaths: over a rail line (no waiting for trains) or over a stream, pond or gap. Bridges are built as part of drawing the path; there is no separate tool.
+**Flow class** How a river or stream runs on a tile: *calm*, *brisk* or *rapids* (white water), from its discharge and the drop per tile. Snowmelt makes spring rivers faster.
+
+**Footbridge** A raised timber crossing for footpaths: over a rail line (no waiting for trains) or over a stream, river, pond or gap. Bridges are built as part of drawing the path; there is no separate tool.
 
 **Green Resort** A year-report award for a resort that is gentle on forest, wildlife and energy.
 
@@ -53,9 +55,13 @@ screenshots: []
 
 **Level crossing** A footpath or road crossing a rail line on the level; barriers close for trains and guests wait.
 
+**Mid-station** An extra station half way along a gondola, cable car or detachable chair, where guests and hikers can get on and off (Add mid-station in the lift inspector).
+
 **Mothballed** A snow cannon that is switched off: no energy, no water, 15 % of its upkeep.
 
 **Not connected** A building that has no path, road or rail link yet.
+
+**Natural spring** A spring site found on every map (cyan ring while the Landscape Water tab is open): the usual start of a river.
 
 **Overlay** A map view (coverage, snowmaking, wildlife…); <kbd>O</kbd> cycles them.
 
@@ -67,6 +73,8 @@ screenshots: []
 
 **Ranger Rudi** The friendly adviser at the bottom left.
 
+**River** A one-tile-wide channel you dig from a spring, a lake shore or a stream to a lake, a stream or the map edge (Landscape > Water). It flows calm, brisk or as rapids and freezes in a hard winter.
+
 **Run** One stretch of piste between two junctions or lift stations, with its own name, difficulty, traffic and open / closed switch.
 
 **Runs overlay** The map view that colours and labels every run.
@@ -77,6 +85,8 @@ screenshots: []
 
 **Skip to…** Fast-forward to the next month, season or event (<kbd>K</kbd>).
 
+**Spring** A river source: a natural spring site or one you place (Landscape > Water, $250). Not the season: for that see *Spring skiing*.
+
 **Snowline** The altitude above which snow lies at a given time of year.
 
 **Snowmaking** Cannons fed from a reservoir that make artificial snow in the cold.
@@ -84,6 +94,8 @@ screenshots: []
 **Spring skiing** Skiing on high pistes in spring while the valley is already green.
 
 **Story guest** A guest with a name and one wish.
+
+**Suspension footbridge** A rope-and-plank bridge for footpaths and hiking trails over a river, lake, pond or gorge, 5 to 12 tiles long, from resort level 3. Hikers stop in the middle for the view.
 
 **Tile** One square of the map (about 10 m).
 

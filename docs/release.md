@@ -1,6 +1,41 @@
 # Release notes and checklist
 
-Current release: **0.2.5 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.6 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.6 (2026-10-29, macOS, Node v22.23.4)
+
+M6.2 + M6.6 milestone STOP batch (Phase 6 content wave 2): rivers (Dig river / Place spring / Fill in river, natural springs, flow classes, winter ice), the suspension footbridge and bridges over rivers, N-station lifts (mid-stations) and the six-seat high-speed chair, quiet seasonal closures, touch drawers that tuck away on every touch screen. Version bump, CHANGELOG `[0.2.6]` with Highlights, guide (Building > Rivers and springs, Lifts & pistes > Mid-stations, Rails, crossings & bridges > suspension, Guests & seasons, glossary, career), landing page, 5 new screenshots (river-rapids, river-frozen, ui-river-tool, bridge-suspension, lift-midstation) + 8 re-shot, `docs/playtest-m62.md`. Decisions: rivers and mid-stations ship ON with no flag (player-driven; every golden unchanged, only the `progression` part of the hash moved, `docs/balance.md` "M6.2 + M6.6 STOP check").
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 370 files passed, 1 skipped; 3733 tests passed, 32 skipped |
+| Balance | `npm run test:balance` | 36 passed (~590 s); bot money golden unchanged |
+| Perf | `npm run test:perf` | 26 files, 44 tests passed (alone) |
+| Shots | `npm run shot:suite` | 17 shots, 0 errors on every shot |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK (splash stages offline, no page errors, no failed requests) |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Phase 6 story | `npm run phase6:sanity` | OK (natural spring river, footpath + hiking trail bridges over a dug river, suspension footbridge over a gorge, gondola with a mid-station ridden in ride-along, save + reload: every saved part identical, MaterialGuard 0, 0 console errors) |
+| Flicker | `npm run flicker -- --only 64-summer-river,64-winter-mid` | 0 pop events, 0 LOD flips in both new scenes (`docs/flicker.md`) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers,strokes,lift,trails,ui --viewport phone` (+ tablet, land for strokes / drawers / placement / camera) | all pass after the drawer fix (strokes 44/44, ui 31/31 on phone and tablet); the four stroke failures on clean HEAD were a real bug, fixed |
+| Not run | full `touch:e2e` matrix (walk, ride-photo, title, page, `lift` / `trails` / `ui` on land) | ~55 min; the walk physics change is covered by `tests/render/walkPhysics.test.ts` and the harness walk over the suspension bridge |
+| Size | `npm run size` | 2710.2 kB raw / 975.7 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (22 pages, 69 screenshots, 7.7 MB of the 8 MB budget: the 1280 px files over 100 kB are re-encoded at lower quality, `MAX_BYTES_1280`, 170 URLs crawled at `/slopetycoon/`) |
+
+Goldens: none re-recorded (see `docs/balance.md`). Bugs found by the STOP checks and fixed: phone / tablet portrait strokes (drawer covered the map), 44 px targets (menu footer sponsor link, New game *Advanced*), the walker could not climb a steep bridge deck ramp (suspension bridge), `populateDemo('Medium')` in the flicker scripts built nothing.
+
+### Dist size 0.2.6 (gzip level 9)
+
+| File | Raw | gzip |
+|---|---:|---:|
+| assets/index-nDn6ORo8.js (app) | 1961.4 kB | 675.3 kB |
+| assets/three-Zm3xuFxa.js | 568.4 kB | 142.5 kB |
+| assets/uikit-RggTVibx.js | 6.3 kB | 2.5 kB |
+| assets/index-Dk_rm1cx.css | 4.4 kB | 1.3 kB |
+| fonts/ | 93.6 kB | 86.9 kB |
+| icons/ | 64.4 kB | 62.7 kB |
+| html / manifest / whats-new.json / other | 105.3 kB | 91.4 kB |
+| **Total (excl. sw.js)** | **2710.2 kB** | **975.7 kB** |
 
 ## 0.2.5 (2026-10-29, macOS, Node v22.23.4)
 

@@ -56,6 +56,8 @@ Winter buildings are mothballed in summer and cost a fraction of their upkeep, b
 
 {{fig:season-summer}}
 
+On a lift with **mid-stations** (see [Lifts & pistes](page:lifts-pistes)), hikers and bikers who ride up choose the station **nearest their goal** and walk the trails from there, so a mid-station works as a trailhead half way up the mountain. A **suspension footbridge** on a hiking trail is a viewpoint: hikers stop in the middle for the view.
+
 Hikers get hungry too. Before a trip they eat if they can, about four in ten bring a free packed lunch, and a hut, café, terrace or the farm shop within about eight tiles of the route counts as a **food stop** on the way. If a trail is long and has no food anywhere near it, guests shorten or skip the trip, and Ranger Rudi suggests *Hikers are going hungry*: add a hut or café near the trails.
 
 ## Day and night

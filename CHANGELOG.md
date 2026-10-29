@@ -4,7 +4,20 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
-### Added
+## [0.2.6] - 2026-10-29 (pre-release)
+
+Rivers and mid-stations, the second content wave of Phase 6 (milestones M6.2 and M6.6). Changes since 0.2.5: dig a river from a spring, a suspension footbridge, mid-stations on gondolas, cable cars and detachable chairs, the six-seat high-speed chair, quieter closure toasts, drawers that step aside on every touch screen.
+
+### Highlights
+
+- Dig a river: find the cyan spring rings, drag to a lake, a stream or the map edge and the route is found for you; it runs calm, brisk or as rapids with white water, and freezes over in a hard winter.
+- Suspension footbridge: a rope-and-plank bridge spans a river, lake or gorge up to 12 tiles for footpaths and hiking trails; hikers stop mid-span for the view.
+- Mid-stations: add a station half way up a gondola, cable car or detachable chair so guests (and hikers) can get on and off in the middle.
+- A new high-speed six-seat chair with a wind visor, at resort level 3.
+- Several closures for the same season (no snow, too warm) now show one toast instead of a stack.
+- On phones and tablets the open drawer steps aside when you paint, so pistes and ponds can be drawn.
+
+### Changes
 
 - **Dig a river** (Landscape > Water, resort level 2): drag from a spring, a lake shore or a stream bank to a lake, a stream or the map edge and the route is found for you along the fall line; the ghost shows the channel, how deep it cuts (blue to orange), the length, the drop and the cost, and says plainly why a route is refused. *Place spring* ($250, also a card in the Terrain drawer) makes a source anywhere the ground rises on two sides, *Fill in river* puts the ground back, one undo step per river, and cyan rings mark the natural springs while the Water tab is open (toggle *Springs*). Keys 7 / 8 / 9; on touch a second tap confirms. See `docs/rivers.md`.
 
@@ -20,13 +33,14 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Suspension footbridge** (resort level 3): drag a footpath or hiking trail across a river, a lake, a pond or a deep gorge that a regular bridge cannot span (5 to 12 tiles) and the drag turns into a rope-and-plank suspension bridge by itself (steel cables for footpaths, rope for hiking trails): towers, sagging cables, a plank deck that dips a little mid-span, hand ropes, snow on the deck in winter. The ghost shows span, deck level and price ($400 a tile plus $800 for the anchors, no upkeep); refusals say why (*Span too long: max 12 tiles*, *the banks are too uneven*). Walkers cross it on the deck, hikers use the trail version as a viewpoint: they stop mid-span for the view. Bridges over dug rivers work like those over streams (all four path kinds; a river cannot be filled in while a bridge crosses it).
 - **High-speed six-seat chair** (resort level 3): a detachable six-seater with a wind visor and its own teal station. It out-carries a quad but loads at a slower cadence than the plain six-pack, and it may have mid-stations.
 
-### Changed
-
 - **Quiet seasonal closures**: when several attractions close for the same seasonal reason within a few seconds (no snow, too warm, out of season) the game shows ONE toast (*3 winter attractions closed for summer: Magic Carpet, Ice Rink, Heated Terrace*, with a *Go to* for the first) instead of a stack; each attraction toasts once per season, and the News keeps one row per reason and day. Breakdowns, storms, avalanches and other surprises still get their own toast.
 - **Pricing sliders**: the − and + buttons now sit on the same row as the slider (− slider +, vertically centred, 28 px; 44 px on touch) instead of above and below it, and the Pricing rows fold into two tidy lines on phones.
 - **Build cards**: long names such as *Lodge/Restaurant* wrap at the slash instead of in the middle of a word.
 - **Drawer tabs never clip**: the Buildings and Landscape tab strips (and the Operations tabs) scroll sideways with small ◀ ▶ arrows that appear only when more tabs are hidden, keep the chosen tab in view, and fade a half-visible card at the rail edge so no stray price fragment ("$2") peeks out.
 - **Website screenshots**: toasts are hidden in all screenshots; the bridges shot shows the four bridge kinds over a real one-tile stream without any stand-in markers; the update-card and crossings shots are closer.
+- **Touch: the open drawer tucks away on every touch screen** (it used to be short landscape screens only): on a phone held upright or a tablet the tall *Pistes & Trails* and *Landscape* drawers covered the middle of the map, so a piste or a pond could not be painted. Choosing a card or touching the map now tucks the drawer away; the ☰ options button (always shown on touch) or a tap on the dock brings it back. The *Support the game* link in the menu footer and the *Advanced* row of New game are now 44 px tall on touch.
+- **Walk mode crosses bridges again**: a bridge deck whose ramp rose more than 40 degrees (a suspension bridge over a gorge whose banks fall away at the edge) was a wall for the walker, who also slid back down it; deck ramps are now stairs. Found by the Phase 6 sanity walk.
+- **Developer**: `npm run phase6:sanity` plays the whole Phase 6 story in the real page (a river dug from a natural spring, footpath / hiking trail / suspension bridges over it, a gondola with a mid-station ridden in ride-along, save, reload, identical state, MaterialGuard 0). The flicker scripts now build the demo resort they always meant to (`populateDemo('medium')`, the capitalised name silently built nothing), with new `64-summer-river` and `64-winter-mid` scenarios. `docs/playtest-m62.md` is the human checklist for rivers and mid-stations.
 
 ## [0.2.5] - 2026-10-29 (pre-release)
 

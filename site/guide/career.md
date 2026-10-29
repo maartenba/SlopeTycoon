@@ -23,7 +23,7 @@ On the level-up card, **Show me** opens the drawer that holds a new unlock and p
 
 ### What unlocks when
 
-Everything not listed is available from the start (including the Landscape drawer apart from digging ponds, and the starter chain of lifts, lodge, ticket office, parking, ski school, patrol hub, first-aid hut and the ranger station).
+Everything not listed is available from the start (including the Landscape drawer apart from digging ponds and rivers and placing springs, and the starter chain of lifts, lodge, ticket office, parking, ski school, patrol hub, first-aid hut and the ranger station).
 
 {{gen:unlocks}}
 

@@ -291,7 +291,7 @@
     "building"
    ],
    "kind": "harness",
-   "caption": "Lifts: eleven types, from T-bar to funicular.",
+   "caption": "Lifts: twelve types, from T-bar to funicular.",
    "shot": {
     "start": "summer",
     "hour": 12,
@@ -1296,8 +1296,117 @@
     "target": "lodge",
     "extra": "starter=1&mode=career&hints=0",
     "viewport": "1280x800",
-    "evalJs": "setTimeout(()=>{const w=document.querySelector('st-whats-new');w.showUpdate({title:'A new version is available: 0.2.5',version:'0.2.5',sections:[{version:'0.2.5',date:'2026-10-29',highlights:['Easier money: you start with $150,000 and the quiet months cost less.','Bridges are part of drawing a path, road or trail.','The new Eco Centre opens an Eco programme.']}],fallback:false},{reload(){},later(){}})},1500);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100);",
+    "evalJs": "setTimeout(()=>{const w=document.querySelector('st-whats-new');w.showUpdate({title:'A new version is available: 0.2.6',version:'0.2.6',sections:[{version:'0.2.6',date:'2026-10-29',highlights:['Dig a river from a spring: calm, brisk or rapids, frozen in winter.','Mid-stations on gondolas, cable cars and detachable chairs.','A suspension footbridge over rivers, lakes and gorges.']}],fallback:false},{reload(){},later(){}})},1500);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100);",
     "steps": "wait:3000"
+   }
+  },
+  {
+   "id": "river-rapids",
+   "alt": "A dug river tumbling down a steep slope in summer, white water on its fastest tiles and a trail of foam below.",
+   "pages": [
+    "building"
+   ],
+   "kind": "harness",
+   "caption": "A river dug from a natural spring: calm in the meadow, rapids on the steep part.",
+   "shot": {
+    "size": 128,
+    "seed": 5,
+    "start": "summer",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 9,
+    "target": "92,60",
+    "pre": "(async()=>{const s=__slope,sim=s.sim;sim.progression.bypass++;const ok=s.riverDebug.dig(90,57);sim.progression.bypass--;const rec=sim.rivers.rivers[0];const P=rec.path;const m=P[P.length>>1];const c=s.renderer.controls;c.target.set(m.x+0.5,s.grid.getCorner(m.x,m.y)*0.5,m.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,len:P.length,cls:P.map(q=>{const t=sim.flow.tileAt(q.x,q.y);return t?t.way.cls[t.i]:-1}).join(''),frozen:sim.flow.frozen})})()",
+    "steps": "wait:2500"
+   }
+  },
+  {
+   "id": "river-frozen",
+   "alt": "The same river in midwinter, frozen over with a white sheet of ice and snow on both banks.",
+   "pages": [
+    "landing"
+   ],
+   "kind": "harness",
+   "caption": "In a hard winter the river freezes over and stops flowing.",
+   "shot": {
+    "size": 128,
+    "seed": 5,
+    "start": "winter",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 9,
+    "target": "92,60",
+    "pre": "(async()=>{const s=__slope,sim=s.sim;sim.progression.bypass++;const ok=s.riverDebug.dig(90,57);sim.progression.bypass--;const rec=sim.rivers.rivers[0];const P=rec.path;const m=P[P.length>>1];sim.jumpToDay(140,11);for(let k=0;k<400;k++)s.loop.advance(1);const c=s.renderer.controls;c.target.set(m.x+0.5,s.grid.getCorner(m.x,m.y)*0.5,m.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,len:P.length,cls:P.map(q=>{const t=sim.flow.tileAt(q.x,q.y);return t?t.way.cls[t.i]:-1}).join(''),frozen:sim.flow.frozen})})()",
+    "steps": "wait:2500"
+   }
+  },
+  {
+   "id": "bridge-suspension",
+   "alt": "A suspension footbridge spanning a deep dry gorge, two tall pylons with cables holding a narrow plank deck between the banks.",
+   "pages": [
+    "rails-bridges"
+   ],
+   "kind": "harness",
+   "caption": "The suspension footbridge: seven tiles over a gorge, no pier in the middle.",
+   "shot": {
+    "size": 64,
+    "seed": 61,
+    "start": "summer",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 6,
+    "target": "31,31",
+    "pre": "(async()=>{const s=__slope,sim=s.sim,g=sim.grid,n=sim.networks,imp=(u)=>new Function('u','return import(u)')(u);const [SP,N]=await Promise.all([imp('/src/world/StrokePlan.ts'),imp('/src/world/Networks.ts')]);sim.progression.bypass++;\nconst t=[];s.props.removeInRect(20,24,42,38,t);const gx=22,gy=26,py=gy+5;\nfor(let y=gy;y<gy+11;y++)for(let x=gx;x<gx+19;x++)g.tileType[g.tileIndex(x,y)]=0;\nfor(let vy=gy;vy<=gy+11;vy++)for(let vx=gx;vx<=gx+19;vx++)g.setCornerUnchecked(vx,vy,12);\nfor(let vy=gy;vy<=gy+11;vy++)for(let vx=gx+8;vx<=gx+15;vx++)g.setCornerUnchecked(vx,vy,vx===gx+8||vx===gx+15?10:4);\nconst row=(a,b,y)=>N.lineTiles({x:a,y},{x:b,y});\nn.buildSegment(N.NetKind.Path,row(gx+1,gx+6,py));const pl=SP.planStroke(n,g,'path',row(gx+4,gx+17,py));if(pl.ok)SP.buildStroke(n,'path',pl);\nconst all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);s.refreshProps(all);sim.progression.bypass--;\nconst c=s.renderer.controls;c.target.set(gx+9.5,6,py+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok:pl.ok,reason:pl.reason,b:pl.bridges&&pl.bridges.map(b=>b.kind+b.span.length)})})()",
+    "steps": "wait:2000"
+   }
+  },
+  {
+   "id": "lift-midstation",
+   "alt": "A gondola with a mid-station: cabins stop in a small station half way up the line, then continue to the top.",
+   "pages": [
+    "lifts-pistes"
+   ],
+   "kind": "harness",
+   "caption": "A gondola with a mid-station half way up: guests can get on and off in the middle.",
+   "shot": {
+    "size": 64,
+    "seed": 5,
+    "start": "winter",
+    "hour": 12,
+    "extra": "hints=0",
+    "w": 1600,
+    "h": 1000,
+    "zoom": 6,
+    "target": "lodge",
+    "pre": "(async()=>{const s=__slope,sim=s.sim,g=sim.grid,imp=(u)=>new Function('u','return import(u)')(u);const Lift=await imp('/src/sim/Lift.ts');const lt=s.liftTools.tool.o;sim.progression.bypass++;\ns.populateDemo('starter');s.spawnGuests(200,'skiers');const l0=sim.lifts.all()[0];let focus=null;\nconst bot={x:l0.bottom.x,y:l0.bottom.y},top={x:l0.top.x,y:l0.top.y},snap=structuredClone(l0),idx=sim.lifts.indexOf(l0.id);\nLift.demolishLift(sim.lifts,sim.economy,l0.id);s.liftTools.view.remove(l0.id);let ok=false;\nfor(const u of [0.5,0.45,0.55,0.4,0.6,0.35,0.65]){const mid=Lift.midSiteOnLine(g,bot,top,bot.x+1+(top.x-bot.x)*u,bot.y+1+(top.y-bot.y)*u);const out=Lift.placeLift({...lt.env,props:sim.props},sim.props,'gondola6',bot,top,true,true,[mid]);if(out.ok){lt.onPlaced(out);focus=mid;ok=true;break}}\nif(!ok){sim.lifts.reinsert(snap,idx);s.liftTools.view.add(sim.lifts.get(l0.id))}sim.progression.bypass--;\nconst loop=s.loop;if(loop.paused)loop.setSpeed(1);const tt=loop.tickCount+3000;let q=0;while(loop.tickCount<tt&&q++<1e6)loop.advance(1);\nconst c=s.renderer.controls;if(focus)c.target.set(focus.x+1.5,g.getCorner(focus.x,focus.y)*0.5,focus.y+1.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,focus})})()",
+    "steps": "wait:2000"
+   }
+  },
+  {
+   "id": "ui-river-tool",
+   "alt": "The Landscape drawer on its Water tab with Dig river selected; a route ghost runs from a natural spring marker down the slope with its price.",
+   "pages": [
+    "building"
+   ],
+   "kind": "harness",
+   "caption": "Dig river: pick a natural spring, drag to a lake, a stream or the map edge; the ghost shows the route and the price.",
+   "shot": {
+    "size": 128,
+    "seed": 5,
+    "start": "summer",
+    "hour": 12,
+    "zoom": 4,
+    "target": "91,55",
+    "extra": "starter=1&mode=sandbox&hints=0",
+    "viewport": "1280x900",
+    "evalJs": "__slope.progression.setLevel(2);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
+    "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:600;click:Dig river;wait:400;eval:__slope.renderer.controls.target.set(90.5,3,54.5);wait:300;eval:__slope.riverDebug.ghost(90,57);wait:800"
    }
   }
  ]

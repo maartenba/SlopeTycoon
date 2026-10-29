@@ -30,7 +30,7 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 | Button | What it holds |
 |---|---|
 | Buildings | Everything you can build, in tabs by type |
-| Lifts | The eleven lift types |
+| Lifts | The twelve lift types |
 | Paths & Roads | Footpaths, roads and rail, with the **Crossings** choice (level crossing or bridge over rail; bridges over water are automatic) |
 | Pistes & Trails | Ski pistes by difficulty, plus hiking and biking trails |
 | Terrain | Raise, lower, flatten, smooth the ground (sculpting only) |

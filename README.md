@@ -5,9 +5,9 @@ through winter *and* summer. Three.js + TypeScript, no backend, no external asse
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/maartenba)
 
-**Version 0.2.5** (pre-release)
+**Version 0.2.6** (pre-release)
 
-Status: pre-release (0.2.5) — playtest feedback welcome.
+Status: pre-release (0.2.6) — playtest feedback welcome.
 
 ## Features
 
@@ -38,6 +38,7 @@ Status: pre-release (0.2.5) — playtest feedback welcome.
 - **Statistics, regions and accessibility**: press **I** for charts of guests, cash, rating and revenue (`docs/stats.md`); every seed has a region name and peaks; a colour-blind-safe (Okabe-Ito) palette; reduced motion and text size.
 - **Landscape & drawers**: the Landscape drawer (ponds, trees, boulders, decor; `docs/landscaping.md`) and redesigned Terrain / View drawers with cards and hover info; everything can be built in any season.
 - **Comfort, rails and bridges**: guests get an urge and walk to **Toilets** (Facilities rating bar, `docs/comfort.md`); footpaths and roads cross rail at **level crossings** (barriers, bell, guests wait) or over a **footbridge** (`docs/crossings.md`); **bridges** span streams, ponds and gaps for footpaths, hiking, MTB and roads (`docs/bridges.md`); trails can serve buildings (`docs/trails-access.md`); four new campaigns incl. **Come by Train** (`docs/marketing-pricing.md`).
+- **Rivers, mid-stations and the suspension bridge** (0.2.6): dig a **river** from a natural spring or a placed one (Landscape > Water, level 2; flow classes calm / brisk / rapids, snowmelt, winter ice; `docs/rivers.md`); **mid-stations** on gondolas, cable cars and detachable chairs, and the high-speed six-seat chair (`docs/mid-stations.md`); a **suspension footbridge** over rivers, lakes and gorges (`docs/bridges.md`); human checklist `docs/playtest-m62.md`.
 - **Tutorial**: an interactive guided tour with an on-screen ranger, "Show me" / "Do it for me", contextual hints.
 
 ## Requirements

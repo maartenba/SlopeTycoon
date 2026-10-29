@@ -3,7 +3,7 @@ title: "Building"
 order: 3
 summary: "Placing buildings, access rules, auto-flatten, rotating, undo and redo, bulldozing, the Terrain drawer, trees and the Landscape drawer (ponds, decor)."
 description: "How to place buildings in Slope Tycoon: access rules, auto-flatten, rotating, undo and redo, bulldozing, terraforming, trees and the Landscape drawer."
-screenshots: [ui-buildings-drawer, ui-terrain-drawer, ui-landscape, landscape-pond]
+screenshots: [ui-buildings-drawer, ui-landscape, ui-river-tool, river-rapids]
 ---
 {{fig:ui-buildings-drawer}}
 
@@ -39,7 +39,6 @@ Level crossings, the footbridge over the rail and bridges over streams have thei
 
 ## Terrain and trees
 
-{{fig:ui-terrain-drawer}}
 
 The **Terrain** drawer is sculpting only. Like Buildings and Pistes it has a card rail on the left (raise, lower, flatten, smooth and more, each with an icon, a key badge and a hover card) and a control column on the right: the **target** (corner or area), **brush size**, the **maximum slope** and a live ghost showing the **cost and number of tiles** before you drag. Keys <kbd>1</kbd>–<kbd>4</kbd> pick a tool while the drawer is open, <kbd>[</kbd> <kbd>]</kbd> change the brush. Slopes can't be steeper than the maximum edge step you set. Trees are in the **Landscape** drawer, **Nature** tab: the **Plant** and **Clear** tools paint trees: saplings grow over about four months and never on pistes, paths, buildings or water. Felling forest and planting it back also feeds the *sustainability* bar of your rating (see [Events & the region](page:events)).
 
@@ -47,7 +46,7 @@ The **Terrain** drawer is sculpting only. Like Buildings and Pistes it has a car
 
 > [!TIP] **Build in any season.** Nothing is locked by the calendar: every building, lift, path, piste and landscape item can be placed in any season. The season badges are only hints about when something earns money.
 
-## Landscape: ponds, terrain, nature and decor
+## Landscape: water, terrain, nature and decor
 
 The **Landscape** drawer is where the scenery lives: water, trees and decoration. **Trees are only here** (Nature tab); the Terrain drawer no longer has tree tools.
 
@@ -57,14 +56,34 @@ The **Landscape** drawer (between Terrain and Bulldoze) has four tabs:
 
 | Tab | What you can do |
 |---|---|
-| **Water** | **Dig pond**: drag a rectangle of 3 to 11 tiles (or click for the default size, <kbd>[</kbd> <kbd>]</kbd> change it). **Fill in** turns a pond you dug back into ground. |
+| **Water** | **Dig pond**: drag a rectangle of 3 to 11 tiles (or click for the default size, <kbd>[</kbd> <kbd>]</kbd> change it). **Fill in** turns a pond you dug back into ground. **Dig river**, **Place spring** and **Fill in river** (see *Rivers and springs* below). The **Springs** button shows or hides the spring markers. |
 | **Terrain** | Raise, lower, flatten and smooth, the same brush as the Terrain drawer. |
 | **Nature** | Plant and clear trees, paint **boulders** and remove them (natural ones too). |
 | **Decor** | Bench, lamp post, flower bed, hedge, picket fence, stone wall and fountain, plus an eraser. Oriented pieces follow your drag direction; <kbd>R</kbd> turns them. |
 
-{{fig:landscape-pond}}
 
 - **Unlock**: in Career, digging ponds unlocks at **resort level 2** (*Local favourite*). Everything else in the drawer is available from the start, and Sandbox has it all.
 - **Ponds** need nearly level ground, at least two tiles from other water, buildings and pistes (three from lifts). They cost about **$70 per water tile plus earthworks** (a 5×5 pond is roughly $1,500 to $3,000); filling in costs $35 per tile. A pond freezes over in winter like a natural lake and counts as a lake for a Beach or Boat Rental. Digging works in every season.
 - **Boulders** cost $25 each (removal $12). **Decor** costs $25 to $80 a piece (bench $60, lamp $80, flower bed $40, hedge $30, fence $25, wall $45) and the **fountain $600**; none has upkeep and the eraser is free. Decor needs dry, fairly level ground without trees or rocks, and occupies its tile.
 - Undo and redo (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) cover the whole drawer: one drag is one step. Its keys are listed in [Shortcuts](page:shortcuts).
+
+### Rivers and springs
+
+{{fig:ui-river-tool}}
+
+A river needs a **source**. Every map has one to three **natural springs**, drawn as cyan rings while the Water tab is open (they cost nothing and do not change the land until you dig). Pick **Dig river** (<kbd>7</kbd>), press on a spring, a spot beside a lake (an outlet) or a spot beside a stream (a branch), drag towards a lake, a stream or the map edge and release. You do not have to draw the route: the game finds the cheapest one along the fall line and the ghost shows it, how deep it cuts (blue = no cutting, orange = six half-steps), its length, the drop and the price. If it cannot be done the tip says why (*A river must end in a lake, a stream or at the map edge*, *Too deep to dig (max 6 per tile)*, *Water can't flow uphill here*, *Blocked by a building, lift, rail, path or other water*).
+
+- **A river is one tile wide**, cut at most six half-steps deep per tile, and costs about $30 a tile plus the earthworks. One dig is one undo step.
+- **Place spring** ($250, also a card in the Terrain drawer) makes a source on dry, free ground that rises on at least two sides (<kbd>8</kbd>). **Fill in river** (<kbd>9</kbd>) puts the ground back; it is refused while another river flows into this one or while a bridge crosses it (*remove the bridge first*).
+- **Unlock**: in Career, *Dig river* and *Place spring* come at **resort level 2**, like ponds. Sandbox has them from the start.
+- On a phone or tablet the second tap on the end (or **Place** in the touch bar) confirms.
+
+{{fig:river-rapids}}
+
+**How a river flows.** Every stream and dug river has a **discharge** (springs, lake outlets and tributaries add up) that rises with the **snowmelt** in spring (April to May) and sinks in late summer. Together with the drop per tile that makes each tile **calm**, **brisk** or **rapids**: rapids show white water and a few capped splashes, calm reaches are smooth. Rivers are a small plus for the wildlife-habitat part of your sustainability score (up to +2 points).
+
+
+**Winter ice.** A dug river freezes over after three days below -2 °C (it stops flowing, and water tours close with *Closed: the river is frozen*) and thaws again after two days above +1 °C. Natural streams, ponds and lakes keep their usual winter look. Pistes cannot be painted over a river, frozen or not, and nobody walks on the ice.
+
+Rivers are real water: buildings cannot stand on them, and every path kind bridges them by itself (see [Rails, crossings & bridges](page:rails-bridges)).
+

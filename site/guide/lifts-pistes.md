@@ -1,9 +1,9 @@
 ---
 title: "Lifts & pistes"
 order: 4
-summary: "The eleven lift types, towers and clearance, planned lift maintenance, pistes and runs, grooming and snowmaking."
-description: "Slope Tycoon lifts and pistes: all eleven lift types, towers and clearance rules, planned maintenance, pistes and runs, grooming and snowmaking explained."
-screenshots: [ui-lifts-drawer, runs-overlay, ui-runs-tab, ui-snowmaking]
+summary: "The twelve lift types, mid-stations, towers and clearance, planned lift maintenance, pistes and runs, grooming and snowmaking."
+description: "Slope Tycoon lifts and pistes: twelve lift types, mid-stations, towers and clearance, planned maintenance, pistes and runs, grooming and snowmaking."
+screenshots: [ui-lifts-drawer, lift-midstation, runs-overlay, ui-runs-tab]
 ---
 ## Lifts
 
@@ -17,6 +17,7 @@ A lift has a **bottom station** and a **top station**. The game places towers al
 
 - **Fixed grip** lifts (T-bar, older chairs) are cheap but slow to board. **Detachable** lifts slow down in the station, so they load faster and run faster on the line.
 - **Bubble** chairs and **cabins** keep guests warm and happy, and close less often in the wind.
+- The **Chairlift (6-seat, high-speed)** (resort level 3, a teal station with wind visors on the chairs) is a detachable six-seater: it carries more than a quad on a long line, loads a little slower than the plain six-pack because its carriers sit further apart, and may have mid-stations.
 - Only some lifts carry **bikes**, which matters in summer.
 - In Career mode the biggest lifts unlock with your resort level (see [Career & scenarios](page:career)).
 
@@ -29,6 +30,18 @@ Cables must stay clear of what's underneath: trees, roofs and other lifts. The c
 - Choose a **taller lift type**, or avoid flying over big buildings (a lodge or an apartment block is always too tall, a small shop is fine).
 
 The error message tells you what the cable would hit, for example *Cable would hit Base Lodge*.
+
+### Mid-stations
+
+{{fig:lift-midstation}}
+
+A **gondola**, a **cable car** or a **detachable chair** (the quad, the six-seaters and the eight-seat bubble) can have one or two **mid-stations** on the way up. Select the built lift, press **Add mid-station** in the lift inspector and aim along the line: the ghost snaps to the nearest valid spot (up to four tiles away) and shows the price, the number of stations and the ride time, or says which segment is refused and why (*Mid-station site occupied*, *Segment 2: ...*). A click builds it; **Remove mid-station** takes it out again and gives back half of the extra cost. Both are one undo step, and the lift must be empty first (close it and let it run out).
+
+- **What it costs**: a mid-station costs as much as a terminal, plus the extra cable and towers. The stations stand on the straight line between the two ends, on a levelled pad (auto-flatten charges it once), with the towers at least two tiles away.
+- **No second ticket**: a guest pays the day pass once and can ride terminal to mid and mid to top without paying again.
+- **Skiers** who just want a ride get off at the mid-station about a third of the time and take a run from there. **Hikers and bikers** pick the station nearest their goal and walk the trails from it, and the runs of a piste that starts at a mid-station are their own runs.
+- **Gondolas and chairs** slow down in the station and keep their cadence; the **cable car** stops at every station, so a mid-station lowers its capacity. In walk mode you can board at any station except the top and get off at a mid-station with <kbd>E</kbd>.
+- T-bars, fixed-grip chairs and the funicular cannot have mid-stations.
 
 ### Breakdowns and wind
 
@@ -89,7 +102,6 @@ Fresh snow turns bumpy and icy with traffic. **Grooming** restores it overnight.
 
 ### Snowmaking
 
-{{fig:ui-snowmaking}}
 
 When natural snow is thin, build a **Reservoir** and **Snowmaking Cannons** (both under Buildings → Snow). Cannons only run when it is cold enough and the reservoir has water, and they add to your running costs. The **snowmaking overlay** (<kbd>O</kbd> cycles overlays) shows where they reach.
 

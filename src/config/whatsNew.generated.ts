@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.2.6",
+    "date": "2026-10-29",
+    "highlights": [
+      "Dig a river: find the cyan spring rings, drag to a lake, a stream or the map edge and the route is found for you; it runs calm, brisk or as rapids…",
+      "Suspension footbridge: a rope-and-plank bridge spans a river, lake or gorge up to 12 tiles for footpaths and hiking trails; hikers stop mid-span for…",
+      "Mid-stations: add a station half way up a gondola, cable car or detachable chair so guests (and hikers) can get on and off in the middle.",
+      "A new high-speed six-seat chair with a wind visor, at resort level 3.",
+      "Several closures for the same season (no snow, too warm) now show one toast instead of a stack.",
+      "On phones and tablets the open drawer steps aside when you paint, so pistes and ponds can be drawn."
+    ]
+  },
+  {
     "version": "0.2.5",
     "date": "2026-10-29",
     "highlights": [
@@ -22,17 +34,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Four new marketing campaigns, including Come by Train and the Snowboard Park Jam.",
       "Hiking and MTB trails can now serve buildings such as the Mountain Hut and Ranger Station.",
       "Ranger Rudi explains himself better, with full advice text and clearer \"why can't I build here\" messages."
-    ]
-  },
-  {
-    "version": "0.2.2",
-    "date": "2026-10-27",
-    "highlights": [
-      "The game now has a real calendar: winter is December to March, and festivals sit in their proper months.",
-      "Pistes are split into named runs that you can open, groom and rename one by one.",
-      "Green energy: solar, wind, hydro and biomass take a bite out of the lift power bill.",
-      "Lifts get a yearly service, and snow cannons get an on/off switch (or Auto).",
-      "Hungry hikers are fed better, and the loading screen now shows what it is doing."
     ]
   }
 ];

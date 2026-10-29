@@ -6,7 +6,7 @@ import type { ShotInfo } from './md';
 export const SHOTS_DIR = 'site/assets/shots';
 export const INDEX_FILE = join(SHOTS_DIR, 'index.json');
 export const WIDTHS = [640, 1280] as const;
-export const MAX_BYTES_1280 = 250 * 1024;
+export const MAX_BYTES_1280 = 100 * 1024; // the site budget is 8 MiB of screenshots in total (scripts/site/crawl.ts): the 1280 px files over 100 kB are re-encoded at a lower quality
 
 export interface IndexEntry { w: number; h: number; files: { w: number; file: string; bytes: number }[] }
 export type ShotIndex = Record<string, IndexEntry>;

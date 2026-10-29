@@ -4,7 +4,7 @@ Read this first. Canonical instructions for AI agents (CLAUDE.md just points her
 
 ## Project
 **Slope Tycoon**: a browser PWA, 3D isometric ski-resort tycoon (three.js + TypeScript + Vite). Everything is procedural: terrain, models, textures, icons, logo, sound effects, ambience and music (no asset files except self-hosted fonts Nunito + Lilita One in `public/fonts`). Works offline (service worker), saves locally (IndexedDB + localStorage fallback).
-- Version is **0.2.5** (pre-release). **Never call it 1.0** until the user says so.
+- Version is **0.2.6** (pre-release). **Never call it 1.0** until the user says so.
 - Repo `maartenba/SlopeTycoon`; **not yet published**. `LICENSE` is a copyright notice only (no open-source grant; the owner decides later, see `docs/deploy.md`); do not add or change a licence. Third-party: `THIRD_PARTY_NOTICES.md` (`npm run licenses`).
 - **Privacy (owner decision, supersedes the earlier "no tracking" rule)**: no ads, no accounts, saves stay on the device, **anonymous opt-in statistics** via Google Analytics (`G-NX37ERE0S9`). Consent first: nothing loads or is sent until `localStorage['slope.consent.analytics'] === 'granted'` (shared by the website and the game); never on localhost / headless. The only allowed external hosts are `googletagmanager.com` / `google-analytics.com` (injected after consent), plus the GitHub and Wikipedia LINKS on the website (plain links, nothing requested until clicked). A **Sponsor link** to exactly `https://github.com/sponsors/maartenba` (see `.github/FUNDING.yml`) is allowed in the website header/footer/About/landing and the game's About dialog / menu footer: wording 'Support the game' / 'Sponsor on GitHub' (a support link, NOT a sharing feature), `target=_blank rel=noopener`, never a popup/toast/gate. No other external requests. See `site/pages/privacy.md`, `docs/deploy.md`.
 
@@ -37,6 +37,7 @@ npm run build:site | site:check | verify:site | site:shots | site:dev
 npm run docs:img           # optimise docs/img (WebP)
 npm run shot -- --size 64 --seed 61 --out NAME   # real-game screenshot via Chrome SwiftShader
 npm run touch:e2e [-- --only camera,walk --viewport phone|land|tablet]   # real emulated-touch end-to-end (gated, ~55 min for all; docs/touch.md)
+npm run phase6:sanity [-- --shots 1]   # real-page story: river from a natural spring, bridges (foot / hike / suspension), gondola with a mid-station ridden, save + reload identical (seed 5, ~2 min)
 npm run shot:suite | ui:suite | ui2:suite | demo:shots | town:shots | recap:shot
 npm run flicker            # camera shimmer / LOD pop measurement (docs/flicker.md)
 npm run analysis:ski|timeflow|hiking|hunger|towns   # analysis reports
@@ -92,6 +93,7 @@ Tests live in `tests/` mirroring `src/` (sim, world, render, ui, ui-dom (happy-d
 
 ## Known gaps / open items
 - Done (0.2.0): touch, colour-blind palette, Statistics (`I`, `docs/stats.md`), named regions, Landscape drawer, redesigned Terrain / View drawers, M5.4 depth, M5.5. Remaining: human playtest STOP of Task 32.
+- Done in 0.2.6 (CHANGELOG): rivers (Dig river / Place spring / Fill in river, natural springs, flow classes, winter ice; `docs/rivers.md`), suspension footbridge + bridges over rivers (`docs/bridges.md`), mid-stations + `chair6d` (`docs/mid-stations.md`), touch drawers tuck away on every touch screen. Rivers and mid-stations ship ON (player-driven, no flag; goldens unchanged, `docs/balance.md` "M6.2 + M6.6 STOP check"). Remaining: human playtest STOPs of Tasks 18 and 40 (`docs/playtest-m62.md`).
 - Done in 0.2.3 (CHANGELOG): comfort need + Toilets + Facilities rating facet (`docs/comfort.md`), rail level crossings + footbridge over rail (`docs/crossings.md`), bridges (`docs/bridges.md`), trail access + remote supply (`docs/trails-access.md`), campaigns v2 (Come by Train, Snowboard Park Jam, Hike & Bike Weekends, Festival Season), inert frameworks: tours (`docs/tours.md`), viewpoints (`docs/viewpoints.md`), lodging tiers (`docs/lodging.md`), guest types (`docs/guest-types.md`). Goldens re-recorded in `docs/balance.md` "M6.1 re-record". Remaining: human playtest STOP (`docs/playtest-m61.md`).
 - Done in 0.2.2 (CHANGELOG): real calendar + date chip + Events strip + climate curves (`docs/time-flow.md` §10-11), pistes as runs (Runs overlay / tab, per-run open / groom / rename, run-aware routing), planned lift maintenance (Operations > Maintenance), snowmaking On / Off / Auto + per-cannon switch, energy grid and green buildings (Energy tab), hiker hunger fixes (`npm run analysis:hunger`), Almabtrieb announcements, train station on rail end, footpath access for shops / chalets / apartments, loading indicator on the splash (`npm run boot:shots`). Guide + site + dev docs updated for all of it.
 - Done in 0.2.1 (CHANGELOG): audio rewrite (nine procedural tracks, Music style + Next track, ambience default 0.28; `docs/audio.md`), lift tower height caps + thicker tall towers (`docs/lifts-clearance.md`).
