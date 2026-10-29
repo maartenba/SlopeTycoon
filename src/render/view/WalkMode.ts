@@ -5,7 +5,7 @@ import { TileType, type Grid } from '../../world/Grid';
 import { PropKind, growthFactor, type PropStore } from '../../world/Props';
 import type { Networks } from '../../world/Networks';
 import type { LiftData, CablePath } from '../../sim/Lift';
-import { samplePath } from '../../sim/Lift';
+import { MID_SLOW_ZONE, midDistancesOf, pathToRope, ropeToPath, samplePath } from '../../sim/Lift';
 import { Damped, yawOfHeading, type RideSample, type ViewCameraRig } from './ViewCameraRig';
 import {
   NO_INPUT, WALK, applyLook, eyeY, makeWalker, settle, stepStride, stepWalker, footstepDue,
@@ -174,7 +174,7 @@ export class WalkMode {
   private nextProbe = 0;
   private eyeD = new Damped();
   private fov = 75;
-  private ride: { liftId: number; t: number; dur: number; path: CablePath; family: string; top: LiftData['top']; name: string; seats: number } | null = null;
+  private ride: { liftId: number; t: number; dur: number; path: CablePath; family: string; top: LiftData['top']; name: string; seats: number; /** N-station lifts: path distance of each mid-station, rope coordinates of the start / end, the mid-stations' footprints. */ mids: number[]; r0: number; r1: number; midSites: Array<{ x: number; y: number }>; /** index (in `mids`) of the mid-station the carrier is crawling through, or -1 */ at: number } | null = null;
   private rideSample: RideSample = { x: 0, y: 0, z: 0, hx: 0, hz: 0, speed: 0, slope: 0, kind: 'chair' };
   private lastStep = 0;
   /** True when the 5 Hz probe saw a guest / animal within ~2.5 tiles (then the per-frame soft push queries the crowd). */
@@ -289,14 +289,19 @@ export class WalkMode {
     return out;
   }
   /** E key. Returns a short description of what happened (for tests / toasts). */
-  interact(): 'board' | 'closed' | 'inspect' | 'none' {
-    if (!this.active || this.ride) return 'none';
+  interact(): 'board' | 'closed' | 'inspect' | 'alight' | 'none' {
+    if (this.active && this.ride) { // N-station lift: E while the carrier crawls through a mid-station gets the rider off there
+      if (this.ride.at < 0) return 'none';
+      this.alight(this.ride, this.ride.at);
+      return 'alight';
+    }
+    if (!this.active) return 'none';
     this.probe();
     const b = this.boardable;
     if (b) {
       const v = boardVerdict(b.lift);
       if (!v.ok) { this.d.toast?.(v.reason!); return 'closed'; }
-      this.startRide(b.lift as unknown as ReturnType<WalkDeps['lifts']>[number]);
+      this.startRide(b.lift as unknown as ReturnType<WalkDeps['lifts']>[number], b.station);
       return 'board';
     }
     if (this.hit) {
@@ -308,8 +313,15 @@ export class WalkMode {
   }
 
   // ---- cosmetic lift ride ----
-  private startRide(l: ReturnType<WalkDeps['lifts']>[number]): void {
-    this.ride = { liftId: l.id, t: 0, dur: cosmeticRideSeconds({ rideTimeS: l.rideTimeS }), path: l.path, family: l.family, top: l.top, name: l.name, seats: LIFTS[l.kind]?.capacityPerCarrier ?? 4 };
+  private startRide(l: ReturnType<WalkDeps['lifts']>[number], station = 0): void {
+    const multi = !!l.stations && l.stations.length > 2;
+    const mids = multi ? midDistancesOf(l, l.path) : [];
+    const startD = station > 0 ? mids[station - 1]! : 0;
+    const full = pathToRope(l.path.length, mids), r0 = pathToRope(startD, mids);
+    this.ride = {
+      liftId: l.id, t: 0, dur: cosmeticRideSeconds({ rideTimeS: l.rideTimeS * ((full - r0) / (full || 1)) }), path: l.path, family: l.family, top: l.top, name: l.name, seats: LIFTS[l.kind]?.capacityPerCarrier ?? 4,
+      mids, r0, r1: full, midSites: multi ? l.stations!.slice(1, -1).map((m) => ({ x: m.x, y: m.y })) : [], at: -1,
+    };
     this.card = null; this.prompt = '';
     this.d.rig.reset(); this.d.rig.recentre();
   }
@@ -318,15 +330,18 @@ export class WalkMode {
     r.t += dt;
     const p = Math.min(1, r.t / r.dur);
     this.rideProgress = p;
-    const sm = this.rideSample, sp = samplePath(r.path, p * r.path.length);
-    sm.x = sp.x; sm.y = sp.y; sm.z = sp.z; sm.hx = r.path.dirX; sm.hz = r.path.dirZ; sm.speed = r.path.length / r.dur; sm.slope = -sp.pitch;
+    const d = r.mids.length ? ropeToPath(r.r0 + p * (r.r1 - r.r0), r.mids, r.path.length) : p * r.path.length;
+    r.at = r.mids.findIndex((m) => Math.abs(d - m) <= MID_SLOW_ZONE / 2 + 0.01);
+    this.prompt = r.at >= 0 && p < 1 ? 'E: Get off here (or stay seated)' : '';
+    const sm = this.rideSample, sp = samplePath(r.path, d);
+    sm.x = sp.x; sm.y = sp.y; sm.z = sp.z; sm.hx = r.path.dirX; sm.hz = r.path.dirZ; sm.speed = (r.path.length / r.dur) * (r.at >= 0 ? 0.1 : 1); sm.slope = -sp.pitch;
     sm.kind = r.family === 'gondola' || r.family === 'cablecar' || r.family === 'funicular' ? (r.family as RideSample['kind']) : 'chair';
     sm.seat = 1; sm.seats = r.seats; // deterministic seat for the (non-guest) walker
     this.d.rig.update(dt, sm);
     if (p >= 1) this.alight(r);
   }
-  private alight(r: NonNullable<WalkMode['ride']>): void {
-    const w = this.d.world, cx = r.top.x + LIFT_STATION_SIZE / 2, cz = r.top.y + LIFT_STATION_SIZE / 2;
+  private alight(r: NonNullable<WalkMode['ride']>, mid = -1): void {
+    const w = this.d.world, at = mid >= 0 ? r.midSites[mid]! : r.top, cx = at.x + LIFT_STATION_SIZE / 2, cz = at.y + LIFT_STATION_SIZE / 2;
     const f = nearestFree(w, cx + r.path.dirX * (LIFT_STATION_SIZE / 2 + 1), cz + r.path.dirZ * (LIFT_STATION_SIZE / 2 + 1), 10) ?? { x: cx, z: cz };
     this.ride = null; this.rideProgress = -1;
     const s = this.state;
@@ -334,7 +349,7 @@ export class WalkMode {
     this.eyeD.snap(eyeY(s));
     this.d.rig.reset();
     this.applyCamera(0, true);
-    this.d.toast?.(`Arrived at the top of ${r.name}`);
+    this.d.toast?.(mid >= 0 ? `Got off at the mid-station of ${r.name}` : `Arrived at the top of ${r.name}`);
   }
   /** Name of the lift being ridden (HUD). */
   get rideName(): string { return this.ride?.name ?? ''; }

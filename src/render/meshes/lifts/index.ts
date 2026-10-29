@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { LIFTS, normalizeLiftKind } from '../../../config/lifts';
 import { LIFT_ECO_FACTOR, LIFT_STATION_SIZE } from '../../../config/balance';
-import { LIFT_PARAMS, carrierStates, liftPath, type CablePath, type LiftData } from '../../../sim/Lift';
-import { buildStationParts } from './Station';
+import { LIFT_PARAMS, carrierStates, liftPath, liftStations, type CablePath, type LiftData } from '../../../sim/Lift';
+import { buildMidStationParts, buildStationParts } from './Station';
 import { buildTowerGeometry } from './Tower';
 import { buildCableGeometry, buildCableNearGeometry } from './Cable';
 import { isPerspective } from '../../view/cameraMath';
@@ -126,6 +126,13 @@ export class LiftView {
     return p;
   }
 
+  private midStation(kind: LiftKind): StationParts {
+    const key = `${kind}:mid`;
+    let p = this.stationCache.get(key);
+    if (!p) { p = buildMidStationParts(kind); this.stationCache.set(key, p); }
+    return p;
+  }
+
   private signMat(text: string, bg: string, fg: string): THREE.Material {
     const key = `${text}|${bg}|${fg}`;
     let e = this.signMats.get(key);
@@ -149,15 +156,18 @@ export class LiftView {
     const path = liftPath(lift);
     const geos: THREE.BufferGeometry[] = [];
     const yaw = Math.atan2(path.dirX, path.dirZ);
-    for (const [isTop, st] of [[false, lift.bottom], [true, lift.top]] as const) {
-      const parts = this.station(lift.kind, isTop);
+    const stations = liftStations(lift);
+    stations.forEach((st, si) => {
+      const mid = si > 0 && si < stations.length - 1; // pass-through mid-station of an N-station lift
+      const isTop = si === stations.length - 1;
+      const parts = mid ? this.midStation(lift.kind) : this.station(lift.kind, isTop);
       const sm = new THREE.Group();
       sm.position.set(st.x + LIFT_STATION_SIZE / 2, st.ground, st.y + LIFT_STATION_SIZE / 2);
       sm.rotation.y = yaw;
       sm.add(new THREE.Mesh(parts.geometry, mat === this.mat ? this.stationMat : mat));
       if (parts.sign && withSign) sm.add(new THREE.Mesh(parts.sign.geometry, this.signMat(parts.sign.text, parts.sign.bg, parts.sign.fg)));
       g.add(sm);
-    }
+    });
     const towers: Entry['towers'] = [];
     const polyPts: number[] = [lift.bottom.x + LIFT_STATION_SIZE / 2, lift.bottom.y + LIFT_STATION_SIZE / 2];
     for (const t of lift.towers) {
@@ -299,6 +309,8 @@ export class LiftView {
 
   phaseOf(id: number): number { return this.entries.get(id)?.phase ?? 0; }
   has(id: number): boolean { return this.entries.has(id); }
+  /** The lift record the mesh was built from (identity check after undo / redo). */
+  dataOf(id: number): LiftData | undefined { return this.entries.get(id)?.lift; }
   /** Ids of the lifts that currently have meshes. */
   ids(): number[] { return [...this.entries.keys()]; }
 }

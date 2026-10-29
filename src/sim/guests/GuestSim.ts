@@ -338,7 +338,7 @@ export class GuestSim {
       if (s.rideRun[slot]) {
         s.act[slot] = Act.SkiDown; s.runMax[slot] = 0; s.rideRun[slot] = 0;
         this.exploration.remember(s, slot, liftId); // skiers only: pick the line for this run
-        if (dir === 0 && !mid && isSkiMode(s.moveMode[slot]!)) s.via[slot] = this.exploration.pickVia(s, slot, l, this.rng); // (from a mid-station: the plain way down)
+        if (dir === 0 && isSkiMode(s.moveMode[slot]!)) s.via[slot] = this.exploration.pickVia(s, slot, l, this.rng, mid ? station : undefined); // (from a mid-station: a line from there down to the bottom)
       }
       this.nm?.reset(slot);
     },

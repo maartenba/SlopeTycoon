@@ -6,7 +6,7 @@ import { LIFT_STATION_SIZE } from '../config/balance';
 import { displayName } from '../ui/text';
 import { placeBuilding, type PlaceOutcome } from '../sim/PlaceBuilding';
 import type { LiftKind } from '../config/lifts';
-import { placeLift, type LiftData, type LiftPlaceOutcome, type StationSite } from '../sim/Lift';
+import { placeLift, setMidStations, type LiftData, type LiftPlaceOutcome, type MidChangeOutcome, type StationSite } from '../sim/Lift';
 import { footprintOf, type PlacedBuilding } from '../sim/Buildings';
 import { GState } from '../sim/guests/Guest';
 import type { InstanceSave } from '../sim/attractions/Attraction';
@@ -358,6 +358,44 @@ export class Undo {
       redo: () => { lifts.remove(id); economy.refund(refund); return { touchedChunks: [], changed: [], kind: 'lift' }; },
     });
     return { ok: true, refund };
+  }
+
+  /** Add / move / remove the mid-stations of a lift (Task 39), one undo step. Refused while guests queue for or ride the lift. */
+  setLiftMids(env: Parameters<typeof placeLift>[0], props: PropStore | undefined, id: number, mids: StationSite[], autoFlatten = true, clearLane = true): MidChangeOutcome {
+    const { grid, networks, lifts, economy } = this.env;
+    const S = LIFT_STATION_SIZE;
+    const before = lifts.get(id);
+    if (!before) return { ok: false, reasons: ['The lift is gone'], charged: 0, refunded: 0, touchedChunks: [] };
+    if (this.guestsAtLift(id) > 0) return { ok: false, reasons: ['Guests are queueing for or riding this lift: close it and let it empty first'], charged: 0, refunded: 0, touchedChunks: [] };
+    const pads: Rect[] = mids.map((m) => ({ x0: m.x - MARGIN, y0: m.y - MARGIN, x1: m.x + S + MARGIN, y1: m.y + S + MARGIN }));
+    const xs = [before.bottom.x, before.top.x], ys = [before.bottom.y, before.top.y];
+    const bbox: Rect = { x0: Math.min(...xs) - MARGIN, y0: Math.min(...ys) - MARGIN, x1: Math.max(...xs) + S + MARGIN, y1: Math.max(...ys) + S + MARGIN };
+    const delta = TerrainDelta.capture(grid, props, networks, pads.length ? pads : [bbox], bbox);
+    let out!: MidChangeOutcome;
+    const name = displayName(before.kind);
+    const index = lifts.indexOf(id);
+    const cmd: UndoCommand = {
+      label: name, verb: 'placed', day: this.day(), cost: 0,
+      do: () => { out = setMidStations(env, props, id, mids, autoFlatten, clearLane); return out.ok; },
+      check: () => (!lifts.get(id) ? 'The lift is gone' : this.guestsAtLift(id) > 0 ? `Guests are queueing for or riding the ${name}` : delta.stale()),
+      undo: () => {
+        lifts.remove(id); lifts.reinsert(out.previous!, index);
+        if (out.charged > 0) economy.refund(out.charged);
+        if (out.refunded > 0) economy.charge(out.refunded);
+        return { touchedChunks: delta.revert(), changed: [], kind: 'lift' };
+      },
+      checkRedo: () => (!lifts.get(id) ? 'The lift is gone' : this.guestsAtLift(id) > 0 ? `Guests are queueing for or riding the ${name}` : delta.preMatches()),
+      redo: () => {
+        if (!cmd.do()) return { fail: out.reasons[0] ?? 'It cannot be changed any more' };
+        delta.seal();
+        return { touchedChunks: delta.touchedNow(), changed: [], kind: 'lift' };
+      },
+    };
+    if (!cmd.do()) return out;
+    delta.seal();
+    cmd.cost = out.charged - out.refunded;
+    this.record(cmd);
+    return out;
   }
 
   // ---------- network tiles (path / road / rail / piste bulldozed by tile) ----------

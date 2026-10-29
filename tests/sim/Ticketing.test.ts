@@ -77,6 +77,29 @@ describe('Ticketing', () => {
     expect(f.state.money).toBe(before);
     expect(f.t.canRide(holder)).toBe(true);
   });
+  it('N-station lifts (docs/mid-stations.md): terminal -> mid and mid -> top are two boardings but ONE pass sale (no per-ride tickets exist)', () => {
+    const f = fixture(false);
+    f.budgets.set(1, 200);
+    f.t.onArrival(1, 0);
+    f.t.onBoard(1); // terminal -> mid
+    f.t.onBoard(1); // mid -> top
+    expect(f.state.money).toBe(45);
+    expect(f.t.dayPassesSold).toBe(1);
+    expect(f.t.rides).toBe(2); // rides = boardings (segment boardings), documented
+    // hikers / bikers: the foot ticket is also sold once per day
+    f.budgets.set(2, 100);
+    f.t.onBoard(2, true); f.t.onBoard(2, true);
+    expect(f.t.hikerTickets).toBe(1);
+    expect(f.state.money).toBe(45 + 15);
+    // season holders stay free on every segment
+    f.t.onMonth(8);
+    let holder = -1;
+    for (let id = 10; id < 300 && holder < 0; id++) { f.budgets.set(id, 100); f.t.onArrival(id, 0); if (f.t.isHolder(id)) holder = id; }
+    const before = f.state.money;
+    f.t.onBoard(holder); f.t.onBoard(holder);
+    expect(f.state.money).toBe(before + 0);
+    expect(f.t.holderRides).toBe(2);
+  });
   it('serialise round trip is deterministic', () => {
     const f = fixture(true); f.t.onMonth(8); f.budgets.set(1, 100); f.t.onArrival(1, 45);
     const g = fixture(true); g.t.load(JSON.parse(JSON.stringify(f.t.serialize())));

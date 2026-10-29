@@ -31,6 +31,8 @@ export interface LiftInfo {
   lengthM: number; rideTimeS: number; throughputPerHour: number; upkeepPerDay: number; refund: number;
   /** Conditions (sim/OpenStatus): current mode and why it is closed. */
   activeMode?: string | null; closedReason?: string;
+  /** N-station lifts (docs/mid-stations.md): only for kinds that may have mid-stations. */
+  mids?: { count: number; max: number; picking: boolean };
   /** Operations (sim/ops/LiftOps), optional. */
   ops?: LiftOpsInfo;
 }
@@ -39,6 +41,10 @@ export interface LiftInspectorApi {
   setOpen(id: number, open: boolean): void;
   setSpeed(id: number, v: number): void;
   demolish(id: number): void;
+  /** Enter / leave the 'pick a point on the line' mode. */
+  addMid?(id: number): void;
+  /** Remove mid-station `index` (1 = the lowest one). */
+  removeMid?(id: number, index: number): void;
   setMode?(id: number, mode: 'auto' | 'open' | 'closed'): void;
   setHours?(id: number, from: number, to: number): void;
   setDaylight?(id: number, on: boolean): void;
@@ -165,6 +171,20 @@ export class StLiftInspector extends StElement {
       const toggle = el('button', { textContent: i.open ? 'Close lift' : 'Open lift' });
       toggle.addEventListener('click', () => a?.setOpen(i.id, !i.open));
       kids.push(toggle);
+    }
+    if (i.mids) {
+      const m = i.mids;
+      kids.push(line(`Stations: ${m.count + 2}${m.count ? ` (${m.count} mid-station${m.count === 1 ? '' : 's'})` : ''}`, 'small'));
+      const row = el('div', { className: 'row' });
+      const add = el('button', { textContent: m.picking ? 'Cancel mid-station' : 'Add mid-station', disabled: !m.picking && m.count >= m.max, title: m.count >= m.max ? `At most ${m.max} mid-stations` : 'Pick a point on the line: guests can board and alight there' });
+      add.addEventListener('click', () => a?.addMid?.(i.id));
+      row.append(add);
+      for (let k = 1; k <= m.count; k++) {
+        const rm = el('button', { textContent: m.count > 1 ? `Remove mid-station ${k}` : 'Remove mid-station', title: 'Back to fewer stations (half of the extra cost is refunded)' });
+        rm.addEventListener('click', () => a?.removeMid?.(i.id, k));
+        row.append(rm);
+      }
+      kids.push(row);
     }
     const del = el('button', { textContent: `Demolish (+${formatMoney(i.refund)})` });
     del.addEventListener('click', () => a?.demolish(i.id));

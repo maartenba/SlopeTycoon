@@ -78,6 +78,9 @@ export class TrailGoals {
     for (const l of g.world.lifts()) {
       const top = g.stationAnchor(l, 1);
       for (const t of hike) if ((t % n - l.top.x) ** 2 + ((t / n | 0) - l.top.y) ** 2 <= 16) { list.push({ tile: t, rel: this.rel(g, t), kind: 3 }); break; }
+      if (l.stations && l.stations.length > 2) for (const st of l.stations.slice(1, -1)) { // a mid-station is a trail head too
+        for (const t of hike) if ((t % n - st.x) ** 2 + ((t / n | 0) - st.y) ** 2 <= 16) { list.push({ tile: t, rel: this.rel(g, t), kind: 3 }); break; }
+      }
       void top;
     }
     // viewpoint buildings: score cached per nav epoch; the goal is the nearest snow-free trail tile (like huts); kept through trimming
@@ -132,33 +135,43 @@ export class TrailGoals {
     const hiker = c.pref === 1 || coreOf(c.type) === GuestType.Adventure;
     const fit = 0.85 + 0.1 * c.skill - 0.2 * c.fatigue;
     const scored: GoalPick[] = [];
+    // N-station lift: the hiker / biker alights at the station nearest to the goal (mid-stations are trail heads too); 2-station lifts: the top, exactly as before
+    const stn = wantLift && lift!.lift.stations && lift!.lift.stations.length > 2 ? lift!.lift.stations.slice(1).filter((st) => st.alight !== false) : null;
+    const stnTile = stn ? stn.map((st) => st.y * n + st.x) : [];
     const cands: Poi[] = bike ? this.mtb.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 0 as const })) : this.pois;
     for (const p of cands) {
       if (this.bad.has(p.tile)) continue;
-      const px = p.tile % n, py = (p.tile / n) | 0, d = Math.hypot(px - sx, py - sy);
+      const px = p.tile % n, py = (p.tile / n) | 0;
+      let ax = sx, ay = sy, aRel = sRel, aVia = liftTop;
+      if (stn) {
+        let bk = stn.length - 1, bd = Infinity;
+        for (let k = 0; k < stn.length; k++) { const dd = Math.hypot(px - stn[k]!.x, py - stn[k]!.y); if (dd < bd - 1e-9) { bd = dd; bk = k; } }
+        ax = stn[bk]!.x; ay = stn[bk]!.y; aVia = stnTile[bk]!; aRel = this.rel(g, aVia);
+      }
+      const d = Math.hypot(px - ax, py - ay);
       if (d < 6) continue;
-      const oneWay = bike && p.rel < sRel - 0.03;
+      const oneWay = bike && p.rel < aRel - 0.03;
       if (bike && wantLift && !oneWay) continue; // lift-first bikers only descend
       const total = d * T.detour * (oneWay ? 1 : 2);
       const D = plannedHours(total, n, bike ? 1 : 0, fit);
       const allowed = c.leaveHour - EXC.duskMargin - c.hour - EXC.stopH - (wantLift ? 0.4 : 0);
       if (allowed < EXC.minH * 0.8) continue;
-      let sc = bike ? 0.4 + 1.2 * (sRel - p.rel) : 0.3 + 0.9 * Math.pow(p.rel, 1.2) + (p.kind === 2 ? T.hutBonus : 0) + (p.kind === 1 ? T.summitBonus : 0) + (p.kind === 3 ? 0.1 : 0) + (p.view ? VIEWPOINT.poiBonus * p.view : 0);
+      let sc = bike ? 0.4 + 1.2 * (aRel - p.rel) : 0.3 + 0.9 * Math.pow(p.rel, 1.2) + (p.kind === 2 ? T.hutBonus : 0) + (p.kind === 1 ? T.summitBonus : 0) + (p.kind === 3 ? 0.1 : 0) + (p.view ? VIEWPOINT.poiBonus * p.view : 0);
       if (!bike && p.rel >= T.topRel) sc += hiker ? T.pullHiker : T.pullOther;
       if (D > allowed) sc -= 0.8 * (D / allowed - 1);
       if (c.skill <= 0 && p.rel > 0.7) sc -= 0.3;
       if (c.storm && p.rel > 0.3) sc -= 0.8;
       sc -= 1.5 * c.avoid(p.tile) + c.penalty(p.tile);
       sc += T.noise * rng.next();
-      scored.push({ tile: p.tile, via: wantLift ? liftTop : -1, rel: p.rel, score: sc, oneWay });
+      scored.push({ tile: p.tile, via: wantLift ? aVia : -1, rel: p.rel, score: sc, oneWay });
     }
     scored.sort((a, b) => b.score - a.score || a.tile - b.tile);
     // reachability: the best candidates must have a hike path from where the guest starts (snow gaps cut off high trail sections)
-    const from = wantLift ? liftTop : Math.floor(c.y) * n + Math.floor(c.x);
     const mode = bike ? NavMode.Bike : NavMode.Hike;
     let best: GoalPick | null = null;
     for (let k = 0; k < Math.min(5, scored.length) && !best; k++) {
       const cand = scored[k]!;
+      const from = wantLift ? cand.via : Math.floor(c.y) * n + Math.floor(c.x);
       let ok = true;
       if (g.standable(mode, from)) {
         let r = g.pf.cached(mode, from, cand.tile);

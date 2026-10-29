@@ -2,7 +2,7 @@ import { EXPLORE } from '../../config/balance';
 import type { GuestStore } from './Guest';
 import { NavMode, type NavGraph } from './NavGraph';
 import { Layer } from '../../world/Networks';
-import type { LiftData } from '../Lift';
+import { liftStations, type LiftData } from '../Lift';
 
 /**
  * Skier exploration (docs/ski-exploration.md). Before this module every run was "lift -> cheapest path back to the same lift's bottom": all skiers of a
@@ -53,8 +53,9 @@ export class Exploration {
     s.recC[slot] = s.recB[slot]!; s.recB[slot] = s.recA[slot]!; s.recA[slot] = liftId + 1;
   }
 
-  private poolFor(g: NavGraph, l: LiftData): number[] {
-    const w = g.world, n = g.size, top = l.top, bot = l.bottom;
+  /** `k` = index of the station the run starts at (default the top; a mid-station of an N-station lift: the stretch from there down to the bottom). */
+  private poolFor(g: NavGraph, l: LiftData, k?: number): number[] {
+    const w = g.world, n = g.size, top = k === undefined ? l.top : liftStations(l)[k]!, bot = l.bottom;
     const dx = bot.x - top.x, dy = bot.y - top.y, len2 = dx * dx + dy * dy || 1, len = Math.sqrt(len2);
     const corridor = Math.max(EXPLORE.corridorMin, len * EXPLORE.corridorFrac);
     const topA = g.tileAltitude(top.y * n + top.x), botA = g.tileAltitude(bot.y * n + bot.x);
@@ -95,12 +96,13 @@ export class Exploration {
   }
 
   /** Candidate via tiles for (lift, difficulty): in the corridor pool, skiable from the top and on to the bottom. Cached per nav epoch. */
-  private valid(g: NavGraph, l: LiftData, d: number): number[] {
-    let c = this.cands.get(l.id);
-    if (!c || c.epoch !== g.epoch) { c = { epoch: g.epoch, pool: this.poolFor(g, l), ok: [undefined, undefined, undefined, undefined] }; this.cands.set(l.id, c); }
+  private valid(g: NavGraph, l: LiftData, d: number, k?: number): number[] {
+    const ck = k === undefined || k === liftStations(l).length - 1 ? l.id : l.id + 1_000_000 * (k + 1); // (per start station)
+    let c = this.cands.get(ck);
+    if (!c || c.epoch !== g.epoch) { c = { epoch: g.epoch, pool: this.poolFor(g, l, k), ok: [undefined, undefined, undefined, undefined] }; this.cands.set(ck, c); }
     let ok = c.ok[d];
     if (!ok) {
-      const mode = NavMode.Ski0 + d, top = g.stationAnchor(l, 1), bottom = g.stationAnchor(l, 0);
+      const mode = NavMode.Ski0 + d, top = k === undefined ? g.stationAnchor(l, 1) : g.stationAnchorAt(l, k), bottom = g.stationAnchor(l, 0);
       const down = this.flood(g, mode, top, true, 6000), up = this.flood(g, mode, bottom, false, 6000);
       ok = c.ok[d] = c.pool.filter((t) => down.has(t) && up.has(t));
     }
@@ -111,12 +113,12 @@ export class Exploration {
    * Pick the via tile for a run starting at the top of `lift` (returns tile + 1, 0 = none: plain cheapest path).
    * Guests at SkiOff skip it (they free-ride).
    */
-  pickVia(s: GuestStore, slot: number, lift: LiftData, rng: { next(): number }): number {
+  pickVia(s: GuestStore, slot: number, lift: LiftData, rng: { next(): number }, fromStation?: number): number {
     const g = this.nav();
     this.picks++;
     if (!this.enabled || !g || s.moveMode[slot] === NavMode.SkiOff) return 0;
     const d = Math.max(0, Math.min(3, s.moveMode[slot]! - NavMode.Ski0));
-    const list = this.valid(g, lift, d);
+    const list = this.valid(g, lift, d, fromStation);
     if (list.length === 0) return 0;
     const n = g.size, skill = s.skill[slot]!, lv = s.via[slot]!, last = lv !== 0 ? Math.abs(lv) - 1 : -1;
     let best = -1, bs = -Infinity;

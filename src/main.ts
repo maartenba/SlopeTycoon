@@ -1061,7 +1061,7 @@ bootStage('lifts');
 const liftTools = liftToolsRef = safely('Lifts', () => registerLiftTools({ lifts,
   grid, props, economy, scene: renderer.scene, camera: renderer.controls.camera, dom: renderer.webgl.domElement, overlays, ui, frame: renderer,
   access: netTools?.networks.access, gate: sim.gate, buildings,
-  toast, isBulldozing: () => bulldozing, refreshProps, onPropsCleared: () => { sim.nature.cover.dirty = true; }, bus, liftOps: sim.liftOps, undo, onProfile: (v) => profileRef?.show(v), snowlineM: snowlineNow, onDemolished: (label, refund) => offerUndo(label, refund),
+  toast, isBulldozing: () => bulldozing, refreshProps, onPropsCleared: () => { sim.nature.cover.dirty = true; }, bus, liftOps: sim.liftOps, undo, guestsAtLift: (id) => undo.guestsAtLift(id), onMidChanged: () => { sim.nature.cover.dirty = true; }, onProfile: (v) => profileRef?.show(v), snowlineM: snowlineNow, onDemolished: (label, refund) => offerUndo(label, refund),
   liftName: (id) => sim.names.liftName(id), renameLift: (id, n) => sim.names.rename('lift', id, n),
   suspendOthers: () => { tools.activate('lift'); },
   resumeOthers: () => tools.release('lift'),

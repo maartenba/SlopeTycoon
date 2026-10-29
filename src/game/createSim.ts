@@ -306,7 +306,7 @@ export function createSim(opts: SimOptions) {
   const runIndex = new RunIndex({
     networks, terrainVersion: () => grid.terrainVersion,
     alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
-    stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; },
+    stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { if (l.stations) for (const st of l.stations) out.push({ x: st.x + 1, y: st.y + 1 }); else out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; }, // (mid-stations split runs too)
   });
   type PisteEntryInfo = Run & { difficulty: number };
   let pisteIdx: { net: RunNetwork | null; map: Map<number, PisteEntryInfo>; list: PisteEntryInfo[] } = { net: null, map: new Map(), list: [] };

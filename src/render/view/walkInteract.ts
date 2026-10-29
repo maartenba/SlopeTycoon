@@ -46,6 +46,8 @@ export interface BoardableLift {
   name: string;
   bottom: { x: number; y: number };
   top: { x: number; y: number };
+  /** N-station lifts: every station bottom -> top (boardable from all but the top one). */
+  stations?: ReadonlyArray<{ x: number; y: number }>;
   open: boolean;
   closedReason?: string | null;
   /** Cable ride time in seconds at the lift's current speed (computeStats().rideTimeS). */
@@ -62,11 +64,15 @@ export function stationDistance(sx: number, sy: number, x: number, z: number, si
   return Math.hypot(dx, dz);
 }
 /** Nearest bottom station within reach (ties: lowest id), or null. */
-export function nearestBoardable<T extends BoardableLift>(lifts: readonly T[], x: number, z: number, reach = BOARD_REACH): { lift: T; dist: number } | null {
-  let best: { lift: T; dist: number } | null = null;
+export function nearestBoardable<T extends BoardableLift>(lifts: readonly T[], x: number, z: number, reach = BOARD_REACH): { lift: T; dist: number; /** Index of the station the walker boards at (0 = the bottom). */ station: number } | null {
+  let best: { lift: T; dist: number; station: number } | null = null;
   for (const l of lifts) {
-    const d = stationDistance(l.bottom.x, l.bottom.y, x, z);
-    if (d <= reach && (!best || d < best.dist - 1e-9 || (Math.abs(d - best.dist) <= 1e-9 && l.id < best.lift.id))) best = { lift: l, dist: d };
+    const n = l.stations && l.stations.length > 2 ? l.stations.length - 1 : 1; // N-station lifts: also from the mid-stations (never the top one)
+    for (let k = 0; k < n; k++) {
+      const st = n === 1 ? l.bottom : l.stations![k]!;
+      const d = stationDistance(st.x, st.y, x, z);
+      if (d <= reach && (!best || d < best.dist - 1e-9 || (Math.abs(d - best.dist) <= 1e-9 && l.id < best.lift.id))) best = { lift: l, dist: d, station: k };
+    }
   }
   return best;
 }

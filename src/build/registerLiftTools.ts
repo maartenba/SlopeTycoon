@@ -3,7 +3,8 @@ import { LIFTS, type LiftKind } from '../config/lifts';
 import type { Grid } from '../world/Grid';
 import type { PropStore } from '../world/Props';
 import type { Economy } from '../sim/Economy';
-import { LiftStore, type LiftEnv, demolishLift, liftStats, rayDistanceToLift, upkeepPerDay, type LiftData, type LiftPlaceOutcome } from '../sim/Lift';
+import { LiftStore, type LiftEnv, demolishLift, liftStats, midCount, rayDistanceToLift, upkeepPerDay, type LiftData, type LiftPlaceOutcome } from '../sim/Lift';
+import { LIFT_MAX_STATIONS } from '../config/balance';
 import { LiftView } from '../render/meshes/lifts';
 import { pickHeightfield } from '../render/Picking';
 import type { Overlays } from '../render/Overlays';
@@ -62,6 +63,10 @@ export interface LiftToolsDeps {
   renameLift?(id: number, name: string): void;
   /** Records lift placements / demolitions for undo. */
   undo?: Undo;
+  /** Guests queueing for / riding a lift (mid-station changes are refused while > 0). */
+  guestsAtLift?(id: number): number;
+  /** A lift got / lost a mid-station (lets the host refresh runs / nav / tips). */
+  onMidChanged?(out: import('../sim/Lift').MidChangeOutcome): void;
   /** A lift was demolished through the inspector / bulldozer (lets the UI offer 'Undo'). */
   onDemolished?(label: string, refund: number): void;
 }
@@ -116,6 +121,7 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
       id: l.id, kind: l.kind, name: d.liftName?.(l.id), open: l.open, speed: l.speed, lengthM: st.lengthM, rideTimeS: st.rideTimeS,
       throughputPerHour: st.throughputPerHour, upkeepPerDay: upkeepPerDay(l), refund: Math.round(l.cost * 0.5),
       activeMode: l.activeMode, closedReason: l.closedReason,
+      mids: LIFTS[l.kind].midStations ? { count: midCount(l), max: LIFT_MAX_STATIONS - 2, picking: tool.midMode === l.id } : undefined,
       ops: ops ? opsInfo(l) : undefined,
     });
   };
@@ -129,7 +135,19 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
     d.onChanged?.();
   };
 
-  const tool = new LiftTool({
+  const lenv = (): LiftEnv => ({ grid: d.grid, lifts, economy: d.economy, access: d.access, gate: d.gate, props: d.props, buildings: d.buildings });
+  const tool: LiftTool = new LiftTool({
+    liftBusy: d.guestsAtLift ? (id) => d.guestsAtLift!(id) > 0 : undefined,
+    placeMids: d.undo ? (id, mids, autoFlatten, clearLane) => d.undo!.setLiftMids(lenv(), d.props, id, mids, autoFlatten, clearLane) : undefined,
+    onMidChanged: (out) => {
+      if (out.lift) view.add(out.lift);
+      if (out.touchedChunks.length) { d.refreshProps(out.touchedChunks); d.onPropsCleared?.(); }
+      const n = out.lift ? midCount(out.lift) : 0;
+      d.toast(out.charged > 0 ? `Mid-station built (-$${out.charged}); the lift now has ${n + 2} stations` : `Mid-station removed (+$${out.refunded}); the lift has ${n + 2} stations`);
+      d.onMidChanged?.(out);
+      showInspector();
+      d.onChanged?.();
+    },
     env: { grid: d.grid, lifts, economy: d.economy, access: d.access, gate: d.gate, props: d.props, buildings: d.buildings }, props: d.props, view,
     place: d.undo ? (kind, bottom, top, autoFlatten, clearLane) => d.undo!.placeLift({ grid: d.grid, lifts, economy: d.economy, access: d.access, gate: d.gate, props: d.props, buildings: d.buildings }, d.props, kind, bottom, top, autoFlatten, clearLane) : undefined, scene: d.scene, camera: d.camera, dom: d.dom, overlays: d.overlays,
     onPlaced: (out: LiftPlaceOutcome) => {
@@ -178,6 +196,8 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
       setOpen: (id, o) => { lifts.setOpen(id, o); d.bus?.emit('lift:opened', { id, open: o }); showInspector(); },
       setSpeed: (id, v) => { lifts.setSpeed(id, v); showInspector(); },
       demolish,
+      addMid: (id) => { if (tool.midMode === id) { tool.cancel(); showInspector(); return; } d.suspendOthers(); if (tool.startMid(id)) { d.onActiveChange?.(null); d.toast('Pick a point on the line (Esc cancels)'); } else d.resumeOthers(); showInspector(); },
+      removeMid: (id, index) => { tool.removeMid(id, index); },
       setMode: (id, m) => { ops?.setMode(id, m); showInspector(); d.onChanged?.(); },
       setHours: (id, f, t) => { ops?.setHours(id, f, t); showInspector(); },
       setDaylight: (id, v) => { ops?.setDaylight(id, v); showInspector(); },
@@ -197,7 +217,7 @@ export function registerLiftTools(d: LiftToolsDeps): LiftTools {
   d.frame.onFrame = (dt): void => { prevFrame?.(dt); view.update(dt); };
 
   const syncView = (): void => {
-    for (const l of lifts.all()) if (!view.has(l.id)) view.add(l);
+    for (const l of lifts.all()) if (!view.has(l.id) || view.dataOf(l.id) !== l) view.add(l); // (an undone mid-station change brings back another record)
     for (const id of view.ids()) if (!lifts.get(id)) view.remove(id);
     if (selected !== null && !lifts.get(selected)) selected = null;
     showInspector();

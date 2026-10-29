@@ -6,7 +6,8 @@ import { LIFT_STATION_SIZE } from '../config/balance';
 import { pickHeightfield, type PickResult } from '../render/Picking';
 import type { Overlays } from '../render/Overlays';
 import type { LiftView } from '../render/meshes/lifts';
-import { placeLift, stationAnchor, validateLift, type LiftCheck, type LiftEnv, type LiftPlaceOutcome, type StationSite } from '../sim/Lift';
+import { LIFT_MAX_STATIONS } from '../config/balance';
+import { liftStations, midSiteOnLine, placeLift, previewMids, setMidStations, stationAnchor, validateLift, type LiftCheck, type LiftEnv, type LiftPlaceOutcome, type MidChangeOutcome, type StationSite } from '../sim/Lift';
 import { routeFacts, snapLift, validKinds, whyNot } from '../sim/LiftAssist';
 import type { PropStore } from '../world/Props';
 import { formatMoney } from '../ui/format';
@@ -21,6 +22,12 @@ export interface LiftToolOptions {
   overlays: Overlays;
   /** Replaces `placeLift` (main wires the undo recorder in here). */
   place?(kind: LiftKind, bottom: StationSite, top: StationSite, autoFlatten: boolean, clearLane: boolean): LiftPlaceOutcome;
+  /** Replaces `setMidStations` (main wires the undo recorder in here). */
+  placeMids?(id: number, mids: StationSite[], autoFlatten: boolean, clearLane: boolean): MidChangeOutcome;
+  /** A mid-station was added / removed through the tool or `removeMid` (Task 39). */
+  onMidChanged?(out: MidChangeOutcome): void;
+  /** True while guests queue for / ride the lift (the change is refused: close it and let it empty). */
+  liftBusy?(id: number): boolean;
   onPlaced(out: LiftPlaceOutcome): void;
   onError(msg: string): void;
   onCancel(): void;
@@ -37,6 +44,12 @@ export class LiftTool {
   /** 'Clear forest lane': cut the trees a cable cannot clear with towers (default ON). */
   clearLane = true;
   private bottom: StationSite | null = null;
+  /** 'Add mid-station' pick mode: the lift being extended (docs/mid-stations.md). */
+  private midLift: number | null = null;
+  private midSite: StationSite | null = null;
+  private midCheck: (LiftCheck & { charge: number }) | null = null;
+  /** Last candidate search (the search validates up to 9 sites; cached per hovered grid cell like the lift cache). */
+  private midCache: { key: string; value: { site: StationSite; chk: LiftCheck & { charge: number }; snapped: boolean } | null } | null = null;
   private pick: PickResult | null = null;
   private preview: { group: THREE.Group; dispose(): void } | null = null;
   private last: LiftCheck | null = null;
@@ -53,12 +66,15 @@ export class LiftTool {
     };
     on(o.dom, 'pointermove', (e: PointerEvent) => this.onMove(e));
     on(window, 'pointerdown', (e: PointerEvent) => this.onDown(e), true);
-    on(o.dom, 'contextmenu', (e: Event) => { if (this.kind) { e.preventDefault(); this.cancel(); } });
+    on(o.dom, 'contextmenu', (e: Event) => { if (this.active) { e.preventDefault(); this.cancel(); } });
     on(window, 'keydown', (e: KeyboardEvent) => this.onKey(e));
   }
 
-  get active(): boolean { return this.kind !== null; }
-  get stage(): 'bottom' | 'top' | null { return this.kind ? (this.bottom ? 'top' : 'bottom') : null; }
+  get active(): boolean { return this.kind !== null || this.midLift !== null; }
+  /** The lift id whose mid-station is being picked (null = not in that mode). */
+  get midMode(): number | null { return this.midLift; }
+  get midPreview(): (LiftCheck & { charge: number }) | null { return this.midCheck; }
+  get stage(): 'bottom' | 'top' | null { return this.midLift !== null ? 'top' : this.kind ? (this.bottom ? 'top' : 'bottom') : null; }
   get lastCheck(): LiftCheck | null { return this.last; }
 
   start(kind: LiftKind): void {
@@ -70,7 +86,54 @@ export class LiftTool {
     this.cache = null;
   }
 
+  /** Start picking a mid-station point on the line of lift `id` (inspector button). False (+ error toast) when the lift cannot have one. */
+  startMid(id: number): boolean {
+    const l = this.o.env.lifts.get(id);
+    if (!l) return false;
+    if (!LIFTS[l.kind].midStations) { this.o.onError(`A ${LIFTS[l.kind].name} cannot have mid-stations (gondolas, cable cars and detachable chairs only)`); return false; }
+    if (liftStations(l).length >= LIFT_MAX_STATIONS) { this.o.onError(`At most ${LIFT_MAX_STATIONS - 2} mid-stations per lift`); return false; }
+    if (this.o.liftBusy?.(id)) { this.o.onError('Guests are queueing for or riding this lift: close it and let it empty first'); return false; }
+    this.clearPreview();
+    this.kind = null; this.bottom = null;
+    this.midLift = id; this.midSite = null; this.midCheck = null; this.midCache = null;
+    return true;
+  }
+
+  /** Remove mid-station `index` (1-based among all stations: 1..n-2) of lift `id`. */
+  removeMid(id: number, index: number): boolean {
+    const l = this.o.env.lifts.get(id);
+    if (!l?.stations || index < 1 || index > l.stations.length - 2) return false;
+    if (this.o.liftBusy?.(id)) { this.o.onError('Guests are queueing for or riding this lift: close it and let it empty first'); return false; }
+    const keep = l.stations.slice(1, -1).filter((_, i) => i + 1 !== index).map((m) => ({ x: m.x, y: m.y }));
+    const out = this.o.placeMids ? this.o.placeMids(id, keep, this.autoFlatten, this.clearLane) : setMidStations(this.o.env, this.o.props, id, keep, this.autoFlatten, this.clearLane);
+    if (!out.ok) { this.o.onError(out.reasons.join(', ')); return false; }
+    this.o.onMidChanged?.(out);
+    return true;
+  }
+
+  /** The best valid spot for a mid-station near the hovered point: the point itself, else the nearest valid one along the line (<= 4 tiles). */
+  private midCandidate(): { site: StationSite; chk: LiftCheck & { charge: number }; snapped: boolean } | null {
+    const l = this.midLift === null ? undefined : this.o.env.lifts.get(this.midLift), p = this.pick;
+    if (!l || !p) return null;
+    const bottom = { x: l.bottom.x, y: l.bottom.y }, top = { x: l.top.x, y: l.top.y };
+    const have = (l.stations ?? []).slice(1, -1).map((m) => ({ x: m.x, y: m.y }));
+    const hovered = midSiteOnLine(this.o.env.grid, bottom, top, p.point.x, p.point.z);
+    const key = `${l.id}|${hovered.x},${hovered.y}|${this.autoFlatten}|${this.clearLane}|${have.length}|${l.tiles.length}`;
+    if (this.midCache?.key === key) return this.midCache.value;
+    const dx = top.x - bottom.x, dy = top.y - bottom.y, len = Math.hypot(dx, dy) || 1;
+    const opts = { autoFlatten: this.autoFlatten, clearLane: this.clearLane };
+    let first: { site: StationSite; chk: LiftCheck & { charge: number } } | null = null;
+    for (const k of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
+      const site = k === 0 ? hovered : stationAnchor(this.o.env.grid, hovered.x + LIFT_STATION_SIZE / 2 + (dx / len) * k, hovered.y + LIFT_STATION_SIZE / 2 + (dy / len) * k);
+      const chk = previewMids(this.o.env, l.id, [...have, site], opts);
+      if (!first) first = { site, chk };
+      if (chk.ok) return (this.midCache = { key, value: { site, chk, snapped: k !== 0 } }).value;
+    }
+    return (this.midCache = { key, value: first ? { ...first, snapped: false } : null }).value;
+  }
+
   cancel(): void {
+    if (this.midLift !== null) { this.midLift = null; this.midSite = null; this.midCheck = null; this.midCache = null; this.clearPreview(); this.o.overlays.hide(); this.o.onCancel(); return; }
     if (!this.kind) return;
     this.kind = null;
     this.bottom = null;
@@ -99,7 +162,29 @@ export class LiftTool {
     return p ? stationAnchor(this.o.env.grid, p.point.x, p.point.z) : null;
   }
 
+  private refreshMid(e?: { clientX: number; clientY: number }): void {
+    const ov = this.o.overlays, l = this.midLift === null ? undefined : this.o.env.lifts.get(this.midLift);
+    this.clearPreview();
+    const x = e?.clientX ?? 0, y = e?.clientY ?? 0;
+    if (!l) { ov.hide(); return; }
+    const c = this.midCandidate();
+    if (!c) { ov.setTooltip({ cost: 0, blocked: false, text: `${LIFTS[l.kind].name}: move along the line to place a mid-station`, x, y }); ov.setColor(0xffee55); return; }
+    this.midSite = c.site; this.midCheck = c.chk;
+    if (c.chk.data) {
+      this.preview = this.o.view.createPreview({ ...c.chk.data, id: -1 }, c.chk.ok);
+      this.o.scene.add(this.preview.group);
+    }
+    ov.setVertexRect(c.site.x, c.site.y, c.site.x + LIFT_STATION_SIZE, c.site.y + LIFT_STATION_SIZE);
+    ov.setColor(!c.chk.ok ? 0xff5555 : c.snapped || c.chk.warnings.length ? 0xffbb33 : 0x66ff66);
+    const st = c.chk.stats;
+    const text = c.chk.ok && st
+      ? `${c.snapped ? 'Snapped to the nearest valid spot \u00b7 ' : ''}Mid-station ${formatMoney(c.chk.charge)} \u00b7 ${liftStations(l).length + 1} stations \u00b7 ride ${Math.round(st.rideTimeS)} s \u00b7 click to build`
+      : c.chk.reasons.slice(0, 3).join(' \u00b7 ');
+    ov.setTooltip({ cost: c.chk.charge, blocked: !c.chk.ok, text: text + (c.chk.warnings.length ? ` \u26a0 ${c.chk.warnings.join(', ')}` : ''), x, y });
+  }
+
   private refresh(e?: { clientX: number; clientY: number }): void {
+    if (this.midLift !== null) { this.refreshMid(e); return; }
     const kind = this.kind, s = this.site();
     const ov = this.o.overlays;
     this.clearPreview();
@@ -153,15 +238,16 @@ export class LiftTool {
   }
 
   private onMove(e: PointerEvent): void {
-    if (!this.kind || e.target !== this.o.dom) return;
+    if (!this.active || e.target !== this.o.dom) return;
     this.pick = this.doPick(e);
     this.refresh(e);
   }
 
   private onDown(e: PointerEvent): void {
-    if (!this.kind || e.button !== 0 || e.target !== this.o.dom) return;
+    if (!this.active || e.button !== 0 || e.target !== this.o.dom) return;
     e.stopImmediatePropagation();
     this.pick = this.doPick(e);
+    if (this.midLift !== null) { this.refresh(e); this.buildMid(); return; }
     const s = this.site();
     if (!s) return;
     if (!this.bottom) { this.bottom = s; this.refresh(e); return; }
@@ -180,8 +266,23 @@ export class LiftTool {
     return true;
   }
 
+  /** Build the previewed mid-station (stays in the mode on failure so the player can aim again; leaves it on success). */
+  private buildMid(): boolean {
+    const id = this.midLift, site = this.midSite, chk = this.midCheck;
+    const l = id === null ? undefined : this.o.env.lifts.get(id);
+    if (!l || !site || !chk) return false;
+    if (!chk.ok) { this.o.onError(chk.reasons.slice(0, 2).join(', ')); return false; }
+    const mids = [...(l.stations ?? []).slice(1, -1).map((m) => ({ x: m.x, y: m.y })), site];
+    const out = this.o.placeMids ? this.o.placeMids(l.id, mids, this.autoFlatten, this.clearLane) : setMidStations(this.o.env, this.o.props, l.id, mids, this.autoFlatten, this.clearLane);
+    if (!out.ok) { this.o.onError(out.reasons.join(', ')); return false; }
+    this.o.onMidChanged?.(out);
+    this.cancel();
+    return true;
+  }
+
   /** Touch (docs/touch.md): commit the previewed station (the Place button / second tap): the bottom one first, then build at the top one. False when nothing is aimed yet. */
   confirm(): boolean {
+    if (this.midLift !== null) return this.pick ? this.buildMid() : false;
     if (!this.kind) return false;
     const s = this.site();
     if (!s) return false;
@@ -191,6 +292,7 @@ export class LiftTool {
 
   /** Touch bar text: what the next tap does / what the previewed line costs or why it is not valid. */
   touchHint(): string {
+    if (this.midLift !== null) { const c = this.midCheck; return !c ? 'Tap the line to aim the mid-station' : c.ok ? `${formatMoney(c.charge)} \u00b7 tap again or \u2713 to build the mid-station` : `\u2716 ${c.reasons[0] ?? 'not valid here'}`; }
     const kind = this.kind;
     if (!kind) return '';
     if (!this.bottom) return `${LIFTS[kind].name}: tap the map for the bottom station`;
@@ -202,7 +304,7 @@ export class LiftTool {
   private onKey(e: KeyboardEvent): void {
     const t = ((e.composedPath?.()[0] as HTMLElement | undefined) ?? e.target) as HTMLElement | null; // the real target: events from inputs inside a shadow root are retargeted to the host
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
-    if (!this.kind) return;
+    if (!this.active) return;
     if (e.key === 'Escape') this.cancel();
     else if (e.key === 'f' || e.key === 'F') { this.autoFlatten = !this.autoFlatten; this.refresh(); }
     else if (e.key === 'l' || e.key === 'L') { this.setClearLane(!this.clearLane); this.refresh(); }

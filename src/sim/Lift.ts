@@ -351,7 +351,7 @@ export interface CarrierState extends PathSample {
  * Loop kinds: `count` carriers evenly spread over the 2*L loop (up strand, then down strand).
  * Reversible kinds: 2 cabins in opposition with dwell at the ends.
  */
-export function carrierStates(l: Pick<LiftData, 'kind' | 'nodes'>, phase: number, path: CablePath = liftPath(l)): CarrierState[] {
+export function carrierStates(l: Pick<LiftData, 'kind' | 'nodes'> & Partial<Pick<LiftData, 'stations'>>, phase: number, path: CablePath = liftPath(l)): CarrierState[] {
   const def = LIFTS[l.kind];
   const P = path.length;
   const out: CarrierState[] = [];
@@ -359,23 +359,64 @@ export function carrierStates(l: Pick<LiftData, 'kind' | 'nodes'>, phase: number
     const s = samplePath(path, d, strand === 0 ? STRAND_OFFSET : -STRAND_OFFSET);
     return { ...s, strand, index };
   };
+  const mids = l.stations && l.stations.length > 2 ? midDistancesOf(l as Pick<LiftData, 'kind' | 'nodes' | 'stations'>, path) : [];
   if (def.reversible) {
+    // reversible: the cabin stops (dwell D) at every station, both ways; mids are visited on the way up and on the way down
     const D = LIFT_DWELL_S * def.speed;
-    const cyc = 2 * (P + D);
-    const u = ((phase % cyc) + cyc) % cyc;
-    let a: number;
-    if (u < D) a = 0; else if (u < D + P) a = u - D; else if (u < 2 * D + P) a = P; else a = P - (u - 2 * D - P);
+    const stops = [0, ...mids, P];
+    const seq: Array<{ len: number; from: number; to: number }> = []; // len = rope tiles; from == to is a dwell
+    for (let k = 0; k < stops.length; k++) { seq.push({ len: D, from: stops[k]!, to: stops[k]! }); if (k + 1 < stops.length) seq.push({ len: stops[k + 1]! - stops[k]!, from: stops[k]!, to: stops[k + 1]! }); }
+    for (let k = stops.length - 1; k >= 0; k--) { if (k < stops.length - 1 && k > 0) seq.push({ len: D, from: stops[k]!, to: stops[k]! }); if (k > 0) seq.push({ len: stops[k]! - stops[k - 1]!, from: stops[k]!, to: stops[k - 1]! }); }
+    const cyc = seq.reduce((a, q) => a + q.len, 0);
+    let u = ((phase % cyc) + cyc) % cyc, a = 0;
+    for (const q of seq) { if (u < q.len || q === seq[seq.length - 1]) { a = q.from === q.to ? q.from : q.from + (q.to - q.from) * Math.min(1, u / q.len); break; } u -= q.len; }
     out.push(at(a, 0, 0), at(P - a, 1, 1));
     return out;
   }
-  const loop = 2 * P;
+  // Detachable loop: carriers slow to a crawl in a zone around each mid-station (rope coordinate r -> path distance d, see `ropeToPath`).
+  const E = mids.length ? MID_SLOW_EXTRA : 0;
+  const ropeLen = P + mids.length * E;
+  const loop = 2 * ropeLen;
   const count = Math.max(2, Math.floor(loop / def.carrierSpacing));
   for (let i = 0; i < count; i++) {
     const s = ((((phase + (i * loop) / count) % loop) + loop) % loop);
-    if (s < P) out.push(at(s, 0, i));
-    else out.push(at(2 * P - s, 1, i));
+    if (s < ropeLen) out.push(at(ropeToPath(s, mids, P), 0, i));
+    else out.push(at(ropeToPath(2 * ropeLen - s, mids, P), 1, i));
   }
   return out;
+}
+
+/** Visual carrier slow-down around a mid-station (docs/mid-stations.md): zone length (tiles of cable), and the rope tiles it adds: carriers crawl at 1/10 of the line speed there. */
+export const MID_SLOW_ZONE = 4;
+export const MID_SLOW_EXTRA = MID_SLOW_ZONE * 9;
+
+/** Path distance of every mid-station (slant tiles from the bottom). */
+export function midDistancesOf(l: Pick<LiftData, 'kind' | 'nodes' | 'stations'>, path: CablePath): number[] {
+  const pi = nodePointIndex(l.nodes, LIFT_PARAMS[l.kind].sag);
+  return l.stations!.slice(1, -1).map((s) => path.cum[Math.min(path.cum.length - 1, pi[s.node]!)]!);
+}
+
+/** Cable distance -> rope coordinate (inverse of `ropeToPath`). */
+export function pathToRope(d: number, mids: number[]): number {
+  let r = d;
+  const hz = MID_SLOW_ZONE / 2;
+  for (const m of mids) r += MID_SLOW_EXTRA * Math.max(0, Math.min(1, (d - (m - hz)) / MID_SLOW_ZONE));
+  return r;
+}
+
+/** Rope coordinate -> cable distance: free running at the line speed, 1/10 of it inside the MID_SLOW_ZONE around each mid-station. Monotone, continuous. */
+export function ropeToPath(r: number, mids: number[], P: number): number {
+  if (!mids.length) return Math.max(0, Math.min(P, r));
+  const hz = MID_SLOW_ZONE / 2;
+  let rope = 0, d = 0; // rope / path position of the segment start
+  for (const m of mids) {
+    const a = m - hz, b = m + hz; // zone start / end on the path
+    if (r <= rope + (a - d)) return d + (r - rope);
+    rope += a - d; d = a;
+    if (r <= rope + hz * 2 + MID_SLOW_EXTRA) return d + ((r - rope) / (MID_SLOW_ZONE + MID_SLOW_EXTRA)) * MID_SLOW_ZONE;
+    rope += MID_SLOW_ZONE + MID_SLOW_EXTRA; d = b;
+  }
+  return Math.min(P, d + (r - rope));
 }
 
 // ---------- validation ----------
@@ -954,6 +995,15 @@ export class LiftStore {
     return l;
   }
 
+  /** Put back a record taken out with `remove` (the SAME object: views and systems hold references) at store position `index`. */
+  attach(l: LiftData, index: number): LiftData {
+    const list = [...this.items.values()];
+    list.splice(Math.max(0, Math.min(index, list.length)), 0, l);
+    this.items = new Map(list.map((x) => [x.id, x]));
+    for (const t of l.tiles) this.occ.set(t % this.occ.size, Math.floor(t / this.occ.size), OccFlag.Lift, l.id);
+    return l;
+  }
+
   remove(id: number): LiftData | null {
     const l = this.items.get(id);
     if (!l) return null;
@@ -1017,6 +1067,90 @@ export function placeLift(
   fin.data.cost = total;
   const lift = env.lifts.add(fin.data);
   return { ok: true, reasons: [], lift, cost: total, touchedChunks: touched };
+}
+
+export interface MidChangeOutcome {
+  ok: boolean; reasons: string[];
+  /** The lift after the change (same id, same store position, ops / speed / mode / counters kept). */
+  lift?: LiftData;
+  /** The exact record before the change (for undo). */
+  previous?: LiftData;
+  /** Dollars charged (adding a mid-station: the price difference) or 0. */
+  charged: number;
+  /** Dollars refunded (removing one: half the price difference) or 0. */
+  refunded: number;
+  touchedChunks: number[];
+}
+
+/**
+ * Add / move / remove the mid-stations of an existing lift (docs/mid-stations.md, Task 39): the lift is re-planned between its unchanged terminals
+ * with the new mid-station list (`[]` = back to an ordinary 2-station lift). Same id and store position; operations, speed, mode and counters are kept.
+ * Price: adding charges the difference to the new total (a mid-station costs as much as a terminal plus the extra cable and towers); removing refunds
+ * half of the difference. The caller makes sure nobody is queueing for or riding the lift. All-or-nothing: on any failure the old lift is back untouched.
+ */
+export function setMidStations(env0: LiftEnv, props: PropStore | undefined, id: number, mids: StationSite[], autoFlatten = true, clearLane = true): MidChangeOutcome {
+  const env: LiftEnv = env0.props || !props ? env0 : { ...env0, props };
+  const fail = (reasons: string[], touchedChunks: number[] = []): MidChangeOutcome => ({ ok: false, reasons, charged: 0, refunded: 0, touchedChunks });
+  const old = env.lifts.get(id);
+  if (!old) return fail(['The lift is gone']);
+  const previous = structuredClone(old);
+  const index = env.lifts.indexOf(id);
+  const bottom: StationSite = { x: old.bottom.x, y: old.bottom.y }, top: StationSite = { x: old.top.x, y: old.top.y };
+  const back = (): void => { env.lifts.attach(old, index); };
+  env.lifts.remove(id); // its own tiles must not block the re-plan
+  const chk = validateLift(env, old.kind, bottom, top, { autoFlatten, clearLane, mids: mids.length ? mids : undefined, skipFunds: true });
+  if (!chk.ok || !chk.data) { back(); return fail(chk.reasons); }
+  const total = chk.cost + chk.flattenCost;
+  const adding = mids.length > midCount(previous);
+  const cost = adding ? Math.max(total, previous.cost) : Math.min(total, previous.cost);
+  const charged = adding ? Math.max(0, Math.round(cost - previous.cost)) : 0;
+  const refunded = adding ? 0 : Math.round(0.5 * Math.max(0, previous.cost - cost));
+  if (charged > 0 && !env.economy.charge(charged)) { back(); return fail(['Not enough funds']); }
+  const touched: number[] = [], applied: CornerChange[] = [];
+  for (const plan of chk.flattenPlan) {
+    const r = flattenRect(env.grid, { vx0: plan.site.x, vy0: plan.site.y, vx1: plan.site.x + S, vy1: plan.site.y + S }, plan.target, flattenOpts(env, plan.edge, true, props));
+    applied.push(...r.changed); touched.push(...r.touchedChunks);
+  }
+  const fin = validateLift(env, old.kind, bottom, top, { autoFlatten: false, skipFunds: true, clearLane, mids: mids.length ? mids : undefined });
+  if (!fin.ok || !fin.data) {
+    for (let i = applied.length - 1; i >= 0; i--) { const c = applied[i]!; env.grid.setCornerUnchecked(c.vx, c.vy, c.from); }
+    if (charged > 0) env.economy.refund(charged);
+    back();
+    return fail(fin.reasons, touched);
+  }
+  if (fin.lane && fin.lane.count > 0 && props) touched.push(...applyLane(props, fin.lane));
+  for (const t of fin.data.tiles) props?.removeInRect(t % env.grid.size, Math.floor(t / env.grid.size), t % env.grid.size, Math.floor(t / env.grid.size), touched);
+  const next: LiftData = { ...previous, bottom: fin.data.bottom, top: fin.data.top, towers: fin.data.towers, nodes: fin.data.nodes, tiles: fin.data.tiles, cost };
+  if (fin.data.stations) next.stations = fin.data.stations; else delete next.stations;
+  if (refunded > 0) env.economy.refund(refunded);
+  env.lifts.reinsert(next, index);
+  return { ok: true, reasons: [], lift: env.lifts.get(id), previous, charged, refunded, touchedChunks: touched };
+}
+
+/** Dry run of `setMidStations` (validation only, nothing is changed, the lift is put back): the check plus the money it would cost / refund. */
+export function previewMids(env: LiftEnv, id: number, mids: StationSite[], opts: ValidateOpts = {}): LiftCheck & { charge: number } {
+  const old = env.lifts.get(id);
+  const bad = (r: string): LiftCheck & { charge: number } => ({ ok: false, reasons: [r], cost: 0, flattenCost: 0, flatten: false, flattenPlan: [], supportCost: 0, stats: null, warnings: [], data: null, charge: 0 });
+  if (!old) return bad('The lift is gone');
+  const index = env.lifts.indexOf(id);
+  env.lifts.remove(id);
+  try {
+    const chk = validateLift(env, old.kind, { x: old.bottom.x, y: old.bottom.y }, { x: old.top.x, y: old.top.y }, { ...opts, mids: mids.length ? mids : undefined, skipFunds: true });
+    const total = chk.cost + chk.flattenCost;
+    const charge = Math.max(0, Math.round(Math.max(total, old.cost) - old.cost));
+    if (chk.ok && charge > 0 && !env.economy.canAfford(charge)) { chk.ok = false; chk.reasons.push(`Not enough funds ($${charge})`); }
+    return Object.assign(chk, { charge });
+  } finally {
+    env.lifts.attach(old, index);
+  }
+}
+
+/** The mid-station site nearest to the hovered point `(cx, cy)` (tile units) that lies on the straight line of the lift: the point projected on the line, snapped to the 2x2 grid. */
+export function midSiteOnLine(grid: Grid, bottom: StationSite, top: StationSite, cx: number, cy: number): StationSite {
+  const bc = { x: bottom.x + S / 2, z: bottom.y + S / 2 }, tc = { x: top.x + S / 2, z: top.y + S / 2 };
+  const dx = tc.x - bc.x, dz = tc.z - bc.z, L2 = dx * dx + dz * dz || 1;
+  const u = Math.max(0, Math.min(1, ((cx - bc.x) * dx + (cy - bc.z) * dz) / L2));
+  return stationAnchor(grid, bc.x + dx * u, bc.z + dz * u);
 }
 
 /** Remove a lift with 50% refund of its build cost. */
