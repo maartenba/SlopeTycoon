@@ -24,6 +24,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'landscape', id: 'river', level: 2 },
   // Level 3 (Regional name): the heavy transport.
   { kind: 'lift', id: 'funicular', level: 3 },
+  // Level 3: the high-speed six-seat chair (Phase 6, Task 47; no goal or Advisor rule needs it).
+  { kind: 'lift', id: 'chair6d', level: 3 },
   // Level 3: the big solar plant (small hydro needs a stream and $11k: self-limiting, always open).
   { kind: 'building', id: 'solarPlant', level: 3 },
   // Level 4 (Alpine destination): rescue by air and the biggest cabins / chairs.
