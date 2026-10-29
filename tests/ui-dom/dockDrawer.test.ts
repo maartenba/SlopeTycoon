@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { registerComponents, el } from '../../src/ui';
 import type { DockApi, StDock } from '../../src/ui/components/StDock';
@@ -64,4 +65,29 @@ describe('low-profile build drawer (DOM)', () => {
     expect(dock.drawerOpen).toBe(false);
     dock.remove();
   });
+});
+
+describe('tab strip never clips (DOM)', () => {
+  for (const drawer of ['buildings', 'landscape'] as const) {
+    it(`${drawer}: every tab is a reachable nowrap button in a scrollable strip with edge arrows`, () => {
+      const { dock } = mount();
+      dock.show(drawer);
+      const wrap = q(dock, '.head .tabsw')!;
+      expect(wrap).toBeTruthy();
+      const tabs = wrap.querySelector<HTMLElement>('.tabs')!;
+      expect(tabs.querySelectorAll('button').length).toBeGreaterThanOrEqual(drawer === 'buildings' ? 7 : 3);
+      // CSS contract (happy-dom has no layout): the strip scrolls, tabs never shrink or wrap, arrows exist
+      const css = readFileSync('src/ui/components/StDock.ts', 'utf8');
+      expect(css).toMatch(/\.tabs\{[^}]*overflow-x:auto/);
+      expect(css).toMatch(/\.tabs button\{flex:none;white-space:nowrap\}/);
+      expect(wrap.querySelector('.tn.l')).toBeTruthy();
+      expect(wrap.querySelector('.tn.r')).toBeTruthy();
+      // clicking each tab switches to it (all reachable)
+      for (const b of Array.from(tabs.querySelectorAll<HTMLElement>('button'))) {
+        const id = b.dataset.tab!;
+        b.click();
+        expect(q(dock, `.head .tabs button[data-tab="${id}"]`)!.classList.contains('active')).toBe(true);
+      }
+    });
+  }
 });

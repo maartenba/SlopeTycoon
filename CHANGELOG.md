@@ -4,11 +4,16 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Added
+
+- **Rivers, groundwork** (no tool yet): the data model and planner for digging a river from a spring, lake shore or stream down to a lake, a stream or the map edge (1 tile wide, cut at most 6 steps deep per tile, cost and plain-language refusals), saves, undo, and 1-3 natural spring sites per map derived from the seed without changing the terrain. Nothing changes in existing games until a river is dug (`docs/rivers.md`).
+
 ### Changed
 
 - **Quiet seasonal closures**: when several attractions close for the same seasonal reason within a few seconds (no snow, too warm, out of season) the game shows ONE toast (*3 winter attractions closed for summer: Magic Carpet, Ice Rink, Heated Terrace*, with a *Go to* for the first) instead of a stack; each attraction toasts once per season, and the News keeps one row per reason and day. Breakdowns, storms, avalanches and other surprises still get their own toast.
 - **Pricing sliders**: the − and + buttons now sit on the same row as the slider (− slider +, vertically centred, 28 px; 44 px on touch) instead of above and below it, and the Pricing rows fold into two tidy lines on phones.
 - **Build cards**: long names such as *Lodge/Restaurant* wrap at the slash instead of in the middle of a word.
+- **Drawer tabs never clip**: the Buildings and Landscape tab strips (and the Operations tabs) scroll sideways with small ◀ ▶ arrows that appear only when more tabs are hidden, keep the chosen tab in view, and fade a half-visible card at the rail edge so no stray price fragment ("$2") peeks out.
 - **Website screenshots**: toasts are hidden in all screenshots; the bridges shot shows the four bridge kinds over a real one-tile stream without any stand-in markers; the update-card and crossings shots are closer.
 
 ## [0.2.5] - 2026-10-29 (pre-release)

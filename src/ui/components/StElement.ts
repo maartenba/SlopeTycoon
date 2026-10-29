@@ -43,7 +43,9 @@ input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3
 input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: #2b3d54; border: 1px solid #40536d; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe29a, #e0a030); border: 1px solid #fff3; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
 input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #e0a030; border: 1px solid #fff3; }
-.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--c-border-soft); }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--c-border-soft); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs > * { flex: none; white-space: nowrap; }
 .tab, button.tab { background: transparent; border: 1px solid transparent; border-bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; padding: 5px 14px; color: var(--c-muted); font-weight: 700; margin-bottom: -1px; }
 .tab:hover:not(:disabled) { background: rgba(255,255,255,.06); color: #fff; border-color: transparent; }
 .tab.active, button.tab.active { background: rgba(255,255,255,.08); color: var(--c-accent-text); border-color: var(--c-border-soft); border-bottom: 1px solid #1a2331; }

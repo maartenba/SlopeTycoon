@@ -98,15 +98,21 @@ const css = `
 .head h3{margin:0;font-size:calc(13px * var(--ui-scale, 1));color:#ffd070;white-space:nowrap}
 .head .grow{flex:1 1 0;min-width:0}
 .flat{display:flex;gap:5px;align-items:center;padding:3px 8px;border-radius:4px;background:rgba(224,160,48,.22);border:1px solid #e0a030;font-weight:600;cursor:pointer;white-space:nowrap}
-.tabs{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;flex:1 1 220px;min-width:0;scrollbar-width:none}
+.tabsw{display:flex;align-items:center;gap:2px;flex:1 1 220px;min-width:0}
+.tabs{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;flex:1 1 auto;min-width:0;scrollbar-width:none;scroll-behavior:smooth}
 .tabs::-webkit-scrollbar{display:none}
-.tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);padding-right:10px}
 .tabs button{flex:none;white-space:nowrap}
+.tabsw .tn{flex:none;width:26px;min-width:0;padding:0;height:28px;visibility:hidden}
+.tabsw.can-l .tn.l,.tabsw.can-r .tn.r{visibility:visible}
+@media (pointer:coarse){.tabsw .tn{width:44px;height:44px}.tabs button{min-height:44px}}
 .body{display:flex;gap:8px;min-height:0;overflow:hidden}
 .rail{position:relative;flex:1;min-width:0;display:flex}
 .grid{flex:1;min-width:0;display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding:0 8px;padding:2px 2px 6px;height:128px;box-sizing:border-box;overscroll-behavior:contain}
 .grid::-webkit-scrollbar{height:6px}
 .grid::-webkit-scrollbar-thumb{background:#5a7090;border-radius:3px}
+.rail.can-r .grid{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
+.rail.can-l.can-r .grid{-webkit-mask-image:linear-gradient(90deg,transparent,#000 44px,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,transparent,#000 44px,#000 calc(100% - 44px),transparent)}
+.rail.can-l:not(.can-r) .grid{-webkit-mask-image:linear-gradient(90deg,transparent,#000 44px);mask-image:linear-gradient(90deg,transparent,#000 44px)}
 .fade{position:absolute;top:0;bottom:8px;width:34px;display:none;align-items:center;pointer-events:none;z-index:2}
 .fade.l{left:0;justify-content:flex-start;background:linear-gradient(90deg,rgba(20,28,40,.95),rgba(20,28,40,0))}
 .fade.r{right:0;justify-content:flex-end;background:linear-gradient(270deg,rgba(20,28,40,.95),rgba(20,28,40,0))}
@@ -422,6 +428,41 @@ export class StDock extends StElement {
     return networkSeason(id as NetworkItem['key']);
   }
 
+  /** Tab strip that never clips: scrolls sideways with edge arrows (shown only when more tabs hide that way) and keeps the active tab in view. */
+  private tabStrip(items: ReadonlyArray<{ id: string; icon: string; label: string }>, active: string, pick: (id: string) => void): HTMLElement {
+    const wrap = el('div', 'tabsw');
+    const tabs = el('div', 'tabs');
+    for (const t of items) {
+      const b = el('button', t.id === active ? 'active' : '', `${t.icon} ${t.label}`);
+      b.dataset.tab = t.id;
+      b.addEventListener('click', () => pick(t.id));
+      tabs.appendChild(b);
+    }
+    const mk = (cls: 'l' | 'r', label: string, dir: number): HTMLElement => {
+      const n = el('button', `tn ${cls}`, label);
+      n.setAttribute('aria-label', dir < 0 ? 'Previous tabs' : 'More tabs');
+      n.tabIndex = -1;
+      n.addEventListener('click', () => { tabs.scrollBy({ left: dir * Math.max(80, tabs.clientWidth * 0.6), behavior: 'smooth' }); });
+      return n;
+    };
+    const sync = (): void => {
+      wrap.classList.toggle('can-l', tabs.scrollLeft > 2);
+      wrap.classList.toggle('can-r', tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 2);
+    };
+    tabs.addEventListener('scroll', sync, { passive: true });
+    wrap.append(mk('l', '◀', -1), tabs, mk('r', '▶', 1));
+    const act = tabs.querySelector<HTMLElement>('button.active');
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
+      if (act) {
+        const l = act.offsetLeft - tabs.offsetLeft;
+        if (l < tabs.scrollLeft) tabs.scrollLeft = Math.max(0, l - 8);
+        else if (l + act.offsetWidth > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = l + act.offsetWidth - tabs.clientWidth + 8;
+      }
+      sync();
+    });
+    return wrap;
+  }
+
   /** Sort the cards of a built drawer by season relevance (stable) and move the DOM nodes in place; refresh number badges, dimming and season badges. */
   private orderCards(b: Built): void {
     if (b.drawer !== 'buildings' && b.drawer !== 'lifts' && b.drawer !== 'pistes') return;
@@ -489,27 +530,10 @@ export class StDock extends StElement {
     this.head.replaceChildren(el('h3', '', this.drawerTitle(open)));
     this.body.replaceChildren();
     if (open === 'buildings') {
-      const tabs = el('div', 'tabs');
-      for (const t of BUILDING_TABS) {
-        const b = el('button', t.id === this.tab ? 'active' : '', `${t.icon} ${t.label}`);
-        b.dataset.tab = t.id;
-        b.addEventListener('click', () => { this.tab = t.id; this.hover = null; this.renderDrawer(); });
-        tabs.appendChild(b);
-      }
-      this.head.appendChild(tabs);
-      // the strip scrolls sideways on narrow windows: keep the chosen tab in view (the Energy tab sits at the far end)
-      const act = tabs.querySelector<HTMLElement>('button.active');
-      if (act && typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { tabs.scrollLeft = Math.max(0, act.offsetLeft + act.offsetWidth - tabs.clientWidth + 28); });
+      this.head.appendChild(this.tabStrip(BUILDING_TABS, this.tab, (id) => { this.tab = id as BuildingTab; this.hover = null; this.renderDrawer(); }));
     }
     if (open === 'landscape') {
-      const tabs = el('div', 'tabs');
-      for (const t of LAND_TABS) {
-        const b = el('button', t.id === this.landTab ? 'active' : '', `${t.icon} ${t.label}`);
-        b.dataset.tab = t.id;
-        b.addEventListener('click', () => { this.landTab = t.id; this.activateLandTab(); this.renderDrawer(); });
-        tabs.appendChild(b);
-      }
-      this.head.appendChild(tabs);
+      this.head.appendChild(this.tabStrip(LAND_TABS, this.landTab, (id) => { this.landTab = id as LandTab; this.activateLandTab(); this.renderDrawer(); }));
     }
     if (open !== 'buildings' && open !== 'landscape') this.head.appendChild(el('span', 'grow'));
     this.chip = null;
