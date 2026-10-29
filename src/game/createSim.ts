@@ -56,6 +56,7 @@ import { Coverage, type NetworkProvider } from '../sim/Coverage';
 import { networkProviderFrom } from '../build/NetworkAdapter';
 import { heightAt } from '../render/Picking';
 import { Nature } from '../sim/nature/Nature';
+import { FlowModel, riverHabitatPoints } from '../sim/nature/Flow';
 import { Marketing } from '../sim/Marketing';
 import { EVENING_VENUES, FOOD } from '../sim/guests/Decision';
 import { accepts as elasticAccepts, affordShare, demandMultiplier, mixVolume } from '../sim/Elasticity';
@@ -288,6 +289,9 @@ export function createSim(opts: SimOptions) {
     multiplier: () => economy.constructionMultiplier(),
   });
 
+  // Flow model of every waterway + ice of dug rivers (Phase 6 Tasks 15 / 17): lazy table, nothing per tick, saved only inside the `rivers` module.
+  const flow = new FlowModel({ natural: () => terrainInfo.streams, rivers: () => rivers });
+
   // ---- Sim-driven season (weather + per-tile snow, altitude-dependent snowline) ----
   const worldScale = worldScaleFor(size);
   const weather = new Weather(seed, worldScale, game.date);
@@ -338,7 +342,7 @@ export function createSim(opts: SimOptions) {
     runs: () => pisteIndex().list, runId: (r) => names.pisteId(r as Run), runClosed: (id) => runSettings.isClosed(id),
     runNodes: () => runIndex.network().nodes.map((n) => ({ tiles: n.tiles, runs: [...n.runsOut, ...n.runsIn] })),
   });
-  const weatherSystem = createWeatherSystem(weather, snow, { bus, onDay: () => { openStatus.evaluate(); hooks.onDay?.(); } });
+  const weatherSystem = createWeatherSystem(weather, snow, { bus, onDay: () => { flow.onDay(game.date.day, weather.current.valleyT); openStatus.evaluate(); hooks.onDay?.(); } });
   registry.replace(weatherSystem);
   openStatus.evaluate();
 
@@ -535,7 +539,7 @@ export function createSim(opts: SimOptions) {
     version: () => networks.version,
     instability: (i) => safety.avalanche.inst[i] ?? 0,
     weather: () => ({ wind: weather.current.wind }),
-    frozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0,
+    frozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0 || flow.anyDugFrozen(),
     disturb: (x, y, r) => { const f = natureRef?.fauna; if (f) for (const a of f.animals) if ((a.x - x) ** 2 + (a.y - y) ** 2 <= r * r) a.flee = Math.max(a.flee, FAUNA.fleeTicks); },
   });
   const attractions = new AttractionSystem({
@@ -624,7 +628,7 @@ export function createSim(opts: SimOptions) {
       return habitatTiles.length ? built / habitatTiles.length : 0;
     },
     protection: () => staffUpgrades.wildlifeProtection(),
-    bonus: () => energy.recyclingBonus(),
+    bonus: () => energy.recyclingBonus() + riverHabitatPoints(rivers.rivers),
     eco: () => eco.points(),
     motor: () => tours.motorPenalty(),
     trainShare: () => (opts.campaignsV2 !== false ? marketingRef?.railShare() ?? null : null),
@@ -950,6 +954,7 @@ export function createSim(opts: SimOptions) {
   const jumpToDay = (dayOfYear: number, hour = 8): void => {
     jumpTo(game.date, dayOfYear, hour);
     weather.rollDay(game.date);
+    flow.settle(game.date.day, weather.current.valleyT);
     snow.settle(game.date);
     weatherSystem.resync();
     ops.settle(game);
@@ -1131,7 +1136,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    tours, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv,
+    tours, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,

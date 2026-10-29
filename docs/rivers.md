@@ -6,7 +6,7 @@ Developer notes for dug rivers and spring sites. Status: **data model + planner 
 
 - `src/world/Rivers.ts` — `Rivers` store: `rivers: RiverRec[]` (`path`, `level[]`, `source`, `sink`, `end`, `carved[]`, `cost`), `springs` (player-placed), `natural` (derived overlay), `version`, `onChange`. `createSim` builds it as `sim.rivers`; `sim.riverEnv()` returns the planner environment (lakes + ponds, network layers, lift clearance, construction multiplier, props).
 - A river is a polyline of 4-connected tiles. Committed tiles become `TileType.Stream` + `OccFlag.Water`, exactly like natural streams, so everything that already treats streams as water works unchanged: buildings are refused (`Cannot build on a stream`), the hydro rule sees a stream bank, pistes are refused (`PISTE_WATER_MSG`), rail cannot cross, paths and trails bridge them.
-- `waterways(natural, dug)` in `Streams.ts` is the one read model (`{ id: 'n0' | 'r1', kind, path, level, end }`). Flow `Q`, speed and the flow class are layered on it by Task 15.
+- `waterways(natural, dug)` in `Streams.ts` is the one read model (`{ id: 'n0' | 'r1', kind, path, level, end }`). Flow `Q`, speed and the flow class are layered on it by Task 15 (see Flow).
 - **Carved heights live in the saved `grid` module** (heights, tile types, occupancy). The `rivers` module keeps the records + the exact corner diff (`carved: { v, from, to }`) so a river can be filled back in. It is `omitWhenNull`: `serialize()` is `null` while there are no rivers and no player springs, so saves and `stateHash` of every world without them are byte-identical to before (no new flag needed; nothing exists until the player digs).
 
 ## RiverPlanner (`src/world/RiverPlanner.ts`, pure)
@@ -32,6 +32,17 @@ Developer notes for dug rivers and spring sites. Status: **data model + planner 
 ## Tests
 
 `tests/world/riverPlanner.test.ts` (synthetic slopes: fall line, ridge carve, deep refusal, uphill, blockers, detour, endpoints, merge, lake outlet / sink, branch, lift veto, fill-in; seeds 61 / 7 / 5 on 128: spring → lake; `[perf]` 256), `tests/world/springSites.test.ts` (determinism, no writes, rule, ≥ 90 % coverage, inert hash, player springs), `tests/world/terrainGolden.test.ts` (**byte-identical terrain for seeds 1-20 x 64 / 128 / 256**, recorded before this work, also after deriving sites), `tests/persist/rivers.test.ts` (save / load / in-place hash equality, old saves, undo / redo).
+
+## Flow (`src/sim/nature/Flow.ts`, Task 15; constants `FLOW` in `config/rivers.ts`)
+
+- `computeFlow(natural, rivers, seasonFactor, frozen?)` is pure; `sim.flow` (`FlowModel`) caches it and recomputes **lazily**: only when `Rivers.version`, the SIM month or the ice state changes. Nothing runs per tick.
+- **Q per tile** = source base (natural stream head 1, spring 1, lake outlet 2, branch = 0.5 x the parent's Q at the `via` tile) + the Q at the mouth of every tributary that merges upstream of the tile (`end: 'merge'`, found by the sink tile or an adjacent foreign waterway tile). Cycles fall back to 1.
+- **Season factor by sim month**: Apr / May x1.5 (snowmelt), Jun / Jul x1, Aug / Sep x0.7 (late-summer low), Oct / Nov x0.8, winter x1.
+- **Speed** `v = (0.3 + 0.7 x slope) x sqrt(clamp(Q x season, 0.25, 4))`, slope = half-steps of drop per tile over a +-2 tile window, capped at 2.2. **Classes**: calm `< 0.7`, brisk `< 1.3`, rapids `>= 1.3`.
+- Natural streams get the same model (base 1 at the head); they have **no ice state** (the global render freeze keeps driving their winter look).
+- Effects: river tiles are `TileType.Stream` + `OccFlag.Water`, so buildings are refused, pistes are refused (**the old "pistes paintable over streams" bug is already fixed in `Networks.canPaint`**, pinned by `tests/world/strokes.test.ts` and, for dug rivers, `tests/sim/nature/flow.test.ts`), rail is refused, paths / trails bridge them. Beach / boat rental adjacency uses `Buildings.lakeTiles` (lakes and ponds only, never rivers). Snowmaking keeps its existing reservoir behaviour (rivers are not an intake in v1). Fauna drinking is not modelled (no fauna behaviour changed, so no hash moved).
+- **Habitat**: `riverHabitatPoints` adds up to +2 sustainability points (+1 per 40 dug river tiles) through the existing `bonus` input; 0 without dug rivers.
+- **Hash**: the table is never saved or hashed. The only saved flow state is the ice of dug rivers (Task 17), written inside the `rivers` module, which is absent while no river / spring exists, so every world without dug rivers keeps its `stateHash`.
 
 ## Not yet (later tasks)
 

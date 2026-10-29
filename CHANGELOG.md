@@ -8,6 +8,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 - **Rivers, groundwork** (no tool yet): the data model and planner for digging a river from a spring, lake shore or stream down to a lake, a stream or the map edge (1 tile wide, cut at most 6 steps deep per tile, cost and plain-language refusals), saves, undo, and 1-3 natural spring sites per map derived from the seed without changing the terrain. Nothing changes in existing games until a river is dug (`docs/rivers.md`).
 
+- **River flow, groundwork**: every stream and dug river now has a discharge (springs, lake outlets, branches and merging tributaries add up), a seasonal factor (snowmelt in spring, low water in late summer) and a calm / brisk / rapids class from its drop per tile. A river adds a little wildlife-habitat sustainability. Nothing changes in games without a dug river (`docs/rivers.md`).
+
 - **N-station lifts, groundwork** (no tool yet): a gondola, cable car or detachable chair can now have one or two mid-stations in the model. Every segment is checked on its own, the mid-station gets a flat pad and towers keep 2 tiles away, guests can ride between any two stations and get off nearest their goal, no carrier ever exceeds its capacity, and saves gain an optional station list (format 3; every existing lift stays a plain two-station lift). Nothing changes in existing games (`docs/mid-stations.md`).
 
 ### Changed
