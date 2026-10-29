@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { el, registerComponents } from '../../src/ui';
 import { EventBus } from '../../src/core/EventBus';
 import type { GameEvents } from '../../src/core/events';
-import type { NewsItem } from '../../src/ui/newsFormat';
+import { formatEvent, type NewsItem } from '../../src/ui/newsFormat';
 import { CameraController, FOCUS_ZOOM, focusPose } from '../../src/render/CameraController';
 
 registerComponents();
@@ -76,5 +76,20 @@ describe('camera focus tween', () => {
     expect(cam.zoom).toBeGreaterThanOrEqual(cam.minZoom); expect(cam.zoom).toBeLessThanOrEqual(z0 + 1e-9);
     cam.focusOn(50, 50); cam.pan(1, 0); expect(cam.focusing).toBe(false);
     cam.dispose();
+  });
+});
+
+describe('seasonal closures in the news', () => {
+  it('feed keeps one row per kind and day, and onSeasonal sees every closure', () => {
+    const bus = new EventBus<GameEvents>();
+    const news = el('st-news'); document.body.append(news);
+    const seen: number[] = [], onItem = vi.fn();
+    news.bind(bus, { stamp: () => '', muted: () => new Set(), setMuted: () => undefined, onItem, onSeasonal: (i) => { seen.push(i.seasonal!.id); } });
+    for (const id of [1, 2, 3]) news.push(formatEvent('attraction:closed', { id, type: 'iceRink', reason: 'Closed: too warm at 1,240 m (15°C)' }, {}));
+    news.push(formatEvent('attraction:closed', { id: 4, type: 'iceRink', reason: 'Closed: no staff' }, {}));
+    expect(seen).toEqual([1, 2, 3]);
+    expect(news.items).toHaveLength(2);
+    expect(news.items.find((r) => r.seasonal)!.text).toBe('3 attractions closed: too warm');
+    expect(onItem).toHaveBeenCalledTimes(2); // first seasonal row (main skips its toast) + the staff closure
   });
 });

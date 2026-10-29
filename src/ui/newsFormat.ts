@@ -37,7 +37,13 @@ export interface NewsItem {
   counter?: CounterId;
   /** Aggregated wording when the key coalesces N times ('3 pistes closed'). Falls back to 'text ×N'. */
   many?: (n: number) => string;
+  /** Expected seasonal closure of an attraction (no snow / too warm / out of season): grouped into one quiet toast, one news row per kind and day. */
+  seasonal?: SeasonalClosure;
 }
+
+export interface SeasonalClosure { id: number; name: string; kind: 'snow' | 'warm' | 'season' }
+/** Classifies a closure reason as seasonal (null for genuine surprises such as staff, breakdowns, storms). */
+export const seasonalKind = (reason: string): SeasonalClosure['kind'] | null => /no snow/i.test(reason) ? 'snow' : /too warm/i.test(reason) ? 'warm' : /for the season|lake is frozen/i.test(reason) ? 'season' : null;
 
 /** Where something happened: 'on Blue Run 3', 'near the Mountain Hut 2', 'in the northern upper bowl'. */
 export interface PlaceText { name: string; on: string; near: string }
@@ -75,7 +81,13 @@ export const NEWS_FORMATTERS: Table = {
   'lift:opened': 'ignored', // see formatLiftOpened
   'lift:closed': (e, c) => ({ text: `${liftLabel(c, e.id)} closed. ${reasonText(e.reason)}`, severity: 'warn', tier: 'important', icon: '🚡', key: `lift:closed:${e.id}`, category: 'closure', focus: at(c, 'lift', e.id) }),
   'attraction:opened': (e, c) => ({ text: `${displayName(e.type)} opened`, severity: 'good', tier: 'info', icon: '🎡', key: `attr:open:${e.id}`, category: 'closure', focus: at(c, 'building', e.id) }),
-  'attraction:closed': (e, c) => ({ text: `${displayName(e.type)} closed. ${reasonText(e.reason)}`, severity: 'warn', tier: 'important', icon: '🎡', key: `attr:closed:${e.id}`, category: 'closure', focus: at(c, 'building', e.id) }),
+  'attraction:closed': (e, c) => {
+    const kind = seasonalKind(e.reason), name = displayName(e.type), text = `${name} closed. ${reasonText(e.reason)}`;
+    if (!kind) return { text, severity: 'warn', tier: 'important', icon: '🎡', key: `attr:closed:${e.id}`, category: 'closure', focus: at(c, 'building', e.id) };
+    // Seasonal: one news row per kind and day ('3 attractions closed: no snow'), grouped toast (see closureGrouper).
+    const why = kind === 'snow' ? 'no snow' : kind === 'warm' ? 'too warm' : 'out of season';
+    return { text, severity: 'warn', tier: 'important', icon: '🎡', key: `attr:closed:seasonal:${kind}`, category: 'closure', focus: at(c, 'building', e.id), seasonal: { id: e.id, name, kind }, many: (n) => `${n} attractions closed: ${why}` };
+  },
   'piste:opened': (e) => (e.open
     ? { text: 'A piste opened', severity: 'good', tier: 'info', icon: '⛷️', key: 'piste:opened', category: 'closure', many: (n) => `${plural(n, 'piste')} opened` }
     : { text: 'A piste closed', severity: 'warn', tier: 'important', icon: '⛷️', key: 'piste:closed', category: 'closure', many: (n) => `${plural(n, 'piste')} closed` }),

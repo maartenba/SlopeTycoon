@@ -18,6 +18,8 @@ export interface NewsApi {
   goTo?(f: FocusTarget): void;
   /** Called for each NEW feed row (not for coalesced repeats, counters or muted items); main routes critical/important ones to toasts. */
   onItem?(item: NewsItem): void;
+  /** Every seasonal attraction closure (also the ones coalesced into an existing row), for the grouped toast. */
+  onSeasonal?(item: NewsItem): void;
   muted(): ReadonlySet<string>;
   setMuted(cat: string, on: boolean): void;
   /** Current in-game date (for per-day coalescing); defaults to counting day:changed events. */
@@ -135,6 +137,7 @@ export class StNews extends StElement {
   push(item: NewsItem | null): void {
     if (!item) return;
     item.text = sentence(item.text);
+    if (item.seasonal) this.api?.onSeasonal?.(item);
     const r = this.feed.push(item, this.absDay);
     if (r === 'row') {
       if (TIER_RANK[item.tier] >= TIER_RANK.important) this.api?.onItem?.(item);

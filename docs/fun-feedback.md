@@ -18,6 +18,9 @@ Setting: Settings > Gameplay > *Feedback intensity* (Off / Subtle / Lively), per
 
 *Reduced motion* (Settings > Accessibility, or the OS preference) clamps Lively to Subtle and disables confetti, camera kick and emote rise. Tune: edit the `SUBTLE` / `LIVELY` objects; `tests/render/feedbackPolicy*.test.ts` document the relations (Lively is never more than 2x Subtle).
 
+## Seasonal closure toasts (`src/ui/closureGrouper.ts`)
+Attraction closures whose reason is seasonal (`seasonalKind`: *no snow*, *too warm*, *closed for the season*, frozen lake) are expected, not news. `NEWS_FORMATTERS['attraction:closed']` tags them (`NewsItem.seasonal`) and gives them one shared news key per kind and day (the row reads *3 attractions closed: too warm*). `StNews` hands every one of them to `SeasonalClosureGrouper`, which collects closures for 4 s and then emits ONE toast (*3 winter attractions closed for summer: A, B, C*, more than 4 names: *A, B, C and N more*; *Go to* focuses the first). Each attraction toasts once per season (the set resets when the season changes), so a closure that repeats the next day stays silent. Staff, breakdown, storm, avalanche and other reasons are not seasonal and keep their own toast. Tests: `tests/ui/closureGrouper.test.ts`, `tests/ui-dom/goto.test.ts`.
+
 ## Money popups
 `MoneyAggregator` sums sales per building for 2 s, then shows one floating `+$` text if the sum clears the threshold above. Pooled DOM elements (`FloatText`), nothing per tick. Small sales never pop; they only count towards the daily average.
 

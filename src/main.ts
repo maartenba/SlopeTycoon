@@ -200,6 +200,8 @@ import { resolveChain } from '@/tutorial/ui-targets';
 import { TutorialMarker } from '@/render/TutorialMarker';
 import { displayName, sentence } from '@/ui/text';
 import type { FocusTarget } from '@/ui/newsFormat';
+import { SeasonalClosureGrouper } from '@/ui/closureGrouper';
+const closureGrouper = new SeasonalClosureGrouper();
 import { t as tr } from '@/tutorial/strings';
 import { ADVISOR_UI } from '@/sim/advisor/strings';
 import { formatRecap, shouldShowRecap, wireMonthCard, type RecapModel } from '@/ui/recap';
@@ -2582,7 +2584,8 @@ if (ui && !DEMO) {
     ctx: { locate: (kind, id) => { if (kind === 'lift') { const l = liftToolsRef?.lifts.get(id); return l ? { x: l.bottom.x, y: l.bottom.y } : null; } const b = buildings.get(id); return b ? { x: b.x + b.w / 2 - 0.5, y: b.y + b.h / 2 - 0.5 } : null; }, liftName: (id) => (liftToolsRef?.lifts.get(id) ? sim.names.liftName(id) : undefined), money: (n) => formatMoney(n), where: (x, y) => { const p = sim.names.describeLocation(x, y); return { name: p.name, on: p.on, near: p.near }; } },
     date: () => game.date,
     // The news feed is the single source of toasts: only critical + important rows toast (muted categories excluded; per-key cooldown in the limiter).
-    onItem: (it) => { audioRef?.news(it); const f = it.focus; toastEl.show(it.text, it.severity === 'bad' ? 'error' : it.severity === 'warn' ? 'warn' : 'info', 3500, { key: it.key, category: it.category, severity: it.severity, tier: it.tier, ...(f ? { action: { label: 'Go to', run: () => goTo(f) }, ttlMs: 7000 } : {}) }); },
+    onSeasonal: (it) => { if (!closureGrouper.add({ ...it.seasonal!, text: it.text, ...(it.focus ? { focus: it.focus } : {}) }, seasonOf(game.date), performance.now())) return; window.setTimeout(() => { const g = closureGrouper.flush(performance.now()); if (g) toastEl.show(g.text, 'warn', 3500, { key: `closure-group:${performance.now()}`, category: 'closure', severity: 'warn', tier: 'important', ...(g.focus ? { action: { label: 'Go to', run: () => goTo(g.focus!) } } : {}), ttlMs: 7000 }); }, closureGrouper.windowMs + 50); },
+    onItem: (it) => { audioRef?.news(it); if (it.seasonal) return; const f = it.focus; toastEl.show(it.text, it.severity === 'bad' ? 'error' : it.severity === 'warn' ? 'warn' : 'info', 3500, { key: it.key, category: it.category, severity: it.severity, tier: it.tier, ...(f ? { action: { label: 'Go to', run: () => goTo(f) }, ttlMs: 7000 } : {}) }); },
     stamp: () => `${formatGameDate(game.date).short} ${String(Math.floor(game.date.minute / 60)).padStart(2, '0')}:${String(game.date.minute % 60).padStart(2, '0')}`,
     goTo: (f) => goTo(f),
     focus: (x, y) => goTo({ x, y }),
