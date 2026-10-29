@@ -1080,7 +1080,6 @@
    "id": "energy-solar-wind",
    "alt": "A solar array and a wind turbine beside the village road in summer.",
    "pages": [
-    "operations",
     "landing"
    ],
    "kind": "harness",
@@ -1125,7 +1124,7 @@
   },
   {
    "id": "ui-loading",
-   "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts\u2026'.",
+   "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
    "pages": [
     "troubleshooting",
     "getting-started"
@@ -1239,6 +1238,70 @@
     "extra": "starter=1&mode=career",
     "viewport": "1920x1080",
     "steps": "click:button[data-drawer=marketing];wait:600;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Train'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600"
+   }
+  },
+  {
+   "id": "ui-eco-programme",
+   "alt": "The Eco programme dialog: five policies with fees and running costs, the carbon-neutral certificate and the sustainability parts.",
+   "pages": [
+    "operations"
+   ],
+   "kind": "harness",
+   "caption": "The Eco programme: five policies, a certificate and what each adds to Sustainability.",
+   "shot": {
+    "start": "winter",
+    "hour": 12,
+    "zoom": 3,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1600x900",
+    "size": 256,
+    "seed": 61,
+    "pre": "(async()=>{const s=__slope,n=s.sim.networks;const N=await new Function('u','return import(u)')('/src/world/Networks.ts');const {NetKind}=N;s.populateDemo('medium');s.progression.setLevel(4);const pts=[];for(let y=0;y<256;y+=2)for(let x=0;x<256;x+=2){const k=n.kindAt(x,y);if(k===NetKind.Path||k===NetKind.Road)pts.push({x,y});}let done=false;for(const p of pts){if(done)break;for(let dy=-4;dy<=4&&!done;dy+=1)for(let dx=-5;dx<=5&&!done;dx+=1){const o=s.debugPlace('ecoCentre',p.x+dx,p.y+dy,0,true);if(!o.ok)continue;if(s.sim.eco.enabled){done=true;console.info('EN '+(p.x+dx)+','+(p.y+dy));s.sim.eco.start('smartSnow');s.sim.eco.start('localProduce');}else s.sim.buildings.remove(o.building.id);}}console.info('pts '+pts.length+' done '+done);})();",
+    "steps": "wait:1500;eval:__slope.select([...__slope.sim.buildings.all()].find(x=>x.type==='ecoCentre').id);wait:500;click:Open the Eco programme;wait:600",
+    "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "ui-crossings",
+   "alt": "The Crossings section of the Paths & Roads drawer: level crossing or bridge over rail, bridge over water, merge elsewhere.",
+   "pages": [
+    "rails-bridges"
+   ],
+   "kind": "harness",
+   "caption": "The Crossings section of the Paths & Roads drawer.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 3,
+    "target": "lodge",
+    "extra": "starter=1&mode=sandbox",
+    "viewport": "1600x900",
+    "size": 256,
+    "seed": 61,
+    "steps": "wait:800;click:button[data-drawer=paths];wait:600;click:Footpath;wait:600",
+    "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+   }
+  },
+  {
+   "id": "ui-update-card",
+   "alt": "The update card: a new version is available, with a few highlights and Reload now / Later buttons.",
+   "pages": [
+    "saves"
+   ],
+   "kind": "harness",
+   "caption": "The update card: highlights, Reload now or Later.",
+   "shot": {
+    "start": "summer",
+    "hour": 12,
+    "zoom": 2,
+    "target": "lodge",
+    "extra": "starter=1&mode=career&hints=0",
+    "viewport": "1280x800",
+    "size": 256,
+    "seed": 61,
+    "evalJs": "setTimeout(()=>{const w=document.querySelector('st-whats-new');w.showUpdate({title:'A new version is available: 0.2.5',version:'0.2.5',sections:[{version:'0.2.5',date:'2026-10-29',highlights:['Easier money: you start with $150,000 and the quiet months cost less.','Bridges are part of drawing a path, road or trail.','The new Eco Centre opens an Eco programme.']}],fallback:false},{reload(){},later(){}})},1500);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100);",
+    "steps": "wait:3000"
    }
   }
  ]

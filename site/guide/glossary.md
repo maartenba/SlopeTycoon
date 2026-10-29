@@ -29,6 +29,8 @@ screenshots: []
 
 **Energy grid** The generators (solar, wind, hydro, biomass) that offset a capped share of your lift energy bill.
 
+**Eco Centre** A level-4 building that opens the *Eco programme*: five paid policies and a carbon-neutral certificate that lift the Sustainability score by up to 29 points.
+
 **Events strip** The January to December overview in the Events calendar.
 
 **Facilities** The rating bar (6 %) for toilets: comfort satisfaction, coverage of pistes and village, blocks per guest.
@@ -37,7 +39,7 @@ screenshots: []
 
 **Fast nights** An option that makes nights pass faster.
 
-**Footbridge** A raised timber crossing for footpaths: over a rail line (no waiting for trains) or over a stream (Bridge tool).
+**Footbridge** A raised timber crossing for footpaths: over a rail line (no waiting for trains) or over a stream, pond or gap. Bridges are built as part of drawing the path; there is no separate tool.
 
 **Green Resort** A year-report award for a resort that is gentle on forest, wildlife and energy.
 

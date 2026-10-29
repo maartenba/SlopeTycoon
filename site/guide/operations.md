@@ -3,7 +3,7 @@ title: "Operations & safety"
 order: 6
 summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, energy and green buildings, crews and courses."
 description: "Run the mountain in Slope Tycoon: ski patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, energy, crews and courses."
-screenshots: [ui-staff, ui-maintenance, ui-energy-tab, energy-solar-wind]
+screenshots: [ui-eco-programme, ui-staff, ui-maintenance, ui-energy-tab]
 ---
 Skiing is fun until somebody falls over. The **Operations** drawer and the coverage overlays show how well your resort can cope. Its tabs are **Lifts** (opening hours, the snowmaking row), **Runs** (see [Lifts & pistes](page:lifts-pistes)), **Maintenance** and **Staff**.
 
@@ -74,9 +74,23 @@ Lifts and snow cannons burn energy, and that is a cost line in your books (and a
 | **Tree Nursery** | Raises saplings that count against the forest you felled, and makes replanting cheaper. |
 | **Recycling & Compost Centre** | A flat bonus to the sustainability score (one is enough). |
 
-{{fig:energy-solar-wind}}
-
 How it works: generators cover a **share of the day's lift energy bill**, at most 60 %, hour by hour; the surplus is **not sold**, so energy is never free and overbuilding is wasted money. A solar array or small hydro typically pays itself back in about **3 years**, a turbine in 2.5 to 3, biomass in about 5. Games without generators behave exactly as before.
+
+### Eco Centre and the Eco programme
+
+The **Eco Centre** (Energy tab, resort level 4, $20,000, $18 a day, one per resort, needs a road or footpath) opens the **Eco programme**: select it and press **Open the Eco programme**. Five policies each have a start fee, a daily running cost and a trade-off:
+
+| Policy | Fee | Per day | Points | Trade-off |
+|---|---:|---:|---:|---|
+| Electric snowcats & groomers | $3,500 | $14 | +4 | running cost; saves fuel |
+| Car-free village | $4,000 | $12 | +5 | slightly fewer arrivals |
+| Habitat corridors & wildlife protection | $3,000 | $12 | +7 | forestry crew and fencing |
+| Local produce & zero-waste kitchens | $2,500 | $8 | +4 | supplier cost; restaurants earn a little more |
+| Smart snowmaking & dimmed lifts | $3,000 | $8 | +5 | controls cost more than they save at first |
+
+Hold three policies with renewables covering at least 20 % of your energy for ten days in a row and the **carbon-neutral certificate** is yours (fee $5,000, then $5 a day while the audit runs): another 4 points and a lasting boost to arrivals. Together the programme can lift the Sustainability score by **up to 29 points**. It costs about $77 a day and roughly pays for itself, so it is a strategic choice rather than a money machine. Demolish the centre and everything pauses at no cost. Ranger Rudi suggests it when Sustainability is your weakest area.
+
+{{fig:ui-eco-programme}}
 
 Inspectors show **output now**, today, yesterday and the share of the bill each unit offsets. The **sustainability** facet of your rating counts the **net grid purchase per guest** (what you still buy), so generators raise it; recycling adds a few points and nursery saplings count against felled trees. Ranger Rudi suggests a Solar Array when energy is your weakest green spot. See [Events, stories & the region](page:events) for the Green Resort award.
 

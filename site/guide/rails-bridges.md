@@ -3,8 +3,12 @@ title: "Rails, crossings & bridges"
 order: 3.5
 summary: "Level crossings and the footbridge over rail, bridges over streams, ponds and gaps for footpaths, trails and roads."
 description: "Slope Tycoon guide to rails, level crossings, footbridges over the rail and bridges over streams: how to build them, what they cost and why one is refused."
-screenshots: [crossing-closed, footbridge-rail, bridges-stream]
+screenshots: [ui-crossings, crossing-closed, footbridge-rail, bridges-stream]
 ---
+{{fig:ui-crossings}}
+
+There is no bridge tool: bridges are part of drawing a path. Both the **Paths & Roads** and the **Pistes & Trails** drawers have a **Crossings** section that says what happens where: over rail you choose *Level crossing* (default) or *Bridge*; over water and gaps it is always a bridge, built automatically; where a path or road meets another one they simply merge.
+
 {{fig:crossing-closed}}
 
 **Level crossings.** Drag a **Footpath** or **Road** across a straight rail line at a right angle (from the **Paths & Roads** drawer) and it becomes a level crossing: a footpath crossing costs $150 extra, a road crossing $400. A few seconds before a train arrives the barriers come down, red lamps blink and a quiet bell rings; guests and cars wait on the approach side and go on once the train has passed. Trains never stop for anyone, and nobody is ever run over. Crossings need a straight line, can't be next to another crossing (two tiles of room) or at a station, and a building can't stand on one. Bulldozing a crossing turns the tile back into plain rail.

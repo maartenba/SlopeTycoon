@@ -54,6 +54,8 @@ Paint pistes by **difficulty**: green (easy), blue, red and black. The game colo
 - **Steepness**: a piste's real slope decides how hard it feels. A “green” painted on a cliff is still a cliff.
 - **Variety**: a good resort offers all difficulties; a goal asks for runs of green, blue and red, and another for a black run.
 
+Trails cross water and rails too: drag a hiking or MTB trail over a pond, stream or gap and a wooden hiking bridge or MTB bridge is built as part of the stroke; over rail the **Crossings** section lets you choose a level crossing or a footbridge / MTB ramp bridge ($900 / $1,100). Ski pistes stop at water and rail. See [Rails, crossings & bridges](page:rails-bridges).
+
 > [!NOTE] **Hiking and biking trails can be painted all year**, including in deep winter: snow cover does not block them (they are just not used much until the snow melts).
 
 ### Runs

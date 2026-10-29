@@ -58,9 +58,9 @@ Festivals have their own cards just below the campaigns: see [Events, stories & 
 
 | Difficulty | Feel |
 |---|---|
-| Relaxed | More starting money, cheaper upkeep, patient guests, fewer incidents |
-| Normal | The intended balance |
-| Challenging | Less money, higher upkeep and interest, pickier guests, more incidents |
+| Relaxed | More starting money ($225,000), cheaper upkeep, patient guests, fewer incidents |
+| Normal | The intended balance: $150,000 to start |
+| Challenging | Less money ($112,500), higher upkeep and interest, pickier guests, more incidents |
 
 > [!TIP] Rudi's “cash runway” advice appears when you have under five days of upkeep in the bank. Believe him.
 
@@ -74,4 +74,4 @@ Festivals have their own cards just below the campaigns: see [Events, stories & 
 - **Campaigns need cash** (keep $20,000 spare). *Come by Train* is a good cheap filler once a Train Station stands.
 - **Avoid** building everything on day one, training every staff course in year 1 and big early terraforming.
 
-Ranger Rudi shows a **Cash tips** card when your cash is thin early in the game.
+The quiet months are cheaper than they used to be: idle lifts draw about a quarter of their energy, closed winter venues cost 15 % of their upkeep and furloughed staff 35 % of their wages. Ranger Rudi shows a **Cash tips** card when your cash is thin in the first two years, and his *In debt* advice lists concrete ways out (Starter loan, resting lifts, pausing building).

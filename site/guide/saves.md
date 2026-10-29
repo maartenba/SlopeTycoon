@@ -3,7 +3,7 @@ title: "Saves, offline & install"
 order: 14
 summary: "Quick save, slots, autosave, exporting .slope files, and playing offline as an installed app."
 description: "Slope Tycoon saves: quick save, slots, autosave, exporting .slope backup files, and playing offline as an installed app. Everything stays on your device."
-screenshots: [ui-saveload]
+screenshots: [ui-saveload, ui-update-card]
 ---
 {{fig:ui-saveload}}
 
@@ -25,10 +25,12 @@ Saves are stored **in your browser on this device** (IndexedDB). There is no acc
 
 ## Offline and installing
 
-After your first visit the game caches itself, so it **works without a network** (an *Offline* pill appears in the top bar). When an update is available, you get an *Update available* toast; the game saves before it reloads.
+After your first visit the game caches itself, so it **works without a network** (an *Offline* pill appears in the top bar). When an update is available, a small card appears (nothing is paused) saying *A new version is available* with a few highlights of what changed. **Reload now** saves first and reloads; **Later** hides it for an hour. Offline it just says *A new version is ready*. The first time you start a new version you also get a one-time *What's new* card, and the **About** dialog has a *What's new* button.
 
 - **Chrome / Edge**: click **Install** in the top bar (or the install icon in the address bar).
 - **iPhone / iPad**: Safari → Share → Add to Home Screen.
 - Updates reach you within about ten minutes of a new release.
+
+{{fig:ui-update-card}}
 
 The website you are reading and the game are separate: the website needs no service worker, only the game is installable.

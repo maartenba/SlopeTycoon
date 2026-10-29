@@ -31,7 +31,7 @@ Each button opens a **drawer** with items or panels. Click again, or press <kbd>
 |---|---|
 | Buildings | Everything you can build, in tabs by type |
 | Lifts | The eleven lift types |
-| Paths & Roads | Footpaths, roads and rail |
+| Paths & Roads | Footpaths, roads and rail, with the **Crossings** choice (level crossing or bridge over rail; bridges over water are automatic) |
 | Pistes & Trails | Ski pistes by difficulty, plus hiking and biking trails |
 | Terrain | Raise, lower, flatten, smooth the ground (sculpting only) |
 | Landscape | Dig ponds, boulders, plant or clear trees, garden decor (see [Building](page:building)) |
@@ -49,7 +49,14 @@ The **View** drawer groups **Camera** (rotate, zoom), **Modes** (ride-along, wal
 ## Bottom left and right
 
 - **Advice** (bottom left, next to Rudi's face) shows up to three suggestions. **Show me** moves the camera (or opens the right drawer and highlights the card); **Dismiss** hides one for 30 in-game days.
+- **Advice** shows Rudi's full message: the card grows to a maximum height and the list scrolls, instead of cutting text with an ellipsis. Goal names in the Goals card wrap too.
 - **News** (bottom right) collects events, milestones and guest reviews. Important ones pop up as toasts.
+
+## Update card, What's new and About
+
+When a new version is waiting, a small card at the top left (nothing is paused) lists a few highlights, with **Reload now** (autosaves first) and **Later** (a picture is in [Saves, offline & install](page:saves)).
+
+The first time you launch a new version you get a one-time **What's new** card, and the **About** dialog (Menu) has a *What's new* button and a discreet **Support the game** link to GitHub Sponsors. It is a plain link that opens only when you click it; the game stays free, with no ads and no nagging.
 
 ## Help, pause and the camera
 
