@@ -1,6 +1,36 @@
 # Release notes and checklist
 
-Current release: **0.2.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.5 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.5 (2026-10-29, macOS, Node v22.23.4)
+
+0.2.4 was skipped (never released). Money pass, tidy town footpaths, bridges as part of drawing, Crossings section, stream bridges, Eco Centre + Eco programme, update card + What's new, Sponsor links, website footer, `createSim` defaults == the real game. Version bump, CHANGELOG `[0.2.5]` with Highlights, guide (Money, Operations Eco section, Interface, Saves, Rails/crossings, Lifts & pistes, glossary), landing line, 3 new shots (`ui-eco-programme`, `ui-crossings`, `ui-update-card`) and 5 re-shot (`ui-pistes-drawer`, `bridges-stream`, `ui-hud`, `ui-buildings-drawer`).
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 353 files passed, 1 skipped; 3581 tests passed, 32 skipped |
+| Balance | `npm run test:balance` | 36 passed (~550 s) |
+| Perf | `npm run test:perf` | 24 files, 42 tests passed (alone) |
+| Shots | `npm run shot:suite` | 17 shots, 0 errors on every shot |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK (splash stages offline, no page errors, no failed requests) |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Size | `npm run size` | 2636.6 kB raw / 951.4 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (22 pages, 64 screenshots, 7.6 MB of the 8 MB budget, 160 URLs crawled at `/slopetycoon/`) |
+| Not run | `touch:e2e` | the full matrix takes ~55 min; no touch code changed except drawer text |
+
+### Dist size 0.2.5 (gzip level 9)
+
+| File | Raw | gzip |
+|---|---:|---:|
+| assets/index-CRWO51Z9.js (app) | 1888.6 kB | 651.2 kB |
+| assets/three-CWI5RsfT.js | 567.7 kB | 142.3 kB |
+| assets/uikit-D4bozi_t.js | 6.3 kB | 2.5 kB |
+| assets/index-Dk_rm1cx.css | 4.4 kB | 1.3 kB |
+| fonts/ | 93.6 kB | 86.9 kB |
+| icons/ | 64.4 kB | 62.7 kB |
+| html / manifest / whats-new.json / other | 105.3 kB | 91.4 kB |
+| **Total (excl. sw.js)** | **2636.6 kB** | **951.4 kB** |
 
 ## 0.2.3 (2026-10-28)
 
