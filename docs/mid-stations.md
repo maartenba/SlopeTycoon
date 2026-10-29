@@ -1,6 +1,6 @@
 # N-station lifts (mid-stations)
 
-Phase 6, M6.6, Tasks 36-39 and 47 (model, validation, guests, tool UX, mesh, walk-mode ride, `chair6d`). The `midStations` createSim flag and the golden re-record come with Task 40; the bot never builds mid-stations, so goldens do not move from the tool alone.
+Phase 6, M6.6, Tasks 36-39 and 47 (model, validation, guests, tool UX, mesh, walk-mode ride, `chair6d`). **Decision (M6.6 STOP, 0.2.6): mid-stations ship ON, with no createSim flag.** The tool is player-driven and the bot never builds a mid-station, so goldens do not move (verified: bot games before / after the milestone differ only in the `progression` part, `docs/balance.md` "M6.2 + M6.6 STOP check"). Player guide: *Lifts & pistes* > Mid-stations.
 
 A lift can have **1 or 2 intermediate stations** (3 or 4 stations in all), where guests board and alight. Only **gondolas, cable cars and detachable chairs** may have them (`LiftDef.midStations`, derived in `src/config/lifts.ts`: family gondola / cablecar, or chair with `detachable`). T-bars, fixed-grip chairs and funiculars refuse.
 
@@ -63,4 +63,4 @@ There are **no per-ride tickets**: `Ticketing` sells a **day pass once per guest
 
 ## Not yet
 
-The `midStations` createSim flag and the golden re-record (Task 40; the bot does not build mid-stations), the guide / website text, and an angle (non-straight) mid-station. Night lighting of the mid-station is lamp-coloured geometry only.
+An angle (non-straight) mid-station. Night lighting of the mid-station is lamp-coloured geometry only.

@@ -2,6 +2,8 @@
 
 Developer notes for dug rivers and spring sites. Status: **data model + planner + saves + spring sites** (Tasks 13 and 44) and the **Landscape-drawer tool** (Task 14, see "Tool"). Flow model (15), rendering (16) and ice (17) build on this. Owner decisions: rivers are **1 tile wide**, carved **at most 6 half-steps per tile**, **no upkeep**; a spring costs **$250**.
 
+**Decision (M6.2 STOP, 0.2.6): rivers ship ON, no flag.** Digging a river / placing a spring is player-driven; no bot, demo or headless run does it, the `rivers` module is `omitWhenNull`, and the natural spring sites are a derived overlay, so every existing game and golden is unchanged (`docs/balance.md` "M6.2 + M6.6 STOP check"). Player guide: *Building* > Landscape > Water; human checklist `docs/playtest-m62.md`; whole-story check `npm run phase6:sanity`.
+
 ## Model
 
 - `src/world/Rivers.ts` — `Rivers` store: `rivers: RiverRec[]` (`path`, `level[]`, `source`, `sink`, `end`, `carved[]`, `cost`), `springs` (player-placed), `natural` (derived overlay), `version`, `onChange`. `createSim` builds it as `sim.rivers`; `sim.riverEnv()` returns the planner environment (lakes + ponds, network layers, lift clearance, construction multiplier, props).
@@ -78,4 +80,4 @@ Dug rivers are bridged like streams by all four path kinds, plus the suspension 
 
 ## Not yet (later tasks)
 
-Flow `Q` / speed (15), Water.ts rendering of dug rivers and spring markers (16), ice (17), rafting / canyoning, snowmaking from rivers, sustainability bonus.
+Rafting / canyoning and snowmaking from rivers. (Flow, rendering, ice and the habitat bonus are done, see above.)
