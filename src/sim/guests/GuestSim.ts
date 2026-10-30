@@ -528,7 +528,7 @@ export class GuestSim {
     if (!goal) { this.abort(i); return; }
     const res = this.movement.moveTo(s, i, goal);
     switch (res) {
-      case 'moving': this.after(i); if (s.act[i] === Act.ToTrail) this.tryExcursion(i); return;
+      case 'moving': this.after(i); if (s.act[i] === Act.ToTrail) this.tryExcursion(i); else if (s.act[i] === Act.SkiDown && this.decider.snacks.length) this.coffeeBreak(i); return;
       case 'pending': return;
       case 'lift': this.requestRide(i, true); return;
       case 'arrived': this.arrived(i, rng); return;
@@ -544,6 +544,22 @@ export class GuestSim {
         this.abort(i, 20);
     }
   }
+
+  /** Mid-run coffee break (docs/coffee-stand.md): a skier passing within SNACK.passRadius of an open stand may divert for a cup, then carries on (the next decision). Stateless choice, no RNG. */
+  private coffeeBreak(i: number): void {
+    const s = this.store;
+    const h = s.hunger[i]!;
+    if (!((h >= SNACK.passMin && h <= SNACK.passMax) || s.fatigue[i]! >= SNACK.tired)) return;
+    const b = this.decider.snackWithin(s.x[i]!, s.y[i]!, SNACK.passRadius);
+    if (!b) return;
+    const hh = Math.imul(s.id[i]! ^ 0x2f6b1c3d, 0x85ebca6b) ^ Math.imul(s.runs[i]! + 7, 0xc2b2ae35);
+    if (((hh ^ (hh >>> 15)) >>> 0) % SNACK.oneIn !== 0) return;
+    if (s.budget[i]! < 6) return;
+    this.coffeeStops++;
+    s.target[i] = b.id; s.act[i] = Act.ToBuilding; s.state[i] = GState.Walking; s.actTick[i] = this.tick; s.via[i] = 0; s.moveMode[i] = this.contextMode(i);
+    this.nm?.reset(i);
+  }
+  coffeeStops = 0;
 
   /** Convert a hike/bike path with no lift hop left and >= EXC.minTiles remaining into a compressed-time excursion. */
   private tryExcursion(i: number): void {

@@ -26,7 +26,7 @@ export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heate
 /** Quick-service kiosks (Phase 6 Task 28, docs/coffee-stand.md): a cup and a bite on the way, never the real meal. Not in FOOD: they only compete as a nearby snack (see `SNACK`). */
 export const SNACKS = new Set(['coffeeStand']);
 /** Snack stop tuning: guests with hunger in [minHunger, maxHunger] weigh the nearest open kiosk with score `base + perHunger x hunger - distPenalty x tiles + nearBonus x (1 - tiles / radius)`: the pull FALLS with hunger (a snack-sized appetite stops for a coffee; a really hungry guest wants the real meal, which scores 2 x hunger) and with the detour. */
-export const SNACK = { minHunger: 0.3, maxHunger: 0.7, base: 1.75, perHunger: -1, radius: 7, nearBonus: 0.3, distPenalty: 0.15, /** Hunger a cup and a bite take off (the Coffee Stand spec's `hungerBy`). */ by: 0.3, /** Dollars a cup and a bite cost when a hiker stops at a kiosk with no other food in reach. */ spend: 4 } as const;
+export const SNACK = { minHunger: 0.3, maxHunger: 0.7, base: 1.75, perHunger: -1, radius: 7, nearBonus: 0.3, distPenalty: 0.15, /** Hunger a cup and a bite take off (the Coffee Stand spec's `hungerBy`). */ by: 0.3, /** Mid-run break: a skier within `passRadius` tiles of an open stand, hunger in [passMin, passMax] (or tired: fatigue >= tired), takes it on about 1 in `oneIn` passes (stateless hash of guest id and runs: no RNG, no stored cap; a cup takes 0.3 off the hunger, so a guest is back in the window only hours later = 1-2 stops a day). */ passRadius: 2, passMin: 0.3, passMax: 0.7, tired: 0.6, oneIn: 3, /** Dollars a cup and a bite cost when a hiker stops at a kiosk with no other food in reach. */ spend: 4 } as const;
 /** Evening venues beyond the daytime FOOD list: the Après-Ski Bar (a drinks stop, not a meal). */
 export const BAR = new Set(['apresBar']);
 /** Every venue the evening model schedules (dinner, drinks, terrace). */
@@ -302,6 +302,13 @@ export class Decider {
       consider({ kind: 'rest', score: 0.5 }); // nothing to do: linger (idle) near the venues
     } else consider({ kind: 'home', score: 0.2 + (hour >= apresEnd(s.id[i]!, this.day) ? 5 : 0) });
     return cands.reduce((a, c) => (c.score > a.score ? c : a));
+  }
+
+  /** Open stand within `r` tiles of a point (mid-run coffee break, docs/coffee-stand.md); nearest, ties by id. No RNG. */
+  snackWithin(x: number, y: number, r: number): WorldBuilding | undefined {
+    let best: WorldBuilding | undefined, bd = r * r;
+    for (const b of this.snacks) { const d = dist2(b, x, y); if (d <= bd && (!best || d < bd || b.id < best.id)) { bd = d; best = b; } }
+    return best;
   }
 
   /** Coffee stand: a hungry-ish guest near an open kiosk weighs a quick stop (no RNG draw: guests without a kiosk keep their stream). */

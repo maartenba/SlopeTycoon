@@ -237,4 +237,24 @@ describe('coffee stand in a real resort', () => {
     expect(meals(a.sim)).toBeGreaterThan(0);
     expect(meals(a.sim)).toBeGreaterThan(meals(b.sim) * 0.6);
   }, 120_000);
+
+  it('mid-run coffee break: skiers passing within 2 tiles of an open stand sometimes stop (a few per guest per day, never stuck)', async () => {
+    const { createSim } = await import('../../../src/game/createSim');
+    const { findSite } = await import('../../../src/tutorial/suggest');
+    const { placeBuilding } = await import('../../../src/sim/PlaceBuilding');
+    const sim = createSim({ size: 64, seed: 61, starterResort: true, mode: 'sandbox', startSeason: 'winter', now: () => 0 });
+    const bottom = sim.lifts.all()[0]!.bottom;
+    const site = findSite(sim, 'coffeeStand', { x: bottom.x + 2, y: bottom.y }, { rmax: 5 })!;
+    const o = placeBuilding(sim.env, sim.props, 'coffeeStand', site.x, site.y, site.rot, true, false);
+    expect(o.ok).toBe(true);
+    sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true);
+    expect(sim.buildings.get(o.building!.id)!.active).toBe(true);
+    sim.guestSim.spawner.rateMult = 6;
+    for (let i = 0; i < 240 * 3; i++) sim.tick(1);
+    const gs = sim.guestSim, st = sim.attractions.get(o.building!.id)!;
+    const stops = gs.coffeeStops, guests = Math.max(1, gs.runsCompleted);
+    expect(stops).toBeGreaterThan(0);
+    expect(stops).toBeLessThanOrEqual(st.stats.served + 5);
+    expect(stops / guests).toBeLessThan(0.2); // per completed run, restrained
+  }, 120_000);
 });

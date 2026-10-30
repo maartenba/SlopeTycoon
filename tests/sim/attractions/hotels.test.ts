@@ -24,7 +24,7 @@ import { seasonOf } from '../../../src/sim/Clock';
 
 const EVENING = 18 * 60 + 30;
 const dayOf = (season: string): number => { for (let d = 0; d < 180; d++) if (seasonOf({ day: d }) === season) return d + 3; throw new Error('no day'); };
-const night = (h: ReturnType<typeof harness>, n: number, o: { type?: number } = {}): number[] => Array.from({ length: n }, () => h.guest({ overnight: true, budget: 900, ...o }));
+const night = (h: ReturnType<typeof harness>, n: number, o: { type?: number; budget?: number } = {}): number[] => Array.from({ length: n }, () => h.guest({ overnight: true, budget: 900, ...o }));
 
 type Sim = ReturnType<typeof createSim>;
 const ANCHORS: ReadonlyArray<readonly [number, number]> = [[-10, 4], [0, -10], [-14, -4], [8, -8], [14, 0], [8, 10]];
@@ -156,6 +156,39 @@ describe('VIPs prefer the luxury hotel', () => {
     const vip = h.guest({ overnight: true, type: GuestType.VIP, budget: 60 });
     h.run(1);
     expect(h.sys.rooms.roomOf(h.store.id[vip]!)).toBe(chalet.id);
+  });
+});
+
+describe('"Let couples in" (M6.4 owner decision)', () => {
+  const fill = (season: string, type: number, n: number, budget = 900): number => {
+    const h = harness();
+    h.add('chalet', 4, 4); h.add('apartment', 30, 4); const lux = h.add('luxuryHotel', 20, 4);
+    h.run(1);
+    h.state.date.day = dayOf(season); h.state.date.minute = EVENING;
+    night(h, n, { type, budget });
+    h.run(1);
+    return h.sys.rooms.occupied(lux.id);
+  };
+  it('a couples-only resort fills a share of the suites without VIPs: about 45 % of couples, more in winter; thin wallets and budget guests stay out', () => {
+    const summer = fill('summer', GuestType.Couple, 40), winter = fill('winter', GuestType.Couple, 40);
+    expect(summer).toBeGreaterThanOrEqual(10); expect(summer).toBeLessThanOrEqual(22);
+    expect(winter).toBeGreaterThanOrEqual(summer - 4); expect(winter).toBeGreaterThanOrEqual(12);
+    expect(fill('summer', GuestType.Couple, 40, 150)).toBe(0); // under 4 nights of $100
+    expect(fill('summer', GuestType.Budget, 40)).toBe(0);
+    const solo = fill('summer', GuestType.Solo, 40);
+    expect(solo).toBeLessThan(summer); expect(solo).toBeLessThanOrEqual(12);
+  });
+  it('VIPs still come first: 30 VIPs among 40 couples take every suite', () => {
+    const h = harness();
+    h.add('chalet', 4, 4); const lux = h.add('luxuryHotel', 20, 4);
+    h.run(1);
+    h.state.date.minute = EVENING;
+    night(h, 40, { type: GuestType.Couple }); // couples spawn first (lower ids): the VIPs still get the suites ranked first
+    const vips = night(h, 30, { type: GuestType.VIP });
+    h.run(1);
+    const vipIn = vips.filter((g) => h.sys.rooms.roomOf(h.store.id[g]!) === lux.id).length;
+    expect(vipIn).toBe(30); // VIPs check in first, every suite is theirs even though the couples arrived first
+    expect(h.sys.rooms.occupied(lux.id)).toBe(30);
   });
 });
 

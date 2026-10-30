@@ -3,7 +3,10 @@ import type { GameState } from '../../core/GameState';
 import type { GameBus } from '../../core/events';
 import { DAYS_PER_YEAR } from '../../config/balance';
 import { NIGHTLY_RATE, type LedgerCategory } from '../../config/prices';
-import { hourOfDay, seasonOf } from '../Clock';
+import { hourOfDay, seasonOf, weekdayOf } from '../Clock';
+
+/** Luxury suite take-up of guests who are only lukewarm (docs/hotels.md "Let couples in"). */
+export const SUITE = { couple: 0.45, other: 0.12, winter: 1.25, weekend: 1.2, nights: 4 } as const;
 import type { SimSystem } from '../Systems';
 import { Act } from '../guests/Decision';
 import type { ArriveResult, GuestAttractionPort } from '../guests/AttractionPort';
@@ -393,8 +396,16 @@ export class AttractionSystem implements GuestAttractionPort {
     const lodgings = [...this.items.values()].filter((a) => a.spec.rooms && a.open).sort((a, b) => a.id - b.id);
     if (!lodgings.length) return;
     const tiered = lodgings.some((a) => a.spec.tier !== undefined);
-    for (let i = 0; i < s.limit; i++) {
-      if (!s.alive[i] || !s.overnight[i]) continue;
+    // Tiered houses: guests who LIKE a tiered house (VIPs for a luxury suite, budget guests for a pitch) check in first, so a lukewarm guest who came first
+    // never takes the suite a VIP would have (stable, slot order inside each group; untiered worlds keep the plain slot order).
+    const order: number[] = [];
+    for (let i = 0; i < s.limit; i++) if (s.alive[i] && s.overnight[i]) order.push(i);
+    if (tiered) {
+      const likes = (i: number): number => lodgings.some((a) => a.spec.tier && this.appeal(a.id, s.type[i]!) >= CAMP.likes) ? 0 : 1;
+      const key = new Map<number, number>(order.map((i) => [i, likes(i)]));
+      order.sort((a, b) => key.get(a)! - key.get(b)! || a - b);
+    }
+    for (const i of order) {
       const gid = s.id[i]!;
       if (this.rooms.roomOf(gid) !== undefined && this.rooms.roomOf(gid) !== -1) {
         // already has a room: pay for the new night in the same building if it is still open
@@ -402,7 +413,7 @@ export class AttractionSystem implements GuestAttractionPort {
         if (a && a.open) this.chargeNight(a, i);
         continue;
       }
-      for (const a of tiered ? this.byPreference(lodgings, s.type[i]!) : lodgings) {
+      for (const a of tiered ? this.byPreference(lodgings, s.type[i]!, gid, s.budget[i]!) : lodgings) {
         if (this.rooms.occupied(a.id) >= (a.spec.rooms ?? 0)) continue;
         if (!this.chargeNight(a, i)) continue;
         this.rooms.assign(gid, a.id);
@@ -415,9 +426,29 @@ export class AttractionSystem implements GuestAttractionPort {
    * Lodging v2 order for ONE guest type (only used while a tiered house exists, so worlds without one keep the plain id order): a tiered house the type likes
    * (appeal >= `CAMP.likes`) comes first, untiered houses next, then the tiered houses the type is lukewarm about; a type that has no appetite for it (appeal <= `CAMP.avoids`, i.e. 0 after the tier shift) never takes it.
    */
-  private byPreference(lodgings: Attraction[], type: number): Attraction[] {
-    const rank = (a: Attraction): number => { if (!a.spec.tier) return 1; const ap = this.appeal(a.id, type); return ap >= CAMP.likes ? 0 : ap <= CAMP.avoids ? 9 : 2; };
+  private byPreference(lodgings: Attraction[], type: number, gid = 0, budget = 0): Attraction[] {
+    const rank = (a: Attraction): number => {
+      if (!a.spec.tier) return 1;
+      const ap = this.appeal(a.id, type);
+      if (ap >= CAMP.likes) return 0;
+      if (ap <= CAMP.avoids) return 9;
+      return a.spec.tier === 'luxury' && this.suiteTreat(a, type, gid, budget) ? 0 : 2;
+    };
     return lodgings.map((a, i) => ({ a, i, r: rank(a) })).filter((x) => x.r < 9).sort((p, q) => p.r - q.r || p.i - q.i).map((x) => x.a);
+  }
+
+  /**
+   * "Let couples in" (M6.4 owner decision, docs/hotels.md): a guest who is only lukewarm about a luxury suite still books one with a stateless share
+   * (hash of the guest id, no RNG): couples 45 %, everybody else 12 %, x1.25 in winter, x1.2 Fri-Sun; only when the budget covers `SUITE.nights` nights at the nightly rate
+   * (the x2.5 tier keeps thin wallets out). VIPs (appeal >= 0.65) are untouched: they still come first.
+   */
+  private suiteTreat(a: Attraction, type: number, gid: number, budget: number): boolean {
+    const rate = this.d.nightRate?.(a.b.type) ?? NIGHTLY_RATE[a.b.type]?.price ?? 0;
+    if (budget < rate * SUITE.nights) return false;
+    const winter = seasonOf({ day: this.day }) === 'winter', wkend = weekdayOf({ year: 0, day: this.absDay }) >= 4;
+    const share = (type === 1 ? SUITE.couple : SUITE.other) * (winter ? SUITE.winter : 1) * (wkend ? SUITE.weekend : 1);
+    const h = Math.imul(gid ^ 0x51ed270b, 0x85ebca6b) ^ Math.imul(Math.floor(this.absDay) + 3, 0xc2b2ae35);
+    return (((h ^ (h >>> 15)) >>> 0) % 1000) / 1000 < share;
   }
 
   /** Evening campfire (19:00+): campers at an open campground gain happiness; toilets within `CAMP.toiletRadius` tiles double it. */

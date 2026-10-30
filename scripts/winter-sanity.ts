@@ -52,7 +52,7 @@ try {
   });
   console.log(JSON.stringify(built.log), JSON.stringify(built.types));
   for (const t of ['luxuryHotel', 'smallHotel', 'coffeeStand', 'heatedTerrace', 'skiSchoolHQ', 'kidsGround']) check(`${t} placed and active`, built.types.includes(`${t}:on`), built.types);
-  const focus = (name: string, zoom = 1): Promise<void> => page.evaluate((at, zoom) => { const s = (window as any).__slope, c2 = s.renderer.controls, t0 = c2.target, cam = s.renderer.camera; const b = s.sim.buildings.all().find((q: any) => q.type === at); if (!b) return; const nx = b.x + b.w / 2, ny = s.grid.heights[b.y * s.grid.vsize + b.x] * 0.5, nz = b.y + b.h / 2; t0.set(nx, ny, nz); c2.zoom = 1; c2.zoomBy(zoom); c2.update(); }, name, zoom);
+  const focus = (name: string, zoom = 1): Promise<void> => page.evaluate((at, zoom) => { const s = (window as any).__slope, c2 = s.renderer.controls, t0 = c2.target; const b = s.sim.buildings.all().find((q: any) => q.type === at); if (!b) return; const nx = b.x + b.w / 2, ny = s.grid.heights[b.y * s.grid.vsize + b.x] * 0.5, nz = b.y + b.h / 2; t0.set(nx, ny, nz); c2.zoom = 1; c2.zoomBy(zoom); c2.update(); }, name, zoom);
 
   // ---- a December weekday outside the holidays, then a few days of play ----
   await page.evaluate((v) => { (window as any).__summerRun = v; }, summerRun);

@@ -6,8 +6,8 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
     "version": "0.2.8",
     "date": "2026-10-30",
     "highlights": [
-      "Two hotels: a Small Hotel with 40 rooms over a lobby restaurant, and a Luxury Hotel with 30 suites for VIPs and a heated outdoor pool that steams in…",
-      "A Coffee Stand: a tiny kiosk beside a piste or footpath for a quick cup and a bite.",
+      "Two hotels: a Small Hotel with 40 rooms over a lobby restaurant, and a Luxury Hotel with 30 suites for VIPs and couples and a heated outdoor pool…",
+      "A Coffee Stand: a tiny kiosk beside a piste or footpath where skiers pull over for a quick cup and a bite.",
       "Two calm new guests: Seniors who love terraces, views and pools, and orange-bibbed school classes that arrive by coach on weekdays.",
       "Two new campaigns: Wellness & Views for seniors and couples, and School Trips for quiet weekdays.",
       "The pool's heating shows up in your energy bill, so solar and wind now pay for a bit of luxury.",
