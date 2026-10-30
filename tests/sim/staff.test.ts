@@ -68,10 +68,11 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '137b8822',
   'yearReports': '102ceb83',
   'advisor': 'ca063e92',
-  'progression': '30be591e',
+  'progression': 'fa89ad3d',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
+// RE-RECORDED (M6.3 STOP: rafting + canyoning level 3 unlock rows: ONLY `progression` moved (30be591e -> fa89ad3d); every other part byte-identical, money unchanged).
 // RE-RECORDED (M6.3 unlock rows: tackleHut level 2, treehouse level 2, crag, quadBase: ONLY `progression` moved (6d55bbeb -> 30be591e); every other part is byte-identical, so spawning, economy and rating are unchanged).
 // RE-RECORDED (Climbing Crag unlock, Phase 6 Task 23: ONLY `progression` moved (2b81e824 -> 6d55bbeb): the unlock snapshot gained building:crag at level 2; every other part is byte-identical; later Phase 6 unlock rows move it again).
 // RE-RECORDED (Quad Base unlock, Phase 6 Task 22: ONLY `progression` moved (c1c20eb0 -> 2b81e824): the unlock snapshot gained building:quadBase at level 2; every other part is byte-identical; later Phase 6 unlock rows move it again).

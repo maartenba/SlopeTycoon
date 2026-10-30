@@ -50,6 +50,8 @@ export interface BotOptions {
   eco?: boolean | 'build';
   /** Summer lift handling: 'rest' (default; the bot closes the winter lifts) or 'keep' (a typical human leaves every lift on the default schedule: energy for nobody). */
   summerLifts?: 'rest' | 'keep';
+  /** Summer plan (Phase 6 M6.3 STOP check, default false so the golden runs stay put): hiking + MTB trails along every lift line (the chairs are the bike lifts) in the opening, then campground, petting zoo and viewpoint are added at the END of the wish list (additive: no winter building is displaced) (one building a month, respecting unlocks when asked). */
+  summer?: boolean;
   /** Apply a price strategy once (exploit tests). */
   prices?: (sim: Sim) => void;
 }
@@ -73,6 +75,9 @@ export const WISHES: readonly Wish[] = [
   ['rental', [1, 1, 2]], ['chalet', [2, 3, 4]], ['lodge', [1, 2, 3]], ['playground', [1, 1, 1]], ['adventurePark', [1, 1, 2]], ['shop', [1, 2, 3]], ['parking', [1, 2, 2]], ['cafe', [1, 2, 3]],
   ['apartment', [0, 1, 2]], ['liftWorkshop', [1, 1, 1]], ['beach', [0, 1, 1]],
 ];
+
+/** Wishes of the `summer` option (campground, petting zoo, viewpoint). */
+export const SUMMER_WISHES: readonly Wish[] = [['campground', [1, 1, 2]], ['pettingZoo', [1, 1, 2]], ['viewpoint', [1, 1, 2]]];
 
 export class Bot {
   report: StarterReport | null = null;
@@ -101,7 +106,7 @@ export class Bot {
     const cash0 = sim.game.money;
     const top = 5_000_000;
     sim.game.money = top;
-    const trails = this.policy?.trails;
+    const trails = this.policy?.trails || this.opt.summer;
     this.report = buildStarterResort(sim, {
       ...this.policy?.starter, ...this.opt.starterOpts, funds: top,
       ...(trails ? { extra: (kit) => {
@@ -155,7 +160,7 @@ export class Bot {
           sim.refreshCoverage(b, out.changed.length > 0);
           // shop / chalet / apartment accept a footpath, but the bot keeps serving them by road (balance + goldens unchanged)
           if (def.access === 'road' || type === 'shop' || type === 'chalet' || type === 'apartment') this.ensure(NetKind.Road, b, [networks.roadEntry ?? { x: -1, y: -1 }]);
-          else if (def.access === 'path' || def.access === 'pisteEdge') this.ensure(NetKind.Path, b, ringOf(lodge));
+          else if (def.access === 'path' || def.access === 'pisteEdge' || (this.opt.summer && type === 'viewpoint')) this.ensure(NetKind.Path, b, ringOf(lodge));
           buildings.reevaluate(); sim.refreshCoverage(undefined, true);
           return true;
         }
@@ -224,7 +229,8 @@ export class Bot {
     if (sim.guestSim.comfortNeed && cash() > reserve + 3_000 && this.count('toilets') < Math.min(3, 1 + Math.floor(sim.guestSim.store.count / 100))) this.build('toilets');
     if (this.opt.expand === false) return;
     const si = sim.size >= 256 ? 2 : sim.size >= 128 ? 1 : 0;
-    for (const [type, max] of this.policy?.wishes ?? WISHES) {
+    const wishes = this.opt.summer ? [...(this.policy?.wishes ?? WISHES), ...SUMMER_WISHES] : this.policy?.wishes ?? WISHES;
+    for (const [type, max] of wishes) {
       if (this.count(type) >= max[si]!) continue;
       if (this.opt.respectUnlocks && !sim.progression.isUnlocked('building', type)) continue; // locked at this resort level: skip, the next level may open it
       const cost = BUILDINGS[type]!.cost;
