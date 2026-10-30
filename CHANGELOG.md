@@ -4,6 +4,12 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- **Seniors** (new guest type): quiet guests who tire fast and need the toilet more often, take a coffee on the Heated Terrace or in the Café, walk up to a viewpoint now and then and never ski a black run. They arrive from level 2 once the village has a terrace, a café or toilets, most on weekdays, with grey hair and brown cardigans (`docs/guest-types.md`).
+- **School groups** (new guest type): a class of 8-15 children and a teacher arrives by coach on weekdays in early December, January and summer, wearing matching orange bibs. The teacher walks them to the Ski School, Kids Ground, Playground or Petting Zoo (a Ski School teaches a big class in batches). Needs a kids venue; low spend, high volume (`docs/guest-types.md`).
+- **Petting Zoo** is now a kids venue families can drop children at in summer.
+
 ## [0.2.7] - 2026-10-30 (pre-release)
 
 Summer content, the third content wave of Phase 6 (milestone M6.3). Changes since 0.2.6: a campground, a petting zoo, viewpoints and treehouses, quad tours, a climbing crag, rafting and canyoning on a river, angling with fish stock, two new guest types and two summer campaigns.

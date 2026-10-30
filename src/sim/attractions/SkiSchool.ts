@@ -60,6 +60,9 @@ export class SkiSchool {
     for (const list of [this.queue, this.active]) for (let i = list.length - 1; i >= 0; i--) if (list[i]!.group === group) list.splice(i, 1);
   }
 
+  /** True while a lesson batch of this group waits or runs. */
+  pending(group: number): boolean { return this.queue.some((g) => g.group === group) || this.active.some((g) => g.group === group); }
+
   newDay(day: number): void { if (day !== this.day) { this.day = day; this.lessonsToday = 0; } }
 
   update(tick: number): void {

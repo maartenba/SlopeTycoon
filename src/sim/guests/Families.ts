@@ -3,11 +3,12 @@
  *  glued to a parent (position follows the family leader). No three/DOM imports. */
 import { SkiSchool, SKI_SCHOOL, type LessonGroup, type SkiSchoolHooks } from '../attractions/SkiSchool';
 import type { GameBus } from '../../core/events';
+import { extraDef } from '../../config/guestTypes';
 import { GState, GuestType, Leave, type GuestStore } from './Guest';
 import { addLessonXp } from './Skill';
 import type { WorldBuilding } from './GuestWorld';
 
-export type KidsKind = 'skiSchool' | 'kidsGround' | 'playground' | 'childcare';
+export type KidsKind = 'skiSchool' | 'kidsGround' | 'playground' | 'pettingZoo' | 'childcare';
 export interface KidsArea { id: number; kind: KidsKind; x: number; y: number; w: number; h: number; capacity: number; open: boolean }
 export interface LunchSpot { id: number; kind: 'restaurant' | 'hut' | 'playground' | 'rink' | 'beach'; x: number; y: number; w: number; h: number }
 /** Source of kid-friendly destinations (Task 23's attraction registry can replace the default Buildings adapter). */
@@ -16,7 +17,7 @@ export interface KidsAreaProvider {
   lunchSpots(): LunchSpot[];
 }
 
-export const KIDS_NAMES: Record<KidsKind, string> = { skiSchool: 'Ski School', kidsGround: 'Kids Ground', playground: 'Playground', childcare: 'childcare' };
+export const KIDS_NAMES: Record<KidsKind, string> = { skiSchool: 'Ski School', kidsGround: 'Kids Ground', playground: 'Playground', pettingZoo: 'Petting Zoo', childcare: 'childcare' };
 const FOOD_KIND: Record<string, LunchSpot['kind']> = { baseLodge: 'restaurant', lodge: 'restaurant', cafe: 'restaurant', heatedTerrace: 'restaurant', mountainHut: 'hut' };
 
 /**
@@ -33,6 +34,7 @@ export function buildingKidsProvider(buildings: () => Iterable<WorldBuilding>, s
         if (b.type === 'skiSchoolHQ') mk('skiSchool', 30, snow);
         else if (b.type === 'kidsGround') mk('kidsGround', 25, snow);
         else if (b.type === 'playground') mk('playground', 25, !snow);
+        else if (b.type === 'pettingZoo') mk('pettingZoo', 20, !snow);
         else if (b.type === 'baseLodge') mk('childcare', 6, !snow);
       }
       return out;
@@ -63,6 +65,9 @@ export const FAMILY = {
   noSchoolDrain: 0.004, waitDrain: 0.005, playGain: 0.002,
   kidUnhappy: 0.1,
 } as const;
+
+/** Kids per lesson batch of a big (school) group. */
+export const LESSON_BATCH = 6;
 
 export interface Family {
   group: number;
@@ -227,7 +232,8 @@ export class Families {
   private register(): void {
     const s = this.store, by = new Map<number, number[]>();
     for (let i = 0; i < s.limit; i++) {
-      if (!s.alive[i] || s.type[i] !== GuestType.Family) continue;
+      const ty = s.type[i]!;
+      if (!s.alive[i] || (ty !== GuestType.Family && !(ty >= 6 && extraDef(ty)?.kidGroup))) continue;
       const g = s.group[i]!;
       if (g <= 0 || this.groups.has(g) || this.ignored.has(g)) continue;
       let a = by.get(g); if (!a) by.set(g, a = []);
@@ -236,9 +242,10 @@ export class Families {
     for (const [g, ids] of by) {
       if (ids.length < 2) { this.ignored.add(g); continue; }
       ids.sort((a, b) => a - b);
-      const np = ids.length >= 3 ? 2 : 1;
-      const parents = ids.slice(0, np), kids = ids.slice(np, np + FAMILY.maxKids);
-      for (const id of ids.slice(np + FAMILY.maxKids)) parents.push(id);
+      const sc = extraDef(s.type[s.slotOf(ids[0]!)]!)?.kidGroup; // school group: the first id is the teacher, everybody else is a child
+      const np = sc ? Math.min(sc.adults, ids.length - 1) : ids.length >= 3 ? 2 : 1;
+      const parents = ids.slice(0, np), kids = ids.slice(np, np + (sc ? 99 : FAMILY.maxKids));
+      if (!sc) for (const id of ids.slice(np + FAMILY.maxKids)) parents.push(id);
       const f: Family = {
         group: g, parents, kids, leader: parents[0]!, phase: FamilyPhase.Together, phaseTick: this.tick, venue: null, failed: new Set(),
         sessions: 0, lunchDone: false, noSchool: false, lessonDone: false, regroupReason: 'lunch', lunchSpot: null, lastRetry: this.tick,
@@ -267,7 +274,7 @@ export class Families {
 
   private pickVenue(f: Family): KidsArea | null {
     const all = this.provider.areas();
-    const order: KidsKind[] = ['skiSchool', 'kidsGround', 'playground', 'childcare'];
+    const order: KidsKind[] = ['skiSchool', 'kidsGround', 'playground', 'pettingZoo', 'childcare'];
     const used = new Map<number, number>();
     for (const o of this.groups.values()) if (o.venue && o.phase === FamilyPhase.AtVenue) used.set(o.venue.id, (used.get(o.venue.id) ?? 0) + o.kids.length);
     for (const k of order) {
@@ -449,7 +456,11 @@ export class Families {
     f.sessions++; f.lessonDone = false;
     this.dropoffs++;
     for (const sl of this.slots(f.kids)) { const [x, y] = this.spot(v, this.store.id[sl]!); this.host.place(sl, x, y); }
-    if (v.kind === 'skiSchool') this.school(v.id).enroll(f.group, [...f.kids], this.tick);
+    if (v.kind === 'skiSchool') {
+      const sch = this.school(v.id);
+      // a big group (school class) is taught in batches of at most `LESSON_BATCH` kids so a small school (2 instructors = 8 places) can start them; most families have <= 3 kids = one batch
+      for (let k = 0; k < f.kids.length; k += LESSON_BATCH) sch.enroll(f.group, f.kids.slice(k, k + LESSON_BATCH), this.tick);
+    }
     this.setPhase(f, FamilyPhase.AtVenue);
     this.bus?.emit('family:dropoff', { group: f.group, venueId: v.id, venue: v.kind, kids: f.kids.length, parents: f.parents.length });
   }
@@ -458,7 +469,7 @@ export class Families {
     const f = this.groups.get(g.group);
     const quality = this.school(schoolId).quality();
     if (f) {
-      f.lessonDone = true;
+      f.lessonDone = !this.school(schoolId).pending(g.group); // a big group is done once its last batch finished
       for (const id of g.kids) {
         const sl = this.store.slotOf(id);
         if (sl < 0) continue;

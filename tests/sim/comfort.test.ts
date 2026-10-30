@@ -50,8 +50,10 @@ describe('comfort need (Phase 6 Task 7)', () => {
     expect(t.stats.served).toBeGreaterThan(0);
   });
   it('guests in need walk to the toilet and are relieved; without one they stay desperate', () => {
-    const run = (withToilet: boolean): number => {
-      const sim = createSim({ size: 64, seed: 61, starterResort: true, mode: 'sandbox', now: () => 0 });
+    // a handful of guests is awake at this hour: average a few seeds so a different arrival draw (new guest types) cannot flip a 3-guest sample
+    const run = (withToilet: boolean): number => [61, 7, 5].reduce((a, seed) => a + runOne(withToilet, seed), 0) / 3;
+    const runOne = (withToilet: boolean, seed: number): number => {
+      const sim = createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', now: () => 0 });
       if (!withToilet) { for (const b of sim.buildings.all().filter((x) => x.type === 'toilets')) sim.buildings.remove(b.id); sim.refreshCoverage(undefined, true); }
       sim.tick(240 * 6 + 120);
       const s = sim.guestSim.store;
@@ -59,7 +61,7 @@ describe('comfort need (Phase 6 Task 7)', () => {
       const ids = new Set<number>(); for (let i = 0; i < s.limit; i++) if (s.alive[i]) ids.add(s.id[i]!);
       sim.tick(40);
       let u = 0, n = 0;
-      for (const id of ids) { const i = s.slotOf(id); if (i >= 0) { u += s.urge[i]!; n++; } }
+      for (const id of ids) { const i = s.slotOf(id); if (i >= 0 && !sim.guestSim.families.controls(i)) { u += s.urge[i]!; n++; } } // kids of a family / school class are driven by the family system (never walk to a toilet themselves)
       return n ? u / n : 1;
     };
     expect(run(true)).toBeLessThan(run(false) - 0.05);

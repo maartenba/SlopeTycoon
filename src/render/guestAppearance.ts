@@ -58,6 +58,8 @@ export function ageOf(id: number, rawType: number, kid?: boolean): number {
   if (kid === true) return Age.Child;
   const type = coreOf(rawType); // extra guest types look like their fallback core type unless a look hook says otherwise
   const r = rand01(id, 11);
+  const lk = rawType >= 6 ? extraDef(rawType)?.look : undefined;
+  if (lk?.age !== undefined && kid !== false && rand01(id, 16) < (lk.ageShare ?? 1)) return lk.age; // seniors: grey / white hair, a calmer figure
   if (type === 2) return kid === false ? (r < 0.12 ? Age.Teen : Age.Adult) : r < 0.36 ? Age.Child : r < 0.46 ? Age.Teen : Age.Adult;
   if (type === 5) return r < 0.12 ? Age.Teen : Age.Adult;
   return r < 0.08 ? Age.Teen : r < (type === 4 ? 0.2 : 0.17) ? Age.Senior : Age.Adult;
@@ -100,6 +102,7 @@ export function appearanceOf(id: number, type: number, winter: boolean, kid?: bo
   const lk = type >= 6 ? extraDef(type)?.look : undefined;
   if (lk?.helmet) out.hairStyle = HairStyle.Helmet; // mountain bikers: a helmet in every season
   else if (lk?.hat !== undefined && age !== Age.Child) out.hairStyle = lk.hat; // anglers: cap / sun hat
+  else if (lk?.noHelmet && out.hairStyle === HairStyle.Helmet) out.hairStyle = female ? HairStyle.Bun : HairStyle.Short; // seniors: no ski helmet, the grey hair shows
   out.top = top;
   out.bottom = Math.floor(rand01(id, 8) * 8);
   out.hat = (top + 3 + Math.floor(rand01(id, 9) * 9)) % 16;

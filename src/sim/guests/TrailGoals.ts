@@ -1,5 +1,6 @@
 import { Layer } from '../../world/Networks';
 import type { LiftInfo } from './Decision';
+import { extraDef } from '../../config/guestTypes';
 import { coreOf, GuestType } from './Guest';
 import { NavMode, type NavGraph } from './NavGraph';
 import { EXC, plannedHours } from './Excursion';
@@ -132,6 +133,7 @@ export class TrailGoals {
     const topRel = lift ? this.rel(g, liftTop) : 0;
     const wantLift = !!lift && topRel - here >= T.minLiftGain && c.wait(lift.lift.id) < 80 && rng.chance(T.liftFirstChance);
     const sx = wantLift ? lift!.lift.top.x : c.x, sy = wantLift ? lift!.lift.top.y : c.y, sRel = wantLift ? topRel : here;
+    const vm = c.type >= 6 ? extraDef(c.type)?.viewBonus ?? 1 : 1; // seniors love a view (1 for the core types)
     const hiker = c.pref === 1 || coreOf(c.type) === GuestType.Adventure;
     const fit = 0.85 + 0.1 * c.skill - 0.2 * c.fatigue;
     const scored: GoalPick[] = [];
@@ -156,7 +158,7 @@ export class TrailGoals {
       const D = plannedHours(total, n, bike ? 1 : 0, fit);
       const allowed = c.leaveHour - EXC.duskMargin - c.hour - EXC.stopH - (wantLift ? 0.4 : 0);
       if (allowed < EXC.minH * 0.8) continue;
-      let sc = bike ? 0.4 + 1.2 * (aRel - p.rel) : 0.3 + 0.9 * Math.pow(p.rel, 1.2) + (p.kind === 2 ? T.hutBonus : 0) + (p.kind === 1 ? T.summitBonus : 0) + (p.kind === 3 ? 0.1 : 0) + (p.view ? VIEWPOINT.poiBonus * p.view : 0);
+      let sc = bike ? 0.4 + 1.2 * (aRel - p.rel) : 0.3 + 0.9 * Math.pow(p.rel, 1.2) + (p.kind === 2 ? T.hutBonus : 0) + (p.kind === 1 ? T.summitBonus : 0) + (p.kind === 3 ? 0.1 : 0) + (p.view ? VIEWPOINT.poiBonus * p.view * vm : 0);
       if (!bike && p.rel >= T.topRel) sc += hiker ? T.pullHiker : T.pullOther;
       if (D > allowed) sc -= 0.8 * (D / allowed - 1);
       if (c.skill <= 0 && p.rel > 0.7) sc -= 0.3;

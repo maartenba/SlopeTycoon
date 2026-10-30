@@ -1,3 +1,4 @@
+import { extraDef } from '../../config/guestTypes';
 import { GState, Leave, GuestStore, SKILL_NAMES, GSTATE_NAMES, typeKey } from './Guest';
 
 /** Per-tick need growth (240 ticks = one in-game day). */
@@ -48,12 +49,13 @@ export function happinessTarget(hunger: number, fatigue: number, env: NeedEnv, u
 export function tickNeeds(s: GuestStore, i: number, env: NeedEnv): number {
   const st = s.state[i]!;
   const walking = st === GState.Walking || st === GState.Leaving;
+  const tn = s.type[i]! >= 6 ? extraDef(s.type[i]!)?.needs : undefined; // per-type multipliers (extra types only; core = exactly the old numbers)
   if (st === GState.Sleeping) s.fatigue[i] = Math.max(0, s.fatigue[i]! + NEEDS.fatigueSleep);
   else {
     s.hunger[i] = Math.min(1, s.hunger[i]! + (walking ? (s.act[i] === 7 ? NEEDS.hungerHike : NEEDS.hungerWalk) : NEEDS.hungerIdle));
-    s.fatigue[i] = Math.min(1, s.fatigue[i]! + (walking ? NEEDS.fatigueWalk : NEEDS.fatigueIdle));
+    s.fatigue[i] = Math.min(1, s.fatigue[i]! + (walking ? NEEDS.fatigueWalk : NEEDS.fatigueIdle) * (tn?.fatigue ?? 1));
   }
-  if (env.comfort && st !== GState.Sleeping) s.urge[i] = Math.min(1, s.urge[i]! + (walking ? NEEDS.urgeWalk : NEEDS.urgeIdle));
+  if (env.comfort && st !== GState.Sleeping) s.urge[i] = Math.min(1, s.urge[i]! + (walking ? NEEDS.urgeWalk : NEEDS.urgeIdle) * (tn?.urge ?? 1));
   const target = happinessTarget(s.hunger[i]!, s.fatigue[i]!, env, s.urge[i]!);
   s.happiness[i] = s.happiness[i]! + (target - s.happiness[i]!) * NEEDS.happinessRate;
   if (s.state[i] === GState.Leaving) return 0;

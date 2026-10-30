@@ -32,6 +32,19 @@ export interface TypeLook {
   helmet?: boolean;
   /** Head-wear forced for the type (HairStyle value); anglers favour caps / sun hats. */
   hat?: number;
+  /** Age class forced for `ageShare` (default 1) of the type's guests (Age value, 3 = senior: grey / white hair). Kids of a school group stay children (the family system says so). */
+  age?: number;
+  ageShare?: number;
+  /** No helmet in winter (hair, beanie or hat instead): seniors, so the grey / white hair reads. */
+  noHelmet?: boolean;
+}
+
+/** Per-type need multipliers (Phase 6 Task 29; Needs.tickNeeds). Core types and omitted keys = 1, bit for bit. */
+export interface TypeNeeds {
+  /** Fatigue growth multiplier (seniors tire quickly). */
+  fatigue?: number;
+  /** Comfort-need urge growth multiplier (seniors need the toilet more often). */
+  urge?: number;
 }
 
 export interface GuestTypeDef {
@@ -62,6 +75,24 @@ export interface GuestTypeDef {
   look?: TypeLook;
   /** Activity preference in percent [hike, bike]; the rest skis. Omitted = the fallback type's (`prefFor`). */
   pref?: readonly [number, number];
+  /** Calendar gate evaluated on top of the season share (weekdays only, low season ...). Absent = no restriction. Needs the calendar fields of `ActiveCtx`; a context without them fails the gate. */
+  when?: (c: ActiveCtx) => boolean;
+  /** Arrival weight multiplier on weekdays (Mon-Fri) / weekend days (default 1). */
+  dayMult?: { weekday?: number; weekend?: number };
+  /** `requires` for one season only (replaces `requires` in that season): a school group needs a snow kids venue in winter, a summer one in summer. */
+  requiresIn?: Partial<Record<SeasonId, readonly string[]>>;
+  /** Need multipliers (fatigue, urge). */
+  needs?: TypeNeeds;
+  /** Highest skill the type ever reaches (0..3). Seniors stop at intermediate: they take green / blue / red pistes, never black. */
+  maxSkill?: number;
+  /** Multiplier on the hiking-goal bonus of viewpoints (default 1). */
+  viewBonus?: number;
+  /** Building ids this type picks for a meal when one is open (falls back to every venue); seniors take the terrace / the café. */
+  foodPrefer?: readonly string[];
+  /** Extra score of the 'eat' goal (a coffee and cake stop even without hunger). */
+  eatBonus?: number;
+  /** Arrives as a supervised kids group: `adults` adult(s) (the lowest ids) and the rest children, handled by the Families system (school groups). */
+  kidGroup?: { adults: number };
 }
 
 /**
@@ -74,7 +105,7 @@ export const COND_FISHING = '@fishing';
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -94,6 +125,28 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     appeal: { angling: 1.5, tackleHut: 1.5, beach: 0.7, boats: 0.6, restaurant: 0.7, bar: 0.5, terrace: 0.6, hike: 0.5, farm: 0.5, shop: 0.4, adventure: 0.15, rink: 0.2, stunt: 0.05, playground: 0.1, kidsGround: 0.1, carpet: 0.05, tour: 0.1 },
     group: [1, 2], budget: [100, 200], overnight: 0.25, pref: [25, 0],
     look: { top: 5, topShare: 0.8, colour: 0x1fa59a, hat: 7 }, // teal jacket, cap
+  },
+  {
+    // Slow, comfortable, well-off: short days (tire fast), the toilet more often, a long coffee on the terrace, the viewpoint, a nap; never a black run.
+    // Mostly on weekdays and in the quiet seasons. Gate: level 2 and somewhere to sit / relieve themselves (terrace, café or toilets).
+    id: 'senior', label: 'Senior', seasons: { winter: 0.05, spring: 0.05, summer: 0.04, autumn: 0.06 }, minLevel: 2, requires: ['heatedTerrace', 'cafe', 'toilets'], fallback: 'couple', segment: 'couple',
+    weather: { rain: 0.5, storm: 0.1, snow: 0.8, heavySnow: 0.5 }, dayMult: { weekday: 1.4, weekend: 0.7 },
+    // `pool` = a lodging with the pool amenity (Luxury Hotel); `tour` = sleigh / guided tours (M6.5); the viewpoint is a hiking goal (`viewBonus`), not an attraction.
+    appeal: { heatedTerrace: 1.5, terrace: 1.5, cafe: 1.4, restaurant: 1.0, pool: 1.5, lodging: 0.9, tour: 1.3, zoo: 0.8, farm: 0.8, beach: 0.6, boats: 0.7, shop: 0.7, hike: 0.3, bar: 0.3, rink: 0.3, carpet: 0.1, kidsGround: 0.1, playground: 0.1, adventure: 0.05, stunt: 0.05, climbing: 0.05 },
+    group: [1, 2], budget: [350, 650], overnight: 0.55, skill: [0.45, 0.55, 0, 0], maxSkill: 1, pref: [25, 0],
+    needs: { fatigue: 1.5, urge: 2 }, viewBonus: 1.5, foodPrefer: ['heatedTerrace', 'cafe'], eatBonus: 0.35,
+    look: { top: 15, topShare: 0.6, colour: 0xb39ddb, age: 3, ageShare: 0.9, noHelmet: true }, // brown cardigans, grey / white hair
+  },
+  {
+    // A class on a day trip: 1 teacher + 8-15 children arriving by coach, weekdays only, outside the holidays, in the low season (Dec 1-8, January) and in summer. They are a kids group of the
+    // Families system (one teacher, the kids go to the ski school / kids ground / playground / petting zoo). Cheap day: small budgets, no overnight stay.
+    id: 'school', label: 'School group', seasons: { winter: 0.02, summer: 0.015 }, minLevel: 2, fallback: 'family', segment: 'budget',
+    requiresIn: { winter: ['skiSchoolHQ', 'kidsGround', 'magicCarpet'], summer: ['playground', 'pettingZoo', 'campground'] },
+    when: (c) => c.weekday !== undefined && c.weekday < 5 && !c.holiday && (c.season === 'summer' || c.month === 0 || (c.month === 11 && (c.dom ?? 99) <= 8)),
+    weather: { rain: 0.5, storm: 0.05, heavySnow: 0.6 },
+    appeal: { skiSchoolHQ: 1.4, carpet: 1.4, kidsGround: 1.4, playground: 1.4, zoo: 1.2, rink: 0.9, beach: 0.7, farm: 0.7, restaurant: 0.4, shop: 0.3, bar: 0, adventure: 0.2, stunt: 0.2 },
+    group: [9, 16], budget: [70, 130], overnight: 0, pref: [10, 10], kidGroup: { adults: 1 },
+    look: { top: 1, topShare: 1, colour: 0xf08a24 }, // matching orange bibs
   },
 ];
 
@@ -139,13 +192,20 @@ export function typeLabel(type: number): string {
 /** Every type index in order (core + extras). */
 export function allTypes(): number[] { return Array.from({ length: guestTypeCount() }, (_, i) => i); }
 
-export interface ActiveCtx { season: SeasonId; level: number; hasBuilding: (id: string) => boolean; weather?: WeatherKind }
+export interface ActiveCtx {
+  season: SeasonId; level: number; hasBuilding: (id: string) => boolean; weather?: WeatherKind;
+  /** Calendar (the spawner fills them from the date): weekday 0 = Monday .. 6 = Sunday, real month 0 = January, day of month 1..15, public / school holiday (marketing HOLIDAYS). */
+  weekday?: number; month?: number; dom?: number; holiday?: boolean;
+}
 /** Arrival weight of an extra type right now (0 = not eligible): season share x weather. Level / requirement gates apply first. */
 export function extraWeight(def: GuestTypeDef, c: ActiveCtx): number {
   const share = def.seasons[c.season] ?? 0;
   if (share <= 0 || c.level < def.minLevel) return 0;
-  if (def.requires && def.requires.length && !def.requires.some((r) => c.hasBuilding(r))) return 0;
-  return share * (c.weather ? def.weather?.[c.weather] ?? 1 : 1);
+  const req = def.requiresIn?.[c.season] ?? def.requires;
+  if (req && req.length && !req.some((r) => c.hasBuilding(r))) return 0;
+  if (def.when && !def.when(c)) return 0;
+  const dm = def.dayMult && c.weekday !== undefined ? (c.weekday < 5 ? def.dayMult.weekday : def.dayMult.weekend) ?? 1 : 1;
+  return share * dm * (c.weather ? def.weather?.[c.weather] ?? 1 : 1);
 }
 
 /** Appeal of an attraction (kind / id / explicit core columns) for a type. Core types read their column untouched. */
@@ -154,6 +214,6 @@ export function appealFor(spec: { kind: string; appeal: readonly number[] }, bui
   const d = extraDef(type);
   if (!d) return spec.appeal[0];
   const own = d.appeal;
-  if (own) { const v = (buildingId !== undefined ? own[buildingId] : undefined) ?? own[spec.kind]; if (v !== undefined) return v; }
+  if (own) { const am = (spec as { amenity?: string } | undefined)?.amenity; const v = (buildingId !== undefined ? own[buildingId] : undefined) ?? (am ? own[am] : undefined) ?? own[spec.kind]; if (v !== undefined) return v; }
   return spec.appeal[idx(d.fallback)];
 }

@@ -2,7 +2,9 @@ import type { GameState } from '../../core/GameState';
 import type { GameBus, SeasonId } from '../../core/events';
 import { BUILDINGS } from '../../config/buildings';
 import { DAYS_PER_YEAR, GUEST_BASE_SPAWN_PER_TICK, SIZE_SPAWN_MULT } from '../../config/balance';
-import { hourOfDay, seasonOf } from '../Clock';
+import { hourOfDay, seasonOf, weekdayOf } from '../Clock';
+import { realMonthOfDay, calendarDayOfMonth } from '../calendar';
+import { isHoliday } from '../Pricing';
 import { arrivalWindow } from '../Daylight';
 import type { SimSystem } from '../Systems';
 import type { RailCrossings } from '../RailCrossings';
@@ -210,7 +212,10 @@ export class Spawner {
    * level + required buildings. No eligible type = the core type is returned untouched.
    */
   private maybeExtra(state: GameState, season: SeasonId, coreTotal: number, mk: MarketingState, core: number): number {
-    const ctx = { season, level: this.levelFn(), hasBuilding: (id: string) => this.placed.has(id), weather: this.world.weather().kind };
+    const ctx = {
+      season, level: this.levelFn(), hasBuilding: (id: string) => this.placed.has(id), weather: this.world.weather().kind,
+      weekday: weekdayOf(state.date), month: realMonthOfDay(state.date.day), dom: calendarDayOfMonth(state.date.day), holiday: isHoliday(state.date.day),
+    };
     let sum = 0;
     const ws: number[] = [];
     for (let j = 0; j < GUEST_TYPE_DEFS.length; j++) {
@@ -248,10 +253,12 @@ export class Spawner {
       kind = VehicleKind.Bus; size = rng.int(8, 14);
       riders = Array.from({ length: size }, () => rng.pick([GuestType.Solo, GuestType.Budget, GuestType.Adventure]));
     } else riders = Array.from({ length: size }, () => type);
+    const coach = p === r.road && kind === VehicleKind.Car && type >= CORE_TYPE_COUNT && !!extraDef(type)?.kidGroup;
+    if (coach) kind = VehicleKind.Bus; // a school group arrives by coach (or by train when the rail leg is chosen)
     if (p === r.rail) kind = VehicleKind.Train;
     if (p === r.air) kind = VehicleKind.Plane;
     if (this.store.count + this.ridersInFlight() + size > this.store.capacity) { this.overflow += size; return size; } // aggregate
-    const dests = kind === VehicleKind.Bus ? p.destinations.filter((d) => d.type === 'shuttleDepot') : p.destinations;
+    const dests = kind === VehicleKind.Bus && !coach ? p.destinations.filter((d) => d.type === 'shuttleDepot') : p.destinations;
     const dest = rng.pick(dests);
     const to = { x: dest.x, y: dest.y, w: dest.w, h: dest.h };
     let pts: number[] = [];

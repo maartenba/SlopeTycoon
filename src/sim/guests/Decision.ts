@@ -319,11 +319,14 @@ export class Decider {
     if (this.food.length) {
       const lunch = hour >= 11.5 && hour <= 13.5 && hunger > 0.2;
       const group = s.group[i]!;
-      const b = lunch && group ? [...this.food].sort((a, c) => a.id - c.id)[group % this.food.length]! : this.nearest(this.food, x, y, rng)!;
+      const xd = s.type[i]! >= 6 ? extraDef(s.type[i]!) : undefined; // seniors: the terrace / the café first (extra types only; the core draw order is untouched)
+      const pool = xd?.foodPrefer ? this.food.filter((f) => xd.foodPrefer!.includes(f.type)) : this.food;
+      const menu = pool.length ? pool : this.food;
+      const b = lunch && group ? [...menu].sort((a, c) => a.id - c.id)[group % menu.length]! : this.nearest(menu, x, y, rng)!;
       const taste = this.port ? 0.5 * (this.port.appeal(b.id, s.type[i]!) - 0.5) : 0;
       const dem = EVENING.demandWeight * Math.max(0, venueDemand(venueKindOf(b.type), this.day, hour) - 1); // peaks (lunch, dinner) pull; quiet hours are neutral
       const outdoorsy = (pref === Pref.Hike || pref === Pref.Bike) && this.hikeTiles.length + this.mtbTiles.length > 0;
-      out.push({ kind: 'eat', building: b, score: (hunger > 0.4 ? 2 * hunger : 0.1) + (lunch ? 1.5 : 0) + (outdoorsy && hunger > NEEDS.hungryExcursion ? 1.5 : 0) + taste + dem + noise() });
+      out.push({ kind: 'eat', building: b, score: (hunger > 0.4 ? 2 * hunger : 0.1) + (lunch ? 1.5 : 0) + (outdoorsy && hunger > NEEDS.hungryExcursion ? 1.5 : 0) + taste + dem + (xd?.eatBonus ?? 0) + noise() });
     }
     const port = this.port;
     const restList = port ? this.rest.filter((b) => port.canUse(b.id, i)) : this.rest;
