@@ -68,10 +68,11 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '137b8822',
   'yearReports': '102ceb83',
   'advisor': 'ca063e92',
-  'progression': '2b81e824',
+  'progression': '7c9f8d82',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
+// RE-RECORDED (Treehouse unlock, Phase 6 Task 21: ONLY `progression` moved (2b81e824 -> 7c9f8d82): the unlock snapshot gained building:treehouse at level 2; every other part is byte-identical (the viewpoint platform is never gated; the bonus goal is saved only once met).
 // RE-RECORDED (Quad Base unlock, Phase 6 Task 22: ONLY `progression` moved (c1c20eb0 -> 2b81e824): the unlock snapshot gained building:quadBase at level 2; every other part is byte-identical; later Phase 6 unlock rows move it again).
 // RE-RECORDED (Suspension footbridge unlock, Phase 6 Task 46: ONLY `progression` moved (7e176510 -> c1c20eb0): the unlock snapshot gained landscape:suspension at level 3; everything else is byte-identical).
 // RE-RECORDED (Dig river unlock, Phase 6 Task 14: ONLY `progression` moved (8e20e249 -> 7e176510): the unlock snapshot gained landscape:river at level 2 and lift:chair6d at level 3; everything else is byte-identical).

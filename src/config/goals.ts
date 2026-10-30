@@ -107,3 +107,16 @@ export const GOALS: readonly GoalDef[] = [
 
 /** Sum of every reward (dollars). */
 export const TOTAL_REWARDS = GOALS.reduce((a, g) => a + g.reward, 0);
+
+/**
+ * Bonus goals (Phase 6 content): OPTIONAL side goals that are never part of a chapter and never shown in the three active slots, so the chain (and its
+ * golden / grant budget) is untouched. The engine checks them hourly; the first time one is met it pays its grant and shows a quiet milestone.
+ * Saved in the goals module only once one is done (`bonus`), so a world without any hashes exactly as before.
+ */
+/** How far up the mountain (0 valley floor .. 1 summit) counts as 'high ground' for the viewpoint goal. The plan's literal 2,000 m cannot be reached on any map size (tops: about 1,390 m on 64, 1,500 on 128, 1,700 m on 256), so it is relative. */
+export const VIEWPOINT_GOAL_ALT = 0.6;
+export const BONUS_GOALS: readonly GoalDef[] = [
+  { id: 'viewpointHigh', panel: { drawer: 'buildings', item: 'viewpoint' }, chapter: 'bonus', title: 'A viewpoint on the heights', flavour: 'The postcards almost sell themselves from up here.', todo: 'Build a Viewpoint on high ground (the upper part of the mountain) beside a footpath or hiking trail.', reward: 2500,
+    check: ({ w }) => { const vp = w.buildings().filter((b) => b.active && b.type === 'viewpoint'); if (!vp.length) return 0; return vp.some((b) => (w.altFrac?.(b.x + (b.w >> 1), b.y + (b.h >> 1)) ?? 0) >= VIEWPOINT_GOAL_ALT) ? 1 : 0.5; },
+    focus: (w) => firstOf(w, 'viewpoint') ?? lodge(w) },
+];

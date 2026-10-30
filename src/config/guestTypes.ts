@@ -1,4 +1,5 @@
 import type { SeasonId, WeatherKind } from '../core/events';
+import { ICE_FISHING } from './balance';
 
 /**
  * Guest-type framework (Phase 6, Task 9; docs/guest-types.md).
@@ -27,8 +28,6 @@ export interface TypeLook {
   outfit?: number;
   /** Always a helmet (any season): mountain bikers. */
   helmet?: boolean;
-  /** Carries a fishing rod (view-only prop): anglers. */
-  rod?: boolean;
   /** Head-wear forced for the type (HairStyle value); anglers favour caps / sun hats. */
   hat?: number;
 }
@@ -66,12 +65,14 @@ export interface GuestTypeDef {
 /**
  * Pseudo building ids a type may list in `requires` (conditions the spawner computes from the world, not placed buildings):
  * `@mtbBikeLift` = a rideable MTB trail AND an open bike-capable lift (Mountain biker).
+ * `@fishing` = an open Tackle & bait hut with fishable water (and fish) in reach (Angler).
  */
 export const COND_MTB_BIKE_LIFT = '@mtbBikeLift';
+export const COND_FISHING = '@fishing';
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -81,6 +82,16 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     appeal: { adventure: 1.3, rental: 0.9, restaurant: 0.7, bar: 0.8, terrace: 0.7, hike: 0.5, shop: 0.4, kidsGround: 0.1, playground: 0.1, carpet: 0.05, rink: 0.1, stunt: 0.2, beach: 0.5, boats: 0.4 },
     group: [1, 3], budget: [220, 420], overnight: 0.35, skill: [0.05, 0.3, 0.45, 0.2], pref: [5, 88],
     look: { top: 3, colour: 0x9acd32, helmet: true, outfit: 1 },
+  },
+  {
+    // Calm, solo / couple, low spend but steady, long dwell (the hut visit is ~7 game hours). Anchored on a Tackle & bait hut: no open hut with fish = weight 0.
+    // Summer is the main season, spring / autumn at half, winter only with ice fishing (frozen lakes and ponds; ICE_FISHING).
+    id: 'angler', label: 'Angler', seasons: { summer: 0.1, spring: 0.05, autumn: 0.05, winter: ICE_FISHING ? 0.06 : 0 }, minLevel: 2, requires: [COND_FISHING], fallback: 'solo', segment: 'solo',
+    weather: { rain: 0.6, storm: 0.1, snow: 0.8, heavySnow: 0.5 },
+    // Loves the hut and quiet water; likes a meal; hates the noisy and the sporty.
+    appeal: { angling: 1.5, tackleHut: 1.5, beach: 0.7, boats: 0.6, restaurant: 0.7, bar: 0.5, terrace: 0.6, hike: 0.5, farm: 0.5, shop: 0.4, adventure: 0.15, rink: 0.2, stunt: 0.05, playground: 0.1, kidsGround: 0.1, carpet: 0.05, tour: 0.1 },
+    group: [1, 2], budget: [100, 200], overnight: 0.25, pref: [25, 0],
+    look: { top: 5, colour: 0x1fa59a, hat: 7 }, // teal jacket, cap
   },
 ];
 

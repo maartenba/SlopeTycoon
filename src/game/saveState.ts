@@ -147,6 +147,8 @@ export const SAVE_MODULES: SaveModule[] = [
   { key: 'eco', version: 1, omitWhenNull: true, serialize: (sim) => sim.eco.serialize(), load: (sim, d) => sim.eco.load(d), reset: (sim) => sim.eco.reset() },
   // Tour bases (Phase 6 Task 5): per-tour counters + schedule slot. `null` (= left out of stateHash, like an absent module) until a tour base exists.
   { key: 'tours', version: 1, omitWhenNull: true, serialize: (sim) => sim.tours.serialize(), load: (sim, d) => sim.tours.load(d), reset: (sim) => sim.tours.reset() },
+  // Fish stock per water body (Phase 6 Task 49, docs/anglers.md). `null` (= left out of stateHash) until somebody has fished.
+  { key: 'fishStock', version: 1, omitWhenNull: true, serialize: (sim) => sim.fishStock.serialize(), load: (sim, d) => sim.fishStock.load(d), reset: (sim) => sim.fishStock.reset() },
   // Welcome-back recap data (M5.1). Additive: old saves have none -> reduced recap.
   { key: 'sessionMeta', version: 1, serialize: (sim) => sim.session.serialize(), load: (sim, d) => sim.session.load(d), reset: (sim) => sim.session.reset() },
   // Resort goal chain. Keep LAST: reset() (old saves without it) silently completes goals the restored world already satisfies.

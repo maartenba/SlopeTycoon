@@ -198,6 +198,7 @@ export const STRINGS = {
   'hint.season.winter.text': 'Winter is here: open your lifts, check pistes and set ticket prices.',
   'hint.season.spring.text': 'Spring: the snowline climbs and lower pistes melt. Time for hiking trails and summer plans.',
   'hint.season.summer.text': 'Summer: build hiking and MTB trails, boats and beaches. Construction is cheaper now.',
+  'hint.view.photo.text': 'A place with a view: hikers will walk there for it, and Photo mode (the camera button) now has a **Viewpoint** button that takes you to it.',
   'hint.summer.farm.text': 'Summer is here: an **Alpine Farm** (Recreation) brings cows to the pastures and attracts families.',
   'hint.lowRating.text': 'Your rating dropped. Open the rating panel to see what hurts the most.',
   'hint.noSchool.text': 'Families are arriving but you have no **Ski School**. Kids need lessons.',

@@ -20,10 +20,16 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'windTurbine', level: 2 },
   // Level 2: the summer quad tours (Phase 6 Task 22; an optional motorised extra: no goal or Advisor rule needs it).
   { kind: 'building', id: 'quadBase', level: 2 },
+  // Level 2: the Tackle & bait hut (Phase 6 Task 49; angling is optional: no goal or Advisor rule needs it; the fishing pier needs the hut first).
+  { kind: 'building', id: 'tackleHut', level: 2 },
+  // Level 2: the climbing crag (Phase 6 Task 23; needs a rock face, an optional adventure extra: no goal or Advisor rule needs it).
+  { kind: 'building', id: 'crag', level: 2 },
   // Level 2: digging ponds (the rest of the Landscape drawer is always available).
   { kind: 'landscape', id: 'pond', level: 2 },
   // Level 2: digging rivers + placing springs (Phase 6, like ponds; no goal or Advisor rule needs a river).
   { kind: 'landscape', id: 'river', level: 2 },
+  // Level 2: the treehouse (Phase 6 Task 21; a hiker / family extra that needs a forest: no goal or Advisor rule needs it; the viewpoint platform is never gated).
+  { kind: 'building', id: 'treehouse', level: 2 },
   // Level 3: the suspension footbridge (Phase 6 Task 46; a hiker attraction, nothing a goal or Advisor rule needs; regular bridges are always available).
   { kind: 'landscape', id: 'suspension', level: 3 },
   // Level 3 (Regional name): the heavy transport.

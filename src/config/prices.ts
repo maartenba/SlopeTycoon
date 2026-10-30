@@ -37,6 +37,9 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   magicCarpet: { price: 2, max: 10, billing: 'perUse', category: 'recreation' },
   kidsGround: { price: 5, max: 20, billing: 'perUse', category: 'recreation' },
   mtbTrail: { price: 3, max: 15, billing: 'perUse', category: 'recreation' },
+  /** Tackle & bait hut (docs/anglers.md): the day ticket / licence; rods (FISH.rodRent) and bait (FISH.bait) are fixed extras. */
+  tackleHut: { price: 12, max: 30, billing: 'perUse', category: 'recreation' },
+  fishingPier: { price: 0, max: 0, billing: 'perUse', category: 'recreation' },
   /** Free to use (docs/comfort.md): the entry exists so the attraction runtime has a ledger category; price 0 / max 0 = no price slider. */
   quadBase: { price: 40, max: 60, billing: 'perUse', category: 'recreation' },
   toilets: { price: 0, max: 0, billing: 'perUse', category: 'other' },

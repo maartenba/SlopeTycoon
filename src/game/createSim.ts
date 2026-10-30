@@ -1,7 +1,7 @@
 import { Grid, TileType } from '../world/Grid';
 import { generateTerrain, type TerrainResult } from '../world/TerrainGen';
 import { generateProps, PropStore } from '../world/Props';
-import { Layer as NetLayer, Networks } from '../world/Networks';
+import { Layer as NetLayer, NetKind, Networks } from '../world/Networks';
 import { Weather, SnowCover, createWeatherSystem } from '../sim/Weather';
 import { Safety } from '../sim/ops/Safety';
 import { createOps, Reservoirs, SNOWMAKING, qualityPreference, qualityInjuryScale, qualitySpeedFactor, type Ops } from '../sim/ops';
@@ -59,6 +59,9 @@ import { networkProviderFrom } from '../build/NetworkAdapter';
 import { heightAt } from '../render/Picking';
 import { Nature } from '../sim/nature/Nature';
 import { FlowModel, riverHabitatPoints } from '../sim/nature/Flow';
+import { FishStock } from '../sim/nature/FishStock';
+import { fishBodies } from '../sim/nature/FishWaters';
+import { AnglingPlanner } from '../sim/attractions/Angling';
 import { Marketing } from '../sim/Marketing';
 import { EVENING_VENUES, FOOD } from '../sim/guests/Decision';
 import { accepts as elasticAccepts, affordShare, demandMultiplier, mixVolume } from '../sim/Elasticity';
@@ -96,7 +99,7 @@ import { TREE_KINDS } from '../world/Props';
 import { ScenarioRunner, type ScenarioWorld } from '../sim/scenario/ScenarioRunner';
 import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
-import { COND_MTB_BIKE_LIFT } from '../config/guestTypes';
+import { COND_FISHING, COND_MTB_BIKE_LIFT } from '../config/guestTypes';
 import { DAYS_PER_YEAR } from '../config/balance';
 import { Landscape, type LandscapeEnv } from '../sim/landscape/Landscape';
 import { Rivers } from '../world/Rivers';
@@ -556,7 +559,24 @@ export function createSim(opts: SimOptions) {
     frozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0 || flow.anyDugFrozen(),
     disturb: (x, y, r) => { const f = natureRef?.fauna; if (f) for (const a of f.animals) if ((a.x - x) ** 2 + (a.y - y) ** 2 <= r * r) a.flee = Math.max(a.flee, FAUNA.fleeTicks); },
   });
+  // ---- Angling (Phase 6 Task 49, docs/anglers.md): fish stock per water body (null module while nobody has fished), the plan of every tackle hut. ----
+  const fishStock = new FishStock();
+  let fishBodiesCache: { stamp: number; list: ReturnType<typeof fishBodies> } | null = null;
+  const waterBodies = (): ReturnType<typeof fishBodies> => {
+    const stamp = rivers.version * 4099 + landscape.version;
+    if (!fishBodiesCache || fishBodiesCache.stamp !== stamp) fishBodiesCache = { stamp, list: fishBodies(size, terrainInfo.lakes, landscape.ponds, terrainInfo.streams, rivers.rivers) };
+    return fishBodiesCache.list;
+  };
+  const tileFrozen = (t: number): boolean => weather.temperatureAt(cond.altitude(t % size, Math.floor(t / size))) <= 0;
+  const anglingPlanner = new AnglingPlanner({
+    size, bodies: waterBodies, buildings: () => buildings.all(),
+    isWalk: (x, y) => { const i = y * size + x; return (networks.kind[i] ?? 0) === NetKind.Path || ((networks.layers[i] ?? 0) & (NetLayer.Mtb | NetLayer.Hike)) !== 0; },
+    frozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0,
+    riverFrozen: (key) => (key[0] === 'r' || key[0] === 'n') && (flow.get(key)?.frozen ?? false),
+    stamp: () => rivers.version * 4099 + landscape.version * 131 + networks.version * 7 + flow.version * 17 + buildings.all().length,
+  });
   const attractions = new AttractionSystem({
+    angling: { stock: fishStock, planner: anglingPlanner },
     tours,
     exitFor,
     buildings: () => buildings.all(),
@@ -577,6 +597,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   registry.replace(attractions.asSystem());
+  bus.on('day:changed', () => fishStock.newDay((key) => { const b = waterBodies().find((w) => w.key === key); return !b || (b.kind === 'river' || b.kind === 'stream' ? (flow.get(key)?.frozen ?? false) || tileFrozen(b.tiles[0]!) : tileFrozen(b.tiles[0]!)); }, (key) => flow.get(key)?.mouthQ ?? 0));
   guestSim.setAttractions(attractions);
 
   // ---- Nature: wild fauna, farm livestock, forest cover/growth (cosmetic + scenery/avalanche/restaurant hooks) ----
@@ -645,6 +666,7 @@ export function createSim(opts: SimOptions) {
     bonus: () => energy.recyclingBonus() + riverHabitatPoints(rivers.rivers),
     eco: () => eco.points(),
     motor: () => tours.motorPenalty(),
+    fish: () => fishStock.sustainPoints(),
     trainShare: () => (opts.campaignsV2 !== false ? marketingRef?.railShare() ?? null : null),
   });
   bus.on('guest:arrived', () => sustain.noteArrival());
@@ -763,6 +785,8 @@ export function createSim(opts: SimOptions) {
   guestSim.spawner.flagsFn = (): string[] => {
     const f: string[] = [];
     if (guestSim.decider.mtbTiles.length > 0 && lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes)) f.push(COND_MTB_BIKE_LIFT);
+    // Angler (Task 42): an open tackle hut with a fishable water in reach that still has fish
+    if (attractions.all().some((a) => a.spec.angling && a.open && anglingPlanner.plan(a.b).bodies.some((b) => fishStock.get(b.key) > 0.05))) f.push(COND_FISHING);
     return f;
   };
   guestSim.spawner.pricingDemand = {
@@ -1042,6 +1066,7 @@ export function createSim(opts: SimOptions) {
     },
     trailTiles: () => { let n = 0; const a = networks.layers; for (let i = 0; i < a.length; i++) if (a[i]! & (NetLayer.Hike | NetLayer.Mtb)) n++; return n; },
     stars: () => rating.stars, money: () => game.money, debt: () => loans.totalDebt(),
+    altFrac: (x, y) => (cond.altitude(x, y) - worldScale.baseWorld) / worldScale.reliefWorld,
     grant: (amount) => economy.earn('grant', amount),
   });
   const goals = new Goals(goalWorld, bus);
@@ -1156,7 +1181,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    tours, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
+    tours, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,

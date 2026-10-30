@@ -319,6 +319,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'fish.overfished',
+    setup: (s) => { s.progression.unlockAll = true; buildAt(s, 'tackleHut', lodge(s), { rmax: 14 }); s.fishStock.set('l0', 0.1); },
+    fixes: [
+      { name: 'the water recovers', apply: (s) => { s.fishStock.set('l0', 0.8); } },
+      { name: 'the hut is bulldozed', apply: (s) => { for (const b of s.buildings.all().filter((x) => x.type === 'tackleHut')) s.buildings.remove(b.id); } },
+    ],
+  },
+  {
     id: 'piste.disconnected', daily: true,
     setup: (s) => { let t = 0; for (let i = 0; i < s.size * s.size; i++) if (s.ops.quality.isPiste(i)) { t = i; break; } const real = s.networks.pisteComponents.bind(s.networks); s.networks.pisteComponents = () => [...real(), { disconnected: true, count: 9, tiles: [t] }] as never; },
     fixes: [

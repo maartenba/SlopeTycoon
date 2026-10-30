@@ -7,7 +7,7 @@
  * No three / DOM imports. The engine reads the world through the small `GoalWorld` interface so every check is testable with a fixture.
  */
 import type { GameBus } from '../../core/events';
-import { CHAPTERS, GOALS, type ChapterDef, type GoalDef } from '../../config/goals';
+import { BONUS_GOALS, CHAPTERS, GOALS, type ChapterDef, type GoalDef } from '../../config/goals';
 
 /** A place in the UI (not on the map) that 'Show me' opens: a dock drawer (+ optional item to point at) or the HUD rating panel. */
 export interface PanelRef { drawer: 'buildings' | 'lifts' | 'pistes' | 'paths' | 'finance' | 'ops' | 'marketing' | 'pricing' | 'rating'; item?: string }
@@ -25,6 +25,8 @@ export interface GoalWorld {
   stars(): number;
   money(): number;
   debt(): number;
+  /** Height of a tile as a share of the map's relief (0 valley floor .. 1 summit); bonus goals only (absent in fixtures = 0). */
+  altFrac?(x: number, y: number): number;
   /** Pay a goal reward (ledger category `grant`). */
   grant(amount: number): void;
 }
@@ -57,7 +59,7 @@ export interface GoalsView {
   completed: number; total: number; finished: boolean; granted: number;
 }
 
-export interface GoalsSave { done: string[]; chapters: string[]; facts: GoalFacts; granted: number }
+export interface GoalsSave { done: string[]; chapters: string[]; facts: GoalFacts; granted: number; /** Bonus goals done (present only once one is). */ bonus?: string[] }
 
 /** How many goals are shown / evaluated at a time. */
 export const ACTIVE_GOALS = 3;
@@ -71,11 +73,13 @@ export class Goals {
   /** True while the tutorial runs: no evaluation, no rewards (tutorial funds must stay predictable). Not saved. */
   paused = false;
   private done = new Set<string>();
+  /** Optional bonus goals that are done (never part of a chapter, see BONUS_GOALS). */
+  private bonusDone = new Set<string>();
   private chaptersDone = new Set<string>();
   private progress = new Map<string, number>();
   private listeners: Array<() => void> = [];
 
-  constructor(private readonly world: () => GoalWorld, private readonly bus: GameBus, readonly goals: readonly GoalDef[] = GOALS, readonly chapters: readonly ChapterDef[] = CHAPTERS) {
+  constructor(private readonly world: () => GoalWorld, private readonly bus: GameBus, readonly goals: readonly GoalDef[] = GOALS, readonly chapters: readonly ChapterDef[] = CHAPTERS, readonly bonus: readonly GoalDef[] = goals === GOALS ? BONUS_GOALS : []) {
     bus.on('guest:arrived', () => { const f = this.facts; f.arrivalsToday++; f.lifetime++; if (f.arrivalsToday > f.bestDay) f.bestDay = f.arrivalsToday; });
     bus.on('day:changed', () => { this.facts.arrivalsToday = 0; });
     bus.on('ops:grooming', (e) => { if (e.vehicles > 0) this.facts.groomedNights++; });
@@ -85,7 +89,7 @@ export class Goals {
   }
 
   onChange(fn: () => void): void { this.listeners.push(fn); }
-  isDone(id: string): boolean { return this.done.has(id); }
+  isDone(id: string): boolean { return this.done.has(id) || this.bonusDone.has(id); }
   chapterDone(id: string): boolean { return this.chaptersDone.has(id); }
   get completedCount(): number { return this.done.size; }
   get finished(): boolean { return this.done.size >= this.goals.length; }
@@ -123,7 +127,16 @@ export class Goals {
       if (!progressed) break;
     }
     for (const g of this.active()) this.progress.set(g.id, this.check(g));
+    for (const g of this.bonus) if (!this.bonusDone.has(g.id) && this.check(g) >= 1) { this.completeBonus(g, silent); changed = true; }
     if (changed || !silent) for (const l of this.listeners) l();
+  }
+
+  /** A bonus goal: pays its grant and shows one quiet milestone; no chapter, no active slot. */
+  private completeBonus(g: GoalDef, silent: boolean): void {
+    this.bonusDone.add(g.id);
+    if (silent) return;
+    if (g.reward > 0) { this.world().grant(g.reward); this.granted += g.reward; }
+    this.bus.emit('milestone', { id: `goal:${g.id}`, title: g.reward > 0 ? `${g.title} (+$${g.reward.toLocaleString('en-US')})` : g.title, major: false });
   }
 
   private complete(g: GoalDef, silent: boolean): void {
@@ -161,7 +174,7 @@ export class Goals {
   /** Mark every already-satisfied goal as done without reward or events (old saves, pre-built resorts). */
   silentSync(): void { this.evaluate(true); }
 
-  serialize(): GoalsSave { return { done: this.goals.filter((g) => this.done.has(g.id)).map((g) => g.id), chapters: [...this.chaptersDone], facts: { ...this.facts }, granted: this.granted }; }
+  serialize(): GoalsSave { return { done: this.goals.filter((g) => this.done.has(g.id)).map((g) => g.id), chapters: [...this.chaptersDone], facts: { ...this.facts }, granted: this.granted, ...(this.bonusDone.size ? { bonus: [...this.bonusDone].sort() } : {}) }; }
   load(d: unknown): void {
     const o = d as Partial<GoalsSave>;
     const ids = new Set(this.goals.map((g) => g.id));
@@ -169,12 +182,13 @@ export class Goals {
     this.chaptersDone = new Set((o.chapters ?? []).filter((id) => this.chapters.some((c) => c.id === id)));
     this.facts = { ...emptyFacts(), ...(o.facts ?? {}) };
     this.granted = o.granted ?? 0;
+    this.bonusDone = new Set((o.bonus ?? []).filter((id) => this.bonus.some((b) => b.id === id)));
     this.progress.clear();
     for (const g of this.active()) this.progress.set(g.id, this.check(g));
   }
   /** Fresh chain (module missing in an old save): nothing done, then silently complete what is already satisfied. */
   reset(): void {
-    this.done.clear(); this.chaptersDone.clear(); this.facts = emptyFacts(); this.granted = 0; this.progress.clear();
+    this.done.clear(); this.bonusDone.clear(); this.chaptersDone.clear(); this.facts = emptyFacts(); this.granted = 0; this.progress.clear();
     this.silentSync();
   }
 }

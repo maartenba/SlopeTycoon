@@ -23,6 +23,7 @@ import type { PanelRef } from '../goals/Goals';
 import { ENERGY } from '../../config/energy';
 import { CROSSING } from '../../config/crossings';
 import { CAMP } from '../attractions/Campground';
+import { FISH } from '../../config/balance';
 import { TEXT, FRIENDLY } from './strings';
 
 export interface Pt { x: number; y: number }
@@ -384,6 +385,15 @@ export const RULES: readonly Rule[] = [
     if (roads < 8) return null; // the ride needs a road or footpath to run on
     return { id: 'tour.quad', severity: 'info', ...TEXT.quadTours(), panel: { drawer: 'buildings', item: 'quadBase' } }; // a drawer hint only (like eco.centre): the item is career-gated, the player picks the spot
   }),
+  // Angling (docs/anglers.md): a fished water below 30 % stock (40 % while shown: hysteresis) is "Overfished"; the fix is Catch & release or a second water.
+  rule('fish.overfished', 2, (c) => {
+    const sim = c.sim, hut = sim.buildings.all().filter((b) => b.type === 'tackleHut' && b.active).sort((x, y) => x.id - y.id)[0];
+    if (!hut) return null;
+    const mark = sim.fishStock.overfished(c.shown ? FISH.overfished + 0.1 : FISH.overfished);
+    if (!mark.length) return null;
+    const names = sim.waterBodies().filter((w) => mark.some((m) => m.key === w.key)).map((w) => w.name);
+    return { id: 'fish.overfished', severity: 'warn', ...TEXT.overfished(names.length ? names : ['A water'], Math.round(mark[0]!.stock * 100)), target: { x: hut.x + hut.w / 2 - 0.5, y: hut.y + hut.h / 2 - 0.5, kind: 'building', id: hut.id } };
+  }, true),
   rule('cash.summerBuffer', 2, (c) => {
     const sp = seasonProgress(c.sim.game.date);
     if (sp.season !== 'spring' || sp.daysLeft > 20) return null;

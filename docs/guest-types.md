@@ -1,6 +1,6 @@
 # Guest types (framework)
 
-Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventure; indices 0-5) keep their hand-tuned tables. **Extra** types (index 6+) are data rows in `src/config/guestTypes.ts` (`GUEST_TYPE_DEFS`), so Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler arrive as data plus a few hooks. The shipped list is `SHIPPED_TYPES` (never reorder, append only): **6 = Mountain biker** (Task 25). Types that become active move the golden hashes (re-recorded at the milestone STOP).
+Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventure; indices 0-5) keep their hand-tuned tables. **Extra** types (index 6+) are data rows in `src/config/guestTypes.ts` (`GUEST_TYPE_DEFS`), so Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler arrive as data plus a few hooks. The shipped list is `SHIPPED_TYPES` (never reorder, append only): **6 = Mountain biker** (Task 25), **7 = Angler** (Task 42). Types that become active move the golden hashes (re-recorded at the milestone STOP).
 
 ## A type row (`GuestTypeDef`)
 | Field | Meaning |
@@ -38,4 +38,6 @@ Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventur
 |---|---|---|---|---|
 | 6 | `mtb` Mountain biker | summer 0.18 (~15 % of the summer arrivals) | level 1; `requires: ['@mtbBikeLift']` | segment adventure (Hike & Bike Weekends, Summer Adventure); `pref: [5, 88]` (hike %, bike %: nearly always the MTB trails); appeal adventure park 1.3, rental 0.9, bars / restaurants 0.7-0.8; look: lime top, helmet in every season, forced summer outfit; rain x0.4 |
 
-`requires` also accepts **pseudo ids** computed by the spawner from the world (`Spawner.flagsFn`, wired in `createSim`): `@mtbBikeLift` = the decider knows a rideable MTB trail tile AND at least one open lift that `carriesBikes`. `GuestTypeDef.pref` overrides the hike / bike activity split in `prefFor`; `look.helmet` / `look.hat` / `look.rod` are the head-wear and prop hooks.
+| 7 | `angler` Angler | summer 0.10, spring / autumn 0.05, winter 0.06 only with `ICE_FISHING` | level 2; `requires: ['@fishing']` | segment solo; calm, low spend, long dwell at the Tackle & bait hut (`docs/anglers.md`); appeal tackle hut 1.5, beach .7, boats .6, restaurant .7; cap + teal jacket; hates noise (a motorised tour base within 14 tiles of the hut spoils the visit) |
+
+`requires` also accepts **pseudo ids** computed by the spawner from the world (`Spawner.flagsFn`, wired in `createSim`): `@mtbBikeLift` = the decider knows a rideable MTB trail tile AND at least one open lift that `carriesBikes`; `@fishing` = an open Tackle & bait hut with a fishable water in reach that still has fish (> 5 % stock). `GuestTypeDef.pref` overrides the hike / bike activity split in `prefFor`; `look.helmet` / `look.hat` / `look.rod` are the head-wear and prop hooks.

@@ -1,6 +1,6 @@
 # Viewpoint system (Phase 6, Task 6)
 
-A reusable system, not a building. The suspension footbridge on a hiking trail is a viewpoint too, fed through `Decider.bridgeViews` (not a building; docs/bridges.md). Any catalog entry that sets `BuildingDef.viewpoint` (`ViewpointSpec`, `src/config/viewpoints.ts`) becomes a hiking destination, a short happiness boost and a photo-mode spot. The Viewpoint platform, the Treehouse (M6.3 Task 22) and the suspension footbridge (Task 46) only have to set that field. **No building is in the catalog yet** (the tests inject temporary defs); no per-id logic exists in placement or guest code (a test greps for it).
+A reusable system, not a building. The suspension footbridge on a hiking trail is a viewpoint too, fed through `Decider.bridgeViews` (not a building; docs/bridges.md). Any catalog entry that sets `BuildingDef.viewpoint` (`ViewpointSpec`, `src/config/viewpoints.ts`) becomes a hiking destination, a short happiness boost and a photo-mode spot. The Viewpoint platform and the Treehouse (Task 21, see "Content" below) and the suspension footbridge (Task 46) only had to set that field. No per-id logic exists in placement or guest code (a test greps for it).
 
 ## View score (`src/sim/attractions/Viewpoint.ts`)
 `viewScore` in 0..1 = (share of tiles in a disc of `VIEWPOINT.radius` = 12 tiles that lie at least `lowerMargin` below the site) x (relative altitude of the site on the map). A summit sees almost everything below it (0.8+), a ridge shoulder about half, a pit or flat ground scores 0. Pure and deterministic; `Viewpoints.refresh` caches it per nav epoch (and building set), so it costs nothing per tick. `openDirection` = the direction in which the ground falls away (photo spot look direction).
@@ -26,3 +26,20 @@ A reusable system, not a building. The suspension footbridge on a hiking trail i
 `VIEWPOINT` (`radius`, `poiBonus`, `maxKept`, `dwellH`, `happiness`, `trailReach`, `lowerMargin`, `photoDist/Lift/Pitch`), `FOREST_SITE`, per building `ViewpointSpec` (`radius`, `weight`, `dwellH`, `photo`).
 
 Tests: `tests/sim/attractions/viewpoint.test.ts`.
+
+## Content (Phase 6 Task 21)
+| | Viewpoint | Treehouse |
+|---|---|---|
+| Catalog | `viewpoint`, recreation, 2 x 2, $1,500, upkeep $2/day, no staff, **never gated** (level 1) | `treehouse`, recreation, 2 x 2, $2,500, upkeep $4/day, no staff, **level 2** (`UNLOCKS`) |
+| Access | hiking trail, alt footpath, alt piste edge (`pisteRule edge`) | hiking trail, alt footpath |
+| Site | slope <= 3, flatten optional, rock allowed; no forest rule: a ridge platform | slope <= 2, **never flattened**, `forest: { minTrees 6, radius 3, keepTrees }` (refused in a meadow with "Needs forest around it"; the trees stay) |
+| `viewpoint` spec | `{}` (weight 1, photo spot) | `{ weight: 0.8 }` (a slightly weaker pull than a ridge platform, a hiker and family favourite) |
+| Mesh | `render/meshes/viewpoint.ts`, about 530 triangles: footings, plank deck, railing on three sides, telescope on a pedestal, bench, VIEW signpost, flag, step | `render/meshes/treehouse.ts`, about 800 triangles: trunk with root flare, plank deck, timber cabin with a mossy gable roof + lit window (glass colour glows at night), rope ladder, sagging rope bridge to a second little platform, thin crowns; 1.97 tall, under the cable overfly limit |
+
+Both are plain hiker destinations: no ticket, no attraction spec, no staff, no sustainability hook (a 2 x 2 building among thousands of habitat tiles moves the score by less than 0.05; a test measures it). They appear in the **Recreation** tab, as photo-mode spots (the **Viewpoint** button of the Photo panel) and in the hiker goal choice by view score. A one-shot hint (`view.photo`, info tier, respects the Hints setting) tells the player about the photo spot after the first one is placed.
+
+### Bonus goal "A viewpoint on the heights"
+`BONUS_GOALS` (`config/goals.ts`): optional goals that are **not part of the 20-goal chain**, never fill one of the three active slots and never block a chapter. The engine (`Goals`) checks them hourly; the first time one is met it pays its grant ($2,500) and shows a quiet milestone. They are saved as `bonus` in the goals module only once one is done, so a world without any hashes exactly as before. The goal is met by an active viewpoint whose centre is at least `VIEWPOINT_GOAL_ALT` (0.6) of the way up the mountain (`GoalWorld.altFrac`).
+The plan asked for "above 2,000 m": that altitude does not exist (the highest ground is about 1,390 m on a 64 map, 1,500 m on 128 and 1,700 m on 256), so the threshold is relative.
+
+Tests: `tests/sim/attractions/viewpointContent.test.ts` (catalog rows, meshes, the hint, meadow refusal / forest acceptance with trees kept, a real ridge viewpoint chosen by hikers and deterministic, the bonus goal in a fixture and in a real sim incl. save / load, sustainability neutral).

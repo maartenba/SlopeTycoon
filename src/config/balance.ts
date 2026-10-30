@@ -384,3 +384,27 @@ export type { ModKey } from './staffUpgrades';
 export interface ModSource { staffUpgrades: { mod(key: ModKey): number } }
 /** Multiplier of a balance knob from trained staff upgrades (1 = untouched). The ONLY way upgrade effects reach the systems. */
 export const mod = (sim: ModSource, key: ModKey): number => sim.staffUpgrades.mod(key);
+
+/** Ice fishing (Phase 6 Task 49): winter angling on FROZEN lakes and ponds (never rivers). Owner: "ice fishing cool" = on by default. */
+export const ICE_FISHING = true;
+/** Angling (docs/anglers.md): fish stock per water body, tackle hut prices and spots. */
+export const FISH = {
+  /** Stock (0..1) of a water body nobody has fished yet. */
+  initial: 0.85,
+  /** Logistic regrowth per day (r x s x (1 - s)) + a small floor so an emptied water can recover; dug rivers / streams x `riverRegrow` while Q >= 1. */
+  regrow: 0.08, floor: 0.004, riverRegrow: 1.5,
+  /** A hut serves water within this many tiles (centre to water tile); it must be placed within `nearWater` tiles of fishable water. */
+  radius: 20, nearWater: 3,
+  /** Bank spots (shore tile of a fishable body beside a path / trail) a hut counts, and places per fishing pier. */
+  bankSpotsMax: 8, pierSlots: 4,
+  /** Extras per visit: rod hire (only the share without their own rod), bait; kept fish sell at the cafe. */
+  rodRent: 8, bait: 3, keepSale: 2, rodOwners: 40,
+  /** Casting attempts per visit and the catch chance: `catchBase + catchSlope x stock`. */
+  casts: 4, catchBase: 0.12, catchSlope: 0.78,
+  /** Stock lost per catch (x size factor: small waters deplete faster): Keep vs Catch & release. */
+  depleteKeep: 0.012, depleteRelease: 0.0008, sizeRef: 25,
+  /** Below this the advisor warns "Overfished" and anglers are less happy. */
+  overfished: 0.3,
+  /** Sustainability facet points (+/-): (mean stock - `sustainMid`) x `sustainK`, clamped to +/- `sustainMax`. */
+  sustainMid: 0.6, sustainK: 5, sustainMax: 2,
+} as const;

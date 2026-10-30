@@ -43,9 +43,11 @@ export interface AttractionSpec {
   extra?: 'lake';
   /** Tour base (Phase 6 Task 5, docs/tours.md): TourDef id. Guests board in scheduled departures instead of one by one; see TourSystem. */
   tour?: string;
+  /** Tackle & bait hut (Phase 6 Task 49): a visit is a fishing trip (rod + bait extras, catches at the end; docs/anglers.md). */
+  angling?: boolean;
 }
 
-export interface AttractionStats { /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
+export interface AttractionStats { /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
 
 /** Plain data for the inspector / reports. */
 export interface AttractionInfo {
@@ -62,17 +64,25 @@ export interface AttractionInfo {
   camp?: { pitches: number; used: number; toilets: boolean; fires: number };
   /** Tour base: departures today, riders, next departure, route (TourSystem.info). */
   tour?: TourInfo;
+  /** Tackle & bait hut (docs/anglers.md): Catch & release / Keep setting, fishing places, waters in reach with their stock, ice and noise state. */
+  angling?: { keep: boolean; spots: number; piers: number; ice: boolean; noisy: boolean; catches: number; bodies: Array<{ key: string; name: string; kind: string; stock: number }> };
   /** Toilets (comfort need): guests served today and the per-day figure above which the block is overrun. */
   toilet?: { usesToday: number; perDay: number };
 }
 
-export interface InstanceSave { id: number; price: number; staff: number; stats: AttractionStats; open?: boolean; reason?: string; reported?: boolean }
+export interface InstanceSave { id: number; price: number; staff: number; stats: AttractionStats; open?: boolean; reason?: string; reported?: boolean; keep?: boolean }
 
 /** Runtime state of one placed attraction: queue (FIFO with balking), service slots, price, staff, counters. */
 export class Attraction {
   readonly def: BuildingDef;
   price: number;
   staff: number;
+  /** Tackle hut setting: keep the catch (earns a little more, depletes the stock) instead of Catch & release (default). Saved only when true. */
+  keep = false;
+  /** Tackle hut: fishing places right now (set by the system each tick); undefined = the catalog capacity. */
+  slotsNow: number | undefined;
+  /** Tackle hut inspector data (set by the attraction system). */
+  anglingInfo: (() => AttractionInfo['angling'] | undefined) | undefined;
   /** Tour bases: inspector data (set by the attraction system). */
   tourInfo: (() => TourInfo | null) | undefined;
   /** Live price multiplier (markup % x seasonal schedule), set by the system; 1 = list price. */
@@ -98,7 +108,7 @@ export class Attraction {
   get billing(): 'perUse' | 'perHour' | 'perNight' { return PRICE_TABLE[this.b.type]?.billing ?? 'perUse'; }
   get maxPrice(): number { return PRICE_TABLE[this.b.type]?.max ?? 0; }
 
-  baseCapacity(): number { return Math.max(1, (this.spec.slots ?? this.def.capacity) + (this.spec.amenity === 'pool' ? this.spec.poolSlots ?? 0 : 0)); }
+  baseCapacity(): number { return Math.max(1, (this.slotsNow ?? this.spec.slots ?? this.def.capacity) + (this.spec.amenity === 'pool' ? this.spec.poolSlots ?? 0 : 0)); }
   /** Staff ratio 0..1: understaffed attractions serve fewer guests at once. */
   staffFactor(): number { return this.def.staff > 0 ? Math.min(1, this.staff / this.def.staff) : 1; }
   /** Simultaneous capacity after staffing. */
@@ -139,14 +149,16 @@ export class Attraction {
       price: this.price, maxPrice: this.maxPrice, billing: this.billing, unitPrice: this.unitPrice(),
       staff: this.staff, staffRequired: this.def.staff, upkeepPerDay: this.upkeepPerDay(),
       ...(this.tourInfo ? { tour: this.tourInfo() ?? undefined } : {}),
+      ...(this.anglingInfo ? { angling: this.anglingInfo() } : {}),
     };
   }
 
-  save(): InstanceSave { return { id: this.b.id, price: this.price, staff: this.staff, stats: { ...this.stats, ...(this.stats.hourly ? { hourly: [...this.stats.hourly] } : {}) }, open: this.open, reason: this.reason, reported: this.reported }; }
+  save(): InstanceSave { return { id: this.b.id, price: this.price, staff: this.staff, stats: { ...this.stats, ...(this.stats.hourly ? { hourly: [...this.stats.hourly] } : {}) }, open: this.open, reason: this.reason, reported: this.reported, ...(this.keep ? { keep: true } : {}) }; }
   /** Queues / users are NOT restored (guests inside are released by the next membership check). */
   load(d: InstanceSave): void {
     this.price = d.price; this.staff = d.staff; this.stats = { ...d.stats, ...(d.stats.hourly ? { hourly: [...d.stats.hourly] } : {}) };
     if (d.open !== undefined) { this.open = d.open; this.reason = d.reason; this.reported = d.reported; }
+    this.keep = d.keep === true;
     this.queue = []; this.users = [];
   }
 }

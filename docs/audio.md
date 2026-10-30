@@ -131,6 +131,7 @@ Rules: **noise beds only** (no oscillator tones, no resonant filters: every Q <=
 | wind | pink + 0.83x-rate brown -> low-pass 620 Hz (centre drifts on 0.043 / 0.071 Hz) -> high-pass 60 -> gust gain drifting on 0.037 / 0.071 / 0.13 Hz (+-0.31 total) |
 | rain / leaves | pink x2 -> high-pass 700 / 1400 -> low-pass 5.2k / 4.2k, slow gain drift (the old white-noise "static" and 0.3 Hz swish are gone) |
 | crickets | two raspy band-limited-noise voices (3.9 / 4.4 kHz, Q 4) with smooth sine pulse trains (19 / 23 Hz) in slow phrases (1.1 / 0.8 Hz); no hard gates; ceiling .05 |
+| campfire (Phase 6 Task 19) | band-passed pink noise (2.6 kHz, Q 0.7) with two unrelated fast sine pops (9.1 / 3.7 Hz); only near an open campground on summer evenings (18:30-22:30), close in, not in rain; ceiling .035 (the quietest layer); 8 nodes |
 | insects | faint 2.4 kHz band "meadow air" (the Q 9 whine is gone) |
 | crowd | three broad formant bands (350 / 900 / 2300 Hz) of pink noise, amplitude drifting at 0.4 / 3.1 / 4.7 Hz, low-pass 3 kHz |
 | lift | brown rumble (low-pass 220) + soft 650 Hz band, slight 0.8 Hz drift; no oscillators (the 48 Hz saw hum is gone) |

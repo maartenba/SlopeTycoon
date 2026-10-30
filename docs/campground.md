@@ -26,6 +26,9 @@ From 19:00, once per evening (`lastGatherDay`; saved as `gather` **only** once a
 * **Smoke**: `Smoke.ts` kind `camp` (`BuildingDef.chimney` = tip of the tallest flame): evenings 18:30-22:30 (0.6) and a faint breakfast fire 06:30-08:30, scaled by overnight occupancy, **independent of the cold**, only in summer (`ctx.season`). Same single instanced draw call and 16-emitter cap as the chimney smoke.
 * **Audio**: see "Audio" below.
 
+## Audio
+A `campfire` ambience layer (`audio/Ambience.ts`, ceiling 0.035: below the crickets 0.05, a sixth of the crowd 0.2): band-passed pink noise whose level pops irregularly (two unrelated fast sine LFOs, no gates, so no clicks), 8 nodes (the layer budget test is `< 200` nodes in total). `ambienceMix` plays it only while the fire burns (about 18:30-22:30, ramped), close in (`close^1.3`: gone when zoomed out), not in rain, and `WorldProbe` feeds `campfire` = proximity (14 tiles) to the nearest **open** campground (`ProbeDeps.campfires`, wired in `main.ts`). By ear on a real device: not verified (the harness cannot hear audio); the tests pin the levels (`tests/audio/campfire.test.ts`).
+
 ## Advisor
 `summer.camp` (impact 1, info): in summer with >= 12 guests and a lodge, "Summer nights: a campground" with a build action next to the village; with a campground but no toilets within 10 tiles, "Campers want toilets" with a toilets site next to it. Show me goes to the site.
 

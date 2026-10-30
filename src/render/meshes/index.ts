@@ -20,6 +20,10 @@ import * as Q from './buildings/tours';
 import { TURBINE_HUB } from './buildings/energy';
 import { campground, campfireGlowGeometry } from './campground';
 import { pettingZoo } from './pettingZoo';
+import { tackleHut } from './tackleHut';
+import { fishingPier } from './fishingPier';
+import { viewpoint } from './viewpoint';
+import { treehouse } from './treehouse';
 
 const e = (build: BuildFn, foundation = true): BuilderEntry => ({ build, foundation });
 
@@ -35,7 +39,9 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   stuntPark: e(R.stuntPark, false), adventurePark: e(R.adventurePark, false),
   alpineFarm: e(F.alpineFarm, false), trainStation: e(T.trainStation), altiport: e(T.altiport), parking: e(T.parking, false),
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
-  campground: e(campground, false), pettingZoo: e(pettingZoo, false),
+  campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false),
+  tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
+
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 

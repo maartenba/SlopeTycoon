@@ -39,7 +39,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  campground: '⛺', pettingZoo: '🐐', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -72,8 +72,12 @@ const DESCRIPTIONS: Record<string, string> = {
   adventurePark: 'Summer ropes course and zip-lines.',
   quadBase: 'Summer guided quad rides along the roads and footpaths next to it. Loud: scares wildlife and costs a little sustainability.',
   alpineFarm: 'Cows, sheep and goats graze the alpine pastures in summer; the farm shop attracts families; restaurants near farms earn more.',
+  tackleHut: 'Anglers\' base: rents rods ($8), sells day tickets and bait. Fishes every lake, pond or river within 20 tiles; set Catch & release or Keep. Place it within 3 tiles of water beside a path.',
+  fishingPier: 'A jetty with four fishing places for the tackle huts in reach. Needs a Tackle & Bait Hut first; sits on a lake or pond shore.',
   campground: 'Summer only: 16 tent and caravan pitches around a campfire. Cheap nights for budget and adventure guests; toilets nearby make a better evening. Reached by a footpath or hiking trail.',
   pettingZoo: 'Summer family attraction: goats, sheep, rabbits and a donkey in a fenced pen. Small entry ticket; closed in snow. Needs a footpath.',
+  viewpoint: 'A timber platform with a railing and a telescope. Hikers walk to it for the view (best on a ridge or high ground), stop for a look and leave happier; it is a spot in Photo mode. Beside a hiking trail, a footpath or a piste.',
+  treehouse: 'A wooden house up in the trees with a rope bridge. Needs forest around it (6 trees within 3 tiles) and keeps them. A hiker and family favourite with a view; reached by a hiking trail or footpath.',
   boatRental: 'Summer lake boats; must touch a lake.',
   beach: 'Summer lakeside beach; must touch a lake.',
   trainStation: 'Brings guests by rail.',

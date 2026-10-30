@@ -3,6 +3,7 @@ import type { GameEventName, GameEvents } from '../core/events';
 import { DAYS_PER_YEAR } from '../config/balance';
 import { Q } from '../sim/ops/PisteQuality';
 import { GuestType } from '../sim/guests/Guest';
+import { BUILDINGS } from '../config/buildings';
 import { Queries } from './queries';
 import { TutorialStore } from './TutorialEngine';
 import { hintKey, t } from './strings';
@@ -55,6 +56,8 @@ export const HINTS: HintDef[] = [
   def({ id: 'season.winter', tier: 'info', on: 'season:changed', when: (_f, e) => e.season === 'winter' }),
   def({ id: 'season.spring', tier: 'info', on: 'season:changed', when: (_f, e) => e.season === 'spring' }),
   def({ id: 'season.summer', tier: 'info', on: 'season:changed', when: (_f, e) => e.season === 'summer' }),
+  // The first viewpoint / treehouse: Photo mode has a spot for it now (docs/viewpoints.md)
+  def({ id: 'view.photo', tier: 'info', on: 'building:placed', when: (_f, e) => !!BUILDINGS[e.type]?.viewpoint }),
   def({ id: 'summer.farm', tier: 'info', on: 'season:changed', when: (f, e) => e.season === 'summer' && !f.q.has('alpineFarm') }),
 ];
 

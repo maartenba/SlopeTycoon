@@ -26,9 +26,20 @@ export function formatAttractionStats(i: AttractionInfo): string[] {
     `Upkeep incl. wages: ${formatMoney(i.upkeepPerDay)}/day`,
     ...(i.toilet ? [`Used today: ${i.toilet.usesToday}/${i.toilet.perDay} · ${i.toilet.usesToday > i.toilet.perDay ? 'overrun: add more toilets' : 'clean'}`] : []),
     ...(i.camp ? [`Pitches: ${i.camp.used}/${i.camp.pitches} tonight · ${i.camp.toilets ? 'toilets in reach: a better night' : 'no toilets within 10 tiles: campers grumble'}`] : []),
+    ...(i.angling ? formatAnglingLines(i.angling) : []),
     ...(i.tour ? formatTourLines(i.tour) : []),
     ...(i.beds ? [`Trekker beds: ${i.beds.used}/${i.beds.total} booked tonight · ${i.beds.sold} nights sold`] : []),
   ];
+}
+
+/** Tackle hut inspector lines (docs/anglers.md): places, ice / noise state, the stock of every water in reach, fish caught. */
+export function formatAnglingLines(g: NonNullable<AttractionInfo['angling']>): string[] {
+  const out = [`Fishing places: ${g.spots} (${g.piers} on piers) · ${g.keep ? 'Keeping the catch' : 'Catch & release'}`];
+  if (g.ice) out.push('Ice fishing: the lakes and ponds are frozen (rivers stay closed)');
+  if (g.noisy) out.push('A noisy tour base is within earshot: anglers grumble');
+  for (const b of g.bodies) out.push(`${b.name}: ${Math.round(b.stock * 100)}% fish${b.stock < 0.3 ? ' (overfished)' : ''}`);
+  out.push(`Fish caught so far: ${g.catches}`);
+  return out;
 }
 
 /** Tour inspector lines (docs/tours.md): departures today, riders, revenue, next departure, route. */

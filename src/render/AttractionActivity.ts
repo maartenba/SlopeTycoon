@@ -8,14 +8,18 @@ export interface ActivityView {
   open: boolean;
   /** Lake tiles near the building (boats sail between them). */
   lake?: Array<{ x: number; y: number }>;
+  /** Tackle hut: the fishing places (pier / bank / ice) with the cast direction (sim `AnglingPlan.spots`). */
+  spots?: ReadonlyArray<{ x: number; y: number; kind: 'pier' | 'bank' | 'ice'; heading: number }>;
 }
 
-export type PropKind = 'figure' | 'boat' | 'umbrella';
+export type PropKind = 'figure' | 'boat' | 'umbrella' | 'rod' | 'bobber' | 'hole' | 'stool';
 export interface Pose { kind: PropKind; x: number; y: number; heading: number; seed: number }
 
 export const ACTIVITY_FAR_VIEW_HEIGHT = 70;
 export const MAX_FIGURES_PER_ATTRACTION = 12;
 export const MAX_BOATS = 8;
+/** Anglers drawn per tackle hut (the sim may seat more). */
+export const MAX_ANGLERS = 12;
 
 const hash = (n: number): number => ((Math.imul(n + 1, 2654435761) >>> 0) % 1000) / 1000;
 
@@ -73,12 +77,23 @@ export function activityPoses(v: ActivityView, t: number, out: Pose[]): number {
       }
       break;
     }
+    case 'tackleHut': { // anglers stand at their place facing the water: a rod, a bobber that bobs on the water, on the ice a hole and a stool (view only)
+      const spots = v.spots ?? [], na = Math.min(v.users, spots.length, MAX_ANGLERS);
+      for (let i = 0; i < na; i++) {
+        const sp = spots[i]!, dx = Math.cos(sp.heading), dy = Math.sin(sp.heading);
+        push('figure', sp.x, sp.y, sp.heading, i);
+        push('rod', sp.x, sp.y, sp.heading, i);
+        if (sp.kind === 'ice') { push('hole', sp.x + dx * 0.32, sp.y + dy * 0.32, 0, i); push('stool', sp.x - dx * 0.2, sp.y - dy * 0.2, 0, i); }
+        else push('bobber', sp.x + dx * 0.85, sp.y + dy * 0.85, 0, i); // bobbing is applied at draw time from the tick
+      }
+      break;
+    }
     default: return 0;
   }
   return out.length;
 }
 
-const FIGURE_CAP = 480, BOAT_CAP = 64, UMBRELLA_CAP = 64;
+const FIGURE_CAP = 480, BOAT_CAP = 64, UMBRELLA_CAP = 64, ANGLER_CAP = 96;
 
 /**
  * Cheap instanced props for attraction activity: figures, boats and umbrellas = 3 draw calls total. Hidden when zoomed far out.
@@ -89,6 +104,10 @@ export class AttractionActivity {
   private figures: THREE.InstancedMesh;
   private boats: THREE.InstancedMesh;
   private umbrellas: THREE.InstancedMesh;
+  private rods: THREE.InstancedMesh;
+  private bobbers: THREE.InstancedMesh;
+  private holes: THREE.InstancedMesh;
+  private stools: THREE.InstancedMesh;
   private poses: Pose[] = [];
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
@@ -108,7 +127,15 @@ export class AttractionActivity {
     this.boats = new THREE.InstancedMesh(boat, new THREE.MeshLambertMaterial({ color: 0xd9534f }), BOAT_CAP);
     const umb = new THREE.ConeGeometry(0.26, 0.16, 8); umb.translate(0, 0.52, 0);
     this.umbrellas = new THREE.InstancedMesh(umb, new THREE.MeshLambertMaterial({ color: 0xf0ad4e }), UMBRELLA_CAP);
-    for (const m of [this.figures, this.boats, this.umbrellas]) { m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0; this.group.add(m); }
+    // Angling props: a slanted rod held out over the water, a red bobber, an ice hole and a stool. 4 more instanced draws, only while anglers fish.
+    const rod = new THREE.CylinderGeometry(0.008, 0.016, 0.6, 4); rod.translate(0, 0.3, 0); rod.rotateZ(-(Math.PI / 2 - 0.55)); rod.translate(0.07, 0.17, 0);
+    this.rods = new THREE.InstancedMesh(rod, new THREE.MeshLambertMaterial({ color: 0x6b4226 }), ANGLER_CAP);
+    this.bobbers = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 6, 4), new THREE.MeshLambertMaterial({ color: 0xd9453a }), ANGLER_CAP);
+    const hole = new THREE.CylinderGeometry(0.11, 0.11, 0.012, 8); hole.translate(0, 0.012, 0);
+    this.holes = new THREE.InstancedMesh(hole, new THREE.MeshLambertMaterial({ color: 0x1b3a52 }), ANGLER_CAP);
+    const stool = new THREE.CylinderGeometry(0.06, 0.05, 0.1, 6); stool.translate(0, 0.05, 0);
+    this.stools = new THREE.InstancedMesh(stool, new THREE.MeshLambertMaterial({ color: 0xb5773f }), ANGLER_CAP);
+    for (const m of [this.figures, this.boats, this.umbrellas, this.rods, this.bobbers, this.holes, this.stools]) { m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0; this.group.add(m); }
   }
 
   /** `tick` = sim tick (+ fraction); `viewHeight` = camera.top - camera.bottom. */
@@ -118,22 +145,23 @@ export class AttractionActivity {
     if (this.far) { this.lastFar = true; return; }
     if (tick === this.lastTick && !this.lastFar) return; // poses are a pure function of the tick: nothing to redo while paused
     this.lastTick = tick; this.lastFar = false;
-    let nf = 0, nb = 0, nu = 0;
+    const all = [this.figures, this.boats, this.umbrellas, this.rods, this.bobbers, this.holes, this.stools];
+    const caps = [FIGURE_CAP, BOAT_CAP, UMBRELLA_CAP, ANGLER_CAP, ANGLER_CAP, ANGLER_CAP, ANGLER_CAP];
+    const slot = { figure: 0, boat: 1, umbrella: 2, rod: 3, bobber: 4, hole: 5, stool: 6 } as const;
+    const n = [0, 0, 0, 0, 0, 0, 0];
     for (const v of this.views()) {
       const cnt = activityPoses(v, tick, this.poses);
       for (let k = 0; k < cnt; k++) {
-        const po = this.poses[k]!;
-        const mesh = po.kind === 'figure' ? this.figures : po.kind === 'boat' ? this.boats : this.umbrellas;
-        const idx = po.kind === 'figure' ? nf : po.kind === 'boat' ? nb : nu;
-        if (idx >= (po.kind === 'figure' ? FIGURE_CAP : po.kind === 'boat' ? BOAT_CAP : UMBRELLA_CAP)) continue;
-        this.p.set(po.x, this.heightAt(po.x, po.y), po.y);
+        const po = this.poses[k]!, si = slot[po.kind], idx = n[si]!;
+        if (idx >= caps[si]!) continue;
+        const bob = po.kind === 'bobber' ? 0.012 * Math.sin(tick * 0.35 + po.seed * 1.9) : 0;
+        this.p.set(po.x, this.heightAt(po.x, po.y) + bob, po.y);
         this.q.setFromAxisAngle(this.up, -po.heading);
         this.m.compose(this.p, this.q, this.s);
-        mesh.setMatrixAt(idx, this.m);
-        if (po.kind === 'figure') nf++; else if (po.kind === 'boat') nb++; else nu++;
+        all[si]!.setMatrixAt(idx, this.m);
+        n[si]!++;
       }
     }
-    this.figures.count = nf; this.boats.count = nb; this.umbrellas.count = nu;
-    for (const m of [this.figures, this.boats, this.umbrellas]) m.instanceMatrix.needsUpdate = true;
+    all.forEach((m, i) => { m.count = n[i]!; m.instanceMatrix.needsUpdate = true; });
   }
 }

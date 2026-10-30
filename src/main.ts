@@ -1124,6 +1124,7 @@ const activityViews = (): ActivityView[] => {
       activityCache.set(a.id, v);
     }
     v.users = a.usersNow; v.open = a.open; v.w = a.b.w; v.h = a.b.h;
+    if (a.spec.angling && a.usersNow > 0) v.spots = sim.anglingPlanner.plan(a.b).spots; else if (v.spots) v.spots = undefined;
     activityList.push(v);
   }
   return activityList;
@@ -2543,6 +2544,7 @@ if (ui && !DEMO) {
   inspector.bindAttraction({
     setPrice: (id, p) => { sim.priceApi.setForBuilding(id, p); refreshUi(); },
     adjustStaff: (id, d) => { const a = attractions.get(id); if (a) { a.setStaff(a.staff + d); refreshUi(); } },
+    setKeep: (id, keep) => { if (attractions.setKeep(id, keep)) refreshUi(); },
   });
   // Pre-render thumbnails during idle time (after the first frame); the dock fills placeholders as they arrive.
   {

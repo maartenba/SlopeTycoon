@@ -19,6 +19,9 @@ import { eveningPremium, venueServing } from '../Evening';
 import type { TourSystem } from './Tour';
 import { GRUBBY_URGE, TOILET_USES_PER_DAY } from './Toilets';
 import { CAMP, campFireHappiness } from './Campground';
+import { fishVisit, ownsRod, visitMood, type AnglingPlan, type AnglingPlanner } from './Angling';
+import { FISH } from '../../config/balance';
+import type { FishStock } from '../nature/FishStock';
 
 export interface AttractionDeps {
   buildings: () => Iterable<WorldBuilding>;
@@ -44,6 +47,8 @@ export interface AttractionDeps {
   willBuy?: (guestType: number, guestId: number, buildingType: string, listPrice: number, salt: number) => boolean;
   /** Tour bases (Phase 6 Task 5): schedule, closures and ride bookkeeping of attractions with `spec.tour`. Absent = tours never run. */
   tours?: TourSystem;
+  /** Tackle & bait huts (Phase 6 Task 49, docs/anglers.md): fish stock + the per-hut plan (water in reach, places, ice, noise). Absent = a hut is closed ("no water"). */
+  angling?: { stock: FishStock; planner: AnglingPlanner };
 }
 
 /** Ticks a guest waits in an attraction queue before giving up. */
@@ -74,6 +79,8 @@ export class AttractionSystem implements GuestAttractionPort {
   private hour = 12;
   private day = 0;
   private absDay = 0;
+  /** The sim rng of the running update (catches draw from it: deterministic, drawn only when a hut visit ends). */
+  private rng: { next(): number } | null = null;
 
   constructor(private d: AttractionDeps) {}
 
@@ -156,6 +163,7 @@ export class AttractionSystem implements GuestAttractionPort {
       if (e.happiness && !grubby) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + e.happiness));
       if (effects.spec.amenity === 'pool') s.happiness[slot] = Math.min(1, s.happiness[slot]! + (effects.spec.poolHappiness ?? 0.06));
       if (effects.spec.grantsGear) this.rented.add(id);
+      if (effects.spec.angling) this.fishTrip(slot, id, effects);
       s.visits[slot] = Math.min(255, s.visits[slot]! + 1);
     }
     const home = this.items.get(s.target[slot]!);
@@ -166,6 +174,18 @@ export class AttractionSystem implements GuestAttractionPort {
       this.d.hash?.move(slot, exit.x, exit.y);
     }
     s.state[slot] = GState.Idle; s.timer[slot] = 6 + (id % 8); s.act[slot] = Act.None; s.target[slot] = 0; s.actTick[slot] = tick;
+  }
+
+  /** The end of a fishing visit: casts at the water the guest was assigned, kept fish sell at the cafe, the mood follows the catch (see `visitMood`). */
+  private fishTrip(slot: number, id: number, a: Attraction): void {
+    const g = this.d.angling;
+    if (!g || !this.rng) return;
+    const plan = g.planner.plan(a.b), rng = this.rng;
+    const v = fishVisit(g.stock, plan, id, a.keep, () => rng.next());
+    a.stats.catches = (a.stats.catches ?? 0) + v.catches;
+    if (a.keep && v.catches > 0) { const sale = v.catches * FISH.keepSale; this.d.earn('restaurants', sale); a.stats.revenue += sale; a.recordRevenue(this.hour, sale); }
+    const s = this.d.store;
+    s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + visitMood(v, plan)));
   }
 
   /** Toilets: guests served today (cleanliness; saved in the attraction stats so a reload keeps it). */
@@ -186,8 +206,17 @@ export class AttractionSystem implements GuestAttractionPort {
       const price = a.unitPrice();
       if (s.budget[slot]! < price) { a.stats.turnedAway++; this.release(q.id, tick, null); continue; }
       if (price > 0) { s.budget[slot] = s.budget[slot]! - price; this.d.earn(a.category, price); a.stats.revenue += price; a.recordRevenue(this.hour, price); }
+      if (a.spec.angling) this.angleExtras(a, slot, q.id);
       a.users.push({ id: q.id, end: tick + a.serviceTime() });
     }
+  }
+
+  /** Rod hire (guests without their own rod) and bait, paid at the hut on top of the day ticket when the guest can afford it. */
+  private angleExtras(a: Attraction, slot: number, id: number): void {
+    const s = this.d.store;
+    const rod = ownsRod(id) ? 0 : FISH.rodRent, bait = FISH.bait;
+    if (rod > 0 && s.budget[slot]! >= rod) { s.budget[slot] = s.budget[slot]! - rod; this.d.earn('rental', rod); a.stats.revenue += rod; a.recordRevenue(this.hour, rod); }
+    if (s.budget[slot]! >= bait) { s.budget[slot] = s.budget[slot]! - bait; this.d.earn('shops', bait); a.stats.revenue += bait; a.recordRevenue(this.hour, bait); }
   }
 
   /** Tour departure: up to the free seats of the queue board, pay the ticket and ride for the tour duration (they stay Using, off the nav graph). */
@@ -213,10 +242,33 @@ export class AttractionSystem implements GuestAttractionPort {
     if (st && !st.open) return { open: false, reason: st.reason ?? 'Closed' };
     if (a.spec.seasonOpen && !a.spec.seasonOpen.includes(seasonOf({ day: this.day }))) return { open: false, reason: 'Closed for the season' };
     if (a.spec.extra === 'lake' && this.d.lakeFrozen?.(a.b)) return { open: false, reason: 'Closed: the lake is frozen' };
+    if (a.spec.angling) { const r = this.anglingClosed(a); if (r) return { open: false, reason: r }; }
     if (a.def.staff > 0 && a.staff <= 0) return { open: false, reason: 'Closed: no staff' };
     if (a.spec.tour) { const r = this.d.tours?.closed(a); if (r) return { open: false, reason: r }; }
     return { open: true };
   }
+
+  private anglingClosed(a: Attraction): string | undefined {
+    const g = this.d.angling;
+    if (!g) return 'Closed: no water to fish';
+    const p = g.planner.plan(a.b);
+    if (!p.near) return 'Closed: no lake, pond or river within 3 tiles';
+    if (p.bodies.length === 0) return p.ice ? 'Closed: the water is frozen' : 'Closed: no fishable water in reach';
+    return undefined;
+  }
+
+  /** Hut inspector data: fishing places, waters in reach with their stock, ice / noise state, catches so far, Keep setting. */
+  anglingInfo(id: number): { keep: boolean; spots: number; piers: number; ice: boolean; noisy: boolean; catches: number; bodies: Array<{ key: string; name: string; kind: string; stock: number }> } | undefined {
+    const a = this.items.get(id), g = this.d.angling;
+    if (!a || !a.spec.angling || !g) return undefined;
+    const p: AnglingPlan = g.planner.plan(a.b);
+    return {
+      keep: a.keep, spots: p.spots.length, piers: p.spots.filter((x) => x.kind === 'pier').length, ice: p.ice, noisy: p.noisy, catches: a.stats.catches ?? 0,
+      bodies: p.bodies.map((b) => ({ key: b.key, name: b.name, kind: b.kind, stock: g.stock.get(b.key) })),
+    };
+  }
+  /** Catch & release (false, default) vs Keep (true) of a tackle hut. */
+  setKeep(id: number, keep: boolean): boolean { const a = this.items.get(id); if (!a || !a.spec.angling) return false; a.keep = keep; return true; }
 
   /** Undo support: the saved runtime of one attraction (price, staff, stats, open flags). */
   snapshotInstance(id: number): InstanceSave | undefined { return this.items.get(id)?.save(); }
@@ -237,7 +289,8 @@ export class AttractionSystem implements GuestAttractionPort {
         n.priceScale = () => this.d.priceScale?.(b.type) ?? 1;
         if (spec.eveningShift) n.hourScale = () => eveningPremium(this.hour);
         if (spec.tour) n.tourInfo = () => this.d.tours?.info(n) ?? null;
-        if (cur) { n.price = cur.price; n.staff = cur.staff; n.stats = cur.stats; n.users = cur.users; n.queue = cur.queue; n.open = cur.open; n.reported = cur.reported; }
+        if (spec.angling) n.anglingInfo = () => this.anglingInfo(b.id);
+        if (cur) { n.keep = cur.keep; n.price = cur.price; n.staff = cur.staff; n.stats = cur.stats; n.users = cur.users; n.queue = cur.queue; n.open = cur.open; n.reported = cur.reported; }
         this.items.set(b.id, n);
       }
     }
@@ -246,16 +299,18 @@ export class AttractionSystem implements GuestAttractionPort {
       for (const u of a.users) this.release(u.id, this.tick, null);
       for (const q of a.queue) this.release(q.id, this.tick, null);
       this.items.delete(id);
+      this.d.angling?.planner.forget(id);
       this.d.tours?.gone(id);
     }
   }
 
   update(state: GameState, tick: number): void {
-    this.tick = tick;
+    this.tick = tick; this.rng = state.rng;
     this.hour = hourOfDay(state.date); this.day = state.date.day; this.absDay = state.date.year * DAYS_PER_YEAR + state.date.day;
     this.d.tours?.setContext({ tick, day: state.date.day, absDay: state.date.year * DAYS_PER_YEAR + state.date.day, hour: this.hour });
     this.sync();
     for (const a of this.items.values()) {
+      if (a.spec.angling) { const p = this.d.angling?.planner.plan(a.b); a.slotsNow = p ? Math.max(2, p.spots.length) : undefined; }
       const v = this.evalOpen(a);
       a.open = v.open; a.reason = v.reason;
       if (a.reported !== v.open) {

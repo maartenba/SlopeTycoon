@@ -1,4 +1,4 @@
-import type { ViewpointSpec } from './viewpoints';
+import { FOREST_SITE, type ViewpointSpec } from './viewpoints';
 
 export type BuildingCategory =
   | 'core' | 'services' | 'lodging' | 'kids' | 'safety' | 'operations'
@@ -184,5 +184,13 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('pettingZoo', 'Petting Zoo', 'recreation', 3, 3, 3000, 10, { access: 'path', site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional' } }, { needs: ['snowFree'], staff: 1, capacity: 20 }),
   // Quad Base (Phase 6 Task 22, docs/quads.md): garage + fuel pump + staging yard of the guided summer quad tours. The ride runs on the attached road / footpath tiles (config/tours.ts).
   b('quadBase', 'Quad Base', 'recreation', 3, 2, 6500, 25, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default' }, placeTip: 'Place the quad base beside a road or footpath: the tour rides out along it' }, { needs: ['snowFree'], staff: 2, capacity: 8 }),
+  // Viewpoint (Phase 6 Task 21, docs/viewpoints.md): a timber platform with a railing and a telescope on high ground. A hiker destination (view score, longer stop, happiness) and a photo-mode spot; no staff, never gated. Trail, footpath or piste edge.
+  b('viewpoint', 'Viewpoint', 'recreation', 2, 2, 1500, 2, { access: 'trail', altAccess: ['path', 'pisteEdge'], pisteRule: 'edge', site: { maxSlope: 3, slopeKind: 'any', autoFlatten: 'optional', allowRock: true } }, { viewpoint: {}, placeTip: 'Place the viewpoint on high ground beside a hiking trail, a footpath or a piste' }),
+  // Treehouse (Phase 6 Task 21): a wooden house in the trees with a rope bridge. Needs forest around it (6+ trees within 3 tiles), keeps the trees, never flattens. Trail or footpath. A slightly weaker view than a ridge platform (weight 0.8) but a family favourite.
+  b('treehouse', 'Treehouse', 'recreation', 2, 2, 2500, 4, { access: 'trail', altAccess: ['path'], pisteRule: 'forbid', site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'never', allowRock: false, forest: { minTrees: FOREST_SITE.minTrees, radius: FOREST_SITE.radius, keepTrees: true } } }, { viewpoint: { weight: 0.8 }, placeTip: 'Place the treehouse in the forest: it needs at least 6 trees within 3 tiles' }),
+  // Tackle & bait hut (Phase 6 Task 49, docs/anglers.md): the anglers' base. Rents rods, sells day tickets and bait; fishes every water body within FISH.radius (lake, pond, stream, dug river).
+  b('tackleHut', 'Tackle & Bait Hut', 'recreation', 2, 2, 1800, 6, { access: 'path', altAccess: ['trail'], site: HUT, placeTip: 'Place the tackle hut within 3 tiles of a lake, pond or river, beside a footpath' }, { staff: 1, capacity: 8 }),
+  // Fishing pier (Phase 6 Task 49): 1x2 timber jetty off a lake / pond shore; four fishing places for the huts within reach. Needs a Tackle & bait hut first.
+  b('fishingPier', 'Fishing Pier', 'water', 1, 2, 400, 1, { access: 'none', site: { maxSlope: 2, onWater: 'lakeEdge', autoFlatten: 'optional' }, placeTip: 'Place the pier on a lake or pond shore' }, { requires: ['tackleHut'], capacity: 4 }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));
