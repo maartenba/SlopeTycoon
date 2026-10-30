@@ -10,7 +10,7 @@ import { Excursions, EXC } from './Excursion';
 import type { LiftData } from '../Lift';
 import type { SimSystem } from '../Systems';
 import type { GuestAttractionPort } from './AttractionPort';
-import { Act, Decider, FOOD, type Intent, REST } from './Decision';
+import { Act, Decider, FOOD, type Intent, REST, SNACK, SNACKS } from './Decision';
 import { coreOf, eventReason, GState, GuestStore, GuestType, Leave } from './Guest';
 import { Mode } from './Guest';
 import type { GuestWorld, WorldBuilding } from './GuestWorld';
@@ -109,10 +109,15 @@ export class GuestSim {
       leaveHour: () => this.decider.leaveHour,
       avoid: (t) => this.decider.avoidTile(t),
       reachedGoal: (slot, kind) => { const s = this.store; this.attractions?.trail(slot, kind === 1 ? 'bike' : 'hike', this.tick); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); },
-      foodNear: (x, y) => { const r2 = EXC.foodRadius * EXC.foodRadius; for (const b of this.byId.values()) if ((FOOD.has(b.type) ? b.type !== 'baseLodge' : b.type === 'alpineFarm') && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= r2) return true; return false; },
+      foodNear: (x, y) => { const r2 = EXC.foodRadius * EXC.foodRadius; for (const b of this.byId.values()) if ((FOOD.has(b.type) ? b.type !== 'baseLodge' : b.type === 'alpineFarm' || SNACKS.has(b.type)) && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= r2) return true; return false; },
       viewDwellH: (goal) => this.decider.viewDwell(goal),
       viewed: (slot, goal) => { const v = this.decider.viewAt(goal); if (!v) return; const s = this.store; s.happiness[slot] = Math.min(1, s.happiness[slot]! + VIEWPOINT.happiness * v.score); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); this.decider.goals.viewpoints.record(v.id); },
-      lunch: (slot) => { const s = this.store; s.hunger[slot] = 0.05; s.budget[slot] = s.budget[slot]! - 12; this.world.onSpend?.(12, 'food'); },
+      lunch: (slot) => {
+        const s = this.store;
+        // a coffee stand is the only food in reach: a cup and a bite (Phase 6 Task 28), not a lunch
+        if (this.snackOnly(s.x[slot]!, s.y[slot]!)) { s.hunger[slot] = Math.max(0.05, s.hunger[slot]! - SNACK.by); s.budget[slot] = s.budget[slot]! - SNACK.spend; this.world.onSpend?.(SNACK.spend, 'food'); return; }
+        s.hunger[slot] = 0.05; s.budget[slot] = s.budget[slot]! - 12; this.world.onSpend?.(12, 'food');
+      },
       finished: (slot, ok, isTrek) => this.excFinished(slot, ok, isTrek),
     });
     this.spawner = new Spawner(world, this.store, this.hash, bus);
@@ -663,6 +668,17 @@ export class GuestSim {
       if (this.injuryHook?.(s.id[i]!, s.x[i]!, s.y[i]!, { over: diff - skill, offPiste, quality: pq ? pq.injury : 1 })) return;
       if (rng.chance(0.35)) this.startLeaving(i, Leave.Injured);
     }
+  }
+
+  /** Excursion food stop: is a coffee stand the only food within `EXC.foodRadius` of this point? */
+  private snackOnly(x: number, y: number): boolean {
+    const r2 = EXC.foodRadius * EXC.foodRadius;
+    let snack = false;
+    for (const b of this.byId.values()) {
+      if ((b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 > r2) continue;
+      if (SNACKS.has(b.type)) snack = true; else if ((FOOD.has(b.type) && b.type !== 'baseLodge') || b.type === 'alpineFarm') return false;
+    }
+    return snack;
   }
 
   private visit(i: number, b: WorldBuilding): void {

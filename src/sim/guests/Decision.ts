@@ -23,6 +23,10 @@ export const Pref = { Ski: 0, Hike: 1, Bike: 2 } as const;
 export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike' | 'relief';
 
 export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace', 'smallHotel']);
+/** Quick-service kiosks (Phase 6 Task 28, docs/coffee-stand.md): a cup and a bite on the way, never the real meal. Not in FOOD: they only compete as a nearby snack (see `SNACK`). */
+export const SNACKS = new Set(['coffeeStand']);
+/** Snack stop tuning: guests with hunger in [minHunger, maxHunger] weigh the nearest open kiosk with score `base + perHunger x hunger - distPenalty x tiles + nearBonus x (1 - tiles / radius)`: the pull FALLS with hunger (a snack-sized appetite stops for a coffee; a really hungry guest wants the real meal, which scores 2 x hunger) and with the detour. */
+export const SNACK = { minHunger: 0.3, maxHunger: 0.7, base: 1.75, perHunger: -1, radius: 7, nearBonus: 0.3, distPenalty: 0.15, /** Hunger a cup and a bite take off (the Coffee Stand spec's `hungerBy`). */ by: 0.3, /** Dollars a cup and a bite cost when a hiker stops at a kiosk with no other food in reach. */ spend: 4 } as const;
 /** Evening venues beyond the daytime FOOD list: the Après-Ski Bar (a drinks stop, not a meal). */
 export const BAR = new Set(['apresBar']);
 /** Every venue the evening model schedules (dinner, drinks, terrace). */
@@ -87,6 +91,8 @@ const dist2 = (b: WorldBuilding, x: number, y: number): number => (b.x + b.w / 2
  */
 export class Decider {
   food: WorldBuilding[] = [];
+  /** Open coffee stands / kiosks (SNACKS). */
+  snacks: WorldBuilding[] = [];
   bars: WorldBuilding[] = [];
   huts: WorldBuilding[] = [];
   /** Buildings with `def.viewpoint` (Phase 6 Task 6): hiker goals with a view score. */
@@ -159,7 +165,7 @@ export class Decider {
   reset(): void { this.goals.reset(); this.descent.clear(); this.descentEpoch = -1; this.scanEpoch = -1; this.lifts = []; this.hikeTiles = []; this.mtbTiles = []; this.skiOpenTiles = 0; }
 
   refresh(buildings: Iterable<WorldBuilding>): void {
-    this.food = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
+    this.food = []; this.snacks = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
     for (const b of buildings) {
       if (!b.active) continue;
       if (this.port && !this.port.accepts(b.id)) continue;
@@ -169,11 +175,12 @@ export class Decider {
       const vp = BUILDINGS[b.type]?.viewpoint; if (vp) this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); // viewpoint buildings (config-driven)
       const serving = this.port?.serving?.(b.id) ?? true; // venues are only candidates while serving (08:00 - 23:00)
       if (FOOD.has(b.type) && serving) this.food.push(b);
+      if (SNACKS.has(b.type)) this.snacks.push(b);
       if (BAR.has(b.type) && serving) this.bars.push(b);
       if (REST.has(b.type)) this.rest.push(b);
       if (SHOP.has(b.type)) this.shop.push(b);
       if (ACTIVITY.has(b.type)) this.activity.push(b);
-      if (VISIT_CATEGORIES.has(BUILDINGS[b.type]?.category ?? '') && !FOOD.has(b.type)  && !BAR.has(b.type) && !REST.has(b.type) && !SHOP.has(b.type) && !ACTIVITY.has(b.type)) this.other.push(b);
+      if (VISIT_CATEGORIES.has(BUILDINGS[b.type]?.category ?? '') && !FOOD.has(b.type) && !SNACKS.has(b.type) && !BAR.has(b.type) && !REST.has(b.type) && !SHOP.has(b.type) && !ACTIVITY.has(b.type)) this.other.push(b);
     }
     const nav = this.nav();
     this.goals.queryBudget = 24;
@@ -297,6 +304,16 @@ export class Decider {
     return cands.reduce((a, c) => (c.score > a.score ? c : a));
   }
 
+  /** Coffee stand: a hungry-ish guest near an open kiosk weighs a quick stop (no RNG draw: guests without a kiosk keep their stream). */
+  private snackFor(s: GuestStore, i: number, hunger: number, x: number, y: number): Intent | null {
+    if (!this.snacks.length || hunger < SNACK.minHunger || hunger > SNACK.maxHunger) return null;
+    let best: WorldBuilding | undefined, bd = Infinity;
+    for (const b of this.snacks) { const d = dist2(b, x, y); if (d < bd || (d === bd && b.id < best!.id)) { bd = d; best = b; } }
+    if (!best || (this.port && this.port.unitPrice(best.id) > s.budget[i]!)) return null;
+    const dist = Math.sqrt(bd);
+    return { kind: 'eat', building: best, score: SNACK.base + SNACK.perHunger * hunger - SNACK.distPenalty * dist + SNACK.nearBonus * Math.max(0, 1 - dist / SNACK.radius) };
+  }
+
   /** Comfort need: walk to the nearest open toilet once the urge passes the seek mark (no RNG draw, so guests that do not seek keep their stream). */
   private relief(s: GuestStore, i: number): Intent | null {
     if (!this.comfort || !this.toilets.length || s.urge[i]! < NEEDS.urgeSeek) return null;
@@ -328,6 +345,8 @@ export class Decider {
       const outdoorsy = (pref === Pref.Hike || pref === Pref.Bike) && this.hikeTiles.length + this.mtbTiles.length > 0;
       out.push({ kind: 'eat', building: b, score: (hunger > 0.4 ? 2 * hunger : 0.1) + (lunch ? 1.5 : 0) + (outdoorsy && hunger > NEEDS.hungryExcursion ? 1.5 : 0) + taste + dem + (xd?.eatBonus ?? 0) + noise() });
     }
+    const snack = this.snackFor(s, i, hunger, x, y);
+    if (snack) out.push(snack);
     const port = this.port;
     const restList = port ? this.rest.filter((b) => port.canUse(b.id, i)) : this.rest;
     if (restList.length && fatigue > 0.5) out.push({ kind: 'rest', building: this.nearest(restList, x, y, rng)!, score: 1.8 * fatigue + noise() });

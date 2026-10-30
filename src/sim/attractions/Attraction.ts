@@ -18,7 +18,7 @@ export interface AttractionSpec {
   /** Simultaneous users; defaults to the catalog capacity. */
   slots?: number;
   /** Need effects applied when service completes. */
-  effects: { hungerTo?: number; fatigue?: number; happiness?: number; /** Comfort need: the urge is lowered to at most this (0 = fully relieved). Toilets 0, dining venues a little. */ urgeTo?: number };
+  effects: { hungerTo?: number; /** Snack: takes this much off the hunger (floor 0.05) instead of fixing it to a level (Coffee Stand, `hungerBy` 0.3: a cup and a bite, never the real meal). */ hungerBy?: number; fatigue?: number; happiness?: number; /** Comfort need: the urge is lowered to at most this (0 = fully relieved). Toilets 0, dining venues a little. */ urgeTo?: number };
   appeal: Appeal;
   /** Guests get ski/board/bike gear (rental). */
   grantsGear?: boolean;

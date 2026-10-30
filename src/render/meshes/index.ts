@@ -28,6 +28,7 @@ import { tackleHut } from './tackleHut';
 import { fishingPier } from './fishingPier';
 import { hotelSmall } from './hotelSmall';
 import { hotelLuxury, poolWaterGeometry } from './hotelLuxury';
+import { coffeeStand } from './coffeeStand';
 
 const e = (build: BuildFn, foundation = true, rooted = false): BuilderEntry => ({ build, foundation, ...(rooted ? { rooted } : {}) });
 
@@ -45,7 +46,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
   campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false, true),
   tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
-  smallHotel: e(hotelSmall), luxuryHotel: e(hotelLuxury, false),
+  smallHotel: e(hotelSmall), luxuryHotel: e(hotelLuxury, false), coffeeStand: e(coffeeStand, false),
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 

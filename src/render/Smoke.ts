@@ -12,8 +12,8 @@ export const SMOKE = {
   lodNear: 45, lodMid: 80, lodFar: 130,
   /** Pool steam (Luxury Hotel): at most this many pools steam at once (the puffs are wide, a few already fill the screen). */
   steamMax: 3,
-  /** Puff size factor (1 + wide): pool steam is more than twice as wide. */
-  steamWide: 1.4,
+  /** Puff size factors (1 + wide): pool steam is twice as wide, the coffee-stand wisp half as big. */
+  steamWide: 1.4, wispWide: -0.55,
 } as const;
 
 export interface SmokeCandidate {
@@ -34,16 +34,16 @@ export interface SmokeCtx {
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
-export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace' | 'camp' | 'pool';
+export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace' | 'camp' | 'pool' | 'coffee';
 const KIND: Record<string, SmokeKind> = {
   chalet: 'lodging', apartment: 'lodging', baseLodge: 'dining', lodge: 'dining', cafe: 'dining', mountainHut: 'dining', heatedTerrace: 'terrace', apresBar: 'dining', alpineFarm: 'farm', rangerStation: 'farm', campground: 'camp',
-  smallHotel: 'dining', luxuryHotel: 'pool',
+  smallHotel: 'dining', luxuryHotel: 'pool', coffeeStand: 'coffee',
 };
 export const smokeKindOf = (type: string): SmokeKind | null => KIND[type] ?? null;
 /** Where a building's smoke / steam rises (building-local): its chimney, or the pool steam vent of the Luxury Hotel. */
 export const emitterSpecOf = (type: string): ChimneySpec | undefined => BUILDINGS[type]?.chimney ?? BUILDINGS[type]?.steam;
 /** Puff size factor of a kind: 0 = the common chimney puff. */
-export const wideOf = (type: string): number => (smokeKindOf(type) === 'pool' ? SMOKE.steamWide : 0);
+export const wideOf = (type: string): number => { const k = smokeKindOf(type); return k === 'pool' ? SMOKE.steamWide : k === 'coffee' ? SMOKE.wispWide : 0; };
 const inHours = (h: number, a: number, b: number): boolean => (a <= b ? h >= a && h < b : h >= a || h < b);
 
 /** Pure: 0..1 chimney strength of one building. 0 = no smoke. */
@@ -53,6 +53,10 @@ export function smokeIntensity(type: string, active: boolean, temp: number, hour
   if (kind === 'pool') { // heated outdoor pool (Phase 6 Task 27): steam whenever the air is below POOL.steamBelow, any hour, denser the colder it is
     if (temp >= POOL.steamBelow) return 0;
     return clamp01(0.55 + 0.45 * clamp01((POOL.steamBelow - temp) / 12));
+  }
+  if (kind === 'coffee') { // coffee stand wisp (Phase 6 Task 28): daytime only, a thin wisp that is stronger in the cold
+    if (!inHours(hour, 8, 17.5)) return 0;
+    return clamp01(0.3 + 0.55 * clamp01((SMOKE.tempMax + 8 - temp) / 20));
   }
   if (kind === 'camp') { // campfire (Phase 6 Task 19): independent of the cold; evening and a faint breakfast fire, only while the campground is open (summer)
     if (season !== undefined && season !== 'summer') return 0;

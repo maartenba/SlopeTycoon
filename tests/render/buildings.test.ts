@@ -54,7 +54,7 @@ describe('building meshes', () => {
       expect(box.containsPoint(new THREE.Vector3(d.chimney.x, d.chimney.y - 0.05, d.chimney.z)), d.id).toBe(true);
       expect(found, `${d.id} has no vertex at its chimney top`).toBe(true);
     }
-    expect(n).toBe(13); // + biomassHeating (item F), + campground (campfire smoke, Phase 6 Task 19), + small hotel (kitchen chimney, Phase 6 Task 27); the luxury hotel steams through `BuildingDef.steam`
+    expect(n).toBe(14); // + biomassHeating (item F), + campground (campfire smoke, Phase 6 Task 19), + small hotel (kitchen chimney) and coffee stand (espresso flue, Phase 6 Tasks 27 / 28); the luxury hotel steams through `BuildingDef.steam`
   });
 
   it('keeps the glass vertex-colour convention (warm night glow) in every habitable building', () => {

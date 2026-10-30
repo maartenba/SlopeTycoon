@@ -160,6 +160,7 @@ export class AttractionSystem implements GuestAttractionPort {
     if (effects) {
       const e = effects.spec.effects;
       if (e.hungerTo !== undefined) s.hunger[slot] = Math.min(s.hunger[slot]!, e.hungerTo);
+      if (e.hungerBy !== undefined) s.hunger[slot] = Math.min(s.hunger[slot]!, Math.max(0.05, s.hunger[slot]! - e.hungerBy));
       const grubby = effects.spec.kind === 'toilet' && this.usesToday(effects) > TOILET_USES_PER_DAY; // overrun block: only half relief, no goodwill
       if (e.urgeTo !== undefined) s.urge[slot] = Math.min(s.urge[slot]!, grubby ? GRUBBY_URGE : e.urgeTo);
       if (e.fatigue) s.fatigue[slot] = Math.min(1, Math.max(0, s.fatigue[slot]! + e.fatigue));

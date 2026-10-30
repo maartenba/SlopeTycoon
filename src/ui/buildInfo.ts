@@ -39,7 +39,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  smallHotel: '🏨', luxuryHotel: '🏩', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -79,6 +79,7 @@ const DESCRIPTIONS: Record<string, string> = {
   fishingPier: 'A jetty with four fishing places for the tackle huts in reach. Needs a Tackle & Bait Hut first; sits on a lake or pond shore.',
   smallHotel: '40 rooms over a lobby restaurant, open all year: standard prices and a steady stream of guests. Needs a road. Unlocks at level 3.',
   luxuryHotel: '30 suites and a heated outdoor pool that steams in the cold. VIPs and couples book it first; the pool heating costs energy that solar, wind and hydro can offset. Needs a road. Unlocks at level 4.',
+  coffeeStand: 'A tiny kiosk for a quick coffee and a bite, beside a piste, a footpath or a trail. Cheap, open all year; food only (toilets are the comfort fix).',
   campground: 'Summer only: 16 tent and caravan pitches around a campfire. Cheap nights for budget and adventure guests; toilets nearby make a better evening. Reached by a footpath or hiking trail.',
   pettingZoo: 'Summer family attraction: goats, sheep, rabbits and a donkey in a fenced pen. Small entry ticket; closed in snow. Needs a footpath.',
   viewpoint: 'A timber platform with a railing and a telescope. Hikers walk to it for the view (best on a ridge or high ground), stop for a look and leave happier; it is a spot in Photo mode. Beside a hiking trail, a footpath or a piste.',

@@ -214,5 +214,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('smallHotel', 'Small Hotel', 'lodging', 5, 4, 24000, 55, { access: 'road', placeTip: 'Place the hotel beside a road on flat ground' }, { staff: 2, capacity: 40, chimney: { x: 1.5, y: 2.7, z: -0.55 } }),
   // Luxury Hotel (Phase 6 Task 27): 30 suites (luxury tier x2.5), VIPs' first choice, a heated outdoor pool with steam in the cold. Road access, open all year. Level 4 in Career.
   b('luxuryHotel', 'Luxury Hotel', 'lodging', 6, 6, 48000, 90, { access: 'road', placeTip: 'Place the hotel beside a road on flat ground; the pool deck faces south' }, { staff: 4, capacity: 30, steam: { x: 1.3, y: 0.15, z: 1.55 } }),
+  // Coffee Stand (Phase 6 Task 28, docs/coffee-stand.md): a 1x1 kiosk beside a piste, a footpath or a trail; a quick cup and a bite (food only: the toilets are the comfort source). All year.
+  b('coffeeStand', 'Coffee Stand', 'services', 1, 1, 1200, 4, { access: 'pisteEdge', altAccess: ['path', 'trail'], pisteRule: 'edge', site: HUT, placeTip: 'Place the coffee stand beside a piste, a footpath or a trail' }, { staff: 1, capacity: 4, chimney: { x: 0.18, y: 0.94, z: -0.1 } }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

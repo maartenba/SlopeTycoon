@@ -29,6 +29,8 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   smallHotel: { price: 12, max: 40, billing: 'perUse', category: 'restaurants' },
   /** Luxury Hotel: nightly rate only; the pool is free for guests. */
   luxuryHotel: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
+  /** Coffee Stand (docs/coffee-stand.md): a cheap cup and a bite, cheaper than the cafe. */
+  coffeeStand: { price: 4, max: 12, billing: 'perUse', category: 'restaurants' },
   /** Petting zoo (docs/petting-zoo.md): small entry ticket, a family summer attraction. */
   pettingZoo: { price: 8, max: 25, billing: 'perUse', category: 'recreation' },
   iceRink: { price: 6, max: 25, billing: 'perHour', category: 'recreation' },
