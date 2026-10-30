@@ -4,7 +4,20 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
-### Added
+## [0.2.7] - 2026-10-30 (pre-release)
+
+Summer content, the third content wave of Phase 6 (milestone M6.3). Changes since 0.2.6: a campground, a petting zoo, viewpoints and treehouses, quad tours, a climbing crag, rafting and canyoning on a river, angling with fish stock, two new guest types and two summer campaigns.
+
+### Highlights
+
+- A real summer: build a campground with a glowing campfire, a petting zoo, a viewpoint on the ridge and a treehouse in the forest, then run the new Family Summer Camp campaign.
+- Adventure: quad convoys on your roads, a climbing crag on a real rock face, and rafting and canyoning on a river you dug yourself.
+- Fishing: a Tackle & Bait Hut and fishing piers on lakes, ponds and rivers, with a fish stock that regrows, Catch & release or Keep, and ice fishing on frozen lakes in winter.
+- Two new kinds of guests: mountain bikers on your trails and quiet anglers at the water.
+- Angler's Paradise, a second new campaign, fills your lakes with anglers while the fish last.
+- A new Summer page and a Quads, climbing, rafting & fishing page in the player guide.
+
+### Changes
 
 - **Campground** (summer lodging, level 1): 16 tent and caravan pitches around a campfire, $24 a night (budget tier), open in summer only. Budget and adventure guests pitch their tent first, the evening fire cheers campers up (more with toilets within 10 tiles), the fire glows and smokes at night. Footpath or hiking trail access; an Advisor tip for quiet summers (`docs/campground.md`).
 - **Viewpoint** and **Treehouse** (hiker destinations): a timber platform with a railing and telescope for ridges and high ground (level 1), and a wooden house in the trees with a rope bridge that needs a forest around it (6 trees within 3 tiles, level 2, keeps the trees). Hikers climb to them for the view, they are Photo mode spots, and building a viewpoint on high ground pays a bonus goal (`docs/viewpoints.md`).
@@ -21,6 +34,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Mountain bikers and anglers read in a crowd**: about 85 % of bikers wear lime (with a helmet) and 80 % of anglers teal (with a cap), instead of about half.
 - **Dust, snow puffs and confetti** are soft round sprites, no longer flat squares.
 - **Dug rivers on slopes**: the channel bed now descends continuously (both corners of every tile edge are cut to one level that never rises along the flow), so a river no longer shows a saw-tooth of tilted water sheets, single-corner pits, or a surface that seems to climb the hillside; the water surface of a bend can never rise above its entry level. Flow animation direction is pinned downstream by a test (`docs/rivers.md`, "Bed and flow direction").
+
+- **Website and guide**: two new guide pages, *Summer* and *Quads, climbing, rafting & fishing*, new screenshots (campground at night, petting zoo, treehouse, quad convoy, climbing crag, rafting, anglers, ice fishing, the Marketing drawer with the summer campaigns), guide updates for guests, money, operations, career, building and the glossary, and a *summer attractions* fact on the landing page.
+- **Developer**: the `Bot` has a `summer` option (default off, so the goldens stay put): hiking and MTB trails along every lift line, then a campground, a petting zoo and a viewpoint at the end of the wish list; `scripts/analysis/summerBot.ts` prints the summer revenue share with and without it (`docs/balance.md`, "M6.3 STOP check"). The staff golden `progression` part moved because of the rafting and canyoning unlock rows (nothing else). `npm run summer:sanity` plays the summer story in the real page (a river from a natural spring, a pond, campground, petting zoo, tackle hut + pier, rafting base on the river and a quad base, a summer fortnight with every attraction serving guests, a quad convoy and a raft ride seen, anglers arriving, save, reload, every saved part identical, MaterialGuard 0, 0 console errors); the flicker harness has a `64-summer-content` scene (`docs/flicker.md`). `docs/playtest-m63.md` is the human checklist for the summer content.
 
 ## [0.2.6] - 2026-10-29 (pre-release)
 

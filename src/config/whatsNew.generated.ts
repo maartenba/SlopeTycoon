@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.2.7",
+    "date": "2026-10-30",
+    "highlights": [
+      "A real summer: build a campground with a glowing campfire, a petting zoo, a viewpoint on the ridge and a treehouse in the forest, then run the new…",
+      "Adventure: quad convoys on your roads, a climbing crag on a real rock face, and rafting and canyoning on a river you dug yourself.",
+      "Fishing: a Tackle & Bait Hut and fishing piers on lakes, ponds and rivers, with a fish stock that regrows, Catch & release or Keep, and ice fishing…",
+      "Two new kinds of guests: mountain bikers on your trails and quiet anglers at the water.",
+      "Angler's Paradise, a second new campaign, fills your lakes with anglers while the fish last.",
+      "A new Summer page and a Quads, climbing, rafting & fishing page in the player guide."
+    ]
+  },
+  {
     "version": "0.2.6",
     "date": "2026-10-29",
     "highlights": [
@@ -23,17 +35,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "The new Eco Centre opens an Eco programme: five policies and a carbon-neutral certificate for a greener resort.",
       "Generated towns have tidy footpaths, and Rudi's advice now shows in full.",
       "A small card tells you when a new version is ready and what is new in it."
-    ]
-  },
-  {
-    "version": "0.2.3",
-    "date": "2026-10-28",
-    "highlights": [
-      "Toilets are here: guests get an urge, and an unmet one costs a little mood. Build a few.",
-      "Trains and cars can cross safely: level crossings, footbridges over the rail and real bridges over water.",
-      "Four new marketing campaigns, including Come by Train and the Snowboard Park Jam.",
-      "Hiking and MTB trails can now serve buildings such as the Mountain Hut and Ranger Station.",
-      "Ranger Rudi explains himself better, with full advice text and clearer \"why can't I build here\" messages."
     ]
   }
 ];

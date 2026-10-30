@@ -1,6 +1,41 @@
 # Release notes and checklist
 
-Current release: **0.2.6 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.7 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.7 (2026-10-30, macOS, Node v22.23.4)
+
+M6.3 milestone STOP batch (Phase 6 content wave 3, summer): campground, petting zoo, viewpoint, treehouse, quad base, climbing crag, rafting + canyoning bases, tackle hut + piers + fish stock + ice fishing, Mountain biker + Angler guests, Family Summer Camp + Angler's Paradise. Version bump, CHANGELOG `[0.2.7]` with Highlights, two new guide pages (Summer; Quads, climbing, rafting & fishing) and updates to Guests, Money, Operations, Building, Career, glossary, landing (summer attractions fact), 9 new screenshots + 2 re-shot (`ui-marketing-campaigns`, `ui-update-card`), `docs/playtest-m63.md`. Decisions: all content ships ON with no flag (there is no `tours` flag); only the staff golden `progression` part moved (30be591e -> fa89ad3d, rafting + canyoning unlock rows). Open: the bot's summer revenue share is 21-25 %, below the plan's 25 % target (`docs/balance.md` "M6.3 STOP check").
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 390 files passed, 1 skipped; 3964 tests passed, 32 skipped |
+| Balance | `npm run test:balance` | 36 passed (run before the docs batch; only a bot option and tests were added afterwards); bot money golden unchanged |
+| Perf | `npm run test:perf` | 26 files, 44 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on every shot |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Phase 6 story | `npm run phase6:sanity` | OK |
+| Summer story | `npm run summer:sanity` | OK (river + pond, campground, petting zoo, hut + pier, rafting base, quad base all active and serving, convoy + raft ride seen, anglers arrive, fish stock created, save + reload identical, MaterialGuard 0, 0 console errors) |
+| Flicker | `npm run flicker -- --only 64-summer-content --kinds rotfine,zoompop,jitter,still` | 0 pops; 2 LOD flips equal to the plain summer baseline (`docs/flicker.md`). The full default scenario list was started and stopped after ~27 min (too slow); not re-run in full |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | 39/39 passed |
+| Size | `npm run size` | 2774.2 kB raw / 997.5 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (24 pages, 77 screenshots, 8.0 MB of the 8 MB budget: `MAX_BYTES_1280` lowered 100 -> 88 kB and all shots re-encoded; 188 URLs crawled) |
+
+Goldens: `GOLDEN_BOT.progression` re-recorded, nothing else. Bugs found by the STOP checks: none in the game; a harness gotcha (`sim.game.date.tick`, not `sim.game.tick`) and a hut that is closed unless water is within 3 tiles were found while writing the sanity script.
+
+### Dist size 0.2.7 (gzip level 9)
+
+| File | Raw | gzip |
+|---|---:|---:|
+| assets/index-PejMoxCf.js (app) | 2024.9 kB | 696.9 kB |
+| assets/three-iTBe2s16.js | 568.4 kB | 142.5 kB |
+| assets/uikit-ChtGzdTN.js | 6.3 kB | 2.5 kB |
+| assets/index-Dk_rm1cx.css | 4.4 kB | 1.3 kB |
+| fonts/ | 93.6 kB | 86.9 kB |
+| icons/ | 64.4 kB | 62.7 kB |
+| html / manifest / whats-new.json / other | 105.8 kB | 91.6 kB |
+| **Total (excl. sw.js)** | **2774.2 kB** | **997.5 kB** |
 
 ## 0.2.6 (2026-10-29, macOS, Node v22.23.4)
 
