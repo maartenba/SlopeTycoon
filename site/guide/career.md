@@ -27,7 +27,7 @@ Everything not listed is available from the start (including the Landscape drawe
 
 {{gen:unlocks}}
 
-The table is generated from the game's rules, so it always matches: the energy buildings are mostly available from the start, with the **Wind Turbine** at level 2 and the **Solar Plant** at level 3.
+The summer buildings are spread out on purpose: *Campground*, *Petting Zoo* and *Viewpoint* are free from the start, the *Tackle & Bait Hut*, *Treehouse*, *Quad Base* and *Climbing Crag* come at level 2, the *Rafting* and *Canyoning* bases at level 3 ([Summer](page:summer)). The table is generated from the game's rules, so it always matches: the energy buildings are mostly available from the start, with the **Wind Turbine** at level 2 and the **Solar Plant** at level 3.
 
 ## Goals
 

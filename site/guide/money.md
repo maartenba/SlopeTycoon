@@ -42,6 +42,11 @@ Four campaigns are newer and tell you what to build:
 - **Hike & Bike Weekends** pulls couples and walkers to your trails, but only on peak days (weekends and holidays): weekdays are weak.
 - **Festival Season** needs a booked festival running or starting within a week and works only around the festival dates; outside them it is weak. Book the festival first, then the campaign.
 
+Two **summer campaigns** work with the buildings on the [Summer](page:summer) page:
+
+- **Family Summer Camp** ($6,000, 14 days) needs a **Campground** (open) plus a **kids area or a Petting Zoo**, and runs in summer. It brings families (a little more with a Petting Zoo) and, unlike *Families*, needs no Ski School.
+- **Angler's Paradise** ($3,500, 14 days) needs a **Tackle & Bait Hut** on water that still holds fish. It lifts the number of anglers (and a few couples), works in summer and autumn and at half strength while the water is frozen, and its effect fades when the fish run low (*Overfished*).
+
 Each card shows a **Show me** button for a missing requirement: it opens the right building card, pans to the station or scrolls to the Events calendar.
 
 Festivals have their own cards just below the campaigns: see [Events, stories & the region](page:events).

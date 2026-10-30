@@ -48,6 +48,8 @@ Bears sleep through winter, get hungry in autumn and roam the remote forest in t
 
 Autumn has a bonus: the **Almabtrieb**. With an Alpine Farm (and cows) the herds come down from the pastures in early October. It is announced three days ahead in the news and by Ranger Rudi (*Show me* flies to the base station), starts with a news item on 1 October, brings a small arrival bonus and dresses the road by the base station for 11 days. It is listed in the Events panel with its date; without a farm Rudi suggests building one.
 
+**Fish are wildlife too.** Every lake, pond, stream and dug river has a **fish stock** that regrows by itself (faster in flowing water, not at all under ice). A *Tackle & Bait Hut* is set to **Catch & release** (the stock hardly shrinks) or **Keep** (a little more income, but the fish disappear about fifteen times faster); when a water falls under 30 % the Advisor warns *Overfished*. A healthy stock adds a little, an empty one subtracts a little (at most two points) from your [sustainability](page:events) score. In winter anglers **ice-fish** on frozen lakes and ponds. More in [Summer](page:summer).
+
 Build a **Ranger Station** (it unlocks a goal early on) to keep guests and animals apart. Rangers can stock bear-proof bins. The **Rangers & wildlife** course scares guests less often and halves the habitat penalty in your [sustainability](page:events) score.
 
 ## Lifts: maintenance and breakdowns

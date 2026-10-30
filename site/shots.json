@@ -1,1413 +1,1587 @@
 {
- "_comment": "Screenshot manifest for the website and guide. kind=harness: 'shot' = ShotOpts for scripts/lib/harness.ts shot(); kind=copy: copies 'source'. Run `npm run site:shots -- --only id1,id2|--missing`, then `npm run site:build`.",
- "width": 1280,
- "shots": [
-  {
-   "id": "hero-winter",
-   "alt": "A busy ski village in winter sunshine, lifts climbing the slopes behind the lodge.",
-   "pages": [
-    "landing",
-    "getting-started"
-   ],
-   "kind": "harness",
-   "caption": "Winter: lifts, pistes and a village that is getting busy.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 12,
-    "zoom": 6,
-    "target": "56,104",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-    "ticks": 2400,
-    "w": 1600,
-    "h": 1000,
-    "start": "winter",
-    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
-   }
-  },
-  {
-   "id": "season-spring",
-   "alt": "The same valley in spring: blossom in the meadows, thin snow on the high slopes.",
-   "pages": [
-    "landing",
-    "guests-seasons"
-   ],
-   "kind": "harness",
-   "caption": "Spring: skiing up high, hiking down low.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 12,
-    "zoom": 5.5,
-    "target": "lodge",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-    "ticks": 900,
-    "w": 1600,
-    "h": 1000,
-    "start": "spring",
-    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
-   }
-  },
-  {
-   "id": "season-summer",
-   "alt": "A green summer valley with the village, hiking trails and meadows.",
-   "pages": [
-    "landing",
-    "guests-seasons"
-   ],
-   "kind": "harness",
-   "caption": "Summer: the snow is gone, the hikers and bikers arrive.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 12,
-    "zoom": 5.5,
-    "target": "lodge",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'hikers')",
-    "ticks": 900,
-    "w": 1600,
-    "h": 1000,
-    "start": "summer",
-    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
-   }
-  },
-  {
-   "id": "season-autumn",
-   "alt": "Autumn colours on the larger trees around the village.",
-   "pages": [
-    "landing",
-    "guests-seasons"
-   ],
-   "kind": "harness",
-   "caption": "Autumn: golden trees and a quiet breath before the snow.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 12,
-    "zoom": 5.5,
-    "target": "lodge",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-    "ticks": 900,
-    "w": 1600,
-    "h": 1000,
-    "start": "autumn",
-    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
-   }
-  },
-  {
-   "id": "night-village",
-   "alt": "The village at night with warm lit windows and lamp posts.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "After dark the windows light up.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 21.5,
-    "zoom": 5.5,
-    "target": "lodge",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-    "ticks": 900,
-    "w": 1600,
-    "h": 1000,
-    "start": "winter",
-    "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
-   }
-  },
-  {
-   "id": "slope-guests",
-   "alt": "Skiers and snowboarders in colourful jackets streaming down a groomed slope.",
-   "pages": [
-    "landing",
-    "guests-seasons"
-   ],
-   "kind": "harness",
-   "caption": "Guests come in all shapes: skiers, boarders, families, hikers.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 12,
-    "zoom": 6,
-    "target": "lodge",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
-    "ticks": 1500,
-    "w": 1600,
-    "h": 1000,
-    "start": "winter",
-    "evalJs": "(()=>{const s=window.__slope;const l=s.sim.lifts.all()[0];const c=s.renderer.controls;const x=(l.bottom.x+l.top.x)/2,z=(l.bottom.y+l.top.y)/2;c.target.set(x,s.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);const u=document.getElementById('ui');if(u)u.style.display='none'})()"
-   }
-  },
-  {
-   "id": "ride-ski",
-   "alt": "First-person view from a skier going down the slope, other guests ahead.",
-   "pages": [
-    "landing",
-    "modes"
-   ],
-   "kind": "harness",
-   "caption": "Ride along with any guest, from the lift to the bottom of the run.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 11,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
-    "ticks": 1500,
-    "view": "ride",
-    "guest": "auto",
-    "vticks": 30,
-    "freeze": true,
-    "w": 1600,
-    "h": 1000
-   }
-  },
-  {
-   "id": "ride-lift",
-   "alt": "Looking out from a chairlift seat over the valley and the cable.",
-   "pages": [
-    "landing",
-    "modes",
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "Chairlift POV.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 11,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
-    "ticks": 300,
-    "view": "lift",
-    "freeze": true,
-    "w": 1600,
-    "h": 1000
-   }
-  },
-  {
-   "id": "walk-lodge",
-   "alt": "First-person walk in front of the base lodge.",
-   "pages": [
-    "landing",
-    "modes"
-   ],
-   "kind": "harness",
-   "caption": "Walk mode: stroll through your own resort.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "hour": 12,
-    "zoom": null,
-    "target": "lodge",
-    "extra": "starter=1",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-    "ticks": 900,
-    "w": 1600,
-    "h": 1000,
-    "view": "walk",
-    "walkAt": "lodge",
-    "walkYaw": 20,
-    "freeze": true,
-    "start": "winter"
-   }
-  },
-  {
-   "id": "photo-mode",
-   "alt": "Photo mode with a warm filter and a decorative frame around a dusk scene.",
-   "pages": [
-    "landing",
-    "modes"
-   ],
-   "kind": "harness",
-   "caption": "Photo mode: filters, frames and golden hour, saved locally as a PNG.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 11,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
-    "ticks": 600,
-    "view": "photo",
-    "photoHero": true,
-    "photoFilter": "vivid",
-    "photoFrame": "film",
-    "photoHour": 17.4,
-    "freeze": true,
-    "w": 1600,
-    "h": 1000
-   }
-  },
-  {
-   "id": "ui-hud",
-   "alt": "The main screen: top bar with money, rating and time; goals card on the right; the dock at the bottom.",
-   "pages": [
-    "interface",
-    "getting-started"
-   ],
-   "kind": "harness",
-   "caption": "The whole screen: top bar, goals card, dock.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100)"
-   }
-  },
-  {
-   "id": "ui-buildings-drawer",
-   "alt": "The Buildings drawer open with category tabs and building cards with prices.",
-   "pages": [
-    "building",
-    "interface"
-   ],
-   "kind": "harness",
-   "caption": "The Buildings drawer: tabs, prices and a season tag on each card.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=buildings]"
-   }
-  },
-  {
-   "id": "ui-lifts-drawer",
-   "alt": "The Lifts drawer showing the lift types, some locked in Career mode.",
-   "pages": [
-    "lifts-pistes",
-    "building"
-   ],
-   "kind": "harness",
-   "caption": "Lifts: twelve types, from T-bar to funicular.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=lifts]"
-   }
-  },
-  {
-   "id": "ui-pistes-drawer",
-   "alt": "The Pistes drawer with difficulty colours and grooming tools.",
-   "pages": [
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "Paint pistes by colour; the game checks that they connect.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=pistes]"
-   }
-  },
-  {
-   "id": "ui-finance",
-   "alt": "The Finance drawer with the money overview and tabs.",
-   "pages": [
-    "money"
-   ],
-   "kind": "harness",
-   "caption": "Finance: income, expenses, loans and reports.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=finance]"
-   }
-  },
-  {
-   "id": "ui-pricing",
-   "alt": "The Pricing drawer with day pass and food price sliders.",
-   "pages": [
-    "money"
-   ],
-   "kind": "harness",
-   "caption": "Pricing: the game tells you if a price is cheap or expensive.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=pricing]"
-   }
-  },
-  {
-   "id": "ui-ops",
-   "alt": "The Operations drawer with staff and safety coverage.",
-   "pages": [
-    "operations"
-   ],
-   "kind": "harness",
-   "caption": "Operations: staff, coverage and the safety picture.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=ops]"
-   }
-  },
-  {
-   "id": "ui-level-panel",
-   "alt": "The Career HUD: top bar, a level badge on the goals card and the dock along the bottom.",
-   "pages": [
-    "career"
-   ],
-   "kind": "harness",
-   "caption": "Career: the goals card carries your level badge; click it for the next level's requirements.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:Level;wait:400"
-   }
-  },
-  {
-   "id": "ui-levelup",
-   "alt": "A level-up celebration banner over the resort.",
-   "pages": [
-    "career"
-   ],
-   "kind": "harness",
-   "caption": "Levelling up unlocks bigger lifts and buildings.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "evalJs": "setTimeout(()=>window.__slope.progression.setLevel(4),200)",
-    "steps": "wait:1500"
-   }
-  },
-  {
-   "id": "ui-scenarios",
-   "alt": "The scenario picker with six scenario cards and star difficulty.",
-   "pages": [
-    "career",
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Six scenarios, from a gentle valley to the Alpine Giant.",
-   "shot": {
-    "bare": true,
-    "viewport": "1280x800",
-    "steps": "click:Scenarios;wait:700"
-   }
-  },
-  {
-   "id": "ui-newgame",
-   "alt": "The New Game dialog with Career and Sandbox, map size and season.",
-   "pages": [
-    "getting-started",
-    "career"
-   ],
-   "kind": "harness",
-   "caption": "New game: Career or Sandbox, map size, season, difficulty.",
-   "shot": {
-    "bare": true,
-    "viewport": "1280x800",
-    "steps": "click:New game;wait:800"
-   }
-  },
-  {
-   "id": "ui-year-report",
-   "alt": "The Resort of the Year report with charts and awards.",
-   "pages": [
-    "career",
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Every in-game year ends with a report card (shown with demo numbers here).",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1",
-    "viewport": "1280x800",
-    "evalJs": "window.__slope.stats.demoYear(); window.__slope.yearReport.show(undefined,false)",
-    "steps": "wait:1200"
-   }
-  },
-  {
-   "id": "ui-trophies",
-   "alt": "The trophy shelf with achievements and cosmetic rewards.",
-   "pages": [
-    "achievements",
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "The trophy shelf.",
-   "shot": {
-    "bare": true,
-    "viewport": "1280x800",
-    "steps": "click:Trophies;wait:700"
-   }
-  },
-  {
-   "id": "ui-settings",
-   "alt": "The settings dialog with sound, feedback intensity, text size and reduced motion.",
-   "pages": [
-    "settings",
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Settings: sound, feedback, text size, reduced motion and more.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x1300",
-    "steps": "click:Sound & settings;wait:500"
-   }
-  },
-  {
-   "id": "ui-settings-desktop",
-   "alt": "The settings dialog on a desktop screen, with sound, accessibility, touch controls and the privacy section.",
-   "pages": [
-    "settings"
-   ],
-   "kind": "harness",
-   "caption": "Settings on desktop: sound, colour palette, touch controls and the privacy choice.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1600x1300",
-    "local": {
-     "slope.consent.analytics": "denied"
+  "_comment": "Screenshot manifest for the website and guide. kind=harness: 'shot' = ShotOpts for scripts/lib/harness.ts shot(); kind=copy: copies 'source'. Run `npm run site:shots -- --only id1,id2|--missing`, then `npm run site:build`.",
+  "width": 1280,
+  "shots": [
+    {
+      "id": "hero-winter",
+      "alt": "A busy ski village in winter sunshine, lifts climbing the slopes behind the lodge.",
+      "pages": [
+        "landing",
+        "getting-started"
+      ],
+      "kind": "harness",
+      "caption": "Winter: lifts, pistes and a village that is getting busy.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": 6,
+        "target": "56,104",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 2400,
+        "w": 1600,
+        "h": 1000,
+        "start": "winter",
+        "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
     },
-    "steps": "click:Sound & settings;wait:500"
-   }
-  },
-  {
-   "id": "ui-help",
-   "alt": "The help dialog listing keyboard shortcuts.",
-   "pages": [
-    "interface"
-   ],
-   "kind": "harness",
-   "caption": "Press ? or H anywhere for the shortcut list.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:Keyboard shortcuts"
-   }
-  },
-  {
-   "id": "ui-saveload",
-   "alt": "The Save and Load dialog with slots and export buttons.",
-   "pages": [
-    "saves"
-   ],
-   "kind": "harness",
-   "caption": "Save / Load: slots, quicksave and .slope export.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "click:Save game (Ctrl;wait:500"
-   }
-  },
-  {
-   "id": "ui-pause",
-   "alt": "The pause menu with Resume, Save, Load, Settings, Help.",
-   "pages": [
-    "interface"
-   ],
-   "kind": "harness",
-   "caption": "Esc opens the pause menu when nothing else is open.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1280x800",
-    "steps": "key:Escape;wait:400"
-   }
-  },
-  {
-   "id": "ui-menu",
-   "alt": "The main menu with Continue, New game, Scenarios, Trophies and a live village behind it.",
-   "pages": [
-    "getting-started"
-   ],
-   "kind": "harness",
-   "caption": "The title screen, with a live demo village behind the menu.",
-   "shot": {
-    "bare": true,
-    "viewport": "1280x800"
-   }
-  },
-  {
-   "id": "ops-bear",
-   "alt": "A brown bear on a meadow path with an orange threat overlay glowing around it, close to the village.",
-   "pages": [
-    "operations",
-    "landing"
-   ],
-   "kind": "copy",
-   "caption": "A bear in the woods. Rangers keep guests and bears apart.",
-   "source": "docs/img/bear-threat-overlay.webp"
-  },
-  {
-   "id": "towns-sheet",
-   "alt": "A contact sheet of ten different generated resort towns.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "copy",
-   "caption": "Ten demo towns, all generated from a seed.",
-   "source": "docs/img/towns-sheet.webp"
-  },
-  {
-   "id": "festival-market",
-   "alt": "The village road decked out for the Christmas Market: bunting, a banner and striped market stalls beside the lift station.",
-   "pages": [
-    "events",
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Christmas Market: bunting, banner and stalls along the road.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 14,
-    "zoom": 6,
-    "target": "54,106",
-    "extra": "starter=1&hints=0",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
-    "ticks": 300,
-    "w": 1600,
-    "h": 1000,
-    "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'christmasMarket',start:t,end:t+8});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
-    "steps": "wait:5000"
-   }
-  },
-  {
-   "id": "festival-carnival",
-   "alt": "A costumed carnival procession walking along a road hung with bunting, banners and flags.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Winter Carnival: banners, stalls and a costumed procession.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 12,
-    "zoom": 6,
-    "target": "54,106",
-    "extra": "starter=1&hints=0",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
-    "ticks": 300,
-    "w": 1600,
-    "h": 1000,
-    "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'carnival',start:t,end:t+5});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
-    "steps": "wait:5000"
-   }
-  },
-  {
-   "id": "almabtrieb",
-   "alt": "Decorated cows with flower headdresses walking down the village road for the Almabtrieb.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Almabtrieb: the decorated herd comes down in autumn.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "autumn",
-    "hour": 13,
-    "zoom": 6,
-    "target": "54,106",
-    "extra": "starter=1&hints=0",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
-    "ticks": 300,
-    "w": 1600,
-    "h": 1000,
-    "evalJs": "(()=>{const w=__slope.weather;w.current={kind:'clear',intensity:0,valleyT:9,snowline:w.current.snowline,wind:0.1,fog:0};})();(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'almabtrieb',start:t,end:t+10});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
-    "steps": "wait:5000"
-   }
-  },
-  {
-   "id": "events-calendar",
-   "alt": "The Marketing drawer with the Events calendar: festival cards with cost, length and requirements.",
-   "pages": [
-    "events"
-   ],
-   "kind": "harness",
-   "caption": "The Events calendar sits under the campaigns in the Marketing drawer.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x1000",
-    "steps": "wait:1500;click:button[data-drawer=marketing];wait:800",
-    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "ui-staff",
-   "alt": "The Staff tab of the Operations drawer: four crews, wage level and the six training courses.",
-   "pages": [
-    "operations"
-   ],
-   "kind": "harness",
-   "caption": "Staff: four crews on Auto and six training courses.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:Staff;wait:800",
-    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)"
-   }
-  },
-  {
-   "id": "ui-landscape",
-   "alt": "The Landscape drawer on its Water tab: Dig pond and Fill in, with tabs for Terrain, Nature and Decor.",
-   "pages": [
-    "building"
-   ],
-   "kind": "harness",
-   "caption": "The Landscape drawer: Water, Terrain, Nature and Decor.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "evalJs": "__slope.progression.setLevel(2);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
-    "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:800"
-   }
-  },
-  {
-   "id": "landscape-pond",
-   "alt": "A pond dug on a level bench in summer, with a sand shore, boulders, a fountain, a fence, hedges and benches.",
-   "pages": [
-    "building"
-   ],
-   "kind": "harness",
-   "caption": "A pond with garden decor, all from the Landscape drawer.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "summer",
-    "hour": 12,
-    "zoom": 4,
-    "target": "lodge",
-    "extra": "starter=1&hints=0",
-    "w": 1600,
-    "h": 1000,
-    "evalJs": "(()=>{__slope.sim.progression.unlockAll=true;const L=__slope.landscapeDebug;const f=L.find(7);L.dig(f.x,f.y,7);for(const [k,r] of [['bench',1],['lamp',0],['flowerBed',0],['fountain',0],['hedge',0],['hedge',0],['hedge',0],['wall',1],['wall',1],['fence',0],['fence',0],['bench',0]]){let done=false;for(let dy=-8;dy<=8&&!done;dy++)for(let dx=-8;dx<=8&&!done;dx++){if(Math.abs(dx)<5&&Math.abs(dy)<5)continue;if(L.decor(k,f.x+dx,f.y+dy,r)==='ok')done=true;}}L.rocks(f.x+4,f.y+4,2);const p=__slope.sim.landscape.ponds[0];__slope.renderer.controls.target.set(f.x+0.5,p.level*0.5,f.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';})()",
-    "steps": "wait:5000"
-   }
-  },
-  {
-   "id": "story-inspector",
-   "alt": "The guest inspector for a named guest, Marta from Graz, with her wish, progress and Pin and Follow buttons.",
-   "pages": [
-    "events"
-   ],
-   "kind": "harness",
-   "caption": "A story guest: a name, one wish, and Pin and Follow buttons.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "winter",
-    "hour": 11,
-    "zoom": 3,
-    "target": "lodge",
-    "extra": "starter=1&hints=0",
-    "viewport": "1280x800",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(150,'skiers')",
-    "ticks": 400,
-    "evalJs": "(()=>{const g=__slope.guestSim,st=g.store,sim=__slope.sim;let id=0,sl=-1;for(let s=0;s<st.capacity;s++){const i=st.id[s];if(i&&st.slotOf(i)===s&&st.act[s]===5){id=i;sl=s;break;}}if(!id){for(let s=0;s<st.capacity;s++){const i=st.id[s];if(i&&st.slotOf(i)===s){id=i;sl=s;break;}}}\nsim.stories.enabled=true;sim.stories.active.push({id,name:'Marta from Graz',kind:'runs',n:5,day:0,runs:2,runMax:0,queueMax:0,visited:[],lesson:false,excursion:false,head:'',lastVisits:0,x:st.x[sl],y:st.y[sl],happiness:0.8,leaving:false});sim.stories.pin(id);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),1500)",
-    "steps": "wait:3000"
-   }
-  },
-  {
-   "id": "ui-rating",
-   "alt": "The rating panel open under the stars: bars for each part of the score including sustainability and a market line against nearby resorts.",
-   "pages": [
-    "events"
-   ],
-   "kind": "harness",
-   "caption": "The rating panel: one bar per facet, now with sustainability, and where you stand in the region.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "winter",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&hints=0",
-    "viewport": "1280x800",
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
-    "ticks": 400,
-    "steps": "click:.l;wait:800",
-    "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),1500)"
-   }
-  },
-  {
-   "id": "ui-year-region",
-   "alt": "The year report scrolled to The region: bars for each neighbouring resort and the Green Resort award among the awards.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "The year report compares you with the neighbours and can award a Green Resort.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1",
-    "viewport": "1280x1500",
-    "evalJs": "(()=>{const r=__slope.sim.rivals;const sec=(y)=>({share:0.41,fair:1/3,rank:1,of:3,sustainability:72,entries:[{name:'Your resort',stars:3.8,share:0.41,you:true},{name:'Silberhorn Ski Area',stars:3.6,share:0.33,you:false},{name:'Edelweiss Peaks',stars:3.3,share:0.26,you:false}]});r.section=sec;__slope.stats.demoYear();__slope.yearReport.show(undefined,false)})()",
-    "steps": "wait:1500"
-   }
-  },
-  {
-   "id": "ui-profile",
-   "alt": "A slope profile card showing altitude over distance coloured by difficulty with a dashed snowline, next to a highlighted suggested run.",
-   "pages": [
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "Slope profile and Suggest a run: see the gradient and the snowline before you build.",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 12,
-    "zoom": 3,
-    "target": "lodge",
-    "extra": "starter=1&hints=0",
-    "viewport": "1280x800",
-    "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500"
-   }
-  },
-  {
-   "id": "ui-terrain-drawer",
-   "alt": "The Terrain drawer: a rail of cards for raise, lower, flatten, smooth and more with key badges and cost hints, and a side column with target, brush size, slope limit and a live cost preview.",
-   "pages": [
-    "building"
-   ],
-   "kind": "harness",
-   "caption": "The redesigned Terrain drawer: cards on the left, brush and cost on the right.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x800",
-    "steps": "click:button[data-drawer=terrain];wait:600",
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "ui-view-drawer",
-   "alt": "The View drawer with Camera, Modes, Overlays and Season groups of cards.",
-   "pages": [
-    "interface"
-   ],
-   "kind": "harness",
-   "caption": "The View drawer: camera, modes, overlays and season.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1600x1300",
-    "steps": "click:button[data-drawer=view];wait:600",
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "ui-stats",
-   "alt": "The Statistics dialog with charts of guests, cash, rating and revenue over a chosen time range.",
-   "pages": [
-    "money"
-   ],
-   "kind": "harness",
-   "caption": "Statistics (I): guests, cash, rating and revenue over time.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "evalJs": "__slope.stats.demoYear(3)",
-    "steps": "wait:800;key:i;wait:1000"
-   }
-  },
-  {
-   "id": "touch-phone-hud",
-   "alt": "The game on a phone held upright: compact top bar, goals, large on-screen speed buttons and a scrolling dock.",
-   "pages": [
-    "touch"
-   ],
-   "kind": "harness",
-   "caption": "On a phone: a compact HUD with 44 px targets.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "390x844",
-    "touch": true,
-    "steps": "wait:1200",
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "touch-phone-place",
-   "alt": "A phone showing the Buildings drawer open over the map.",
-   "pages": [
-    "touch"
-   ],
-   "kind": "harness",
-   "caption": "Drawers on a phone slide up and tuck away.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "390x844",
-    "touch": true,
-    "steps": "wait:1000;click:button[data-drawer=buildings];wait:800",
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "touch-tablet",
-   "alt": "A tablet in landscape with the Pistes drawer open and the touch controls on screen.",
-   "pages": [
-    "touch"
-   ],
-   "kind": "harness",
-   "caption": "On a tablet the full layout fits, with bigger controls.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1024x768",
-    "touch": true,
-    "steps": "wait:1000;click:button[data-drawer=pistes];wait:800",
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "cbsafe-pistes",
-   "alt": "The slope-profile card for a suggested run drawn in the colour-blind-safe palette: sky blue, blue, vermillion and near-black for the four piste difficulties.",
-   "pages": [
-    "settings"
-   ],
-   "kind": "harness",
-   "caption": "The colour-blind-safe palette on the slope profile (compare the green and blue of the default).",
-   "shot": {
-    "size": 128,
-    "seed": 61,
-    "start": "winter",
-    "hour": 12,
-    "zoom": 3,
-    "target": "lodge",
-    "extra": "starter=1&hints=0",
-    "viewport": "1280x800",
-    "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500",
-    "local": {
-     "slope.a11y.v1": "{\"palette\":\"cbsafe\"}"
+    {
+      "id": "season-spring",
+      "alt": "The same valley in spring: blossom in the meadows, thin snow on the high slopes.",
+      "pages": [
+        "landing",
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "Spring: skiing up high, hiking down low.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": 5.5,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 900,
+        "w": 1600,
+        "h": 1000,
+        "start": "spring",
+        "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
     },
-    "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "ui-runs-tab",
-   "alt": "The Runs tab of the Operations drawer: a table of every run with level, length, drop, traffic, surface, grooming order and an Open / Closed button.",
-   "pages": [
-    "lifts-pistes",
-    "operations"
-   ],
-   "kind": "harness",
-   "caption": "Operations > Runs: every run on its own row, with traffic, grooming order and an open / closed switch.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 3.5,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:button[data-tab=runs];wait:800",
-    "evalJs": "__slope.progression.setLevel(4);(()=>{const S=__slope.sim,L=S.lifts.all();const line=(a,b)=>{const n=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);return Array.from({length:n+1},(_,i)=>({x:Math.round(a.x+(b.x-a.x)*i/n),y:Math.round(a.y+(b.y-a.y)*i/n)}))};const fat=(p)=>{const m=new Map();for(const t of p)for(const [dx,dy] of [[0,0],[1,0],[0,1],[1,1]])m.set((t.x+dx)+','+(t.y+dy),{x:t.x+dx,y:t.y+dy});return [...m.values()]};let tot=0;L.forEach((l,k)=>{const t=l.top,b=l.bottom,dx=b.x-t.x,dy=b.y-t.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;(k==0?[[-4,1],[9,2]]:[[-4,3]]).forEach(([o,d],j)=>{const a={x:Math.round(t.x+1+nx*o),y:Math.round(t.y+1+ny*o)},c={x:Math.round(b.x+1+nx*o),y:Math.round(b.y+1+ny*o)};const pts=[...line({x:t.x+1,y:t.y+1},a),...line(a,c),...line(c,{x:b.x+1,y:b.y+1})];const r=S.networks.paint(1,fat(pts),d);tot+=r.painted});});console.log('RUNS painted',tot);const l0=L[0],c=__slope.renderer.controls,x=(l0.bottom.x+l0.top.x)/2,z=(l0.bottom.y+l0.top.y)/2;c.target.set(x,__slope.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
-    "ticks": 1500,
-    "size": 256,
-    "seed": 61,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
-   }
-  },
-  {
-   "id": "runs-overlay",
-   "alt": "The Runs map overlay: each run in its own colour with a name label, junction and station tiles in white.",
-   "pages": [
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "The Runs overlay (O cycles overlays): every run in its own colour, labelled.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 3.5,
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "steps": "wait:1500",
-    "evalJs": "(()=>{const S=__slope.sim,L=S.lifts.all();const line=(a,b)=>{const n=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);return Array.from({length:n+1},(_,i)=>({x:Math.round(a.x+(b.x-a.x)*i/n),y:Math.round(a.y+(b.y-a.y)*i/n)}))};const fat=(p)=>{const m=new Map();for(const t of p)for(const [dx,dy] of [[0,0],[1,0],[0,1],[1,1]])m.set((t.x+dx)+','+(t.y+dy),{x:t.x+dx,y:t.y+dy});return [...m.values()]};let tot=0;L.forEach((l,k)=>{const t=l.top,b=l.bottom,dx=b.x-t.x,dy=b.y-t.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;(k==0?[[-4,1],[9,2]]:[[-4,3]]).forEach(([o,d],j)=>{const a={x:Math.round(t.x+1+nx*o),y:Math.round(t.y+1+ny*o)},c={x:Math.round(b.x+1+nx*o),y:Math.round(b.y+1+ny*o)};const pts=[...line({x:t.x+1,y:t.y+1},a),...line(a,c),...line(c,{x:b.x+1,y:b.y+1})];const r=S.networks.paint(1,fat(pts),d);tot+=r.painted});});console.log('RUNS painted',tot);const l0=L[0],c=__slope.renderer.controls,x=(l0.bottom.x+l0.top.x)/2,z=(l0.bottom.y+l0.top.y)/2;c.target.set(x,__slope.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);})();__slope.setOverlay('runs');setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
-    "ticks": 800,
-    "size": 256,
-    "seed": 61,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
-   }
-  },
-  {
-   "id": "ui-maintenance",
-   "alt": "The Maintenance tab of the Operations drawer: global Auto / Manual policy, a service window per lift, last and next service, overdue marks and a 30-day cost projection.",
-   "pages": [
-    "operations",
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "Operations > Maintenance: a service window for every lift.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:button[data-tab=maint];wait:800",
-    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
-    "ticks": 1500,
-    "size": 256,
-    "seed": 61,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
-   }
-  },
-  {
-   "id": "ui-energy-tab",
-   "alt": "The Energy tab of the Buildings drawer: Solar Array, Solar Plant, Wind Turbine, Small Hydro, Biomass Heating, Tree Nursery and Recycling & Compost Centre cards with prices.",
-   "pages": [
-    "building",
-    "operations"
-   ],
-   "kind": "harness",
-   "caption": "Buildings > Energy: solar, wind, hydro, biomass, a nursery and a recycling centre.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 3,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1600x900",
-    "steps": "wait:1200;click:button[data-drawer=buildings];wait:400;click:Energy;wait:800",
-    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
-    "size": 256,
-    "seed": 61,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')",
-    "ticks": 1500
-   }
-  },
-  {
-   "id": "energy-solar-wind",
-   "alt": "A solar array and a wind turbine beside the village road in summer.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "Solar panels and a wind turbine take a share of the lift energy bill.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 5,
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x800",
-    "steps": "wait:1500",
-    "evalJs": "(()=>{const l=__slope.sim.lifts.all()[0],cx=l.bottom.x,cy=l.bottom.y;const P=(t,n,r)=>{let c=0;for(let k=3;k<r&&c<n;k++)for(let dy=-k;dy<=k&&c<n;dy+=2)for(let dx=-k;dx<=k&&c<n;dx+=2){if(Math.max(Math.abs(dx),Math.abs(dy))!==k)continue;const o=__slope.debugPlace(t,cx+dx,cy+dy,0,true);if(o.ok)c++}return c};__slope.progression.setLevel(4);P('solarArray',3,30);P('windTurbine',1,40);P('recyclingCentre',1,30);P('smallHydro',1,60);const c=__slope.renderer.controls;c.target.set(cx,__slope.grid.getCorner(cx,cy)*0.5,cy);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
-    "ticks": 1500,
-    "size": 256,
-    "seed": 61,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
-   }
-  },
-  {
-   "id": "ui-snowmaking",
-   "alt": "The Operations drawer with the Snowmaking row: On, Off and Auto buttons, a status line and Turn all cannons off / on.",
-   "pages": [
-    "operations",
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "Operations > Snowmaking: On, Off or Auto, per resort and per cannon.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x900",
-    "steps": "wait:1500;click:button[data-drawer=ops];wait:800",
-    "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
-    "ticks": 1500,
-    "size": 256,
-    "seed": 61,
-    "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
-   }
-  },
-  {
-   "id": "ui-loading",
-   "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
-   "pages": [
-    "troubleshooting",
-    "getting-started"
-   ],
-   "kind": "copy",
-   "caption": "The loading splash shows real boot stages.",
-   "source": "docs/img/loading-splash.webp"
-  },
-  {
-   "id": "crossing-closed",
-   "alt": "A footpath level crossing with its barriers down while a train approaches the station.",
-   "pages": [
-    "rails-bridges"
-   ],
-   "kind": "harness",
-   "caption": "A level crossing: the barriers close for the train and guests wait.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "summer",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 8,
-    "target": "lodge",
-    "pre": "(async()=>{const s=__slope,sim=s.sim,imp=new Function('u','return import(u)');const N=await imp('/src/world/Networks.ts');const SP=await imp('/src/sim/guests/Spawner.ts');const {NetKind,lineTiles}=N;const n=sim.networks;\nn.buildSegment(NetKind.Rail,lineTiles({x:38,y:57},{x:38,y:50}));s.debugPlace('trainStation',37,50,1);s.debugPlace('shuttleDepot',27,57,0);\nn.buildSegment(NetKind.Path,lineTiles({x:27,y:60},{x:36,y:60}));n.buildSegment(NetKind.Path,lineTiles({x:36,y:59},{x:36,y:52}));n.buildSegment(NetKind.Path,lineTiles({x:34,y:54},{x:36,y:54}));\nn.buildSegment(NetKind.Path,lineTiles({x:36,y:57},{x:42,y:57}));s.debugPlace('cafe',41,58,0);n.buildSegment(NetKind.Road,lineTiles({x:26,y:62},{x:50,y:62}));s.debugPlace('parking',47,58,0);sim.buildings.reevaluate();\nsim.guestSim.spawner.marketingFn=()=>({...SP.defaultMarketing(),railBias:0.9});\nconst t=57*sim.size+38;const loop=s.loop;if(loop.paused)loop.setSpeed(1);let g=0;\nwhile(!sim.crossings.isClosed(t)&&g++<60000)loop.advance(1);\nfor(let k=0;k<2;k++)loop.advance(1);loop.setSpeed(0);const c=s.renderer.controls;c.target.set(38.5,s.grid.getCorner(38,58)*0.5,59.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({closed:sim.crossings.isClosed(t),g,cross:n.cross[t]});})()",
-    "steps": "wait:3000"
-   }
-  },
-  {
-   "id": "footbridge-rail",
-   "alt": "A timber footbridge with stairs spanning the railway while a train passes underneath.",
-   "pages": [
-    "rails-bridges"
-   ],
-   "kind": "harness",
-   "caption": "A footbridge over the rail: guests never wait for the train.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "summer",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 8,
-    "target": "lodge",
-    "pre": "(async()=>{const s=__slope,sim=s.sim,imp=new Function('u','return import(u)');const N=await imp('/src/world/Networks.ts');const SP=await imp('/src/sim/guests/Spawner.ts');const {NetKind,lineTiles}=N;const n=sim.networks;\nn.buildSegment(NetKind.Rail,lineTiles({x:38,y:57},{x:38,y:50}));s.debugPlace('trainStation',37,50,1);s.debugPlace('shuttleDepot',27,57,0);\nn.buildSegment(NetKind.Path,lineTiles({x:27,y:60},{x:36,y:60}));n.buildSegment(NetKind.Path,lineTiles({x:36,y:59},{x:36,y:52}));n.buildSegment(NetKind.Path,lineTiles({x:34,y:54},{x:36,y:54}));\nn.buildSegment(NetKind.Path,lineTiles({x:36,y:57},{x:42,y:57}),true);s.debugPlace('cafe',41,58,0);sim.buildings.reevaluate();\nsim.guestSim.spawner.marketingFn=()=>({...SP.defaultMarketing(),railBias:0.9});\nconst t=57*sim.size+38;const loop=s.loop;if(loop.paused)loop.setSpeed(1);let g=0;\nconst near=()=>{for(const v of sim.guestSim.spawner.vehicles){if(v.kind!==undefined&&v.pts){let k=0;while(k*2+3<v.pts.length&&v.cum[k+1]<=v.dist)k++;const x=v.pts[k*2],y=v.pts[k*2+1];if(Math.hypot(x-38.5,y-57.5)<1.2&&v.pts.length>8&&v.mode!==undefined&&v.riders!==undefined&&v.group!==undefined&&v.speed>3)return true;}}return false};\nwhile(!near()&&g++<60000)loop.advance(1);loop.setSpeed(0);const c=s.renderer.controls;c.target.set(38.5,s.grid.getCorner(38,58)*0.5,58.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({g,cross:n.cross[t]});})()",
-    "steps": "wait:2000"
-   }
-  },
-  {
-   "id": "bridges-stream",
-   "alt": "A footbridge, a hiking bridge, an MTB bridge and a road bridge side by side over a one-tile mountain stream.",
-   "pages": [
-    "rails-bridges"
-   ],
-   "kind": "harness",
-   "caption": "Bridges over a stream: footbridge, hiking, MTB and road.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "summer",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 8,
-    "target": "42,5",
-    "pre": "(async()=>{const s=__slope,sim=s.sim,n=sim.networks,g=s.grid;const N=await new Function('u','return import(u)')('/src/world/Networks.ts');\nconst R=[];{const t=[];s.props.removeInRect(34,0,52,11,t);s.refreshProps(t);}\nconst h=Math.max(...g.getCorners(42,5));for(let vy=0;vy<=11;vy++)for(let vx=37;vx<=48;vx++){if(vx===42||vx===43)continue;g.setCornerUnchecked(vx,vy,h);}\nconst row=(kind,y)=>{const p=s.planBridge(n,g,kind,{x:41,y},{x:43,y});R.push(kind+y+':'+(p.ok?'ok':p.reason));if(p.ok)n.buildBridge(p);};\nconst approach=(y)=>{n.buildSegment(N.NetKind.Path,N.lineTiles({x:37,y},{x:40,y}));n.buildSegment(N.NetKind.Path,N.lineTiles({x:44,y},{x:47,y}));};\nfor(const y of [2,4,6])approach(y);\nrow('footbridge',2);row('hikeBridge',4);row('mtbBridge',6);\nn.roadEntry={x:37,y:8};n.buildSegment(N.NetKind.Road,N.lineTiles({x:37,y:8},{x:41,y:8}));n.buildSegment(N.NetKind.Road,N.lineTiles({x:43,y:8},{x:47,y:8}));row('roadBridge',8);\nsim.buildings.reevaluate();\nconst c=s.renderer.controls;c.target.set(42.5,g.getCorner(42,5)*0.5,5);const u=document.getElementById('ui');if(u)u.style.display='none';console.log('BR4 '+R.join(' '));return 1})()",
-    "steps": "wait:1500"
-   }
-  },
-  {
-   "id": "toilets-hut",
-   "alt": "A small toilet hut with a red roof between the car park and the road, close to the base lodge.",
-   "pages": [
-    "guests-seasons"
-   ],
-   "kind": "harness",
-   "caption": "A toilet hut by the path: guests with an urge walk to it.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "summer",
-    "hour": 12,
-    "extra": "starter=1&mode=career&hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 6.5,
-    "target": "lodge",
-    "pre": "__slope.spawnGuests(150,'mixed')",
-    "ticks": 900,
-    "evalJs": "(()=>{const s=__slope,b=s.buildings.all().find(q=>q.type==='toilets');if(b){const g=s.buildingsView.get(b.id);s.renderer.controls.target.set(b.x+b.w/2,g?g.position.y:0,b.y+b.h/2);}const u=document.getElementById('ui');if(u)u.style.display='none';})()"
-   }
-  },
-  {
-   "id": "ui-marketing-campaigns",
-   "alt": "The Marketing drawer scrolled to the new campaigns: Come by Train, Snowboard Park Jam and Hike & Bike Weekends, with their requirements.",
-   "pages": [
-    "money"
-   ],
-   "kind": "harness",
-   "caption": "New campaigns: Come by Train, Snowboard Park Jam, Hike & Bike Weekends.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career",
-    "viewport": "1920x1080",
-    "steps": "click:button[data-drawer=marketing];wait:600;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Train'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600"
-   }
-  },
-  {
-   "id": "ui-eco-programme",
-   "alt": "The Eco programme dialog: five policies with fees and running costs, the carbon-neutral certificate and the sustainability parts.",
-   "pages": [
-    "operations"
-   ],
-   "kind": "harness",
-   "caption": "The Eco programme: five policies, a certificate and what each adds to Sustainability.",
-   "shot": {
-    "start": "winter",
-    "hour": 12,
-    "zoom": 3,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1600x900",
-    "size": 256,
-    "seed": 61,
-    "pre": "(async()=>{const s=__slope,n=s.sim.networks;const N=await new Function('u','return import(u)')('/src/world/Networks.ts');const {NetKind}=N;s.populateDemo('medium');s.progression.setLevel(4);const pts=[];for(let y=0;y<256;y+=2)for(let x=0;x<256;x+=2){const k=n.kindAt(x,y);if(k===NetKind.Path||k===NetKind.Road)pts.push({x,y});}let done=false;for(const p of pts){if(done)break;for(let dy=-4;dy<=4&&!done;dy+=1)for(let dx=-5;dx<=5&&!done;dx+=1){const o=s.debugPlace('ecoCentre',p.x+dx,p.y+dy,0,true);if(!o.ok)continue;if(s.sim.eco.enabled){done=true;console.info('EN '+(p.x+dx)+','+(p.y+dy));s.sim.eco.start('smartSnow');s.sim.eco.start('localProduce');}else s.sim.buildings.remove(o.building.id);}}console.info('pts '+pts.length+' done '+done);})();",
-    "steps": "wait:1500;eval:__slope.select([...__slope.sim.buildings.all()].find(x=>x.type==='ecoCentre').id);wait:500;click:Open the Eco programme;wait:600",
-    "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "ui-crossings",
-   "alt": "The Crossings section of the Paths & Roads drawer: level crossing or bridge over rail, bridge over water, merge elsewhere.",
-   "pages": [
-    "rails-bridges"
-   ],
-   "kind": "harness",
-   "caption": "The Crossings section of the Paths & Roads drawer.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=sandbox",
-    "viewport": "1280x800",
-    "steps": "wait:800;click:button[data-drawer=paths];wait:600;click:Footpath;wait:600",
-    "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
-   }
-  },
-  {
-   "id": "ui-update-card",
-   "alt": "The update card: a new version is available, with a few highlights and Reload now / Later buttons.",
-   "pages": [
-    "saves"
-   ],
-   "kind": "harness",
-   "caption": "The update card: highlights, Reload now or Later.",
-   "shot": {
-    "start": "summer",
-    "hour": 12,
-    "zoom": 2,
-    "target": "lodge",
-    "extra": "starter=1&mode=career&hints=0",
-    "viewport": "1280x800",
-    "evalJs": "setTimeout(()=>{const w=document.querySelector('st-whats-new');w.showUpdate({title:'A new version is available: 0.2.6',version:'0.2.6',sections:[{version:'0.2.6',date:'2026-10-29',highlights:['Dig a river from a spring: calm, brisk or rapids, frozen in winter.','Mid-stations on gondolas, cable cars and detachable chairs.','A suspension footbridge over rivers, lakes and gorges.']}],fallback:false},{reload(){},later(){}})},1500);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100);",
-    "steps": "wait:3000"
-   }
-  },
-  {
-   "id": "river-rapids",
-   "alt": "A dug river tumbling down a steep slope in summer, white water on its fastest tiles and a trail of foam below.",
-   "pages": [
-    "building"
-   ],
-   "kind": "harness",
-   "caption": "A river dug from a natural spring: calm in the meadow, rapids on the steep part.",
-   "shot": {
-    "size": 128,
-    "seed": 5,
-    "start": "summer",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 9,
-    "target": "92,60",
-    "pre": "(async()=>{const s=__slope,sim=s.sim;sim.progression.bypass++;const ok=s.riverDebug.dig(90,57);sim.progression.bypass--;const rec=sim.rivers.rivers[0];const P=rec.path;const m=P[P.length>>1];const c=s.renderer.controls;c.target.set(m.x+0.5,s.grid.getCorner(m.x,m.y)*0.5,m.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,len:P.length,cls:P.map(q=>{const t=sim.flow.tileAt(q.x,q.y);return t?t.way.cls[t.i]:-1}).join(''),frozen:sim.flow.frozen})})()",
-    "steps": "wait:2500"
-   }
-  },
-  {
-   "id": "river-frozen",
-   "alt": "The same river in midwinter, frozen over with a white sheet of ice and snow on both banks.",
-   "pages": [
-    "landing"
-   ],
-   "kind": "harness",
-   "caption": "In a hard winter the river freezes over and stops flowing.",
-   "shot": {
-    "size": 128,
-    "seed": 5,
-    "start": "winter",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 9,
-    "target": "92,60",
-    "pre": "(async()=>{const s=__slope,sim=s.sim;sim.progression.bypass++;const ok=s.riverDebug.dig(90,57);sim.progression.bypass--;const rec=sim.rivers.rivers[0];const P=rec.path;const m=P[P.length>>1];sim.jumpToDay(140,11);for(let k=0;k<400;k++)s.loop.advance(1);const c=s.renderer.controls;c.target.set(m.x+0.5,s.grid.getCorner(m.x,m.y)*0.5,m.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,len:P.length,cls:P.map(q=>{const t=sim.flow.tileAt(q.x,q.y);return t?t.way.cls[t.i]:-1}).join(''),frozen:sim.flow.frozen})})()",
-    "steps": "wait:2500"
-   }
-  },
-  {
-   "id": "bridge-suspension",
-   "alt": "A suspension footbridge spanning a deep dry gorge, two tall pylons with cables holding a narrow plank deck between the banks.",
-   "pages": [
-    "rails-bridges"
-   ],
-   "kind": "harness",
-   "caption": "The suspension footbridge: seven tiles over a gorge, no pier in the middle.",
-   "shot": {
-    "size": 64,
-    "seed": 61,
-    "start": "summer",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 6,
-    "target": "31,31",
-    "pre": "(async()=>{const s=__slope,sim=s.sim,g=sim.grid,n=sim.networks,imp=(u)=>new Function('u','return import(u)')(u);const [SP,N]=await Promise.all([imp('/src/world/StrokePlan.ts'),imp('/src/world/Networks.ts')]);sim.progression.bypass++;\nconst t=[];s.props.removeInRect(20,24,42,38,t);const gx=22,gy=26,py=gy+5;\nfor(let y=gy;y<gy+11;y++)for(let x=gx;x<gx+19;x++)g.tileType[g.tileIndex(x,y)]=0;\nfor(let vy=gy;vy<=gy+11;vy++)for(let vx=gx;vx<=gx+19;vx++)g.setCornerUnchecked(vx,vy,12);\nfor(let vy=gy;vy<=gy+11;vy++)for(let vx=gx+8;vx<=gx+15;vx++)g.setCornerUnchecked(vx,vy,vx===gx+8||vx===gx+15?10:4);\nconst row=(a,b,y)=>N.lineTiles({x:a,y},{x:b,y});\nn.buildSegment(N.NetKind.Path,row(gx+1,gx+6,py));const pl=SP.planStroke(n,g,'path',row(gx+4,gx+17,py));if(pl.ok)SP.buildStroke(n,'path',pl);\nconst all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);s.refreshProps(all);sim.progression.bypass--;\nconst c=s.renderer.controls;c.target.set(gx+9.5,6,py+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok:pl.ok,reason:pl.reason,b:pl.bridges&&pl.bridges.map(b=>b.kind+b.span.length)})})()",
-    "steps": "wait:2000"
-   }
-  },
-  {
-   "id": "lift-midstation",
-   "alt": "A gondola with a mid-station: cabins stop in a small station half way up the line, then continue to the top.",
-   "pages": [
-    "lifts-pistes"
-   ],
-   "kind": "harness",
-   "caption": "A gondola with a mid-station half way up: guests can get on and off in the middle.",
-   "shot": {
-    "size": 64,
-    "seed": 5,
-    "start": "winter",
-    "hour": 12,
-    "extra": "hints=0",
-    "w": 1600,
-    "h": 1000,
-    "zoom": 6,
-    "target": "lodge",
-    "pre": "(async()=>{const s=__slope,sim=s.sim,g=sim.grid,imp=(u)=>new Function('u','return import(u)')(u);const Lift=await imp('/src/sim/Lift.ts');const lt=s.liftTools.tool.o;sim.progression.bypass++;\ns.populateDemo('starter');s.spawnGuests(200,'skiers');const l0=sim.lifts.all()[0];let focus=null;\nconst bot={x:l0.bottom.x,y:l0.bottom.y},top={x:l0.top.x,y:l0.top.y},snap=structuredClone(l0),idx=sim.lifts.indexOf(l0.id);\nLift.demolishLift(sim.lifts,sim.economy,l0.id);s.liftTools.view.remove(l0.id);let ok=false;\nfor(const u of [0.5,0.45,0.55,0.4,0.6,0.35,0.65]){const mid=Lift.midSiteOnLine(g,bot,top,bot.x+1+(top.x-bot.x)*u,bot.y+1+(top.y-bot.y)*u);const out=Lift.placeLift({...lt.env,props:sim.props},sim.props,'gondola6',bot,top,true,true,[mid]);if(out.ok){lt.onPlaced(out);focus=mid;ok=true;break}}\nif(!ok){sim.lifts.reinsert(snap,idx);s.liftTools.view.add(sim.lifts.get(l0.id))}sim.progression.bypass--;\nconst loop=s.loop;if(loop.paused)loop.setSpeed(1);const tt=loop.tickCount+3000;let q=0;while(loop.tickCount<tt&&q++<1e6)loop.advance(1);\nconst c=s.renderer.controls;if(focus)c.target.set(focus.x+1.5,g.getCorner(focus.x,focus.y)*0.5,focus.y+1.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,focus})})()",
-    "steps": "wait:2000"
-   }
-  },
-  {
-   "id": "ui-river-tool",
-   "alt": "The Landscape drawer on its Water tab with Dig river selected; a route ghost runs from a natural spring marker down the slope with its price.",
-   "pages": [
-    "building"
-   ],
-   "kind": "harness",
-   "caption": "Dig river: pick a natural spring, drag to a lake, a stream or the map edge; the ghost shows the route and the price.",
-   "shot": {
-    "size": 128,
-    "seed": 5,
-    "start": "summer",
-    "hour": 12,
-    "zoom": 4,
-    "target": "91,55",
-    "extra": "starter=1&mode=sandbox&hints=0",
-    "viewport": "1280x900",
-    "evalJs": "__slope.progression.setLevel(2);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
-    "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:600;click:Dig river;wait:400;eval:__slope.renderer.controls.target.set(90.5,3,54.5);wait:300;eval:__slope.riverDebug.ghost(90,57);wait:800"
-   }
-  }
- ]
+    {
+      "id": "season-summer",
+      "alt": "A green summer valley with the village, hiking trails and meadows.",
+      "pages": [
+        "landing",
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "Summer: the snow is gone, the hikers and bikers arrive.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": 5.5,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'hikers')",
+        "ticks": 900,
+        "w": 1600,
+        "h": 1000,
+        "start": "summer",
+        "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
+    },
+    {
+      "id": "season-autumn",
+      "alt": "Autumn colours on the larger trees around the village.",
+      "pages": [
+        "landing",
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "Autumn: golden trees and a quiet breath before the snow.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": 5.5,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 900,
+        "w": 1600,
+        "h": 1000,
+        "start": "autumn",
+        "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
+    },
+    {
+      "id": "night-village",
+      "alt": "The village at night with warm lit windows and lamp posts.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "After dark the windows light up.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 21.5,
+        "zoom": 5.5,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 900,
+        "w": 1600,
+        "h": 1000,
+        "start": "winter",
+        "evalJs": "(()=>{const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
+    },
+    {
+      "id": "slope-guests",
+      "alt": "Skiers and snowboarders in colourful jackets streaming down a groomed slope.",
+      "pages": [
+        "landing",
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "Guests come in all shapes: skiers, boarders, families, hikers.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": 6,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+        "ticks": 1500,
+        "w": 1600,
+        "h": 1000,
+        "start": "winter",
+        "evalJs": "(()=>{const s=window.__slope;const l=s.sim.lifts.all()[0];const c=s.renderer.controls;const x=(l.bottom.x+l.top.x)/2,z=(l.bottom.y+l.top.y)/2;c.target.set(x,s.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
+    },
+    {
+      "id": "ride-ski",
+      "alt": "First-person view from a skier going down the slope, other guests ahead.",
+      "pages": [
+        "landing",
+        "modes"
+      ],
+      "kind": "harness",
+      "caption": "Ride along with any guest, from the lift to the bottom of the run.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 11,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+        "ticks": 1500,
+        "view": "ride",
+        "guest": "auto",
+        "vticks": 30,
+        "freeze": true,
+        "w": 1600,
+        "h": 1000
+      }
+    },
+    {
+      "id": "ride-lift",
+      "alt": "Looking out from a chairlift seat over the valley and the cable.",
+      "pages": [
+        "landing",
+        "modes",
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "Chairlift POV.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 11,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+        "ticks": 300,
+        "view": "lift",
+        "freeze": true,
+        "w": 1600,
+        "h": 1000
+      }
+    },
+    {
+      "id": "walk-lodge",
+      "alt": "First-person walk in front of the base lodge.",
+      "pages": [
+        "landing",
+        "modes"
+      ],
+      "kind": "harness",
+      "caption": "Walk mode: stroll through your own resort.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": null,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 900,
+        "w": 1600,
+        "h": 1000,
+        "view": "walk",
+        "walkAt": "lodge",
+        "walkYaw": 20,
+        "freeze": true,
+        "start": "winter"
+      }
+    },
+    {
+      "id": "photo-mode",
+      "alt": "Photo mode with a warm filter and a decorative frame around a dusk scene.",
+      "pages": [
+        "landing",
+        "modes"
+      ],
+      "kind": "harness",
+      "caption": "Photo mode: filters, frames and golden hour, saved locally as a PNG.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 11,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+        "ticks": 600,
+        "view": "photo",
+        "photoHero": true,
+        "photoFilter": "vivid",
+        "photoFrame": "film",
+        "photoHour": 17.4,
+        "freeze": true,
+        "w": 1600,
+        "h": 1000
+      }
+    },
+    {
+      "id": "ui-hud",
+      "alt": "The main screen: top bar with money, rating and time; goals card on the right; the dock at the bottom.",
+      "pages": [
+        "interface",
+        "getting-started"
+      ],
+      "kind": "harness",
+      "caption": "The whole screen: top bar, goals card, dock.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100)"
+      }
+    },
+    {
+      "id": "ui-buildings-drawer",
+      "alt": "The Buildings drawer open with category tabs and building cards with prices.",
+      "pages": [
+        "building",
+        "interface"
+      ],
+      "kind": "harness",
+      "caption": "The Buildings drawer: tabs, prices and a season tag on each card.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=buildings]"
+      }
+    },
+    {
+      "id": "ui-lifts-drawer",
+      "alt": "The Lifts drawer showing the lift types, some locked in Career mode.",
+      "pages": [
+        "lifts-pistes",
+        "building"
+      ],
+      "kind": "harness",
+      "caption": "Lifts: twelve types, from T-bar to funicular.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=lifts]"
+      }
+    },
+    {
+      "id": "ui-pistes-drawer",
+      "alt": "The Pistes drawer with difficulty colours and grooming tools.",
+      "pages": [
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "Paint pistes by colour; the game checks that they connect.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=pistes]"
+      }
+    },
+    {
+      "id": "ui-finance",
+      "alt": "The Finance drawer with the money overview and tabs.",
+      "pages": [
+        "money"
+      ],
+      "kind": "harness",
+      "caption": "Finance: income, expenses, loans and reports.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=finance]"
+      }
+    },
+    {
+      "id": "ui-pricing",
+      "alt": "The Pricing drawer with day pass and food price sliders.",
+      "pages": [
+        "money"
+      ],
+      "kind": "harness",
+      "caption": "Pricing: the game tells you if a price is cheap or expensive.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=pricing]"
+      }
+    },
+    {
+      "id": "ui-ops",
+      "alt": "The Operations drawer with staff and safety coverage.",
+      "pages": [
+        "operations"
+      ],
+      "kind": "harness",
+      "caption": "Operations: staff, coverage and the safety picture.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=ops]"
+      }
+    },
+    {
+      "id": "ui-level-panel",
+      "alt": "The Career HUD: top bar, a level badge on the goals card and the dock along the bottom.",
+      "pages": [
+        "career"
+      ],
+      "kind": "harness",
+      "caption": "Career: the goals card carries your level badge; click it for the next level's requirements.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:Level;wait:400"
+      }
+    },
+    {
+      "id": "ui-levelup",
+      "alt": "A level-up celebration banner over the resort.",
+      "pages": [
+        "career"
+      ],
+      "kind": "harness",
+      "caption": "Levelling up unlocks bigger lifts and buildings.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "evalJs": "setTimeout(()=>window.__slope.progression.setLevel(4),200)",
+        "steps": "wait:1500"
+      }
+    },
+    {
+      "id": "ui-scenarios",
+      "alt": "The scenario picker with six scenario cards and star difficulty.",
+      "pages": [
+        "career",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Six scenarios, from a gentle valley to the Alpine Giant.",
+      "shot": {
+        "bare": true,
+        "viewport": "1280x800",
+        "steps": "click:Scenarios;wait:700"
+      }
+    },
+    {
+      "id": "ui-newgame",
+      "alt": "The New Game dialog with Career and Sandbox, map size and season.",
+      "pages": [
+        "getting-started",
+        "career"
+      ],
+      "kind": "harness",
+      "caption": "New game: Career or Sandbox, map size, season, difficulty.",
+      "shot": {
+        "bare": true,
+        "viewport": "1280x800",
+        "steps": "click:New game;wait:800"
+      }
+    },
+    {
+      "id": "ui-year-report",
+      "alt": "The Resort of the Year report with charts and awards.",
+      "pages": [
+        "career",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Every in-game year ends with a report card (shown with demo numbers here).",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1",
+        "viewport": "1280x800",
+        "evalJs": "window.__slope.stats.demoYear(); window.__slope.yearReport.show(undefined,false)",
+        "steps": "wait:1200"
+      }
+    },
+    {
+      "id": "ui-trophies",
+      "alt": "The trophy shelf with achievements and cosmetic rewards.",
+      "pages": [
+        "achievements",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "The trophy shelf.",
+      "shot": {
+        "bare": true,
+        "viewport": "1280x800",
+        "steps": "click:Trophies;wait:700"
+      }
+    },
+    {
+      "id": "ui-settings",
+      "alt": "The settings dialog with sound, feedback intensity, text size and reduced motion.",
+      "pages": [
+        "settings",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Settings: sound, feedback, text size, reduced motion and more.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x1300",
+        "steps": "click:Sound & settings;wait:500"
+      }
+    },
+    {
+      "id": "ui-settings-desktop",
+      "alt": "The settings dialog on a desktop screen, with sound, accessibility, touch controls and the privacy section.",
+      "pages": [
+        "settings"
+      ],
+      "kind": "harness",
+      "caption": "Settings on desktop: sound, colour palette, touch controls and the privacy choice.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1600x1300",
+        "local": {
+          "slope.consent.analytics": "denied"
+        },
+        "steps": "click:Sound & settings;wait:500"
+      }
+    },
+    {
+      "id": "ui-help",
+      "alt": "The help dialog listing keyboard shortcuts.",
+      "pages": [
+        "interface"
+      ],
+      "kind": "harness",
+      "caption": "Press ? or H anywhere for the shortcut list.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:Keyboard shortcuts"
+      }
+    },
+    {
+      "id": "ui-saveload",
+      "alt": "The Save and Load dialog with slots and export buttons.",
+      "pages": [
+        "saves"
+      ],
+      "kind": "harness",
+      "caption": "Save / Load: slots, quicksave and .slope export.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "click:Save game (Ctrl;wait:500"
+      }
+    },
+    {
+      "id": "ui-pause",
+      "alt": "The pause menu with Resume, Save, Load, Settings, Help.",
+      "pages": [
+        "interface"
+      ],
+      "kind": "harness",
+      "caption": "Esc opens the pause menu when nothing else is open.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1280x800",
+        "steps": "key:Escape;wait:400"
+      }
+    },
+    {
+      "id": "ui-menu",
+      "alt": "The main menu with Continue, New game, Scenarios, Trophies and a live village behind it.",
+      "pages": [
+        "getting-started"
+      ],
+      "kind": "harness",
+      "caption": "The title screen, with a live demo village behind the menu.",
+      "shot": {
+        "bare": true,
+        "viewport": "1280x800"
+      }
+    },
+    {
+      "id": "ops-bear",
+      "alt": "A brown bear on a meadow path with an orange threat overlay glowing around it, close to the village.",
+      "pages": [
+        "operations",
+        "landing"
+      ],
+      "kind": "copy",
+      "caption": "A bear in the woods. Rangers keep guests and bears apart.",
+      "source": "docs/img/bear-threat-overlay.webp"
+    },
+    {
+      "id": "towns-sheet",
+      "alt": "A contact sheet of ten different generated resort towns.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "copy",
+      "caption": "Ten demo towns, all generated from a seed.",
+      "source": "docs/img/towns-sheet.webp"
+    },
+    {
+      "id": "festival-market",
+      "alt": "The village road decked out for the Christmas Market: bunting, a banner and striped market stalls beside the lift station.",
+      "pages": [
+        "events",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Christmas Market: bunting, banner and stalls along the road.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 14,
+        "zoom": 6,
+        "target": "54,106",
+        "extra": "starter=1&hints=0",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+        "ticks": 300,
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'christmasMarket',start:t,end:t+8});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+        "steps": "wait:5000"
+      }
+    },
+    {
+      "id": "festival-carnival",
+      "alt": "A costumed carnival procession walking along a road hung with bunting, banners and flags.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Winter Carnival: banners, stalls and a costumed procession.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "zoom": 6,
+        "target": "54,106",
+        "extra": "starter=1&hints=0",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+        "ticks": 300,
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'carnival',start:t,end:t+5});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+        "steps": "wait:5000"
+      }
+    },
+    {
+      "id": "almabtrieb",
+      "alt": "Decorated cows with flower headdresses walking down the village road for the Almabtrieb.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Almabtrieb: the decorated herd comes down in autumn.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "autumn",
+        "hour": 13,
+        "zoom": 6,
+        "target": "54,106",
+        "extra": "starter=1&hints=0",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+        "ticks": 300,
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{const w=__slope.weather;w.current={kind:'clear',intensity:0,valleyT:9,snowline:w.current.snowline,wind:0.1,fog:0};})();(()=>{const s=__slope.sim,t=Math.floor(__slope.game.date.year*180+__slope.game.date.day);s.events.booked.push({id:'almabtrieb',start:t,end:t+10});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+        "steps": "wait:5000"
+      }
+    },
+    {
+      "id": "events-calendar",
+      "alt": "The Marketing drawer with the Events calendar: festival cards with cost, length and requirements.",
+      "pages": [
+        "events"
+      ],
+      "kind": "harness",
+      "caption": "The Events calendar sits under the campaigns in the Marketing drawer.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x1000",
+        "steps": "wait:1500;click:button[data-drawer=marketing];wait:800",
+        "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "ui-staff",
+      "alt": "The Staff tab of the Operations drawer: four crews, wage level and the six training courses.",
+      "pages": [
+        "operations"
+      ],
+      "kind": "harness",
+      "caption": "Staff: four crews on Auto and six training courses.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:Staff;wait:800",
+        "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)"
+      }
+    },
+    {
+      "id": "ui-landscape",
+      "alt": "The Landscape drawer on its Water tab: Dig pond and Fill in, with tabs for Terrain, Nature and Decor.",
+      "pages": [
+        "building"
+      ],
+      "kind": "harness",
+      "caption": "The Landscape drawer: Water, Terrain, Nature and Decor.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "evalJs": "__slope.progression.setLevel(2);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
+        "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:800"
+      }
+    },
+    {
+      "id": "landscape-pond",
+      "alt": "A pond dug on a level bench in summer, with a sand shore, boulders, a fountain, a fence, hedges and benches.",
+      "pages": [
+        "building"
+      ],
+      "kind": "harness",
+      "caption": "A pond with garden decor, all from the Landscape drawer.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "zoom": 4,
+        "target": "lodge",
+        "extra": "starter=1&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{__slope.sim.progression.unlockAll=true;const L=__slope.landscapeDebug;const f=L.find(7);L.dig(f.x,f.y,7);for(const [k,r] of [['bench',1],['lamp',0],['flowerBed',0],['fountain',0],['hedge',0],['hedge',0],['hedge',0],['wall',1],['wall',1],['fence',0],['fence',0],['bench',0]]){let done=false;for(let dy=-8;dy<=8&&!done;dy++)for(let dx=-8;dx<=8&&!done;dx++){if(Math.abs(dx)<5&&Math.abs(dy)<5)continue;if(L.decor(k,f.x+dx,f.y+dy,r)==='ok')done=true;}}L.rocks(f.x+4,f.y+4,2);const p=__slope.sim.landscape.ponds[0];__slope.renderer.controls.target.set(f.x+0.5,p.level*0.5,f.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+        "steps": "wait:5000"
+      }
+    },
+    {
+      "id": "story-inspector",
+      "alt": "The guest inspector for a named guest, Marta from Graz, with her wish, progress and Pin and Follow buttons.",
+      "pages": [
+        "events"
+      ],
+      "kind": "harness",
+      "caption": "A story guest: a name, one wish, and Pin and Follow buttons.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 11,
+        "zoom": 3,
+        "target": "lodge",
+        "extra": "starter=1&hints=0",
+        "viewport": "1280x800",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(150,'skiers')",
+        "ticks": 400,
+        "evalJs": "(()=>{const g=__slope.guestSim,st=g.store,sim=__slope.sim;let id=0,sl=-1;for(let s=0;s<st.capacity;s++){const i=st.id[s];if(i&&st.slotOf(i)===s&&st.act[s]===5){id=i;sl=s;break;}}if(!id){for(let s=0;s<st.capacity;s++){const i=st.id[s];if(i&&st.slotOf(i)===s){id=i;sl=s;break;}}}\nsim.stories.enabled=true;sim.stories.active.push({id,name:'Marta from Graz',kind:'runs',n:5,day:0,runs:2,runMax:0,queueMax:0,visited:[],lesson:false,excursion:false,head:'',lastVisits:0,x:st.x[sl],y:st.y[sl],happiness:0.8,leaving:false});sim.stories.pin(id);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),1500)",
+        "steps": "wait:3000"
+      }
+    },
+    {
+      "id": "ui-rating",
+      "alt": "The rating panel open under the stars: bars for each part of the score including sustainability and a market line against nearby resorts.",
+      "pages": [
+        "events"
+      ],
+      "kind": "harness",
+      "caption": "The rating panel: one bar per facet, now with sustainability, and where you stand in the region.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&hints=0",
+        "viewport": "1280x800",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+        "ticks": 400,
+        "steps": "click:.l;wait:800",
+        "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),1500)"
+      }
+    },
+    {
+      "id": "ui-year-region",
+      "alt": "The year report scrolled to The region: bars for each neighbouring resort and the Green Resort award among the awards.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "The year report compares you with the neighbours and can award a Green Resort.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1",
+        "viewport": "1280x1500",
+        "evalJs": "(()=>{const r=__slope.sim.rivals;const sec=(y)=>({share:0.41,fair:1/3,rank:1,of:3,sustainability:72,entries:[{name:'Your resort',stars:3.8,share:0.41,you:true},{name:'Silberhorn Ski Area',stars:3.6,share:0.33,you:false},{name:'Edelweiss Peaks',stars:3.3,share:0.26,you:false}]});r.section=sec;__slope.stats.demoYear();__slope.yearReport.show(undefined,false)})()",
+        "steps": "wait:1500"
+      }
+    },
+    {
+      "id": "ui-profile",
+      "alt": "A slope profile card showing altitude over distance coloured by difficulty with a dashed snowline, next to a highlighted suggested run.",
+      "pages": [
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "Slope profile and Suggest a run: see the gradient and the snowline before you build.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "zoom": 3,
+        "target": "lodge",
+        "extra": "starter=1&hints=0",
+        "viewport": "1280x800",
+        "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500"
+      }
+    },
+    {
+      "id": "ui-terrain-drawer",
+      "alt": "The Terrain drawer: a rail of cards for raise, lower, flatten, smooth and more with key badges and cost hints, and a side column with target, brush size, slope limit and a live cost preview.",
+      "pages": [
+        "building"
+      ],
+      "kind": "harness",
+      "caption": "The redesigned Terrain drawer: cards on the left, brush and cost on the right.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x800",
+        "steps": "click:button[data-drawer=terrain];wait:600",
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "ui-view-drawer",
+      "alt": "The View drawer with Camera, Modes, Overlays and Season groups of cards.",
+      "pages": [
+        "interface"
+      ],
+      "kind": "harness",
+      "caption": "The View drawer: camera, modes, overlays and season.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1600x1300",
+        "steps": "click:button[data-drawer=view];wait:600",
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "ui-stats",
+      "alt": "The Statistics dialog with charts of guests, cash, rating and revenue over a chosen time range.",
+      "pages": [
+        "money"
+      ],
+      "kind": "harness",
+      "caption": "Statistics (I): guests, cash, rating and revenue over time.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "evalJs": "__slope.stats.demoYear(3)",
+        "steps": "wait:800;key:i;wait:1000"
+      }
+    },
+    {
+      "id": "touch-phone-hud",
+      "alt": "The game on a phone held upright: compact top bar, goals, large on-screen speed buttons and a scrolling dock.",
+      "pages": [
+        "touch"
+      ],
+      "kind": "harness",
+      "caption": "On a phone: a compact HUD with 44 px targets.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "390x844",
+        "touch": true,
+        "steps": "wait:1200",
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "touch-phone-place",
+      "alt": "A phone showing the Buildings drawer open over the map.",
+      "pages": [
+        "touch"
+      ],
+      "kind": "harness",
+      "caption": "Drawers on a phone slide up and tuck away.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "390x844",
+        "touch": true,
+        "steps": "wait:1000;click:button[data-drawer=buildings];wait:800",
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "touch-tablet",
+      "alt": "A tablet in landscape with the Pistes drawer open and the touch controls on screen.",
+      "pages": [
+        "touch"
+      ],
+      "kind": "harness",
+      "caption": "On a tablet the full layout fits, with bigger controls.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1024x768",
+        "touch": true,
+        "steps": "wait:1000;click:button[data-drawer=pistes];wait:800",
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "cbsafe-pistes",
+      "alt": "The slope-profile card for a suggested run drawn in the colour-blind-safe palette: sky blue, blue, vermillion and near-black for the four piste difficulties.",
+      "pages": [
+        "settings"
+      ],
+      "kind": "harness",
+      "caption": "The colour-blind-safe palette on the slope profile (compare the green and blue of the default).",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "zoom": 3,
+        "target": "lodge",
+        "extra": "starter=1&hints=0",
+        "viewport": "1280x800",
+        "steps": "click:Pistes & Trails;wait:500;click:Suggest a run;wait:2500",
+        "local": {
+          "slope.a11y.v1": "{\"palette\":\"cbsafe\"}"
+        },
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "ui-runs-tab",
+      "alt": "The Runs tab of the Operations drawer: a table of every run with level, length, drop, traffic, surface, grooming order and an Open / Closed button.",
+      "pages": [
+        "lifts-pistes",
+        "operations"
+      ],
+      "kind": "harness",
+      "caption": "Operations > Runs: every run on its own row, with traffic, grooming order and an open / closed switch.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 3.5,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:button[data-tab=runs];wait:800",
+        "evalJs": "__slope.progression.setLevel(4);(()=>{const S=__slope.sim,L=S.lifts.all();const line=(a,b)=>{const n=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);return Array.from({length:n+1},(_,i)=>({x:Math.round(a.x+(b.x-a.x)*i/n),y:Math.round(a.y+(b.y-a.y)*i/n)}))};const fat=(p)=>{const m=new Map();for(const t of p)for(const [dx,dy] of [[0,0],[1,0],[0,1],[1,1]])m.set((t.x+dx)+','+(t.y+dy),{x:t.x+dx,y:t.y+dy});return [...m.values()]};let tot=0;L.forEach((l,k)=>{const t=l.top,b=l.bottom,dx=b.x-t.x,dy=b.y-t.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;(k==0?[[-4,1],[9,2]]:[[-4,3]]).forEach(([o,d],j)=>{const a={x:Math.round(t.x+1+nx*o),y:Math.round(t.y+1+ny*o)},c={x:Math.round(b.x+1+nx*o),y:Math.round(b.y+1+ny*o)};const pts=[...line({x:t.x+1,y:t.y+1},a),...line(a,c),...line(c,{x:b.x+1,y:b.y+1})];const r=S.networks.paint(1,fat(pts),d);tot+=r.painted});});console.log('RUNS painted',tot);const l0=L[0],c=__slope.renderer.controls,x=(l0.bottom.x+l0.top.x)/2,z=(l0.bottom.y+l0.top.y)/2;c.target.set(x,__slope.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "ticks": 1500,
+        "size": 256,
+        "seed": 61,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+      }
+    },
+    {
+      "id": "runs-overlay",
+      "alt": "The Runs map overlay: each run in its own colour with a name label, junction and station tiles in white.",
+      "pages": [
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "The Runs overlay (O cycles overlays): every run in its own colour, labelled.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 3.5,
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "steps": "wait:1500",
+        "evalJs": "(()=>{const S=__slope.sim,L=S.lifts.all();const line=(a,b)=>{const n=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);return Array.from({length:n+1},(_,i)=>({x:Math.round(a.x+(b.x-a.x)*i/n),y:Math.round(a.y+(b.y-a.y)*i/n)}))};const fat=(p)=>{const m=new Map();for(const t of p)for(const [dx,dy] of [[0,0],[1,0],[0,1],[1,1]])m.set((t.x+dx)+','+(t.y+dy),{x:t.x+dx,y:t.y+dy});return [...m.values()]};let tot=0;L.forEach((l,k)=>{const t=l.top,b=l.bottom,dx=b.x-t.x,dy=b.y-t.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;(k==0?[[-4,1],[9,2]]:[[-4,3]]).forEach(([o,d],j)=>{const a={x:Math.round(t.x+1+nx*o),y:Math.round(t.y+1+ny*o)},c={x:Math.round(b.x+1+nx*o),y:Math.round(b.y+1+ny*o)};const pts=[...line({x:t.x+1,y:t.y+1},a),...line(a,c),...line(c,{x:b.x+1,y:b.y+1})];const r=S.networks.paint(1,fat(pts),d);tot+=r.painted});});console.log('RUNS painted',tot);const l0=L[0],c=__slope.renderer.controls,x=(l0.bottom.x+l0.top.x)/2,z=(l0.bottom.y+l0.top.y)/2;c.target.set(x,__slope.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);})();__slope.setOverlay('runs');setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "ticks": 800,
+        "size": 256,
+        "seed": 61,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+      }
+    },
+    {
+      "id": "ui-maintenance",
+      "alt": "The Maintenance tab of the Operations drawer: global Auto / Manual policy, a service window per lift, last and next service, overdue marks and a 30-day cost projection.",
+      "pages": [
+        "operations",
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "Operations > Maintenance: a service window for every lift.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "steps": "wait:1500;click:button[data-drawer=ops];wait:400;click:button[data-tab=maint];wait:800",
+        "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "ticks": 1500,
+        "size": 256,
+        "seed": 61,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+      }
+    },
+    {
+      "id": "ui-energy-tab",
+      "alt": "The Energy tab of the Buildings drawer: Solar Array, Solar Plant, Wind Turbine, Small Hydro, Biomass Heating, Tree Nursery and Recycling & Compost Centre cards with prices.",
+      "pages": [
+        "building",
+        "operations"
+      ],
+      "kind": "harness",
+      "caption": "Buildings > Energy: solar, wind, hydro, biomass, a nursery and a recycling centre.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 3,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1600x900",
+        "steps": "wait:1200;click:button[data-drawer=buildings];wait:400;click:Energy;wait:800",
+        "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "size": 256,
+        "seed": 61,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')",
+        "ticks": 1500
+      }
+    },
+    {
+      "id": "energy-solar-wind",
+      "alt": "A solar array and a wind turbine beside the village road in summer.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Solar panels and a wind turbine take a share of the lift energy bill.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 5,
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x800",
+        "steps": "wait:1500",
+        "evalJs": "(()=>{const l=__slope.sim.lifts.all()[0],cx=l.bottom.x,cy=l.bottom.y;const P=(t,n,r)=>{let c=0;for(let k=3;k<r&&c<n;k++)for(let dy=-k;dy<=k&&c<n;dy+=2)for(let dx=-k;dx<=k&&c<n;dx+=2){if(Math.max(Math.abs(dx),Math.abs(dy))!==k)continue;const o=__slope.debugPlace(t,cx+dx,cy+dy,0,true);if(o.ok)c++}return c};__slope.progression.setLevel(4);P('solarArray',3,30);P('windTurbine',1,40);P('recyclingCentre',1,30);P('smallHydro',1,60);const c=__slope.renderer.controls;c.target.set(cx,__slope.grid.getCorner(cx,cy)*0.5,cy);})();setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "ticks": 1500,
+        "size": 256,
+        "seed": 61,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+      }
+    },
+    {
+      "id": "ui-snowmaking",
+      "alt": "The Operations drawer with the Snowmaking row: On, Off and Auto buttons, a status line and Turn all cannons off / on.",
+      "pages": [
+        "operations",
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "Operations > Snowmaking: On, Off or Auto, per resort and per cannon.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x900",
+        "steps": "wait:1500;click:button[data-drawer=ops];wait:800",
+        "evalJs": "__slope.progression.setLevel(4);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "ticks": 1500,
+        "size": 256,
+        "seed": 61,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(200,'mixed')"
+      }
+    },
+    {
+      "id": "ui-loading",
+      "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
+      "pages": [
+        "troubleshooting",
+        "getting-started"
+      ],
+      "kind": "copy",
+      "caption": "The loading splash shows real boot stages.",
+      "source": "docs/img/loading-splash.webp"
+    },
+    {
+      "id": "crossing-closed",
+      "alt": "A footpath level crossing with its barriers down while a train approaches the station.",
+      "pages": [
+        "rails-bridges"
+      ],
+      "kind": "harness",
+      "caption": "A level crossing: the barriers close for the train and guests wait.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 8,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,imp=new Function('u','return import(u)');const N=await imp('/src/world/Networks.ts');const SP=await imp('/src/sim/guests/Spawner.ts');const {NetKind,lineTiles}=N;const n=sim.networks;\nn.buildSegment(NetKind.Rail,lineTiles({x:38,y:57},{x:38,y:50}));s.debugPlace('trainStation',37,50,1);s.debugPlace('shuttleDepot',27,57,0);\nn.buildSegment(NetKind.Path,lineTiles({x:27,y:60},{x:36,y:60}));n.buildSegment(NetKind.Path,lineTiles({x:36,y:59},{x:36,y:52}));n.buildSegment(NetKind.Path,lineTiles({x:34,y:54},{x:36,y:54}));\nn.buildSegment(NetKind.Path,lineTiles({x:36,y:57},{x:42,y:57}));s.debugPlace('cafe',41,58,0);n.buildSegment(NetKind.Road,lineTiles({x:26,y:62},{x:50,y:62}));s.debugPlace('parking',47,58,0);sim.buildings.reevaluate();\nsim.guestSim.spawner.marketingFn=()=>({...SP.defaultMarketing(),railBias:0.9});\nconst t=57*sim.size+38;const loop=s.loop;if(loop.paused)loop.setSpeed(1);let g=0;\nwhile(!sim.crossings.isClosed(t)&&g++<60000)loop.advance(1);\nfor(let k=0;k<2;k++)loop.advance(1);loop.setSpeed(0);const c=s.renderer.controls;c.target.set(38.5,s.grid.getCorner(38,58)*0.5,59.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({closed:sim.crossings.isClosed(t),g,cross:n.cross[t]});})()",
+        "steps": "wait:3000"
+      }
+    },
+    {
+      "id": "footbridge-rail",
+      "alt": "A timber footbridge with stairs spanning the railway while a train passes underneath.",
+      "pages": [
+        "rails-bridges"
+      ],
+      "kind": "harness",
+      "caption": "A footbridge over the rail: guests never wait for the train.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 8,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,imp=new Function('u','return import(u)');const N=await imp('/src/world/Networks.ts');const SP=await imp('/src/sim/guests/Spawner.ts');const {NetKind,lineTiles}=N;const n=sim.networks;\nn.buildSegment(NetKind.Rail,lineTiles({x:38,y:57},{x:38,y:50}));s.debugPlace('trainStation',37,50,1);s.debugPlace('shuttleDepot',27,57,0);\nn.buildSegment(NetKind.Path,lineTiles({x:27,y:60},{x:36,y:60}));n.buildSegment(NetKind.Path,lineTiles({x:36,y:59},{x:36,y:52}));n.buildSegment(NetKind.Path,lineTiles({x:34,y:54},{x:36,y:54}));\nn.buildSegment(NetKind.Path,lineTiles({x:36,y:57},{x:42,y:57}),true);s.debugPlace('cafe',41,58,0);sim.buildings.reevaluate();\nsim.guestSim.spawner.marketingFn=()=>({...SP.defaultMarketing(),railBias:0.9});\nconst t=57*sim.size+38;const loop=s.loop;if(loop.paused)loop.setSpeed(1);let g=0;\nconst near=()=>{for(const v of sim.guestSim.spawner.vehicles){if(v.kind!==undefined&&v.pts){let k=0;while(k*2+3<v.pts.length&&v.cum[k+1]<=v.dist)k++;const x=v.pts[k*2],y=v.pts[k*2+1];if(Math.hypot(x-38.5,y-57.5)<1.2&&v.pts.length>8&&v.mode!==undefined&&v.riders!==undefined&&v.group!==undefined&&v.speed>3)return true;}}return false};\nwhile(!near()&&g++<60000)loop.advance(1);loop.setSpeed(0);const c=s.renderer.controls;c.target.set(38.5,s.grid.getCorner(38,58)*0.5,58.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({g,cross:n.cross[t]});})()",
+        "steps": "wait:2000"
+      }
+    },
+    {
+      "id": "bridges-stream",
+      "alt": "A footbridge, a hiking bridge, an MTB bridge and a road bridge side by side over a one-tile mountain stream.",
+      "pages": [
+        "rails-bridges"
+      ],
+      "kind": "harness",
+      "caption": "Bridges over a stream: footbridge, hiking, MTB and road.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 8,
+        "target": "42,5",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,n=sim.networks,g=s.grid;const N=await new Function('u','return import(u)')('/src/world/Networks.ts');\nconst R=[];{const t=[];s.props.removeInRect(34,0,52,11,t);s.refreshProps(t);}\nconst h=Math.max(...g.getCorners(42,5));for(let vy=0;vy<=11;vy++)for(let vx=37;vx<=48;vx++){if(vx===42||vx===43)continue;g.setCornerUnchecked(vx,vy,h);}\nconst row=(kind,y)=>{const p=s.planBridge(n,g,kind,{x:41,y},{x:43,y});R.push(kind+y+':'+(p.ok?'ok':p.reason));if(p.ok)n.buildBridge(p);};\nconst approach=(y)=>{n.buildSegment(N.NetKind.Path,N.lineTiles({x:37,y},{x:40,y}));n.buildSegment(N.NetKind.Path,N.lineTiles({x:44,y},{x:47,y}));};\nfor(const y of [2,4,6])approach(y);\nrow('footbridge',2);row('hikeBridge',4);row('mtbBridge',6);\nn.roadEntry={x:37,y:8};n.buildSegment(N.NetKind.Road,N.lineTiles({x:37,y:8},{x:41,y:8}));n.buildSegment(N.NetKind.Road,N.lineTiles({x:43,y:8},{x:47,y:8}));row('roadBridge',8);\nsim.buildings.reevaluate();\nconst c=s.renderer.controls;c.target.set(42.5,g.getCorner(42,5)*0.5,5);const u=document.getElementById('ui');if(u)u.style.display='none';console.log('BR4 '+R.join(' '));return 1})()",
+        "steps": "wait:1500"
+      }
+    },
+    {
+      "id": "toilets-hut",
+      "alt": "A small toilet hut with a red roof between the car park and the road, close to the base lodge.",
+      "pages": [
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "A toilet hut by the path: guests with an urge walk to it.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 6.5,
+        "target": "lodge",
+        "pre": "__slope.spawnGuests(150,'mixed')",
+        "ticks": 900,
+        "evalJs": "(()=>{const s=__slope,b=s.buildings.all().find(q=>q.type==='toilets');if(b){const g=s.buildingsView.get(b.id);s.renderer.controls.target.set(b.x+b.w/2,g?g.position.y:0,b.y+b.h/2);}const u=document.getElementById('ui');if(u)u.style.display='none';})()"
+      }
+    },
+    {
+      "id": "ui-marketing-campaigns",
+      "alt": "The Marketing drawer scrolled to the new Family Summer Camp campaign with its requirements (a campground and a kids area or petting zoo), and the start of Angler's Paradise below it.",
+      "pages": [
+        "money"
+      ],
+      "kind": "harness",
+      "caption": "The new summer campaigns: Family Summer Camp, with Angler's Paradise just below it.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career",
+        "viewport": "1920x1080",
+        "steps": "click:button[data-drawer=marketing];wait:600;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Summer Camp'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};sim.economy.earn('other',20000);put('campground',lodge,'path');put('toilets',lodge,'path');put('pettingZoo',lodge,'path');const pp=s.landscapeDebug.find(5);s.landscapeDebug.dig(pp.x,pp.y,5);put('tackleHut',pp,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;s.loop.setSpeed(1);s.spawnGuests(60,'mixed');for(let i=0;i<30;i++)s.loop.advance(1);return 'ok'})()"
+      }
+    },
+    {
+      "id": "ui-eco-programme",
+      "alt": "The Eco programme dialog: five policies with fees and running costs, the carbon-neutral certificate and the sustainability parts.",
+      "pages": [
+        "operations"
+      ],
+      "kind": "harness",
+      "caption": "The Eco programme: five policies, a certificate and what each adds to Sustainability.",
+      "shot": {
+        "start": "winter",
+        "hour": 12,
+        "zoom": 3,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1600x900",
+        "size": 256,
+        "seed": 61,
+        "pre": "(async()=>{const s=__slope,n=s.sim.networks;const N=await new Function('u','return import(u)')('/src/world/Networks.ts');const {NetKind}=N;s.populateDemo('medium');s.progression.setLevel(4);const pts=[];for(let y=0;y<256;y+=2)for(let x=0;x<256;x+=2){const k=n.kindAt(x,y);if(k===NetKind.Path||k===NetKind.Road)pts.push({x,y});}let done=false;for(const p of pts){if(done)break;for(let dy=-4;dy<=4&&!done;dy+=1)for(let dx=-5;dx<=5&&!done;dx+=1){const o=s.debugPlace('ecoCentre',p.x+dx,p.y+dy,0,true);if(!o.ok)continue;if(s.sim.eco.enabled){done=true;console.info('EN '+(p.x+dx)+','+(p.y+dy));s.sim.eco.start('smartSnow');s.sim.eco.start('localProduce');}else s.sim.buildings.remove(o.building.id);}}console.info('pts '+pts.length+' done '+done);})();",
+        "steps": "wait:1500;eval:__slope.select([...__slope.sim.buildings.all()].find(x=>x.type==='ecoCentre').id);wait:500;click:Open the Eco programme;wait:600",
+        "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "ui-crossings",
+      "alt": "The Crossings section of the Paths & Roads drawer: level crossing or bridge over rail, bridge over water, merge elsewhere.",
+      "pages": [
+        "rails-bridges"
+      ],
+      "kind": "harness",
+      "caption": "The Crossings section of the Paths & Roads drawer.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "1280x800",
+        "steps": "wait:800;click:button[data-drawer=paths];wait:600;click:Footpath;wait:600",
+        "evalJs": "setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "ui-update-card",
+      "alt": "The update card: a new version is available, with a few highlights and Reload now / Later buttons.",
+      "pages": [
+        "saves"
+      ],
+      "kind": "harness",
+      "caption": "The update card: highlights, Reload now or Later.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=career&hints=0",
+        "viewport": "1280x800",
+        "evalJs": "setTimeout(()=>{const w=document.querySelector('st-whats-new');w.showUpdate({title:'A new version is available: 0.2.7',version:'0.2.7',sections:[{version:'0.2.7',date:'2026-10-30',highlights:['A real summer: campground, petting zoo, viewpoint and treehouse.','Quads, a climbing crag, rafting and canyoning on your own river.','Fishing with fish stock, ice fishing, and anglers and mountain bikers.']}],fallback:false},{reload(){},later(){}})},1500);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),100);",
+        "steps": "wait:3000"
+      }
+    },
+    {
+      "id": "river-rapids",
+      "alt": "A dug river tumbling down a steep slope in summer, white water on its fastest tiles and a trail of foam below.",
+      "pages": [
+        "building"
+      ],
+      "kind": "harness",
+      "caption": "A river dug from a natural spring: calm in the meadow, rapids on the steep part.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "summer",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "92,60",
+        "pre": "(async()=>{const s=__slope,sim=s.sim;sim.progression.bypass++;const ok=s.riverDebug.dig(90,57);sim.progression.bypass--;const rec=sim.rivers.rivers[0];const P=rec.path;const m=P[P.length>>1];const c=s.renderer.controls;c.target.set(m.x+0.5,s.grid.getCorner(m.x,m.y)*0.5,m.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,len:P.length,cls:P.map(q=>{const t=sim.flow.tileAt(q.x,q.y);return t?t.way.cls[t.i]:-1}).join(''),frozen:sim.flow.frozen})})()",
+        "steps": "wait:2500"
+      }
+    },
+    {
+      "id": "river-frozen",
+      "alt": "The same river in midwinter, frozen over with a white sheet of ice and snow on both banks.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "In a hard winter the river freezes over and stops flowing.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "92,60",
+        "pre": "(async()=>{const s=__slope,sim=s.sim;sim.progression.bypass++;const ok=s.riverDebug.dig(90,57);sim.progression.bypass--;const rec=sim.rivers.rivers[0];const P=rec.path;const m=P[P.length>>1];sim.jumpToDay(140,11);for(let k=0;k<400;k++)s.loop.advance(1);const c=s.renderer.controls;c.target.set(m.x+0.5,s.grid.getCorner(m.x,m.y)*0.5,m.y+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,len:P.length,cls:P.map(q=>{const t=sim.flow.tileAt(q.x,q.y);return t?t.way.cls[t.i]:-1}).join(''),frozen:sim.flow.frozen})})()",
+        "steps": "wait:2500"
+      }
+    },
+    {
+      "id": "bridge-suspension",
+      "alt": "A suspension footbridge spanning a deep dry gorge, two tall pylons with cables holding a narrow plank deck between the banks.",
+      "pages": [
+        "rails-bridges"
+      ],
+      "kind": "harness",
+      "caption": "The suspension footbridge: seven tiles over a gorge, no pier in the middle.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 6,
+        "target": "31,31",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=sim.grid,n=sim.networks,imp=(u)=>new Function('u','return import(u)')(u);const [SP,N]=await Promise.all([imp('/src/world/StrokePlan.ts'),imp('/src/world/Networks.ts')]);sim.progression.bypass++;\nconst t=[];s.props.removeInRect(20,24,42,38,t);const gx=22,gy=26,py=gy+5;\nfor(let y=gy;y<gy+11;y++)for(let x=gx;x<gx+19;x++)g.tileType[g.tileIndex(x,y)]=0;\nfor(let vy=gy;vy<=gy+11;vy++)for(let vx=gx;vx<=gx+19;vx++)g.setCornerUnchecked(vx,vy,12);\nfor(let vy=gy;vy<=gy+11;vy++)for(let vx=gx+8;vx<=gx+15;vx++)g.setCornerUnchecked(vx,vy,vx===gx+8||vx===gx+15?10:4);\nconst row=(a,b,y)=>N.lineTiles({x:a,y},{x:b,y});\nn.buildSegment(N.NetKind.Path,row(gx+1,gx+6,py));const pl=SP.planStroke(n,g,'path',row(gx+4,gx+17,py));if(pl.ok)SP.buildStroke(n,'path',pl);\nconst all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);s.refreshProps(all);sim.progression.bypass--;\nconst c=s.renderer.controls;c.target.set(gx+9.5,6,py+0.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok:pl.ok,reason:pl.reason,b:pl.bridges&&pl.bridges.map(b=>b.kind+b.span.length)})})()",
+        "steps": "wait:2000"
+      }
+    },
+    {
+      "id": "lift-midstation",
+      "alt": "A gondola with a mid-station: cabins stop in a small station half way up the line, then continue to the top.",
+      "pages": [
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "A gondola with a mid-station half way up: guests can get on and off in the middle.",
+      "shot": {
+        "size": 64,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 6,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=sim.grid,imp=(u)=>new Function('u','return import(u)')(u);const Lift=await imp('/src/sim/Lift.ts');const lt=s.liftTools.tool.o;sim.progression.bypass++;\ns.populateDemo('starter');s.spawnGuests(200,'skiers');const l0=sim.lifts.all()[0];let focus=null;\nconst bot={x:l0.bottom.x,y:l0.bottom.y},top={x:l0.top.x,y:l0.top.y},snap=structuredClone(l0),idx=sim.lifts.indexOf(l0.id);\nLift.demolishLift(sim.lifts,sim.economy,l0.id);s.liftTools.view.remove(l0.id);let ok=false;\nfor(const u of [0.5,0.45,0.55,0.4,0.6,0.35,0.65]){const mid=Lift.midSiteOnLine(g,bot,top,bot.x+1+(top.x-bot.x)*u,bot.y+1+(top.y-bot.y)*u);const out=Lift.placeLift({...lt.env,props:sim.props},sim.props,'gondola6',bot,top,true,true,[mid]);if(out.ok){lt.onPlaced(out);focus=mid;ok=true;break}}\nif(!ok){sim.lifts.reinsert(snap,idx);s.liftTools.view.add(sim.lifts.get(l0.id))}sim.progression.bypass--;\nconst loop=s.loop;if(loop.paused)loop.setSpeed(1);const tt=loop.tickCount+3000;let q=0;while(loop.tickCount<tt&&q++<1e6)loop.advance(1);\nconst c=s.renderer.controls;if(focus)c.target.set(focus.x+1.5,g.getCorner(focus.x,focus.y)*0.5,focus.y+1.5);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,focus})})()",
+        "steps": "wait:2000"
+      }
+    },
+    {
+      "id": "ui-river-tool",
+      "alt": "The Landscape drawer on its Water tab with Dig river selected; a route ghost runs from a natural spring marker down the slope with its price.",
+      "pages": [
+        "building"
+      ],
+      "kind": "harness",
+      "caption": "Dig river: pick a natural spring, drag to a lake, a stream or the map edge; the ghost shows the route and the price.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "summer",
+        "hour": 12,
+        "zoom": 4,
+        "target": "91,55",
+        "extra": "starter=1&mode=sandbox&hints=0",
+        "viewport": "1280x900",
+        "evalJs": "__slope.progression.setLevel(2);setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200);setTimeout(()=>document.querySelectorAll('st-recap').forEach(e=>{e.style.display='none'}),300)",
+        "steps": "wait:1500;click:button[data-drawer=landscape];wait:400;click:Water;wait:600;click:Dig river;wait:400;eval:__slope.renderer.controls.target.set(90.5,3,54.5);wait:300;eval:__slope.riverDebug.ghost(90,57);wait:800"
+      }
+    },
+    {
+      "id": "summer-campground-night",
+      "alt": "A campground at night: tents and caravans around a glowing campfire with a column of smoke.",
+      "pages": [
+        "summer",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "The campground at night: the campfire glows and smokes while campers sit around it.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 21.5,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 8,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const b=put('campground',lodge,'path');put('toilets',lodge,'path');s.spawnGuests(150,'mixed');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({b:b&&[b.x,b.y]})})()",
+        "ticks": 1200
+      }
+    },
+    {
+      "id": "summer-petting-zoo",
+      "alt": "A fenced petting zoo with goats, sheep, rabbits and a donkey, a shed and a feeding trough beside a footpath.",
+      "pages": [
+        "summer"
+      ],
+      "kind": "harness",
+      "caption": "The petting zoo: goats, sheep, rabbits and a donkey, $8 a visit.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const b=put('pettingZoo',lodge,'path');s.spawnGuests(150,'mixed');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({b:b&&[b.x,b.y]})})()",
+        "ticks": 900
+      }
+    },
+    {
+      "id": "summer-treehouse",
+      "alt": "A small treehouse with a rope bridge and a ladder standing among tall trees.",
+      "pages": [
+        "summer"
+      ],
+      "kind": "harness",
+      "caption": "The treehouse: a house in the trees that hikers climb to for the view.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 12,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const fd=sim.terrainInfo.forestDensity,N=g.size,cs=[];for(let y=2;y<N-4;y++)for(let x=2;x<N-4;x++){if(PB.validatePlacement(sim.env,'treehouse',x,y,0,true).reasons.length)continue;cs.push([fd[y*N+x],x,y])}cs.sort((a,b)=>a[0]-b[0]);const bq=cs[Math.floor(cs.length*0.12)];const o=bq?s.debugPlace('treehouse',bq[1],bq[2],0,true):{ok:false};const b=o.ok?o.building:null;s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({n:cs.length,d:bq&&bq[0]})})()",
+        "ticks": 60
+      }
+    },
+    {
+      "id": "summer-quads",
+      "alt": "A convoy of four quads with helmeted riders raising dust on a gravel road beside the quad base garage.",
+      "pages": [
+        "summer-adventures"
+      ],
+      "kind": "harness",
+      "caption": "A quad convoy leaves the base: four quads, eight riders, dust behind them.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 14,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 14,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};const fol=(kind)=>{const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>!kind||c.kind===kind);if(cs.length){const x=cs.reduce((a,c)=>a+c.x,0)/cs.length,y=cs.reduce((a,c)=>a+c.y,0)/cs.length;s.renderer.controls.target.set(x,s.grid.getCorner(Math.round(x),Math.round(y))*0.5,y)}return cs.length};const b=put('quadBase',lodge,'road');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;sim.progression.bypass++;sim.game.date.minute=12*60+30;s.loop.setSpeed(1);let n=0;for(let i=0;i<600&&!n;i++){if(i%30===0)s.spawnGuests(120,'mixed');adv(1);n=sim.tours.carriers(sim.game.date.tick).length}adv(1);const cnt=fol();s.loop.setSpeed(0);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({cnt,min:sim.game.date.minute})})()"
+      }
+    },
+    {
+      "id": "summer-crag",
+      "alt": "A small climbing hut at the foot of a rock face with helmeted climbers on ropes on the rock.",
+      "pages": [
+        "summer-adventures"
+      ],
+      "kind": "harness",
+      "caption": "The climbing crag: climbers on ropes on the real rock face.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 12,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};const b=put('crag',lodge,'path');const CL=await imp('/src/world/Cliffs.ts');let sx=0,sy=0,n=0;if(b)for(let y=b.y-3;y<b.y+b.h+3;y++)for(let x=b.x-3;x<b.x+b.w+3;x++){if(CL.isCliffTile(g,x,y,2)){sx+=x;sy+=y;n++}}s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;sim.progression.bypass++;s.loop.setSpeed(1);let nu=0;const at=()=>sim.attractions.all().find(a=>a.b.type==='crag');for(let i=0;i<900&&!nu;i++){if(i%30===0)s.spawnGuests(150,'mixed');adv(1);nu=at()?at().users.length:0}adv(1);const m=n?{x:(sx/n*0.65+b.x*0.35),y:(sy/n*0.65+b.y*0.35),w:1,h:1}:b;const c=s.renderer.controls;c.target.set(m.x+m.w/2,s.grid.getCorner(Math.round(m.x),Math.round(m.y))*0.5,m.y+m.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';s.loop.setSpeed(0);return JSON.stringify({b:b&&[b.x,b.y],n,nu})})()"
+      }
+    },
+    {
+      "id": "summer-rafting",
+      "alt": "A raft with four paddlers running a river between the rapids beside the rafting base.",
+      "pages": [
+        "summer-adventures"
+      ],
+      "kind": "harness",
+      "caption": "Rafting on a river you dug: two rafts of four, a splash at the rapids.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "summer",
+        "hour": 14,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 11,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};const fol=(kind)=>{const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>!kind||c.kind===kind);if(cs.length){const x=cs.reduce((a,c)=>a+c.x,0)/cs.length,y=cs.reduce((a,c)=>a+c.y,0)/cs.length;s.renderer.controls.target.set(x,s.grid.getCorner(Math.round(x),Math.round(y))*0.5,y)}return cs.length};sim.economy.earn('other',9e6);const ok=s.riverDebug.dig(90,57);const rv=sim.rivers.rivers[0];const P=rv?rv.path:[];const m=P[P.length>>1]||lodge;const b=put('raftingBase',m,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;sim.progression.bypass++;sim.game.date.minute=12*60+30;s.loop.setSpeed(1);let n=0;for(let i=0;i<900&&!n;i++){if(i%30===0)s.spawnGuests(150,'mixed');adv(1);n=sim.tours.carriers(sim.game.date.tick).filter(c=>c.kind==='raft').length}adv(2);const cnt=fol('raft');s.loop.setSpeed(0);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({ok,cnt,b:b&&[b.x,b.y]})})()"
+      }
+    },
+    {
+      "id": "summer-anglers",
+      "alt": "Anglers with rods on a fishing pier and the shore of a small lake beside a tackle hut, red bobbers floating on the water.",
+      "pages": [
+        "summer-adventures"
+      ],
+      "kind": "harness",
+      "caption": "A tackle hut and a pier on a lake: rods, bobbers and a steady stream of anglers.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 10,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.economy.earn('other',9e6);const pp=s.landscapeDebug.find(5);s.landscapeDebug.dig(pp.x,pp.y,5);const b=put('tackleHut',pp,'path');const pier=put('fishingPier',b,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;sim.progression.bypass++;s.loop.setSpeed(1);const at=()=>sim.attractions.all().find(a=>a.b.type==='tackleHut');let nu=0;const st=s.guestSim.store;for(let i=0;i<1200&&nu<4;i++){if(i%40===0){s.spawnGuests(60,'mixed');let k=0;for(let j=0;j<st.limit&&k<40;j++)if(st.alive[j]&&st.type[j]!==7){st.type[j]=7;k++}}adv(1);nu=at()?at().users.length:0}adv(3);const m={x:pp.x+2,y:pp.y+2,w:1,h:1};const c=s.renderer.controls;c.target.set(m.x+m.w/2,s.grid.getCorner(Math.round(m.x),Math.round(m.y))*0.5,m.y+m.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';s.loop.setSpeed(0);return JSON.stringify({b:b&&[b.x,b.y],nu,pier:!!pier})})()"
+      }
+    },
+    {
+      "id": "summer-ice-fishing",
+      "alt": "Anglers ice-fishing on a frozen pond: dark holes, stools and rods on the ice beside a tackle hut in the snow.",
+      "pages": [
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Winter: anglers ice-fish on a frozen pond.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 11,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};sim.economy.earn('other',9e6);const pp=s.landscapeDebug.find(5);s.landscapeDebug.dig(pp.x,pp.y,5);const b=put('tackleHut',pp,'path');put('fishingPier',b,'path');s.spawnGuests(60,'mixed');const st=s.guestSim.store;let k=0;for(let i=0;i<st.limit&&k<45;i++)if(st.alive[i]){st.type[i]=7;k++}s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;const m={x:pp.x+2,y:pp.y+2,w:1,h:1};const c=s.renderer.controls;c.target.set(m.x+m.w/2,s.grid.getCorner(Math.round(m.x),Math.round(m.y))*0.5,m.y+m.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({b:b&&[b.x,b.y]})})()",
+        "ticks": 60
+      }
+    }
+  ]
 }

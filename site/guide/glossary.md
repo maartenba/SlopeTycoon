@@ -9,11 +9,15 @@ screenshots: []
 
 **Almabtrieb** The autumn descent of the decorated cows from the alpine pastures; a festival you can watch.
 
+**Angler** A niche guest type (teal jacket, cap) who comes for the fishing; needs an open Tackle & Bait Hut and fish in the water. See [Summer](page:summer).
+
 **Annual service** The yearly planned maintenance of a lift (Operations → Maintenance); a missed one makes the lift *overdue*.
 
 **Auto-flatten** Automatic levelling of the ground under a building when you place it (<kbd>F</kbd> toggles).
 
 **Career** The default game mode where your resort levels up and unlocks big items. Opposite of *Sandbox*.
+
+**Catch & release** The default setting of a Tackle & Bait Hut: anglers put the fish back, the stock barely shrinks. The alternative is *Keep*.
 
 **Clearance** Free air under a lift cable above trees, roofs and other lifts.
 
@@ -39,6 +43,8 @@ screenshots: []
 
 **Fast nights** An option that makes nights pass faster.
 
+**Fish stock** How many fish a lake, pond, stream or river holds (0 to 100 %). It regrows by itself; under 30 % the Advisor warns *Overfished*.
+
 **Flow class** How a river or stream runs on a tile: *calm*, *brisk* or *rapids* (white water), from its discharge and the drop per tile. Snowmelt makes spring rivers faster.
 
 **Footbridge** A raised timber crossing for footpaths: over a rail line (no waiting for trains) or over a stream, river, pond or gap. Bridges are built as part of drawing the path; there is no separate tool.
@@ -46,6 +52,8 @@ screenshots: []
 **Green Resort** A year-report award for a resort that is gentle on forest, wildlife and energy.
 
 **Grooming** Overnight smoothing of piste snow by groomers.
+
+**Ice fishing** Anglers fishing through holes on a frozen lake or pond in winter.
 
 **Incident** A guest injury, burial, stranding or animal encounter.
 
@@ -56,6 +64,8 @@ screenshots: []
 **Level crossing** A footpath or road crossing a rail line on the level; barriers close for trains and guests wait.
 
 **Mid-station** An extra station half way along a gondola, cable car or detachable chair, where guests and hikers can get on and off (Add mid-station in the lift inspector).
+
+**Mountain biker** A niche summer guest type (lime shirt, helmet) who comes once a rideable MTB trail and an open bike lift exist.
 
 **Mothballed** A snow cannon that is switched off: no energy, no water, 15 % of its upkeep.
 
@@ -99,4 +109,8 @@ screenshots: []
 
 **Tile** One square of the map (about 10 m).
 
+**Tour** A guided ride or paddle along a route: the Quad Base, the Rafting Base and the Canyoning Base ([Summer](page:summer)).
+
 **Toilets** A free-to-use hut that eases the comfort need; stands on a footpath, a trail or a piste edge.
+
+**Viewpoint** A hiking destination with a view: the Viewpoint platform, the Treehouse and a suspension footbridge.

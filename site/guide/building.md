@@ -9,7 +9,7 @@ screenshots: [ui-buildings-drawer, ui-landscape, ui-river-tool, river-rapids]
 
 ## The Buildings drawer
 
-Buildings are grouped in tabs: **Core**, **Services** (restaurants, shops, parking…), **Lodging**, **Kids**, **Safety**, **Operations**, **Snow**, **Water**, **Energy** (solar, wind, hydro, biomass, nursery, recycling: see [Operations & safety](page:operations)), **Recreation** and **Transport**. Each card shows the price and a small **season tag** (a hint only: you can build anything in any season): some buildings only earn their keep in winter (ski school, Après-Ski Bar, snowmaking cannons), some in summer (Adventure Park, beach, boat rental) and some all year. Hover a card for cost, upkeep, footprint and requirements.
+Buildings are grouped in tabs: **Core**, **Services** (restaurants, shops, parking…), **Lodging**, **Kids**, **Safety**, **Operations**, **Snow**, **Water**, **Energy** (solar, wind, hydro, biomass, nursery, recycling: see [Operations & safety](page:operations)), **Recreation** (the summer attractions: campground, petting zoo, viewpoint, treehouse, quad base, climbing crag, rafting and canyoning bases, tackle & bait hut and fishing piers, see [Summer](page:summer)) and **Transport**. Each card shows the price and a small **season tag** (a hint only: you can build anything in any season): some buildings only earn their keep in winter (ski school, Après-Ski Bar, snowmaking cannons), some in summer (Adventure Park, beach, boat rental) and some all year. Hover a card for cost, upkeep, footprint and requirements.
 
 > [!TIP] Press <kbd>1</kbd>–<kbd>9</kbd> to pick the Nth card while the Buildings drawer is open.
 
@@ -84,6 +84,8 @@ A river needs a **source**. Every map has one to three **natural springs**, draw
 
 
 **Winter ice.** A dug river freezes over after three days below -2 °C (it stops flowing, and water tours close with *Closed: the river is frozen*) and thaws again after two days above +1 °C. Natural streams, ponds and lakes keep their usual winter look. Pistes cannot be painted over a river, frozen or not, and nobody walks on the ice.
+
+A **Rafting Base** or **Canyoning Base** beside a dug river turns it into an attraction (see [Summer](page:summer)).
 
 Rivers are real water: buildings cannot stand on them, and every path kind bridges them by itself (see [Rails, crossings & bridges](page:rails-bridges)).
 

@@ -11,6 +11,8 @@ screenshots: [slope-guests, season-spring, season-summer, toilets-hut]
 
 Guests come as **solo** travellers, **couples**, **families**, **budget** skiers, **VIPs** and **adventurers**. Each type has its own taste in prices, its own patience and its own favourite things to do. In winter they ski or snowboard (roughly one in three boards), in summer they hike or ride mountain bikes, and some just relax at the lake or the rink.
 
+Two **niche summer types** join them. **Mountain bikers** (lime shirt, helmet, about 15 % of the summer crowd) only come once the resort has a rideable MTB trail and an open lift that carries bikes; they ride the trails, rent bikes and count as adventurers for campaigns. **Anglers** (teal jacket and cap, quiet, low spend, steady) only come to a resort with an open Tackle & Bait Hut and fish in the water; they are the one type that also comes in winter, for ice fishing. More in [Summer](page:summer).
+
 Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt, and sooner or later they need a toilet. When they leave they judge the resort, and the average becomes your **star rating**.
 
 ### Toilets and the comfort need
@@ -52,11 +54,11 @@ Snow depends on **altitude and temperature**. Low pistes melt out first, high on
 
 ### Summer is not a holiday
 
-Winter buildings are mothballed in summer and cost a fraction of their upkeep, but you still pay wages, loans and the rest. Build hiking and biking trails, an Adventure Park, the beach or boat rental, and run a summer campaign. Rudi warns you in late spring to save a buffer.
+Winter buildings are mothballed in summer and cost a fraction of their upkeep, but you still pay wages, loans and the rest. Build hiking and biking trails, an Adventure Park, the beach or boat rental, a campground, a petting zoo, a viewpoint, and run a summer campaign. The [Summer](page:summer) page is a plan: campground, petting zoo, viewpoint, treehouse, quads, a climbing crag, rafting and canyoning, and fishing. Rudi warns you in late spring to save a buffer.
 
 {{fig:season-summer}}
 
-On a lift with **mid-stations** (see [Lifts & pistes](page:lifts-pistes)), hikers and bikers who ride up choose the station **nearest their goal** and walk the trails from there, so a mid-station works as a trailhead half way up the mountain. A **suspension footbridge** on a hiking trail is a viewpoint: hikers stop in the middle for the view.
+On a lift with **mid-stations** (see [Lifts & pistes](page:lifts-pistes)), hikers and bikers who ride up choose the station **nearest their goal** and walk the trails from there, so a mid-station works as a trailhead half way up the mountain. A **suspension footbridge** on a hiking trail is a viewpoint: hikers stop in the middle for the view, and so is a **Viewpoint** platform or a **Treehouse**: build them on high ground or in a forest beside a trail and hikers walk up for the view, stop longer and leave happier. **Summer arrivals** come in with the warm weather: lifts that carry bikes, trails, lodging that opens in summer (the campground) and attractions bring more guests, and a resort with none of them still gets a thin stream of hikers.
 
 Hikers get hungry too. Before a trip they eat if they can, about four in ten bring a free packed lunch, and a hut, café, terrace or the farm shop within about eight tiles of the route counts as a **food stop** on the way. If a trail is long and has no food anywhere near it, guests shorten or skip the trip, and Ranger Rudi suggests *Hikers are going hungry*: add a hut or café near the trails.
 

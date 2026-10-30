@@ -11,7 +11,7 @@
    {
     "w": 1280,
     "file": "hero-winter-1280.webp",
-    "bytes": 83040
+    "bytes": 87612
    }
   ]
  },
@@ -59,7 +59,7 @@
    {
     "w": 1280,
     "file": "season-spring-1280.webp",
-    "bytes": 101842
+    "bytes": 82564
    }
   ]
  },
@@ -75,7 +75,7 @@
    {
     "w": 1280,
     "file": "season-summer-1280.webp",
-    "bytes": 91378
+    "bytes": 71948
    }
   ]
  },
@@ -91,7 +91,7 @@
    {
     "w": 1280,
     "file": "season-autumn-1280.webp",
-    "bytes": 98164
+    "bytes": 79884
    }
   ]
  },
@@ -155,7 +155,7 @@
    {
     "w": 1280,
     "file": "ride-lift-1280.webp",
-    "bytes": 102352
+    "bytes": 83812
    }
   ]
  },
@@ -187,7 +187,7 @@
    {
     "w": 1280,
     "file": "photo-mode-1280.webp",
-    "bytes": 90812
+    "bytes": 72134
    }
   ]
  },
@@ -203,7 +203,7 @@
    {
     "w": 1280,
     "file": "ui-buildings-drawer-1280.webp",
-    "bytes": 92804
+    "bytes": 84550
    }
   ]
  },
@@ -219,7 +219,7 @@
    {
     "w": 1280,
     "file": "ui-lifts-drawer-1280.webp",
-    "bytes": 96554
+    "bytes": 87676
    }
   ]
  },
@@ -251,7 +251,7 @@
    {
     "w": 1280,
     "file": "ui-finance-1280.webp",
-    "bytes": 91052
+    "bytes": 89748
    }
   ]
  },
@@ -267,7 +267,7 @@
    {
     "w": 1280,
     "file": "ui-pricing-1280.webp",
-    "bytes": 86358
+    "bytes": 85044
    }
   ]
  },
@@ -283,7 +283,7 @@
    {
     "w": 1280,
     "file": "ui-ops-1280.webp",
-    "bytes": 91776
+    "bytes": 83402
    }
   ]
  },
@@ -299,7 +299,7 @@
    {
     "w": 1280,
     "file": "ui-level-panel-1280.webp",
-    "bytes": 90840
+    "bytes": 83010
    }
   ]
  },
@@ -315,7 +315,7 @@
    {
     "w": 1280,
     "file": "ui-levelup-1280.webp",
-    "bytes": 91012
+    "bytes": 89984
    }
   ]
  },
@@ -411,7 +411,7 @@
    {
     "w": 1280,
     "file": "ui-help-1280.webp",
-    "bytes": 94828
+    "bytes": 81252
    }
   ]
  },
@@ -491,7 +491,7 @@
    {
     "w": 1280,
     "file": "festival-market-1280.webp",
-    "bytes": 92846
+    "bytes": 82770
    }
   ]
  },
@@ -507,7 +507,7 @@
    {
     "w": 1280,
     "file": "festival-carnival-1280.webp",
-    "bytes": 91930
+    "bytes": 89872
    }
   ]
  },
@@ -523,7 +523,7 @@
    {
     "w": 1280,
     "file": "almabtrieb-1280.webp",
-    "bytes": 83206
+    "bytes": 89916
    }
   ]
  },
@@ -603,7 +603,7 @@
    {
     "w": 1280,
     "file": "ui-year-region-1280.webp",
-    "bytes": 96234
+    "bytes": 81924
    }
   ]
  },
@@ -635,7 +635,7 @@
    {
     "w": 1280,
     "file": "ui-landscape-1280.webp",
-    "bytes": 96476
+    "bytes": 88070
    }
   ]
  },
@@ -667,7 +667,7 @@
    {
     "w": 1280,
     "file": "ui-terrain-drawer-1280.webp",
-    "bytes": 95572
+    "bytes": 87376
    }
   ]
  },
@@ -683,7 +683,7 @@
    {
     "w": 1280,
     "file": "ui-view-drawer-1280.webp",
-    "bytes": 97032
+    "bytes": 87030
    }
   ]
  },
@@ -811,7 +811,7 @@
    {
     "w": 1280,
     "file": "ui-runs-tab-1280.webp",
-    "bytes": 98644
+    "bytes": 90570
    }
   ]
  },
@@ -827,7 +827,7 @@
    {
     "w": 1280,
     "file": "runs-overlay-1280.webp",
-    "bytes": 96430
+    "bytes": 87596
    }
   ]
  },
@@ -859,7 +859,7 @@
    {
     "w": 1280,
     "file": "ui-energy-tab-1280.webp",
-    "bytes": 99624
+    "bytes": 80438
    }
   ]
  },
@@ -955,7 +955,7 @@
    {
     "w": 1280,
     "file": "toilets-hut-1280.webp",
-    "bytes": 75984
+    "bytes": 82600
    }
   ]
  },
@@ -966,12 +966,12 @@
    {
     "w": 640,
     "file": "ui-marketing-campaigns-640.webp",
-    "bytes": 38026
+    "bytes": 38476
    },
    {
     "w": 1280,
     "file": "ui-marketing-campaigns-1280.webp",
-    "bytes": 81474
+    "bytes": 88140
    }
   ]
  },
@@ -987,7 +987,7 @@
    {
     "w": 1280,
     "file": "ui-crossings-1280.webp",
-    "bytes": 94728
+    "bytes": 87164
    }
   ]
  },
@@ -998,12 +998,12 @@
    {
     "w": 640,
     "file": "ui-update-card-640.webp",
-    "bytes": 42044
+    "bytes": 42316
    },
    {
     "w": 1280,
     "file": "ui-update-card-1280.webp",
-    "bytes": 92088
+    "bytes": 85058
    }
   ]
  },
@@ -1099,7 +1099,135 @@
    {
     "w": 1280,
     "file": "ui-river-tool-1280.webp",
-    "bytes": 101966
+    "bytes": 85346
+   }
+  ]
+ },
+ "summer-campground-night": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-campground-night-640.webp",
+    "bytes": 16662
+   },
+   {
+    "w": 1280,
+    "file": "summer-campground-night-1280.webp",
+    "bytes": 40316
+   }
+  ]
+ },
+ "summer-petting-zoo": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-petting-zoo-640.webp",
+    "bytes": 18956
+   },
+   {
+    "w": 1280,
+    "file": "summer-petting-zoo-1280.webp",
+    "bytes": 45794
+   }
+  ]
+ },
+ "summer-treehouse": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-treehouse-640.webp",
+    "bytes": 14548
+   },
+   {
+    "w": 1280,
+    "file": "summer-treehouse-1280.webp",
+    "bytes": 33302
+   }
+  ]
+ },
+ "summer-quads": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-quads-640.webp",
+    "bytes": 40666
+   },
+   {
+    "w": 1280,
+    "file": "summer-quads-1280.webp",
+    "bytes": 83464
+   }
+  ]
+ },
+ "summer-crag": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-crag-640.webp",
+    "bytes": 10628
+   },
+   {
+    "w": 1280,
+    "file": "summer-crag-1280.webp",
+    "bytes": 25916
+   }
+  ]
+ },
+ "summer-rafting": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-rafting-640.webp",
+    "bytes": 16998
+   },
+   {
+    "w": 1280,
+    "file": "summer-rafting-1280.webp",
+    "bytes": 39170
+   }
+  ]
+ },
+ "summer-anglers": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-anglers-640.webp",
+    "bytes": 17864
+   },
+   {
+    "w": 1280,
+    "file": "summer-anglers-1280.webp",
+    "bytes": 41268
+   }
+  ]
+ },
+ "summer-ice-fishing": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "summer-ice-fishing-640.webp",
+    "bytes": 24384
+   },
+   {
+    "w": 1280,
+    "file": "summer-ice-fishing-1280.webp",
+    "bytes": 55856
    }
   ]
  }
