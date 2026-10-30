@@ -69,7 +69,7 @@ import { Marketing } from '../sim/Marketing';
 import { EVENING_VENUES, FOOD } from '../sim/guests/Decision';
 import { accepts as elasticAccepts, affordShare, demandMultiplier, mixVolume } from '../sim/Elasticity';
 import { TYPE_MIX, offSeasonNoLiftFactor } from '../sim/guests/Spawner';
-import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, FESTIVAL_CAMPAIGN, ANGLER_CAMPAIGN, type DayClass, type ScheduleProfile } from '../config/marketing';
+import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, FESTIVAL_CAMPAIGN, ANGLER_CAMPAIGN, VIEWS_MIN, type DayClass, type ScheduleProfile } from '../config/marketing';
 import { PRICE_TABLE } from '../config/prices';
 import { Staff } from '../sim/staff/Staff';
 import { StaffUpgrades } from '../sim/staff/Upgrades';
@@ -767,7 +767,7 @@ export function createSim(opts: SimOptions) {
     economy, bus, date: () => game.date, gate, trackRail: opts.campaignsV2 !== false,
     ctx: {
       season: () => seasonOf(game.date), stars: () => rating.stars,
-      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : f === 'pettingZoo' ? hasActive(['pettingZoo']) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
+      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : f === 'pettingZoo' ? hasActive(['pettingZoo']) : f === 'trainCampaign' ? (marketingRef?.running() ?? []).some((r) => r.id === 'train' && !r.lapsed) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
       dayClass: () => pricing.dayClass(),
       fishStock: () => { const v = hutWaters(); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; },
       festivalWindow: () => (eventsRef?.booked ?? []).some((b) => festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
@@ -793,6 +793,9 @@ export function createSim(opts: SimOptions) {
           case 'campground': return hasActive(['campground']);
           case 'kidsOrZoo': return hasActive(['kidsGround', 'playground', 'magicCarpet', 'pettingZoo']);
           case 'tackleHut': return hasActive(['tackleHut']);
+          case 'poolOrViews': return attractions.all().some((a) => a.spec.amenity === 'pool' && a.b.active) || buildings.all().filter((b) => b.active && !!BUILDINGS[b.type]?.viewpoint).length >= VIEWS_MIN; // Lodging v2 pool amenity (Luxury Hotel) or viewpoints
+          case 'toilets': return hasActive(['toilets']);
+          case 'cheapLodging': return hasActive(['apartment', 'campground', 'baseLodge']);
           case 'water': return hutWaters().some((v) => v >= ANGLER_CAMPAIGN.minStock);
           case 'bookedFestival': return (eventsRef?.booked ?? []).some((b) => b.end > festDay() && b.start - festDay() <= FESTIVAL_CAMPAIGN.prereqDays);
         }

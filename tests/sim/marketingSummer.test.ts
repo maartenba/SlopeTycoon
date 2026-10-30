@@ -90,7 +90,8 @@ describe('summer campaigns: effectiveness', () => {
     g.m.start('summerCamp');
     const e2 = g.m.effect();
     expect(e2.weights.family).toBeGreaterThan(1.5);
-    expect(e2.types).toEqual({});
+    expect(Object.keys(e2.types)).toEqual(['school']); // school groups come along on a summer camp (+0.4 x effectiveness)
+    expect(e2.types.school).toBeGreaterThan(1.2); expect(e2.types.school).toBeLessThan(1.5);
     expect(e2.boost).toBeGreaterThan(1);
     // ends: the tail decays, then it is gone
     g.date.day += campaignById('summerCamp')!.durationDays + MARKETING.tailDays + 1; g.m.update();

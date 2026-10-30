@@ -305,6 +305,24 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'marketing.wellness',
+    setup: (s) => { guests(s, 20); s.game.money = 50_000; campStub(s, 'wellness'); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'wellness' }] as never; } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 2_000; } },
+      { name: 'spring arrives', apply: (s) => { s.game.date.day = seasonStartDay('spring') + 2; } },
+    ],
+  },
+  {
+    id: 'marketing.school',
+    setup: (s) => { guests(s, 20); s.game.date.day = seasonStartDay('summer') + 5; s.game.money = 50_000; campStub(s, 'school'); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'school' }] as never; } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 2_000; } },
+      { name: 'the season turns to autumn', apply: (s) => { s.game.date.day = seasonStartDay('autumn') + 2; } },
+    ],
+  },
+  {
     id: 'season.winter',
     setup: (s) => { s.game.date.day = seasonStartDay('winter') - 10; removeTypes(s, 'snowCannon'); },
     fixes: [

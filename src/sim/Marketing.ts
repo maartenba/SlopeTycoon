@@ -160,7 +160,7 @@ export class Marketing {
   preview(def: CampaignDef): Preview {
     const eff = this.effectiveness(def), base = this.baselinePerDay();
     const spend = this.d.ctx.spendPerGuest?.() ?? 80;
-    const maxT = Math.max(0, ...Object.values(def.targets));
+    const maxT = Math.max(0, ...Object.values(def.targets), ...Object.values(def.extraTargets ?? {}));
     let extra: [number, number] | null = null, rev: [number, number] | null = null, cpg: number | null = null;
     if (base !== null && base > 0) {
       const tailDays = MARKETING.tailDays / 2;

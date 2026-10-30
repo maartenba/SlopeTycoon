@@ -9,6 +9,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Seniors** (new guest type): quiet guests who tire fast and need the toilet more often, take a coffee on the Heated Terrace or in the Café, walk up to a viewpoint now and then and never ski a black run. They arrive from level 2 once the village has a terrace, a café or toilets, most on weekdays, with grey hair and brown cardigans (`docs/guest-types.md`).
 - **School groups** (new guest type): a class of 8-15 children and a teacher arrives by coach on weekdays in early December, January and summer, wearing matching orange bibs. The teacher walks them to the Ski School, Kids Ground, Playground or Petting Zoo (a Ski School teaches a big class in batches). Needs a kids venue; low spend, high volume (`docs/guest-types.md`).
 - **Petting Zoo** is now a kids venue families can drop children at in summer.
+- **Campaigns**: *Wellness & Views* ($8,000, 21 days; seniors and couples; needs a hotel pool or two viewpoints, a place to eat and toilets; premium day pass) and *School Trips* ($4,000, 14 days; weekdays only; needs a Ski School, a kids area and cheap beds; cheap day pass; 15 % stronger while Come by Train runs). Come by Train and Family Summer Camp now also reach seniors and school groups, and the campaign card shows the boost of the targeted guest types. New Advisor tips point to both (`docs/marketing-pricing.md`).
 
 ## [0.2.7] - 2026-10-30 (pre-release)
 

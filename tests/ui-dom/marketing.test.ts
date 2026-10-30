@@ -23,7 +23,7 @@ describe('st-marketing', () => {
     const start = vi.fn((id: string) => m.start(id));
     p.bind({ view: () => buildMarketingView(m, 50000), start });
     const r = root(p);
-    expect(r.querySelectorAll('.card').length).toBe(11);
+    expect(r.querySelectorAll('.card').length).toBe(13);
     expect(r.textContent).toMatch(/Families/);
     expect(r.textContent).toMatch(/✗ Ski School HQ/); // hard prerequisite missing -> listed with a cross
     expect(r.textContent).toMatch(/✓ An open lift/);

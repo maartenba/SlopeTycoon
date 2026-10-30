@@ -9,7 +9,7 @@ export const DAY_CLASSES: readonly DayClass[] = ['peak', 'regular', 'off'];
 export const SCHEDULE_PROFILES: readonly ScheduleProfile[] = ['winter', 'shoulder', 'summer'];
 
 /** Facilities used for soft bonuses (computed by createSim from the placed buildings + rating). */
-export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' | 'parkLift' | 'pettingZoo';
+export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' | 'parkLift' | 'pettingZoo' | 'trainCampaign';
 /**
  * HARD campaign prerequisites (checked by `Marketing.canStart` and again daily while a campaign runs).
  * skiSchool: active Ski School HQ · kidsArea: active Kids Ground, Playground or Magic Carpet · openLift: a lift open for business · piste: an open ski piste ·
@@ -18,7 +18,8 @@ export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' |
  */
 export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental'
   | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival'
-  | 'campground' | 'kidsOrZoo' | 'tackleHut' | 'water';
+  | 'campground' | 'kidsOrZoo' | 'tackleHut' | 'water'
+  | 'poolOrViews' | 'toilets' | 'cheapLodging';
 /**
  * Campaigns v2 (Task 50): railStation: active Train Station on a rail line that is served (Arrivals `rail.available`) · stationPath: that station is active, i.e. within
  * walking reach of the lodge/village or served by a Shuttle Depot (the Dependencies rule) · stuntPark: active Stunt Park · bookedFestival: a booked festival running or
@@ -28,11 +29,17 @@ export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parkin
  * Summer campaigns (Task 51): campground: an active Campground (it only takes guests in summer, the campaign is summer-only too) · kidsOrZoo: an active kids area (Kids Ground, Playground,
  * Magic Carpet) OR an active Petting Zoo (no Ski School) · tackleHut: an active Tackle & bait hut · water: a water that hut can reach holds fish stock >= `ANGLER_CAMPAIGN.minStock`.
  */
+/**
+ * Senior / School campaigns (Task 52): poolOrViews: an active lodging with the pool amenity (the Luxury Hotel; read generically from the attraction spec) OR at least `VIEWS_MIN` active viewpoints
+ * (Viewpoint, Treehouse: any building with `viewpoint`) · toilets: an active Toilets block · cheapLodging: an active Apartment, Campground or Base Lodge (rooms a class can afford).
+ */
 /** `label` is the sentence shown in the Requires list ('Ski School HQ'); `build` = building type the player can place to fix it; `show` = what the Show me button does when it is unmet
  *  ('build' opens the Buildings drawer on `build`, 'station' pans to the Train Station, 'events' scrolls to the Events calendar). */
 export interface Prereq { id: PrereqId; label: string; build?: string; show?: 'build' | 'station' | 'events'; /** Only needed to START the campaign; not re-checked while it runs (the festival may end before the campaign does). */ startOnly?: boolean }
 /** Chalets + apartments needed for the luxury branch of the VIP prerequisite (the Base Lodge does not count: every resort has one). */
 export const VIP_LODGING_MIN = 2;
+/** Viewpoints that stand in for a hotel pool in the Wellness & Views prerequisite. */
+export const VIEWS_MIN = 2;
 /** A running campaign whose prerequisites vanished is paused (effectiveness 0) and cancelled after this many days. */
 export const PREREQ_GRACE_DAYS = 3;
 
@@ -116,7 +123,7 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
   // ---- Campaigns v2, early batch (Task 50): existing buildings only. Numbers are starting points (docs/marketing-pricing.md). ----
   {
     id: 'train', name: 'Come by Train', icon: '🚆', blurb: 'Green-travel offers: cheaper trips by rail, fewer cars in the car park.', segment: 'Budget, solo and couples',
-    cost: 4000, durationDays: 21, targets: { budget: 0.8, solo: 0.4, couple: 0.3 }, volumeBoost: 0.06, seasons: ['winter', 'spring', 'summer', 'autumn'], offSeason: 1,
+    cost: 4000, durationDays: 21, targets: { budget: 0.8, solo: 0.4, couple: 0.3 }, extraTargets: { senior: 0.6, school: 0.5 }, volumeBoost: 0.06, seasons: ['winter', 'spring', 'summer', 'autumn'], offSeason: 1,
     prereqs: [{ id: 'railStation', label: 'A Train Station on a rail line that trains can reach', build: 'trainStation', show: 'build' }, { id: 'stationPath', label: 'The station within walking reach of the lodge (or a Shuttle Depot)', show: 'station' }],
     bonus: { id: 'shuttle', factor: 1.15 }, railBias: TRAIN_CAMPAIGN.modeShift, cooldownDays: 14,
   },
@@ -140,7 +147,7 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
   // ---- Summer campaigns (Task 51): ride on the Campground / Petting zoo / Tackle hut + Angler type. Numbers are starting points. ----
   {
     id: 'summerCamp', name: 'Family Summer Camp', icon: '⛺', blurb: 'Tents, a campfire and a petting zoo: a summer holiday for families.', segment: 'Families',
-    cost: 6000, durationDays: 14, targets: { family: 1.6 }, volumeBoost: 0.08, seasons: ['summer'], offSeason: 0.2,
+    cost: 6000, durationDays: 14, targets: { family: 1.6 }, extraTargets: { school: 0.4 }, volumeBoost: 0.08, seasons: ['summer'], offSeason: 0.2,
     prereqs: [{ id: 'summerSeason', label: 'Summer season' }, { id: 'campground', label: 'A Campground', build: 'campground', show: 'build' }, { id: 'kidsOrZoo', label: 'A kids area (Kids Ground, Playground, Magic Carpet) or a Petting Zoo', build: 'pettingZoo', show: 'build' }],
     priceAlign: 'cheap', bonus: { id: 'pettingZoo', factor: 1.2 }, cooldownDays: 21,
   },
@@ -149,6 +156,19 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
     cost: 3500, durationDays: 14, targets: { couple: 0.4, solo: 0.2 }, extraTargets: { angler: 1.8 }, volumeBoost: 0.05, seasons: ICE_FISHING ? ['summer', 'autumn', 'winter'] : ['summer', 'autumn'], offSeason: 0.3, seasonMult: { winter: 0.5 },
     prereqs: [{ id: 'tackleHut', label: 'A Tackle & Bait Hut', build: 'tackleHut', show: 'build' }, { id: 'water', label: `A lake, pond or river with fish (stock ${Math.round(ANGLER_CAMPAIGN.minStock * 100)}% or more) in reach of the hut` }],
     fishFactor: true, cooldownDays: 14,
+  },
+  // ---- Senior + School campaigns (Task 52): ride on the Senior / School group types (Task 29). Numbers are starting points. ----
+  {
+    id: 'wellness', name: 'Wellness & Views', icon: '🧖', blurb: 'Hotel spa, pool and panoramas for seniors and couples. Needs a good resort, a hotel pool or two viewpoints, a place to eat and toilets.', segment: 'Seniors and couples',
+    cost: 8000, durationDays: 21, targets: { couple: 0.6 }, extraTargets: { senior: 1.6 }, volumeBoost: 0.05, seasons: ['summer', 'autumn', 'winter'], offSeason: 0.5,
+    prereqs: [{ id: 'poolOrViews', label: `A hotel with a pool, or ${VIEWS_MIN} viewpoints`, build: 'viewpoint', show: 'build' }, { id: 'dining', label: 'A restaurant, café or terrace', build: 'cafe', show: 'build' }, { id: 'toilets', label: 'Toilets', build: 'toilets', show: 'build' }],
+    priceAlign: 'premium', minStars: 3, cooldownDays: 21,
+  },
+  {
+    id: 'school', name: 'School Trips', icon: '🚌', blurb: 'Class trips on weekdays in the quiet weeks (early December, January) and in summer. Needs a ski school, a kids area and cheap beds. Low spend, high volume.', segment: 'School classes',
+    cost: 4000, durationDays: 14, targets: {}, extraTargets: { school: 2.0 }, volumeBoost: 0.10, seasons: ['winter', 'summer'], offSeason: 0.4,
+    prereqs: [{ id: 'skiSchool', label: 'Ski School HQ', build: 'skiSchoolHQ' }, { id: 'kidsArea', label: 'A kids area (Kids Ground, Playground or Magic Carpet)', build: 'kidsGround' }, { id: 'cheapLodging', label: 'Cheap lodging (Apartment, Campground or Base Lodge)', build: 'apartment', show: 'build' }],
+    dayClassMult: { off: 1.5, regular: 1.2, peak: 0.3 }, priceAlign: 'cheap', bonus: { id: 'trainCampaign', factor: 1.15 }, cooldownDays: 21,
   },
 ];
 
@@ -169,6 +189,7 @@ export const MARKETING = {
 } as const;
 
 /** Per-type price sensitivity k: demand multiplier = exp(-k (ratio - 1)). */
+/** The extra guest types (Senior, School group, ...) have no key of their own: their marketing segment (config/guestTypes.ts) picks the row, Senior = couple (1.0 / 0.9), School group = budget (2.2 / 0.55). */
 export const SENSITIVITY: Record<GuestTypeKey, number> = { solo: 1.3, couple: 1.0, family: 1.2, vip: 0.4, budget: 2.2, adventure: 0.9 };
 /** Share of their budget a guest type is willing to put into one ticket (replaces the old affordShare stub). */
 export const AFFORD_SHARE: Record<GuestTypeKey, number> = { solo: 0.9, couple: 0.9, family: 0.85, vip: 1, budget: 0.55, adventure: 0.85 };

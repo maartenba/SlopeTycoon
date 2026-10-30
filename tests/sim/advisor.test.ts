@@ -67,6 +67,8 @@ const CASES: Case[] = [
   { id: 'marketing.parkingFull', trigger: (s) => { trainStub(s, 0.3); parkingStub(s, 1e6); }, calm: (s) => { trainStub(s, 0.3); parkingStub(s, 0); } },
   { id: 'marketing.summerCamp', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; stubBlocker(s, 'summerCamp'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; } },
   { id: 'marketing.anglers', trigger: (s) => { guests(s, 20); s.game.money = 50_000; stubBlocker(s, 'angler'); }, calm: (s) => { guests(s, 20); s.game.money = 50_000; } },
+  { id: 'marketing.wellness', trigger: (s) => { guests(s, 20); s.game.money = 50_000; stubBlocker(s, 'wellness'); }, calm: (s) => { guests(s, 20); s.game.money = 50_000; } },
+  { id: 'marketing.school', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; stubBlocker(s, 'school'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 1_000; } },
   { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.events.setAuto(false); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
   { id: 'season.summer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.networks.layers[100] = (s.networks.layers[100]! | Layer.Hike) as never; } },

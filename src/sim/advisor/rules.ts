@@ -13,6 +13,7 @@ import { isAccessReason } from '../PlacementRules';
 import { liftOpenForBusiness } from '../ops/LiftOps';
 import { GuestType } from '../guests/Guest';
 import { seasonProgress } from '../Clock';
+import { realMonthOfDay } from '../calendar';
 import { almabtriebWindow } from '../events/EventCalendar';
 import { Q } from '../ops/PisteQuality';
 import { SNOWMAKING } from '../ops/Snowmaking';
@@ -299,6 +300,20 @@ export const RULES: readonly Rule[] = [
     if (c.season === 'spring' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'angler') || m.blocker('angler') !== null) return null;
     if (c.sim.game.money < (c.shown ? 3_500 : 5_000)) return null;
     return { id: 'marketing.anglers', severity: 'info', ...TEXT.anglersCampaign(), panel: { drawer: 'marketing', item: 'angler' } };
+  }, false, true),
+  // Senior + School campaigns (Task 52): a ready village with a pool / viewpoints suggests Wellness & Views; a ski school + kids area + cheap beds in the quiet weeks suggests School Trips.
+  rule('marketing.wellness', 1, (c) => {
+    const m = c.sim.marketing;
+    if (c.season === 'spring' || c.sim.guestSim.store.count < 10 || c.sim.rating.stars < 3 || m.running().some((r) => r.id === 'wellness') || m.blocker('wellness') !== null) return null;
+    if (c.sim.game.money < (c.shown ? 8_000 : 12_000)) return null;
+    return { id: 'marketing.wellness', severity: 'info', ...TEXT.wellnessCampaign(), panel: { drawer: 'marketing', item: 'wellness' } };
+  }, false, true),
+  rule('marketing.school', 1, (c) => {
+    const m = c.sim.marketing, d = c.sim.game.date;
+    const quiet = c.season === 'summer' || realMonthOfDay(d.day) === 0; // January and summer (early December is a new game's first week: no nagging)
+    if (!quiet || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'school') || m.blocker('school') !== null) return null;
+    if (c.sim.game.money < (c.shown ? 4_000 : 6_000)) return null;
+    return { id: 'marketing.school', severity: 'info', ...TEXT.schoolCampaign(), panel: { drawer: 'marketing', item: 'school' } };
   }, false, true),
   // ---- season lookahead ----
   // Almabtrieb (autumn cattle descent): no farm -> suggest one (spring..early autumn); farm + herd -> 'Almabtrieb in N days' / 'is on', Show me goes to the dressed road near the base station
