@@ -10,8 +10,8 @@ Hotels and calmer guests, the fourth content wave of Phase 6 (milestone M6.4). C
 
 ### Highlights
 
-- Two hotels: a Small Hotel with 40 rooms over a lobby restaurant, and a Luxury Hotel with 30 suites for VIPs and a heated outdoor pool that steams in the cold.
-- A Coffee Stand: a tiny kiosk beside a piste or footpath for a quick cup and a bite.
+- Two hotels: a Small Hotel with 40 rooms over a lobby restaurant, and a Luxury Hotel with 30 suites for VIPs and couples and a heated outdoor pool that steams in the cold.
+- A Coffee Stand: a tiny kiosk beside a piste or footpath where skiers pull over for a quick cup and a bite.
 - Two calm new guests: Seniors who love terraces, views and pools, and orange-bibbed school classes that arrive by coach on weekdays.
 - Two new campaigns: Wellness & Views for seniors and couples, and School Trips for quiet weekdays.
 - The pool's heating shows up in your energy bill, so solar and wind now pay for a bit of luxury.
@@ -22,6 +22,9 @@ Hotels and calmer guests, the fourth content wave of Phase 6 (milestone M6.4). C
 
 - **Seniors** (new guest type): quiet guests who tire fast and need the toilet more often, take a coffee on the Heated Terrace or in the Café, walk up to a viewpoint now and then and never ski a black run. They arrive from level 2 once the village has a terrace, a café or toilets, most on weekdays, with grey hair and brown cardigans (`docs/guest-types.md`).
 - **School groups** (new guest type): a class of 8-15 children and a teacher arrives by coach on weekdays in early December, January and summer, wearing matching orange bibs. The teacher walks them to the Ski School, Kids Ground, Playground or Petting Zoo (a Ski School teaches a big class in batches). Needs a kids venue; low spend, high volume (`docs/guest-types.md`).
+- **Luxury suites** now fill without VIPs: about 4 in 10 couples (and a few well-off guests) book a suite when their wallet covers four nights, more in winter and at weekends; VIPs still check in first.
+- **Coffee Stand**: a skier who skis within two tiles of an open stand, a little hungry or tired, sometimes stops for a quick cup and carries on.
+- Checked: school classes cause no injuries (`scripts/analysis/incidentsByType.ts`).
 - **Petting Zoo** is now a kids venue families can drop children at in summer.
 - **Campaigns**: *Wellness & Views* ($8,000, 21 days; seniors and couples; needs a hotel pool or two viewpoints, a place to eat and toilets; premium day pass) and *School Trips* ($4,000, 14 days; weekdays only; needs a Ski School, a kids area and cheap beds; cheap day pass; 15 % stronger while Come by Train runs). Come by Train and Family Summer Camp now also reach seniors and school groups, and the campaign card shows the boost of the targeted guest types. New Advisor tips point to both (`docs/marketing-pricing.md`).
 - **Small Hotel** (level 3) and **Luxury Hotel** (level 4): two roadside hotels that stay open all year. The Small Hotel has 40 rooms at the standard price ($40 a night) over a lobby restaurant; the Luxury Hotel has 30 suites at 2.5 times that ($100), draws VIPs first, and has a heated outdoor pool (20 guests at a time, a happier stay) that **steams when it is colder than 5 degrees**, glows at night and costs energy: the heating counts as energy demand, so solar, wind and hydro power pay for part of it. The VIP campaign now accepts a Luxury Hotel as its lodging, and the Advisor mentions VIP lodging once it unlocks.

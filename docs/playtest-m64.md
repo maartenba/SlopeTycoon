@@ -38,8 +38,9 @@ Numbers from the agents' checks (`docs/balance.md` "M6.4 STOP check"): a bot tha
 - [ ] Save mid-December with everything built, reload: identical (suites, pool slots, campaign timers). An old 0.2.7 save loads and nothing changes until you build.
 - [ ] Touch (phone or tablet): placing both hotels and the stand with the two-step placement, reading the hotel inspector and the two new campaign cards at 44 px targets.
 
-## Open questions for the owner
-1. **Luxury Hotel economy**: suites mostly fill with VIPs only. Keep (VIP campaign becomes the way to use it), or let couples in at a lower appeal?
-2. **Coffee stand mid-run stops**: leave as is (decision points only) or add the "skier passing within 2 tiles" rule?
-3. **School groups and safety**: 8 -> 18 incidents on one test resort. Acceptable, or soften (smaller classes, instructor-led, fewer slope visits)?
-4. **Bot economy shift** (+8.7 % on 64 / 61, other seeds within +-3 %): acceptable as a side effect of two new guest types?
+## Owner questions (answered)
+1. **Luxury Hotel economy**: answered, couples in (about 45 % of couples, 12 % of others, more in winter / weekends, 4 nights of budget); VIPs still first. Check on the playtest that a mid-game resort fills about 40-70 % of the suites without VIPs.
+2. **Coffee stand mid-run stops**: answered, a skier skiing within 2 tiles of an open stand (a little hungry or tired) stops 1 pass in 3, then carries on. Check that stands beside a piste feel alive, and that nobody stalls on the way.
+3. **School groups and safety**: measured, classes cause 0 injuries (families 0.3-2.8 per 1000); the 8 -> 18 was noise from a shifted arrival draw. No change.
+4. **Pool steam**: good, no change.
+5. **Bot economy shift** (+8.7 % on 64 / 61, other seeds within +-3 %): still to confirm as acceptable.
