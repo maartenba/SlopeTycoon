@@ -21,6 +21,8 @@ screenshots: []
 
 **Clearance** Free air under a lift cable above trees, roofs and other lifts.
 
+**Coffee Stand** A 1 x 1 kiosk beside a piste or path: a $4 cup that takes the edge off hunger. See [Hotels & the coffee stand](page:hotels).
+
 **Comfort** The need for a toilet: an urge that grows while guests are out; it feeds the Facilities bar of the rating.
 
 **Crew** One of the four staff groups: instructors, patrol, groomers and lift operators.
@@ -31,9 +33,9 @@ screenshots: []
 
 **Drawer** A panel that opens from a dock button.
 
-**Energy grid** The generators (solar, wind, hydro, biomass) that offset a capped share of your lift energy bill.
-
 **Eco Centre** A level-4 building that opens the *Eco programme*: five paid policies and a carbon-neutral certificate that lift the Sustainability score by up to 29 points.
+
+**Energy grid** The generators (solar, wind, hydro, biomass) that offset a capped share of your lift energy bill.
 
 **Events strip** The January to December overview in the Events calendar.
 
@@ -63,15 +65,17 @@ screenshots: []
 
 **Level crossing** A footpath or road crossing a rail line on the level; barriers close for trains and guests wait.
 
-**Mid-station** An extra station half way along a gondola, cable car or detachable chair, where guests and hikers can get on and off (Add mid-station in the lift inspector).
+**Luxury Hotel** 30 suites for VIPs and couples with a heated outdoor pool that steams in the cold; the pool heating is an energy cost. See [Hotels & the coffee stand](page:hotels).
 
-**Mountain biker** A niche summer guest type (lime shirt, helmet) who comes once a rideable MTB trail and an open bike lift exist.
+**Mid-station** An extra station half way along a gondola, cable car or detachable chair, where guests and hikers can get on and off (Add mid-station in the lift inspector).
 
 **Mothballed** A snow cannon that is switched off: no energy, no water, 15 % of its upkeep.
 
-**Not connected** A building that has no path, road or rail link yet.
+**Mountain biker** A niche summer guest type (lime shirt, helmet) who comes once a rideable MTB trail and an open bike lift exist.
 
 **Natural spring** A spring site found on every map (cyan ring while the Landscape Water tab is open): the usual start of a river.
+
+**Not connected** A building that has no path, road or rail link yet.
 
 **Overlay** A map view (coverage, snowmaking, wildlife…); <kbd>O</kbd> cycles them.
 
@@ -91,15 +95,23 @@ screenshots: []
 
 **Sandbox** Everything unlocked from day one.
 
+**School group** A class of one teacher and 8 to 15 children in orange bibs, arriving by coach on weekdays outside the holidays. See [Seniors & school trips](page:seniors-schools).
+
+**School Trips** The weekday campaign that brings school groups. See [Seniors & school trips](page:seniors-schools).
+
+**Senior** A calm, well-off weekday guest who tires fast, needs the toilet often, avoids black runs and loves terraces, views and pools. See [Seniors & school trips](page:seniors-schools).
+
 **Service window** The month in which a lift gets its annual service.
 
 **Skip to…** Fast-forward to the next month, season or event (<kbd>K</kbd>).
 
-**Spring** A river source: a natural spring site or one you place (Landscape > Water, $250). Not the season: for that see *Spring skiing*.
+**Small Hotel** 40 mid-range rooms over a lobby restaurant. See [Hotels & the coffee stand](page:hotels).
 
 **Snowline** The altitude above which snow lies at a given time of year.
 
 **Snowmaking** Cannons fed from a reservoir that make artificial snow in the cold.
+
+**Spring** A river source: a natural spring site or one you place (Landscape > Water, $250). Not the season: for that see *Spring skiing*.
 
 **Spring skiing** Skiing on high pistes in spring while the valley is already green.
 
@@ -109,8 +121,11 @@ screenshots: []
 
 **Tile** One square of the map (about 10 m).
 
-**Tour** A guided ride or paddle along a route: the Quad Base, the Rafting Base and the Canyoning Base ([Summer](page:summer)).
-
 **Toilets** A free-to-use hut that eases the comfort need; stands on a footpath, a trail or a piste edge.
 
+**Tour** A guided ride or paddle along a route: the Quad Base, the Rafting Base and the Canyoning Base ([Summer](page:summer)).
+
 **Viewpoint** A hiking destination with a view: the Viewpoint platform, the Treehouse and a suspension footbridge.
+
+
+**Wellness & Views** The campaign that brings Seniors and couples; needs a hotel pool or a viewpoint. See [Seniors & school trips](page:seniors-schools).

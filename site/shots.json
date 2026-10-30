@@ -1224,21 +1224,24 @@
     },
     {
       "id": "ui-marketing-campaigns",
-      "alt": "The Marketing drawer scrolled to the new Family Summer Camp campaign with its requirements (a campground and a kids area or petting zoo), and the start of Angler's Paradise below it.",
+      "alt": "The Marketing drawer scrolled to the Wellness & Views campaign for seniors and couples, with its requirements (a hotel pool or viewpoint, a restaurant or terrace, toilets) and the School Trips campaign below it.",
       "pages": [
-        "money"
+        "money",
+        "seniors-schools"
       ],
       "kind": "harness",
-      "caption": "The new summer campaigns: Family Summer Camp, with Angler's Paradise just below it.",
+      "caption": "The new campaigns: Wellness & Views for seniors and couples, School Trips for classes on weekdays.",
       "shot": {
-        "start": "summer",
+        "start": "winter",
         "hour": 12,
         "zoom": 2,
         "target": "lodge",
-        "extra": "starter=1&mode=career",
+        "extra": "starter=1&mode=career&hints=0",
         "viewport": "1920x1080",
-        "steps": "click:button[data-drawer=marketing];wait:600;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Summer Camp'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600",
-        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};sim.economy.earn('other',20000);put('campground',lodge,'path');put('toilets',lodge,'path');put('pettingZoo',lodge,'path');const pp=s.landscapeDebug.find(5);s.landscapeDebug.dig(pp.x,pp.y,5);put('tackleHut',pp,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;s.loop.setSpeed(1);s.spawnGuests(60,'mixed');for(let i=0;i<30;i++)s.loop.advance(1);return 'ok'})()"
+        "steps": "wait:5000;click:button[data-drawer=marketing];wait:600;eval:__slope.bus.emit('money:changed',{});wait:900;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Wellness'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nput('luxuryHotel',lodge,'road');put('toilets',lodge,'path');put('coffeeStand',lodge,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);s.loop.setSpeed(1);adv(260);s.loop.setSpeed(1);sim.progression.bypass--;})()",
+        "size": 128,
+        "seed": 5
       }
     },
     {
@@ -1581,6 +1584,113 @@
         "target": "lodge",
         "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};sim.economy.earn('other',9e6);const pp=s.landscapeDebug.find(5);s.landscapeDebug.dig(pp.x,pp.y,5);const b=put('tackleHut',pp,'path');put('fishingPier',b,'path');s.spawnGuests(60,'mixed');const st=s.guestSim.store;let k=0;for(let i=0;i<st.limit&&k<45;i++)if(st.alive[i]){st.type[i]=7;k++}s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;const m={x:pp.x+2,y:pp.y+2,w:1,h:1};const c=s.renderer.controls;c.target.set(m.x+m.w/2,s.grid.getCorner(Math.round(m.x),Math.round(m.y))*0.5,m.y+m.h/2);const u=document.getElementById('ui');if(u)u.style.display='none';return JSON.stringify({b:b&&[b.x,b.y]})})()",
         "ticks": 60
+      }
+    },
+    {
+      "id": "hotel-luxury-steam",
+      "alt": "A large cream-coloured hotel with a slate roof beside a heated outdoor pool, white steam rising from the water into the cold winter air, snow on the ground.",
+      "pages": [
+        "hotels"
+      ],
+      "kind": "harness",
+      "caption": "The Luxury Hotel in winter: a heated pool that steams when the air is cold.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 16.2,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 5,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst h=put('luxuryHotel',lodge,'road');put('toilets',lodge,'path');clear(h);s.buildingsView.sync&&s.buildingsView.sync();sim.progression.bypass--;sim.progression.bypass++;s.spawnGuests(80,'mixed');s.weather.current.valleyT=-8;s.loop.setSpeed(1);adv(400);s.weather.current.valleyT=-8;look(h,9);s.loop.setSpeed(0);sim.progression.bypass--;return 'ok'})()",
+        "steps": "wait:6000"
+      }
+    },
+    {
+      "id": "hotel-luxury-night",
+      "alt": "The luxury hotel at night: warm lit windows, a glowing blue pool with steam above it and snow falling.",
+      "pages": [
+        "hotels"
+      ],
+      "kind": "harness",
+      "caption": "At night the windows glow and the pool lights stay on.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 22,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 5,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst h=put('luxuryHotel',lodge,'road');clear(h);s.buildingsView.sync&&s.buildingsView.sync();s.spawnGuests(80,'mixed');s.weather.current.valleyT=-8;s.loop.setSpeed(1);adv(400);s.weather.current.valleyT=-8;look(h,9);s.loop.setSpeed(0);sim.progression.bypass--;return 'ok'})()",
+        "steps": "wait:6000"
+      }
+    },
+    {
+      "id": "hotel-small",
+      "alt": "A two-storey cream hotel with a red roof, balconies, flower boxes and a glazed restaurant wing with an awning.",
+      "pages": [
+        "hotels"
+      ],
+      "kind": "harness",
+      "caption": "The Small Hotel: 40 rooms over a lobby restaurant.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 6,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst h=put('smallHotel',lodge,'road');clear(h);s.buildingsView.sync&&s.buildingsView.sync();look(h,3.4);sim.progression.bypass--;return 'ok'})()"
+      }
+    },
+    {
+      "id": "coffee-stand",
+      "alt": "A tiny timber coffee kiosk with a red roof and a striped awning beside a ski piste, with skiers passing by.",
+      "pages": [
+        "hotels"
+      ],
+      "kind": "harness",
+      "caption": "A Coffee Stand at the piste edge: a quick cup for skiers coming off the slope.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 7,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst pst=sim.runs&&0;const h=put('coffeeStand',lodge,'path');s.buildingsView.sync&&s.buildingsView.sync();s.spawnGuests(150,'skiers');s.loop.setSpeed(1);adv(600);look(h,11);s.loop.setSpeed(0);sim.progression.bypass--;return 'ok'})()"
+      }
+    },
+    {
+      "id": "guests-seniors-school",
+      "alt": "A school class of about a dozen children in matching orange bibs walking with their teacher along a footpath in a snowy ski village.",
+      "pages": [
+        "seniors-schools"
+      ],
+      "kind": "harness",
+      "caption": "A school class in orange bibs on a December weekday.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst {weekdayOf}=await imp('/src/sim/Clock.ts'),{isHoliday}=await imp('/src/sim/Pricing.ts'),{calendarDayOfMonth}=await imp('/src/sim/calendar.ts');\nput('smallHotel',lodge,'road');put('kidsGround',lodge,'path');put('heatedTerrace',lodge,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);\nfor(let d=120;d<130;d++){if(weekdayOf({year:sim.game.date.year,day:d})<4&&!isHoliday(d)&&calendarDayOfMonth(d)<=3){sim.game.date.day=d;break}}\ns.loop.setSpeed(1);const st=s.guestSim.store;let best=null,n9=0,n8=0;\nfor(let i=0;i<80&&n9<6;i++){if(i%6===0)s.spawnGuests(70,'mixed');adv(30);let c9=0,c8=0,ax=0,ay=0;for(let j=0;j<st.limit;j++){if(!st.alive[j])continue;if(st.type[j]===9){c9++;ax+=st.x[j];ay+=st.y[j]}else if(st.type[j]===8)c8++}if(c9>n9){n9=c9;n8=c8;best={x:ax/c9,y:ay/c9}}}\nconst g9=[];for(let j=0;j<st.limit;j++)if(st.alive[j]&&st.type[j]===9)g9.push([st.x[j],st.y[j]]);let bc=null,bn=-1;for(const a of g9){let k=0;for(const b of g9)if(Math.hypot(a[0]-b[0],a[1]-b[1])<3)k++;if(k>bn){bn=k;bc=a}}if(bc)best={x:bc[0],y:bc[1]};const c=s.renderer.controls;if(best){c.target.set(best.x,s.grid.getCorner(Math.round(best.x),Math.round(best.y))*0.5,best.y)}c.zoom=1;c.zoomBy(13);const u=document.getElementById('ui');if(u)u.style.display='none';s.loop.setSpeed(0);return JSON.stringify({n9,n8,best});})()"
       }
     }
   ]

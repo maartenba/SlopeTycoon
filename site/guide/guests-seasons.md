@@ -13,6 +13,8 @@ Guests come as **solo** travellers, **couples**, **families**, **budget** skiers
 
 Two **niche summer types** join them. **Mountain bikers** (lime shirt, helmet, about 15 % of the summer crowd) only come once the resort has a rideable MTB trail and an open lift that carries bikes; they ride the trails, rent bikes and count as adventurers for campaigns. **Anglers** (teal jacket and cap, quiet, low spend, steady) only come to a resort with an open Tackle & Bait Hut and fish in the water; they are the one type that also comes in winter, for ice fishing. More in [Summer](page:summer).
 
+Two **calm types** fill the quiet times. **Seniors** (lilac cardigans, grey hair) come on weekdays and in the quiet seasons, tire quickly, need a toilet more often, never ride black runs and love a terrace, a café, a view or a hotel pool. **School groups** (one teacher and a class of 8 to 15 in orange bibs) arrive by coach on weekdays only, outside the holidays: in the first week of December, in January and on summer weekdays, and only to a resort with a ski school, kids ground or magic carpet (summer: a playground, petting zoo or campground). Both unlock at resort level 2: see [Seniors & school trips](page:seniors-schools). Overnight guests can now sleep in a **Small Hotel** or a **Luxury Hotel** (see [Hotels & the coffee stand](page:hotels)).
+
 Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt, and sooner or later they need a toilet. When they leave they judge the resort, and the average becomes your **star rating**.
 
 ### Toilets and the comfort need
@@ -42,7 +44,7 @@ A game year has **180 days** in 12 months of 15 days, and the months are the **r
 | Summer | June to September | 60 days | Hiking, biking, lakes and farms. Lifts that carry bikes shine. Warmest in mid-July. |
 | Autumn | October and November | 30 days | A breathing space: maintenance, bears get hungry, the first snow on the peaks in October and in the valley in late November. |
 
-Daylight follows the sun too: the **longest day is 21 June** and the **shortest 21 December**, so December days are short (lifts open about 08:30) and summer days long. Weekdays are real as well: Saturday and Sunday are the peak days (see [Money](page:money)).
+Daylight follows the sun too: the **longest day is 21 June** and the **shortest 21 December**, so December days are short (lifts open about 08:30) and summer days long. Weekdays are real as well: Saturday and Sunday are the peak days (see [Money](page:money)), and quiet weekdays are when **Seniors** and **school classes** visit: the first week of December and January are school-class weeks in winter (see [Seniors & school trips](page:seniors-schools)).
 
 Festivals sit in their real months: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Almabtrieb in early October and New Year on 31 December. The **Events strip** in the Marketing drawer shows all twelve months at a glance (see [Events, stories & the region](page:events)).
 

@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.2.8",
+    "date": "2026-10-30",
+    "highlights": [
+      "Two hotels: a Small Hotel with 40 rooms over a lobby restaurant, and a Luxury Hotel with 30 suites for VIPs and a heated outdoor pool that steams in…",
+      "A Coffee Stand: a tiny kiosk beside a piste or footpath for a quick cup and a bite.",
+      "Two calm new guests: Seniors who love terraces, views and pools, and orange-bibbed school classes that arrive by coach on weekdays.",
+      "Two new campaigns: Wellness & Views for seniors and couples, and School Trips for quiet weekdays.",
+      "The pool's heating shows up in your energy bill, so solar and wind now pay for a bit of luxury.",
+      "Two new guide pages: Hotels & the coffee stand, and Seniors & school trips."
+    ]
+  },
+  {
     "version": "0.2.7",
     "date": "2026-10-30",
     "highlights": [
@@ -24,17 +36,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "A new high-speed six-seat chair with a wind visor, at resort level 3.",
       "Several closures for the same season (no snow, too warm) now show one toast instead of a stack.",
       "On phones and tablets the open drawer steps aside when you paint, so pistes and ponds can be drawn."
-    ]
-  },
-  {
-    "version": "0.2.5",
-    "date": "2026-10-29",
-    "highlights": [
-      "Easier money: you start with $150,000, the quiet months cost less, and Ranger Rudi has cash tips when you run thin.",
-      "Bridges are part of drawing: drag a path, road or trail across a pond, gap or stream and the bridge is built for you, with a clear Crossings choice…",
-      "The new Eco Centre opens an Eco programme: five policies and a carbon-neutral certificate for a greener resort.",
-      "Generated towns have tidy footpaths, and Rudi's advice now shows in full.",
-      "A small card tells you when a new version is ready and what is new in it."
     ]
   }
 ];

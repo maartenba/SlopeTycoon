@@ -103,3 +103,20 @@ A ninth component, **Facilities**, weight **0.06**: 45 % comfort satisfaction (s
 Sustainability also has a small **train share** input (Come by Train, Phase 6 Task 50): the share of the last 14 days' arrivals by rail earns up to +3 facet points (linear to a 30 % share, `TRAIN_SUSTAIN` in `config/marketing.ts`, tracked only when `createSim({ campaignsV2: true })`), at most 0.24 rating score points. Sustainability energy counts **net grid purchase** per guest (generator offset is already off the ledger line); recycling adds +4 points and nursery saplings count against felled trees (docs/energy.md). Rudi's `energy.green` rule names energy as the weakest part. The *Runs* change also affects the "Too few green runs" hint: it counts runs, not connected blobs.
 
 The **eco** term (Eco Centre policies + carbon-neutral certificate, up to +29 points, bounded by `ECO.maxPoints` = 30) is added like recycling and train; the total is still clamped to 100. At the 0.08 weight the maximum is +2.3 rating score points (+0.12 stars): docs/eco.md.
+
+
+### Star distribution with Seniors and School groups (M6.4 STOP, 0.2.8)
+Re-measured on HEAD (`npx vite-node scripts/analysis/ratingDistribution.ts`, daily samples after day 10, 64 map, both new guest types ON). The facilities facet (toilets, terraces, seniors' tolerance) did **not** move:
+
+| resort (64) | seed | mean, stars | facilities |
+|---|---|---|---:|
+| starter | 61 | 88.1; 4★ 16 %, 4.5★ 84 % | 87 |
+| demo starter | 61 | 87.4; 3.5★ 1 %, 4★ 28 %, 4.5★ 71 % | 87 |
+| demo large | 61 | 89.7; 4★ 8 %, 4.5★ 86 %, 5★ 6 % | 89 |
+| bot | 61 | 88.2; 4★ 25 %, 4.5★ 75 % | 87 |
+| starter | 7 | 89.3; 4★ 18 %, 4.5★ 81 %, 5★ 1 % | 92 |
+| demo starter | 7 | 88.9; 4★ 14 %, 4.5★ 86 % | 92 |
+| demo large | 7 | 89.0; 4★ 22 %, 4.5★ 78 % | 88 |
+| bot | 7 | 89.2; 4★ 18 %, 4.5★ 77 %, 5★ 5 % | 92 |
+
+The 4-4.5★ band holds on every resort and the facilities facet stays 87-92 as in the M6.3 check (bot 64 / 61 and 64 / 7 are identical to it: 25 / 75 and 18 / 77 / 5). Seniors and classes are guests of the existing needs, so they feed the same facets; the distribution is not isolated per guest type. The bot's year-2 net (64 / 61) is 148.1k (unchanged by the types in this run: the economy shift above comes with the 360-day / 200-day replays).

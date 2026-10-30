@@ -76,6 +76,8 @@ Lifts and snow cannons burn energy, and that is a cost line in your books (and a
 | **Tree Nursery** | Raises saplings that count against the forest you felled, and makes replanting cheaper. |
 | **Recycling & Compost Centre** | A flat bonus to the sustainability score (one is enough). |
 
+A **Luxury Hotel**'s heated pool is part of the bill too: about $17 a day at a winter noon (never less than a quarter of that, even in summer), booked on the energy line and offset by generators like the lifts (see [Hotels & the coffee stand](page:hotels)).
+
 How it works: generators cover a **share of the day's lift energy bill**, at most 60 %, hour by hour; the surplus is **not sold**, so energy is never free and overbuilding is wasted money. A solar array or small hydro typically pays itself back in about **3 years**, a turbine in 2.5 to 3, biomass in about 5. Games without generators behave exactly as before.
 
 ### Eco Centre and the Eco programme

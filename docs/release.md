@@ -1,6 +1,42 @@
 # Release notes and checklist
 
-Current release: **0.2.7 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.8 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.8 (2026-10-30, macOS, Node v22.23.4)
+
+M6.4 milestone STOP batch (Phase 6 content wave 4): Small Hotel + Luxury Hotel with a steaming heated pool, Coffee Stand, Senior + School group guests, Wellness & Views + School Trips campaigns. Version bump, CHANGELOG `[0.2.8]` with Highlights, two new guide pages (Hotels & the coffee stand; Seniors & school trips) and updates to Guests & seasons, Money, Operations (pool heating), Building, Career, glossary, landing (guest types fact, hotels line), 5 new screenshots (`hotel-luxury-steam`, `hotel-luxury-night`, `hotel-small`, `coffee-stand`, `guests-seniors-school`) + 1 re-shot (`ui-marketing-campaigns`), `docs/playtest-m64.md`. Decisions: everything ships ON with no flag; the bot's money moves with the two guest types (goldens re-recorded, `docs/balance.md` "M6.4 STOP check"); coffee-stand "skiers stop mid-run" not implemented (decision points only, documented); energyBot bound relaxed 0.97 -> 0.95 after a 3-seed re-measure.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 397 files passed, 1 skipped; 4063 tests passed, 32 skipped |
+| Balance | `npm run test:balance` | 36 passed |
+| Perf | `npm run test:perf` | 27 files, 47 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on every shot (17) |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Phase 6 story | `npm run phase6:sanity` | OK |
+| Summer story | `npm run summer:sanity` | OK |
+| Winter story | `npm run winter:sanity` (new) | OK: both hotels active on a road, pool steam 0.88 at -3.9 C, coffee stand, Seniors and a school class on a December weekday, save + reload identical, MaterialGuard 0, 0 console errors; `-- --start summer` OK (Luxury Hotel idle without VIPs, see `docs/hotels.md`) |
+| Flicker | `npm run flicker:building -- --place luxuryHotel --out hotel64` | 155.2 oscillating px per window (the demo lodge: 849.3) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | 39/39 passed |
+| Size | `npm run size` | 2792.6 kB raw / 1003.8 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (26 pages, 82 screenshots, 8.0 MB of the 8 MB budget: `MAX_BYTES_1280` lowered 88 -> 70 kB and all shots re-encoded; 200 URLs crawled) |
+
+Goldens: `GOLDEN_BOT` (10+ parts) + `GOLDEN_BOT_MONEY` 222414.97 -> 227010.16, the `yearReport` snapshot and the `energyBot` bound; plain-bot replay on three seeds before / after in `docs/balance.md`. Bugs found by the STOP checks: the `.gitignore` test (`node_modules/x`) failed in any checkout where `node_modules` is a symlink (git refuses a path beyond a symlink): fixed by checking `node_modules`; the VIP campaign label did not name hotels: fixed; the Marketing drawer in a paused headless page shows stale requirement states until a `money:changed` event (harness artefact, a running game refreshes it).
+
+### Dist size 0.2.8 (gzip level 9)
+
+| File | Raw | gzip |
+|---|---:|---:|
+| assets/index-CmOOUrEp.js (app) | 2043.2 kB | 703.1 kB |
+| assets/three-iTBe2s16.js | 568.4 kB | 142.5 kB |
+| assets/uikit-DhcMvu7R.js | 6.3 kB | 2.5 kB |
+| assets/index-Dk_rm1cx.css | 4.4 kB | 1.3 kB |
+| fonts/ | 93.6 kB | 86.9 kB |
+| icons/ | 64.4 kB | 62.7 kB |
+| html / manifest / whats-new.json / other | 105.9 kB | 91.7 kB |
+| **Total (excl. sw.js)** | **2792.6 kB** | **1003.8 kB** |
 
 ## 0.2.7 (2026-10-30, macOS, Node v22.23.4)
 

@@ -47,6 +47,13 @@ Two **summer campaigns** work with the buildings on the [Summer](page:summer) pa
 - **Family Summer Camp** ($6,000, 14 days) needs a **Campground** (open) plus a **kids area or a Petting Zoo**, and runs in summer. It brings families (a little more with a Petting Zoo) and, unlike *Families*, needs no Ski School.
 - **Angler's Paradise** ($3,500, 14 days) needs a **Tackle & Bait Hut** on water that still holds fish. It lifts the number of anglers (and a few couples), works in summer and autumn and at half strength while the water is frozen, and its effect fades when the fish run low (*Overfished*).
 
+Two campaigns reach the calm guests of the quiet weeks (see [Seniors & school trips](page:seniors-schools)):
+
+- **Wellness & Views** ($8,000, 21 days) brings **Seniors** and couples; it needs a **hotel pool or a viewpoint**, a restaurant, café or terrace, toilets and 3 stars, and it prefers premium prices. It runs in summer, autumn and winter (half strength in spring).
+- **School Trips** ($4,000, 14 days) brings **school classes** on weekdays in winter and summer; it needs a ski school, a kids area and cheap lodging, and prefers cheap prices. It is 15 % stronger while Come by Train runs.
+
+**Come by Train** and **Family Summer Camp** now also pull in some Seniors and school groups. The **VIP High-Rollers** campaign accepts an open **Luxury Hotel** (see [Hotels & the coffee stand](page:hotels)) as its lodging requirement.
+
 Each card shows a **Show me** button for a missing requirement: it opens the right building card, pans to the station or scrolls to the Events calendar.
 
 Festivals have their own cards just below the campaigns: see [Events, stories & the region](page:events).
