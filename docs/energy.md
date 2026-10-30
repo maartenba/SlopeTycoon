@@ -7,7 +7,7 @@ Code: `src/sim/Energy.ts` (grid + generator maths), `src/config/energy.ts` (all 
 ## Model
 
 * **Unit = energy dollars**: what the same energy would cost from the grid. The lift and snowmaking bills were already in dollars. The UI shows **kWh = $ / 0.20** and **kW = $/h / 0.20** (`ENERGY.gridPricePerKwh`; display only).
-* **Demand** (per day) = lift energy line + snowmaking energy booked that day. No building base load: keeping it simple, existing cost units only.
+* **Demand** (per day) = lift energy line + snowmaking energy booked that day. No building base load: keeping it simple, existing cost units only. The one exception is the **heated pool of the Luxury Hotel** (`POOL`, `poolHeatCost`; docs/hotels.md): $18 a day at full heating, booked on the energy line and added to the demand and to the line the offset comes off.
 * **Supply**: every active generator adds its output **hour by hour** (`time:hour`), so "output now", "today so far" and "yesterday" are real numbers. Biomass burns once a day.
 * **Settlement** (inside the daily cost calculation, `Finance.costs()`): `applied = min(generated, 60 % x demand, lift energy line)`. That much comes **off the `energy` ledger line**; the rest is **wasted** (not sold; `ENERGY.surplusSoldShare = 0`: the valley grid is small, selling would add a second income line and a way to make energy "free" by overbuilding). Deficit is simply the bill that remains, at the existing price. So a resort with 20 panels pays at least 40 % of its energy bill.
 * **The cap is the balance guarantee.** Energy is never free; panels beyond the cap are wasted money. The per-day cap also means summer surplus (long days, low lift demand) is mostly lost: that is why a solar array pays back in about 3 years, not 1.

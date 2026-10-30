@@ -14,6 +14,6 @@ Code: optional fields on `AttractionSpec` (`src/sim/attractions/Attraction.ts`),
 1. Rate: `NIGHTLY_RATE.<type> = tieredNightly({ price: 40, max: 150 }, 'luxury')` (price and cap scale; Pricing key `night:<type>` picks it up).
 2. Appeal: `appeal: tierAppeal(base, 'luxury')` (`TIER_APPEAL_SHIFT`: luxury +0.4 VIP / +0.1 couple / -0.25 budget; budget +0.3 budget / -0.3 VIP / -0.05 couple; clamped 0..1).
 3. Spec: `{ kind: 'lodging', overnightOnly: true, rooms, tier, seasonOpen?, amenity?, poolSlots? ... }` in `LODGING_SPECS`, plus a `buildings.ts` row (`access` per the access table).
-4. `VIP_LODGING_MIN` (marketing) still counts only chalets/apartments until the hotel rows land (Task 27 extends it).
+4. The VIP prerequisite (`vipAccess`) counts chalets + apartments + small hotels (`VIP_LODGING_MIN`) or accepts an active Luxury Hotel / altiport: see `docs/hotels.md` (Task 27: Small Hotel, Luxury Hotel with a heated pool).
 
 Tests: `tests/sim/attractions/Lodging.test.ts` ("lodging v2": tier prices, appeal shift, season closure and reopening, pool slots and bonus; they register throw-away building types and remove them afterwards).

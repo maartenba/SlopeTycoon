@@ -22,12 +22,12 @@ export const Pref = { Ski: 0, Hike: 1, Bike: 2 } as const;
 
 export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike' | 'relief';
 
-export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace']);
+export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace', 'smallHotel']);
 /** Evening venues beyond the daytime FOOD list: the Après-Ski Bar (a drinks stop, not a meal). */
 export const BAR = new Set(['apresBar']);
 /** Every venue the evening model schedules (dinner, drinks, terrace). */
 export const EVENING_VENUES: readonly string[] = [...FOOD, ...BAR];
-export const REST = new Set(['baseLodge', 'lodge', 'chalet', 'apartment']);
+export const REST = new Set(['baseLodge', 'lodge', 'chalet', 'apartment', 'smallHotel', 'luxuryHotel']);
 export const SHOP = new Set(['shop', 'rental']);
 /** Real attractions (activity goals); everything else visitable counts as generic wandering. */
 export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet', 'quadBase', 'crag', 'tackleHut', 'raftingBase', 'canyoningBase']);
@@ -173,7 +173,7 @@ export class Decider {
       if (REST.has(b.type)) this.rest.push(b);
       if (SHOP.has(b.type)) this.shop.push(b);
       if (ACTIVITY.has(b.type)) this.activity.push(b);
-      if (VISIT_CATEGORIES.has(BUILDINGS[b.type]?.category ?? '') && !FOOD.has(b.type) && !BAR.has(b.type) && !REST.has(b.type) && !SHOP.has(b.type) && !ACTIVITY.has(b.type)) this.other.push(b);
+      if (VISIT_CATEGORIES.has(BUILDINGS[b.type]?.category ?? '') && !FOOD.has(b.type)  && !BAR.has(b.type) && !REST.has(b.type) && !SHOP.has(b.type) && !ACTIVITY.has(b.type)) this.other.push(b);
     }
     const nav = this.nav();
     this.goals.queryBudget = 24;

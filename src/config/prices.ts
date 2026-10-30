@@ -25,6 +25,10 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   apartment: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
   /** Campground: nightly pitch fee only (NIGHTLY_RATE); free to walk into. */
   campground: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
+  /** Small Hotel: the lobby restaurant (meals); rooms are billed by NIGHTLY_RATE. */
+  smallHotel: { price: 12, max: 40, billing: 'perUse', category: 'restaurants' },
+  /** Luxury Hotel: nightly rate only; the pool is free for guests. */
+  luxuryHotel: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },
   /** Petting zoo (docs/petting-zoo.md): small entry ticket, a family summer attraction. */
   pettingZoo: { price: 8, max: 25, billing: 'perUse', category: 'recreation' },
   iceRink: { price: 6, max: 25, billing: 'perHour', category: 'recreation' },
@@ -63,6 +67,9 @@ export const NIGHTLY_RATE: Record<string, { price: number; max: number }> = {
   apartment: { price: 30, max: 120 },
   /** Campground (Lodging v2, budget tier): standard rate 40 x 0.6 = $24 a night, cap $90. */
   campground: tieredNightly({ price: 40, max: 150 }, 'budget'),
+  /** Small Hotel (Lodging v2, standard tier: x1): $40 a night, cap $150; the restaurant is paid per meal. Luxury Hotel (luxury tier x2.5): $100 a night, cap $375. */
+  smallHotel: tieredNightly({ price: 40, max: 150 }, 'standard'),
+  luxuryHotel: tieredNightly({ price: 40, max: 150 }, 'luxury'),
   /** Mountain Hut bed + half-board for trekkers. */
   mountainHut: { price: 45, max: 120 },
 };

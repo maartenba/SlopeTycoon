@@ -18,10 +18,10 @@ export interface UnlockCardModel { level: number; name: string; items: Array<{ k
 export const RECAP_AUTO_MS = 20000;
 export const MONTH_CARD_MS = 8000;
 /** Fixed footprint of the card (src/ui/layout.ts zone `top-card`). */
-export const RECAP_W = 320, RECAP_H = 280, MONTH_H = 150, COLLAPSED_H = 30, UNLOCK_H = 168;
+export const RECAP_W = 320, RECAP_H = 280, MONTH_H = 150, COLLAPSED_H = 30, UNLOCK_H = 190;
 export const UNLOCK_CARD_MS = 14000;
 /** Rows listed on the level-up card (the rest is summed up as '+N more'). */
-export const UNLOCK_ROWS = 4;
+export const UNLOCK_ROWS = 5; // level 4 now unlocks five items (Phase 6 Task 27 added the Luxury Hotel): the card grew by one row
 
 /**
  * Transient info card (M5.1), one element with two modes: the "Welcome back" recap after loading a save (~20 s) and the month-end summary

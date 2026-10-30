@@ -106,7 +106,7 @@ try {
   await page.setViewport({ width: 960, height: 600, deviceScaleFactor: 1 });
   await page.goto(`${srv.url}?${new URLSearchParams({ size: String(size), seed: String(seed), start: season, hints: '0' })}`, { waitUntil: 'load', timeout: 90000 });
   await page.waitForFunction(() => !!(window as any).__slope, { timeout: 90000 });
-  await page.evaluate(() => {
+  await page.evaluate((place) => {
     const s = (window as any).__slope;
     s.populateDemo('medium');
     const loop = s.loop; if (loop.paused) loop.setSpeed(1);
@@ -114,7 +114,13 @@ try {
     s.setHour(12);
     const b = s.buildings.all().find((q: any) => q.type === 'baseLodge');
     if (b) s.renderer.controls.target.set(b.x + b.w / 2, 0, b.y + b.h / 2);
-  });
+    if (place) { // --place <type>: measure another building (Phase 6 Task 27: the Luxury Hotel with its pool): first free spot, trees cleared, centred
+      s.sim.progression.unlockAll = true; s.sim.game.money += 1e7;
+      let f: any = null;
+      for (let y = 6; y < s.sim.size - 12 && !f; y += 2) for (let x = 6; x < s.sim.size - 12 && !f; x += 2) { const o = s.debugPlace(place, x, y, 0, true); if (o.ok) f = { x, y, b: o.building }; }
+      if (f) { const t2: unknown[] = []; s.props.removeInRect(f.x - 3, f.y - 3, f.x + f.b.w + 3, f.y + f.b.h + 3, t2); s.refreshProps(t2); const c2 = s.renderer.controls, t0 = c2.target, cam = s.renderer.camera, nx = f.x + f.b.w / 2, ny = s.grid.heights[f.y * s.grid.vsize + f.x] * 0.5, nz = f.y + f.b.h / 2; cam.position.x += nx - t0.x; cam.position.y += ny - t0.y; cam.position.z += nz - t0.z; t0.set(nx, ny, nz); c2.update(); console.log(`LODGE placed ${place} at ${f.x},${f.y}`); } else console.log(`LODGE could not place ${place}`);
+    }
+  }, a.place ?? '');
   await new Promise((r) => setTimeout(r, 2500));
   const r = await page.evaluate(run, { yaws: Number(a.yaws ?? 8), zooms: (a.zooms ?? '2,3.5,6').split(',').map(Number), T: Number(a.T ?? 8), off: a.off ? a.off.split(',') : [], rw: Number(a.rw ?? 300), rh: Number(a.rh ?? 220) });
   r.heats.forEach((h: string, i: number) => writeFileSync(`.weave/shots/flicker-building-${a.out ?? 'run'}-z${i}.png`, Buffer.from(h.split(',')[1]!, 'base64'))); delete r.heats;

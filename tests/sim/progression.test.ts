@@ -127,7 +127,7 @@ describe('unlock table (config/unlocks.ts)', () => {
     for (const l of ['tbar', 'chair2', 'chair4', 'chair4d']) expect(isGated('lift', l), l).toBe(false);
     for (const c of ['families', 'budget', 'summer', 'brand']) expect(isGated('campaign', c), c).toBe(false);
     expect(unlockLevel('building', 'nope')).toBe(1);
-    expect(Object.keys(BUILDINGS).filter((b) => isGated('building', b)).length).toBeLessThanOrEqual(12); // 5 + the Phase 6 optional extras (+ the two water tour bases, Task 24)
+    expect(Object.keys(BUILDINGS).filter((b) => isGated('building', b)).length).toBeLessThanOrEqual(14); // 5 + the Phase 6 optional extras (+ the two water tour bases, Task 24, + the two hotels, Task 27)
   });
 
   it('no goal, advisor rule or tutorial lift default depends on a gated item (they could deadlock / propose locked things)', () => {

@@ -97,6 +97,8 @@ export interface BuildingDef {
   coverageKind?: 'firstAid' | 'patrol' | 'grooming' | 'snowmaking' | 'warning' | 'heli' | 'wildlife' | 'pipe';
   /** Chimney top offset (see ChimneySpec). Only buildings with a wood fire / stove have one. */
   chimney?: ChimneySpec;
+  /** Steam vent above a heated pool (Luxury Hotel, docs/hotels.md): where the white steam rises (building-local, like `chimney`); the render emits it while the air is below `POOL.steamBelow`. */
+  steam?: ChimneySpec;
   /** Viewpoint POI (Phase 6 Task 6, docs/viewpoints.md): hikers choose it as a goal, stop longer, gain happiness; a photo-mode spot. */
   viewpoint?: ViewpointSpec;
 }
@@ -208,5 +210,9 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('raftingBase', 'Rafting Base', 'recreation', 3, 2, 5500, 22, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional', nearWaterway: true }, placeTip: 'Place the rafting base beside a road or footpath, within 3 tiles of a river or stream with brisk flow' }, { needs: ['snowFree'], staff: 2, capacity: 8 }),
   // Canyoning Base (Phase 6 Task 24): guided descents of a steep rocky stream. Needs a steep stream with rock walls within 3 tiles, a trail or footpath.
   b('canyoningBase', 'Canyoning Base', 'recreation', 2, 2, 4800, 18, { access: 'trail', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional', nearWaterway: true }, placeTip: 'Place the canyoning base beside a trail or footpath, within 3 tiles of a steep stream through rock' }, { needs: ['snowFree'], staff: 2, capacity: 6 }),
+  // Small Hotel (Phase 6 Task 27, docs/hotels.md): 40 rooms (standard tier x1) over a lobby restaurant, road access, open all year. Level 3 in Career.
+  b('smallHotel', 'Small Hotel', 'lodging', 5, 4, 24000, 55, { access: 'road', placeTip: 'Place the hotel beside a road on flat ground' }, { staff: 2, capacity: 40, chimney: { x: 1.5, y: 2.7, z: -0.55 } }),
+  // Luxury Hotel (Phase 6 Task 27): 30 suites (luxury tier x2.5), VIPs' first choice, a heated outdoor pool with steam in the cold. Road access, open all year. Level 4 in Career.
+  b('luxuryHotel', 'Luxury Hotel', 'lodging', 6, 6, 48000, 90, { access: 'road', placeTip: 'Place the hotel beside a road on flat ground; the pool deck faces south' }, { staff: 4, capacity: 30, steam: { x: 1.3, y: 0.15, z: 1.55 } }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

@@ -21,6 +21,20 @@ export const GENERATORS: Record<string, GeneratorDef> = {
   biomassHeating: { kind: 'biomass', rated: 0.4 },
 };
 
+/**
+ * Heated outdoor pool of the Luxury Hotel (Phase 6 Task 27, docs/hotels.md). Energy dollars per day at full heating; the cost is booked on the `energy` line and
+ * counted as DEMAND, so the solar / wind / hydro offset (capped at 60 % of demand) takes its share off it like the lift bill. Cold air costs more: the factor is
+ * 1 at `fullBelow` (deg C) and `minShare` at `warmAbove`. Steam rises when the air is below `steamBelow` (the same number drives the render).
+ */
+export const POOL = { perDay: 18, fullBelow: -5, warmAbove: 22, minShare: 0.25, steamBelow: 5 } as const;
+/** Pure: heating share 0..1 of a pool at this air temperature (deg C). */
+export function poolHeatFactor(temp: number): number {
+  const k = (POOL.warmAbove - temp) / (POOL.warmAbove - POOL.fullBelow);
+  return Math.min(1, Math.max(POOL.minShare, k));
+}
+/** Pure: energy dollars one heated pool burns in a day at this air temperature. */
+export const poolHeatCost = (temp: number): number => Math.round(POOL.perDay * poolHeatFactor(temp) * 100) / 100;
+
 /** Ids of every green building (generators + the nursery and the recycling centre). */
 export const GREEN_BUILDINGS = ['solarArray', 'solarPlant', 'windTurbine', 'smallHydro', 'biomassHeating', 'treeNursery', 'recyclingCentre', 'ecoCentre'] as const;
 

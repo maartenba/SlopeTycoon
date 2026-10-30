@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BUILDINGS, type ChimneySpec } from '../config/buildings';
+import { POOL } from '../config/energy';
 
 /** Wood-fire chimney smoke: pure emitter selection + one instanced-billboard draw call (puff animation runs in the vertex shader). */
 export const SMOKE = {
@@ -9,6 +10,10 @@ export const SMOKE = {
   maxEmitters: 16, puffsPerEmitter: 10, life: 6,
   /** Camera view-height (tiles) thresholds: below near = full cap, above far = no smoke. */
   lodNear: 45, lodMid: 80, lodFar: 130,
+  /** Pool steam (Luxury Hotel): at most this many pools steam at once (the puffs are wide, a few already fill the screen). */
+  steamMax: 3,
+  /** Puff size factor (1 + wide): pool steam is more than twice as wide. */
+  steamWide: 1.4,
 } as const;
 
 export interface SmokeCandidate {
@@ -29,17 +34,26 @@ export interface SmokeCtx {
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
-export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace' | 'camp';
+export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace' | 'camp' | 'pool';
 const KIND: Record<string, SmokeKind> = {
   chalet: 'lodging', apartment: 'lodging', baseLodge: 'dining', lodge: 'dining', cafe: 'dining', mountainHut: 'dining', heatedTerrace: 'terrace', apresBar: 'dining', alpineFarm: 'farm', rangerStation: 'farm', campground: 'camp',
+  smallHotel: 'dining', luxuryHotel: 'pool',
 };
 export const smokeKindOf = (type: string): SmokeKind | null => KIND[type] ?? null;
+/** Where a building's smoke / steam rises (building-local): its chimney, or the pool steam vent of the Luxury Hotel. */
+export const emitterSpecOf = (type: string): ChimneySpec | undefined => BUILDINGS[type]?.chimney ?? BUILDINGS[type]?.steam;
+/** Puff size factor of a kind: 0 = the common chimney puff. */
+export const wideOf = (type: string): number => (smokeKindOf(type) === 'pool' ? SMOKE.steamWide : 0);
 const inHours = (h: number, a: number, b: number): boolean => (a <= b ? h >= a && h < b : h >= a || h < b);
 
 /** Pure: 0..1 chimney strength of one building. 0 = no smoke. */
 export function smokeIntensity(type: string, active: boolean, temp: number, hour: number, overnight: number, dining = 0.5, season?: string): number {
   const kind = smokeKindOf(type);
-  if (!kind || !active || !BUILDINGS[type]?.chimney) return 0;
+  if (!kind || !active || !emitterSpecOf(type)) return 0;
+  if (kind === 'pool') { // heated outdoor pool (Phase 6 Task 27): steam whenever the air is below POOL.steamBelow, any hour, denser the colder it is
+    if (temp >= POOL.steamBelow) return 0;
+    return clamp01(0.55 + 0.45 * clamp01((POOL.steamBelow - temp) / 12));
+  }
   if (kind === 'camp') { // campfire (Phase 6 Task 19): independent of the cold; evening and a faint breakfast fire, only while the campground is open (summer)
     if (season !== undefined && season !== 'summer') return 0;
     return clamp01((inHours(hour, 18.5, 22.5) ? 0.6 : inHours(hour, 6.5, 8.5) ? 0.25 : 0) * (0.5 + 0.5 * clamp01(overnight)));
@@ -64,10 +78,11 @@ export interface SmokeEmitter { id: number; intensity: number }
 /** Pure: pick the strongest emitters (ties by id), at least `minIntensity`, at most `cap`. Deterministic. */
 export function selectEmitters(cands: readonly SmokeCandidate[], ctx: SmokeCtx, cap: number = SMOKE.maxEmitters, minIntensity = 0.15): SmokeEmitter[] {
   const out: SmokeEmitter[] = [];
+  let steaming = 0;
   for (const c of cands) {
     const k = smokeKindOf(c.type);
     const v = smokeIntensity(c.type, c.active, ctx.tempAt(c), ctx.hour, k === 'lodging' || k === 'camp' ? ctx.overnight : 1, ctx.dining ?? 0.5, ctx.season);
-    if (v >= minIntensity) out.push({ id: c.id, intensity: v });
+    if (v >= minIntensity) { if (k === 'pool' && ++steaming > SMOKE.steamMax) continue; out.push({ id: c.id, intensity: v }); }
   }
   out.sort((a, b) => b.intensity - a.intensity || a.id - b.id);
   return out.slice(0, Math.max(0, cap));
@@ -82,35 +97,39 @@ export function smokeCapForZoom(viewHeight: number, max: number = SMOKE.maxEmitt
 }
 
 const VERT = `
-attribute vec3 aOrigin; attribute float aBirth; attribute float aSeed;
+attribute vec3 aOrigin; attribute float aBirth; attribute float aSeed; attribute float aWide;
 uniform float uTime; uniform vec2 uWind; uniform float uLife; uniform float uScale;
-varying vec2 vUv; varying float vAlpha;
+varying vec2 vUv; varying float vAlpha; varying float vWide;
 void main(){
+  vWide = aWide;
   float age = uTime - aBirth;
   float t = age / uLife;
   if (aBirth < 0.0 || t < 0.0 || t > 1.0) { gl_Position = vec4(2.0,2.0,2.0,1.0); vUv = vec2(0.0); vAlpha = 0.0; return; }
   vec3 p = aOrigin;
-  p.y += age * 0.55;
-  p.xz += uWind * (age * age * 0.12 + age * 0.15) + vec2(sin(aSeed * 40.0 + age * 0.9), cos(aSeed * 31.0 + age * 0.7)) * 0.08 * age;
+  float st = clamp(aWide, 0.0, 1.0); // wide puffs (pool steam): slower rise, less wind drift, denser
+  p.y += age * (0.55 - 0.25 * st);
+  p.xz += uWind * (age * age * 0.12 + age * 0.15) * (1.0 - 0.6 * st) + vec2(sin(aSeed * 40.0 + age * 0.9), cos(aSeed * 31.0 + age * 0.7)) * 0.08 * age;
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
-  float size = (0.18 + 0.55 * t) * uScale;
+  float size = (0.18 + 0.55 * t) * uScale * (1.0 + aWide);
   mv.xy += position.xy * size;
   gl_Position = projectionMatrix * mv;
   vUv = position.xy * 2.0;
-  vAlpha = smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.35, 1.0, t)) * 0.55;
+  vAlpha = smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.35, 1.0, t)) * (0.55 + 0.4 * st);
 }`;
 const FRAG = `
 uniform vec3 uColor; uniform float uNight;
-varying vec2 vUv; varying float vAlpha;
+varying vec2 vUv; varying float vAlpha; varying float vWide;
 void main(){
   float d = length(vUv);
   if (d > 1.0 || vAlpha <= 0.0) discard;
   float a = vAlpha * (1.0 - d * d);
   vec3 warm = vec3(1.0, 0.62, 0.36);
-  gl_FragColor = vec4(mix(uColor, uColor * warm * 0.9, uNight), a);
+  vec3 col = mix(uColor, uColor * warm * 0.9, uNight * (1.0 - clamp(vWide, 0.0, 1.0)));
+  col = mix(col, vec3(1.0), clamp(vWide, 0.0, 1.0) * 0.6); // wide puffs (pool steam) are whiter
+  gl_FragColor = vec4(col, a);
 }`;
 
-interface EmitterState { id: number; slot: number; nextAt: number; ring: number; intensity: number; origin: THREE.Vector3 }
+interface EmitterState { id: number; slot: number; nextAt: number; ring: number; intensity: number; origin: THREE.Vector3; wide: number }
 
 export interface SmokeSource { id: number; type: string; active: boolean; x: number; y: number; w: number; h: number }
 
@@ -120,7 +139,7 @@ export class SmokeView {
   readonly mesh: THREE.Mesh;
   private geo = new THREE.InstancedBufferGeometry();
   private mat: THREE.ShaderMaterial;
-  private origin: Float32Array; private birth: Float32Array; private seed: Float32Array;
+  private origin: Float32Array; private birth: Float32Array; private seed: Float32Array; private wide: Float32Array;
   private emitters = new Map<number, EmitterState>();
   private free: number[] = [];
   private time = 0;
@@ -137,10 +156,12 @@ export class SmokeView {
     this.origin = new Float32Array(this.capacity * 3);
     this.birth = new Float32Array(this.capacity).fill(-1);
     this.seed = new Float32Array(this.capacity);
+    this.wide = new Float32Array(this.capacity);
     for (let i = 0; i < this.capacity; i++) this.seed[i] = ((i * 0.6180339) % 1);
     this.geo.setAttribute('aOrigin', new THREE.InstancedBufferAttribute(this.origin, 3).setUsage(THREE.DynamicDrawUsage));
     this.geo.setAttribute('aBirth', new THREE.InstancedBufferAttribute(this.birth, 1).setUsage(THREE.DynamicDrawUsage));
     this.geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(this.seed, 1));
+    this.geo.setAttribute('aWide', new THREE.InstancedBufferAttribute(this.wide, 1).setUsage(THREE.DynamicDrawUsage));
     this.geo.instanceCount = this.capacity;
     this.mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,
@@ -172,7 +193,7 @@ export class SmokeView {
       this.selTimer = 0.5;
       const cands: SmokeCandidate[] = [];
       const byId = new Map<number, SmokeSource>();
-      for (const s of sources) { if (!BUILDINGS[s.type]?.chimney) continue; cands.push({ id: s.id, type: s.type, active: s.active, cx: s.x + s.w / 2, cy: s.y + s.h / 2 }); byId.set(s.id, s); }
+      for (const s of sources) { if (!emitterSpecOf(s.type)) continue; cands.push({ id: s.id, type: s.type, active: s.active, cx: s.x + s.w / 2, cy: s.y + s.h / 2 }); byId.set(s.id, s); }
       this.active = selectEmitters(cands, ctx, cap);
       const keep = new Set(this.active.map((e) => e.id));
       for (const [id, st] of this.emitters) if (!keep.has(id)) { this.free.push(st.slot); this.emitters.delete(id); }
@@ -181,11 +202,11 @@ export class SmokeView {
         if (!st) {
           const slot = this.free.pop() ?? this.emitters.size;
           if (slot >= SMOKE.maxEmitters) continue;
-          st = { id: e.id, slot, nextAt: this.time + (e.id % 5) * 0.1, ring: 0, intensity: e.intensity, origin: new THREE.Vector3() };
+          st = { id: e.id, slot, nextAt: this.time + (e.id % 5) * 0.1, ring: 0, intensity: e.intensity, origin: new THREE.Vector3(), wide: wideOf(byId.get(e.id)!.type) };
           this.emitters.set(e.id, st);
         }
         st.intensity = e.intensity;
-        const s = byId.get(e.id)!, spec = BUILDINGS[s.type]!.chimney!;
+        const s = byId.get(e.id)!, spec = emitterSpecOf(s.type)!;
         worldPos(s, spec, st.origin);
       }
     }
@@ -198,13 +219,16 @@ export class SmokeView {
       st.nextAt = this.time + SMOKE.life / SMOKE.puffsPerEmitter / (0.3 + st.intensity);
       if (!this.frustum.containsPoint(this.tmp.copy(st.origin))) continue; // offscreen: don't spawn
       const idx = st.slot * SMOKE.puffsPerEmitter + (st.ring++ % SMOKE.puffsPerEmitter);
-      this.origin[idx * 3] = st.origin.x; this.origin[idx * 3 + 1] = st.origin.y; this.origin[idx * 3 + 2] = st.origin.z;
-      this.birth[idx] = this.time;
+      // pool steam rises from all over the water, not from one point: a deterministic scatter over the basin (no Math.random in render)
+      const sx = st.wide > 0.5 ? (((st.ring * 0.754877666) % 1) - 0.5) * 1.7 : 0, sz = st.wide > 0.5 ? (((st.ring * 0.569840291) % 1) - 0.5) * 0.9 : 0;
+      this.origin[idx * 3] = st.origin.x + sx; this.origin[idx * 3 + 1] = st.origin.y; this.origin[idx * 3 + 2] = st.origin.z + sz;
+      this.birth[idx] = this.time; this.wide[idx] = st.wide;
       dirty = true;
     }
     if (dirty) {
       (this.geo.getAttribute('aOrigin') as THREE.BufferAttribute).needsUpdate = true;
       (this.geo.getAttribute('aBirth') as THREE.BufferAttribute).needsUpdate = true;
+      (this.geo.getAttribute('aWide') as THREE.BufferAttribute).needsUpdate = true;
     }
   }
 
@@ -242,6 +266,7 @@ export class RapidsSplash {
     this.geo.setAttribute('aOrigin', new THREE.InstancedBufferAttribute(this.origin, 3).setUsage(THREE.DynamicDrawUsage));
     this.geo.setAttribute('aBirth', new THREE.InstancedBufferAttribute(this.birth, 1).setUsage(THREE.DynamicDrawUsage));
     this.geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seed, 1));
+    this.geo.setAttribute('aWide', new THREE.InstancedBufferAttribute(new Float32Array(SPLASH.cap), 1)); // plain puffs
     this.geo.instanceCount = SPLASH.cap;
     this.mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,

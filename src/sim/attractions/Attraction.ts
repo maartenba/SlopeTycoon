@@ -67,6 +67,8 @@ export interface AttractionInfo {
   beds?: { total: number; used: number; sold: number };
   /** Campground: pitches, campers tonight, toilets within reach, evenings of fire. */
   camp?: { pitches: number; used: number; toilets: boolean; fires: number };
+  /** Hotels (Small / Luxury, docs/hotels.md): rooms, occupied tonight, the nightly rate, and for the pool the guests in it, its places, the heating cost per day and whether it steams (filled by the page from the weather). */
+  hotel?: { rooms: number; occupied: number; nightly: number; pool?: { users: number; slots: number; heatPerDay: number; steam: boolean } };
   /** Tour base: departures today, riders, next departure, route (TourSystem.info). */
   tour?: TourInfo;
   /** Tackle & bait hut (docs/anglers.md): Catch & release / Keep setting, fishing places, waters in reach with their stock, ice and noise state. */

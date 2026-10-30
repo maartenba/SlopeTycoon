@@ -73,6 +73,7 @@ const CASES: Case[] = [
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
   { id: 'season.summer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.networks.layers[100] = (s.networks.layers[100]! | Layer.Hike) as never; } },
   { id: 'fish.overfished', trigger: (s) => { s.fishStock.set('l0', 0.1); s.fishStock.set('l1', 0.9); s.buildings.add('tackleHut', 8, 8).building.active = true; }, calm: (s) => { s.fishStock.reset(); } },
+  { id: 'hotel.vip', trigger: (s) => { s.progression.unlockAll = true; guests(s, 45); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 10); } },
   { id: 'summer.camp', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { guests(s, 20); /* winter */ } },
   { id: 'tour.quad', trigger: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 10); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'tour.water', trigger: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); riverStub(s, [1, 1, 1, 1, 1, 2, 2, 1]); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); riverStub(s, [0, 0, 0, 0, 0, 0, 0, 0]); } },

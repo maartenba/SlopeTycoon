@@ -26,6 +26,8 @@ import { viewpoint } from './viewpoint';
 import { treehouse } from './treehouse';
 import { tackleHut } from './tackleHut';
 import { fishingPier } from './fishingPier';
+import { hotelSmall } from './hotelSmall';
+import { hotelLuxury, poolWaterGeometry } from './hotelLuxury';
 
 const e = (build: BuildFn, foundation = true, rooted = false): BuilderEntry => ({ build, foundation, ...(rooted ? { rooted } : {}) });
 
@@ -43,6 +45,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
   campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false, true),
   tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
+  smallHotel: e(hotelSmall), luxuryHotel: e(hotelLuxury, false),
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 
@@ -150,8 +153,11 @@ export class BuildingMeshes {
   /** Campfire glow (additive, world-space radial falloff baked in vertex colours: no noise, flicker-safe): shared by every campground, opacity follows the night factor. */
   private fireGlowGeo: THREE.BufferGeometry | null = null;
   private readonly fireGlowMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, toneMapped: false });
+  /** Luxury Hotel pool water (Phase 6 Task 27): ONE flat unlit grid with static vertex colours, shared by every hotel (a stock MeshBasicMaterial: no custom shader to fail, nothing animated, flicker-safe); pool lights make it a little brighter at night than the dusk-dimmed day tone. */
+  private poolGeo: THREE.BufferGeometry | null = null;
+  private readonly poolMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, name: 'poolWater' });
   /** 0..1 snow cover on upward-facing roof surfaces. */
-  setNight(v: number): void { this.night.value = Math.min(1, Math.max(0, v)); this.fireGlowMat.opacity = this.night.value * 0.95; }
+  setNight(v: number): void { this.night.value = Math.min(1, Math.max(0, v)); this.fireGlowMat.opacity = this.night.value * 0.95; const k = 1 - 0.28 * this.night.value; this.poolMat.color.setRGB(k, k, 1 - 0.1 * this.night.value); }
   setSnow(amount: number): void { this.snow.value = Math.min(1, Math.max(0, amount)); }
 
   private mat(layer: 'wood' | 'stone' | 'roof', variant: number | string = 0): THREE.Material {
@@ -233,11 +239,16 @@ export class BuildingMeshes {
       glow.name = 'fireGlow'; glow.renderOrder = 4;
       g.add(glow);
     }
+    if (id === 'luxuryHotel') {
+      const water = new THREE.Mesh(this.poolGeo ??= poolWaterGeometry(), this.poolMat);
+      water.name = 'poolWater'; water.renderOrder = 1;
+      g.add(water);
+    }
     return g;
   }
 
   dispose(): void {
-    this.fireGlowGeo?.dispose(); this.fireGlowMat.dispose();
+    this.fireGlowGeo?.dispose(); this.fireGlowMat.dispose(); this.poolGeo?.dispose(); this.poolMat.dispose();
     for (const p of this.geoCache.values()) { p.wood?.dispose(); p.stone?.dispose(); p.roof?.dispose(); p.sign?.geometry.dispose(); }
     for (const m of this.mats.values()) m.dispose();
     for (const t of this.textures) t.dispose();

@@ -49,6 +49,7 @@ export const TEXT = {
   runway: (days: number): Text => ({ title: S('Low cash'), why: S(`Cash covers about ${days} days of upkeep. Hold off construction and check prices.`) }),
   winterComing: (days: number, hasReservoir: boolean): Text => ({ title: S('Winter is coming'), why: S(`Winter starts in ${days} days. ${hasReservoir ? `Add a ${B('snowCannon')} on your main piste.` : `Build a ${B('reservoir')} first, then ${B('snowCannon')}s.`}`) }),
   summerComing: (days: number): Text => ({ title: S('Summer is coming'), why: S(`Summer starts in ${days} days and there are no bike or hike trails. Paint a trail and set the summer lift schedule.`) }),
+  vipLodging: (): Text => ({ title: S('VIPs need luxury lodging'), why: S(`Rich guests book the best rooms first. A ${B('luxuryHotel')} (30 suites, a heated pool that steams in the cold) beside a road is where they stay; a ${B('smallHotel')} adds 40 standard rooms and a restaurant. Solar and wind power can pay for the pool heating.`) }),
   summerCamp: (needsToilets: boolean): Text => needsToilets
     ? ({ title: S('Campers want toilets'), why: S(`Your ${B('campground')} has no ${B('toilets')} within 10 tiles. Campers enjoy the evening fire more with toilets nearby.`) })
     : ({ title: S('Summer nights: a campground'), why: S(`Summer is the quiet season. A ${B('campground')} beside a footpath sells cheap nights to budget and adventure guests, and its campfire cheers everybody up. A ${B('viewpoint')} on high ground gives hikers a reason to climb.`) }),

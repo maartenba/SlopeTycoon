@@ -9,9 +9,9 @@ import { Act } from '../guests/Decision';
 import type { ArriveResult, GuestAttractionPort } from '../guests/AttractionPort';
 import { GState, type GuestStore } from '../guests/Guest';
 import type { WorldBuilding } from '../guests/GuestWorld';
-import { Attraction, type InstanceSave } from './Attraction';
+import { Attraction, type AttractionInfo, type InstanceSave } from './Attraction';
 import { TrailUsage } from './Hiking';
-import { RoomBook } from './Lodging';
+import { HOTEL_TYPES, RoomBook } from './Lodging';
 import { hikeFee, mtbFee } from './MtbTrail';
 import { ownsGear } from './Rental';
 import { ATTRACTION_SPECS } from './registry';
@@ -446,6 +446,14 @@ export class AttractionSystem implements GuestAttractionPort {
     let toilets = false;
     for (const b of this.d.buildings()) if (b.type === 'toilets' && b.active && Math.hypot(b.x + b.w / 2 - cx, b.y + b.h / 2 - cy) <= CAMP.toiletRadius) { toilets = true; break; }
     return { pitches: a.spec.rooms ?? 0, used: this.rooms.occupied(id), toilets, fires: a.stats.fires ?? 0 };
+  }
+
+  /** Hotel inspector data (rooms, occupied tonight, nightly rate; the pool users and places for the luxury hotel). Undefined for other buildings. */
+  hotelInfo(id: number): NonNullable<AttractionInfo['hotel']> | undefined {
+    const a = this.items.get(id);
+    if (!a || !HOTEL_TYPES.includes(a.b.type)) return undefined;
+    const nightly = this.d.nightRate?.(a.b.type) ?? NIGHTLY_RATE[a.b.type]?.price ?? 0;
+    return { rooms: a.spec.rooms ?? 0, occupied: this.rooms.occupied(id), nightly, ...(a.spec.amenity === 'pool' ? { pool: { users: a.users.length, slots: a.capacity(), heatPerDay: 0, steam: false } } : {}) };
   }
 
   private chargeNight(a: Attraction, slot: number): boolean {

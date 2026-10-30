@@ -426,6 +426,13 @@ export const RULES: readonly Rule[] = [
     const s = c.site('summer.camp.wc', 'toilets', () => findSite(sim, 'toilets', { x: cx, y: cy }, { rmax: 8, route: 'path' }));
     return { id: 'summer.camp', severity: 'info', ...TEXT.summerCamp(true), action: build('toilets', s), target: s ? siteTarget(s) : { x: cx - 0.5, y: cy - 0.5, kind: 'building', id: camp.id } };
   }),
+  // Hotels (docs/hotels.md): VIPs book luxury lodging first. A busy, well-rated resort that unlocked the Luxury Hotel but has none (and no altiport) hears about it; no build action (the hotel is a level-4 unlock), 'Show me' opens the Buildings drawer on it.
+  rule('hotel.vip', 1, (c) => {
+    const sim = c.sim;
+    if (!sim.progression.isUnlocked('building', 'luxuryHotel') || sim.guestSim.store.count < (c.shown ? 30 : 40) || sim.rating.stars < 3) return null;
+    if (sim.buildings.all().some((b) => b.type === 'luxuryHotel' || b.type === 'altiport')) return null;
+    return { id: 'hotel.vip', severity: 'info', ...TEXT.vipLodging(), panel: { drawer: 'buildings', item: 'luxuryHotel' } };
+  }),
   // Angling (docs/anglers.md): a fished water below 30 % stock (40 % while shown: hysteresis) is "Overfished"; the fix is Catch & release or a second water.
   rule('fish.overfished', 2, (c) => {
     const sim = c.sim, hut = sim.buildings.all().filter((b) => b.type === 'tackleHut' && b.active).sort((x, y) => x.id - y.id)[0];

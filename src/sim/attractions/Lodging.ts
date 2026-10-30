@@ -22,7 +22,12 @@ export const LODGING_SPECS: Record<string, AttractionSpec> = {
   apartment: { kind: 'lodging', serviceTicks: 8, slots: 8, effects: { fatigue: -0.4, happiness: 0.03 }, appeal: [0.1, 0.3, 0.4, 0.2, 0.3, 0.2], overnightOnly: true, rooms: 40 },
   // Campground (Phase 6 Task 19, docs/campground.md): 16 pitches, summer only, budget tier. A little less rest than a bed, a nicer evening (campfire).
   campground: { kind: 'lodging', serviceTicks: 8, slots: 4, effects: { fatigue: -0.3, happiness: 0.06 }, appeal: tierAppeal([0.3, 0.4, 0.6, 0.1, 0.5, 0.7], 'budget'), overnightOnly: true, rooms: 16, tier: 'budget', seasonOpen: ['summer'], campfire: true },
+  // Luxury Hotel (Phase 6 Task 27, docs/hotels.md): 30 suites, luxury tier (x2.5, VIP +0.4), a HEATED OUTDOOR POOL (amenity 'pool': 14 extra Using places for overnight guests, +0.08 mood per visit; the heating is booked as energy demand). Open all year.
+  luxuryHotel: { kind: 'lodging', serviceTicks: 8, slots: 6, effects: { fatigue: -0.45, happiness: 0.08 }, appeal: tierAppeal([0.25, 0.5, 0.4, 0.55, 0.1, 0.2], 'luxury'), overnightOnly: true, rooms: 30, tier: 'luxury', amenity: 'pool', poolSlots: 14, poolHappiness: 0.08 },
 };
+
+/** Hotels (docs/hotels.md): the building types whose rooms count as hotel lodging for the VIP prerequisite and the Advisor. */
+export const HOTEL_TYPES: readonly string[] = ['smallHotel', 'luxuryHotel'];
 
 /** Lodging v2: does this building type take overnight guests in `season`? Types without `seasonOpen` (chalet, apartment, base lodge) always do. Spawner / Rating room counts use it so a closed campground adds no phantom rooms. */
 export function takesGuestsIn(type: string, season: SeasonId): boolean {

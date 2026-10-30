@@ -33,6 +33,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'landscape', id: 'river', level: 2 },
   // Level 2: the treehouse (Phase 6 Task 21; a hiker / family extra that needs a forest: no goal or Advisor rule needs it; the viewpoint platform is never gated).
   { kind: 'building', id: 'treehouse', level: 2 },
+  // Level 3: the Small Hotel (Phase 6 Task 27; an optional lodging tier: chalets and apartments still house everybody, no goal or Advisor rule needs it).
+  { kind: 'building', id: 'smallHotel', level: 3 },
   // Level 3: the suspension footbridge (Phase 6 Task 46; a hiker attraction, nothing a goal or Advisor rule needs; regular bridges are always available).
   { kind: 'landscape', id: 'suspension', level: 3 },
   // Level 3 (Regional name): the heavy transport.
@@ -43,6 +45,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'solarPlant', level: 3 },
   // Level 4 (Alpine destination): rescue by air and the biggest cabins / chairs.
   { kind: 'building', id: 'ecoCentre', level: 4 },
+  // Level 4: the Luxury Hotel with its heated pool (Phase 6 Task 27; VIP lodging, optional: no goal or Advisor rule needs it).
+  { kind: 'building', id: 'luxuryHotel', level: 4 },
   { kind: 'building', id: 'helipad', level: 4 },
   { kind: 'lift', id: 'gondola10', level: 4 },
   { kind: 'lift', id: 'chair8b', level: 4 },

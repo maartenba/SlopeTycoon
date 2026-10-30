@@ -13,6 +13,7 @@ import { seasonOf, hourOfDay, jumpTo, seasonStartDay, monthIndex } from '../sim/
 import { nightWarp } from '../core/pacing';
 import { sunTimes } from '../sim/Daylight';
 import { Energy } from '../sim/Energy';
+import { poolHeatCost } from '../config/energy';
 import { Eco } from '../sim/meta/Eco';
 import { BUILDINGS } from '../config/buildings';
 import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, REMOTE_SUPPLY_MULT, oldDays } from '../config/balance';
@@ -767,7 +768,7 @@ export function createSim(opts: SimOptions) {
     economy, bus, date: () => game.date, gate, trackRail: opts.campaignsV2 !== false,
     ctx: {
       season: () => seasonOf(game.date), stars: () => rating.stars,
-      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : f === 'pettingZoo' ? hasActive(['pettingZoo']) : f === 'trainCampaign' ? (marketingRef?.running() ?? []).some((r) => r.id === 'train' && !r.lapsed) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
+      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment', 'smallHotel', 'luxuryHotel']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : f === 'pettingZoo' ? hasActive(['pettingZoo']) : f === 'trainCampaign' ? (marketingRef?.running() ?? []).some((r) => r.id === 'train' && !r.lapsed) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
       dayClass: () => pricing.dayClass(),
       fishStock: () => { const v = hutWaters(); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; },
       festivalWindow: () => (eventsRef?.booked ?? []).some((b) => festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
@@ -781,7 +782,7 @@ export function createSim(opts: SimOptions) {
           case 'piste': return openStatus.pisteStatuses().some((p) => p.open);
           case 'parking': return hasActive(['parking']);
           case 'dining': return hasActive([...EVENING_VENUES]);
-          case 'vipAccess': return hasActive(['altiport']) || buildings.all().filter((b) => b.active && (b.type === 'chalet' || b.type === 'apartment')).length >= VIP_LODGING_MIN;
+          case 'vipAccess': return hasActive(['altiport', 'luxuryHotel']) || buildings.all().filter((b) => b.active && (b.type === 'chalet' || b.type === 'apartment' || b.type === 'smallHotel')).length >= VIP_LODGING_MIN;
           case 'rating': return rating.stars >= 3;
           case 'summerSeason': return seasonOf(game.date) === 'summer';
           case 'summerAttraction': return hasActive(['adventurePark']) || guestSim.decider.mtbTiles.length > 0;
@@ -964,6 +965,12 @@ export function createSim(opts: SimOptions) {
   /** Off-season relief bookkeeping (derived, not saved): consecutive idle days per venue + dollars saved this game session. */
   const closedDays = new Map<number, { sig: number; idle: number }>();
   const relief = { furlough: 0, mothball: 0 };
+  /** Energy dollars the heated pools of the active Luxury Hotels burn today (noon air temperature at each hotel's altitude); 0 without one. */
+  const poolHeatToday = (): number => {
+    let n = 0;
+    for (const x of buildings.all()) if (x.active && x.type === 'luxuryHotel') n += poolHeatCost(weather.temperatureAt(cond.altitude(Math.floor(x.x + x.w / 2), Math.floor(x.y + x.h / 2)), 12));
+    return n;
+  };
   const finance = new Finance({
     economy, loans, ticketing, bus, startupGraceDays: 14, autoBankruptcyDays: diff.foreclosureDays, autoBankruptcyFloor: diff.foreclosureFloor,
     costs: () => {
@@ -994,8 +1001,10 @@ export function createSim(opts: SimOptions) {
       }
       for (const id of [...closedDays.keys()]) if (!seen.has(id)) closedDays.delete(id);
       // green power: the generators' capped offset comes off the lift energy line (nothing changes without generators)
-      const offset = energy.settleDay(lo.energy + (economy.dayBuckets().expense.snowmaking ?? 0), lo.energy);
-      return { buildings: b, lifts: l, staff: (st + staff.extraWagesPerDay()) * staff.wageMult() + staffUpgrades.upkeepPerDay(), energy: offset > 0 ? lo.energy - offset : lo.energy };
+      // heated pools (Luxury Hotel, docs/hotels.md): booked on the energy line AND counted as demand, so solar / wind / hydro offset them like the lifts (exactly 0 without a hotel)
+      const pool = poolHeatToday();
+      const offset = energy.settleDay(lo.energy + pool + (economy.dayBuckets().expense.snowmaking ?? 0), lo.energy + pool);
+      return { buildings: b, lifts: l, staff: (st + staff.extraWagesPerDay()) * staff.wageMult() + staffUpgrades.upkeepPerDay(), energy: offset > 0 ? lo.energy + pool - offset : lo.energy + pool };
     },
     guests: () => ({ count: guestSim.store.count, happiness: avgHappiness() }),
     credit: creditCtx,

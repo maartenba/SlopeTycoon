@@ -96,6 +96,7 @@ import { GroundMask, treeTowerAo } from '@/render/groundMask';
 import { buildModelGallery, type ModelGallery } from '@/render/meshes/Gallery';
 import { BuildingsView } from '@/render/BuildingsView';
 import { BUILDINGS } from '@/config/buildings';
+import { POOL, poolHeatCost } from '@/config/energy';
 import { openDirection } from '@/sim/attractions/Viewpoint';
 import * as THREE from 'three';
 import { Overlays } from '@/render/Overlays';
@@ -803,7 +804,7 @@ const refreshUi = (): void => {
   dockRef?.refresh();
   const b = selectedId === null ? undefined : buildings.get(selectedId);
   if (!pisteInspectorRef?.busy) showPisteInspector();
-  inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), onFoot: !DEMO && sim.networks.suppliedOnFootOnly(b.id), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; if (i && a?.spec.kind === 'toilet') i.toilet = { usesToday: attractionsRef!.usesToday(a), perDay: TOILET_USES_PER_DAY }; if (i && a?.spec.campfire) i.camp = attractionsRef!.campInfo(b.id); return i; })() } : null);
+  inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), onFoot: !DEMO && sim.networks.suppliedOnFootOnly(b.id), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; if (i && a?.spec.kind === 'toilet') i.toilet = { usesToday: attractionsRef!.usesToday(a), perDay: TOILET_USES_PER_DAY }; if (i && a?.spec.campfire) i.camp = attractionsRef!.campInfo(b.id); if (i) { const h = attractionsRef!.hotelInfo(b.id); if (h) { if (h.pool) { const alt = cond.altitude(Math.floor(b.x + b.w / 2), Math.floor(b.y + b.h / 2)); h.pool.heatPerDay = poolHeatCost(weather.temperatureAt(alt, 12)); h.pool.steam = weather.temperatureAt(alt, currentHour()) < POOL.steamBelow; } i.hotel = h; } } return i; })() } : null);
 };
 const showPisteInspector = (): void => {
   if (!pisteInspectorRef) return;

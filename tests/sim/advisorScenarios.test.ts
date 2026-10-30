@@ -347,6 +347,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'hotel.vip', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 45); },
+    fixes: [
+      { name: 'a luxury hotel stands', apply: (s) => { s.buildings.add('luxuryHotel', 8, 8); } },
+      { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
+    ],
+  },
+  {
     id: 'summer.camp', daily: true,
     setup: (s) => { guests(s, 40); s.game.date.day = seasonStartDay('summer') + 5; },
     fixes: [
