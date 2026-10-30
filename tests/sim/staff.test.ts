@@ -42,33 +42,33 @@ const GOLDEN_STARTER: Record<string, string> = {
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': '31c0e1a8',
+  'core': 'd733404b',
   'config': 'd9813cdd',
   'grid': '410860f8',
   'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'a0aaa356',
-  'lifts': '18031c1a',
+  'lifts': 'a3260382',
   'cond': 'd91eca6f',
   'names': '21b69d9a',
-  'nature': '616ad076',
-  'leavers': '7244ae81',
+  'nature': 'bda43fe4',
+  'leavers': 'bfc2c989',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '571f0cde',
-  'sys.spawner': '88eeedf8',
-  'sys.guests': 'bf9ff94b',
-  'sys.attractions': '3fb8c6cf',
-  'sys.economy': '63a28414',
-  'sys.rating': 'aa8b69de',
-  'sys.ops': 'e3cf2bf0',
-  'families': '72cac77e',
+  'sys.spawner': 'd3a051f4',
+  'sys.guests': '9ca68184',
+  'sys.attractions': '79a14ba2',
+  'sys.economy': 'd17b5a9c',
+  'sys.rating': '45e080a9',
+  'sys.ops': '97621114',
+  'families': '62673d4b',
   'openStatus': 'f48290d9',
-  'sessionMeta': '2c2097de',
-  'goals': '137b8822',
-  'yearReports': '102ceb83',
+  'sessionMeta': 'eb84db05',
+  'goals': '32119d62',
+  'yearReports': '8902b6c2',
   'advisor': 'ca063e92',
-  'progression': 'fa89ad3d',
+  'progression': 'a49305a7',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
@@ -88,7 +88,8 @@ const GOLDEN_BOT: Record<string, string> = {
 // RE-RECORDED (createSim defaults == the real game, docs/balance.md "Defaults == the real game"): autoEvents, stories, remoteSupply, campaignsV2, guestTypesV2 are now ON by default. Money 192905.9 -> 203294.15 (autoEvents +5.05%, stories +0.30%, remoteSupply / campaignsV2 0%, combined +5.39%).
 // RE-RECORDED (Phase 6 M6.1: comfort need + toilets, facilities rating facet, trail access, campaigns v2, bridges / crossings; docs/balance.md "M6.1 re-record"). Money 203294.15 -> 191483.3 (-5.8%).
 // RE-RECORDED (money pass, docs/balance.md "Money pass": starting cash 130k -> 150k, goal grants +2k, softer off-season relief, autumn demand 0.4 -> 0.5). Money 191483.3 -> 222414.97.
-const GOLDEN_BOT_MONEY = 222414.97;
+// RE-RECORDED (M6.4 STOP: Senior + School group guest types ship ON (the bot builds a terrace / cafe / toilets and a ski school + kids area, so it now draws both), plus the hotel / coffee-stand unlock rows; docs/balance.md "M6.4 STOP check"). Money 222414.97 -> 227010.16 (+2.1%); with both types removed every part except `progression` is byte-identical to the previous golden.
+const GOLDEN_BOT_MONEY = 227010.16;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; delete p['energy']; return p; };
 

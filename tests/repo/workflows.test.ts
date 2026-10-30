@@ -60,8 +60,9 @@ describe('repo hygiene', () => {
       expect(ignored, `${f} is git-ignored`).toBe(false);
     }
   });
+  // 'node_modules' (not 'node_modules/x'): in a git worktree / sandbox node_modules is often a symlink and git refuses paths beyond a symlink.
   it('.gitignore ignores build output and screenshots', () => {
-    for (const f of ['dist/index.html', 'node_modules/x', '.weave/shots/a.png', '.weave/plans/x.md']) expect(() => execFileSync('git', ['check-ignore', '-q', f])).not.toThrow();
+    for (const f of ['dist/index.html', 'node_modules', '.weave/shots/a.png', '.weave/plans/x.md']) expect(() => execFileSync('git', ['check-ignore', '-q', f])).not.toThrow();
   });
   it('.nojekyll is shipped from public/ and not in the precache list', () => {
     expect(existsSync('public/.nojekyll')).toBe(true);

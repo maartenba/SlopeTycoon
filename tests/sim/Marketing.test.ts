@@ -54,7 +54,7 @@ describe('campaign prerequisites (hard)', () => {
   });
   it.each([
     ['families', ['skiSchool'], /Ski School HQ/], ['budget', ['parking'], /Parking/], ['budget', ['openLift'], /open lift/i], ['budget', ['piste'], /open piste/i],
-    ['vip', ['vipAccess'], /Altiport or luxury lodging/], ['vip', ['rating'], /3★/], ['vip', ['dining'], /restaurant/i],
+    ['vip', ['vipAccess'], /Altiport, Luxury Hotel or/], ['vip', ['rating'], /3★/], ['vip', ['dining'], /restaurant/i],
     ['summer', ['summerSeason'], /Summer season/], ['summer', ['summerAttraction'], /Adventure Park or an MTB trail/], ['summer', ['summerAccess'], /bike-capable lift or a hiking trail/], ['summer', ['rental'], /Rental/],
     ['brand', ['openLift'], /open lift/i], ['brand', ['dining'], /restaurant/i],
   ] as Array<[string, PrereqId[], RegExp]>)('%s is refused without %s', (id, missing, re) => {

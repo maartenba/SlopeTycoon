@@ -42,7 +42,7 @@ A campaign **cannot start** unless every prerequisite holds; `start()` returns `
 |---|---|
 | families | active Ski School HQ **and** a kids area (Kids Ground, Playground or Magic Carpet) |
 | budget | an open lift, an open ski piste, active Parking |
-| vip | Altiport **or** luxury lodging (>= 2 active chalets/apartments; the Base Lodge does not count, every resort has one), resort rating >= 3★, a restaurant / café / hut / terrace / bar |
+| vip | Altiport, an active Luxury Hotel **or** luxury lodging (>= 2 active chalets/apartments; the Base Lodge does not count, every resort has one), resort rating >= 3★, a restaurant / café / hut / terrace / bar |
 | summer | summer season, Adventure Park or an MTB trail, a bike-capable open lift or a hiking trail, active Rental |
 | brand | an open lift and a restaurant / café / hut / terrace / bar |
 **Running campaigns** re-check the prerequisites every day. While one is missing the campaign is *paused* (effectiveness 0, orange warning in the Running list, `lapsed` counter); it resumes when the item returns and is **cancelled after `PREREQ_GRACE_DAYS` (3) days** (no refund, cooldown applies, history entry "cancelled (Requires: ...)", low-volume event `marketing:cancelled` -> news "Campaign cancelled: <name>. Requires: ..."). Season is a prerequisite only for the summer campaign (others keep the soft off-season factor).

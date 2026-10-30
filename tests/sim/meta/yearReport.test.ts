@@ -123,6 +123,7 @@ describe('starter + bot, deterministic report', () => {
     expect(JSON.stringify(a.yearReports.all())).toBe(JSON.stringify(b.yearReports.all()));
     expect(JSON.stringify(a.stats.serialize(), (_k, v) => (ArrayBuffer.isView(v) ? Array.from(v as unknown as ArrayLike<number>) : v))).toBe(JSON.stringify(b.stats.serialize(), (_k, v) => (ArrayBuffer.isView(v) ? Array.from(v as unknown as ArrayLike<number>) : v)));
     expect(stateHash(a)).toEqual(stateHash(b));
+    // Snapshot RE-RECORDED (M6.4 STOP): Senior + School group guest types ship ON, so the arrival draw moved (y1 guests 1552 -> 1536, y2 3156 -> 3162, y2 incidents 8 -> 18, safety award 2 -> 0); docs/balance.md "M6.4 STOP check".
     expect(a.yearReports.all().map(key)).toMatchSnapshot();
     const [y1, y2] = a.yearReports.all();
     expect(y1!.partial).toBe(true); expect(y2!.partial).toBe(false); expect(y2!.deltas.length).toBe(4);

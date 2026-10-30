@@ -292,7 +292,7 @@ describe('heated pool energy', () => {
 describe('hotels in a real resort: VIP prerequisite, save / load, determinism', () => {
   it('an active Luxury Hotel satisfies the VIP campaign\'s lodging prerequisite (it is no chalet / apartment / altiport)', () => {
     const sim = createSim({ size: 64, seed: 61, starterResort: true, mode: 'sandbox', now: () => 0 });
-    const mentionsLodging = (): boolean => /altiport or luxury lodging/i.test(sim.marketing.blocker('vip') ?? '');
+    const mentionsLodging = (): boolean => /altiport, luxury hotel or/i.test(sim.marketing.blocker('vip') ?? '');
     expect(mentionsLodging()).toBe(true); // the starter resort has neither
     expect(placeRoadBuilding(sim, 'luxuryHotel')).toBeDefined();
     expect(mentionsLodging()).toBe(false);

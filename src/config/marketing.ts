@@ -13,7 +13,7 @@ export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' |
 /**
  * HARD campaign prerequisites (checked by `Marketing.canStart` and again daily while a campaign runs).
  * skiSchool: active Ski School HQ · kidsArea: active Kids Ground, Playground or Magic Carpet · openLift: a lift open for business · piste: an open ski piste ·
- * parking: active Parking · dining: active restaurant / café / hut / terrace / bar · vipAccess: Altiport or luxury lodging (VIP_LODGING_MIN chalets+apartments) ·
+ * parking: active Parking · dining: active restaurant / café / hut / terrace / bar · vipAccess: Altiport, an active Luxury Hotel or VIP_LODGING_MIN chalets+apartments+small hotels ·
  * rating: resort rating >= minStars · summerSeason: it is summer · summerAttraction: Adventure Park or an MTB trail · summerAccess: bike-capable lift or hiking trail · rental: active Rental.
  */
 export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental'
@@ -108,7 +108,7 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
   {
     id: 'vip', name: 'VIP High-Rollers', icon: '🥂', blurb: 'Luxury travel press. Needs luxury lodging or an altiport and premium prices.', segment: 'VIP',
     cost: 12000, durationDays: 21, targets: { vip: 2.2 }, volumeBoost: 0.04, seasons: ['winter', 'autumn'], offSeason: 0.4,
-    prereqs: [{ id: 'vipAccess', label: `Altiport or luxury lodging (${VIP_LODGING_MIN}+ chalets/apartments)`, build: 'altiport' }, { id: 'rating', label: 'Resort rating of 3★ or more' }, { id: 'dining', label: 'A restaurant, café or terrace', build: 'lodge' }], priceAlign: 'premium', bonus: { id: 'altiport', factor: 1.3 }, minStars: 3, cooldownDays: 30,
+    prereqs: [{ id: 'vipAccess', label: `Altiport, Luxury Hotel or ${VIP_LODGING_MIN}+ chalets/apartments/hotels`, build: 'altiport' }, { id: 'rating', label: 'Resort rating of 3★ or more' }, { id: 'dining', label: 'A restaurant, café or terrace', build: 'lodge' }], priceAlign: 'premium', bonus: { id: 'altiport', factor: 1.3 }, minStars: 3, cooldownDays: 30,
   },
   {
     id: 'summer', name: 'Summer Adventure Seekers', icon: '🚵', blurb: 'Bike, hike and adventure promos for summer.', segment: 'Adventure seekers',
