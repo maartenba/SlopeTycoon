@@ -45,6 +45,8 @@ import { createDefaultRegistry, registerGuestSystems, type SystemRegistry } from
 import { GuestSim } from '../sim/guests/GuestSim';
 import { AttractionSystem } from '../sim/attractions/AttractionSystem';
 import { TourSystem } from '../sim/attractions/Tour';
+import { makeWaterEnv, planWaterRoute } from '../sim/attractions/WaterTour';
+import { TOUR_DEFS } from '../config/tours';
 import { FAUNA } from '../sim/nature/Fauna';
 import type { GuestWorld } from '../sim/guests/GuestWorld';
 import type { NavWorld } from '../sim/guests/NavGraph';
@@ -540,9 +542,20 @@ export function createSim(opts: SimOptions) {
     exitCache.set(b.id, { v: networks.version, b, pt });
     return pt;
   };
+  // Water tours (Phase 6 Task 24, docs/water-tours.md): waterways + flow + gorge test; placement (`site.nearWaterway`) judges the NOMINAL flow so a base is never refused for a dry August.
+  const waterEnv = makeWaterEnv({ natural: () => terrainInfo.streams, rivers: () => rivers, flow, grid });
+  env.waterSite = (type, rect) => {
+    const def = TOUR_DEFS[type];
+    if (!def?.water) return { ok: true, reason: '', hint: '', info: '' };
+    const p = planWaterRoute(waterEnv, rect, def, size, true);
+    if (!p.ok) return { ok: false, reason: p.reason, hint: p.detail, info: '' };
+    const w = p.info;
+    return { ok: true, reason: '', hint: '', info: def.water.flow ? `Water in reach: ${w.good} brisk tiles${w.rapids ? `, ${w.rapids} rapids` : ''} over ${p.tiles.length} tiles` : `Stream in reach: ${w.steep} steep tiles, ${w.gorge} rock wall tiles over ${p.tiles.length} tiles` };
+  };
   // Tour attractions (Phase 6 Task 5, docs/tours.md): schedule / route / closures for bases with `spec.tour`. Inert while TOUR_DEFS is empty.
   const tours = new TourSystem({
     size,
+    water: waterEnv,
     allows: (kind, x, y, def) => {
       const i = y * size + x, k = networks.kind[i] ?? 0, l = networks.layers[i] ?? 0;
       switch (kind) {
@@ -595,7 +608,8 @@ export function createSim(opts: SimOptions) {
     priceScale: (type) => pricing.multiplierFor(type),
     nightRate: (type) => pricing.effective(`night:${type}`),
     willBuy: (gt, gid, type, price, salt) => {
-      const ratio = type.startsWith('night:') ? price / pricing.fairOf(type) : (price * pricing.multiplierFor(type)) / pricing.fairOf(type);
+      const tol = type.startsWith('night:') ? 1 : tours.tolerance(type); // water tours: a thrilling route makes the ticket look fairer (exactly 1 elsewhere)
+      const ratio = type.startsWith('night:') ? price / pricing.fairOf(type) : (price * pricing.multiplierFor(type)) / (tol === 1 ? pricing.fairOf(type) : pricing.fairOf(type) * tol);
       return elasticAccepts(gt, ratio, gid, salt, diff.priceSens);
     },
   });
@@ -1184,7 +1198,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    tours, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
+    tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,

@@ -49,6 +49,13 @@ const pisteMid = (s: Sim): Pt => { const p = pistePts(s); return p[Math.floor(p.
 const FAR: Pt = { x: 5, y: 5 };
 const setFamilies = (s: Sim, n: number): void => { const st = s.guestSim.store; for (let i = 0; i < n; i++) { st.alive[i] = 1; st.type[i] = GuestType.Family; } st.count = Math.max(st.count, n); };
 const guests = (s: Sim, n: number): void => { s.guestSim.store.count = n; };
+/** Water tours (Task 24): stub the waterway list + nominal flow of the sim with one river of the given flow classes (the rule only reads them). */
+const riverStub = (s: Sim, cls: number[]): void => {
+  const way = { id: 'n0', kind: 'natural', path: [], level: [], end: 'edge' };
+  (s.waterEnv as unknown as { ways: () => unknown[] }).ways = () => [way];
+  (s.waterEnv as unknown as { flow: () => unknown }).flow = () => ({ cls, rapidsTiles: cls.filter((c) => c === 2).length });
+};
+
 /** The starter resort has no Train Station: fake a served one (rail share, station load) and make Come by Train startable. */
 const trainStub = (s: Sim, share: number): void => { s.game.money = 50_000; s.marketing.railStatus = () => ({ share, load: 0, capacity: 150, available: true }); const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (id: string) => (id === 'train' ? null : real(id)); };
 const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.spawner, real = sp.status.bind(sp); sp.status = () => { const r = real(); return { ...r, arrivals: { ...r.arrivals!, road: { ...r.arrivals!.road, available: true, capacity: 100 } } }; }; sp.modeLoadOf = (m: number) => (m === 0 ? roadLoad : 0); };
@@ -315,6 +322,16 @@ const SCENARIOS: Scenario[] = [
     fixes: [
       { name: 'a quad base stands', apply: (s) => { buildAt(s, 'quadBase', lodge(s), { rmax: 14 }); } },
       { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
+      { name: 'winter comes', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 5; } },
+    ],
+  },
+  {
+    id: 'tour.water', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 40); s.game.date.day = seasonStartDay('summer') + 5; riverStub(s, [1, 1, 1, 1, 1, 2, 2, 1]); },
+    fixes: [
+      { name: 'a rafting base stands', apply: (s) => { s.buildings.add('raftingBase', 8, 8); } },
+      { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
+      { name: 'the river runs dry (calm water)', apply: (s) => { riverStub(s, [0, 0, 0, 0, 0, 0, 0, 0]); } },
       { name: 'winter comes', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 5; } },
     ],
   },

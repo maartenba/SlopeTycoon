@@ -26,6 +26,8 @@ export interface PlacementEnv {
   props?: PropStore;
   /** Career unlock gate (config/unlocks.ts). Absent = nothing is locked (tests, Sandbox). */
   gate?: UnlockGate;
+  /** Water tour bases (Phase 6 Task 24): judge `site.nearWaterway` for a candidate footprint (nominal flow: season / ice independent). Absent = the rule passes (older tests). */
+  waterSite?: (type: string, rect: { x: number; y: number; w: number; h: number }) => { ok: boolean; reason: string; hint: string; info: string };
 }
 
 /** Summary of the levelling a placement would do (cut & fill pad + apron / retaining wall). */
@@ -225,6 +227,11 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
     const n = countCliffs(grid, { x, y, w, h }, site.nearRock);
     if (n < site.nearRock.minTiles) bad('Needs a steep rock face nearby', `pick a spot at the foot of a cliff: at least ${site.nearRock.minTiles} steep bare-rock tiles within ${site.nearRock.radius} tiles (${n} here)`);
     else out.info.push(`Rock face in reach (${n} steep rock tiles)`);
+  }
+  if (site.nearWaterway && env.waterSite) {
+    const r = env.waterSite(type, { x, y, w, h });
+    if (!r.ok) bad(r.reason, r.hint);
+    else out.info.push(r.info);
   }
   out.trees = site.forest && site.forest.keepTrees !== false ? 0 : propsOnFootprint(env, x, y, w, h);
   if (out.trees > 0) out.info.push(`Trees will be cleared (${out.trees})`);

@@ -88,3 +88,7 @@ Dug rivers are bridged like streams by all four path kinds, plus the suspension 
 ## Not yet (later tasks)
 
 Rafting / canyoning and snowmaking from rivers. (Flow, rendering, ice and the habitat bonus are done, see above.)
+
+## Water tours (Task 24)
+
+Rafting and canyoning bases run on any waterway (natural stream or dug river) through `waterways()` and the flow table; see `docs/water-tours.md`. A river you dig for them should drop steeply (a spring on a hillside) or start at a lake (outlet Q 2) to reach brisk flow; late-summer low water (x0.7) can close a rafting base for a month.

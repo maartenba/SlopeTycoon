@@ -18,6 +18,7 @@ import * as W from './buildings/ranger';
 import * as G from './buildings/energy';
 import * as Q from './buildings/tours';
 import { crag } from './buildings/climbing';
+import { raftingBase, canyoningBase } from './buildings/waterTours';
 import { TURBINE_HUB } from './buildings/energy';
 import { campground, campfireGlowGeometry } from './campground';
 import { pettingZoo } from './pettingZoo';
@@ -33,7 +34,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   baseLodge: e(S.baseLodge), lodge: e(S.lodge), cafe: e(S.cafe), apresBar: e(S.apresBar), mountainHut: e(M.mountainHut), shop: e(S.shop), rental: e(S.rental),
   chalet: e(S.chalet), apartment: e(S.apartment), skiSchoolHQ: e(S.skiSchoolHQ),
   magicCarpet: e(K.magicCarpet, false), kidsGround: e(K.kidsGround, false), playground: e(K.playground, false),
-  patrolHub: e(K.patrolHub), rangerStation: e(W.rangerStation), firstAid: e(K.firstAid), warningSign: e(K.warningSign, false), ticketOffice: e(K.ticketOffice), toilets: e(K.toilets, false), quadBase: e(Q.quadBase, false), crag: e(crag, false),
+  patrolHub: e(K.patrolHub), rangerStation: e(W.rangerStation), firstAid: e(K.firstAid), warningSign: e(K.warningSign, false), ticketOffice: e(K.ticketOffice), toilets: e(K.toilets, false), quadBase: e(Q.quadBase, false), crag: e(crag, false), raftingBase: e(raftingBase, false), canyoningBase: e(canyoningBase, false),
   helipad: e(O.helipad), groomerGarage: e(O.groomerGarage), liftWorkshop: e(O.liftWorkshop), snowcatOutpost: e(O.snowcatOutpost), reservoir: e(O.reservoir),
   snowCannon: e(O.snowCannon, false), shuttleDepot: e(O.shuttleDepot),
   boatRental: e(R.boatRental, false), beach: e(R.beach, false), iceRink: e(R.iceRink), heatedTerrace: e(R.heatedTerrace),

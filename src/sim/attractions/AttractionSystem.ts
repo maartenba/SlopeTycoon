@@ -163,7 +163,8 @@ export class AttractionSystem implements GuestAttractionPort {
       const grubby = effects.spec.kind === 'toilet' && this.usesToday(effects) > TOILET_USES_PER_DAY; // overrun block: only half relief, no goodwill
       if (e.urgeTo !== undefined) s.urge[slot] = Math.min(s.urge[slot]!, grubby ? GRUBBY_URGE : e.urgeTo);
       if (e.fatigue) s.fatigue[slot] = Math.min(1, Math.max(0, s.fatigue[slot]! + e.fatigue));
-      if (e.happiness && !grubby) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + e.happiness));
+      const hap = (e.happiness ?? 0) + (effects.spec.tour ? this.d.tours?.thrillBonus(effects) ?? 0 : 0); // water tours: rapids raise the happiness (exactly +0 elsewhere)
+      if (hap && !grubby) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + hap));
       if (effects.spec.amenity === 'pool') s.happiness[slot] = Math.min(1, s.happiness[slot]! + (effects.spec.poolHappiness ?? 0.06));
       if (effects.spec.grantsGear) this.rented.add(id);
       if (effects.spec.angling) this.fishTrip(slot, id, effects);

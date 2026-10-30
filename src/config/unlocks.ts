@@ -24,6 +24,9 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'tackleHut', level: 2 },
   // Level 2: the climbing crag (Phase 6 Task 23; needs a rock face, an optional adventure extra: no goal or Advisor rule needs it).
   { kind: 'building', id: 'crag', level: 2 },
+  // Level 3: the water tours (Phase 6 Task 24; optional summer adventure extras that need a river / steep stream: no goal or Advisor rule needs them).
+  { kind: 'building', id: 'raftingBase', level: 3 },
+  { kind: 'building', id: 'canyoningBase', level: 3 },
   // Level 2: digging ponds (the rest of the Landscape drawer is always available).
   { kind: 'landscape', id: 'pond', level: 2 },
   // Level 2: digging rivers + placing springs (Phase 6, like ponds; no goal or Advisor rule needs a river).

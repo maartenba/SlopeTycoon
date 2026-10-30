@@ -37,6 +37,11 @@ export interface SiteRule {
    * within `radius` tiles of the footprint. Refused with 'Needs a steep rock face nearby'.
    */
   nearRock?: { minTiles: number; radius: number; minSpread: number };
+  /**
+   * Water tour base (Rafting / Canyoning, Phase 6 Task 24): the tour def's water requirements (config/tours.ts `water`) must hold for a route from this footprint
+   * (a put-in within `putIn` tiles, enough brisk flow / steep drop, a gorge) on the NOMINAL flow of the rivers and streams. Refused with the def's `need` message.
+   */
+  nearWaterway?: true;
 }
 
 /** Chimney top in building-local mesh coordinates: x/z from the footprint centre, y above ground (before rotation). Drives winter wood-fire smoke. */
@@ -199,5 +204,9 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('treehouse', 'Treehouse', 'recreation', 2, 2, 2500, 4, { access: 'trail', altAccess: ['path'], pisteRule: 'forbid', site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'never', allowRock: false, forest: { minTrees: FOREST_SITE.minTrees, radius: FOREST_SITE.radius, keepTrees: true } } }, { viewpoint: { weight: 0.8 }, placeTip: 'Place the treehouse in the forest: it needs at least 6 trees within 3 tiles' }),
   // Climbing Crag (Phase 6 Task 23, docs/climbing.md): the base hut of a natural rock face. Needs 3+ steep bare-rock tiles within 3 tiles (SiteRule.nearRock), a trail or footpath to it; summer only.
   b('crag', 'Climbing Crag', 'recreation', 2, 2, 4500, 14, { access: 'trail', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional', nearRock: { minTiles: 3, radius: 3, minSpread: 2 } }, placeTip: 'Place the crag hut at the foot of a rock face, beside a trail or footpath' }, { needs: ['snowFree'], staff: 1, capacity: 8 }),
+  // Rafting Base (Phase 6 Task 24, docs/water-tours.md): boathouse + raft rack at a river put-in. Needs a river or stream with brisk flow within 3 tiles (SiteRule.nearWaterway), a road or footpath; the rafts run downstream (config/tours.ts).
+  b('raftingBase', 'Rafting Base', 'recreation', 3, 2, 5500, 22, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional', nearWaterway: true }, placeTip: 'Place the rafting base beside a road or footpath, within 3 tiles of a river or stream with brisk flow' }, { needs: ['snowFree'], staff: 2, capacity: 8 }),
+  // Canyoning Base (Phase 6 Task 24): guided descents of a steep rocky stream. Needs a steep stream with rock walls within 3 tiles, a trail or footpath.
+  b('canyoningBase', 'Canyoning Base', 'recreation', 2, 2, 4800, 18, { access: 'trail', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'optional', nearWaterway: true }, placeTip: 'Place the canyoning base beside a trail or footpath, within 3 tiles of a steep stream through rock' }, { needs: ['snowFree'], staff: 2, capacity: 6 }),
   b('ticketOffice', 'Ticket Office', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1 }),
 ].map((d) => [d.id, d]));

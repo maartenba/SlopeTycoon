@@ -678,7 +678,7 @@ const updateRiverView = (dt: number, cam: THREE.Camera, viewHeight: number): voi
   if (riverSeen !== sim.rivers.version) { riverSeen = sim.rivers.version; flowSeen = -1; water.setRivers(sim.rivers.rivers.map((r) => ({ id: `r${r.id}`, path: r.path }))); }
   const tbl = sim.flow.all();
   if (flowSeen !== sim.flow.version) { flowSeen = sim.flow.version; water.applyFlow((id) => tbl.get(id)); }
-  rapidsSplash.update(dt, cam, viewHeight, water.rapids, lighting.nightUniform.value);
+  rapidsSplash.update(dt, cam, viewHeight, water.rapids, lighting.nightUniform.value, tourVehicles.splashSpots);
 };
 let landscapeWalkItems: readonly import('@/render/VillageDecor').DecorItem[] = [], landscapeWalkKey: readonly unknown[] = [];
 /** Walk mode collides with the village decor AND the player's decor (stable array identity while neither changes: the walk world caches on it). */

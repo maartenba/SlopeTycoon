@@ -22,6 +22,13 @@ const sicy = (sim: Sim): void => { const q = sim.ops.quality as unknown as { sta
 /** Marks one rail tile of the starter resort as a footpath level crossing (the rule only reads the wait stats and the tile kind). */
 const fakeCrossing = (sim: Sim): number => { const n = sim.networks; const t = n.kind.findIndex((k, i) => k === 3 && !n.cross[i]); n.cross[t] = 1; n.crossCount++; return t; };
 const guests = (sim: Sim, n: number): void => { sim.guestSim.store.count = n; };
+/** Water tours (Task 24): stub the waterway list + nominal flow of the sim with one river of the given flow classes (the rule only reads them). */
+const riverStub = (s: Sim, cls: number[]): void => {
+  const way = { id: 'n0', kind: 'natural', path: [], level: [], end: 'edge' };
+  (s.waterEnv as unknown as { ways: () => unknown[] }).ways = () => [way];
+  (s.waterEnv as unknown as { flow: () => unknown }).flow = () => ({ cls, rapidsTiles: cls.filter((c) => c === 2).length });
+};
+
 
 /** The starter resort has no Train Station: fake a served one (rail share, station load) and make Come by Train startable. */
 const trainStub = (s: Sim, share: number): void => { s.game.money = 50_000; s.marketing.railStatus = () => ({ share, load: 0, capacity: 150, available: true }); const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (id: string) => (id === 'train' ? null : real(id)); };
@@ -63,6 +70,7 @@ const CASES: Case[] = [
   { id: 'fish.overfished', trigger: (s) => { s.fishStock.set('l0', 0.1); s.fishStock.set('l1', 0.9); s.buildings.add('tackleHut', 8, 8).building.active = true; }, calm: (s) => { s.fishStock.reset(); } },
   { id: 'summer.camp', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { guests(s, 20); /* winter */ } },
   { id: 'tour.quad', trigger: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 10); setDay(s, seasonStartDay('summer') + 5); } },
+  { id: 'tour.water', trigger: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); riverStub(s, [1, 1, 1, 1, 1, 2, 2, 1]); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 40); setDay(s, seasonStartDay('summer') + 5); riverStub(s, [0, 0, 0, 0, 0, 0, 0, 0]); } },
   { id: 'cash.summerBuffer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 800; }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.game.money = 5_000_000; } },
   { id: 'snow.gaps', trigger: (s) => removeTypes(s, 'snowCannon'), calm: (s) => { s.coverage.map('snowmaking').fill(1); } },
   { id: 'snow.mode', trigger: (s) => { s.weather.current.snowline = 1e6; }, calm: (s) => { s.weather.current.snowline = 1e6; s.ops.snowmaking.setMode('auto'); } },

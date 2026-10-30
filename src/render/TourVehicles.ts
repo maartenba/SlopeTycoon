@@ -10,6 +10,7 @@ const LOOK: Record<TourVehicleKind, { body: number; trim: number; len: number; w
   scooter: { body: 0xc8452b, trim: 0x222222, len: 0.46, wid: 0.22, high: 0.2 },
   quad: { body: 0x4a6b3a, trim: 0x222222, len: 0.42, wid: 0.3, high: 0.22 },
   raft: { body: 0xe0a030, trim: 0x2a5d86, len: 0.6, wid: 0.34, high: 0.1 },
+  canyoner: { body: 0xe8782a, trim: 0x222222, len: 0.12, wid: 0.12, high: 0.3 },
 };
 
 const box = (w: number, h: number, d: number, y: number, color: number): THREE.BufferGeometry => {
@@ -48,6 +49,41 @@ export function quadGeometry(body = 0x4a6b3a): THREE.BufferGeometry {
   ])!;
 }
 
+/**
+ * An inflatable raft with four paddlers (forward = +x): four orange tubes round a floor, a bow / stern thwart, four helmeted paddlers in life jackets with paddles
+ * lifted at different angles. ~320 triangles; one instance per raft (docs/water-tours.md).
+ */
+export function raftGeometry(body = 0xe0a030): THREE.BufferGeometry {
+  const L = 0.62, W = 0.36, t = 0.075;
+  const parts: THREE.BufferGeometry[] = [
+    box(L - 0.08, 0.02, W - 0.08, 0.0, 0x2a5d86), // floor
+    box(L, t, t, 0.0, body).translate(0, 0, W / 2 - t / 2), box(L, t, t, 0.0, body).translate(0, 0, -(W / 2 - t / 2)),
+    box(t, t, W, 0.0, body).translate(L / 2 - t / 2, 0, 0), box(t, t, W, 0.0, body).translate(-(L / 2 - t / 2), 0, 0),
+    box(0.04, 0.03, W - 0.1, 0.07, 0x7a4a24), // thwart
+  ];
+  const seats: Array<[number, number, number]> = [[0.13, 0.1, 0.5], [0.13, -0.1, -0.4], [-0.1, 0.1, -0.5], [-0.1, -0.1, 0.4]];
+  const jackets = [0xd9453a, 0x4a90d9, 0xf2c14e, 0x5cb85c];
+  seats.forEach(([x, z, tilt], i) => {
+    parts.push(colored(new THREE.BoxGeometry(0.07, 0.1, 0.09), jackets[i]!, x, 0.1, z));
+    parts.push(colored(new THREE.SphereGeometry(0.038, 6, 5), i % 2 ? 0xf2c14e : 0xfafafa, x, 0.2, z));
+    const sign = z > 0 ? 1 : -1;
+    parts.push(colored(new THREE.BoxGeometry(0.012, 0.012, 0.3), 0x7a4a24, x, 0.17, z + sign * 0.14).rotateY(0).applyMatrix4(new THREE.Matrix4().makeRotationX(tilt * sign * 0.35)));
+    parts.push(colored(new THREE.BoxGeometry(0.06, 0.012, 0.07), 0xf2c14e, x, 0.17, z + sign * 0.27));
+  });
+  return mergeGeometries(parts)!;
+}
+
+/** A canyoner on a rope (forward = +x, downhill): body in a wetsuit, helmet, harness, a rope trailing back up the slope. ~120 triangles. */
+export function canyonerGeometry(body = 0xe8782a): THREE.BufferGeometry {
+  return mergeGeometries([
+    colored(new THREE.BoxGeometry(0.06, 0.12, 0.08), body, 0, 0.14, 0), // torso
+    colored(new THREE.BoxGeometry(0.05, 0.1, 0.05), 0x222222, 0.02, 0.06, 0.02), // legs
+    colored(new THREE.SphereGeometry(0.04, 6, 5), 0xf2c14e, 0.01, 0.25, 0), // helmet
+    colored(new THREE.BoxGeometry(0.04, 0.03, 0.1), 0xd9453a, 0, 0.12, 0), // harness
+    colored(new THREE.BoxGeometry(0.5, 0.012, 0.012), 0xd0d4da, -0.27, 0.2, 0), // rope trailing up the slope
+  ])!;
+}
+
 /** Dust puffs trailing a moving quad (cosmetic; positions come from the carrier's heading only, so nothing animates on its own). */
 export const DUST = { perCarrier: 3, step: 0.2, color: 0xcdb48c, opacity: 0.24 } as const;
 
@@ -63,6 +99,8 @@ export class TourVehicles {
   readonly dust: THREE.InstancedMesh;
   private tmp = new THREE.Object3D();
   private buf: Carrier[] = [];
+  /** Rafts currently on rapids tiles (world x, y, z): the splash emitter takes these first (RapidsSplash cap unchanged). */
+  readonly splashSpots: Array<{ x: number; y: number; z: number }> = [];
 
   constructor(private ground: (x: number, z: number) => number, private source: (tick: number, out: Carrier[], max: number) => Carrier[]) {
     this.group.name = 'tourVehicles';
@@ -73,7 +111,7 @@ export class TourVehicles {
     for (const kind of Object.keys(LOOK) as TourVehicleKind[]) {
       const l = LOOK[kind];
       const geo = mergeGeometries([box(l.len, l.high * 0.55, l.wid, 0.04, l.body), box(l.len * 0.5, l.high * 0.45, l.wid * 0.8, 0.04 + l.high * 0.55, l.trim)])!;
-      const mesh = new THREE.InstancedMesh(kind === 'quad' ? quadGeometry(l.body) : geo, new THREE.MeshLambertMaterial({ vertexColors: true }), TOURS.maxCarriers);
+      const mesh = new THREE.InstancedMesh(kind === 'quad' ? quadGeometry(l.body) : kind === 'raft' ? raftGeometry(l.body) : kind === 'canyoner' ? canyonerGeometry(l.body) : geo, new THREE.MeshLambertMaterial({ vertexColors: true }), TOURS.maxCarriers);
       mesh.count = 0; mesh.frustumCulled = false; mesh.name = `tour:${kind}`;
       this.meshes.set(kind, mesh); this.group.add(mesh);
     }
@@ -85,12 +123,18 @@ export class TourVehicles {
   update(tick: number): void {
     const list = this.source(tick, this.buf, TOURS.maxCarriers);
     const used = new Map<TourVehicleKind, number>();
+    this.splashSpots.length = 0;
+    this.tmp.rotation.order = 'YZX';
     for (const c of list) {
       const m = this.meshes.get(c.kind)!, i = used.get(c.kind) ?? 0;
       if (i >= TOURS.maxCarriers) continue;
       used.set(c.kind, i + 1);
-      this.tmp.position.set(c.x, this.ground(c.x, c.y), c.y);
-      this.tmp.rotation.set(0, -c.heading, 0);
+      const gy = this.ground(c.x, c.y), lift = c.kind === 'raft' ? 0.05 : 0;
+      this.tmp.position.set(c.x, gy + lift, c.y);
+      let pitch = 0;
+      if (c.kind === 'canyoner') { const dx = Math.cos(c.heading) * 0.25, dz = Math.sin(c.heading) * 0.25; pitch = Math.atan2(this.ground(c.x + dx, c.y + dz) - this.ground(c.x - dx, c.y - dz), 0.5); }
+      this.tmp.rotation.set(0, -c.heading, pitch);
+      if (c.splash && this.splashSpots.length < 8) this.splashSpots.push({ x: c.x, y: gy + 0.1, z: c.y });
       this.tmp.updateMatrix();
       m.setMatrixAt(i, this.tmp.matrix);
     }

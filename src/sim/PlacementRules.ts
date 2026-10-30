@@ -1,4 +1,5 @@
 import { BUILDINGS, type AccessKind, type AutoFlattenPolicy, type BuildingDef, type PisteRule, type SiteRule } from '../config/buildings';
+import { TOUR_DEFS } from '../config/tours';
 import type { Grid } from '../world/Grid';
 
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -186,6 +187,7 @@ export function describeRules(typeId: string): string[] {
   else out.push('Cannot be on water or streams');
   if (d.streamAdjacent) out.push('Must stand on a stream bank (next to a stream tile)');
   if (s.nearRock) out.push(`Needs a steep rock face: ${s.nearRock.minTiles}+ cliff tiles within ${s.nearRock.radius} tiles`);
+  if (s.nearWaterway) out.push(TOUR_DEFS[d.id]?.water?.need ?? 'Needs a river or stream nearby');
   if (!s.allowRock) out.push('Not on bare rock');
   if (s.minAltitude !== undefined) out.push(d.id === 'windTurbine' ? 'Exposed high ground only (upper third of the terrain)' : `Altitude at least ${s.minAltitude}`);
   if (s.maxAltitude !== undefined) out.push(`Altitude at most ${s.maxAltitude}`);

@@ -230,6 +230,7 @@ export class RapidsSplash {
   private time = 0; private ring = 0; private acc = 0;
   /** Spots picked from the rapids tiles (evenly spaced, deterministic); refreshed when the list changes. */
   private spots: Array<{ x: number; y: number; z: number }> = [];
+  private base: Array<{ x: number; y: number; z: number }> = [];
   private src: ReadonlyArray<{ x: number; y: number; z: number }> | null = null;
 
   constructor() {
@@ -260,8 +261,10 @@ export class RapidsSplash {
   }
 
   /** `rapids`: world positions of rapids tiles (stable array identity while unchanged). */
-  update(dt: number, _camera: THREE.Camera, viewHeight: number, rapids: ReadonlyArray<{ x: number; y: number; z: number }>, nightUniformValue = 0): void {
-    if (rapids !== this.src) { this.src = rapids; this.spots = RapidsSplash.pick(rapids, SPLASH.spots); }
+  update(dt: number, _camera: THREE.Camera, viewHeight: number, rapids: ReadonlyArray<{ x: number; y: number; z: number }>, nightUniformValue = 0, extra: ReadonlyArray<{ x: number; y: number; z: number }> = []): void {
+    if (rapids !== this.src) { this.src = rapids; this.base = RapidsSplash.pick(rapids, SPLASH.spots); }
+    // rafts on rapids (water tours) splash first; the total number of spots never exceeds SPLASH.spots (the puff cap is unchanged)
+    this.spots = extra.length === 0 ? this.base : [...extra.slice(0, SPLASH.spots), ...this.base].slice(0, SPLASH.spots);
     const on = this.spots.length > 0 && viewHeight < SPLASH.lodFar;
     this.mesh.visible = on;
     if (!on) return;

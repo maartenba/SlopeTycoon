@@ -24,6 +24,7 @@ import { ENERGY } from '../../config/energy';
 import { CROSSING } from '../../config/crossings';
 import { CAMP } from '../attractions/Campground';
 import { FISH } from '../../config/balance';
+import { TOUR_DEFS } from '../../config/tours';
 import { TEXT, FRIENDLY } from './strings';
 
 export interface Pt { x: number; y: number }
@@ -368,6 +369,18 @@ export const RULES: readonly Rule[] = [
     for (let i = 0; i < n * n && roads < 8; i++) if (k[i] === 2) roads++;
     if (roads < 8) return null; // the ride needs a road or footpath to run on
     return { id: 'tour.quad', severity: 'info', ...TEXT.quadTours(), panel: { drawer: 'buildings', item: 'quadBase' } }; // a drawer hint only (like eco.centre): the item is career-gated, the player picks the spot
+  }),
+  // Water tours (docs/water-tours.md): a river that brisk-flows (or rapids) and is not yet used by a Rafting Base. Optional; a drawer hint (the item is career-gated, the player picks the spot).
+  rule('tour.water', 1, (c) => {
+    const sim = c.sim;
+    if (seasonProgress(sim.game.date).season !== 'summer' || sim.guestSim.store.count < 30 || !has(sim, 'baseLodge') || sim.progression.locked('building', 'raftingBase')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'raftingBase')) return null;
+    const need = TOUR_DEFS.raftingBase!.water!.flow!;
+    for (const w of sim.waterEnv.ways()) {
+      const f = sim.waterEnv.flow(w.id, true);
+      if (f && f.cls.filter((k) => k >= need.minClass).length >= need.minTiles && f.rapidsTiles > 0) return { id: 'tour.water', severity: 'info', ...TEXT.waterTours(), panel: { drawer: 'buildings', item: 'raftingBase' } };
+    }
+    return null;
   }),
   // Campground (docs/campground.md): a quiet summer gets a campground suggestion; a camp without toilets within reach gets a toilets suggestion
   rule('summer.camp', 1, (c) => {

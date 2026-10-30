@@ -35,7 +35,7 @@ export function buildingsInTab(tab: BuildingTab): BuildingDef[] {
 }
 
 export const BUILDING_ICONS: Record<string, string> = {
-  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', crag: '🧗', parking: '🅿️',
+  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', crag: '🧗', raftingBase: '🛶', canyoningBase: '🪢', parking: '🅿️',
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
@@ -71,6 +71,8 @@ const DESCRIPTIONS: Record<string, string> = {
   stuntPark: 'Jumps and rails on snow.',
   adventurePark: 'Summer ropes course and zip-lines.',
   crag: 'Summer rock climbing at the foot of a natural rock face (needs steep bare rock within 3 tiles). Guided climbs; a rare twisted ankle brings out the patrol.',
+  raftingBase: 'Summer guided raft runs downstream on a river or stream with brisk flow (3 tiles from the base). Rapids thrill the guests; the water runs low in late summer and freezes in winter. Quiet: neutral for sustainability.',
+  canyoningBase: 'Summer guided descents of a steep stream through rock: abseils and water slides. Needs a steep drop and rock walls within 3 tiles of the base.',
   quadBase: 'Summer guided quad rides along the roads and footpaths next to it. Loud: scares wildlife and costs a little sustainability.',
   alpineFarm: 'Cows, sheep and goats graze the alpine pastures in summer; the farm shop attracts families; restaurants near farms earn more.',
   tackleHut: 'Anglers\' base: rents rods ($8), sells day tickets and bait. Fishes every lake, pond or river within 20 tiles; set Catch & release or Keep. Place it within 3 tiles of water beside a path.',

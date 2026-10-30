@@ -1,6 +1,6 @@
 # Tour attractions (Phase 6 Task 5)
 
-A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, snowscooter, quad, and later canyoning and rafting. The system is generic and config driven; the catalogue (`TOUR_DEFS` in `src/config/tours.ts`) grows with the content tasks. First row: the Quad Base (`docs/quads.md`). Without a tour base the system is inert.
+A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, snowscooter, quad, and later canyoning and rafting. The system is generic and config driven; the catalogue (`TOUR_DEFS` in `src/config/tours.ts`) grows with the content tasks. Rows: the Quad Base (`docs/quads.md`), the Rafting and Canyoning Bases (`docs/water-tours.md`). Without a tour base the system is inert.
 
 ## Pieces
 
@@ -26,7 +26,7 @@ A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, 
 
 ## Route planner
 
-`planRoute` runs a breadth-first search over tiles that `allow` the def (`TourDeps.allows`, wired to Networks in `createSim`), starting from the tiles touching the base footprint, depth <= `maxLen`. The route is the shortest path to the farthest reachable tile (lowest index on ties), at least `minLen` tiles; vehicles go out and come back along it. Motorised tours never use piste tiles. It is re-planned only when `networks.version` changes. The `'water'` kind is a stub ("Needs a river with enough flow: dig one in Landscape"), filled in by Task 24.
+`planRoute` runs a breadth-first search over tiles that `allow` the def (`TourDeps.allows`, wired to Networks in `createSim`), starting from the tiles touching the base footprint, depth <= `maxLen`. The route is the shortest path to the farthest reachable tile (lowest index on ties), at least `minLen` tiles; vehicles go out and come back along it. Motorised tours never use piste tiles. It is re-planned only when `networks.version` changes. The `'water'` kind follows a waterway downstream instead (`planWaterRoute`, `docs/water-tours.md`: Rafting Base, Canyoning Base); the stub text remains only for a water def without a `water` block.
 
 ## Closures
 
@@ -50,4 +50,4 @@ Save module `tours` v1: per-tour counters, `lastKey`, day stats. **It serialises
 
 ## Not done here
 
-No route tool (the planner derives the route from the attached network, so the player just builds paths / roads / trails next to the base), no water validator (Task 24).
+No route tool (the planner derives the route from the attached network, so the player just builds paths / roads / trails next to the base; water tours follow the river).

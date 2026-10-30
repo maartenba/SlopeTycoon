@@ -43,6 +43,8 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   /** Free to use (docs/comfort.md): the entry exists so the attraction runtime has a ledger category; price 0 / max 0 = no price slider. */
   quadBase: { price: 40, max: 60, billing: 'perUse', category: 'recreation' },
   crag: { price: 30, max: 60, billing: 'perUse', category: 'recreation' },
+  raftingBase: { price: 30, max: 60, billing: 'perUse', category: 'recreation' },
+  canyoningBase: { price: 35, max: 60, billing: 'perUse', category: 'recreation' },
   toilets: { price: 0, max: 0, billing: 'perUse', category: 'other' },
   hiking: { price: 0, max: 10, billing: 'perUse', category: 'recreation' },
 };

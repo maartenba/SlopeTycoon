@@ -1,5 +1,6 @@
 import { TOUR_DEFS, TOURS, tourDefOf, type TourDef, type TourRouteKind } from '../../config/tours';
 import { seasonOf } from '../Clock';
+import { planWaterRoute, thrillOf, type WaterEnv, type WaterInfo } from './WaterTour';
 import type { WorldBuilding } from '../guests/GuestWorld';
 import type { Attraction, AttractionSpec } from './Attraction';
 
@@ -28,13 +29,15 @@ export interface TourDeps {
   weather(): { wind: number };
   /** Water routes: is the water of this base frozen? */
   frozen?(b: WorldBuilding): boolean;
+  /** Water routes (Task 24): waterways + flow + gorge test; `version()` moves when the rivers, the month or the ice change (the plan is re-made then). */
+  water?: WaterEnv & { version(): number };
   /** Wildlife hook: scare animals within `r` tiles of (x, y). */
   disturb?(x: number, y: number, r: number): void;
 }
 
 export interface TourCtx { tick: number; day: number; absDay: number; hour: number }
 
-export type RoutePlan = { ok: true; tiles: number[] } | { ok: false; reason: string };
+export type RoutePlan = { ok: true; tiles: number[]; water?: WaterInfo } | { ok: false; reason: string };
 
 /**
  * Pure route planner: breadth-first over `allow`ed tiles from the tiles touching the base footprint, depth <= maxLen; the route is the shortest path to
@@ -79,6 +82,8 @@ interface TourState {
   ver: number; plan: RoutePlan;
   /** Cached dynamic closure (wind / instability / frozen) and when it was computed. */
   dynTick: number; dyn: string | null;
+  /** Cached frozen verdict of a water tour (checked every TOURS.checkEvery ticks). */
+  frozTick: number; froz: boolean;
   /** Last schedule slot (absolute) processed; today's counters; yesterday's departures (sustainability); lifetime totals. */
   lastKey: number;
   day: number; dep: number; riders: number; revenue: number; prevDep: number;
@@ -97,9 +102,11 @@ export interface TourInfo {
   /** Next scheduled departure: hour (0..24) and whether it is tomorrow; null = none (closed for the season). */
   next: { hour: number; tomorrow: boolean } | null;
   totalDepartures: number; totalRiders: number; totalRevenue: number;
+  /** Water tours: what the route offers (flow class, rapids / steep / gorge tiles, thrill 0..1). Absent on other tours. */
+  water?: { flow: 'calm' | 'brisk' | 'rapids'; rapids: number; steep: number; gorge: number; thrill: number; mishaps: number };
 }
 
-export interface Carrier { kind: TourDef['vehicle']; x: number; y: number; heading: number; seats: number; /** Route length (tiles) behind the vehicle in its direction of travel (dust trails stop at the route ends). */ back: number }
+export interface Carrier { kind: TourDef['vehicle']; x: number; y: number; heading: number; seats: number; /** Water tours: the carrier is on a rapids tile (splash). */ splash?: boolean; /** Route length (tiles) behind the vehicle in its direction of travel (dust trails stop at the route ends). */ back: number }
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
@@ -116,7 +123,7 @@ export class TourSystem {
   setContext(c: TourCtx): void { this.ctx = c; }
 
   private fresh(id: number, type: string, def: TourDef): TourState {
-    return { id, type, def, ver: -1, plan: { ok: false, reason: 'No route yet' }, dynTick: -1e9, dyn: null, lastKey: -1, day: this.ctx.absDay, dep: 0, riders: 0, revenue: 0, prevDep: 0, totalDep: 0, totalRiders: 0, totalRevenue: 0, rides: [] };
+    return { id, type, def, ver: -1, plan: { ok: false, reason: 'No route yet' }, dynTick: -1e9, dyn: null, frozTick: -1e9, froz: false, lastKey: -1, day: this.ctx.absDay, dep: 0, riders: 0, revenue: 0, prevDep: 0, totalDep: 0, totalRiders: 0, totalRevenue: 0, rides: [] };
   }
   private state(a: Attraction): TourState | null {
     const def = tourDefOf(a.b.type);
@@ -143,11 +150,24 @@ export class TourSystem {
   }
 
   private ensureRoute(s: TourState, b: WorldBuilding): void {
-    const v = this.d.version();
+    const water = s.def.water && s.def.routes.length === 1 && s.def.routes[0] === 'water';
+    const v = water ? this.d.water?.version() ?? 0 : this.d.version();
     if (s.ver === v) return;
     s.ver = v;
+    if (water) { s.plan = this.waterPlan(s, b); return; }
     if (s.def.routes.length === 1 && s.def.routes[0] === 'water') { s.plan = { ok: false, reason: TOURS.waterStub }; return; }
     s.plan = planRoute(this.allow(s), b, this.d.size, s.def.minLen, s.def.maxLen);
+  }
+
+  /** Water route: the planner's slice, or the reason (with a 'runs low' note when the nominal flow would have worked). */
+  private waterPlan(s: TourState, b: WorldBuilding): RoutePlan {
+    const env = this.d.water;
+    if (!env) return { ok: false, reason: TOURS.waterStub };
+    const p = planWaterRoute(env, b, s.def, this.d.size);
+    if (p.ok) return { ok: true, tiles: p.tiles, water: p.info };
+    const nom = planWaterRoute(env, b, s.def, this.d.size, true);
+    if (nom.ok) return { ok: false, reason: `the water runs low right now: ${p.detail}` };
+    return { ok: false, reason: `${p.reason} (${p.detail})` };
   }
 
   /** Tile indices of the planned route (one way), [] when there is none. */
@@ -161,6 +181,10 @@ export class TourSystem {
     this.prune(s);
     const def = s.def;
     if (!def.seasons.includes(seasonOf({ day: this.ctx.day }))) return 'Closed for the season';
+    if (def.routes.includes('water') && this.d.frozen) {
+      if (this.ctx.tick - s.frozTick >= TOURS.checkEvery || this.ctx.tick < s.frozTick) { s.frozTick = this.ctx.tick; s.froz = this.d.frozen(a.b); }
+      if (s.froz) return 'Closed: the river is frozen';
+    }
     this.ensureRoute(s, a.b);
     if (!s.plan.ok) return `Closed: ${s.plan.reason}`;
     if (this.ctx.tick - s.dynTick >= TOURS.checkEvery || this.ctx.tick < s.dynTick) { s.dynTick = this.ctx.tick; s.dyn = this.dynamic(s, a.b); }
@@ -237,7 +261,21 @@ export class TourSystem {
       closed: this.closed(a), routeLen: s.plan.ok ? s.plan.tiles.length : 0,
       departuresToday: s.dep, ridersToday: s.riders, revenueToday: s.revenue, riding: s.rides.reduce((n, r) => n + r.riders, 0), next,
       totalDepartures: s.totalDep, totalRiders: s.totalRiders, totalRevenue: s.totalRevenue,
+      ...(s.plan.ok && s.plan.water ? { water: { flow: (['calm', 'brisk', 'rapids'] as const)[s.plan.water.maxClass]!, rapids: s.plan.water.rapids, steep: s.plan.water.steep, gorge: s.plan.water.gorge, thrill: Math.round(thrillOf(def, s.plan.water) * 100) / 100, mishaps: a.stats.mishaps ?? 0 } } : {}),
     };
+  }
+
+  /** Water tours: extra happiness a rider brings home from a thrilling run (rapids tiles on the route); exactly 0 for every other tour. */
+  thrillBonus(a: Attraction): number {
+    const s = this.st.get(a.id);
+    if (!s || !s.plan.ok || !s.plan.water || !s.def.water?.thrill) return 0;
+    return Math.round(s.def.water.thrill.happiness * thrillOf(s.def, s.plan.water) * 1000) / 1000;
+  }
+  /** Price tolerance of a building type: the share by which guests find the ticket fairer on a thrilling route (1 = no change, also without any water tour). */
+  tolerance(type: string): number {
+    let t = 1;
+    for (const s of this.st.values()) if (s.type === type && s.plan.ok && s.plan.water && s.def.water?.thrill) t = Math.max(t, 1 + s.def.water.thrill.tolerance * thrillOf(s.def, s.plan.water));
+    return t;
   }
 
   /**
@@ -270,6 +308,17 @@ export class TourSystem {
         const per = Math.max(1, Math.round(r.riders / Math.max(1, s.def.vehicles)));
         for (let v = 0; v < s.def.vehicles; v++) {
           if (out.length >= max) return out;
+          if (s.def.oneWay) { // downstream once; on a water route the clock makes a raft faster on fast water (time per tile ~ 1 / speed)
+            const p = Math.min(1, Math.max(0, (tick - r.start) / (r.end - r.start) - v * 0.06)), w = s.plan.water;
+            let f = p * (L - 1);
+            if (w && w.clock.length === L) { let j = 0; while (j < L - 2 && w.clock[j + 1]! < p) j++; const c0 = w.clock[j]!, c1 = w.clock[j + 1]!; f = j + (c1 > c0 ? (p - c0) / (c1 - c0) : 0); }
+            const i0 = Math.min(L - 2, Math.floor(f)), k = Math.min(1, f - i0);
+            const ax = (t[i0]! % n) + 0.5, ay = ((t[i0]! / n) | 0) + 0.5, bx = (t[i0 + 1]! % n) + 0.5, by = ((t[i0 + 1]! / n) | 0) + 0.5;
+            const c: Carrier = { kind: s.def.vehicle, x: ax + (bx - ax) * k, y: ay + (by - ay) * k, heading: Math.atan2(by - ay, bx - ax), seats: per, back: f };
+            if (w && w.cls[k < 0.5 ? i0 : i0 + 1] === 2) c.splash = true;
+            out.push(c);
+            continue;
+          }
           const p = Math.min(1, Math.max(0, (tick - r.start) / (r.end - r.start) - v * 0.03));
           const u = p < 0.5 ? p * 2 : 2 - p * 2, f = u * (L - 1), i0 = Math.min(L - 2, Math.floor(f)), k = f - i0;
           const ax = (t[i0]! % n) + 0.5, ay = ((t[i0]! / n) | 0) + 0.5, bx = (t[i0 + 1]! % n) + 0.5, by = ((t[i0 + 1]! / n) | 0) + 0.5;
@@ -306,7 +355,7 @@ export class TourSystem {
 
 /** Behaviour spec of a tour base for the attraction registry (price / staff / upkeep come from the building and price tables). */
 export function tourSpec(def: TourDef): AttractionSpec {
-  return { kind: 'tour', tour: def.id, serviceTicks: def.durationTicks, slots: def.seats, effects: { happiness: def.happiness }, appeal: def.appeal };
+  return { kind: 'tour', tour: def.id, serviceTicks: def.durationTicks, slots: def.seats, effects: { happiness: def.happiness }, appeal: def.appeal, ...(def.water?.mishap ? { mishap: def.water.mishap } : {}) };
 }
 
 /** Specs of every catalogue tour (empty until the content tasks add rows). */
