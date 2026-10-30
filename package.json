@@ -75,7 +75,8 @@
     "play:sanity": "vite-node scripts/play-sanity.ts",
     "phase6:sanity": "vite-node scripts/phase6-sanity.ts",
     "analytics:e2e": "vite-node scripts/analytics-e2e.ts",
-    "summer:sanity": "vite-node scripts/summer-sanity.ts"
+    "summer:sanity": "vite-node scripts/summer-sanity.ts",
+    "winter:sanity": "vite-node scripts/winter-sanity.ts"
   },
   "dependencies": {
     "three": "^0.186.1"
