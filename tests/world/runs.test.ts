@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { budget } from '../perfMode';
 import { buildRuns, type RunNetwork } from '../../src/world/Runs';
 
 /** ASCII map: '#' piste. alt = row index descending (top of map = high) unless altFn. */
@@ -154,6 +155,6 @@ describe('buildRuns property tests (random strokes)', () => {
     let best = Infinity;
     for (let k = 0; k < 5; k++) { const t = performance.now(); buildRuns(input); best = Math.min(best, performance.now() - t); }
     console.log('buildRuns 256 big network best ms', best.toFixed(2));
-    expect(best).toBeLessThan(40);
+    expect(best).toBeLessThan(budget(40));
   });
 });

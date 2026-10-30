@@ -1,3 +1,4 @@
+import { budget } from '../../perfMode';
 import { describe, expect, it } from 'vitest';
 import { GState, GuestStore, GuestType } from '../../../src/sim/guests/Guest';
 import { LiftQueues, type QueueCallbacks } from '../../../src/sim/guests/LiftQueue';
@@ -286,6 +287,6 @@ describe('N-station lifts: cost', () => {
       for (let t = 1; t <= 200; t++) { log.tick = t; q.update(t, cb); }
       return (performance.now() - t0) / 200;
     }));
-    expect(best).toBeLessThan(5);
+    expect(best).toBeLessThan(budget(5));
   });
 });

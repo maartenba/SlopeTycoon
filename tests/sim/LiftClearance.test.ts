@@ -1,3 +1,4 @@
+import { budget } from '../perfMode';
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { Grid } from '../../src/world/Grid';
@@ -281,7 +282,7 @@ describe('determinism, tree map and perf', () => {
     for (const r of routes) validateLift(env, 'chair4', stationAnchor(grid, r.bx, r.by), stationAnchor(grid, r.tx, r.ty), { skipFunds: true });
     const avg = (performance.now() - t0) / routes.length;
     console.info(`[perf] validateLift forest 256: ${avg.toFixed(2)} ms avg`);
-    expect(avg).toBeLessThan(6);
+    expect(avg).toBeLessThan(budget(6));
   });
 
   it('is unused-safe: rng helper stays deterministic', () => { expect(rng(3)()).toBe(rng(3)()); expect(KINDS.length).toBeGreaterThan(0); });

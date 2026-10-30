@@ -1,3 +1,4 @@
+import { budget } from '../../perfMode';
 import { describe, expect, it } from 'vitest';
 import { EventBus } from '../../../src/core/EventBus';
 import type { GameEvents } from '../../../src/core/events';
@@ -105,6 +106,6 @@ describe('StatsHistory', () => {
     for (let i = 0; i < n; i++) f.h.captureDay();
     const per = (performance.now() - t0) / n;
     console.info(`stats capture (fake sources): ${per.toFixed(4)} ms`);
-    expect(per, `${per.toFixed(4)} ms per capture`).toBeLessThan(0.2);
+    expect(per, `${per.toFixed(4)} ms per capture`).toBeLessThan(budget(0.2));
   });
 });

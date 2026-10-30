@@ -1,3 +1,4 @@
+import { budget } from '../../perfMode';
 /** Phase 6 Task 5: generic tour attraction system (docs/tours.md). Uses a TEST-ONLY dummy tour (no catalogue building yet). */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BUILDINGS, type BuildingDef } from '../../../src/config/buildings';
@@ -341,7 +342,7 @@ describe('TourSystem with synthetic deps (water / motorised / fauna)', () => {
       }
       best = Math.min(best, (performance.now() - t0) / 2000);
     }
-    expect(best).toBeLessThan(0.2);
+    expect(best).toBeLessThan(budget(0.2));
   });
 });
 
