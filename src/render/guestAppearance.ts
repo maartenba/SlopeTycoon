@@ -92,7 +92,8 @@ export function appearanceOf(id: number, type: number, winter: boolean, kid?: bo
   else if (skin >= 3) hair = hr < 0.55 ? 0 : hr < 0.85 ? 1 : hr < 0.95 ? 2 : 3;
   else hair = pick(hr / 0.97, [0.14, 0.2, 0.2, 0.14, 0.26, 0.03, 0.03]);
   const typeTop = type < TYPE_TOP.length ? TYPE_TOP[type]! : extraDef(type)?.look?.top ?? TYPE_TOP[coreOf(type)] ?? 7;
-  const top = rand01(id, 4) < 0.45 ? typeTop : DISTRICT_TOPS && rand01(id, 14) < 0.5 ? DISTRICT_TOPS[Math.floor(rand01(id, 15) * DISTRICT_TOPS.length)]! : Math.floor(rand01(id, 6) * 16);
+  const topShare = type >= 6 ? extraDef(type)?.look?.topShare ?? 0.45 : 0.45;
+  const top = rand01(id, 4) < topShare ? typeTop : DISTRICT_TOPS && rand01(id, 14) < 0.5 ? DISTRICT_TOPS[Math.floor(rand01(id, 15) * DISTRICT_TOPS.length)]! : Math.floor(rand01(id, 6) * 16);
   out.female = female; out.age = age; out.skin = skin; out.hair = hair;
   out.build = age === Age.Child ? 1 : pick(rand01(id, 7), [0.3, 0.5, 0.2]);
   out.hairStyle = hairStyleFor(id, female, age, winter);

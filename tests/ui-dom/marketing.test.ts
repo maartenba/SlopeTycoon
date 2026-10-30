@@ -23,7 +23,7 @@ describe('st-marketing', () => {
     const start = vi.fn((id: string) => m.start(id));
     p.bind({ view: () => buildMarketingView(m, 50000), start });
     const r = root(p);
-    expect(r.querySelectorAll('.card').length).toBe(9);
+    expect(r.querySelectorAll('.card').length).toBe(11);
     expect(r.textContent).toMatch(/Families/);
     expect(r.textContent).toMatch(/✗ Ski School HQ/); // hard prerequisite missing -> listed with a cross
     expect(r.textContent).toMatch(/✓ An open lift/);
@@ -72,6 +72,30 @@ describe('st-marketing campaigns v2', () => {
     expect(m.start('train')).toBeNull();
     p.refresh();
     expect(r.textContent).toMatch(/By train: — of arrivals \(station 12\/150\)/);
+  });
+});
+
+describe('st-marketing summer campaigns (Task 51)', () => {
+  it('renders Family Summer Camp and Angler\'s Paradise with Show me for the unmet building requirements', () => {
+    const date = { year: 0, day: 250 };
+    const m = new Marketing({
+      economy: new Economy({ money: 50000 }), date: () => date,
+      ctx: { season: () => 'summer', stars: () => 3, has: () => false, met: (id) => id !== 'campground' && id !== 'tackleHut' && id !== 'water', dayPassRatio: () => 1, fishStock: () => 0.9 },
+    });
+    const p = el('st-marketing'); document.body.append(p);
+    const showMe = vi.fn();
+    p.bind({ view: () => buildMarketingView(m, 50000), start: (id) => m.start(id), showMe });
+    const r = root(p);
+    const camp = [...r.querySelectorAll('.card')].find((c) => /Family Summer Camp/.test(c.textContent ?? ''))!, ang = [...r.querySelectorAll('.card')].find((c) => /Angler's Paradise/.test(c.textContent ?? ''))!;
+    expect(camp.textContent).toMatch(/✗ A Campground/);
+    expect(camp.textContent).toMatch(/✓ A kids area/);
+    expect(camp.textContent).not.toMatch(/Ski School/);
+    expect(ang.textContent).toMatch(/✗ A Tackle & Bait Hut/);
+    (camp.querySelector('button.show') as HTMLButtonElement).click();
+    expect(showMe).toHaveBeenCalledWith(expect.objectContaining({ id: 'campground', build: 'campground' }));
+    (ang.querySelector('button.show') as HTMLButtonElement).click();
+    expect(showMe).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'tackleHut', build: 'tackleHut' }));
+    expect((camp.querySelector('button:not(.show)') as HTMLButtonElement).disabled).toBe(true);
   });
 });
 

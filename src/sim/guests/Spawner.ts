@@ -16,7 +16,7 @@ import type { GuestWorld, Pt, ResortStats } from './GuestWorld';
 import type { SpatialHash } from './SpatialHash';
 
 /** Marketing stub: per-type weights (default mix) and an overall multiplier. Later tasks drive it from campaigns. */
-export interface MarketingState { weights: Record<GuestTypeName, number>; boost: number; /** Come by Train: share of the road/rail choice moved to rail (0 = none; absent = 0). */ railBias?: number }
+export interface MarketingState { weights: Record<GuestTypeName, number>; boost: number; /** Come by Train: share of the road/rail choice moved to rail (0 = none; absent = 0). */ railBias?: number; /** Extra guest type id -> arrival weight multiplier (campaigns that target one extra type, e.g. Angler's Paradise). */ types?: Record<string, number> }
 export const defaultMarketing = (): MarketingState => ({ weights: { solo: 1, couple: 1, family: 1, vip: 1, budget: 1, adventure: 1 }, boost: 1 });
 
 /** Price stub (default price table); real pricing arrives with the economy tasks. */
@@ -216,7 +216,7 @@ export class Spawner {
     for (let j = 0; j < GUEST_TYPE_DEFS.length; j++) {
       const t = CORE_TYPE_COUNT + j, d = GUEST_TYPE_DEFS[j]!, seg = segmentIndex(t);
       let w = extraWeight(d, ctx);
-      if (w > 0) w *= (this.mixBias?.[t] ?? 1) * (mk.weights[GUEST_TYPE_NAMES[seg]!] ?? 1) * (this.pricingDemand?.typeWeight(seg) ?? 1);
+      if (w > 0) w *= (this.mixBias?.[t] ?? 1) * (mk.weights[GUEST_TYPE_NAMES[seg]!] ?? 1) * (mk.types?.[d.id] ?? 1) * (this.pricingDemand?.typeWeight(seg) ?? 1);
       ws.push(w); sum += w;
     }
     if (sum <= 0) return core;

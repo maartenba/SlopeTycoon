@@ -166,8 +166,10 @@ export class PartBuilder {
   }
 }
 
-export type BuildFn = (b: PartBuilder, w: number, h: number) => void;
-export interface BuilderEntry { build: BuildFn; foundation: boolean }
+/** `depth` = how far below the origin the ground can fall under the footprint (only passed to `rooted` entries: they grow roots / a trunk down to it instead of standing on a plinth). */
+export type BuildFn = (b: PartBuilder, w: number, h: number, depth?: number) => void;
+/** `rooted`: a tree-borne building (treehouse): seated at the MIDDLE of the footprint's corner range, trunks reach down to the lowest corner, no stone plinth / retaining skirt. */
+export interface BuilderEntry { build: BuildFn; foundation: boolean; rooted?: boolean }
 
 /** Gabled house with framed door and windows on the +z face and a window on each gable end. Returns wall top y. */
 export function house(b: PartBuilder, cx: number, cz: number, w: number, d: number, wallH: number, wall: number, roof: number, rise: number, ridgeX = true, shutter = 0.07): number {

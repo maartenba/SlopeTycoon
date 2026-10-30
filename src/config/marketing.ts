@@ -1,4 +1,4 @@
-import { CAL } from './balance';
+import { CAL, ICE_FISHING } from './balance';
 /** Marketing campaign catalog + pricing/elasticity tuning (Task 32). All constants are documented in docs/marketing-pricing.md. */
 export type GuestTypeKey = 'solo' | 'couple' | 'family' | 'vip' | 'budget' | 'adventure';
 export const GUEST_TYPE_KEYS: readonly GuestTypeKey[] = ['solo', 'couple', 'family', 'vip', 'budget', 'adventure'];
@@ -9,7 +9,7 @@ export const DAY_CLASSES: readonly DayClass[] = ['peak', 'regular', 'off'];
 export const SCHEDULE_PROFILES: readonly ScheduleProfile[] = ['winter', 'shoulder', 'summer'];
 
 /** Facilities used for soft bonuses (computed by createSim from the placed buildings + rating). */
-export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' | 'parkLift';
+export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' | 'parkLift' | 'pettingZoo';
 /**
  * HARD campaign prerequisites (checked by `Marketing.canStart` and again daily while a campaign runs).
  * skiSchool: active Ski School HQ · kidsArea: active Kids Ground, Playground or Magic Carpet · openLift: a lift open for business · piste: an open ski piste ·
@@ -17,11 +17,16 @@ export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' |
  * rating: resort rating >= minStars · summerSeason: it is summer · summerAttraction: Adventure Park or an MTB trail · summerAccess: bike-capable lift or hiking trail · rental: active Rental.
  */
 export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental'
-  | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival';
+  | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival'
+  | 'campground' | 'kidsOrZoo' | 'tackleHut' | 'water';
 /**
  * Campaigns v2 (Task 50): railStation: active Train Station on a rail line that is served (Arrivals `rail.available`) · stationPath: that station is active, i.e. within
  * walking reach of the lodge/village or served by a Shuttle Depot (the Dependencies rule) · stuntPark: active Stunt Park · bookedFestival: a booked festival running or
  * starting within `FESTIVAL_CAMPAIGN.prereqDays` days (Events calendar).
+ */
+/**
+ * Summer campaigns (Task 51): campground: an active Campground (it only takes guests in summer, the campaign is summer-only too) · kidsOrZoo: an active kids area (Kids Ground, Playground,
+ * Magic Carpet) OR an active Petting Zoo (no Ski School) · tackleHut: an active Tackle & bait hut · water: a water that hut can reach holds fish stock >= `ANGLER_CAMPAIGN.minStock`.
  */
 /** `label` is the sentence shown in the Requires list ('Ski School HQ'); `build` = building type the player can place to fix it; `show` = what the Show me button does when it is unmet
  *  ('build' opens the Buildings drawer on `build`, 'station' pans to the Train Station, 'events' scrolls to the Events calendar). */
@@ -64,7 +69,16 @@ export interface CampaignDef {
   window?: 'festival';
   /** Campaigns v2: share (0..1, x effectiveness) of the arrivals that would drive that are put on the train instead (while the station has headroom). */
   railBias?: number;
+  /** Summer campaigns: boost per EXTRA guest type id (config/guestTypes.ts), on top of `targets` (which are core segments): Angler's Paradise lifts anglers only. */
+  extraTargets?: Readonly<Record<string, number>>;
+  /** Summer campaigns: effectiveness is scaled by the mean fish stock of the huts' waters (Marketing context `fishStock`). */
+  fishFactor?: boolean;
+  /** Extra effectiveness factor in a season that is in `seasons` (Angler's Paradise: ice fishing in winter works at half strength). */
+  seasonMult?: Partial<Record<SeasonKey, number>>;
 }
+
+/** Angler's Paradise: the hut needs a water with at least `minStock` fish; effectiveness x clamp(stock / `fullStock`, `floor`, 1); below `warnStock` the card warns "Overfished". */
+export const ANGLER_CAMPAIGN = { minStock: 0.4, fullStock: 0.8, floor: 0.3, warnStock: 0.3 } as const;
 
 /** Come by Train (`railBias`): fraction of road arrivals moved to rail at effectiveness 1, saturating at the station capacity (150 concurrent guests, buildings.ts). */
 export const TRAIN_CAMPAIGN = { modeShift: 0.25, /** hard cap of the summed bias */ maxBias: 0.5 } as const;
@@ -122,6 +136,19 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
     id: 'festival', name: 'Festival Season', icon: '🎪', blurb: 'Ride the buzz of a booked festival. Works around the festival dates only.', segment: 'Everyone',
     cost: 3000, durationDays: 10, targets: { family: 0.3, couple: 0.3 }, volumeBoost: 0.15, seasons: ['winter', 'spring', 'summer', 'autumn'], offSeason: 1,
     prereqs: [{ id: 'bookedFestival', label: `A booked festival running or starting within ${FESTIVAL_CAMPAIGN.prereqDays} days`, show: 'events', startOnly: true }], window: 'festival', cooldownDays: 30,
+  },
+  // ---- Summer campaigns (Task 51): ride on the Campground / Petting zoo / Tackle hut + Angler type. Numbers are starting points. ----
+  {
+    id: 'summerCamp', name: 'Family Summer Camp', icon: '⛺', blurb: 'Tents, a campfire and a petting zoo: a summer holiday for families.', segment: 'Families',
+    cost: 6000, durationDays: 14, targets: { family: 1.6 }, volumeBoost: 0.08, seasons: ['summer'], offSeason: 0.2,
+    prereqs: [{ id: 'summerSeason', label: 'Summer season' }, { id: 'campground', label: 'A Campground', build: 'campground', show: 'build' }, { id: 'kidsOrZoo', label: 'A kids area (Kids Ground, Playground, Magic Carpet) or a Petting Zoo', build: 'pettingZoo', show: 'build' }],
+    priceAlign: 'cheap', bonus: { id: 'pettingZoo', factor: 1.2 }, cooldownDays: 21,
+  },
+  {
+    id: 'angler', name: "Angler's Paradise", icon: '🎣', blurb: 'Lakeside Escape: quiet water, a tackle hut and a hot meal for anglers and couples. Needs a water with fish.', segment: 'Anglers and couples',
+    cost: 3500, durationDays: 14, targets: { couple: 0.4, solo: 0.2 }, extraTargets: { angler: 1.8 }, volumeBoost: 0.05, seasons: ICE_FISHING ? ['summer', 'autumn', 'winter'] : ['summer', 'autumn'], offSeason: 0.3, seasonMult: { winter: 0.5 },
+    prereqs: [{ id: 'tackleHut', label: 'A Tackle & Bait Hut', build: 'tackleHut', show: 'build' }, { id: 'water', label: `A lake, pond or river with fish (stock ${Math.round(ANGLER_CAMPAIGN.minStock * 100)}% or more) in reach of the hut` }],
+    fishFactor: true, cooldownDays: 14,
   },
 ];
 

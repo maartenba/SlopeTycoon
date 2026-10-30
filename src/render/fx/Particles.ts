@@ -6,6 +6,20 @@ export function renderRng(seed = 0x9e3779b9): () => number {
   return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
+/**
+ * Soft round sprite (RGBA, white, radial alpha) for the particle quads: without it every puff / spark was a flat untextured SQUARE (dust and snow puffs, pastel confetti
+ * read as squares on any GPU, not only in the SwiftShader harness). Pure data so a test can check it; alpha is 1 in the middle and 0 at the rim (no hard edge).
+ */
+export function softDiscPixels(n = 32): Uint8Array {
+  const px = new Uint8Array(n * n * 4);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const d = Math.hypot((x + 0.5) / n - 0.5, (y + 0.5) / n - 0.5) * 2; // 0 centre .. 1 at the edge midpoints
+    const a = d >= 1 ? 0 : d <= 0.45 ? 1 : 1 - (d - 0.45) / 0.55, i = (y * n + x) * 4;
+    px[i] = px[i + 1] = px[i + 2] = 255; px[i + 3] = Math.round(255 * a * a * (3 - 2 * a));
+  }
+  return px;
+}
+
 export interface Burst { x: number; y: number; z: number; count: number; kind: 'puff' | 'confetti' | 'spark'; /** puff colour (snow / dust) */ color?: number; scale?: number; /** Test/QA only: stretch the lifetime. */ lifeScale?: number }
 
 /**
@@ -24,7 +38,8 @@ export class Particles {
   constructor(capacity = 256, private rng: () => number = renderRng()) {
     this.n = capacity;
     const geo = new THREE.PlaneGeometry(1, 1);
-    const mat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 1, fog: false });
+    const tex = new THREE.DataTexture(softDiscPixels(32), 32, 32, THREE.RGBAFormat); tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 1, fog: false });
     this.mesh = new THREE.InstancedMesh(geo, mat, capacity);
     this.mesh.frustumCulled = false; this.mesh.renderOrder = 9; this.mesh.count = 0;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -88,5 +103,5 @@ export class Particles {
     (this.mesh.material as THREE.MeshBasicMaterial).opacity = 0.7;
   }
   clear(): void { this.alive.fill(0); this.mesh.count = 0; }
-  dispose(): void { this.mesh.geometry.dispose(); (this.mesh.material as THREE.Material).dispose(); }
+  dispose(): void { this.mesh.geometry.dispose(); const m = this.mesh.material as THREE.MeshBasicMaterial; m.map?.dispose(); m.dispose(); }
 }

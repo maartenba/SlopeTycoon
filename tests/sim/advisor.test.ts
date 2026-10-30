@@ -32,6 +32,7 @@ const riverStub = (s: Sim, cls: number[]): void => {
 
 /** The starter resort has no Train Station: fake a served one (rail share, station load) and make Come by Train startable. */
 const trainStub = (s: Sim, share: number): void => { s.game.money = 50_000; s.marketing.railStatus = () => ({ share, load: 0, capacity: 150, available: true }); const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (id: string) => (id === 'train' ? null : real(id)); };
+const stubBlocker = (s: Sim, id: string): void => { const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (x: string) => (x === id ? null : real(x)); };
 const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.spawner, real = sp.status.bind(sp); sp.status = () => { const r = real(); return { ...r, arrivals: { ...r.arrivals!, road: { ...r.arrivals!.road, available: true, capacity: 100 } } }; }; sp.modeLoadOf = (m: number) => (m === 0 ? roadLoad : 0); };
 
 interface Case { id: string; cheap?: boolean; trigger(sim: Sim): void; calm?(sim: Sim): void }
@@ -64,6 +65,8 @@ const CASES: Case[] = [
   { id: 'marketing.ready', trigger: () => { /* the starter resort already qualifies */ }, calm: (s) => { s.game.money = 100; } },
   { id: 'marketing.trainIdle', trigger: (s) => { guests(s, 20); trainStub(s, 0.01); }, calm: (s) => { guests(s, 20); trainStub(s, 0.2); } },
   { id: 'marketing.parkingFull', trigger: (s) => { trainStub(s, 0.3); parkingStub(s, 1e6); }, calm: (s) => { trainStub(s, 0.3); parkingStub(s, 0); } },
+  { id: 'marketing.summerCamp', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; stubBlocker(s, 'summerCamp'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; } },
+  { id: 'marketing.anglers', trigger: (s) => { guests(s, 20); s.game.money = 50_000; stubBlocker(s, 'angler'); }, calm: (s) => { guests(s, 20); s.game.money = 50_000; } },
   { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.events.setAuto(false); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
   { id: 'season.summer', trigger: (s) => { setDay(s, seasonStartDay('summer') - 10); }, calm: (s) => { setDay(s, seasonStartDay('summer') - 10); s.networks.layers[100] = (s.networks.layers[100]! | Layer.Hike) as never; } },

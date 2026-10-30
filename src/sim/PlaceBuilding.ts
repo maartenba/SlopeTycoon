@@ -313,6 +313,16 @@ export function seatOf(grid: Grid, x: number, y: number, w: number, h: number, b
   return { y: max * HEIGHT_UNIT, depth: spread > 0 ? Math.max(base, spread + 0.12) : base, spread };
 }
 
+/**
+ * Seat of a tree-borne building (treehouse): the origin sits at the MIDDLE of the footprint's corner range and the trunks reach down to the lowest corner
+ * (`depth` = distance to it + a small embed, at least 0.3). No pad, no stone plinth: a 2x2 on a 2 half-steps / tile slope used to stand on a 2-unit grey skirt.
+ */
+export function rootedSeatOf(grid: Grid, x: number, y: number, w: number, h: number): { y: number; depth: number; spread: number } {
+  const { min, max } = cornerRange(grid, x, y, w, h);
+  const mid = ((min + max) / 2) * HEIGHT_UNIT;
+  return { y: mid, depth: Math.max(0.3, mid - min * HEIGHT_UNIT + 0.15), spread: (max - min) * HEIGHT_UNIT };
+}
+
 export interface RotateOutcome { ok: boolean; reasons: string[]; building?: PlacedBuilding; changed: number[]; touchedChunks: number[] }
 
 /** Anchor that keeps the footprint centred when a building turns from `fromRot` to `toRot`. */

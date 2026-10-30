@@ -20,6 +20,8 @@ export type TypeGear = 'ski' | 'board';
 export interface TypeLook {
   /** Cloth-palette index (0..15) favoured for the top (about half of the guests wear it, like the core types). */
   top?: number;
+  /** Share (0..1) of the type's guests wearing `top` (default 0.45, like the core types); the rest wear random colours. Small niche types use a higher share so they read in a crowd. */
+  topShare?: number;
   /** Legend / impostor colour (hex). Defaults to the fallback core type colour. */
   colour?: number;
   /** Snow gear override. */
@@ -81,7 +83,7 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     // Loves the bike park and the MTB trails (trail goals come from `pref`), rents gear, eats out; ignores snow-only and lodging-heavy things.
     appeal: { adventure: 1.3, rental: 0.9, restaurant: 0.7, bar: 0.8, terrace: 0.7, hike: 0.5, shop: 0.4, kidsGround: 0.1, playground: 0.1, carpet: 0.05, rink: 0.1, stunt: 0.2, beach: 0.5, boats: 0.4 },
     group: [1, 3], budget: [220, 420], overnight: 0.35, skill: [0.05, 0.3, 0.45, 0.2], pref: [5, 88],
-    look: { top: 3, colour: 0x9acd32, helmet: true, outfit: 1 },
+    look: { top: 3, topShare: 0.85, colour: 0x9acd32, helmet: true, outfit: 1 },
   },
   {
     // Calm, solo / couple, low spend but steady, long dwell (the hut visit is ~7 game hours). Anchored on a Tackle & bait hut: no open hut with fish = weight 0.
@@ -91,7 +93,7 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     // Loves the hut and quiet water; likes a meal; hates the noisy and the sporty.
     appeal: { angling: 1.5, tackleHut: 1.5, beach: 0.7, boats: 0.6, restaurant: 0.7, bar: 0.5, terrace: 0.6, hike: 0.5, farm: 0.5, shop: 0.4, adventure: 0.15, rink: 0.2, stunt: 0.05, playground: 0.1, kidsGround: 0.1, carpet: 0.05, tour: 0.1 },
     group: [1, 2], budget: [100, 200], overnight: 0.25, pref: [25, 0],
-    look: { top: 5, colour: 0x1fa59a, hat: 7 }, // teal jacket, cap
+    look: { top: 5, topShare: 0.8, colour: 0x1fa59a, hat: 7 }, // teal jacket, cap
   },
 ];
 

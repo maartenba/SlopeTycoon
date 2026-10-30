@@ -27,7 +27,7 @@ import { treehouse } from './treehouse';
 import { tackleHut } from './tackleHut';
 import { fishingPier } from './fishingPier';
 
-const e = (build: BuildFn, foundation = true): BuilderEntry => ({ build, foundation });
+const e = (build: BuildFn, foundation = true, rooted = false): BuilderEntry => ({ build, foundation, ...(rooted ? { rooted } : {}) });
 
 /** Registry keyed by BuildingDef.meshBuilder. */
 export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
@@ -41,7 +41,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   stuntPark: e(R.stuntPark, false), adventurePark: e(R.adventurePark, false),
   alpineFarm: e(F.alpineFarm, false), trainStation: e(T.trainStation), altiport: e(T.altiport), parking: e(T.parking, false),
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
-  campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false),
+  campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false, true),
   tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
@@ -54,8 +54,8 @@ export function buildParts(id: string, w: number, h: number, foundationDepth = D
   if (!entry) throw new Error(`No mesh builder for '${id}'`);
   const b = new PartBuilder(w, h);
   if (entry.foundation && foundationDepth > 0) flagstoneFoundation(b, w, h, foundationDepth);
-  else if (foundationDepth > DEFAULT_FOUNDATION + 1e-6) b.box(0, -foundationDepth, 0, w - 0.06, foundationDepth - 0.03, h - 0.06, C.stone, 'stone'); // plain retaining skirt on slopes
-  entry.build(b, w, h);
+  else if (!entry.rooted && foundationDepth > DEFAULT_FOUNDATION + 1e-6) b.box(0, -foundationDepth, 0, w - 0.06, foundationDepth - 0.03, h - 0.06, C.stone, 'stone'); // plain retaining skirt on slopes
+  entry.build(b, w, h, foundationDepth);
   return b.finish();
 }
 

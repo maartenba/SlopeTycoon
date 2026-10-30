@@ -69,7 +69,7 @@ import { Marketing } from '../sim/Marketing';
 import { EVENING_VENUES, FOOD } from '../sim/guests/Decision';
 import { accepts as elasticAccepts, affordShare, demandMultiplier, mixVolume } from '../sim/Elasticity';
 import { TYPE_MIX, offSeasonNoLiftFactor } from '../sim/guests/Spawner';
-import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, FESTIVAL_CAMPAIGN, type DayClass, type ScheduleProfile } from '../config/marketing';
+import { POWDER, SHOCK, PRICE_KEY_INFO, MARKUP, VIP_LODGING_MIN, FESTIVAL_CAMPAIGN, ANGLER_CAMPAIGN, type DayClass, type ScheduleProfile } from '../config/marketing';
 import { PRICE_TABLE } from '../config/prices';
 import { Staff } from '../sim/staff/Staff';
 import { StaffUpgrades } from '../sim/staff/Upgrades';
@@ -761,12 +761,15 @@ export function createSim(opts: SimOptions) {
   const festDay = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
   /** Snowboard Park Jam bonus: an active Stunt Park within 12 tiles of the top station of an open lift. */
   const parkNearLiftTop = (): boolean => buildings.all().some((b) => b.active && b.type === 'stuntPark' && lifts.all().some((l) => liftOpenForBusiness(l) && Math.hypot(l.top.x - (b.x + b.w / 2), l.top.y - (b.y + b.h / 2)) <= 12));
+  /** Fish stock of every water an active Tackle hut reaches (Angler's Paradise prerequisite and effectiveness). */
+  const hutWaters = (): number[] => attractions.all().filter((a) => a.spec.angling && a.b.active).flatMap((a) => anglingPlanner.plan(a.b).bodies.map((b) => fishStock.get(b.key)));
   const marketing = new Marketing({
     economy, bus, date: () => game.date, gate, trackRail: opts.campaignsV2 !== false,
     ctx: {
       season: () => seasonOf(game.date), stars: () => rating.stars,
-      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
+      has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : f === 'pettingZoo' ? hasActive(['pettingZoo']) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
       dayClass: () => pricing.dayClass(),
+      fishStock: () => { const v = hutWaters(); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; },
       festivalWindow: () => (eventsRef?.booked ?? []).some((b) => festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
       festivalMult: () => eventsRef?.arrivalMult() ?? 1,
       rail: () => { const r = guestSim.spawner.status().arrivals?.rail; return { available: r?.available ?? false, load: guestSim.spawner.modeLoadOf(1), capacity: r?.capacity ?? 0 }; },
@@ -787,6 +790,10 @@ export function createSim(opts: SimOptions) {
           case 'railStation': return hasActive(['trainStation']) && (guestSim.spawner.status().arrivals?.rail.available ?? false);
           case 'stationPath': return hasActive(['trainStation']); // Dependencies: active = within walking reach of the lodge (path distance) or served by a Shuttle Depot
           case 'stuntPark': return hasActive(['stuntPark']);
+          case 'campground': return hasActive(['campground']);
+          case 'kidsOrZoo': return hasActive(['kidsGround', 'playground', 'magicCarpet', 'pettingZoo']);
+          case 'tackleHut': return hasActive(['tackleHut']);
+          case 'water': return hutWaters().some((v) => v >= ANGLER_CAMPAIGN.minStock);
           case 'bookedFestival': return (eventsRef?.booked ?? []).some((b) => b.end > festDay() && b.start - festDay() <= FESTIVAL_CAMPAIGN.prereqDays);
         }
       },

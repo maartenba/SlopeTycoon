@@ -1,5 +1,5 @@
 import { segmentIndex } from '../config/guestTypes';
-import { CAMPAIGNS, ELASTICITY, FESTIVAL_CAMPAIGN, GUEST_TYPE_KEYS, MARKETING, PREREQ_GRACE_DAYS, TRAIN_CAMPAIGN, TRAIN_SUSTAIN, type CampaignDef, type DayClass, type FacilityId, type GuestTypeKey, type Prereq, type PrereqId, type SeasonKey } from '../config/marketing';
+import { ANGLER_CAMPAIGN, CAMPAIGNS, ELASTICITY, FESTIVAL_CAMPAIGN, GUEST_TYPE_KEYS, MARKETING, PREREQ_GRACE_DAYS, TRAIN_CAMPAIGN, TRAIN_SUSTAIN, type CampaignDef, type DayClass, type FacilityId, type GuestTypeKey, type Prereq, type PrereqId, type SeasonKey } from '../config/marketing';
 import { sentence } from '../ui/text';
 import { DAYS_PER_YEAR } from '../config/balance';
 import type { GameBus } from '../core/events';
@@ -25,6 +25,8 @@ export interface MarketingContext {
   festivalMult?(): number;
   /** Campaigns v2: rail arrival point (available = station served, load = guests currently on rail trips or at the station side, capacity = station capacity). */
   rail?(): { available: boolean; load: number; capacity: number };
+  /** Summer campaigns: mean fish stock (0..1) of the waters the active Tackle huts reach; null = no hut / no water. Absent = healthy (unit tests). */
+  fishStock?(): number | null;
 }
 export interface MarketingDeps {
   economy: Pick<Economy, 'charge'>;
@@ -44,8 +46,8 @@ interface TailRun { id: string; end: number; eff: number }
 export interface CampaignRecord { id: string; name: string; start: number; days: number; cost: number; eff: number; arrivals: number; baselinePerDay: number | null; uplift: number | null; upliftPct: number | null; shareBefore: number | null; shareDuring: number | null; /** Set when the campaign was cancelled (reason text). */ cancelled?: string }
 interface DayLog { day: number; total: number; byType: number[]; influenced: boolean; /** Arrivals by rail (only when `trackRail`). */ rail?: number }
 
-export interface MarketingEffect { weights: Record<GuestTypeKey, number>; boost: number; /** Share (0..TRAIN_CAMPAIGN.maxBias) of the car/train choice moved to rail (Come by Train). */ railBias: number }
-const neutral = (): MarketingEffect => ({ weights: { solo: 1, couple: 1, family: 1, vip: 1, budget: 1, adventure: 1 }, boost: 1, railBias: 0 });
+export interface MarketingEffect { weights: Record<GuestTypeKey, number>; boost: number; /** Share (0..TRAIN_CAMPAIGN.maxBias) of the car/train choice moved to rail (Come by Train). */ railBias: number; /** Extra guest type id -> weight multiplier (Angler's Paradise); empty = none. */ types: Record<string, number> }
+const neutral = (): MarketingEffect => ({ weights: { solo: 1, couple: 1, family: 1, vip: 1, budget: 1, adventure: 1 }, boost: 1, railBias: 0, types: {} });
 /** Rough weekly mix of day classes (2 weekend days, Friday, 4 weekdays; holidays ignored) for ROI previews of weekday-targeted campaigns. */
 const DAY_MIX: Record<DayClass, number> = { peak: 2 / 7, regular: 1 / 7, off: 4 / 7 };
 
@@ -65,11 +67,19 @@ export function campaignEffectiveness(def: CampaignDef, ctx: MarketingContext): 
   const mul = (label: string, f: number): void => { if (f !== 1) factors.push({ label, factor: Math.round(f * 100) / 100 }); v *= f; };
   const season = ctx.season();
   if (!def.seasons.includes(season)) { mul('Wrong season', def.offSeason); warnings.push(`Works best in ${def.seasons.join('/')}`); }
+  else if (def.seasonMult?.[season] !== undefined) mul('Season', def.seasonMult[season]!);
   const stars = ctx.stars();
   mul('Resort quality', clamp(MARKETING.qualityBase + MARKETING.qualityPerStar * stars, MARKETING.qualityBase, MARKETING.qualityMax));
   if (def.minStars && stars < def.minStars) { mul('Low rating', 0.5 + (0.5 * stars) / def.minStars); warnings.push(`Needs a ${def.minStars}★ resort`); }
   const lacking = missingPrereqs(def, ctx);
   if (lacking.length) { v = 0; warnings.push(`Requires: ${lacking.map((p) => p.label).join(', ')}`); }
+  if (def.fishFactor) {
+    const st = ctx.fishStock?.() ?? null;
+    if (st !== null) {
+      mul('Fish stock', clamp(st / ANGLER_CAMPAIGN.fullStock, ANGLER_CAMPAIGN.floor, 1));
+      if (st < ANGLER_CAMPAIGN.warnStock) warnings.push('Overfished: anglers are not biting. Set the hut to Catch & release and give the water time to recover');
+    }
+  }
   if (def.bonus && ctx.has(def.bonus.id)) mul('Facility bonus', def.bonus.factor);
   if (def.priceAlign) {
     const r = ctx.dayPassRatio();
@@ -280,6 +290,7 @@ export class Marketing {
       const s = it.s * Math.pow(MARKETING.stackFactor, i);
       out.boost += it.def.volumeBoost * s;
       for (const [k, b] of Object.entries(it.def.targets)) out.weights[k as GuestTypeKey] += (b ?? 0) * s;
+      for (const [k, b] of Object.entries(it.def.extraTargets ?? {})) out.types[k] = (out.types[k] ?? 1) + b * s;
       if (it.def.railBias) out.railBias = Math.min(TRAIN_CAMPAIGN.maxBias, out.railBias + it.def.railBias * s);
     });
     // Festival Season x the festival's own arrival multiplier never exceeds the crowding cap (ELASTICITY.maxVolume)

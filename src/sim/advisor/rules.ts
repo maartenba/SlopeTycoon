@@ -287,6 +287,19 @@ export const RULES: readonly Rule[] = [
     if (st.load >= st.capacity * 0.8 || c.sim.guestSim.spawner.modeLoadOf(0) < a.road.capacity * (c.shown ? 0.85 : 0.95)) return null;
     return { id: 'marketing.parkingFull', severity: 'info', ...TEXT.parkingFull(), panel: { drawer: 'marketing', item: 'train' } };
   }, false, true),
+  // Summer campaigns (Task 51, docs/marketing-pricing.md): a ready Campground + kids area / Petting zoo suggests Family Summer Camp; a Tackle hut on fished water suggests Angler's Paradise.
+  rule('marketing.summerCamp', 1, (c) => {
+    const m = c.sim.marketing;
+    if (c.season !== 'summer' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'summerCamp') || m.blocker('summerCamp') !== null) return null;
+    if (c.sim.game.money < (c.shown ? 6_000 : 8_000)) return null;
+    return { id: 'marketing.summerCamp', severity: 'info', ...TEXT.summerCampReady(), panel: { drawer: 'marketing', item: 'summerCamp' } };
+  }, false, true),
+  rule('marketing.anglers', 1, (c) => {
+    const m = c.sim.marketing;
+    if (c.season === 'spring' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'angler') || m.blocker('angler') !== null) return null;
+    if (c.sim.game.money < (c.shown ? 3_500 : 5_000)) return null;
+    return { id: 'marketing.anglers', severity: 'info', ...TEXT.anglersCampaign(), panel: { drawer: 'marketing', item: 'angler' } };
+  }, false, true),
   // ---- season lookahead ----
   // Almabtrieb (autumn cattle descent): no farm -> suggest one (spring..early autumn); farm + herd -> 'Almabtrieb in N days' / 'is on', Show me goes to the dressed road near the base station
   rule('farm.almabtrieb', 1, (c) => {

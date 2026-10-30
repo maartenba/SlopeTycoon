@@ -4,8 +4,13 @@ import { C, PartBuilder, frameWin } from './common';
  * Treehouse (2x2, about 650 triangles): a fat trunk with a plank deck high in the crown, a small timber cabin with a mossy gable roof and a lit window,
  * a rope ladder, and a sagging rope bridge to a second little platform on a slimmer trunk. The deck stays below the 2.0 cable overfly limit.
  */
-export function treehouse(b: PartBuilder, w: number, h: number): void {
+export function treehouse(b: PartBuilder, w: number, h: number, depth = 0): void {
   void w; void h;
+  // on a slope the building is seated mid-footprint: both trunks reach down to the lowest corner (a tree grows out of the hillside, no stone plinth)
+  if (depth > 0.01) {
+    b.cyl(-0.25, -depth, -0.2, 0.16, depth + 0.02, 0x6b4a2e, 'wood', 10);
+    b.cyl(0.62, -depth, 0.35, 0.1, depth + 0.02, 0x75553a, 'wood', 8);
+  }
   const dy = 0.8; // deck height
   // main trunk + root flare, and the second tree
   b.cyl(-0.25, 0, -0.2, 0.17, 1.6, 0x6b4a2e, 'wood', 10);

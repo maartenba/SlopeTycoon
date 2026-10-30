@@ -43,3 +43,5 @@ Both are plain hiker destinations: no ticket, no attraction spec, no staff, no s
 The plan asked for "above 2,000 m": that altitude does not exist (the highest ground is about 1,390 m on a 64 map, 1,500 m on 128 and 1,700 m on 256), so the threshold is relative.
 
 Tests: `tests/sim/attractions/viewpointContent.test.ts` (catalog rows, meshes, the hint, meadow refusal / forest acceptance with trees kept, a real ridge viewpoint chosen by hikers and deterministic, the bonus goal in a fixture and in a real sim incl. save / load, sustainability neutral).
+
+**Treehouse seat (visual fix)**: a sloped 2x2 used to be seated on the highest corner with a plain stone retaining skirt down to the lowest one (up to 2 units tall, grey). The mesh entry is now `rooted` (`BuilderEntry.rooted`): `rootedSeatOf` seats it at the middle of the footprint's corner range and the treehouse mesh grows its trunks down to the lowest corner (`depth` is passed to the builder); no stone layer. Other buildings keep the skirt. Test: `tests/render/treehouseSeat.test.ts`.

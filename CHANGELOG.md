@@ -17,6 +17,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Water tours** (summer, level 3): a *Rafting Base* ($5,500, $30 a ride) within three tiles of a river or stream with brisk flow sends two four-person rafts downstream from 10:00 to 16:00, faster on fast water, with a splash at the rapids; rapids thrill the guests (more happiness, a higher price they find fair). A *Canyoning Base* ($4,800, $35) runs abseiling descents of a steep stream through rock. Both close in a storm, when the river freezes and when late-summer water runs low, a rare twisted ankle brings out the patrol, and rafting costs nothing in sustainability. A river you dig from a spring or lake works as well as a natural one (`docs/water-tours.md`).
 ### Fixes
 
+- **Treehouse on a slope**: it no longer stands on a tall grey retaining skirt; the building is seated mid-slope and its trunks reach down to the lowest corner (`docs/viewpoints.md`).
+- **Mountain bikers and anglers read in a crowd**: about 85 % of bikers wear lime (with a helmet) and 80 % of anglers teal (with a cap), instead of about half.
+- **Dust, snow puffs and confetti** are soft round sprites, no longer flat squares.
 - **Dug rivers on slopes**: the channel bed now descends continuously (both corners of every tile edge are cut to one level that never rises along the flow), so a river no longer shows a saw-tooth of tilted water sheets, single-corner pits, or a surface that seems to climb the hillside; the water surface of a bend can never rise above its entry level. Flow animation direction is pinned downstream by a test (`docs/rivers.md`, "Bed and flow direction").
 
 ## [0.2.6] - 2026-10-29 (pre-release)

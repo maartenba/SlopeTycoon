@@ -56,6 +56,8 @@ const riverStub = (s: Sim, cls: number[]): void => {
   (s.waterEnv as unknown as { flow: () => unknown }).flow = () => ({ cls, rapidsTiles: cls.filter((c) => c === 2).length });
 };
 
+/** Summer campaigns (Task 51): the starter resort has no Campground / Tackle hut: make the campaign startable. */
+const campStub = (s: Sim, id: string): void => { const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (x: string) => (x === id ? null : real(x)); };
 /** The starter resort has no Train Station: fake a served one (rail share, station load) and make Come by Train startable. */
 const trainStub = (s: Sim, share: number): void => { s.game.money = 50_000; s.marketing.railStatus = () => ({ share, load: 0, capacity: 150, available: true }); const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (id: string) => (id === 'train' ? null : real(id)); };
 const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.spawner, real = sp.status.bind(sp); sp.status = () => { const r = real(); return { ...r, arrivals: { ...r.arrivals!, road: { ...r.arrivals!.road, available: true, capacity: 100 } } }; }; sp.modeLoadOf = (m: number) => (m === 0 ? roadLoad : 0); };
@@ -282,6 +284,24 @@ const SCENARIOS: Scenario[] = [
     fixes: [
       { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'train' }] as never; } },
       { name: 'the car park empties', apply: (s) => { parkingStub(s, 0); } },
+    ],
+  },
+  {
+    id: 'marketing.summerCamp',
+    setup: (s) => { guests(s, 20); s.game.date.day = seasonStartDay('summer') + 5; s.game.money = 50_000; campStub(s, 'summerCamp'); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'summerCamp' }] as never; } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 4_000; } },
+      { name: 'summer ends', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 2; } },
+    ],
+  },
+  {
+    id: 'marketing.anglers',
+    setup: (s) => { guests(s, 20); s.game.money = 50_000; campStub(s, 'angler'); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'angler' }] as never; } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 2_000; } },
+      { name: 'spring arrives', apply: (s) => { s.game.date.day = seasonStartDay('spring') + 2; } },
     ],
   },
   {

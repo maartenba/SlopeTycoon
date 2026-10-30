@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Grid } from '../world/Grid';
-import { DEFAULT_FOUNDATION, type BuildingMeshes } from './meshes';
-import { baseHeight, seatOf } from '../sim/PlaceBuilding';
+import { BUILDING_BUILDERS, DEFAULT_FOUNDATION, type BuildingMeshes } from './meshes';
+import { baseHeight, rootedSeatOf, seatOf } from '../sim/PlaceBuilding';
 import { BUILDINGS } from '../config/buildings';
 
 /** The slice of the Buildings store the view reads. */
@@ -39,7 +39,8 @@ export class BuildingsView {
       // gentle-slope types (magic carpet) follow the slope on the lowest corner; everything else sits on a pad at the highest corner
       // with a stone plinth reaching down to the lowest one, so no part is buried.
       const gentle = BUILDINGS[b.type]?.site.slopeKind === 'gentleSlope';
-      const seat = gentle ? { y: baseHeight(this.grid, b.x, b.y, b.w, b.h), depth: DEFAULT_FOUNDATION } : seatOf(this.grid, b.x, b.y, b.w, b.h, DEFAULT_FOUNDATION);
+      const rooted = BUILDING_BUILDERS[BUILDINGS[b.type]?.meshBuilder ?? b.type]?.rooted === true;
+      const seat = gentle ? { y: baseHeight(this.grid, b.x, b.y, b.w, b.h), depth: DEFAULT_FOUNDATION } : rooted ? rootedSeatOf(this.grid, b.x, b.y, b.w, b.h) : seatOf(this.grid, b.x, b.y, b.w, b.h, DEFAULT_FOUNDATION);
       const y = seat.y;
       const sig = `${b.x},${b.y},${b.w},${b.h},${b.rot},${y}`;
       let e = this.entries.get(b.id);
