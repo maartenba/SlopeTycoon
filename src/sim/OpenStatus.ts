@@ -74,6 +74,8 @@ export class OpenStatus {
    */
   readonly closedMask: Uint8Array;
   private closedSet = new Set<number>();
+  /** Tiles of closed backcountry routes (Phase 6 Task 32): part of the navigation mask, never saved here (the Backcountry module owns them). */
+  private extraClosed: ReadonlySet<number> = new Set<number>();
   private closureFlips: number[] = [];
 
   constructor(private d: OpenStatusDeps) { this.closedMask = new Uint8Array(d.grid.size * d.grid.size); }
@@ -97,6 +99,8 @@ export class OpenStatus {
     const f = this.closureFlips; this.closureFlips = [];
     return f;
   }
+  /** Closed backcountry route tiles (not shared with a piste); re-derives the navigation mask. */
+  setExtraClosed(tiles: ReadonlySet<number>): void { this.extraClosed = tiles; this.evalPistes(); }
   isTileClosed(i: number): boolean { return this.closedMask[i] === 1; }
   /** Active temporary closures (UI / news): reason + remaining sim ticks. */
   activeClosures(nowTick: number): Array<{ reason: string; tiles: number; remaining: number }> {
@@ -155,6 +159,7 @@ export class OpenStatus {
     const mask = new Set<number>();
     let unitKeysRef: number[] = [];
     for (const c of this.closures) for (const t of c.tiles) mask.add(t);
+    for (const t of this.extraClosed) mask.add(t);
     if (net) {
       const N = net.size, c = this.d.cond;
       const mark = new Int32Array(N * N).fill(-1);

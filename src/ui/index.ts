@@ -17,6 +17,7 @@ import { StRating } from './components/StRating';
 import { StPerf } from './components/StPerf';
 import { StOperations } from './components/StOperations';
 import { StPisteInspector } from './components/StPisteInspector';
+import { StRouteInspector } from './components/StRouteInspector';
 import { StMarketing } from './components/StMarketing';
 import { StPricing } from './components/StPricing';
 import { StSettings } from './components/StSettings';
@@ -63,6 +64,7 @@ export const COMPONENTS = {
   'st-perf': StPerf,
   'st-operations': StOperations,
   'st-piste-inspector': StPisteInspector,
+  'st-route-inspector': StRouteInspector,
   'st-marketing': StMarketing,
   'st-events': StEvents,
   'st-pricing': StPricing,
@@ -103,4 +105,4 @@ export function el<K extends keyof StTagMap>(tag: K): StTagMap[K] { return docum
 export function registerComponents(): void {
   for (const tag of ALL_COMPONENT_TAGS) if (!customElements.get(tag)) customElements.define(tag, COMPONENTS[tag]);
 }
-export { StPerf, StTopBar, StDock, StHud, StDebug, StInspector, StToast, StHelp, StSpeedControl, StEventLog, StFinance, StLoans, StProfile, StNews, StGuestInspector, StRating, StLiftInspector, StOperations, StPisteInspector, StSettings, StSaveLoad, StAssistant, StSpotlight, StMainMenu, StNewGame, StPauseMenu, StSelect, StModal, StGoals, StRecap, StWhatsNew, StViewHud, StPhoto };
+export { StPerf, StTopBar, StDock, StHud, StDebug, StInspector, StToast, StHelp, StSpeedControl, StEventLog, StFinance, StLoans, StProfile, StNews, StGuestInspector, StRating, StLiftInspector, StOperations, StPisteInspector, StRouteInspector, StSettings, StSaveLoad, StAssistant, StSpotlight, StMainMenu, StNewGame, StPauseMenu, StSelect, StModal, StGoals, StRecap, StWhatsNew, StViewHud, StPhoto };

@@ -152,7 +152,7 @@ void main() {
   base = mix(base, autumnCol, uAutumn * (1.0 - petals * 0.5));
 
   // ---- ground mask (pistes / trails / contact shadows): bilinear (LINEAR texture) + a world-space wobble so every edge is organic, soft and flicker-free
-  float pisteW = 0.0, trailW = 0.0, pisteRaw = 0.0, trailRaw = 0.0, builtM = 0.0, pDiff = 0.0;
+  float pisteW = 0.0, trailW = 0.0, pisteRaw = 0.0, trailRaw = 0.0, builtM = 0.0, pDiff = 0.0, bcRaw = 0.0;
   if (uGroundN > 0.5) {
     vec2 wob = (vec2(vnoise(vWorld.xz * 0.9), vnoise(vWorld.xz * 0.9 + 13.7)) - 0.5) * 0.55;
     vec4 gm = texture2D(tGround, (vWorld.xz + wob) / uGroundN);
@@ -160,6 +160,7 @@ void main() {
     pisteW = smoothstep(0.30, 0.70, pisteRaw);
     trailW = smoothstep(0.52, 0.80, trailRaw);
     pDiff = gm.r > 0.02 ? floor(clamp(gm.b / gm.r * 4.0 - 1.0 + 0.5, 0.0, 3.0)) : 0.0;
+    bcRaw = gm.b * (1.0 - smoothstep(0.0, 0.08, gm.r)); // backcountry route (B on a tile without a piste)
   }
   float fall = 0.0; // fall-line coordinate: mowing stripes run along the slope
   {
@@ -216,6 +217,13 @@ void main() {
     float rim = smoothstep(0.12, 0.5, pisteRaw) * (1.0 - smoothstep(0.5, 0.85, pisteRaw)); // soft blue shoulder: the run reads on snow without a hard outline
     col = mix(col, col * vec3(0.70, 0.80, 0.95), rim * snowAmt);
     col = mix(col, col * vec3(0.9, 0.94, 1.0), smoothstep(0.7, 1.0, pisteRaw) * snowAmt * 0.3);
+  }
+  { // backcountry route: a soft violet track on the snow with a dashed edge (world-space dashes: no crawl)
+    float bcW = smoothstep(0.35, 0.75, bcRaw);
+    float dash = smoothstep(0.30, 0.50, fract((vWorld.x + vWorld.z) * 0.9)) * (1.0 - smoothstep(0.62, 0.82, fract((vWorld.x + vWorld.z) * 0.9)));
+    float bEdge = (1.0 - smoothstep(0.0, clamp(fwW * 1.6, 0.10, 0.34), abs(bcRaw - 0.5))) * step(0.02, bcRaw);
+    col = mix(col, col * vec3(0.86, 0.80, 0.97), bcW * 0.55);
+    col = mix(col, vec3(0.55, 0.30, 0.80), bEdge * dash * 0.85);
   }
   { // difficulty edge line: thin coloured rope along both sides of a ski run (full-tile colours live in the 'Piste difficulty' overlay)
     float ew = clamp(fwW * 1.6, 0.10, 0.34); // edge half-width grows with the pixel footprint: never thinner than ~1.5 px (no hairline shimmer), still a thin rope up close

@@ -45,6 +45,22 @@ export const AVA = {
   winterGapDays: Math.round(100 * CAL),
 } as const;
 
+/** Danger scale 1-5 of a backcountry route (Phase 6 Task 32, docs/backcountry.md): the route's instability score through FIXED thresholds. */
+export const DANGER = {
+  /** Score (0.7 x max + 0.3 x mean instability over the route's tiles) from which level 2, 3, 4 and 5 start. */
+  thresholds: [0.15, 0.35, 0.6, 0.9] as readonly number[],
+  maxWeight: 0.7,
+  /** Routes close at this level (default setting; the player may override per route or globally). */
+  closeAt: 4,
+  /** A route closed by danger reopens once its score is below this (hysteresis: the level may flicker around a threshold). */
+  reopenScore: 0.55,
+  /** Off-piste guests (advanced skiers and boarders) only take open routes up to this level. */
+  offPisteMax: 2,
+} as const;
+export const DANGER_NAMES = ['', 'Low', 'Moderate', 'Considerable', 'High', 'Very high'] as const;
+/** 'Considerable (3)'. */
+export const dangerText = (level: number): string => `${DANGER_NAMES[Math.max(1, Math.min(5, level))]} (${Math.max(1, Math.min(5, level))})`;
+
 export interface AvalancheDeps {
   size: number;
   grid: { steepness(x: number, y: number): number; getCorners(x: number, y: number): readonly [number, number, number, number]; snowDepth: Float32Array };
@@ -112,6 +128,17 @@ export class Avalanche {
     if (hs <= 2.1) return 0.8 + (hs - 1.5) * (0.5 / 0.6);
     return Math.max(0.4, 1.3 - (hs - 2.1) * 0.9);
   }
+
+  /** Danger score of a set of tiles: 0.7 x max + 0.3 x mean of the stored instability (0 on ground that cannot slide). */
+  dangerScore(tiles: ReadonlyArray<number>): number {
+    if (!tiles.length) return 0;
+    let mx = 0, sum = 0;
+    for (const i of tiles) { const v = this.inst[i] ?? 0; if (v > mx) mx = v; sum += v; }
+    return DANGER.maxWeight * mx + (1 - DANGER.maxWeight) * (sum / tiles.length);
+  }
+  /** Danger level 1..5 of a route (anything with `tiles`), from the instability model. Rises after storms / heavy fresh snow / warming, falls after control blasting and with time. */
+  dangerLevel(route: { tiles: ReadonlyArray<number> }): number { return this.levelOfScore(this.dangerScore(route.tiles)); }
+  levelOfScore(score: number): number { let l = 1; for (const t of DANGER.thresholds) if (score >= t) l++; return l; }
 
   /** Mean risk (instability) over candidates, for UI / blasting decisions. */
   maxRisk(): number { let m = 0; for (const i of this.cands) if (this.inst[i]! > m) m = this.inst[i]!; return m; }

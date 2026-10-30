@@ -16,12 +16,16 @@ export type NetKindId = 1 | 2 | 3;
 /** Connection bits per tile. */
 export const Conn = { N: 1, E: 2, S: 4, W: 8 } as const;
 /** Piste layer bits (multiple per tile). */
-export const Layer = { Ski: 1, Mtb: 2, Hike: 4 } as const;
-export type LayerBit = 1 | 2 | 4;
+/** `Backcountry` (Phase 6 Task 32, docs/backcountry.md): winter ski-touring / off-piste routes; a separate layer (never a piste: no grooming, no difficulty edge). */
+export const Layer = { Ski: 1, Mtb: 2, Hike: 4, Backcountry: 8 } as const;
+export type LayerBit = 1 | 2 | 4 | 8;
 export const Difficulty = { Green: 0, Blue: 1, Red: 2, Black: 3 } as const;
 
 export const NET_COST: Record<NetKindId, number> = { 1: 20, 2: 60, 3: 100 };
 export const PISTE_COST_PER_TILE = 10;
+/** Backcountry route: flag poles and marking only, a little dearer than a plain piste tile. */
+export const BACKCOUNTRY_COST_PER_TILE = 15;
+export const BACKCOUNTRY_ORPHAN_MSG = 'Start the route next to a lift top, a hut, a piste end or a hiking trail';
 /** Reasons for level crossings / footbridges over rail (docs/crossings.md). */
 export const CROSS_MSG = {
   angle: 'Paths can only cross a straight rail line at right angles',
@@ -243,7 +247,7 @@ export class Networks {
     this.layers.set(d.layers); this.difficulty.set(d.difficulty); this.quality.set(d.quality);
     this.adoptLegacyBridges();
     this.roadEntry = d.roadEntry ? { ...d.roadEntry } : null; this.railEntry = d.railEntry ? { ...d.railEntry } : null;
-    this.pisteCache = null; this.cache = { v: -1 }; this.journal = null;
+    this.pisteCache = null; this.bcCache = null; this.cache = { v: -1 }; this.journal = null;
     this.version = d.version + 1;
     for (let c = 0; c < this.grid.chunksPerRow ** 2; c++) this.dirty.add(c);
   }
@@ -675,7 +679,7 @@ export class Networks {
     const i = this.idx(x, y);
     const tt = this.grid.tileType[i];
     // Lakes block every layer; streams block ski pistes (no snow on water: documented rule, no snow bridges) but trails bridge them.
-    if (tt === TileType.Water || (tt === TileType.Stream && layer === Layer.Ski)) return { ok: false, reason: PISTE_WATER_MSG };
+    if (tt === TileType.Water || (tt === TileType.Stream && (layer === Layer.Ski || layer === Layer.Backcountry))) return { ok: false, reason: PISTE_WATER_MSG };
     if (this.grid.occupancy.flags[i]! & OccFlag.Decor) return { ok: false, reason: 'Garden decor in the way' };
     if (this.grid.occupancy.flags[i]! & OccFlag.Building) {
       // Only buildings that may stand on a piste (pisteRule 'allow': carpet, cannon, sign, stunt park) can be painted over.
@@ -699,7 +703,7 @@ export class Networks {
       this.note(i);
       if (!(this.layers[i]! & layer)) n++;
       this.layers[i]! |= layer;
-      if (layer !== Layer.Ski && this.kind[i] === 0 && this.grid.tileType[i] === TileType.Stream) this.bridge[i] = 1;
+      if (layer !== Layer.Ski && layer !== Layer.Backcountry && this.kind[i] === 0 && this.grid.tileType[i] === TileType.Stream) this.bridge[i] = 1;
       this.difficulty[i] = override ?? diffs.get(i) ?? diff;
       if (!this.quality[i]) this.quality[i] = 128;
       this.markDirty(t.x, t.y);
@@ -773,6 +777,8 @@ export class Networks {
       const i = this.idx(nx, ny);
       if (this.kind[i]) return true;
       if (layer && (this.layers[i]! & layer)) return true;
+      // a backcountry route may also start from the end of a piste or a trail
+      if (layer === Layer.Backcountry && (this.layers[i]! & (Layer.Ski | Layer.Hike | Layer.Mtb))) return true;
       if (this.grid.occupancy.flags[i]! & (OccFlag.Building | OccFlag.Lift)) return true;
     }
     return false;
@@ -832,6 +838,32 @@ export class Networks {
       for (let i = 0; i < flags.length; i++) if (flags[i] !== old[i]) this.dirty.add((((i / this.size) | 0) / CHUNK_SIZE | 0) * this.grid.chunksPerRow + (((i % this.size) / CHUNK_SIZE) | 0));
     }
     return this.pisteCache;
+  }
+
+  private bcCache: { v: number; comps: PisteComponent[] } | null = null;
+  /** 8-connected components of the Backcountry layer (cached per version): the routes of docs/backcountry.md. */
+  backcountryComponents(): PisteComponent[] {
+    if (this.bcCache && this.bcCache.v === this.version) return this.bcCache.comps;
+    const comps = this.componentsOf(Layer.Backcountry);
+    this.bcCache = { v: this.version, comps };
+    return comps;
+  }
+
+  /** Does any tile of the set sit next to (or on) a piste / trail / path / lift / building: the attachment test of a backcountry route. */
+  attachedToNetwork(tiles: readonly number[]): boolean {
+    const n = this.size, occ = this.grid.occupancy.flags;
+    for (const i of tiles) {
+      const x = i % n, y = (i / n) | 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if (!this.inb(nx, ny)) continue;
+        const j = this.idx(nx, ny);
+        if (this.layers[j]! & (Layer.Ski | Layer.Hike | Layer.Mtb)) return true;
+        if (occ[j]! & (OccFlag.Lift | OccFlag.Building)) return true;
+        if ((dx === 0 || dy === 0) && (this.kind[j] === NetKind.Path || this.kind[j] === NetKind.Road)) return true;
+      }
+    }
+    return false;
   }
 
   private componentsOf(layer: number): PisteComponent[] {

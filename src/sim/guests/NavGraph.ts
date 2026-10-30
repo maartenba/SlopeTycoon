@@ -31,6 +31,8 @@ export interface NavWorld {
   readonly hikeOk: Uint8Array;
   /** Temporarily closed tiles (avalanche / control, Task 27): 1 = skiers may not enter. Optional; footpaths and stations stay usable. */
   readonly closed?: Uint8Array;
+  /** Backcountry routes (Phase 6 Task 32): 1 on tiles of an OPEN route with low avalanche danger (<= 2). Off-piste skiers prefer them (x0.75) and avoid flagged routes of higher danger (x1.5). Optional. */
+  readonly bcOff?: Uint8Array;
   /** Trail/path bridge flag per tile (1 = crossing a stream): hike/bike trails may cross water tiles flagged so. Optional. */
   readonly bridge?: Uint8Array;
   /** Level crossing per tile (Networks.cross; 0 none, 1 footpath / 2 road crossing, 3 footbridge over rail): such a rail tile is walkable. Optional. */
@@ -168,7 +170,8 @@ export class NavGraph implements PathGraph {
         if (!off) return -1;
         const t = w.tileType[b]!;
         if (t === 1) return -1; // rock
-        return len * (down ? 1.2 : 4) * (t === 4 ? 2.2 : 1);
+        const base = len * (down ? 1.2 : 4) * (t === 4 ? 2.2 : 1);
+        return w.bcOff && (l & Layer.Backcountry) !== 0 ? base * (w.bcOff[b] === 1 ? 0.75 : 1.5) : base;
       }
     }
   }

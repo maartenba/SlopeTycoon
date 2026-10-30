@@ -387,6 +387,17 @@ export const RULES: readonly Rule[] = [
     for (let i = 0; i < a.length; i++) if (a[i]! & (Layer.Hike | Layer.Mtb)) return null;
     return { id: 'season.summer', severity: 'info', ...TEXT.summerComing(sp.daysLeft), panel: { drawer: 'pistes', item: 'mtb' } };
   }),
+  // Backcountry (docs/backcountry.md): a route that is OPEN outside Ski Patrol cover, or kept open at danger >= 4 by the player's override. Warnings only: nothing is built or closed for you.
+  rule('backcountry.patrol', 2, (c) => {
+    const bc = c.sim.backcountry, lim = c.shown ? 0.6 : 0.5;
+    const list = bc.routes().filter((r) => r.open && r.covered < lim), n = c.sim.size, top = list[0]?.top ?? 0;
+    return list.length > 0 ? { id: 'backcountry.patrol', severity: 'warn', ...TEXT.backcountryNoPatrol(list.length), target: { x: top % n, y: (top / n) | 0 }, panel: { drawer: 'buildings', item: 'patrolHub' } } : null;
+  }, true),
+  rule('backcountry.risky', 3, (c) => {
+    const r = c.sim.backcountry.routes().find((x) => x.open && x.danger >= c.sim.backcountry.threshold);
+    const n = c.sim.size;
+    return r ? { id: 'backcountry.risky', severity: 'urgent', ...TEXT.backcountryRisky(r.danger), target: { x: r.top % n, y: (r.top / n) | 0 } } : null;
+  }, true),
   // Quad tours (docs/quads.md): a summer extra for a resort with a village and some roads. Optional, never urgent; the text says what it costs (noise, a little sustainability).
   rule('tour.quad', 1, (c) => {
     const sim = c.sim;

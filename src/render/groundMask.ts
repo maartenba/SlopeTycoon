@@ -6,7 +6,8 @@ import { Layer } from '@/world/Networks';
  * contact shadows are SOFT ground treatments instead of per-tile decal quads (no extra draw calls, no geometry rebuild: a paint stroke
  * only rewrites this texture).
  *   R = ski piste mask        G = MTB / hike trail mask
- *   B = ski mask * (difficulty + 1) / 4 (premultiplied: B / R recovers the difficulty even after bilinear blending)
+ *   B = ski mask * (difficulty + 1) / 4 (premultiplied: B / R recovers the difficulty even after bilinear blending);
+ *       on a tile with NO ski piste, B = 255 marks a backcountry route (the shader reads B only where R is ~0)
  *   A = built mask (building footprints)
  */
 export interface MaskNet { readonly size: number; readonly layers: ArrayLike<number>; readonly difficulty: ArrayLike<number> }
@@ -23,7 +24,7 @@ export function fillGroundMask(out: Uint8Array, net: MaskNet, buildings: readonl
     const ski = l & Layer.Ski ? MASK_FULL : 0;
     out[o] = ski;
     out[o + 1] = l & (Layer.Mtb | Layer.Hike) ? MASK_FULL : 0;
-    out[o + 2] = ski ? Math.round(MASK_FULL * ((net.difficulty[i]! + 1) / 4)) : 0;
+    out[o + 2] = ski ? Math.round(MASK_FULL * ((net.difficulty[i]! + 1) / 4)) : l & Layer.Backcountry ? MASK_FULL : 0;
     out[o + 3] = 0;
   }
   for (const b of buildings) {

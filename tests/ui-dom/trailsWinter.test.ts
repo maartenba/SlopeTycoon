@@ -27,7 +27,7 @@ describe('MTB / hiking trails in winter', () => {
   it('stay in the drawer after the ski piste, can be picked, and a note explains they are used in the snow is gone', () => {
     const { dock, started, set } = mount();
     dock.show('pistes');
-    expect(Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.grid .card')).map((c) => c.dataset.id)).toEqual(['ski', 'mtb', 'hike']);
+    expect(Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.grid .card')).map((c) => c.dataset.id)).toEqual(['ski', 'backcountry', 'mtb', 'hike']);
     const mtb = q(dock, '.card[data-id="mtb"]')!;
     expect(mtb.classList.contains('offseason')).toBe(true);
     expect(mtb.classList.contains('locked')).toBe(false);
@@ -38,7 +38,7 @@ describe('MTB / hiking trails in winter', () => {
     expect(note.hidden).toBe(false);
     expect(note.textContent).toMatch(/snow is gone/);
     set('summer');
-    expect(Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.grid .card')).map((c) => c.dataset.id)).toEqual(['mtb', 'hike', 'ski']);
+    expect(Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.grid .card')).map((c) => c.dataset.id)).toEqual(['mtb', 'hike', 'ski', 'backcountry']);
     expect(q(dock, '[data-trail-note]')!.textContent).toMatch(/Ski pistes/);
     set('spring');
     expect(q(dock, '[data-trail-note]')!.hidden).toBe(true);

@@ -35,6 +35,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'treehouse', level: 2 },
   // Level 3: the Small Hotel (Phase 6 Task 27; an optional lodging tier: chalets and apartments still house everybody, no goal or Advisor rule needs it).
   { kind: 'building', id: 'smallHotel', level: 3 },
+  // Level 3: backcountry routes (Phase 6 Task 32; winter ski-touring / off-piste extra, no goal or Advisor rule needs it: the Advisor only WARNS about routes you built).
+  { kind: 'landscape', id: 'backcountry', level: 3 },
   // Level 3: the suspension footbridge (Phase 6 Task 46; a hiker attraction, nothing a goal or Advisor rule needs; regular bridges are always available).
   { kind: 'landscape', id: 'suspension', level: 3 },
   // Level 3 (Regional name): the heavy transport.
@@ -68,7 +70,7 @@ export const unlocksAt = (level: number): UnlockDef[] => UNLOCKS.filter((u) => u
 export function unlockName(kind: UnlockKind, id: string): string {
   if (kind === 'building') return BUILDINGS[id]?.name ?? id;
   if (kind === 'lift') return LIFTS[id as LiftKind]?.name ?? id;
-  if (kind === 'landscape') return id === 'pond' ? 'Ponds & lakes (Landscape)' : id === 'river' ? 'Rivers & springs (Landscape)' : id === 'suspension' ? 'Suspension footbridges (Paths & trails)' : id;
+  if (kind === 'landscape') return id === 'pond' ? 'Ponds & lakes (Landscape)' : id === 'river' ? 'Rivers & springs (Landscape)' : id === 'suspension' ? 'Suspension footbridges (Paths & trails)' : id === 'backcountry' ? 'Backcountry routes (Pistes & trails)' : id;
   return CAMPAIGNS.find((c) => c.id === id)?.name ?? id;
 }
 export const unlockIcon = (kind: UnlockKind, id: string): string => (kind === 'campaign' ? CAMPAIGNS.find((c) => c.id === id)?.icon ?? '📣' : kind === 'lift' ? '🚡' : kind === 'landscape' ? '💧' : '🏗️');

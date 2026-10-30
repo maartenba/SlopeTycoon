@@ -14,6 +14,7 @@ import { autoFlattenDefault } from '../../src/sim/PlacementRules';
 import { seasonStartDay } from '../../src/sim/Clock';
 import { Q } from '../../src/sim/ops/PisteQuality';
 import { Layer } from '../../src/world/Networks';
+import { paintBackcountryRoute } from './backcountryHelpers';
 import { sentence } from '../../src/ui/text';
 import { tutorialSim, makeEngine } from '../tutorial/helpers';
 import { Queries } from '../../src/tutorial/queries';
@@ -360,6 +361,24 @@ const SCENARIOS: Scenario[] = [
     fixes: [
       { name: 'a campground with toilets stands', apply: (s) => { const c = buildAt(s, 'campground', lodge(s), { rmax: 22 }); buildAt(s, 'toilets', { x: c.x + 2, y: c.y + 2 }, { rmax: 6 }); } },
       { name: 'winter comes', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 5; } },
+    ],
+  },
+  {
+    id: 'backcountry.patrol',
+    setup: (s) => { paintBackcountryRoute(s); s.cond.skiOpen.fill(1); s.coverage.map('patrol').fill(0); s.backcountry.refresh(); },
+    fixes: [
+      { name: 'the route is closed by hand (an override-free closure: no snow)', apply: (s) => { s.cond.skiOpen.fill(0); s.backcountry.refresh(); } },
+      { name: 'the route is erased', apply: (s) => { const n = s.size; for (const r of s.backcountry.routes()) for (const t of r.tiles) s.networks.unpaint(Layer.Backcountry, t % n, (t / n) | 0); } },
+      { name: 'patrol covers the route', apply: (s) => { s.coverage.map('patrol').fill(1); s.backcountry.refresh(); } },
+    ],
+  },
+  {
+    id: 'backcountry.risky',
+    setup: (s) => { const t = paintBackcountryRoute(s); s.cond.skiOpen.fill(1); for (const i of t) s.safety.avalanche.inst[i] = 2.5; s.backcountry.refresh(); s.backcountry.setGlobalOverride(true); },
+    fixes: [
+      { name: 'the override is switched off', apply: (s) => { s.backcountry.setGlobalOverride(false); } },
+      { name: 'the danger falls (blasting and settling)', apply: (s) => { for (const r of s.backcountry.routes()) for (const t of r.tiles) s.safety.avalanche.inst[t] = 0; s.backcountry.refresh(); } },
+      { name: 'the route is erased', apply: (s) => { const n = s.size; for (const r of s.backcountry.routes()) for (const t of r.tiles) s.networks.unpaint(Layer.Backcountry, t % n, (t / n) | 0); } },
     ],
   },
   {

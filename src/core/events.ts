@@ -23,7 +23,10 @@ export interface GameEvents {
   /** A footpath/road/rail stroke was committed (or erased). `tiles` = tiles in the stroke. */
   'path:drawn': { kind: 'path' | 'road' | 'rail'; tiles: number; erase: boolean };
   /** A piste/trail stroke was painted (or erased). */
-  'piste:painted': { layer: 'ski' | 'mtb' | 'hike'; tiles: number; erase: boolean };
+  /** A backcountry route opened / closed (avalanche danger, snow, override; docs/backcountry.md). */
+  'backcountry:opened': { id: number; danger: number };
+  'backcountry:closed': { id: number; danger: number; reason?: string };
+  'piste:painted': { layer: 'ski' | 'mtb' | 'hike' | 'backcountry'; tiles: number; erase: boolean };
   /** A lift was built. */
   'lift:built': { id: number; kind: string };
   /** A lift was opened or closed. */
@@ -134,7 +137,7 @@ export type GameEventName = keyof GameEvents;
 /** Every event name (used by the debug event log). `satisfies` + the check below keep it exhaustive. */
 export const GAME_EVENT_NAMES = [
   'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened',
-  'piste:opened', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'incident:avalanche', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated',
+  'piste:opened', 'backcountry:opened', 'backcountry:closed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'incident:avalanche', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated',
   'incident:injury', 'incident:created', 'incident:resolved', 'incident:escalated', 'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'lift:broken', 'lift:repaired', 'ops:serviceSoon', 'lift:serviceStarted', 'lift:serviced', 'lift:serviceOverdue', 'incident:stranded', 'ops:schedule', 'finance:monthClosed', 'rating:changed', 'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'lift:closed', 'weather:changed', 'attraction:opened', 'attraction:closed',
   'ops:grooming', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished', 'story:resolved',
 ] as const satisfies readonly GameEventName[];

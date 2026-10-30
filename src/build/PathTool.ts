@@ -19,6 +19,8 @@ export interface DragToolOptions {
   multiplier: () => number;
   /** Career lock reason of the suspension footbridge (`gate.locked('landscape', 'suspension')`), null = available. */
   suspensionLocked?: () => string | null;
+  /** Career lock reason of backcountry routes, null = available. */
+  backcountryLocked?: () => string | null;
   /** Called after tiles were added/removed (reevaluate deps, refresh UI). */
   onChanged: () => void;
   /** A stroke was committed: group is the tool's undo group ('path'|'road'|'rail'|'piste'), layer for pistes. */

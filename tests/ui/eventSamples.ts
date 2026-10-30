@@ -8,7 +8,7 @@ export const EVENT_SAMPLES: { [K in GameEventName]: GameEvents[K] } = {
   'lift:built': { id: 2, kind: 'chair4d' }, 'lift:opened': { id: 2, open: true }, 'lift:closed': { id: 2, reason: 'Closed: no snow at the top station (1,450 m)' },
   'attraction:opened': { id: 3, type: 'cafe' }, 'attraction:closed': { id: 3, type: 'mountainHut', reason: 'Closed: no snow at 1,450 m' },
   'weather:changed': { kind: 'storm', previous: 'clear', temperature: -3, snowline: 10, precipitation: 'snow' },
-  'piste:opened': { id: 5, open: false }, 'money:changed': { money: 100, delta: 5 },
+  'piste:opened': { id: 5, open: false }, 'backcountry:opened': { id: 7, danger: 2 }, 'backcountry:closed': { id: 7, danger: 4, reason: 'Avalanche danger 4' }, 'money:changed': { money: 100, delta: 5 },
   'loan:taken': { amount: 5000, total: 5000, rate: 5, termMonths: 12 }, 'speed:changed': { speed: 1, previous: 0 }, 'season:changed': { season: 'winter', previous: 'autumn' },
   'incident:avalanche': { x: 12, y: 20, severity: 2, buried: 2 }, 'incident:wildlife': { x: 8, y: 9, kind: 'bear', animal: 'bear', outcome: 'sighting' },
   'wildlife:scare': { animal: 'bear', id: 1, x: 8, y: 9, tile: 100, guests: 5, areaName: 'the northern upper bowl' },

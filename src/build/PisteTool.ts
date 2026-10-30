@@ -1,4 +1,4 @@
-import { TRAIL_ORPHAN_MSG, NetKind, Difficulty, PISTE_WATER_MSG, interpolateStroke, Layer, PISTE_COST_PER_TILE, sweepBrush, type LayerBit } from '../world/Networks';
+import { TRAIL_ORPHAN_MSG, BACKCOUNTRY_ORPHAN_MSG, BACKCOUNTRY_COST_PER_TILE, NetKind, Difficulty, PISTE_WATER_MSG, interpolateStroke, Layer, PISTE_COST_PER_TILE, sweepBrush, type LayerBit } from '../world/Networks';
 import type { Pt } from '../sim/Dependencies';
 import { slopeProfile } from '../sim/PisteStats';
 import { buildTrailStroke, describeExtras, planTrailStroke, type CrossMode } from '../world/StrokePlan';
@@ -22,6 +22,8 @@ export class PisteTool extends DragTool {
   override: number | null = null;
   brush = 1;
   private samples: Pt[] = [];
+  /** Career lock reason of backcountry routes (`gate.locked('landscape', 'backcountry')`), null = available. */
+  backcountryLocked?: () => string | null;
   /** Rail crossing choice for trails (dock toggle 'Cross rails'). */
   crossMode: CrossMode = 'level';
   private get trail(): 'hike' | 'mtb' | null { return this.layer === Layer.Hike ? 'hike' : this.layer === Layer.Mtb ? 'mtb' : null; }
@@ -75,6 +77,14 @@ export class PisteTool extends DragTool {
     if (!tiles.length) return { ok: false, cost: 0, text: this.erasing ? 'Nothing to erase here' : 'Blocked: nothing to paint here' };
     if (this.erasing) return { ok: true, cost: 0, text: `Erase ${tiles.length} tiles` };
     const net = this.o.networks;
+    if (this.layer === Layer.Backcountry) {
+      const lock = this.o.backcountryLocked?.() ?? null;
+      if (lock) return { ok: false, cost: 0, text: lock };
+      if (!net.strokeAnchored(tiles, this.layer)) return { ok: false, cost: 0, text: BACKCOUNTRY_ORPHAN_MSG };
+      const cost = tiles.length * BACKCOUNTRY_COST_PER_TILE * this.o.multiplier();
+      this.emitProfile();
+      return { ok: true, cost, text: `Backcountry route — ${tiles.length} tiles, $${Math.round(cost)}` };
+    }
     if (this.trail && this.start) { // bridges over lakes and rail crossings are part of the stroke
       const plan = planTrailStroke(net, this.o.grid, this.trail, this.strokeLine(), this.o.multiplier(), this.crossMode, this.o.suspensionLocked?.() ?? null);
       if (!plan.ok) return { ok: false, cost: 0, text: plan.reason === TRAIL_ORPHAN_MSG ? TRAIL_ORPHAN_MSG : `Blocked: ${plan.reason}` };
@@ -97,7 +107,7 @@ export class PisteTool extends DragTool {
     const line = this.strokeLine();
     if (line.length < 2) { this.o.onProfile(null); return; }
     const auto = this.override !== null ? this.override : [...this.o.networks.autoDifficulty(line).values()];
-    const label = this.layer === Layer.Ski ? 'Ski piste' : this.layer === Layer.Mtb ? 'MTB trail' : 'Hiking trail';
+    const label = this.layer === Layer.Ski ? 'Ski piste' : this.layer === Layer.Mtb ? 'MTB trail' : this.layer === Layer.Backcountry ? 'Backcountry route' : 'Hiking trail';
     const profile = slopeProfile(this.o.grid, line, auto), snowline = this.snowlineM?.();
     // Building is never season-bound; only opening is. Say so when this line currently lies below the snowline (bare ground).
     const bare = this.layer === Layer.Ski && snowline !== undefined && Math.max(profile.startAltM, profile.endAltM) < snowline;

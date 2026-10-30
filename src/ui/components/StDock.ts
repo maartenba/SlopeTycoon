@@ -32,7 +32,7 @@ export interface DockApi {
   buildings: { locked(id: string): string[]; cost(id: string): number; multiplier(): number; select(id: string): void };
   lifts: { select(kind: LiftKind): void; costPer100m(kind: LiftKind): number; /** Career lock reasons ('Unlocks at level 2: ...'); empty = available. */ locked?(kind: LiftKind): string[] };
   /** Toggle semantics: starting the already-active key stops it. */
-  network: { start(key: NetworkItem['key']): void; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; setOverRail?(on: boolean): void; setCrossMode?(mode: 'level' | 'bridge'): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4): number };
+  network: { start(key: NetworkItem['key']): void; /** Career lock reason of a network item (backcountry routes), null = available. */ locked?(key: NetworkItem['key']): string | null; setOverride(v: number | null): void; setBrush(n: number): void; setErase?(on: boolean): void; setOverRail?(on: boolean): void; setCrossMode?(mode: 'level' | 'bridge'): void; undo?(): boolean; redo?(): boolean; suggest?(want: number | null): void; pruneOrphans?(layer: 1 | 2 | 4 | 8): number };
   terraform: {
     setMode(m: TerraformMode): void; setTarget(t: TerraformTarget): void; setBrush(n: number): void; setMaxEdgeDelta(d: 1 | 2): void;
     state(): { mode: TerraformMode; brush: number; target: TerraformTarget; maxEdgeDelta?: 1 | 2 };
@@ -768,7 +768,8 @@ export class StDock extends StElement {
     if (drawer === 'landscape' || drawer === 'terrain' || drawer === 'view') { const l = this.landItem(id), k = l?.lock?.(); return { text: l?.price ?? '', cost: 0, lock: k ? [k] : [] }; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
     const c = n?.costPerTile || PISTE_COST_PER_TILE;
-    return { text: `${formatMoney(c)}/tile`, cost: c, lock: [] };
+    const lk = n ? api.network.locked?.(n.key) ?? null : null;
+    return { text: `${formatMoney(c)}/tile`, cost: c, lock: lk ? [lk] : [] };
   }
 
   private updateCards(): void {
@@ -799,7 +800,7 @@ export class StDock extends StElement {
     if (drawer === 'lifts') return liftInfo(id as LiftKind, api.lifts.costPer100m(id as LiftKind), this.season(), api.lifts.locked?.(id as LiftKind) ?? []);
     if (drawer === 'landscape' || drawer === 'terrain' || drawer === 'view') { const l = this.landItem(id), k = l?.lock?.(); return l ? { id, title: l.name, desc: l.desc, icon: l.icon, stats: [...l.stats.map((x): [string, string] => [x[0] ?? '', x[1] ?? '']), ...(l.key ? [['Hotkey', l.key] as [string, string]] : [])], reqs: [], rules: l.rules, note: k && LEVEL_LOCK.test(k) ? k : undefined } : null; }
     const n = NETWORK_ITEMS.find((i) => i.key === id);
-    return n ? networkInfo(n, PISTE_COST_PER_TILE, this.season()) : null;
+    return n ? networkInfo(n, PISTE_COST_PER_TILE, this.season(), api.network.locked?.(n.key) ?? null) : null;
   }
 
   private renderInfo(): void {

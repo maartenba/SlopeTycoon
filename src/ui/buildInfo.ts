@@ -116,7 +116,7 @@ export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
 };
 
 const BRIDGE_OF_KEY: Partial<Record<string, BridgeKind>> = { path: 'footbridge', road: 'roadBridge', hike: 'hikeBridge', mtb: 'mtbBridge' };
-export interface NetworkItem { key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike'; name: string; icon: string; costPerTile: number; desc: string; group: 'paths' | 'pistes' }
+export interface NetworkItem { key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike' | 'backcountry'; name: string; icon: string; costPerTile: number; desc: string; group: 'paths' | 'pistes' }
 export const NETWORK_ITEMS: NetworkItem[] = [
   { key: 'path', name: 'Footpath', icon: '🚶', costPerTile: 20, desc: 'Walkway connecting buildings to the village.', group: 'paths' },
   { key: 'road', name: 'Road', icon: '🛣️', costPerTile: 60, desc: 'Road for buses and cars. Connects to the road entry.', group: 'paths' },
@@ -124,6 +124,7 @@ export const NETWORK_ITEMS: NetworkItem[] = [
   { key: 'ski', name: 'Ski piste', icon: '⛷️', costPerTile: 0, desc: 'Paint skiable runs. Difficulty follows slope unless overridden.', group: 'pistes' },
   { key: 'mtb', name: 'MTB trail', icon: '🚵', costPerTile: 0, desc: 'Summer mountain-bike trail.', group: 'pistes' },
   { key: 'hike', name: 'Hiking trail', icon: '🥾', costPerTile: 0, desc: 'Summer hiking trail.', group: 'pistes' },
+  { key: 'backcountry', name: 'Backcountry route', icon: '🚩', costPerTile: 15, desc: 'Winter ski-touring and off-piste route, marked with flag poles. Closes by itself at avalanche danger 4.', group: 'pistes' },
 ];
 
 /** Placement-rule lines: PlacementRules.describeRules (rules audit); catalog-derived fallback if it yields nothing. */
@@ -168,7 +169,7 @@ const money = (n: number): string => '$' + Math.round(n).toLocaleString('en-US')
 
 /** Season relevance of lifts (winter-only drag lifts vs bike-capable chairs/gondolas) and network tools (pistes winter, MTB/hiking summer). */
 export const liftSeason = (k: LiftKind): SeasonTag => (LIFTS[k].carriesBikes ? 'all' : 'winter');
-export const networkSeason = (key: NetworkItem['key']): SeasonTag => (key === 'ski' ? 'winter' : key === 'mtb' || key === 'hike' ? 'summer' : 'all');
+export const networkSeason = (key: NetworkItem['key']): SeasonTag => (key === 'ski' || key === 'backcountry' ? 'winter' : key === 'mtb' || key === 'hike' ? 'summer' : 'all');
 /** 'Mostly used from summer on' hint line for an off-season item; null when usable now. */
 export function seasonHint(tag: SeasonTag, season: SeasonId | undefined): string | null {
   const u = season ? usableFrom(tag, season) : null;
@@ -214,13 +215,16 @@ export function liftInfo(kind: LiftKind, costPer100m: number, season?: SeasonId,
     note: lock.find((l) => LEVEL_NOTE.test(l)), reqs: lock.filter((l) => !LEVEL_NOTE.test(l)).map((text) => ({ text, ok: false })), rules: [...(seasonHint(liftSeason(kind), season) ? [seasonHint(liftSeason(kind), season)!] : []), 'Click bottom station, then top station', 'Stations need flat ground (or auto-flatten)'],
   };
 }
-export function networkInfo(it: NetworkItem, pisteCost: number, season?: SeasonId): InfoModel {
+export function networkInfo(it: NetworkItem, pisteCost: number, season?: SeasonId, lock?: string | null): InfoModel {
   const c = it.costPerTile || pisteCost, h = seasonHint(networkSeason(it.key), season);
   const bk = BRIDGE_OF_KEY[it.key], sp = bk ? BRIDGES[bk] : null;
   const stats: Array<[string, string]> = [['Cost', `${money(c)}/tile`]];
   if (sp) stats.push(['Over water', `${sp.label} ${money(sp.costPerTile)}/tile, max ${sp.maxSpan}`]);
   const rules = [...(h ? [h] : []), ...(it.key === 'path' || it.key === 'road' || it.key === 'rail' ? ['Drag to draw; R flips the L-corner'] : ['Drag to paint with the brush'])];
   if (sp) rules.push(`Drag across water${it.key === 'path' || it.key === 'road' ? ' or a gap' : ''}: a ${sp.label.toLowerCase()} is built for you`);
+  if (it.key === 'backcountry') {
+    return { id: it.key, title: it.name, desc: it.desc, icon: it.icon, stats, reqs: [], note: lock && LEVEL_NOTE.test(lock) ? lock : undefined, rules: [...(h ? [h] : []), 'Start next to a lift top, a hut, a piste end or a hiking trail', 'Not on water or buildings', 'Avalanche danger 1-5 from the snowpack: closed at 4 and 5 (you can override, at your own risk)', 'Patrol cover lowers the danger and the risk'] };
+  }
   if (it.key !== 'ski' && it.key !== 'rail') rules.push(it.key === 'road' ? 'Crosses rails at a level crossing' : 'Crosses rails: level crossing or bridge (Cross rails)');
   return { id: it.key, title: it.name, desc: it.desc, icon: it.icon, stats, reqs: [], rules };
 }

@@ -4,6 +4,7 @@ import { generateProps, PropStore } from '../world/Props';
 import { Layer as NetLayer, NetKind, Networks } from '../world/Networks';
 import { Weather, SnowCover, createWeatherSystem } from '../sim/Weather';
 import { Safety } from '../sim/ops/Safety';
+import { Backcountry } from '../sim/ops/Backcountry';
 import { Sev } from '../sim/ops/Incidents';
 import { createOps, Reservoirs, SNOWMAKING, qualityPreference, qualityInjuryScale, qualitySpeedFactor, type Ops } from '../sim/ops';
 import { TileConditions } from '../sim/TileConditions';
@@ -437,6 +438,7 @@ export function createSim(opts: SimOptions) {
     return skillScore[Math.max(0, Math.min(3, skill | 0))]!;
   };
   // Human names for places (pistes/lifts/buildings/areas) used by news messages; see sim/Names.ts.
+  let backcountryRef: Backcountry | null = null;
   const safety: Safety = new Safety({
     size, seed, guests: guestSim.safetyPort(), coverage, buildings: () => buildings.all(), bus,
     spend: (c, a) => { economy.spend(c, a); },
@@ -447,7 +449,7 @@ export function createSim(opts: SimOptions) {
     forest: terrainInfo.forestDensity,
     blocked: (i) => grid.occupancy.flags[i] !== 0 || (networks.layers[i] ?? 0) !== 0,
     season: () => seasonOf(game.date),
-    onTick: (t) => openStatus.tickClosures(t),
+    onTick: (t) => { openStatus.tickClosures(t); backcountryRef?.update(t); },
     avalanche: {
       grid, weather, altitude: (x, y) => cond.altitude(x, y), addSnow: (i, d) => snow.addSnow(i, d),
       isPiste: (i) => ((networks.layers[i] ?? 0) & NetLayer.Ski) !== 0, isGroomed: (i) => pq.at(i) === 2,
@@ -457,6 +459,13 @@ export function createSim(opts: SimOptions) {
     },
   });
   ops.attachSafety(safety);
+  // ---- Backcountry routes (Phase 6 Task 32, docs/backcountry.md): danger 1-5 from the avalanche model, auto-close at 4, player override. Inert (no routes) = no cost, no state. ----
+  const backcountry = new Backcountry({
+    size, networks, avalanche: safety.avalanche, patrol: () => coverage.map('patrol'), snowy: (i) => cond.isSkiable(i % size, (i / size) | 0),
+    onClosedChange: (tiles) => openStatus.setExtraClosed(tiles), bus,
+  });
+  backcountryRef = backcountry;
+  (navWorld as { bcOff?: Uint8Array }).bcOff = backcountry.offPisteMask;
 
   // ---- Per-run operations (docs/runs.md): grooming orders, traffic history, last-groomed day ----
   const absDayNow = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
@@ -1217,7 +1226,7 @@ export function createSim(opts: SimOptions) {
     },
   });
   const sim = {
-    tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
+    backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
     jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,

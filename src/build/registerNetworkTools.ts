@@ -2,7 +2,7 @@ import type * as THREE from 'three';
 import type { GameBus } from '../core/events';
 import type { Grid } from '../world/Grid';
 import { OccFlag } from '../world/Occupancy';
-import { Layer, Networks, PISTE_COST_PER_TILE } from '../world/Networks';
+import { Layer, Networks, PISTE_COST_PER_TILE, BACKCOUNTRY_COST_PER_TILE } from '../world/Networks';
 import type { Buildings } from '../sim/Buildings';
 import type { Economy } from '../sim/Economy';
 import type { Pt } from '../sim/Dependencies';
@@ -17,6 +17,8 @@ import type { Undo } from './UndoActions';
 export interface NetworkToolsCtx {
   /** Career lock of the suspension footbridge (Phase 6 Task 46): a reason, or null when available. */
   suspensionLocked?: () => string | null;
+  /** `gate.locked('landscape', 'backcountry')` (level 3), null = available. */
+  backcountryLocked?: () => string | null;
   grid: Grid;
   buildings: Buildings;
   economy: Economy;
@@ -64,7 +66,7 @@ export interface NetworkTools {
   isConnected(buildingId: number): boolean;
   cancel(): void;
   /** Start a tool by palette key; starting the active one stops it. */
-  startTool(key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike'): void;
+  startTool(key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike' | 'backcountry'): void;
   setOverride(d: number | null): void;
   setBrush(n: number): void;
   /** Toggle erase mode for piste/trail tools (Shift-drag also erases). */
@@ -80,7 +82,7 @@ export interface NetworkTools {
   /** Re-evaluate buildings / refresh overlays after the shared undo stack changed network tiles. */
   refresh(): void;
   /** Remove unattached piste/trail fragments of a layer; returns tiles removed. */
-  pruneOrphans(layer: 1 | 2 | 4): number;
+  pruneOrphans(layer: 1 | 2 | 4 | 8): number;
 }
 
 const REFUND = 0.5;
@@ -117,10 +119,10 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     grid, networks, camera: ctx.camera, dom: ctx.dom, scene: ctx.scene,
     charge: (c) => economy.charge(c),
     multiplier: () => economy.constructionMultiplier(),
-    suspensionLocked: ctx.suspensionLocked,
+    suspensionLocked: ctx.suspensionLocked, backcountryLocked: ctx.backcountryLocked,
     onChanged: afterChange,
     onStroke: (group, tiles, erase, layer) => {
-      if (group === 'piste') ctx.bus?.emit('piste:painted', { layer: layer === Layer.Mtb ? 'mtb' : layer === Layer.Hike ? 'hike' : 'ski', tiles, erase });
+      if (group === 'piste') ctx.bus?.emit('piste:painted', { layer: layer === Layer.Mtb ? 'mtb' : layer === Layer.Hike ? 'hike' : layer === Layer.Backcountry ? 'backcountry' : 'ski', tiles, erase });
       else if (group === 'path' || group === 'road' || group === 'rail') ctx.bus?.emit('path:drawn', { kind: group, tiles, erase });
     },
     onError: (m) => ctx.toast(m, 'error'),
@@ -151,7 +153,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
   let eraseOn = false;
   const undo = (): boolean => {
     if (ctx.undo && ctx.performUndo) return ctx.performUndo();
-    const group = activeKey === null ? undefined : activeKey === 'ski' || activeKey === 'mtb' || activeKey === 'hike' ? 'piste' : activeKey;
+    const group = activeKey === null ? undefined : activeKey === 'ski' || activeKey === 'mtb' || activeKey === 'hike' || activeKey === 'backcountry' ? 'piste' : activeKey;
     const e = history.pop(group);
     if (!e) { ctx.toast('Nothing to undo', 'info'); return false; }
     networks.restore(e.diff);
@@ -165,6 +167,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     ski: () => piste.startTool(Layer.Ski, overrideValue()),
     mtb: () => piste.startTool(Layer.Mtb, overrideValue()),
     hike: () => piste.startTool(Layer.Hike, overrideValue()),
+    backcountry: () => piste.startTool(Layer.Backcountry, null),
   } as const;
   const overrideValue = (): number | null => (diffSel.value === 'auto' ? null : Number(diffSel.value));
 
@@ -179,7 +182,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;max-width:300px';
     const defs: Array<[keyof typeof run, string, string]> = [
       ['path', 'Footpath', '$20/tile'], ['road', 'Road', '$60/tile'], ['rail', 'Rail', '$100/tile'],
-      ['ski', 'Ski piste', `$${PISTE_COST_PER_TILE}/tile`], ['mtb', 'MTB trail', `$${PISTE_COST_PER_TILE}/tile`], ['hike', 'Hiking trail', `$${PISTE_COST_PER_TILE}/tile`],
+      ['ski', 'Ski piste', `$${PISTE_COST_PER_TILE}/tile`], ['mtb', 'MTB trail', `$${PISTE_COST_PER_TILE}/tile`], ['hike', 'Hiking trail', `$${PISTE_COST_PER_TILE}/tile`], ['backcountry', 'Backcountry route', `$${BACKCOUNTRY_COST_PER_TILE}/tile`],
     ];
     for (const [key, label, cost] of defs) {
       const b = document.createElement('button');

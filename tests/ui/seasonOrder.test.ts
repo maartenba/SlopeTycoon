@@ -17,8 +17,8 @@ describe('catalog season field', () => {
   it('lifts and network tools: drag lifts are winter-only, bike-capable lifts all year; ski winter, MTB/hiking summer', () => {
     expect(liftSeason('tbar')).toBe('winter');
     for (const k of Object.keys(LIFTS) as Array<keyof typeof LIFTS>) expect(liftSeason(k)).toBe(LIFTS[k].carriesBikes ? 'all' : 'winter');
-    expect(networkSeason('ski')).toBe('winter'); expect(networkSeason('mtb')).toBe('summer'); expect(networkSeason('hike')).toBe('summer'); expect(networkSeason('road')).toBe('all');
-    expect(NETWORK_ITEMS.map((n) => networkSeason(n.key)).length).toBe(6);
+    expect(networkSeason('ski')).toBe('winter'); expect(networkSeason('mtb')).toBe('summer'); expect(networkSeason('hike')).toBe('summer'); expect(networkSeason('road')).toBe('all'); expect(networkSeason('backcountry')).toBe('winter');
+    expect(NETWORK_ITEMS.map((n) => networkSeason(n.key)).length).toBe(7);
   });
 });
 

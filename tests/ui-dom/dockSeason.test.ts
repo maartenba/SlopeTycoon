@@ -98,9 +98,9 @@ describe('season-ordered build drawer (DOM)', () => {
     expect(lifts.slice(-winterOnly.length).sort()).toEqual(winterOnly);
     expect(q(dock, '.card[data-id="tbar"]')!.classList.contains('offseason')).toBe(true);
     dock.show('pistes');
-    expect(ids(dock)).toEqual(['mtb', 'hike', 'ski']);
+    expect(ids(dock)).toEqual(['mtb', 'hike', 'ski', 'backcountry']);
     set('winter');
-    expect(ids(dock)).toEqual(['ski', 'mtb', 'hike']);
+    expect(ids(dock)).toEqual(['ski', 'backcountry', 'mtb', 'hike']);
     dock.remove();
   });
 });

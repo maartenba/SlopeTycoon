@@ -194,7 +194,10 @@ import { unlockIcon, unlockName } from '@/config/unlocks';
 import { startMenuPreview } from '@/render/MenuPreview';
 import { mountMainMenu } from '@/ui/menuHost';
 import { modalStack } from '@/ui/modal';
-import { showModal } from '@/ui/components/StModal';
+import { showModal, confirmDialog } from '@/ui/components/StModal';
+import { BackcountryFlags } from '@/render/BackcountryFlags';
+import { routeInfo, OVERRIDE_CONFIRM } from '@/ui/backcountryFormat';
+import type { StRouteInspector } from '@/ui/components/StRouteInspector';
 import { APP_VERSION } from '@/ui/version';
 import { buildUpdateCard, fetchWhatsNew, updateReminderDue, whatsNewOnLaunch, SEEN_VERSION_KEY, UPDATE_REMIND_KEY } from '@/config/whatsNew';
 import { changelogUrl } from '@/ui/whatsNewView';
@@ -579,6 +582,8 @@ let schoolInfoRef: ((id: number, type: string) => NonNullable<import('@/ui/compo
 let selectedId: number | null = null;
 let selectedPiste: { x: number; y: number } | null = null;
 let pisteHighlightOn = false;
+let selectedRoute: number | null = null; // tile index of a selected backcountry route tile
+let routeInspectorRef: StRouteInspector | null = null;
 let pisteInspectorRef: StPisteInspector | null = null;
 const pisteHl = new PisteHighlight();
 renderer.scene.add(pisteHl.mesh);
@@ -689,6 +694,8 @@ const allDecorItems = (): readonly import('@/render/VillageDecor').DecorItem[] =
 };
 const springMarkers = new SpringMarkers(grid, sim.rivers); // Phase 6 Task 14: one instanced ring per spring site, shown on the Landscape > Water tab
 renderer.scene.add(springMarkers.group);
+const bcFlags = new BackcountryFlags(grid, sim.backcountry); // Phase 6 Task 32: flag poles (danger colour) along backcountry routes, one merged mesh
+renderer.scene.add(bcFlags.group);
 const landscapeTool = new LandscapeTool({
   rivers: sim.rivers, riverEnv: () => sim.riverEnv(), beginRiverStroke: (label) => undo.riverStroke(label),
   locked: () => sim.gate.locked('landscape', 'river'), confirmFirst: () => touchWire.enabled(), onSprings: (v) => springMarkers.setVisible(v),
@@ -718,6 +725,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   updateVillageDecor(dt);
   updateLandscapeView();
   springMarkers.update();
+  bcFlags.update();
   updateFestival(dt);
   tourVehicles.update(sim.loop.tickCount);
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
@@ -804,8 +812,16 @@ const refreshUi = (): void => {
   dockRef?.refresh();
   const b = selectedId === null ? undefined : buildings.get(selectedId);
   if (!pisteInspectorRef?.busy) showPisteInspector();
+  showRouteInspector();
   inspectorRef?.show(b ? { id: b.id, type: b.type, name: sim.names.buildingName(b.id), rot: b.rot, active: b.active, reason: b.reason ? sentence(b.reason) : b.reason, refund: refundValue(b.type), onFoot: !DEMO && sim.networks.suppliedOnFootOnly(b.id), conditions: openStatusRef?.buildingStatus(b.id), school: schoolInfoRef?.(b.id, b.type), ops: opsInfo(b.id, b.type), attraction: (() => { const a = attractionsRef?.refreshOpen(b.id), i = a?.info(); if (i && a?.spec.beds) i.beds = { total: a.spec.beds, used: attractionsRef!.beds.occupied(b.id), sold: a.stats.nights }; if (i && a?.spec.kind === 'toilet') i.toilet = { usesToday: attractionsRef!.usesToday(a), perDay: TOILET_USES_PER_DAY }; if (i && a?.spec.campfire) i.camp = attractionsRef!.campInfo(b.id); if (i) { const h = attractionsRef!.hotelInfo(b.id); if (h) { if (h.pool) { const alt = cond.altitude(Math.floor(b.x + b.w / 2), Math.floor(b.y + b.h / 2)); h.pool.heatPerDay = poolHeatCost(weather.temperatureAt(alt, 12)); h.pool.steam = weather.temperatureAt(alt, currentHour()) < POOL.steamBelow; } i.hotel = h; } } return i; })() } : null);
 };
+const showRouteInspector = (): void => {
+  if (!routeInspectorRef) return;
+  const r = selectedRoute !== null ? sim.backcountry.routeAt(selectedRoute) : undefined;
+  if (!r || selectedId !== null || selectedPiste !== null) { if (!r) selectedRoute = null; routeInspectorRef.show(null); return; }
+  routeInspectorRef.show(routeInfo(r, sim.backcountry.globalOverride, sim.backcountry.threshold));
+};
+const selectRoute = (tile: number): void => { selectedId = null; selectedPiste = null; selectedRoute = tile; refreshUi(); };
 const showPisteInspector = (): void => {
   if (!pisteInspectorRef) return;
   const r = selectedPiste ? sim.pisteReportAt(selectedPiste.x, selectedPiste.y) : null;
@@ -814,9 +830,9 @@ const showPisteInspector = (): void => {
   pisteInspectorRef.show({ ...r, highlighted: pisteHighlightOn });
   if (pisteHighlightOn) pisteHl.set(grid, r.tileIdx); else pisteHl.clear();
 };
-const select = (id: number | null): void => { selectedId = id; if (id !== null) { selectedPiste = null; tutorialRef?.engine.notify('select:building'); } refreshUi(); };
-const selectPiste = (x: number, y: number): void => { selectedId = null; selectedPiste = { x, y }; refreshUi(); };
-{ const id = window.setInterval(() => { if (selectedPiste && !pisteInspectorRef?.busy) showPisteInspector(); }, 1000); demoBag.add(() => window.clearInterval(id)); }
+const select = (id: number | null): void => { selectedId = id; if (id !== null) { selectedPiste = null; selectedRoute = null; tutorialRef?.engine.notify('select:building'); } refreshUi(); };
+const selectPiste = (x: number, y: number): void => { selectedId = null; selectedRoute = null; selectedPiste = { x, y }; refreshUi(); };
+{ const id = window.setInterval(() => { if (selectedPiste && !pisteInspectorRef?.busy) showPisteInspector(); if (selectedRoute !== null) showRouteInspector(); }, 1000); demoBag.add(() => window.clearInterval(id)); }
 /** Shared undo stack: last 10 placements / bulldozes of the same in-game day (not saved). Path / piste strokes keep their own Ctrl+Z history. */
 const undo = new Undo(sim);
 const onPlaced = (out: PlaceOutcome): void => {
@@ -925,12 +941,14 @@ const startPlacement = (type: string): void => {
     const p = pickHeightfield(grid, ray.ray.origin, ray.ray.direction);
     const b = p ? buildings.at(p.tileX, p.tileY) : undefined;
     const onPiste = !b && !!p && !!sim.pisteReportAt(p.tileX, p.tileY);
-    const act = routeMapClick(tools.current, !!b, selectedId !== null || selectedPiste !== null, onPiste);
+    const onRoute = !b && !onPiste && !!p && tools.current === 'select' && !!sim.backcountry.routeAt(p.tileY * grid.size + p.tileX);
+    if (onRoute && p) { selectRoute(p.tileY * grid.size + p.tileX); return; }
+    const act = routeMapClick(tools.current, !!b, selectedId !== null || selectedPiste !== null || selectedRoute !== null, onPiste);
     if (act === 'bulldoze' && b) demolish(b.id);
     else if (act === 'bulldoze-miss') { if (!(p && netTools?.bulldozeAt(p.tileX, p.tileY))) toast('Nothing to bulldoze here', 'warn'); }
     else if (act === 'select' && b) select(b.id);
     else if (act === 'select-piste' && p) selectPiste(p.tileX, p.tileY);
-    else if (act === 'deselect') { selectedPiste = null; select(null); }
+    else if (act === 'deselect') { selectedPiste = null; selectedRoute = null; select(null); }
   });
   // Select mode: tile highlight only (no cost tooltip, never edits).
   dom.addEventListener('pointermove', (e) => {
@@ -1050,7 +1068,7 @@ renderer.onFrame = (dt): void => {
 };
 
 // Paths, roads, rail, pistes (own module/palette)
-netTools = safely('Paths/roads/pistes', () => registerNetworkTools({ networks, suspensionLocked: () => sim.gate.locked('landscape', 'suspension'),
+netTools = safely('Paths/roads/pistes', () => registerNetworkTools({ networks, suspensionLocked: () => sim.gate.locked('landscape', 'suspension'), backcountryLocked: () => sim.gate.locked('landscape', 'backcountry'),
   grid, buildings, economy, scene: renderer.scene, camera: renderer.controls.camera, dom: renderer.webgl.domElement, uiRoot: null,
   roadEntry: terrainInfo.roadEntry, railEntry: terrainInfo.railEntry, village: terrainInfo.villageAnchor,
   onFrame: (fn) => { const prev = renderer.onFrame; renderer.onFrame = (dt) => { prev?.(dt); fn(); }; },
@@ -2346,6 +2364,20 @@ if (ui && !DEMO) {
     setClosed: (closed) => { const r = selectedPiste ? sim.pisteReportAt(selectedPiste.x, selectedPiste.y) : null; if (r) sim.setRunClosed(r.id, closed); refreshUi(); },
     setGroom: (mode) => { const r = selectedPiste ? sim.pisteReportAt(selectedPiste.x, selectedPiste.y) : null; if (r) sim.setRunGroomMode(r.id, mode); refreshUi(); },
   });
+  const routeInspector = el('st-route-inspector');
+  routeInspectorRef = routeInspector;
+  routeInspector.bind({
+    setOverride: (on) => {
+      const id = selectedRoute !== null ? sim.backcountry.routeAt(selectedRoute)?.id : undefined;
+      if (id === undefined) return;
+      if (!on) { sim.backcountry.setOverride(id, false); refreshUi(); return; }
+      void confirmDialog(document.getElementById('ui') ?? document.body, { title: 'Open at danger 4+', message: OVERRIDE_CONFIRM, confirm: 'Open anyway', cancel: 'Keep closed', danger: true }).then((ok) => { if (ok) sim.backcountry.setOverride(id, true); refreshUi(); });
+    },
+    setGlobal: (on) => {
+      if (!on) { sim.backcountry.setGlobalOverride(false); refreshUi(); return; }
+      void confirmDialog(document.getElementById('ui') ?? document.body, { title: 'Open all routes at danger 4+', message: OVERRIDE_CONFIRM, confirm: 'Open anyway', cancel: 'Keep closed', danger: true }).then((ok) => { if (ok) sim.backcountry.setGlobalOverride(true); refreshUi(); });
+    },
+  });
   const toastEl = el('st-toast');
   const profileEl = el('st-profile');
   profileRef = profileEl;
@@ -2467,7 +2499,8 @@ if (ui && !DEMO) {
       redo: () => { performRedo(); }, nextRedo: () => { const n = undo.nextRedo(); return n ? `${verbIng(n.verb)} ${n.label}` : null; },
     },
     network: {
-      start: (k) => netTools?.startTool(k),
+      start: (k) => { if (k === 'backcountry') { const l = sim.gate.locked('landscape', 'backcountry'); if (l) { toast(`Locked: ${l}`, 'error'); return; } } netTools?.startTool(k); },
+      locked: (k) => (k === 'backcountry' ? sim.gate.locked('landscape', 'backcountry') : null),
       setOverride: (d) => netTools?.setOverride(d),
       setBrush: (n) => netTools?.setBrush(n),
       setErase: (on) => netTools?.setErase(on),
@@ -2716,7 +2749,7 @@ if (ui && !DEMO) {
     dbg.scenario = { runner: sim.scenario, view: () => sim.scenario?.view() ?? null, forceResult: (r: 'won' | 'lost') => { sim.scenario?.forceResult(r); }, el: scenResult, card: scenCard };
     dbg.stats = { history: sim.stats, demoYear: (endYear = Math.max(2, game.date.year - 1)) => { fillDemoStats(sim.stats, endYear); sim.yearReports.reset(); for (const y of [endYear - 1, endYear]) { quietYears.add(y); sim.yearReports.generate(y); } finPanel.requestRefresh(); return sim.yearReports.latest(); } };
   }, 0);
-  rightCol.append(hud, speedEl, status, goalsEl, ...(scen ? [scenCard] : []), inspector, pisteInspector, guestInsp);
+  rightCol.append(hud, speedEl, status, goalsEl, ...(scen ? [scenCard] : []), inspector, pisteInspector, routeInspector, guestInsp);
   const statsEl = el('st-stats');
   statsRef = statsEl; statsEl.bind({ history: () => sim.stats, guestTypes: () => guestTypeBreakdown(sim.guestSim.store) });
   { const open = statsEl.open.bind(statsEl); let first = true; statsEl.open = (): void => { open(); if (first) { first = false; analytics().track('feature_first_use', { feature: 'stats' }); } }; }
@@ -2931,7 +2964,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, selectRoute, bcFlags, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

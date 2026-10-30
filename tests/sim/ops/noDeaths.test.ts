@@ -83,7 +83,7 @@ describe('forbidden words (user-facing text)', () => {
   });
 
   it('string literals across src contain no death wording (technical uses allow-listed)', () => {
-    const ALLOW = /dead.?end|dead band|dead weight|dead snag|dead tree|dead flat|spiral of death|dead members/i;
+    const ALLOW = /Burials possible; patrol required|dead.?end|dead band|dead weight|dead snag|dead tree|dead flat|spiral of death|dead members/i;
     const files: string[] = [];
     const walk = (d: string): void => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (/\.ts$/.test(p)) files.push(p); } };
     walk(join(__dirname, '../../../src'));

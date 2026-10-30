@@ -4,6 +4,13 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Added
+
+- **Backcountry routes** (level 3): a fourth card in the Pistes & Trails drawer paints winter ski-touring and off-piste routes with flag poles every few tiles and a violet dashed track. A route must start at a lift top, hut, piste end or trail; it is not a piste (no grooming, no difficulty). See `docs/backcountry.md`.
+- **Avalanche danger 1-5** per route, from the avalanche model: it rises after storms and heavy fresh snow, and falls after control blasting and with time. The route inspector shows a danger rose and text such as "Considerable (3)", and the flag colours follow the level.
+- Routes **close automatically at danger 4** ("Avalanche danger 4"); nobody is sent onto a closed route. You can override it per route or for all routes ("Open at danger 4+"), after a confirm ("Open at danger 4? Burials possible; patrol required."). The Advisor warns about open routes outside Ski Patrol cover and about routes kept open at danger 4+.
+- Burials stay injuries: nobody is ever killed. A new repo test (`tests/repo/noDeaths.test.ts`) fails if any sim, UI, config or render string names a death.
+
 ## [0.2.8] - 2026-10-30 (pre-release)
 
 Hotels and calmer guests, the fourth content wave of Phase 6 (milestone M6.4). Changes since 0.2.7: a Small Hotel and a Luxury Hotel with a steaming pool, a Coffee Stand, Senior and School group guests, and the Wellness & Views and School Trips campaigns.

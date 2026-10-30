@@ -91,6 +91,8 @@ export const NEWS_FORMATTERS: Table = {
   'piste:opened': (e) => (e.open
     ? { text: 'A piste opened', severity: 'good', tier: 'info', icon: '⛷️', key: 'piste:opened', category: 'closure', many: (n) => `${plural(n, 'piste')} opened` }
     : { text: 'A piste closed', severity: 'warn', tier: 'important', icon: '⛷️', key: 'piste:closed', category: 'closure', many: (n) => `${plural(n, 'piste')} closed` }),
+  'backcountry:opened': (e) => ({ text: `A backcountry route opened (danger ${e.danger})`, severity: 'good', tier: 'info', icon: '🚩', key: 'backcountry:opened', category: 'closure' }),
+  'backcountry:closed': (e) => ({ text: `A backcountry route closed: ${e.reason ?? `avalanche danger ${e.danger}`}`, severity: 'warn', tier: 'important', icon: '🚩', key: 'backcountry:closed', category: 'closure' }),
   'weather:changed': (e) => {
     if (e.kind === 'heavySnow') return { text: 'Powder day! Heavy snowfall', severity: 'good', tier: 'info', icon: '❄️', key: 'weather:powder', category: 'weather' };
     if (e.kind === 'snow') return { text: e.previous === 'heavySnow' ? 'Snowfall eases' : 'Snowfall begins', severity: 'good', tier: 'trivial', icon: '🌨️', key: 'weather:snow', category: 'weather' };
@@ -184,7 +186,7 @@ export function formatEvent<K extends GameEventName>(name: K, payload: GameEvent
 
 /** Events whose message carries no single place to look at (explicit, enforced by tests; everything else must give a `focus`). */
 export const NON_SPATIAL_EVENTS: ReadonlySet<GameEventName> = new Set<GameEventName>([
-  'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened', 'piste:opened',
+  'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened', 'piste:opened', 'backcountry:opened', 'backcountry:closed',
   'weather:changed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'ops:grooming', 'incident:resolved', 'incident:escalated',
   'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'ops:schedule', 'ops:serviceSoon', 'lift:serviceStarted', 'finance:monthClosed', 'rating:changed',
   'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished',

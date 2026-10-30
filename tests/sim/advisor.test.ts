@@ -8,6 +8,7 @@ import { validatePlacement } from '../../src/sim/PlaceBuilding';
 import { autoFlattenDefault } from '../../src/sim/PlacementRules';
 import { seasonStartDay } from '../../src/sim/Clock';
 import { Layer } from '../../src/world/Networks';
+import { paintBackcountryRoute } from './backcountryHelpers';
 import { Q } from '../../src/sim/ops/PisteQuality';
 import { GuestType } from '../../src/sim/guests/Guest';
 import { DAYS_PER_YEAR } from '../../src/config/balance';
@@ -54,6 +55,9 @@ const CASES: Case[] = [
   { id: 'bear.threat', trigger: (s) => { setDay(s, seasonStartDay('summer') + 5); guests(s, 10); s.ops.safety!.wildlife.animals.push({ kind: 'bear', asleep: false, x: 12, y: 12 } as never); }, calm: (s) => { setDay(s, seasonStartDay('summer') + 5); guests(s, 10); s.ops.safety!.wildlife.animals.push({ kind: 'bear', asleep: true, x: 12, y: 12 } as never); } },
   { id: 'hikers.hungry', trigger: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 8; }, calm: (s) => { s.guestSim.hikerLeaves.n = 20; s.guestSim.hikerLeaves.starving = 0.5; } },
   { id: 'crossing.waits', trigger: (s) => { s.crossings.debugWaits(fakeCrossing(s), 900); }, calm: (s) => { s.crossings.debugWaits(fakeCrossing(s), 40); } },
+  // Backcountry (Phase 6 Task 32): an open route with no patrol cover / a route kept open at danger 4+ by the override
+  { id: 'backcountry.patrol', cheap: true, trigger: (s) => { paintBackcountryRoute(s); s.cond.skiOpen.fill(1); s.coverage.map('patrol').fill(0); s.backcountry.refresh(); }, calm: (s) => { s.backcountry.refresh(); } },
+  { id: 'backcountry.risky', cheap: true, trigger: (s) => { const t = paintBackcountryRoute(s); s.cond.skiOpen.fill(1); for (const i of t) s.safety.avalanche.inst[i] = 2.5; s.backcountry.refresh(); s.backcountry.setGlobalOverride(true); }, calm: (s) => { s.backcountry.refresh(); } },
   { id: 'toilets.none', trigger: (s) => { guests(s, 14); removeTypes(s, 'toilets'); } },
   { id: 'storm.signs', cheap: true, trigger: (s) => { guests(s, 12); s.weather.current.kind = 'storm'; } },
   { id: 'school.none', trigger: (s) => { removeTypes(s, 'skiSchoolHQ'); setFamilies(s, 9); }, calm: (s) => { setFamilies(s, 9); } },
