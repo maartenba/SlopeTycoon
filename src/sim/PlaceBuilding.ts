@@ -3,6 +3,7 @@ import { HEIGHT_UNIT } from '../config/balance';
 import { OccFlag } from '../world/Occupancy';
 import { CHUNK_SIZE, TileType, isWaterType, type Grid } from '../world/Grid';
 import type { CornerChange } from '../world/Terraform';
+import { countCliffs } from '../world/Cliffs';
 import { commitChanges, planFlatten, type FlattenFail, type FlattenFailKind, type FlattenPlan } from '../world/FlattenPlanner';
 import { TREE_KINDS, type PropStore } from '../world/Props';
 
@@ -219,6 +220,11 @@ export function validatePlacement(env: PlacementEnv, type: string, x: number, y:
     const n = env.props.countInRect(x - f.radius, y - f.radius, x + w - 1 + f.radius, y + h - 1 + f.radius, isTreeKind);
     if (n < f.minTrees) bad('Needs forest around it', `pick a spot with at least ${f.minTrees} trees within ${f.radius} tiles (${n} here)`);
     else out.info.push(`Forest around it (${n} trees): they stay`);
+  }
+  if (site.nearRock) {
+    const n = countCliffs(grid, { x, y, w, h }, site.nearRock);
+    if (n < site.nearRock.minTiles) bad('Needs a steep rock face nearby', `pick a spot at the foot of a cliff: at least ${site.nearRock.minTiles} steep bare-rock tiles within ${site.nearRock.radius} tiles (${n} here)`);
+    else out.info.push(`Rock face in reach (${n} steep rock tiles)`);
   }
   out.trees = site.forest && site.forest.keepTrees !== false ? 0 : propsOnFootprint(env, x, y, w, h);
   if (out.trees > 0) out.info.push(`Trees will be cleared (${out.trees})`);

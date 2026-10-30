@@ -24,7 +24,7 @@ describe('catalog rule completeness', () => {
   it('has 31 entries incl. mountainHut', () => { expect(ids.length).toBeGreaterThanOrEqual(31); expect(ids).toContain('mountainHut'); });
   it.each(ids)('%s has complete rule fields', (id) => {
     const d = BUILDINGS[id]!;
-    expect(['road', 'path', 'rail+path', 'pisteEdge', 'none']).toContain(d.access);
+    expect(['road', 'path', 'rail+path', 'pisteEdge', 'trail', 'none']).toContain(d.access);
     expect(['forbid', 'allow', 'edge']).toContain(d.pisteRule);
     expect(['any', 'flat', 'gentleSlope']).toContain(d.site.slopeKind);
     expect(['default', 'optional', 'never']).toContain(d.site.autoFlatten);

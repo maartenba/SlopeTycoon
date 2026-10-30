@@ -4,6 +4,7 @@ import { generateProps, PropStore } from '../world/Props';
 import { Layer as NetLayer, NetKind, Networks } from '../world/Networks';
 import { Weather, SnowCover, createWeatherSystem } from '../sim/Weather';
 import { Safety } from '../sim/ops/Safety';
+import { Sev } from '../sim/ops/Incidents';
 import { createOps, Reservoirs, SNOWMAKING, qualityPreference, qualityInjuryScale, qualitySpeedFactor, type Ops } from '../sim/ops';
 import { TileConditions } from '../sim/TileConditions';
 import { OpenStatus } from '../sim/OpenStatus';
@@ -576,6 +577,8 @@ export function createSim(opts: SimOptions) {
     stamp: () => rivers.version * 4099 + landscape.version * 131 + networks.version * 7 + flow.version * 17 + buildings.all().length,
   });
   const attractions = new AttractionSystem({
+    // Climbing crag (Phase 6 Task 23, docs/climbing.md): a rare MINOR twisted ankle at the base; the patrol answers (never worse than the unattended escalation of any minor injury).
+    mishap: (a, id) => { const s = guestSim.store, i = s.slotOf(id); return i >= 0 && !!safety.incidents.report('injury', s.x[i]!, s.y[i]!, Sev.Minor, id); },
     angling: { stock: fishStock, planner: anglingPlanner },
     tours,
     exitFor,

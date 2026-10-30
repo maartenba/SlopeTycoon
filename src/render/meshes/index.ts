@@ -17,13 +17,14 @@ import * as F from './buildings/farm';
 import * as W from './buildings/ranger';
 import * as G from './buildings/energy';
 import * as Q from './buildings/tours';
+import { crag } from './buildings/climbing';
 import { TURBINE_HUB } from './buildings/energy';
 import { campground, campfireGlowGeometry } from './campground';
 import { pettingZoo } from './pettingZoo';
-import { tackleHut } from './tackleHut';
-import { fishingPier } from './fishingPier';
 import { viewpoint } from './viewpoint';
 import { treehouse } from './treehouse';
+import { tackleHut } from './tackleHut';
+import { fishingPier } from './fishingPier';
 
 const e = (build: BuildFn, foundation = true): BuilderEntry => ({ build, foundation });
 
@@ -32,7 +33,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   baseLodge: e(S.baseLodge), lodge: e(S.lodge), cafe: e(S.cafe), apresBar: e(S.apresBar), mountainHut: e(M.mountainHut), shop: e(S.shop), rental: e(S.rental),
   chalet: e(S.chalet), apartment: e(S.apartment), skiSchoolHQ: e(S.skiSchoolHQ),
   magicCarpet: e(K.magicCarpet, false), kidsGround: e(K.kidsGround, false), playground: e(K.playground, false),
-  patrolHub: e(K.patrolHub), rangerStation: e(W.rangerStation), firstAid: e(K.firstAid), warningSign: e(K.warningSign, false), ticketOffice: e(K.ticketOffice), toilets: e(K.toilets, false), quadBase: e(Q.quadBase, false),
+  patrolHub: e(K.patrolHub), rangerStation: e(W.rangerStation), firstAid: e(K.firstAid), warningSign: e(K.warningSign, false), ticketOffice: e(K.ticketOffice), toilets: e(K.toilets, false), quadBase: e(Q.quadBase, false), crag: e(crag, false),
   helipad: e(O.helipad), groomerGarage: e(O.groomerGarage), liftWorkshop: e(O.liftWorkshop), snowcatOutpost: e(O.snowcatOutpost), reservoir: e(O.reservoir),
   snowCannon: e(O.snowCannon, false), shuttleDepot: e(O.shuttleDepot),
   boatRental: e(R.boatRental, false), beach: e(R.beach, false), iceRink: e(R.iceRink), heatedTerrace: e(R.heatedTerrace),
@@ -41,7 +42,6 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
   campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false),
   tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
-
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 

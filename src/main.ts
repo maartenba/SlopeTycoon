@@ -34,6 +34,7 @@ import { FESTIVAL_BY_ID, type FestivalId } from '@/config/festivals';
 import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import { TourVehicles } from '@/render/TourVehicles';
 import type { Carrier } from '@/sim/attractions/Tour';
+import { CragClimbers } from '@/render/CragClimbers';
 import type { DressingWorld } from '@/render/festival/placeDressing';
 import { dressingWorldOf } from '@/render/festival/dressingWorld';
 import { almabtriebWindow } from '@/sim/events/EventCalendar';
@@ -458,6 +459,9 @@ renderer.scene.add(zooView.group);
 // Tour carriers (Phase 6 Task 5): cosmetic sleighs / scooters / rafts on the rides in progress; instanced, capped, view only. Empty until a tour building exists.
 const tourVehicles = new TourVehicles((x, z) => surfaceHeight(grid, x, z), (t, out, max) => sim.tours.carriers(t, out, max));
 renderer.scene.add(tourVehicles.group);
+// Climbing crag (Phase 6 Task 23, docs/climbing.md): helmeted climbers on a rope on the rock face next to every open crag (2 instanced draws, view only).
+const cragClimbers = new CragClimbers(grid, () => attractions.all().filter((a) => a.b.type === 'crag').map((a) => ({ id: a.id, x: a.b.x, y: a.b.y, w: a.b.w, h: a.b.h, users: a.usersNow, open: a.open })), (x, z) => surfaceHeight(grid, x, z), BUILDINGS.crag!.site.nearRock!);
+renderer.scene.add(cragClimbers.group);
 
 // Festival set dressing (M5.4 Task 21): bunting, flags, banners, stalls, grandstand + a procession for the running events. View only (no Occupancy / pathing); 3 draw calls in total.
 const festivalWorld = (): DressingWorld => dressingWorldOf(sim);
@@ -1154,6 +1158,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     vehicleRenderer.update(a);
     crossingsView.update(dt);
     activity.update(game.date.tick + a, lodHeightFor(cam));
+    cragClimbers.far = activity.far; cragClimbers.update(game.date.tick + a);
     audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
   };
 }
@@ -1255,6 +1260,7 @@ try {
       cows: () => sim.nature.livestock.animals.filter((a) => a.species === 'cow' && !a.hidden),
       cats: () => (opsRef?.grooming.nightActive ? opsRef.grooming.cats : []),
       helis: () => safetyRef?.heli.helis ?? [],
+      campfires: () => buildings.all().filter((b) => b.type === 'campground' && b.active && attractions.get(b.id)?.open).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
       env: () => ({ season: seasonOf(game.date), weather: weather.current.kind, hour: currentHour(), wind: weather.current.wind, ...sunTimes(game.date.day), guests: guestSim.store.count, festival: sim.events.active().length > 0 }),

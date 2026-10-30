@@ -27,6 +27,7 @@ export function formatAttractionStats(i: AttractionInfo): string[] {
     ...(i.toilet ? [`Used today: ${i.toilet.usesToday}/${i.toilet.perDay} · ${i.toilet.usesToday > i.toilet.perDay ? 'overrun: add more toilets' : 'clean'}`] : []),
     ...(i.camp ? [`Pitches: ${i.camp.used}/${i.camp.pitches} tonight · ${i.camp.toilets ? 'toilets in reach: a better night' : 'no toilets within 10 tiles: campers grumble'}`] : []),
     ...(i.angling ? formatAnglingLines(i.angling) : []),
+    ...(i.crag ? [`${i.crag.guided ? 'Guided climbs: an instructor is on duty' : 'No instructor: half capacity, more mishaps'}${i.crag.mishaps ? ` · ${i.crag.mishaps} minor mishap${i.crag.mishaps === 1 ? '' : 's'} so far (the patrol helps)` : ''}`] : []),
     ...(i.tour ? formatTourLines(i.tour) : []),
     ...(i.beds ? [`Trekker beds: ${i.beds.used}/${i.beds.total} booked tonight · ${i.beds.sold} nights sold`] : []),
   ];

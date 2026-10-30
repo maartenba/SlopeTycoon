@@ -35,7 +35,7 @@ export function buildingsInTab(tab: BuildingTab): BuildingDef[] {
 }
 
 export const BUILDING_ICONS: Record<string, string> = {
-  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', parking: '🅿️',
+  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', crag: '🧗', parking: '🅿️',
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
@@ -70,6 +70,7 @@ const DESCRIPTIONS: Record<string, string> = {
   heatedTerrace: 'Warm outdoor seating.',
   stuntPark: 'Jumps and rails on snow.',
   adventurePark: 'Summer ropes course and zip-lines.',
+  crag: 'Summer rock climbing at the foot of a natural rock face (needs steep bare rock within 3 tiles). Guided climbs; a rare twisted ankle brings out the patrol.',
   quadBase: 'Summer guided quad rides along the roads and footpaths next to it. Loud: scares wildlife and costs a little sustainability.',
   alpineFarm: 'Cows, sheep and goats graze the alpine pastures in summer; the farm shop attracts families; restaurants near farms earn more.',
   tackleHut: 'Anglers\' base: rents rods ($8), sells day tickets and bait. Fishes every lake, pond or river within 20 tiles; set Catch & release or Keep. Place it within 3 tiles of water beside a path.',

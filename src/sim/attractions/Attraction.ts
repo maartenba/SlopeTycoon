@@ -5,6 +5,7 @@ import type { WorldBuilding } from '../guests/GuestWorld';
 import type { SeasonId } from '../../core/events';
 import type { LodgingTier } from '../../config/prices';
 import type { TourInfo } from './Tour';
+import { CLIMB } from './Climbing';
 
 /** Preference per guest type: [solo, couple, family, vip, budget, adventure]. */
 export type Appeal = readonly [number, number, number, number, number, number];
@@ -41,13 +42,17 @@ export interface AttractionSpec {
   eveningShift?: boolean;
   /** Extra closed condition evaluated by the system, e.g. 'lake'. */
   extra?: 'lake';
+  /** Climbing crag (Phase 6 Task 23, docs/climbing.md): the instructor is optional (no 'Closed: no staff'; half capacity without one). */
+  optionalStaff?: boolean;
+  /** Climbing crag: chance that a finished visit ends in a MINOR incident (twisted ankle, answered by the patrol), with / without the instructor on duty. */
+  mishap?: { guided: number; unguided: number };
   /** Tour base (Phase 6 Task 5, docs/tours.md): TourDef id. Guests board in scheduled departures instead of one by one; see TourSystem. */
   tour?: string;
   /** Tackle & bait hut (Phase 6 Task 49): a visit is a fishing trip (rod + bait extras, catches at the end; docs/anglers.md). */
   angling?: boolean;
 }
 
-export interface AttractionStats { /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
+export interface AttractionStats { /** Climbing crag: minor mishaps so far (patrol call-outs). Absent elsewhere. */ mishaps?: number; /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
 
 /** Plain data for the inspector / reports. */
 export interface AttractionInfo {
@@ -66,6 +71,8 @@ export interface AttractionInfo {
   tour?: TourInfo;
   /** Tackle & bait hut (docs/anglers.md): Catch & release / Keep setting, fishing places, waters in reach with their stock, ice and noise state. */
   angling?: { keep: boolean; spots: number; piers: number; ice: boolean; noisy: boolean; catches: number; bodies: Array<{ key: string; name: string; kind: string; stock: number }> };
+  /** Climbing crag: instructor on duty (guided) and the mishaps so far. */
+  crag?: { guided: boolean; mishaps: number };
   /** Toilets (comfort need): guests served today and the per-day figure above which the block is overrun. */
   toilet?: { usesToday: number; perDay: number };
 }
@@ -110,7 +117,12 @@ export class Attraction {
 
   baseCapacity(): number { return Math.max(1, (this.slotsNow ?? this.spec.slots ?? this.def.capacity) + (this.spec.amenity === 'pool' ? this.spec.poolSlots ?? 0 : 0)); }
   /** Staff ratio 0..1: understaffed attractions serve fewer guests at once. */
-  staffFactor(): number { return this.def.staff > 0 ? Math.min(1, this.staff / this.def.staff) : 1; }
+  staffFactor(): number {
+    if (this.spec.optionalStaff && this.def.staff > 0) return CLIMB.unguidedShare + (1 - CLIMB.unguidedShare) * Math.min(1, this.staff / this.def.staff); // crag: runs without an instructor, at half capacity
+    return this.def.staff > 0 ? Math.min(1, this.staff / this.def.staff) : 1;
+  }
+  /** Climbing crag: is an instructor on duty? */
+  guided(): boolean { return this.def.staff > 0 && this.staff >= this.def.staff; }
   /** Simultaneous capacity after staffing. */
   capacity(): number { const f = this.staffFactor(); return f <= 0 ? 0 : Math.max(1, Math.floor(this.baseCapacity() * f)); }
   /** Extra staff beyond the requirement speed service up to +50 %. */
@@ -149,6 +161,7 @@ export class Attraction {
       price: this.price, maxPrice: this.maxPrice, billing: this.billing, unitPrice: this.unitPrice(),
       staff: this.staff, staffRequired: this.def.staff, upkeepPerDay: this.upkeepPerDay(),
       ...(this.tourInfo ? { tour: this.tourInfo() ?? undefined } : {}),
+      ...(this.spec.optionalStaff ? { crag: { guided: this.guided(), mishaps: this.stats.mishaps ?? 0 } } : {}),
       ...(this.anglingInfo ? { angling: this.anglingInfo() } : {}),
     };
   }

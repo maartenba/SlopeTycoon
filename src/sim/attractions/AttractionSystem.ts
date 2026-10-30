@@ -19,6 +19,7 @@ import { eveningPremium, venueServing } from '../Evening';
 import type { TourSystem } from './Tour';
 import { GRUBBY_URGE, TOILET_USES_PER_DAY } from './Toilets';
 import { CAMP, campFireHappiness } from './Campground';
+import { mishapRoll } from './Climbing';
 import { fishVisit, ownsRod, visitMood, type AnglingPlan, type AnglingPlanner } from './Angling';
 import { FISH } from '../../config/balance';
 import type { FishStock } from '../nature/FishStock';
@@ -47,6 +48,8 @@ export interface AttractionDeps {
   willBuy?: (guestType: number, guestId: number, buildingType: string, listPrice: number, salt: number) => boolean;
   /** Tour bases (Phase 6 Task 5): schedule, closures and ride bookkeeping of attractions with `spec.tour`. Absent = tours never run. */
   tours?: TourSystem;
+  /** Climbing crag (Phase 6 Task 23): report a MINOR injury incident for this just-released climber (the safety system dispatches the patrol). True when one was opened. */
+  mishap?: (a: Attraction, guestId: number) => boolean;
   /** Tackle & bait huts (Phase 6 Task 49, docs/anglers.md): fish stock + the per-hut plan (water in reach, places, ice, noise). Absent = a hut is closed ("no water"). */
   angling?: { stock: FishStock; planner: AnglingPlanner };
 }
@@ -211,6 +214,13 @@ export class AttractionSystem implements GuestAttractionPort {
     }
   }
 
+  /** Climbing crag: a finished climb rarely ends in a MINOR incident (twisted ankle) that the patrol answers. Stateless roll: no Rng, nothing saved. */
+  private mishap(a: Attraction, guestId: number, tick: number): void {
+    const m = a.spec.mishap!;
+    if (mishapRoll(a.id, guestId, tick) >= (a.guided() ? m.guided : m.unguided)) return;
+    if (this.d.mishap?.(a, guestId)) a.stats.mishaps = (a.stats.mishaps ?? 0) + 1;
+  }
+
   /** Rod hire (guests without their own rod) and bait, paid at the hut on top of the day ticket when the guest can afford it. */
   private angleExtras(a: Attraction, slot: number, id: number): void {
     const s = this.d.store;
@@ -242,8 +252,8 @@ export class AttractionSystem implements GuestAttractionPort {
     if (st && !st.open) return { open: false, reason: st.reason ?? 'Closed' };
     if (a.spec.seasonOpen && !a.spec.seasonOpen.includes(seasonOf({ day: this.day }))) return { open: false, reason: 'Closed for the season' };
     if (a.spec.extra === 'lake' && this.d.lakeFrozen?.(a.b)) return { open: false, reason: 'Closed: the lake is frozen' };
+    if (a.def.staff > 0 && a.staff <= 0 && !a.spec.optionalStaff) return { open: false, reason: 'Closed: no staff' };
     if (a.spec.angling) { const r = this.anglingClosed(a); if (r) return { open: false, reason: r }; }
-    if (a.def.staff > 0 && a.staff <= 0) return { open: false, reason: 'Closed: no staff' };
     if (a.spec.tour) { const r = this.d.tours?.closed(a); if (r) return { open: false, reason: r }; }
     return { open: true };
   }
@@ -339,6 +349,7 @@ export class AttractionSystem implements GuestAttractionPort {
         a.stats.served++;
         if (a.spec.kind === 'toilet') { a.stats.today = (a.stats.todayDay === this.absDay ? a.stats.today ?? 0 : 0) + 1; a.stats.todayDay = this.absDay; }
         this.release(u.id, tick, a);
+        if (a.spec.mishap) this.mishap(a, u.id, tick);
       }
       a.users = still;
       if (a.queue.length) {

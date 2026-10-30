@@ -12,6 +12,7 @@ All rules are data in `src/config/buildings.ts` (`access`, `altAccess`, `pisteRu
 - **def.streamAdjacent** (Small Hydro): the footprint ring (1 tile) must touch a stream tile; reason `Must be next to a stream`; dependency-checked like the lake rule, so a hydro whose stream is later changed becomes inactive. The stream itself is never built on. Green buildings (Solar Array / Plant, Wind Turbine with `minAltitude` 20, Small Hydro, Biomass Heating, Tree Nursery, Recycling Centre): category `energy`, docs/energy.md.
 - **site.onWater**: `never` (all but lake types), `lakeEdge` (Boat Rental, Beach: dry footprint touching a lake), `shallow` (supported, unused). Streams are never buildable (bridges are for paths/roads only).
 - **site.forest** (`{ minTrees, radius, keepTrees }`, treehouse): needs `minTrees` real trees within `radius` tiles or the placement is refused with `Needs forest around it`; trees are not felled (see [viewpoints.md](viewpoints.md)).
+- **site.nearRock** (`{ minTiles, radius, minSpread }`, climbing crag): needs `minTiles` bare-rock tiles whose four corners spread >= `minSpread` half-steps (cliff tiles, `world/Cliffs.ts`) within `radius` tiles of the footprint, or the placement is refused with `Needs a steep rock face nearby` (see [climbing.md](climbing.md)).
 - **site.allowRock**: footprint may sit on Rock tiles (huts, cannon, sign only).
 - **min/maxAltitude**: supported (mean footprint corner height) but no catalog entry sets one yet.
 - **maxCount**: Base Lodge, Train Station, Altiport = 1.

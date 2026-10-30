@@ -185,6 +185,7 @@ export function describeRules(typeId: string): string[] {
   else if (s.onWater === 'shallow') out.push('May extend into lake shallows');
   else out.push('Cannot be on water or streams');
   if (d.streamAdjacent) out.push('Must stand on a stream bank (next to a stream tile)');
+  if (s.nearRock) out.push(`Needs a steep rock face: ${s.nearRock.minTiles}+ cliff tiles within ${s.nearRock.radius} tiles`);
   if (!s.allowRock) out.push('Not on bare rock');
   if (s.minAltitude !== undefined) out.push(d.id === 'windTurbine' ? 'Exposed high ground only (upper third of the terrain)' : `Altitude at least ${s.minAltitude}`);
   if (s.maxAltitude !== undefined) out.push(`Altitude at most ${s.maxAltitude}`);

@@ -358,6 +358,17 @@ export const RULES: readonly Rule[] = [
     for (let i = 0; i < a.length; i++) if (a[i]! & (Layer.Hike | Layer.Mtb)) return null;
     return { id: 'season.summer', severity: 'info', ...TEXT.summerComing(sp.daysLeft), panel: { drawer: 'pistes', item: 'mtb' } };
   }),
+  // Quad tours (docs/quads.md): a summer extra for a resort with a village and some roads. Optional, never urgent; the text says what it costs (noise, a little sustainability).
+  rule('tour.quad', 1, (c) => {
+    const sim = c.sim;
+    if (seasonProgress(sim.game.date).season !== 'summer' || sim.guestSim.store.count < 30 || !has(sim, 'baseLodge') || sim.progression.locked('building', 'quadBase')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'quadBase')) return null;
+    const n = sim.size, k = sim.networks.kind;
+    let roads = 0;
+    for (let i = 0; i < n * n && roads < 8; i++) if (k[i] === 2) roads++;
+    if (roads < 8) return null; // the ride needs a road or footpath to run on
+    return { id: 'tour.quad', severity: 'info', ...TEXT.quadTours(), panel: { drawer: 'buildings', item: 'quadBase' } }; // a drawer hint only (like eco.centre): the item is career-gated, the player picks the spot
+  }),
   // Campground (docs/campground.md): a quiet summer gets a campground suggestion; a camp without toilets within reach gets a toilets suggestion
   rule('summer.camp', 1, (c) => {
     const sim = c.sim;
@@ -373,17 +384,6 @@ export const RULES: readonly Rule[] = [
     if (sim.buildings.all().some((b) => b.type === 'toilets' && b.active && Math.hypot(b.x + b.w / 2 - cx, b.y + b.h / 2 - cy) <= CAMP.toiletRadius)) return null;
     const s = c.site('summer.camp.wc', 'toilets', () => findSite(sim, 'toilets', { x: cx, y: cy }, { rmax: 8, route: 'path' }));
     return { id: 'summer.camp', severity: 'info', ...TEXT.summerCamp(true), action: build('toilets', s), target: s ? siteTarget(s) : { x: cx - 0.5, y: cy - 0.5, kind: 'building', id: camp.id } };
-  }),
-  // Quad tours (docs/quads.md): a summer extra for a resort with a village and some roads. Optional, never urgent; the text says what it costs (noise, a little sustainability).
-  rule('tour.quad', 1, (c) => {
-    const sim = c.sim;
-    if (seasonProgress(sim.game.date).season !== 'summer' || sim.guestSim.store.count < 30 || !has(sim, 'baseLodge') || sim.progression.locked('building', 'quadBase')) return null;
-    if (sim.buildings.all().some((b) => b.type === 'quadBase')) return null;
-    const n = sim.size, k = sim.networks.kind;
-    let roads = 0;
-    for (let i = 0; i < n * n && roads < 8; i++) if (k[i] === 2) roads++;
-    if (roads < 8) return null; // the ride needs a road or footpath to run on
-    return { id: 'tour.quad', severity: 'info', ...TEXT.quadTours(), panel: { drawer: 'buildings', item: 'quadBase' } }; // a drawer hint only (like eco.centre): the item is career-gated, the player picks the spot
   }),
   // Angling (docs/anglers.md): a fished water below 30 % stock (40 % while shown: hysteresis) is "Overfished"; the fix is Catch & release or a second water.
   rule('fish.overfished', 2, (c) => {
