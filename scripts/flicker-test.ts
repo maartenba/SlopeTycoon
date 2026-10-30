@@ -8,7 +8,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { launch, startServer } from './lib/harness';
 
-interface Scenario { id: string; size: number; start: 'winter' | 'summer'; hour: number; seed: number; /** Phase 6: `river` digs a river from the best natural spring, `mid` rebuilds the first lift with a mid-station; the camera then looks at it. */ extra?: 'river' | 'mid' }
+interface Scenario { id: string; size: number; start: 'winter' | 'summer'; hour: number; seed: number; /** Phase 6: `river` digs a river from the best natural spring, `mid` rebuilds the first lift with a mid-station, `summer` adds the M6.3 buildings (campground, petting zoo, viewpoint, treehouse, quad base, crag, tackle hut, pier); the camera then looks at it. */ extra?: 'river' | 'mid' | 'summer' }
 const SCENARIOS: Scenario[] = [
   { id: '64-winter-day', size: 64, start: 'winter', hour: 12, seed: 61 },
   { id: '64-summer-day', size: 64, start: 'summer', hour: 12, seed: 61 },
@@ -18,6 +18,7 @@ const SCENARIOS: Scenario[] = [
   { id: '256-summer-day', size: 256, start: 'summer', hour: 14, seed: 5 },
   { id: '64-summer-river', size: 64, start: 'summer', hour: 12, seed: 61, extra: 'river' },
   { id: '64-winter-mid', size: 64, start: 'winter', hour: 12, seed: 5, extra: 'mid' },
+  { id: '64-summer-content', size: 64, start: 'summer', hour: 21, seed: 61, extra: 'summer' },
 ];
 
 function parseArgs(): Record<string, string> {
@@ -187,6 +188,16 @@ try {
         if (best && s.riverDebug.dig(best.p.x, best.p.y)) { const path = best.pl.path; focus = path[path.length >> 1]; }
         sim.progression.bypass--;
         console.log(`SCENE river ${best ? best.pl.path.length + ' tiles from ' + best.p.x + ',' + best.p.y : 'none'}`);
+      }
+      if (o.extra === 'summer') { // the M6.3 summer buildings around the village through the Bot's own placement (level gate bypassed)
+        const sim = s.sim, imp = (u: string): Promise<any> => (new Function('u', 'return import(u)') as any)(u), { Bot } = await imp('/src/game/bot.ts');
+        sim.progression.bypass++; sim.economy.earn('other', 5_000_000);
+        const bot: any = new Bot(sim, { starter: false }), done: string[] = [];
+        for (const t of ['campground', 'toilets', 'pettingZoo', 'viewpoint', 'treehouse', 'quadBase', 'crag', 'tackleHut', 'fishingPier']) if (bot.build(t)) done.push(t);
+        s.buildingsView.sync?.(); s.refreshProps(Array.from({ length: sim.grid.chunksPerRow ** 2 }, (_, i) => i)); sim.refreshCoverage(undefined, true);
+        const camp = sim.buildings.all().find((q: any) => q.type === 'campground'); if (camp) focus = { x: camp.x + 2, y: camp.y + 2 };
+        sim.progression.bypass--;
+        console.log(`SCENE summer built ${done.join(',')}`);
       }
       if (o.extra === 'mid') { // the first lift rebuilt with a mid-station (same terminals), like the sanity script
         const sim = s.sim, g = sim.grid, Lift = await (new Function('u', 'return import(u)') as any)('/src/sim/Lift.ts'), lt = s.liftTools.tool.o;
