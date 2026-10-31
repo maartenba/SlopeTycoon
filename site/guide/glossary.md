@@ -13,7 +13,11 @@ screenshots: []
 
 **Annual service** The yearly planned maintenance of a lift (Operations → Maintenance); a missed one makes the lift *overdue*.
 
+**Avalanche danger** The 1 to 5 level of a backcountry route (Low, Moderate, Considerable, High, Very high); routes close by themselves at 4. See [Backcountry & avalanche danger](page:backcountry).
+
 **Auto-flatten** Automatic levelling of the ground under a building when you place it (<kbd>F</kbd> toggles).
+
+**Backcountry route** A painted ski-touring route with flag poles, from level 3; not a piste. See [Backcountry & avalanche danger](page:backcountry).
 
 **Career** The default game mode where your resort levels up and unlocks big items. Opposite of *Sandbox*.
 
@@ -24,6 +28,8 @@ screenshots: []
 **Coffee Stand** A 1 x 1 kiosk beside a piste or path: a $4 cup that takes the edge off hunger. See [Hotels & the coffee stand](page:hotels).
 
 **Comfort** The need for a toilet: an urge that grows while guests are out; it feeds the Facilities bar of the rating.
+
+**Danger rose** The half-circle gauge in the route inspector with five coloured wedges, the current danger level bright.
 
 **Crew** One of the four staff groups: instructors, patrol, groomers and lift operators.
 

@@ -40,7 +40,9 @@ Staff can also take one **course** at a time. Each costs a one-off sum, takes so
 
 ## Avalanches
 
-Avalanches are rare and dramatic. They need steep ground (roughly 30–45°), plenty of snow and fresh snowfall, and cold air. Forests protect slopes; patrol cover and **night control blasting** make slides less likely. A slide can bury guests and closes pistes for several hours. Most are small and harmless.
+Avalanches are rare and dramatic. They need steep ground (roughly 30–45°), plenty of snow and fresh snowfall, and cold air. Forests protect slopes; patrol cover and **night control blasting** make slides less likely. A slide can bury guests and closes pistes for several hours. Most are small and harmless, and **nobody ever dies**: buried guests are dug out by patrol or the helicopter, or taken to hospital, and count against your safety rating.
+
+**Backcountry routes** use the same snow model to give each route an **avalanche danger from 1 to 5**. A route closes by itself at 4, a Ski Patrol Hub next to it keeps the danger lower and blasts the slope at night, and you can override a closure if you accept the risk. See [Backcountry & avalanche danger](page:backcountry). The winter tours (snowshoe walks in particular) cancel on unstable snow too: [Sleighs, snowshoes & snowscooters](page:winter-adventures).
 
 ## Wildlife and rangers
 

@@ -6,7 +6,8 @@ import type { ShotInfo } from './md';
 export const SHOTS_DIR = 'site/assets/shots';
 export const INDEX_FILE = join(SHOTS_DIR, 'index.json');
 export const WIDTHS = [640, 1280] as const;
-export const MAX_BYTES_1280 = 70 * 1024; // the site budget is 8 MiB of screenshots in total (scripts/site/crawl.ts): the 1280 px files over 70 kB are re-encoded at a lower quality
+export const MAX_BYTES_1280 = 58 * 1024; // the site budget is 8 MiB of screenshots in total (scripts/site/crawl.ts): the 1280 px files over 58 kB (M6.5 STOP: was 70) are re-encoded at a lower quality
+export const MAX_BYTES_640 = 30 * 1024; // and the 640 px files over 30 kB
 
 export interface IndexEntry { w: number; h: number; files: { w: number; file: string; bytes: number }[] }
 export type ShotIndex = Record<string, IndexEntry>;
@@ -51,7 +52,7 @@ export async function optimizeAll(items: { id: string; png: string }[]): Promise
       const png = readFileSync(it.png); const entry: IndexEntry = { w: 0, h: 0, files: [] };
       for (const width of WIDTHS) {
         let q = 80, out = await enc(png, width, q);
-        while (width === 1280 && out.data.length > MAX_BYTES_1280 && q > 50) { q -= 8; out = await enc(png, width, q); }
+        while (out.data.length > (width === 1280 ? MAX_BYTES_1280 : MAX_BYTES_640) && q > 50) { q -= 8; out = await enc(png, width, q); }
         const file = `${it.id}-${width}.webp`; writeFileSync(join(SHOTS_DIR, file), out.data);
         entry.files.push({ w: out.w, file, bytes: out.data.length }); if (width === 1280) { entry.w = out.w; entry.h = out.h; }
       }

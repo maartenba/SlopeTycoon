@@ -1,6 +1,6 @@
 {
   "name": "slope-tycoon",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/maartenba/SlopeTycoon.git"
@@ -77,7 +77,8 @@
     "analytics:e2e": "vite-node scripts/analytics-e2e.ts",
     "summer:sanity": "vite-node scripts/summer-sanity.ts",
     "winter:tours": "vite-node scripts/winter-tours-sanity.ts",
-    "winter:sanity": "vite-node scripts/winter-sanity.ts"
+    "winter:sanity": "vite-node scripts/winter-sanity.ts",
+    "backcountry:sanity": "vite-node scripts/backcountry-sanity.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

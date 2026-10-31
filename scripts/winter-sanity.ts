@@ -67,7 +67,9 @@ try {
     loop.setSpeed(1);
     const arrived: Record<number, number> = {}; sim.bus.on('guest:arrived', (e: any) => { const k = s.guestSim.store.slotOf(e.id); if (k >= 0) { const t = s.guestSim.store.type[k]; arrived[t] = (arrived[t] ?? 0) + 1; } });
     let steamMax = 0, coldest = 99;
-    for (let day = 0; day < 6; day++) {
+    // Classes are rare (about 2 % of natural arrivals, M6.5 STOP: the Snowboarder carve-out shifted the draw so a 6-day run could see none): keep the date on the chosen weekday and run up to 12 days until one class has arrived.
+    for (let day = 0; day < 12 && (day < 6 || (!(window as any).__summerRun && !arrived[9])); day++) {
+      if (d0 >= 0 && !(window as any).__summerRun && day >= 1) sim.game.date.day = d0;
       if (day < 3) { s.spawnGuests(120, 'mixed'); s.spawnGuests(60, 'skiers'); }
       for (let q = 0; q < 24; q++) { adv(10); const temp = sim.weather.current.valleyT; coldest = Math.min(coldest, temp); steamMax = Math.max(steamMax, smokeIntensity('luxuryHotel', true, temp, 12, 0)); }
     }

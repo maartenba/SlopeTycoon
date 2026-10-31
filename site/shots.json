@@ -30,8 +30,7 @@
       "id": "season-spring",
       "alt": "The same valley in spring: blossom in the meadows, thin snow on the high slopes.",
       "pages": [
-        "landing",
-        "guests-seasons"
+        "landing"
       ],
       "kind": "harness",
       "caption": "Spring: skiing up high, hiking down low.",
@@ -1691,6 +1690,160 @@
         "zoom": 9,
         "target": "lodge",
         "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NK=(await imp('/src/world/Networks.ts')).NetKind;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path)=>{const q=find(type,near);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst clear=(b)=>{const t=[];s.props.removeInRect(b.x-3,b.y-3,b.x+b.w+3,b.y+b.h+3,t);s.refreshProps(t)};\nconst look=(b,zoom)=>{const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(zoom);const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst {weekdayOf}=await imp('/src/sim/Clock.ts'),{isHoliday}=await imp('/src/sim/Pricing.ts'),{calendarDayOfMonth}=await imp('/src/sim/calendar.ts');\nput('smallHotel',lodge,'road');put('kidsGround',lodge,'path');put('heatedTerrace',lodge,'path');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);\nfor(let d=120;d<130;d++){if(weekdayOf({year:sim.game.date.year,day:d})<4&&!isHoliday(d)&&calendarDayOfMonth(d)<=3){sim.game.date.day=d;break}}\ns.loop.setSpeed(1);const st=s.guestSim.store;let best=null,n9=0,n8=0;\nfor(let i=0;i<80&&n9<6;i++){if(i%6===0)s.spawnGuests(70,'mixed');adv(30);let c9=0,c8=0,ax=0,ay=0;for(let j=0;j<st.limit;j++){if(!st.alive[j])continue;if(st.type[j]===9){c9++;ax+=st.x[j];ay+=st.y[j]}else if(st.type[j]===8)c8++}if(c9>n9){n9=c9;n8=c8;best={x:ax/c9,y:ay/c9}}}\nconst g9=[];for(let j=0;j<st.limit;j++)if(st.alive[j]&&st.type[j]===9)g9.push([st.x[j],st.y[j]]);let bc=null,bn=-1;for(const a of g9){let k=0;for(const b of g9)if(Math.hypot(a[0]-b[0],a[1]-b[1])<3)k++;if(k>bn){bn=k;bc=a}}if(bc)best={x:bc[0],y:bc[1]};const c=s.renderer.controls;if(best){c.target.set(best.x,s.grid.getCorner(Math.round(best.x),Math.round(best.y))*0.5,best.y)}c.zoom=1;c.zoomBy(13);const u=document.getElementById('ui');if(u)u.style.display='none';s.loop.setSpeed(0);return JSON.stringify({n9,n8,best});})()"
+      }
+    },
+    {
+      "id": "winter-sleigh",
+      "alt": "A red horse-drawn sleigh with six passengers gliding along a snowy road beside a stable.",
+      "pages": [
+        "winter-adventures"
+      ],
+      "kind": "harness",
+      "caption": "A sleigh ride: six seats, a horse and quiet bells.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 22,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NKm=await imp('/src/world/Networks.ts');const NK=NKm.NetKind,NL=NKm.Layer;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near,minD=0)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd&&dd>=minD){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path,minD=0)=>{const q=find(type,near,minD);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst hideUi=()=>{const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst follow=(kind,zoom)=>{s.loop.setSpeed(1);s.setHour(9.5);s.spawnGuests(150,'mixed');s.spawnGuests(60,'couple');let n=0;while(n++<1500){adv(5);if(n%48===0){s.spawnGuests(100,'mixed');s.spawnGuests(50,'adventure');s.spawnGuests(40,'couple')}const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>c.kind===kind);if(cs.length){const c=cs[Math.min(1,cs.length-1)];s.loop.setSpeed(0);const k=s.renderer.controls;k.target.set(c.x,g.getCorner(Math.round(c.x),Math.round(c.y))*0.5,c.y);k.zoom=1;k.zoomBy(zoom);hideUi();console.log('PRE follow ok '+kind+' '+c.x.toFixed(1)+','+c.y.toFixed(1));return 'ok'}}console.log('PRE follow NONE '+kind+' tourN='+sim.tours.carriers(sim.game.date.tick).length);return 'none'};\nconst b=put('sleighStable',lodge,'road');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;return follow('sleigh',14)})()"
+      }
+    },
+    {
+      "id": "winter-snowshoe",
+      "alt": "A guided line of eight snowshoe walkers with poles and packs following a hiking trail in the snow.",
+      "pages": [
+        "winter-adventures"
+      ],
+      "kind": "harness",
+      "caption": "The Snowshoe Hut sends a guide and eight walkers along a hiking trail.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 10,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NKm=await imp('/src/world/Networks.ts');const NK=NKm.NetKind,NL=NKm.Layer;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near,minD=0)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd&&dd>=minD){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path,minD=0)=>{const q=find(type,near,minD);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst hideUi=()=>{const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst follow=(kind,zoom)=>{s.loop.setSpeed(1);s.setHour(9.5);s.spawnGuests(150,'mixed');s.spawnGuests(60,'couple');let n=0;while(n++<1500){adv(5);if(n%48===0){s.spawnGuests(100,'mixed');s.spawnGuests(50,'adventure');s.spawnGuests(40,'couple')}const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>c.kind===kind);if(cs.length){const c=cs[Math.min(1,cs.length-1)];s.loop.setSpeed(0);const k=s.renderer.controls;k.target.set(c.x,g.getCorner(Math.round(c.x),Math.round(c.y))*0.5,c.y);k.zoom=1;k.zoomBy(zoom);hideUi();console.log('PRE follow ok '+kind+' '+c.x.toFixed(1)+','+c.y.toFixed(1));return 'ok'}}console.log('PRE follow NONE '+kind+' tourN='+sim.tours.carriers(sim.game.date.tick).length);return 'none'};\nconst hut=put('snowshoeHut',lodge,'path',16);console.log('PRE hut '+JSON.stringify(hut&&{x:hut.x,y:hut.y,active:hut.active}));if(hut){const free=(x,y)=>x>=1&&y>=1&&x<g.size-1&&y<g.size-1&&sim.networks.kind[y*g.size+x]===0;let best=[];for(const [vx,vy] of [[1,0],[-1,0],[0,1],[0,-1]]){const sx=vx>0?hut.x+hut.w:vx<0?hut.x-1:hut.x,sy=vy>0?hut.y+hut.h:vy<0?hut.y-1:hut.y;const line=[];for(let j=0;j<14;j++){const p={x:sx+vx*j,y:sy+vy*j};if(!free(p.x,p.y))break;line.push(p)}if(line.length>best.length)best=line}console.log('PRE trail '+sim.networks.paint(NL.Hike,best,0).painted);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;return follow('walkers',14)})()"
+      }
+    },
+    {
+      "id": "winter-scooter",
+      "alt": "A convoy of six snowscooters with riders in helmets throwing up snow spray along a road.",
+      "pages": [
+        "winter-adventures"
+      ],
+      "kind": "harness",
+      "caption": "A Snowscooter Base convoy: fun, loud and a little hard on the wildlife.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 14,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NKm=await imp('/src/world/Networks.ts');const NK=NKm.NetKind,NL=NKm.Layer;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near,minD=0)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd&&dd>=minD){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path,minD=0)=>{const q=find(type,near,minD);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst hideUi=()=>{const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst follow=(kind,zoom)=>{s.loop.setSpeed(1);s.setHour(9.5);s.spawnGuests(150,'mixed');s.spawnGuests(60,'couple');let n=0;while(n++<1500){adv(5);if(n%48===0){s.spawnGuests(100,'mixed');s.spawnGuests(50,'adventure');s.spawnGuests(40,'couple')}const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>c.kind===kind);if(cs.length){const c=cs[Math.min(1,cs.length-1)];s.loop.setSpeed(0);const k=s.renderer.controls;k.target.set(c.x,g.getCorner(Math.round(c.x),Math.round(c.y))*0.5,c.y);k.zoom=1;k.zoomBy(zoom);hideUi();console.log('PRE follow ok '+kind+' '+c.x.toFixed(1)+','+c.y.toFixed(1));return 'ok'}}console.log('PRE follow NONE '+kind+' tourN='+sim.tours.carriers(sim.game.date.tick).length);return 'none'};\nconst b=put('snowscooterBase',lodge,'road');s.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.progression.bypass--;return follow('scooter',14)})()"
+      }
+    },
+    {
+      "id": "backcountry-open",
+      "alt": "A backcountry route marked with flag poles across the snow beside a ski patrol hub, and the route inspector open at the top right showing a green danger rose: Low (1), Open.",
+      "pages": [
+        "backcountry"
+      ],
+      "kind": "harness",
+      "caption": "A painted backcountry route with its flag poles, and the inspector: danger 1, Open.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 8,
+        "target": "lodge",
+        "viewport": "1920x1080",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NKm=await imp('/src/world/Networks.ts');const NK=NKm.NetKind,NL=NKm.Layer;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near,minD=0)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd&&dd>=minD){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path,minD=0)=>{const q=find(type,near,minD);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst hideUi=()=>{const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst follow=(kind,zoom)=>{s.loop.setSpeed(1);s.setHour(9.5);s.spawnGuests(150,'mixed');s.spawnGuests(60,'couple');let n=0;while(n++<1500){adv(5);if(n%48===0){s.spawnGuests(100,'mixed');s.spawnGuests(50,'adventure');s.spawnGuests(40,'couple')}const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>c.kind===kind);if(cs.length){const c=cs[Math.min(1,cs.length-1)];s.loop.setSpeed(0);const k=s.renderer.controls;k.target.set(c.x,g.getCorner(Math.round(c.x),Math.round(c.y))*0.5,c.y);k.zoom=1;k.zoomBy(zoom);hideUi();console.log('PRE follow ok '+kind+' '+c.x.toFixed(1)+','+c.y.toFixed(1));return 'ok'}}console.log('PRE follow NONE '+kind+' tourN='+sim.tours.carriers(sim.game.date.tick).length);return 'none'};\nconst n=sim.size,net=sim.networks;let start=-1;for(let i=0;i<n*n&&start<0;i++)if((net.layers[i]&NL.Ski)&&net.kind[i]===0)start=i;const tiles=[],seen=new Set([start]);let cur=start;for(let k=0;k<80&&tiles.length<16;k++){const x=cur%n,y=(cur/n)|0;let nx2=-1;for(const [dx,dy] of [[1,0],[0,1],[-1,0],[0,-1]]){const a=x+dx,b=y+dy;if(a<1||b<1||a>=n-1||b>=n-1)continue;const j=b*n+a;if(seen.has(j)||(net.layers[j]&NL.Ski)||!net.canPaint(a,b,NL.Backcountry).ok)continue;nx2=j;break}if(nx2<0)break;seen.add(nx2);tiles.push(nx2);cur=nx2}\nconst t=[];for(const i of tiles){s.props.removeInRect((i%n)-3,((i/n)|0)-3,(i%n)+4,((i/n)|0)+4,t)}s.refreshProps(t);net.paint(NL.Backcountry,tiles.map(i=>({x:i%n,y:(i/n)|0})));\nconst mid=tiles[tiles.length>>1];const mx=mid%n,my=(mid/n)|0;let hub=null,bd=1e9;for(let y=2;y<n-4;y++)for(let x=2;x<n-4;x++){if(PB.validatePlacement(sim.env,'patrolHub',x,y,0,true).reasons.length)continue;const d=Math.hypot(x-mx,y-my);if(d<bd&&d>4){bd=d;hub={x,y}}}if(hub)s.debugPlace('patrolHub',hub.x,hub.y,0,true);\ns.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.refreshCoverage(undefined,true);sim.progression.bypass--;sim.backcountry.refresh();\n\nconst r=sim.backcountry.routes()[0];s.selectRoute&&s.selectRoute(mid);const c=s.renderer.controls;c.target.set(mx,g.getCorner(mx,my)*0.5,my);c.zoom=1;c.zoomBy(9);s.loop.setSpeed(0);return JSON.stringify({d:r&&r.danger,open:r&&r.open})})()",
+        "steps": "wait:1500"
+      }
+    },
+    {
+      "id": "backcountry-closed",
+      "alt": "The same backcountry route after a storm: the danger rose points to High (4) in red, the inspector says Avalanche danger 4 and the override toggles are unticked.",
+      "pages": [
+        "backcountry"
+      ],
+      "kind": "harness",
+      "caption": "After a storm the danger climbs to High (4) and the route closes by itself.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 8,
+        "target": "lodge",
+        "viewport": "1920x1080",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,g=s.grid,imp=(u)=>new Function('u','return import(u)')(u);const {Bot}=await imp('/src/game/bot.ts');const PB=await imp('/src/sim/PlaceBuilding.ts');const NKm=await imp('/src/world/Networks.ts');const NK=NKm.NetKind,NL=NKm.Layer;sim.progression.bypass++;const bot=new Bot(sim,{starter:false});const all=Array.from({length:g.chunksPerRow**2},(_,i)=>i);\nconst lodge=sim.buildings.all().find(q=>q.type==='baseLodge');const ring=[];for(let x=lodge.x;x<lodge.x+lodge.w;x++)ring.push({x,y:lodge.y-1},{x,y:lodge.y+lodge.h});for(let y=lodge.y;y<lodge.y+lodge.h;y++)ring.push({x:lodge.x-1,y},{x:lodge.x+lodge.w,y});\nconst find=(type,near,minD=0)=>{let best=null,bd=1e9;for(let y=2;y<g.size-4;y++)for(let x=2;x<g.size-4;x++){if(PB.validatePlacement(sim.env,type,x,y,0,true).reasons.length)continue;const dd=near?Math.hypot(x-near.x,y-near.y):0;if(dd<bd&&dd>=minD){bd=dd;best={x,y};if(!near)return best}}return best};\nconst put=(type,near,path,minD=0)=>{const q=find(type,near,minD);if(!q)return null;const o=s.debugPlace(type,q.x,q.y,0,true);if(!o.ok)return null;const b=o.building;if(path){bot.ensure(path==='road'?NK.Road:NK.Path,b,path==='road'?[sim.networks.roadEntry]:ring);sim.buildings.reevaluate();sim.refreshCoverage(undefined,true)}return b};const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};sim.game.money+=9e6;\nconst hideUi=()=>{const u=document.getElementById('ui');if(u)u.style.display='none'};\nconst follow=(kind,zoom)=>{s.loop.setSpeed(1);s.setHour(9.5);s.spawnGuests(150,'mixed');s.spawnGuests(60,'couple');let n=0;while(n++<1500){adv(5);if(n%48===0){s.spawnGuests(100,'mixed');s.spawnGuests(50,'adventure');s.spawnGuests(40,'couple')}const cs=sim.tours.carriers(sim.game.date.tick).filter(c=>c.kind===kind);if(cs.length){const c=cs[Math.min(1,cs.length-1)];s.loop.setSpeed(0);const k=s.renderer.controls;k.target.set(c.x,g.getCorner(Math.round(c.x),Math.round(c.y))*0.5,c.y);k.zoom=1;k.zoomBy(zoom);hideUi();console.log('PRE follow ok '+kind+' '+c.x.toFixed(1)+','+c.y.toFixed(1));return 'ok'}}console.log('PRE follow NONE '+kind+' tourN='+sim.tours.carriers(sim.game.date.tick).length);return 'none'};\nconst n=sim.size,net=sim.networks;let start=-1;for(let i=0;i<n*n&&start<0;i++)if((net.layers[i]&NL.Ski)&&net.kind[i]===0)start=i;const tiles=[],seen=new Set([start]);let cur=start;for(let k=0;k<80&&tiles.length<16;k++){const x=cur%n,y=(cur/n)|0;let nx2=-1;for(const [dx,dy] of [[1,0],[0,1],[-1,0],[0,-1]]){const a=x+dx,b=y+dy;if(a<1||b<1||a>=n-1||b>=n-1)continue;const j=b*n+a;if(seen.has(j)||(net.layers[j]&NL.Ski)||!net.canPaint(a,b,NL.Backcountry).ok)continue;nx2=j;break}if(nx2<0)break;seen.add(nx2);tiles.push(nx2);cur=nx2}\nconst t=[];for(const i of tiles){s.props.removeInRect((i%n)-3,((i/n)|0)-3,(i%n)+4,((i/n)|0)+4,t)}s.refreshProps(t);net.paint(NL.Backcountry,tiles.map(i=>({x:i%n,y:(i/n)|0})));\nconst mid=tiles[tiles.length>>1];const mx=mid%n,my=(mid/n)|0;let hub=null,bd=1e9;for(let y=2;y<n-4;y++)for(let x=2;x<n-4;x++){if(PB.validatePlacement(sim.env,'patrolHub',x,y,0,true).reasons.length)continue;const d=Math.hypot(x-mx,y-my);if(d<bd&&d>4){bd=d;hub={x,y}}}if(hub)s.debugPlace('patrolHub',hub.x,hub.y,0,true);\ns.buildingsView.sync&&s.buildingsView.sync();s.refreshProps(all);sim.refreshCoverage(undefined,true);sim.progression.bypass--;sim.backcountry.refresh();\n{const av=sim.safety.avalanche,r0=sim.backcountry.routes()[0];av.cands=Int32Array.from([...av.cands,...r0.tiles]);for(let h=0;h<4;h++){sim.weather.current.kind='heavySnow';sim.weather.current.intensity=1;for(const i of r0.tiles)av.inst[i]=Math.min(3,av.inst[i]+0.35);adv(10)}}\nconst r=sim.backcountry.routes()[0];s.selectRoute&&s.selectRoute(mid);const c=s.renderer.controls;c.target.set(mx,g.getCorner(mx,my)*0.5,my);c.zoom=1;c.zoomBy(9);s.loop.setSpeed(0);return JSON.stringify({d:r&&r.danger,open:r&&r.open})})()",
+        "steps": "wait:1500"
+      }
+    },
+    {
+      "id": "guests-boarders-tourers",
+      "alt": "Snowboarders in purple and bright jackets with boards riding down a snowy slope beside a chairlift station, among skiers.",
+      "pages": [
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "Snowboarders now arrive as a guest type of their own: bright jackets, a board and a love of wide runs and the Stunt Park.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "hour": 12,
+        "zoom": 9,
+        "target": "lodge",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers')",
+        "ticks": 1500,
+        "w": 1600,
+        "h": 1000,
+        "start": "winter",
+        "evalJs": "(()=>{const s=window.__slope;const st=s.guestSim.store;let k=0;for(let i=0;i<st.capacity;i++){if(!st.alive[i]||st.type[i]>=6)continue;st.type[i]=(k++%5===0)?11:10}const l=s.sim.lifts.all()[0];const c=s.renderer.controls;const x=(l.bottom.x*0.7+l.top.x*0.3),z=(l.bottom.y*0.7+l.top.y*0.3);c.target.set(x,s.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);const u=document.getElementById('ui');if(u)u.style.display='none'})()"
+      }
+    },
+    {
+      "id": "ui-marketing-powder",
+      "alt": "The Marketing drawer showing the Powder Hounds campaign for ski tourers and riders, with its requirements (an open backcountry route below danger 4, a Ski Patrol Hub, a place to eat), and the Snowboard Park Jam card above it.",
+      "pages": [
+        "backcountry"
+      ],
+      "kind": "harness",
+      "caption": "Powder Hounds and the retargeted Snowboard Park Jam in the Marketing drawer.",
+      "shot": {
+        "size": 128,
+        "seed": 5,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 2,
+        "target": "lodge",
+        "viewport": "1920x1080",
+        "steps": "wait:5000;click:button[data-drawer=marketing];wait:600;eval:__slope.bus.emit('money:changed',{});wait:900;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Snowboard Park'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600"
       }
     }
   ]

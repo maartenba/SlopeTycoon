@@ -5,9 +5,9 @@ through winter *and* summer. Three.js + TypeScript, no backend, no external asse
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/maartenba)
 
-**Version 0.2.8** (pre-release)
+**Version 0.2.9** (pre-release)
 
-Status: pre-release (0.2.8) — playtest feedback welcome.
+Status: pre-release (0.2.9) — playtest feedback welcome.
 
 ## Features
 
@@ -41,6 +41,7 @@ Status: pre-release (0.2.8) — playtest feedback welcome.
 - **Rivers, mid-stations and the suspension bridge** (0.2.6): dig a **river** from a natural spring or a placed one (Landscape > Water, level 2; flow classes calm / brisk / rapids, snowmelt, winter ice; `docs/rivers.md`); **mid-stations** on gondolas, cable cars and detachable chairs, and the high-speed six-seat chair (`docs/mid-stations.md`); a **suspension footbridge** over rivers, lakes and gorges (`docs/bridges.md`); human checklist `docs/playtest-m62.md`.
 - **Summer content** (0.2.7): a **campground** with a campfire, a **petting zoo**, a **viewpoint** and a **treehouse**, **quad tours**, a **climbing crag**, **rafting** and **canyoning** on natural or dug rivers, a **tackle & bait hut** with fishing piers, a regrowing **fish stock**, catch & release or keep, ice fishing, **mountain biker** and **angler** guests and the **Family Summer Camp** and **Angler's Paradise** campaigns (`docs/campground.md`, `docs/petting-zoo.md`, `docs/viewpoints.md`, `docs/quads.md`, `docs/climbing.md`, `docs/water-tours.md`, `docs/anglers.md`).
 - **Hotels and calmer guests** (0.2.8): a **Small Hotel** (40 rooms over a lobby restaurant) and a **Luxury Hotel** (30 suites, VIPs first, a heated outdoor pool that steams below 5 C and costs energy), a **Coffee Stand**, **Senior** and **School group** guests and the **Wellness & Views** and **School Trips** campaigns (`docs/hotels.md`, `docs/coffee-stand.md`, `docs/guest-types.md`, `docs/marketing-pricing.md`); human checklist `docs/playtest-m64.md`.
+- **Winter adventures and the backcountry** (0.2.9): a **Sleigh Stable**, a **Snowshoe Hut** and a **Snowscooter Base**; paint **backcountry routes** with flag poles and watch an **avalanche danger from 1 to 5** (routes close at 4, override with a confirm, patrol cover; nobody ever dies); **Snowboarder** and **Ski tourer** guests and the **Powder Hounds** campaign (`docs/winter-tours.md`, `docs/backcountry.md`, `docs/guest-types.md`).
 - **Tutorial**: an interactive guided tour with an on-screen ranger, "Show me" / "Do it for me", contextual hints.
 
 ## Requirements

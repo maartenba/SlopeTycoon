@@ -88,7 +88,7 @@ Nothing has been pushed or created on GitHub yet. The local clone already has `o
 4. Actions → wait for **Deploy to GitHub Pages** (build, then deploy). URLs: site <https://slopetycoon.com/>, guide `.../guide/`, game `.../play/`.
 5. Repo "About": description (e.g. "Cosy ski-resort tycoon in the browser: three.js, procedural, installable PWA"), website = the Pages URL, topics such as `three-js`, `typescript`, `game`, `tycoon`, `pwa`, `ski`.
 6. Optional custom domain: set `SITE_CNAME` as a repository variable/env for the build step, DNS CNAME to `maartenba.github.io`, enable Enforce HTTPS (see above). Done for `slopetycoon.com`.
-7. First release (when you want it): `npm run release -- ...` (see `scripts/release.ts`) then `git push origin main v0.2.8`. After the tag exists add compare links to `CHANGELOG.md` (`[Unreleased]: https://github.com/maartenba/SlopeTycoon/compare/v0.1.0...HEAD`); none exist yet because there are no tags.
+7. First release (when you want it): `npm run release -- ...` (see `scripts/release.ts`) then `git push origin main v0.2.9`. After the tag exists add compare links to `CHANGELOG.md` (`[Unreleased]: https://github.com/maartenba/SlopeTycoon/compare/v0.1.0...HEAD`); none exist yet because there are no tags.
 
 ### Double-check before going public
 * **No secrets**: `.env*` is git-ignored; run `git log -p | grep -iE "api[_-]?key|secret|token|password"` and scan the output; nothing in `src/` or `public/` should contain credentials.
@@ -103,12 +103,12 @@ Nothing has been pushed or created on GitHub yet. The local clone already has `o
 ```bash
 # Option A: one fresh root commit (drops all old history)
 git checkout --orphan clean-main
-git add -A && git commit -m "Slope Tycoon 0.2.8"
+git add -A && git commit -m "Slope Tycoon 0.2.9"
 git branch -M clean-main main          # replaces old main (backup first!)
 git reflog expire --expire=now --all && git gc --prune=now --aggressive
 du -sh .git
 
 # Option B: keep history, squash into the first commit's tree state
-#   git reset --soft $(git rev-list --max-parents=0 HEAD) && git commit --amend -m "Slope Tycoon 0.2.8"
+#   git reset --soft $(git rev-list --max-parents=0 HEAD) && git commit --amend -m "Slope Tycoon 0.2.9"
 #   (this also collapses everything into a single commit; the old blobs go away after the gc above)
 ```

@@ -3,17 +3,21 @@ title: "Guests & seasons"
 order: 5
 summary: "Who visits, how the snowline and the seasons change your job, day and night, and how to control time."
 description: "Guests and seasons in Slope Tycoon: who visits your resort, how the snowline changes your job through the year, day and night, and how to control time."
-screenshots: [slope-guests, season-spring, season-summer, toilets-hut]
+screenshots: [slope-guests, guests-boarders-tourers, toilets-hut, season-summer]
 ---
 ## Your guests
 
 {{fig:slope-guests}}
 
-Guests come as **solo** travellers, **couples**, **families**, **budget** skiers, **VIPs** and **adventurers**. Each type has its own taste in prices, its own patience and its own favourite things to do. In winter they ski or snowboard (roughly one in three boards), in summer they hike or ride mountain bikes, and some just relax at the lake or the rink.
+Guests come as **solo** travellers, **couples**, **families**, **budget** skiers, **VIPs** and **adventurers**. Each type has its own taste in prices, its own patience and its own favourite things to do. In winter they ski or snowboard (roughly one in three arrives as a **Snowboarder**, see below), in summer they hike or ride mountain bikes, and some just relax at the lake or the rink.
 
 Two **niche summer types** join them. **Mountain bikers** (lime shirt, helmet, about 15 % of the summer crowd) only come once the resort has a rideable MTB trail and an open lift that carries bikes; they ride the trails, rent bikes and count as adventurers for campaigns. **Anglers** (teal jacket and cap, quiet, low spend, steady) only come to a resort with an open Tackle & Bait Hut and fish in the water; they are the one type that also comes in winter, for ice fishing. More in [Summer](page:summer).
 
 Two **calm types** fill the quiet times. **Seniors** (lilac cardigans, grey hair) come on weekdays and in the quiet seasons, tire quickly, need a toilet more often, never ride black runs and love a terrace, a café, a view or a hotel pool. **School groups** (one teacher and a class of 8 to 15 in orange bibs) arrive by coach on weekdays only, outside the holidays: in the first week of December, in January and on summer weekdays, and only to a resort with a ski school, kids ground or magic carpet (summer: a playground, petting zoo or campground). Both unlock at resort level 2: see [Seniors & school trips](page:seniors-schools). Overnight guests can now sleep in a **Small Hotel** or a **Luxury Hotel** (see [Hotels & the coffee stand](page:hotels)).
+
+Two **winter types** round out the slope. **Snowboarders** (purple jackets, beanies, a board under the arm) are no longer just a look: about a third of the winter crowd (and a bit less in spring and autumn) are snowboarders, carved out of the solo, couple, budget and adventure arrivals, so the total number of guests stays the same. They love the **Stunt Park**, wide pistes and renting a board, and they dislike **long flat stretches and catwalks** where a board stops: a run full of flats loses them to a wide one. **Ski tourers** (red shells, a backpack, touring skis; from level 2) only come while the resort has an **open backcountry route below avalanche danger 4**; they skin up the route, spend little and love a mountain hut (see [Backcountry & avalanche danger](page:backcountry)).
+
+{{fig:guests-boarders-tourers}}
 
 Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt, and sooner or later they need a toilet. When they leave they judge the resort, and the average becomes your **star rating**.
 
@@ -51,8 +55,6 @@ Festivals sit in their real months: Christmas Market in December, Winter Carniva
 ### The real snowline
 
 Snow depends on **altitude and temperature**. Low pistes melt out first, high ones last, which is why **spring skiing** works only up high while the valley already hikes. Buildings show a *closed: too warm at 1,240 m* message when the air is wrong for them. **Snowmaking** buys you time on a thin base (see [Lifts & pistes](page:lifts-pistes)); you can switch the cannons off yourself or let them pause when it is too warm.
-
-{{fig:season-spring}}
 
 ### Summer is not a holiday
 

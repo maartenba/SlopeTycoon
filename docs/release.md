@@ -1,6 +1,44 @@
 # Release notes and checklist
 
-Current release: **0.2.8 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.2.9 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.2.9 (2026-10-31, macOS, Node v22.23.4)
+
+M6.5 milestone STOP batch (Phase 6 content wave 5): Sleigh Stable, Snowshoe Hut, Snowscooter Base, Backcountry routes with avalanche danger 1-5, Snowboarder + Ski tourer guests, Powder Hounds + Snowboard Park Jam retarget. Version bump, CHANGELOG `[0.2.9]` with Highlights, two new guide pages (Sleighs, snowshoes & snowscooters; Backcountry & avalanche danger), updates to Guests & seasons, Operations, Money, the glossary and the landing page, seven new screenshots, `docs/playtest-m65.md`.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 407 files passed, 1 skipped; 4198 tests passed, 32 skipped |
+| Balance | `npm run test:balance` | 36 passed |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on every shot (17) |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors |
+| Phase 6 story | `npm run phase6:sanity` | OK |
+| Summer story | `npm run summer:sanity` | OK |
+| Winter story | `npm run winter:sanity` | OK (the December run now continues until a school class has arrived) |
+| Winter tours | `npm run winter:tours` | OK: all three bases served guests, a sleigh, a walker line and a scooter convoy seen, scooter penalty within the cap, MaterialGuard 0 |
+| Backcountry story | `npm run backcountry:sanity` (new) | OK: route painted, Snowboarders + a tourer arrived, a storm lifts the danger to 4, the route closes, nobody on it, override asks for a confirm, blast / settling reopens it, save + reload identical, MaterialGuard 0, 0 console errors |
+| Flicker | `npm run flicker:building -- --place sleighStable` / `snowscooterBase` | 73.7 / 69.9 oscillating px per window (hotel 155.2, demo lodge 849.3); the full `npm run flicker` was started and stopped (it takes too long here) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | 39/39 passed |
+| Size | `npm run size` | 2828.7 kB raw / 1014.7 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run site:og`, `npm run docs:img`, `npm run build:site && npm run site:check && npm run verify:site` | OK (28 pages, 89 screenshots, 7.6 MB of the 8 MB budget: `MAX_BYTES_1280` 70 -> 58 kB and a new 30 kB cap for the 640 px files; 216 URLs crawled) |
+
+Goldens: `GOLDEN_STARTER` and `GOLDEN_BOT` (both moved: guests arrive in the starter too) + `GOLDEN_BOT_MONEY` 227010.16 -> 232186.60, the `yearReport` snapshot, the `summer` income bound (0.97 -> 0.9, chaotic +-7 %); plain-bot replay on three seeds before / after (-5.0 % / +1.1 % / +1.3 %), boarder injury rate, and star distribution in `docs/balance.md` "M6.5 STOP check". Bugs found by the STOP checks: the `winter:sanity` school-class check was a 6-day coin flip; the guide-page related-links test needed the two new guide pages registered; the screenshot budget needed a lower per-file cap (above). Known cosmetic gaps (not fixed, in `docs/playtest-m65.md`): thin snowshoe poles at the default zoom, lavender-looking shaded snow roofs (the game's snow shading, not a bug).
+
+### Dist size 0.2.9 (gzip level 9)
+
+| File | Raw | gzip |
+|---|---:|---:|
+| assets/index-WEqv5lL_.js (app) | 2079.2 kB | 714.0 kB |
+| assets/three-iTBe2s16.js | 568.4 kB | 142.5 kB |
+| assets/uikit-Dkb3nSkr.js | 6.3 kB | 2.5 kB |
+| assets/index-Dk_rm1cx.css | 4.4 kB | 1.3 kB |
+| fonts/ | 93.6 kB | 86.9 kB |
+| icons/ | 64.4 kB | 62.7 kB |
+| html / manifest / whats-new.json / other | 106.0 kB | 91.7 kB |
+| **Total (excl. sw.js)** | **2828.7 kB** | **1014.7 kB** |
 
 ## 0.2.8 (2026-10-30, macOS, Node v22.23.4)
 

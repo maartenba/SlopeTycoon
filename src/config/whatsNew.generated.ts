@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.2.9",
+    "date": "2026-10-31",
+    "highlights": [
+      "Three winter tours: a horse-drawn Sleigh Stable with quiet bells, a Snowshoe Hut with guided walks, and a Snowscooter Base with a roaring convoy.",
+      "Backcountry routes: paint a ski-touring route with flag poles, and watch its avalanche danger from 1 (Low) to 5 (Very high) in a new route inspector…",
+      "Routes close themselves when the danger reaches 4 and reopen when it settles; you can override with a confirmation, and a Ski Patrol Hub keeps the…",
+      "Two new winter guests: Snowboarders in purple who hate flat catwalks, and red-shelled Ski tourers who skin up your routes.",
+      "Powder Hounds, a new campaign for tourers and riders that pauses while every route is closed, and a retargeted Snowboard Park Jam.",
+      "Two new guide pages: Sleighs, snowshoes & snowscooters, and Backcountry & avalanche danger."
+    ]
+  },
+  {
     "version": "0.2.8",
     "date": "2026-10-30",
     "highlights": [
@@ -24,18 +36,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Two new kinds of guests: mountain bikers on your trails and quiet anglers at the water.",
       "Angler's Paradise, a second new campaign, fills your lakes with anglers while the fish last.",
       "A new Summer page and a Quads, climbing, rafting & fishing page in the player guide."
-    ]
-  },
-  {
-    "version": "0.2.6",
-    "date": "2026-10-29",
-    "highlights": [
-      "Dig a river: find the cyan spring rings, drag to a lake, a stream or the map edge and the route is found for you; it runs calm, brisk or as rapids…",
-      "Suspension footbridge: a rope-and-plank bridge spans a river, lake or gorge up to 12 tiles for footpaths and hiking trails; hikers stop mid-span for…",
-      "Mid-stations: add a station half way up a gondola, cable car or detachable chair so guests (and hikers) can get on and off in the middle.",
-      "A new high-speed six-seat chair with a wind visor, at resort level 3.",
-      "Several closures for the same season (no snow, too warm) now show one toast instead of a stack.",
-      "On phones and tablets the open drawer steps aside when you paint, so pistes and ponds can be drawn."
     ]
   }
 ];

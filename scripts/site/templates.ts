@@ -21,10 +21,10 @@ export const OG_ALT: Record<OgKey, string> = {
 /** Which other guide pages are worth reading next (internal links; a test checks the slugs exist). */
 export const RELATED: Record<string, string[]> = {
   'getting-started': ['interface', 'building', 'career'], interface: ['shortcuts', 'getting-started', 'settings'], building: ['summer', 'rails-bridges', 'lifts-pistes'], 'rails-bridges': ['building', 'lifts-pistes', 'guests-seasons'],
-  'lifts-pistes': ['guests-seasons', 'operations', 'building'], 'guests-seasons': ['summer', 'seniors-schools', 'hotels'], summer: ['summer-adventures', 'guests-seasons', 'money'], 'summer-adventures': ['summer', 'building', 'operations'], operations: ['events', 'guests-seasons', 'troubleshooting'],
+  'lifts-pistes': ['guests-seasons', 'operations', 'building'], 'guests-seasons': ['summer', 'seniors-schools', 'backcountry'], summer: ['summer-adventures', 'guests-seasons', 'money'], 'summer-adventures': ['summer', 'building', 'operations'], operations: ['events', 'guests-seasons', 'troubleshooting'],
   money: ['career', 'guests-seasons', 'building'], career: ['achievements', 'modes', 'money'], achievements: ['career', 'modes', 'settings'], modes: ['career', 'touch', 'achievements'],
   touch: ['interface', 'settings', 'troubleshooting'], settings: ['touch', 'saves', 'interface'], saves: ['settings', 'troubleshooting', 'getting-started'], troubleshooting: ['saves', 'settings', 'touch'],
-  hotels: ['seniors-schools', 'building', 'operations'], 'seniors-schools': ['hotels', 'guests-seasons', 'money'],
+  hotels: ['seniors-schools', 'building', 'operations'], 'seniors-schools': ['hotels', 'guests-seasons', 'money'], 'winter-adventures': ['backcountry', 'summer-adventures', 'guests-seasons'], backcountry: ['winter-adventures', 'operations', 'money'],
   glossary: ['getting-started', 'interface', 'shortcuts'], shortcuts: ['interface', 'touch', 'glossary'], events: ['operations', 'guests-seasons', 'money'],
 };
 

@@ -4,10 +4,22 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-10-31 (pre-release)
+
+Winter adventures and the backcountry, the fifth content wave of Phase 6 (milestone M6.5). Changes since 0.2.8: a Sleigh Stable, a Snowshoe Hut and a Snowscooter Base, paintable backcountry routes with an avalanche danger from 1 to 5, Snowboarder and Ski tourer guests, and the Powder Hounds campaign.
+
+### Highlights
+
+- Three winter tours: a horse-drawn Sleigh Stable with quiet bells, a Snowshoe Hut with guided walks, and a Snowscooter Base with a roaring convoy.
+- Backcountry routes: paint a ski-touring route with flag poles, and watch its avalanche danger from 1 (Low) to 5 (Very high) in a new route inspector with a danger rose.
+- Routes close themselves when the danger reaches 4 and reopen when it settles; you can override with a confirmation, and a Ski Patrol Hub keeps the danger down. Nobody ever dies, buried guests are injuries.
+- Two new winter guests: Snowboarders in purple who hate flat catwalks, and red-shelled Ski tourers who skin up your routes.
+- Powder Hounds, a new campaign for tourers and riders that pauses while every route is closed, and a retargeted Snowboard Park Jam.
+- Two new guide pages: Sleighs, snowshoes & snowscooters, and Backcountry & avalanche danger.
+
+### Changes
+
 - **Winter tours** (Phase 6 Task 31, `docs/winter-tours.md`): a Sleigh Stable ($25: a horse-drawn sleigh with six seats and quiet bells on a road or footpath), a Snowshoe Hut ($15: guided walks of eight along a hiking trail, cancelled by storms and unstable snow) and a Snowscooter Base ($45: six scooters on a road, footpath or trail, never a piste; scares wildlife and costs a little sustainability, shared cap of 3). All winter only, career levels 2 / 2 / 3, with an advisor hint and `npm run winter:tours`.
-
-### Added
-
 - **Backcountry routes** (level 3): a fourth card in the Pistes & Trails drawer paints winter ski-touring and off-piste routes with flag poles every few tiles and a violet dashed track. A route must start at a lift top, hut, piste end or trail; it is not a piste (no grooming, no difficulty). See `docs/backcountry.md`.
 - **Avalanche danger 1-5** per route, from the avalanche model: it rises after storms and heavy fresh snow, and falls after control blasting and with time. The route inspector shows a danger rose and text such as "Considerable (3)", and the flag colours follow the level.
 - Routes **close automatically at danger 4** ("Avalanche danger 4"); nobody is sent onto a closed route. You can override it per route or for all routes ("Open at danger 4+"), after a confirm ("Open at danger 4? Burials possible; patrol required."). The Advisor warns about open routes outside Ski Patrol cover and about routes kept open at danger 4+.
@@ -16,6 +28,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Ski tourer guest type** (needs a backcountry route; winter and spring): rides a lift up, then skins up an open backcountry route to its summit; low spend, loves mountain huts, red shell and a backpack. Tourers never go out at avalanche danger 4 or higher, even when you keep the route open.
 - **Powder Hounds campaign** ❄️ ($5,500, 10 days, winter): calls ski tourers and riders. Needs an open route below danger 4, a Ski Patrol Hub and a place to eat; works 30 % harder on a powder day and pauses while every route is closed for avalanche danger. Two new Advisor tips: Powder Hounds and the Snowboard Park Jam.
 - Burials stay injuries: nobody is ever killed. A new repo test (`tests/repo/noDeaths.test.ts`) fails if any sim, UI, config or render string names a death.
+- **Winter and backcountry guide**: two new pages (Sleighs, snowshoes & snowscooters; Backcountry & avalanche danger), updated Guests & seasons, Operations, Money, the glossary and the landing page, with seven new screenshots.
+- **Balance** (docs/balance.md, "M6.5 STOP check"): the bot economy moves with the Snowboarder carve-out (golden 200 d +2.3 %; 360 d on 64 / seed 61 -5.0 %, 128 / seed 7 +1.1 %, 64 / seed 5 +1.3 %); the bot paints no route, so tourers never spawn there. Boarders are injured at 4.8 per 1000 guests, the same as the core types they come from. Goldens (`staff`, `yearReport`) re-recorded; the summer income bound is relaxed 0.97 -> 0.9.
+- Developer: `npm run backcountry:sanity` (a real-page story: paint a route, a storm lifts the danger to 4, the route closes, tourers stop, the override asks for a confirm, blasting reopens it, save and reload identical), `scripts/analysis/botReplay.ts`; `npm run winter:sanity` now waits for a school class.
 
 ## [0.2.8] - 2026-10-30 (pre-release)
 

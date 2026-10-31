@@ -38,9 +38,11 @@ Campaigns raise arrivals of certain guests for a while. Each has **prerequisites
 Four campaigns are newer and tell you what to build:
 
 - **Come by Train** needs a **Train Station** on a rail line that reaches the valley, within walking distance of the lodge (or served by a Shuttle Depot). It moves part of the road arrivals onto the train, up to the station's capacity of 150 guests, so the car park empties, and a small, capped bonus for the share arriving by train feeds your sustainability score.
-- **Snowboard Park Jam** needs an open **Stunt Park** and brings the freestyle crowd.
+- **Snowboard Park Jam** needs an open **Stunt Park**, an open lift and a Rental, and now aims at the **Snowboarders** guest type (+140 %) with a small push for adventurers, so its crowd is the purple-jacket one.
 - **Hike & Bike Weekends** pulls couples and walkers to your trails, but only on peak days (weekends and holidays): weekdays are weak.
 - **Festival Season** needs a booked festival running or starting within a week and works only around the festival dates; outside them it is weak. Book the festival first, then the campaign.
+
+**Powder Hounds** (,500, 10 days, winter) is for ski tourers and riders and needs an open backcountry route below danger 4, a Ski Patrol Hub and somewhere to eat; it is stronger on a powder day and pauses while every route is closed (see [Backcountry & avalanche danger](page:backcountry)).
 
 Two **summer campaigns** work with the buildings on the [Summer](page:summer) page:
 
