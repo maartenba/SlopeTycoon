@@ -50,7 +50,7 @@ A game year has **180 days** in 12 months of 15 days, and the months are the **r
 
 Daylight follows the sun too: the **longest day is 21 June** and the **shortest 21 December**, so December days are short (lifts open about 08:30) and summer days long. Weekdays are real as well: Saturday and Sunday are the peak days (see [Money](page:money)), and quiet weekdays are when **Seniors** and **school classes** visit: the first week of December and January are school-class weeks in winter (see [Seniors & school trips](page:seniors-schools)).
 
-Festivals sit in their real months: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Almabtrieb in early October and New Year on 31 December. The **Events strip** in the Marketing drawer shows all twelve months at a glance (see [Events, stories & the region](page:events)).
+Festivals sit in their real months: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Mountain Concert in early September, the Snow Concert in March, the Almabtrieb in early October and New Year on 31 December. The **Events strip** in the Marketing drawer shows all twelve months at a glance (see [Events, stories & the region](page:events)).
 
 ### The real snowline
 

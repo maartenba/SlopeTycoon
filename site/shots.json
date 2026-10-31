@@ -759,7 +759,7 @@
       "id": "story-inspector",
       "alt": "The guest inspector for a named guest, Marta from Graz, with her wish, progress and Pin and Follow buttons.",
       "pages": [
-        "events"
+        "landing"
       ],
       "kind": "harness",
       "caption": "A story guest: a name, one wish, and Pin and Follow buttons.",
@@ -782,7 +782,7 @@
       "id": "ui-rating",
       "alt": "The rating panel open under the stars: bars for each part of the score including sustainability and a market line against nearby resorts.",
       "pages": [
-        "events"
+        "landing"
       ],
       "kind": "harness",
       "caption": "The rating panel: one bar per facet, now with sustainability, and where you stand in the region.",
@@ -1123,7 +1123,7 @@
     },
     {
       "id": "ui-loading",
-      "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
+      "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts\u2026'.",
       "pages": [
         "troubleshooting",
         "getting-started"
@@ -1844,6 +1844,55 @@
         "target": "lodge",
         "viewport": "1920x1080",
         "steps": "wait:5000;click:button[data-drawer=marketing];wait:600;eval:__slope.bus.emit('money:changed',{});wait:900;eval:(g=>g(g,document))((g,r)=>[...r.querySelectorAll('*')].map(e=>e.tagName==='ST-MARKETING'?[...e.shadowRoot.querySelectorAll('h5')].find(h=>h.textContent.includes('Snowboard Park'))?.scrollIntoView({block:'start'}):e.shadowRoot?g(g,e.shadowRoot):0));wait:600"
+      }
+    },
+    {
+      "id": "concert-summer-night",
+      "alt": "A summer mountain concert at night: a stage with truss and swaying light cones, a crowd in front, bunting and flags.",
+      "pages": [
+        "events",
+        "landing"
+      ],
+      "kind": "harness",
+      "caption": "Mountain Concert, 1-10 September: light cones sweep over the crowd after dark.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "summer",
+        "hour": 21,
+        "zoom": 6,
+        "target": "54,106",
+        "extra": "starter=1&hints=0",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+        "ticks": 300,
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{const s=__slope.sim;s.progression.unlockAll=true;s.lifts.all()[0].kind='gondola6';__slope.events.start('mountainConcertSummer',2);setTimeout(()=>{const l=__slope.festivalDressing.layouts.find(x=>x.stage);const st=l&&l.stage;if(!st)return;__slope.renderer.controls.focusOn(st.x,st.z);try{__slope.renderer.controls.yaw=st.ry+0.55}catch(e){}const u=document.getElementById('ui');if(u)u.style.display='none';},1500);})()",
+        "steps": "wait:6000"
+      }
+    },
+    {
+      "id": "concert-winter-night",
+      "alt": "The Snow Concert at night: a stage with a snowy roof, warm lamps, heaters and light cones above a crowd in beanies.",
+      "pages": [
+        "events"
+      ],
+      "kind": "harness",
+      "caption": "Snow Concert in March: snow on the roof, warm lamps and heaters.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "hour": 21,
+        "zoom": 6,
+        "target": "54,106",
+        "extra": "starter=1&hints=0",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(120,'mixed')",
+        "ticks": 300,
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{const s=__slope.sim;s.progression.unlockAll=true;s.lifts.all()[0].kind='gondola6';__slope.events.start('mountainConcertWinter',2);setTimeout(()=>{const l=__slope.festivalDressing.layouts.find(x=>x.stage);const st=l&&l.stage;if(!st)return;__slope.renderer.controls.focusOn(st.x,st.z);try{__slope.renderer.controls.yaw=st.ry+0.55}catch(e){}const u=document.getElementById('ui');if(u)u.style.display='none';},1500);})()",
+        "steps": "wait:6000"
       }
     }
   ]

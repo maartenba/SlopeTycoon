@@ -1422,5 +1422,37 @@
     "bytes": 82596
    }
   ]
+ },
+ "concert-summer-night": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "concert-summer-night-640.webp",
+    "bytes": 21394
+   },
+   {
+    "w": 1280,
+    "file": "concert-summer-night-1280.webp",
+    "bytes": 52882
+   }
+  ]
+ },
+ "concert-winter-night": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "concert-winter-night-640.webp",
+    "bytes": 19908
+   },
+   {
+    "w": 1280,
+    "file": "concert-winter-night-1280.webp",
+    "bytes": 51834
+   }
+  ]
  }
 }

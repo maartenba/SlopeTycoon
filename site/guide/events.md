@@ -3,7 +3,7 @@ title: "Events, guests' stories & the region"
 order: 7
 summary: "Festivals and automatic events with their set dressing, guests with a wish, neighbouring resorts and the Green Resort award."
 description: "Festivals and events in Slope Tycoon: book a Christmas Market or World Cup, meet guests with a wish, outpace rival resorts and win the Green Resort award."
-screenshots: [events-calendar, festival-market, story-inspector, ui-rating]
+screenshots: [events-calendar, festival-market, concert-summer-night, concert-winter-night]
 ---
 ## The Events calendar
 
@@ -13,7 +13,7 @@ Open **Marketing**: below the campaigns sits the **Events calendar**. It lists w
 
 While a festival runs every guest is a little happier and more people turn up. Prices go into the same **marketing** line of the books as campaigns.
 
-Festivals sit in their **real months**: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, Almabtrieb in early October, New Year on 31 December.
+Festivals sit in their **real months**: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Mountain Concert in early September, the Snow Concert in March, Almabtrieb in early October, New Year on 31 December.
 
 {{gen:festivals}}
 
@@ -27,13 +27,25 @@ Every running festival dresses the village. Bunting and flags go up along the ro
 
 {{fig:festival-market}}
 
-Fireworks are rare and brief: New Year's Eve and the last night of a festival, only after dark. They are skipped when [Settings](page:settings) → Feedback intensity is *Off*.
+Fireworks are rare and brief: New Year's Eve, the last night of a festival and the finale of the Mountain Concert, only after dark. They are skipped when [Settings](page:settings) → Feedback intensity is *Off*.
+
+## Mountain concerts
+
+Two extra events sit **next to** the Summer Music Festival (which stays): the **Mountain Concert** in summer and the **Snow Concert** in winter.
+
+- **Mountain Concert**: start between **1 and 10 September**, two days, $9,000, about a quarter more arrivals. It takes the first free days after the Music Festival.
+- **Snow Concert**: start between **1 and 15 March**, two days, $9,000, a late-season concert in the spring-skiing sun.
+- **You need** resort level 3, 3 stars and a **gondola or cable car** (any one will do), plus the cash. Until then the card says *Needs a gondola or cable car* and **Show me** opens the Lifts drawer. **Rudi** suggests a concert when you own a gondola and one can start within about six weeks.
+
+{{fig:concert-summer-night}}
+
+A **stage** with truss, speakers, a backdrop, a banner with the festival name, a barrier and a small crowd goes up on free, flat ground near the best spot: a mid-station plaza first, then a viewpoint, then the top of the gondola or cable car, then the base station. After dark soft **light cones** sway gently over the crowd (they stand still with reduced motion). Summer has bunting and flags and ends with one modest firework; winter has a snowy roof, warm lamps and heaters, and no fireworks. Close to the stage you hear a **very quiet** distant band and the murmur of a crowd; it follows the ambience volume and mute. Everything is taken down afterwards, and it never blocks building or walking.
+
+{{fig:concert-winter-night}}
 
 ## Guests with a story
 
 A few guests in a hundred arrive with a **name and one wish**: ski five runs, try a black run, have a proper meal, get a drink at the après bar, take a lesson, go on a hike, avoid long queues or simply have a good day. Click them to see the wish and how far along it is.
-
-{{fig:story-inspector}}
 
 - **Pin** keeps the guest in the card; **Follow** makes the camera keep them in view. Closing the card undoes both.
 - You cannot steer story guests. They are ordinary guests, so the only way to grant a wish is to run a good resort. A happy ending earns a small tip and a line in the news; a miss leaves a mild review in the Reviews tab. Nothing else.
@@ -41,8 +53,6 @@ A few guests in a hundred arrive with a **name and one wish**: ski five runs, tr
 ## The region
 
 You are not alone in the valley. Two or three **neighbouring resorts** compete for the same visitors. They are not simulated in detail; each has a star level that creeps up slowly over the years and a ticket price. Open the **rating panel** (click the stars) to see your **market standing**: your slice of the regional visitors and your rank among the nearby resorts.
-
-{{fig:ui-rating}}
 
 - A better rating and a fair price than the neighbours bring a few more guests (at most about +12 %); lagging behind costs up to 10 %. A new resort is not judged during its first month and only fully after about half a year, and in the tutorial and in scenarios the standing is shown but never changes arrivals.
 - The news mentions it only when the leader changes.

@@ -79,6 +79,8 @@ screenshots: []
 
 **Mountain biker** A niche summer guest type (lime shirt, helmet) who comes once a rideable MTB trail and an open bike lift exist.
 
+**Mountain Concert / Snow Concert** Two festivals you can book once you own a gondola or cable car: a stage with swaying light cones, 1-10 September (summer) or 1-15 March (winter).
+
 **Natural spring** A spring site found on every map (cyan ring while the Landscape Water tab is open): the usual start of a river.
 
 **Not connected** A building that has no path, road or rail link yet.
