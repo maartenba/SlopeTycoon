@@ -10,6 +10,7 @@
     "url": "https://github.com/maartenba/SlopeTycoon/issues"
   },
   "private": true,
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=20"
   },

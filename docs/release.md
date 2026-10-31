@@ -305,7 +305,7 @@ Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts
 - No stray debug files (`tests/dbg*`, temp scripts) found on 2026-10-27. `.gitignore` ignores `node_modules`, `dist`, `.DS_Store`, `*.log`; it does **not** ignore `.weave` or `public/icons`.
 - `TODO` / `FIXME` grep over `src sw scripts vite-plugins tests`: **no TODO / FIXME markers** (re-checked 2026-10-27).
 - `console.log` (2026-10-27): the `[demo]` title-scene build line and the two `[perf]` benchmark dumps (debug-panel button) in `src/main.ts`; the pointer diagnostic `console.debug` is gated by `import.meta.env.DEV`. `console.warn` / `console.error` remain for real failures.
-- LICENSE is a copyright notice only (no open-source grant); the owner may choose a licence later.
+- LICENSE is proprietary, all rights reserved (source available, not open source); do not change without the owner.
 
 ## Manual playtest checklist (human-only; nothing below was verified by an agent)
 
@@ -339,5 +339,4 @@ Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts
 - `NavWorld.terrainVersion` not wired in `main.ts`; impact unverified.
 - The app JS chunk (1.7 MB raw) exceeds Vite's 500 kB warning; not split further. Total 887 kB gzip is under the 2 MB budget.
 - `muteMusicInMenus` audio setting exists in `AudioSettings` but is unused.
-- Licence not chosen (`LICENSE` is a copyright notice only; the owner decides later).
 - Human playtest STOP of Task 32 still open.

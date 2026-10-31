@@ -2,6 +2,14 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changes
+
+- **Road overpass**: with the Crossings toggle on Bridge, a road stroke over a straight rail line now builds a raised overpass with ramps (7 or 9 tiles, $900 + $150 per tile, needs free tiles beside the rail, refuses *No room for the ramps* / *Too steep*) instead of a level crossing: cars drive over the deck, trains pass underneath, nobody waits; the level crossing stays the default. The advisor suggests it for roads with long waits (`docs/crossings.md`).
+- **Licence**: Slope Tycoon is now proprietary, all rights reserved (source available to read on GitHub, not open source); new `LICENSE`, `"license": "UNLICENSED"`, footer, About, Privacy, README and `THIRD_PARTY_NOTICES` wording.
+- **Docs**: new `docs/README.md` index of the developer docs by area; `docs/deploy.md` licence section updated; the Highlights sections of 0.2.0 and 0.1.0 added below.
+
 ## [0.3.0] - 2026-10-31 (pre-release)
 
 Mountain concerts and the end of Phase 6 (milestone M6.7). Phase 6 added rivers, summer content, hotels, winter adventures, mid-station lifts and now concerts over 0.2.2-0.3.0; the summary is in `docs/phase6-status.md`. Changes since 0.2.9: the Mountain Concert and the Snow Concert, a guide section for them, and a stale-statement sweep of the guide and the landing page.
@@ -270,6 +278,12 @@ Changes since 0.2.0. Still a pre-release; not 1.0.
 
 Second pre-release (still not a 1.0). Adds Phase 5 (goals, ride-along, photo & walk modes, progression, scenarios, achievements, staff, festivals, stories, rivals, build depth), touch support, colour-blind palette, Statistics, named regions, the Landscape drawer and redesigned Terrain / View drawers.
 
+### Highlights
+
+- Goals, a ranger advisor, ride-along, photo and walk views, resort levels, six scenarios and a Resort of the Year report.
+- Staff, festivals, story guests, rival resorts and a sustainability rating deepen the resort game.
+- Touch support, a colour-blind palette, Statistics and a Landscape drawer.
+
 ### Release prep (0.2.0)
 - Version bumped to **0.2.0** (package, lockfile, About label, service-worker cache version, README, docs, site). Still a pre-release; not 1.0.
 - **Website and guide updated**: new guide page *Touch & tablets*, a Statistics section in *Money*, the redesigned Terrain drawer in *Building* (and the Landscape intro: trees only there; build in any season), the View drawer in *The interface*, region names in *Getting started*, the colour-blind palette and Touch setting in *Settings*, a text-field note in *Shortcuts*; landing page gets touch, colour-blind and statistics cards, facts and an updated FAQ. 7 new screenshots (`ui-terrain-drawer`, `ui-view-drawer`, `ui-stats`, `touch-phone-hud`, `touch-phone-place`, `touch-tablet`, `cbsafe-pistes`) and a re-shoot of every picture. Harness: `local` option (localStorage before boot).
@@ -475,6 +489,12 @@ Second pre-release (still not a 1.0). Adds Phase 5 (goals, ride-along, photo & w
 ## [0.1.0] - 2026-10-23 (pre-release)
 
 First tagged pre-release; previously labelled 0.9.0 internally. Playtest build, not a 1.0. Built in four phases, each approved after a human playtest.
+
+### Highlights
+
+- The first playable release: build lifts, pistes, paths and buildings on a procedural mountain.
+- Guests ski, eat, rest and rate your resort; money, loans and seasons keep the economy honest.
+- Everything is generated in code, works offline and saves on your device.
 
 ### Added
 

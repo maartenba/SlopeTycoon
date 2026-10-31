@@ -82,7 +82,7 @@ export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = [
 ${col('guide', 'Player guide', li(`<a href="${rel}guide/">All guide pages</a>`) + top.map((p) => li(`<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`)).join(''))}
 ${col('project', 'Project', li(`<a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a>`) + li(`<a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>`) + li(sponsorLink('sponsor-foot', 'Sponsor on GitHub')) + li(`<a href="${env.repoUrl}/tree/main/docs">Developer docs</a>`) + li(`<a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`))}
 ${col('privacy', 'Privacy', li(`<a href="${rel}privacy/">Privacy &amp; analytics</a>`) + li(`<a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a>`))}</div>
-<div class="fbottom">Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT). Everything procedural.</div></div></footer>`;
+<div class="fbottom">&copy; 2026 Maarten Balliauw. All rights reserved: source available to read on GitHub, not open source. Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT). Everything procedural.</div></div></footer>`;
 }
 
 const crumbsHtml = (rel: string, items: Array<{ name: string; href?: string }>): string => `<nav class="crumbs" aria-label="Breadcrumb">${items.map((i) => (i.href !== undefined ? `<a href="${rel}${i.href}">${esc(i.name)}</a>` : `<span aria-current="page">${esc(i.name)}</span>`)).join(' › ')}</nav>`;

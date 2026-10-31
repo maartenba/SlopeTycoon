@@ -45,4 +45,4 @@ Choosing "No thanks" after allowing it switches analytics off again straight awa
 
 ## Questions
 
-Slope Tycoon is a hobby project by [Maarten Balliauw](https://github.com/maartenba). If you have a question or want something deleted or explained, open an issue on [GitHub](https://github.com/maartenba/SlopeTycoon/issues). Read the story behind the game on the [about page](../about/).
+Slope Tycoon is a hobby project by [Maarten Balliauw](https://github.com/maartenba). The source is available to read on GitHub; all rights reserved (see the [licence](https://github.com/maartenba/SlopeTycoon/blob/main/LICENSE)). If you have a question or want something deleted or explained, open an issue on [GitHub](https://github.com/maartenba/SlopeTycoon/issues). Read the story behind the game on the [about page](../about/).
