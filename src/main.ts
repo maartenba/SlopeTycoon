@@ -1155,6 +1155,7 @@ const activityViews = (): ActivityView[] => {
 const activity = new AttractionActivity(activityViews, (x, y) => heightAt(grid, x, y));
 renderer.scene.add(activity.group);
 const guestRenderer = new GuestRenderer(guestSim.store);
+guestRenderer.legacyBoarderBelow = () => guestSim.spawner.legacyBoarderBelow;
 const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => { const g = heightAt(grid, x, y), d = sim.networks.deckY(x, y); return d !== null && d > g ? d : g; }); // cars cross road bridges on the deck
 renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
 // Rail level crossings (Phase 6 Task 10, docs/crossings.md): barriers / lamps animate from the sim's closed state; the bell is quiet and fades with camera distance.

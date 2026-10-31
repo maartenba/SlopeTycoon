@@ -37,6 +37,10 @@ export interface TypeLook {
   ageShare?: number;
   /** No helmet in winter (hair, beanie or hat instead): seniors, so the grey / white hair reads. */
   noHelmet?: boolean;
+  /** Share (0..1) of the type's guests in a beanie instead of a helmet in winter (snowboarders). */
+  beanie?: number;
+  /** Always carries a backpack (ski tourers: skins, shovel, probe). */
+  pack?: boolean;
 }
 
 /** Per-type need multipliers (Phase 6 Task 29; Needs.tickNeeds). Core types and omitted keys = 1, bit for bit. */
@@ -93,6 +97,16 @@ export interface GuestTypeDef {
   eatBonus?: number;
   /** Arrives as a supervised kids group: `adults` adult(s) (the lowest ids) and the rest children, handled by the Families system (school groups). */
   kidGroup?: { adults: number };
+  /**
+   * Snowboarder (Phase 6 Task 33): the type is CARVED OUT of the core draw instead of added on top, so the arrival volume does not change. In the listed seasons a core arrival
+   * of one of the `from` types becomes this type with probability `share[season]` (a stateless hash stream, nothing saved; `level` / `requires` / `when` gates and the `types`
+   * campaign multiplier apply). `seasons` of such a type stays empty (it adds no weight of its own).
+   */
+  convert?: { from: readonly CoreTypeName[]; share: Partial<Record<SeasonId, number>> };
+  /** Dislikes flat stretches and catwalks (Task 33): happiness lost per run = `flatHit` x the flat share of the run; the lift choice loses `flatPick` x flat share, gains `widePick` x width. */
+  flats?: { flatHit: number; flatPick: number; widePick: number };
+  /** Ski tourer (Task 34): skins up along a backcountry route (or one lift, then up), never at danger >= `TOURER_MAX_DANGER`. */
+  tourer?: boolean;
 }
 
 /**
@@ -102,10 +116,14 @@ export interface GuestTypeDef {
  */
 export const COND_MTB_BIKE_LIFT = '@mtbBikeLift';
 export const COND_FISHING = '@fishing';
+/** `@backcountryRoute` = at least one open backcountry route with an avalanche danger below `TOURER_MAX_DANGER` (Ski tourer). */
+export const COND_BACKCOUNTRY = '@backcountryRoute';
+/** A ski tourer never goes out at this danger level or higher, even when the route is open (the override that opens a route does not apply to them). */
+export const TOURER_MAX_DANGER = 4;
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -147,6 +165,25 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     appeal: { skiSchoolHQ: 1.4, carpet: 1.4, kidsGround: 1.4, playground: 1.4, zoo: 1.2, rink: 0.9, beach: 0.7, farm: 0.7, restaurant: 0.4, shop: 0.3, bar: 0, adventure: 0.2, stunt: 0.2 },
     group: [9, 16], budget: [70, 130], overnight: 0, pref: [10, 10], kidGroup: { adults: 1 },
     look: { top: 1, topShare: 1, colour: 0xf08a24 }, // matching orange bibs
+  },
+  {
+    // Phase 6 Task 33 (docs/guest-types.md "Snowboarder"): the former cosmetic ~30 % boarders, now a type. Carved OUT of solo / couple / budget / adventure arrivals (about 30 % of all arrivals in
+    // winter, 40 % of those four in the shoulder seasons), so the volume is unchanged. They love the Stunt Park, wide pistes and renting a board; they sulk on flats and catwalks.
+    id: 'snowboarder', label: 'Snowboarder', seasons: {}, minLevel: 1, fallback: 'adventure', segment: 'adventure',
+    convert: { from: ['solo', 'couple', 'budget', 'adventure'], share: { winter: 0.42, spring: 0.4, autumn: 0.375 } },
+    appeal: { stunt: 1.5, rental: 0.7, bar: 0.7, adventure: 0.6, restaurant: 0.5, rink: 0.4, kidsGround: 0.05, playground: 0.05, carpet: 0.05 },
+    group: [1, 3], budget: [160, 330], overnight: 0.4, skill: [0.15, 0.3, 0.35, 0.2], pref: [3, 4],
+    flats: { flatHit: 0.1, flatPick: 1.4, widePick: 0.4 },
+    look: { top: 9, topShare: 0.55, colour: 0xa24bd1, gear: 'board', beanie: 0.7 }, // purple jackets, beanies, a board
+  },
+  {
+    // Phase 6 Task 34 (docs/guest-types.md "Ski tourer"): winter / spring, only while an open backcountry route below danger 4 exists. Skins up (a hike along the route, or one lift and then up), low lift spend,
+    // loves a mountain hut. Never goes at danger >= 4 even if the route is open (decided in `Decider`, checked at the goal list). Small, bright and recognisable.
+    id: 'tourer', label: 'Ski tourer', seasons: { winter: 0.04, spring: 0.025 }, minLevel: 2, requires: [COND_BACKCOUNTRY], fallback: 'adventure', segment: 'adventure', tourer: true,
+    weather: { rain: 0.3, storm: 0, heavySnow: 0.6, snow: 0.9, cloudy: 0.95 },
+    appeal: { mountainHut: 1.5, hut: 1.5, restaurant: 0.5, terrace: 0.5, cafe: 0.6, rental: 0.1, shop: 0.2, stunt: 0.05, rink: 0.05, kidsGround: 0.05, playground: 0.05, carpet: 0.05, bar: 0.4 },
+    group: [1, 3], budget: [100, 190], overnight: 0.3, skill: [0, 0.1, 0.4, 0.5], pref: [8, 0],
+    look: { top: 0, topShare: 0.85, colour: 0xe53935, gear: 'ski', pack: true }, // red shells, a backpack, touring skis
   },
 ];
 
@@ -207,6 +244,18 @@ export function extraWeight(def: GuestTypeDef, c: ActiveCtx): number {
   const dm = def.dayMult && c.weekday !== undefined ? (c.weekday < 5 ? def.dayMult.weekday : def.dayMult.weekend) ?? 1 : 1;
   return share * dm * (c.weather ? def.weather?.[c.weather] ?? 1 : 1);
 }
+
+/** Share (0..1) of the `from` core arrivals that become this type right now (0 = none): season share x level / requirement / calendar gates. */
+export function convertShare(def: GuestTypeDef, c: ActiveCtx): number {
+  const share = def.convert?.share[c.season] ?? 0;
+  if (share <= 0 || c.level < def.minLevel) return 0;
+  const req = def.requiresIn?.[c.season] ?? def.requires;
+  if (req && req.length && !req.some((r) => c.hasBuilding(r))) return 0;
+  if (def.when && !def.when(c)) return 0;
+  return share;
+}
+/** Gear a type is known by (`look.gear`): the snow gear it rents / owns. */
+export const gearOfType = (type: number): TypeGear | undefined => (type < CORE_TYPE_COUNT ? undefined : extraDef(type)?.look?.gear);
 
 /** Appeal of an attraction (kind / id / explicit core columns) for a type. Core types read their column untouched. */
 export function appealFor(spec: { kind: string; appeal: readonly number[] }, buildingId: string | undefined, type: number): number | undefined {

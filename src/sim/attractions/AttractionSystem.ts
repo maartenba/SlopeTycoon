@@ -1,4 +1,4 @@
-import { appealFor } from '../../config/guestTypes';
+import { appealFor, gearOfType } from '../../config/guestTypes';
 import type { GameState } from '../../core/GameState';
 import type { GameBus } from '../../core/events';
 import { DAYS_PER_YEAR } from '../../config/balance';
@@ -113,7 +113,10 @@ export class AttractionSystem implements GuestAttractionPort {
   queueLength(id: number): number { return this.items.get(id)?.queue.length ?? 0; }
   unitPrice(id: number): number { return this.items.get(id)?.unitPrice() ?? 0; }
   appeal(id: number, type: number): number { const a = this.items.get(id); return (a ? appealFor(a.spec, a.b.type, type) : undefined) ?? 0.25; }
-  needsGear(guestId: number, kind: 'ski' | 'bike'): boolean { return !ownsGear(guestId, kind) && !this.rented.has(guestId); }
+  needsGear(guestId: number, kind: 'ski' | 'bike'): boolean {
+    if (kind === 'ski') { const sl = this.d.store.slotOf(guestId); if (sl >= 0 && gearOfType(this.d.store.type[sl]!) === 'board') return !ownsGear(guestId, 'board') && !this.rented.has(guestId); } // Snowboarders: their own (smaller) ownership share
+    return !ownsGear(guestId, kind) && !this.rented.has(guestId);
+  }
 
   /** Total room capacity of active, open lodging (feed to the spawner's overnight cap). */
   lodgingCapacity(): number {

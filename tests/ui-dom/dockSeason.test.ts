@@ -49,7 +49,7 @@ describe('season-ordered build drawer (DOM)', () => {
     const before = new Map(Array.from(dock.shadowRoot!.querySelectorAll<HTMLElement>('.grid .card')).map((c) => [c.dataset.id!, c]));
     set('summer');
     const order = ids(dock);
-    expect(order.slice(-3)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark']);
+    expect(order.slice(-6)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark', 'sleighStable', 'snowshoeHut', 'snowscooterBase']); // + the winter tour bases (Task 31)
     for (const c of dock.shadowRoot!.querySelectorAll<HTMLElement>('.grid .card')) expect(before.get(c.dataset.id!)).toBe(c);
     expect(q(dock, '.card[data-id="beach"]')!.classList.contains('offseason')).toBe(false);
     expect(q(dock, '.card[data-id="iceRink"]')!.classList.contains('offseason')).toBe(true);

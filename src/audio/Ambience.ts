@@ -35,6 +35,8 @@ export interface AmbienceState {
   heli: number;
   /** Quad tour proximity 0..1 (0 = no quad out; Phase 6 Task 22). Optional: absent = 0. */
   quad?: number;
+  /** Horse sleigh proximity 0..1 (0 = no sleigh out; Phase 6 Task 31). Optional: absent = 0. */
+  sleigh?: number;
   /** Campfire proximity 0..1 (0 = no open campground near the listener; Phase 6 Task 19). Optional: absent = 0. */
   campfire?: number;
   /** Walk mode: forest wind shelter 0..1 (0 = open ground, 1 = >= SHELTER.fullTrunks tree trunks within SHELTER.radius tiles). Only the walker's near-field view sets it. */
@@ -51,7 +53,7 @@ export const SHELTER = {
 /** Pure: shelter 0..1 from a trunk count (linear up to SHELTER.fullTrunks). */
 export const shelterFromTrunks = (n: number): number => Math.min(1, Math.max(0, n / SHELTER.fullTrunks));
 
-export const LAYER_IDS = ['wind', 'rain', 'leaves', 'crickets', 'insects', 'crowd', 'lift', 'water', 'snowcat', 'heli', 'quad', 'campfire', 'muffled'] as const;
+export const LAYER_IDS = ['wind', 'rain', 'leaves', 'crickets', 'insects', 'crowd', 'lift', 'water', 'snowcat', 'heli', 'quad', 'sleigh', 'campfire', 'muffled'] as const;
 export type LayerId = (typeof LAYER_IDS)[number];
 export const ONESHOT_IDS = ['birds', 'cowbells', 'bells', 'clanks', 'drips', 'creaks'] as const;
 export type OneShotId = (typeof ONESHOT_IDS)[number];
@@ -66,7 +68,7 @@ export const AMB = {
   /** Max one-shot rates per second at intensity 1. */
   rates: { birds: 0.8, cowbells: 0.15, clanks: 0.35, drips: 0.8, creaks: 0.1 } as const,
   /** Per-layer ceiling (linear gain on the ambience bus). */
-  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.2, snowcat: 0.16, heli: 0.2, quad: 0.045, campfire: 0.035, muffled: 0.175 } as Record<LayerId, number>,
+  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.2, snowcat: 0.16, heli: 0.2, quad: 0.045, sleigh: 0.03, campfire: 0.035, muffled: 0.175 } as Record<LayerId, number>,
   /** Layer crossfade time constant (s). */
   fadeTc: 0.9,
 };
@@ -106,13 +108,14 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const quad = clamp01(s.quad ?? 0) * (0.25 + 0.75 * close) * (1 - wet * 0.5); // a distant, very quiet motor drone while a quad tour is out
   // Campfire: a quiet crackle near an open campground, only while the fire burns (about 18:30-22:30), well below the crickets and the crowd
   const campfire = clamp01(s.campfire ?? 0) * Math.pow(close, 1.3) * window(h, 18.5, 22.5, 1) * (1 - wet);
+  const sleigh = clamp01(s.sleigh ?? 0) * (0.25 + 0.75 * close) * (1 - wet * 0.6); // faint bells, only while a sleigh is out and the camera is near
   const cowSeason = summer ? 1 : spring || autumn ? 0.4 : 0;
   const cowbells = cowSeason * (1 - Math.exp(-Math.max(0, s.cows) / 3)) * close * day * (1 - wet);
   const bells = clamp01(s.buildings) * day * close;
   const clanks = lift * 0.9;
   const drips = spring ? close * clamp01(0.3 + day) * (1 - wet * 0.5) * 0.6 : 0;
   const creaks = winter ? close * (0.3 + 0.5 * night) * quiet : 0;
-  return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, snowcat, heli, quad, campfire, muffled, birds, cowbells, bells, clanks, drips, creaks };
+  return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, snowcat, heli, quad, sleigh, campfire, muffled, birds, cowbells, bells, clanks, drips, creaks };
 }
 
 type Builder = (s: NodeScope) => void;
@@ -168,6 +171,8 @@ const LAYER_BUILDERS: Record<LayerId, Builder> = {
   snowcat: (s) => { const n = s.noiseSrc('brown'), f = s.filter('lowpass', 150, 0), hp = s.filter('highpass', 35, 0), m = s.noiseSrc('pink', 0.8), mf = s.filter('bandpass', 300, 0.7), mg = s.gain(0.3), g = s.gain(0.8); wander(s, g.gain, [[6.5, 0.1], [0.4, 0.05]]); link(n, f, hp, g); link(m, mf, mg, g); g.connect(s.out); },
   // Quad tour: low-passed brown noise with a slow irregular throb (a distant 4-stroke), kept far below the other beds.
   quad: (s) => { const n = s.noiseSrc('brown'), f = s.filter('lowpass', 170, 0), hp = s.filter('highpass', 50, 0), m = s.noiseSrc('pink', 0.77), mf = s.filter('bandpass', 260, 0.6), mg = s.gain(0.25), g = s.gain(0.7); wander(s, g.gain, [[9.5, 0.12], [0.5, 0.07]]); link(n, f, hp, g); link(m, mf, mg, g); g.connect(s.out); },
+  // Sleigh bells: a soft high shimmer of band-limited noise that jingles on two unrelated fast sines (never a gate); the quietest layer (ceiling 0.03).
+  sleigh: (s) => { const a = s.noiseSrc('pink', 1.3), bp = s.filter('bandpass', 3300, 1), g = s.gain(0.5); wander(s, g.gain, [[7.3, 0.3], [11.9, 0.15]]); link(a, bp, g, s.out); },
   // Campfire: band-passed pink noise whose level pops irregularly (two unrelated fast sines, never a gate: no clicks); very quiet and only 8 nodes (the whole bed is node-budgeted).
   campfire: (s) => {
     const a = s.noiseSrc('pink'), bp = s.filter('bandpass', 2600, 0.7), crack = s.gain(0.5);

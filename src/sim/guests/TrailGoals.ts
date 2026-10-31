@@ -30,6 +30,8 @@ export interface GoalPick { tile: number; via: number; rel: number; score: numbe
 export interface GoalCtx {
   hour: number; leaveHour: number; pref: number; type: number; skill: number; fatigue: number; x: number; y: number; storm: boolean;
   avoid(tile: number): number; penalty(tile: number): number; lifts: readonly LiftInfo[]; wait(liftId: number): number; mode: 'hike' | 'bike';
+  /** Ski tourers: only these tiles (the summit / sample tiles of the safe backcountry routes) are candidates, scored as summits. */
+  only?: readonly number[];
 }
 
 export class TrailGoals {
@@ -140,9 +142,9 @@ export class TrailGoals {
     // N-station lift: the hiker / biker alights at the station nearest to the goal (mid-stations are trail heads too); 2-station lifts: the top, exactly as before
     const stn = wantLift && lift!.lift.stations && lift!.lift.stations.length > 2 ? lift!.lift.stations.slice(1).filter((st) => st.alight !== false) : null;
     const stnTile = stn ? stn.map((st) => st.y * n + st.x) : [];
-    const cands: Poi[] = bike ? this.mtb.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 0 as const })) : this.pois;
+    const cands: Poi[] = c.only ? c.only.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 1 as const })) : bike ? this.mtb.map((tile) => ({ tile, rel: this.rel(g, tile), kind: 0 as const })) : this.pois;
     for (const p of cands) {
-      if (this.bad.has(p.tile)) continue;
+      if (!c.only && this.bad.has(p.tile)) continue; // tour goals are judged per start (the same tile is reachable from a lift top but not from the base): never remembered as bad
       const px = p.tile % n, py = (p.tile / n) | 0;
       let ax = sx, ay = sy, aRel = sRel, aVia = liftTop;
       if (stn) {
@@ -180,7 +182,7 @@ export class TrailGoals {
         if (r === undefined && this.queryBudget > 0) { this.queryBudget--; r = g.pf.find(mode, from, cand.tile); }
         if (r === null) ok = false;
       }
-      if (ok) best = cand; else this.bad.add(cand.tile);
+      if (ok) best = cand; else if (!c.only) this.bad.add(cand.tile);
     }
     if (best) { this.picks++; if (best.rel >= T.topRel) this.top++; if (wantLift) this.withLift++; }
     return best;

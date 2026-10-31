@@ -19,7 +19,8 @@ import { type Goal, type Movement, NavMovement } from './Movement';
 import { NavGraph, NavMode, navFromWalkNet, skiModeFor, isSkiMode } from './NavGraph';
 import { tickNeeds, type NeedEnv } from './Needs';
 import { ReviewDirector, type PlaceText } from './Reviews';
-import { injuryRisk, recordRun } from './Skill';
+import { injuryRisk, maxDifficultyFor, recordRun } from './Skill';
+import { CORE_TYPE_COUNT, extraDef } from '../../config/guestTypes';
 import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
 import { Layer } from '../../world/Networks';
@@ -331,6 +332,19 @@ export class GuestSim {
     return isSkiMode(m) ? 'ski' : m === NavMode.Bike ? 'bike' : 'foot';
   }
 
+  /** Ski tourer who just rode a lift up: with some probability skin up a safe backcountry route from the top (docs/guest-types.md "Ski tourer"). No RNG draw for any other guest type. */
+  private startTour(slot: number): boolean {
+    const s = this.store, t = s.type[slot]!;
+    if (t < CORE_TYPE_COUNT || !extraDef(t)?.tourer || !this.decider.tourTiles.length) return false;
+    if (!this.rng.chance(0.7)) return false;
+    const gp = this.decider.tourFrom(s, slot, this.rng, this.hour);
+    if (!gp) return false;
+    const n = this.graph()?.size ?? 1;
+    s.goalX[slot] = (gp.tile % n) + 0.5; s.goalY[slot] = Math.floor(gp.tile / n) + 0.5;
+    s.act[slot] = Act.ToTrail; s.state[slot] = GState.Walking; s.moveMode[slot] = NavMode.Hike; s.via[slot] = 0; s.actTick[slot] = this.tick; this.exc.pending.delete(slot);
+    return true;
+  }
+
   private queueCallbacks = {
     done: (slot: number, liftId: number, dir: 0 | 1, station?: number): void => {
       const s = this.store, l = this.liftData(liftId);
@@ -344,6 +358,7 @@ export class GuestSim {
         s.act[slot] = Act.SkiDown; s.runMax[slot] = 0; s.rideRun[slot] = 0;
         this.exploration.remember(s, slot, liftId); // skiers only: pick the line for this run
         if (dir === 0 && isSkiMode(s.moveMode[slot]!)) s.via[slot] = this.exploration.pickVia(s, slot, l, this.rng, mid ? station : undefined); // (from a mid-station: a line from there down to the bottom)
+        if (dir === 0 && this.startTour(slot)) { this.nm?.reset(slot); return; }
       }
       this.nm?.reset(slot);
     },
@@ -671,6 +686,8 @@ export class GuestSim {
     recordRun(s, i, diff);
     this.runsCompleted++;
     s.fatigue[i] = Math.min(1, s.fatigue[i]! + 0.02);
+    const fd = s.type[i]! >= 6 ? extraDef(s.type[i]!)?.flats : undefined; // Snowboarders (Task 33): a small happiness hit for the flat share of the lift's ski route (long low-gradient stretches / catwalks)
+    if (fd) { const li = this.decider.lifts.find((l) => l.lift.id === s.liftId[i]); const fl = li?.flat?.[maxDifficultyFor(skill)] ?? 0; if (fl > 0) s.happiness[i] = Math.max(0, s.happiness[i]! - fd.flatHit * fl); }
     s.state[i] = GState.Idle; s.timer[i] = rng.int(EXPLORE.runPause[0], EXPLORE.runPause[1]); s.act[i] = Act.None;
     const pq = this.pisteQualityAt?.(((s.y[i]! | 0) * this.world.mapSize) + (s.x[i]! | 0), skill);
     const offPiste = s.moveMode[i] === NavMode.SkiOff;

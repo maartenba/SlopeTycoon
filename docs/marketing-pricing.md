@@ -56,7 +56,7 @@ Four more rows in `CAMPAIGNS` (existing buildings only; the first five rows are 
 | id | name | targets (share boost) | requires | seasons (off-season factor) | cost / days / cooldown | volume | extras |
 |---|---|---|---|---|---|---|---|
 | train | Come by Train 🚆 | budget +80 %, solo +40 %, couple +30 % | `railStation`, `stationPath` | all (1) | 4000 / 21 / 14 | +6 % | `railBias` 0.25, Shuttle Depot x1.15 |
-| parkJam | Snowboard Park Jam 🏂 | adventure +120 %, solo +40 % | `stuntPark`, `openLift`, `rental` | winter, spring (0.2) | 5000 / 10 / 21 | +8 % | x1.2 with a stunt park within 12 tiles of an open lift's top station (`parkLift`) |
+| parkJam | Snowboard Park Jam 🏂 | **snowboarder** +140 % (`extraTargets`), adventure +40 % (retargeted in Task 53; was adventure +120 %, solo +40 %) | `stuntPark`, `openLift`, `rental` | winter, spring (0.2) | 5000 / 10 / 21 | +8 % | x1.2 with a stunt park within 12 tiles of an open lift's top station (`parkLift`) |
 | hikeBike | Hike & Bike Weekends 🥾 | couple +90 %, solo +60 %, family +30 % | `summerSeason`, `summerAccess`, `dining` | summer, autumn (0.3) | 4500 / 14 / 14 | +10 % | `dayClassMult` peak 1.4 / Friday 0.8 / Mon-Thu 0.6 |
 | festival | Festival Season 🎪 | family +30 %, couple +30 % | `bookedFestival` (start only) | all (1) | 3000 / 10 / 30 | +15 % | `window: 'festival'`: x1 inside the window, x0.2 outside |
 New prerequisites: `railStation` (active Train Station and `arrivals.rail.available`: served by the rail line from the entry), `stationPath` (the station is active = within walking reach of the lodge by path, or a Shuttle Depot serves it: the Dependencies rule, not a new BFS), `stuntPark` (active Stunt Park), `bookedFestival` (a booking running or starting within `FESTIVAL_CAMPAIGN.prereqDays` = 7 days; `startOnly`, i.e. not re-checked while the campaign runs, so the festival may end first). New facilities: `shuttle` (active Shuttle Depot), `parkLift`. Each unmet prerequisite shows a **Show me** button on the card (Buildings drawer on the building, pans to the Train Station, or scrolls to the Events calendar).
@@ -91,3 +91,14 @@ New prerequisites (`createSim` `met`): `poolOrViews` = an **active lodging whose
 
 ## Known limitation
 Arrivals are throttled by arrival capacity (parking / road in-flight capacity) in the default starter resort: demand multipliers show in `Spawner.status().rate` but realised arrivals only grow when capacity is not binding (the tests widen `BUILDINGS.parking.capacity` temporarily). UI is untested in a browser (DOM tests only).
+
+## Powder Hounds (Phase 6 Task 53) and the Park Jam retarget
+| id | name | targets | prereqs | season | cost / days / cooldown | volume | notes |
+|---|---|---|---|---|---|---|---|
+| powder | Powder Hounds ❄️ | **tourer** +160 %, **snowboarder** +50 % (`extraTargets`), adventure +40 % | `backcountry`, `patrol`, `dining` | winter (0.1 elsewhere) | 5500 / 10 / 21 | +6 % | `powderMult` x1.3 on a powder day (live, like `dayClassMult`) |
+
+- **Prerequisites**: `backcountry` = an open backcountry route with avalanche danger below 4 (`Decider.touring.hasSafeRoute()`: the Ski tourer's own cut-off, the route's override does not count), `patrol` = an active Ski Patrol Hub, `dining` = an active restaurant / café / hut / terrace. While every route is closed (or at 4+) the prerequisite lapses and the campaign **pauses** like any missing prereq (effectiveness 0, `PREREQ_GRACE_DAYS` = 3 then cancelled); it resumes when a safe route opens. The copy never points guests at a closed route and never mentions death (`noDeaths` test).
+- **Powder day**: `MarketingContext.powderDay()` = the Events calendar's `powder` event is active; `CampaignDef.powderMult` multiplies the live effect (`Marketing.liveFactor`), not the stored effectiveness.
+- **Snowboard Park Jam** now lifts the new Snowboarder type (`extraTargets.snowboarder` 1.4, segment adventure + 0.4); the Spawner applies the multiplier to the share of core arrivals that become snowboarders (`GuestTypeDef.convert`), so the campaign shifts the mix without adding volume beyond its `volumeBoost`.
+- **Advisor** (`marketing.powder`: winter, >= 10 guests, startable, cash >= $8,000 / keep $5,500; `marketing.parkJam`: not summer / autumn, >= 10 guests, startable, cash >= $7,500 / keep $5,000; Show me -> the card).
+

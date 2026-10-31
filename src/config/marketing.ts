@@ -19,7 +19,8 @@ export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' |
 export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental'
   | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival'
   | 'campground' | 'kidsOrZoo' | 'tackleHut' | 'water'
-  | 'poolOrViews' | 'toilets' | 'cheapLodging';
+  | 'poolOrViews' | 'toilets' | 'cheapLodging'
+  | 'backcountry' | 'patrol';
 /**
  * Campaigns v2 (Task 50): railStation: active Train Station on a rail line that is served (Arrivals `rail.available`) · stationPath: that station is active, i.e. within
  * walking reach of the lodge/village or served by a Shuttle Depot (the Dependencies rule) · stuntPark: active Stunt Park · bookedFestival: a booked festival running or
@@ -32,6 +33,10 @@ export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parkin
 /**
  * Senior / School campaigns (Task 52): poolOrViews: an active lodging with the pool amenity (the Luxury Hotel; read generically from the attraction spec) OR at least `VIEWS_MIN` active viewpoints
  * (Viewpoint, Treehouse: any building with `viewpoint`) · toilets: an active Toilets block · cheapLodging: an active Apartment, Campground or Base Lodge (rooms a class can afford).
+ */
+/**
+ * Powder Hounds (Task 53): backcountry: an open backcountry route with an avalanche danger below 4 (`TOURER_MAX_DANGER`; the Ski tourer's own cut-off): when every route is closed or
+ * at danger 4+ the prerequisite lapses and the campaign pauses (PREREQ_GRACE_DAYS applies) · patrol: an active Ski Patrol Hub.
  */
 /** `label` is the sentence shown in the Requires list ('Ski School HQ'); `build` = building type the player can place to fix it; `show` = what the Show me button does when it is unmet
  *  ('build' opens the Buildings drawer on `build`, 'station' pans to the Train Station, 'events' scrolls to the Events calendar). */
@@ -82,6 +87,8 @@ export interface CampaignDef {
   fishFactor?: boolean;
   /** Extra effectiveness factor in a season that is in `seasons` (Angler's Paradise: ice fishing in winter works at half strength). */
   seasonMult?: Partial<Record<SeasonKey, number>>;
+  /** Live effect multiplier on a powder day (Events calendar `powder`): Powder Hounds x1.3. Absent = 1. */
+  powderMult?: number;
 }
 
 /** Angler's Paradise: the hut needs a water with at least `minStock` fish; effectiveness x clamp(stock / `fullStock`, `floor`, 1); below `warnStock` the card warns "Overfished". */
@@ -128,8 +135,8 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
     bonus: { id: 'shuttle', factor: 1.15 }, railBias: TRAIN_CAMPAIGN.modeShift, cooldownDays: 14,
   },
   {
-    id: 'parkJam', name: 'Snowboard Park Jam', icon: '🏂', blurb: 'A jam session in the Stunt Park for the freestyle crowd.', segment: 'Adventure seekers',
-    cost: 5000, durationDays: 10, targets: { adventure: 1.2, solo: 0.4 }, volumeBoost: 0.08, seasons: ['winter', 'spring'], offSeason: 0.2,
+    id: 'parkJam', name: 'Snowboard Park Jam', icon: '🏂', blurb: 'A jam session in the Stunt Park for the snowboard crowd.', segment: 'Snowboarders',
+    cost: 5000, durationDays: 10, targets: { adventure: 0.4 }, extraTargets: { snowboarder: 1.4 }, volumeBoost: 0.08, seasons: ['winter', 'spring'], offSeason: 0.2,
     prereqs: [{ id: 'stuntPark', label: 'A Stunt Park', build: 'stuntPark', show: 'build' }, { id: 'openLift', label: 'An open lift' }, { id: 'rental', label: 'Rental', build: 'rental', show: 'build' }],
     bonus: { id: 'parkLift', factor: 1.2 }, cooldownDays: 21,
   },
@@ -169,6 +176,13 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
     cost: 4000, durationDays: 14, targets: {}, extraTargets: { school: 2.0 }, volumeBoost: 0.10, seasons: ['winter', 'summer'], offSeason: 0.4,
     prereqs: [{ id: 'skiSchool', label: 'Ski School HQ', build: 'skiSchoolHQ' }, { id: 'kidsArea', label: 'A kids area (Kids Ground, Playground or Magic Carpet)', build: 'kidsGround' }, { id: 'cheapLodging', label: 'Cheap lodging (Apartment, Campground or Base Lodge)', build: 'apartment', show: 'build' }],
     dayClassMult: { off: 1.5, regular: 1.2, peak: 0.3 }, priceAlign: 'cheap', bonus: { id: 'trainCampaign', factor: 1.15 }, cooldownDays: 21,
+  },
+  // ---- Powder Hounds (Task 53): ride on the Ski tourer / Snowboarder types and the backcountry routes (docs/backcountry.md). Never points guests at a closed route: it pauses with the last open one. ----
+  {
+    id: 'powder', name: 'Powder Hounds', icon: '❄️', blurb: 'Fresh-snow promos for ski tourers and riders. Needs an open backcountry route below danger 4, a Ski Patrol Hub and a place to eat. Works best on a powder day and pauses while every route is closed.', segment: 'Tourers and riders',
+    cost: 5500, durationDays: 10, targets: { adventure: 0.4 }, extraTargets: { tourer: 1.6, snowboarder: 0.5 }, volumeBoost: 0.06, seasons: ['winter'], offSeason: 0.1,
+    prereqs: [{ id: 'backcountry', label: 'An open backcountry route (avalanche danger below 4)' }, { id: 'patrol', label: 'An active Ski Patrol Hub', build: 'patrolHub', show: 'build' }, { id: 'dining', label: 'A restaurant, café or mountain hut', build: 'mountainHut', show: 'build' }],
+    powderMult: 1.3, cooldownDays: 21,
   },
 ];
 

@@ -145,7 +145,8 @@ export class NavGraph implements PathGraph {
         return path || station ? len * (road ? 0.8 : 1) : -1;
       case NavMode.Hike:
         if (path || station) return len * (road ? 0.8 : 1);
-        return (w.layers[b]! & Layer.Hike) !== 0 && w.hikeOk[b] === 1 ? len * 1.2 : -1;
+        if ((w.layers[b]! & Layer.Hike) !== 0 && w.hikeOk[b] === 1) return len * 1.2;
+        return this.skinnable(b) ? len * 1.6 : -1; // Ski tourers (Task 34) skin up an open backcountry route; a plain hiker's goals are never on one
       case NavMode.Bike: {
         if (path || station) return len * 0.8;
         // a bridge deck is flat by construction; `isBikeable` is false on water tiles, so bikers could never use an MTB bridge over a lake or stream without this
@@ -176,6 +177,12 @@ export class NavGraph implements PathGraph {
     }
   }
 
+  /** A snowy, open (not closed for avalanche danger) backcountry tile: the Ski tourer walks up it on skins (Hike mode, slower than a hiker on a trail). */
+  private skinnable(t: number): boolean {
+    const w = this.world;
+    return (w.layers[t]! & Layer.Backcountry) !== 0 && w.skiOpen[t] === 1 && !(w.closed && w.closed[t] === 1); // a marked route is walked even over a patch of rock
+  }
+
   private cornerBlocked(a: number, b: number): boolean {
     const n = this.size, w = this.world;
     const c1 = ((a / n) | 0) * n + (b % n), c2 = ((b / n) | 0) * n + (a % n);
@@ -193,7 +200,7 @@ export class NavGraph implements PathGraph {
     if ((w.occ[t]! & SOLID) !== 0) return false;
     switch (mode) {
       case NavMode.Walk: return false;
-      case NavMode.Hike: return (w.layers[t]! & Layer.Hike) !== 0 && w.hikeOk[t] === 1;
+      case NavMode.Hike: return ((w.layers[t]! & Layer.Hike) !== 0 && w.hikeOk[t] === 1) || this.skinnable(t);
       case NavMode.Bike: return (w.layers[t]! & Layer.Mtb) !== 0 && w.hikeOk[t] === 1;
       default:
         if (w.skiOpen[t] !== 1 || (w.closed && w.closed[t] === 1)) return false;
@@ -207,7 +214,7 @@ export class NavGraph implements PathGraph {
     const walk = NAV_SPEED.walk * this.walkScale;
     if (mode === NavMode.Walk) return walk;
     const onPath = this.isPathTile(b) || this.stationMask[b] === 1;
-    if (mode === NavMode.Hike) return onPath ? walk : NAV_SPEED.hike;
+    if (mode === NavMode.Hike) return onPath ? walk : (this.world.layers[b]! & Layer.Backcountry) !== 0 ? NAV_SPEED.hike * 0.85 : NAV_SPEED.hike; // skins are a little slower than boots
     if (mode === NavMode.Bike) {
       if (onPath) return NAV_SPEED.bike * 0.6;
       return this.altOf(a) - this.altOf(b) > EPS ? NAV_SPEED.bike : NAV_SPEED.bike * 0.5;

@@ -199,6 +199,9 @@ export class GuestRenderer {
   /** Triangles per gear geometry (diagnostics). */
   readonly gearTriangles: number[] = [];
 
+  /** Guests with an id below this keep the old cosmetic boarders (a save from before Snowboarder was a type); `main.ts` wires `Spawner.legacyBoarderBelow`. */
+  legacyBoarderBelow: () => number = () => 0;
+
   constructor(private store: GuestStore) {
     const n = store.capacity;
     const pal = makePalette();
@@ -335,7 +338,7 @@ export class GuestRenderer {
       }
       const state = s.state[i]!;
       const uk = state === GState.Using && this.usingKind ? this.usingKind(i) : UsingKind.Other;
-      const gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!));
+      const gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!) ?? (s.id[i]! >= this.legacyBoarderBelow() ? 'ski' : undefined)); // Snowboarder is a type now: only guests of a pre-0.2.9 save keep the cosmetic boarders
       const P = POSE[gear]!;
       this.dist[i] = this.dist[i]! + (spd * GAIT_RATE + (P.still ? STILL_RATE : 0)) * dt;
       let bt = B[gear]!;

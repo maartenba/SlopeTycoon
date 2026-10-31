@@ -12,7 +12,7 @@ import { takesGuestsIn } from '../attractions/Lodging';
 import {
   evaluateArrivals, makeCum, tripPlan, VEHICLE_SPEED, VehicleKind, centre, vehiclePose, type ArrivalPoint, type ArrivalReport, type Vehicle,
 } from './Arrivals';
-import { GUEST_TYPE_DEFS, CORE_TYPE_COUNT, extraDef, extraWeight, segmentIndex } from '../../config/guestTypes';
+import { GUEST_TYPE_DEFS, CORE_TYPE_COUNT, CORE_TYPE_NAMES, convertShare, extraDef, extraWeight, segmentIndex } from '../../config/guestTypes';
 import { GUEST_TYPE_NAMES, GuestType, Mode, Skill, type GuestStore, type GuestTypeName } from './Guest';
 import type { GuestWorld, Pt, ResortStats } from './GuestWorld';
 import type { SpatialHash } from './SpatialHash';
@@ -120,6 +120,14 @@ export class Spawner {
   private attractFn: (s: ResortStats) => number = attractiveness;
   /** Rail level crossings (createSim wires it; null = none): cars hold at closed road crossings, trains never spawn inside a closing window. */
   crossings: RailCrossings | null = null;
+  /**
+   * Guests with an id below this keep the OLD cosmetic ~30 % boarders (saves from before Snowboarder became a type, Task 33); 0 = every guest is rendered by its type.
+   * A save without the field resolves lazily to the store's next id (the guests that were already there).
+   */
+  private legacyPending = false;
+  private legacyBelow = 0;
+  get legacyBoarderBelow(): number { this.resolveLegacy(); return this.legacyBelow; }
+  private resolveLegacy(): void { if (this.legacyPending) { this.legacyPending = false; this.legacyBelow = this.store.nextGuestId; } }
   private acc = 0;
   private nextVehicle = 1;
   private nextGroup = 1;
@@ -165,6 +173,7 @@ export class Spawner {
   }
 
   update(state: GameState, tick: number): void {
+    this.resolveLegacy();
     this.seasonNow = seasonOf(state.date);
     if (tick % 10 === 0 || !this.report) this.refresh();
     this.advanceVehicles(state);
@@ -224,10 +233,28 @@ export class Spawner {
       if (w > 0) w *= (this.mixBias?.[t] ?? 1) * (mk.weights[GUEST_TYPE_NAMES[seg]!] ?? 1) * (mk.types?.[d.id] ?? 1) * (this.pricingDemand?.typeWeight(seg) ?? 1);
       ws.push(w); sum += w;
     }
-    if (sum <= 0) return core;
-    let u = hash01(state.date.year * DAYS_PER_YEAR + state.date.day, state.date.tick, this.nextGroup) * (coreTotal + sum);
-    if (u >= sum) return core;
-    for (let j = 0; j < ws.length; j++) { u -= ws[j]!; if (u < 0) return CORE_TYPE_COUNT + j; }
+    const day = state.date.year * DAYS_PER_YEAR + state.date.day;
+    if (sum > 0) {
+      let u = hash01(day, state.date.tick, this.nextGroup) * (coreTotal + sum);
+      if (u < sum) for (let j = 0; j < ws.length; j++) { u -= ws[j]!; if (u < 0) return CORE_TYPE_COUNT + j; }
+    }
+    return this.convertCore(day, state.date.tick, ctx, mk, core);
+  }
+
+  /**
+   * Types carved OUT of the core draw (Snowboarder, `GuestTypeDef.convert`): a core arrival of a listed type becomes the type with probability share x campaign / bias multiplier,
+   * so the arrival volume is unchanged. Own hash stream (nothing saved, `state.rng` untouched).
+   */
+  private convertCore(day: number, tick: number, ctx: Parameters<typeof extraWeight>[1], mk: MarketingState, core: number): number {
+    for (let j = 0; j < GUEST_TYPE_DEFS.length; j++) {
+      const d = GUEST_TYPE_DEFS[j]!;
+      if (!d.convert || !d.convert.from.some((f) => CORE_TYPE_NAMES.indexOf(f) === core)) continue;
+      const base = convertShare(d, ctx);
+      if (base <= 0) continue;
+      const t = CORE_TYPE_COUNT + j;
+      const p = Math.min(0.9, base * (this.mixBias?.[t] ?? 1) * (mk.types?.[d.id] ?? 1));
+      if (hash01(day, tick, this.nextGroup + 7919) < p) return t;
+    }
     return core;
   }
 
@@ -358,10 +385,11 @@ export class Spawner {
   }
 
   serialize(): unknown {
-    return { vehicles: this.vehicles, acc: this.acc, nextVehicle: this.nextVehicle, nextGroup: this.nextGroup, overflow: this.overflow, marketing: this.marketing, prices: this.prices };
+    return { vehicles: this.vehicles, acc: this.acc, nextVehicle: this.nextVehicle, nextGroup: this.nextGroup, overflow: this.overflow, marketing: this.marketing, prices: this.prices, legacyBelow: this.legacyBoarderBelow };
   }
   load(d: unknown): void {
-    const s = d as ReturnType<Spawner['serialize']> as { vehicles: Vehicle[]; acc: number; nextVehicle: number; nextGroup: number; overflow: number; marketing: MarketingState; prices: PriceTable };
+    const s = d as ReturnType<Spawner['serialize']> as { vehicles: Vehicle[]; acc: number; nextVehicle: number; nextGroup: number; overflow: number; marketing: MarketingState; prices: PriceTable; legacyBelow?: number };
+    if (s.legacyBelow === undefined) { this.legacyPending = true; this.legacyBelow = 0; } else { this.legacyPending = false; this.legacyBelow = s.legacyBelow; }
     this.vehicles = s.vehicles; this.acc = s.acc; this.nextVehicle = s.nextVehicle; this.nextGroup = s.nextGroup; this.overflow = s.overflow;
     this.marketing = s.marketing; this.prices = s.prices; this.report = null;
   }

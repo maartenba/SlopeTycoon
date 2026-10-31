@@ -76,6 +76,7 @@
     "phase6:sanity": "vite-node scripts/phase6-sanity.ts",
     "analytics:e2e": "vite-node scripts/analytics-e2e.ts",
     "summer:sanity": "vite-node scripts/summer-sanity.ts",
+    "winter:tours": "vite-node scripts/winter-tours-sanity.ts",
     "winter:sanity": "vite-node scripts/winter-sanity.ts"
   },
   "dependencies": {

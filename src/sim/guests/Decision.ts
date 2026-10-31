@@ -14,6 +14,7 @@ import { TrailGoals } from './TrailGoals';
 import { VIEWPOINT } from '../../config/viewpoints';
 import type { ViewpointSite } from '../attractions/Viewpoint';
 import { NEEDS } from './Needs';
+import { Touring } from './Tourer';
 
 /** Current activity of a guest (stored in GuestStore.act). */
 export const Act = { None: 0, ToBuilding: 1, ToLift: 2, Queue: 3, Ride: 4, SkiDown: 5, ToTrail: 6, Excursion: 7 } as const;
@@ -47,6 +48,35 @@ export interface LiftInfo {
   bikeDescent: boolean;
   topDepth: number;
   bottomX: number; bottomY: number;
+  /** Shape of the cheapest ski route top -> bottom per max difficulty (Snowboarder, Task 33): flat share 0..1 (long low-gradient stretches / catwalks) and mean width 0..1. */
+  flat?: [number, number, number, number];
+  wide?: [number, number, number, number];
+}
+
+/** Flat detection (Task 33): consecutive piste tiles of a route whose drop is below `drop` (world units per tile); a stretch of at least `minRun` tiles is a flat / catwalk. */
+export const FLATS = { drop: 0.04, minRun: 4 } as const;
+
+/** Flat share and mean width of a ski route (node list of the nav graph). Pure; cached per nav epoch by the Decider. */
+export function routeShape(nav: NavGraph, nodes: ArrayLike<number>): { flat: number; wide: number } {
+  const n = nav.size;
+  let flat = 0, run = 0, pistes = 0, wide = 0;
+  const close = (): void => { if (run >= FLATS.minRun) flat += run; run = 0; };
+  for (let k = 1; k < nodes.length; k++) {
+    const a = nodes[k - 1]!, b = nodes[k]!;
+    if (Math.abs((a % n) - (b % n)) > 1 || Math.abs(((a / n) | 0) - ((b / n) | 0)) > 1 || !nav.isPiste(b)) { close(); continue; }
+    pistes++;
+    const bx = b % n, by = (b / n) | 0;
+    let nb = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const x = bx + dx, y = by + dy;
+      if (x >= 0 && y >= 0 && x < n && y < n && nav.isPiste(y * n + x)) nb++;
+    }
+    wide += nb / 8;
+    if (nav.tileAltitude(a) - nav.tileAltitude(b) < FLATS.drop) run++; else close();
+  }
+  close();
+  return pistes ? { flat: flat / pistes, wide: wide / pistes } : { flat: 0, wide: 0 };
 }
 
 export interface Intent {
@@ -113,6 +143,10 @@ export class Decider {
   mtbTiles: number[] = [];
   skiOpenTiles = 0;
   private descent = new Map<string, boolean>();
+  private shapes = new Map<string, { flat: number; wide: number }>();
+  /** Ski tourers (Task 34): the backcountry routes, attached by createSim; goal tiles of the SAFE routes (danger < TOURER_MAX_DANGER) are refreshed every `refresh`. */
+  readonly touring = new Touring();
+  tourTiles: number[] = [];
   private descentEpoch = -1;
   private scanEpoch = -1;
   /** Max uncached descent queries per refresh (time-slicing). */
@@ -185,8 +219,9 @@ export class Decider {
     const nav = this.nav();
     this.goals.queryBudget = 24;
     this.lifts = [];
+    this.tourTiles = nav && this.touring.attached ? this.touring.goalTiles((t) => nav.tileAltitude(t)) : [];
     if (!nav) return;
-    if (this.descentEpoch !== nav.epoch) { this.descent.clear(); this.descentEpoch = nav.epoch; }
+    if (this.descentEpoch !== nav.epoch) { this.descent.clear(); this.shapes.clear(); this.descentEpoch = nav.epoch; }
     if (this.scanEpoch !== nav.epoch) this.scanTrails(nav);
     let budget = this.descentBudget;
     nav.pf.grantBuilds(24);
@@ -209,16 +244,23 @@ export class Decider {
         if (res === undefined) return false; // deferred (build budget): unknown, retried at the next refresh
         v = res !== null;
         this.descent.set(key, v);
+        if (res) this.shapes.set(key, routeShape(nav, res.nodes));
         return v;
       };
       const skiCarry = am === 'ski' || am === 'mixed';
       const bikeCarry = (am === 'foot' || am === 'mixed') && LIFTS[l.kind].carriesBikes;
       const sd: [boolean, boolean, boolean, boolean] = [false, false, false, false];
       if (skiCarry) for (let d = 0; d < 4; d++) sd[d] = query(NavMode.Ski0 + d);
-      this.lifts.push({
+      const info: LiftInfo = {
         lift: l, skiDescent: sd, bikeDescent: bikeCarry ? query(NavMode.Bike) : false,
         topDepth: w.snow[top] ?? 0, bottomX: l.bottom.x, bottomY: l.bottom.y,
-      });
+      };
+      if (skiCarry) {
+        const fl: [number, number, number, number] = [0, 0, 0, 0], wd: [number, number, number, number] = [0, 0, 0, 0];
+        for (let d = 0; d < 4; d++) { const sh = this.shapes.get(`${l.id}:${NavMode.Ski0 + d}`); if (sh) { fl[d] = sh.flat; wd[d] = sh.wide; } }
+        info.flat = fl; info.wide = wd;
+      }
+      this.lifts.push(info);
     }
   }
 
@@ -240,6 +282,16 @@ export class Decider {
     this.goals.build(nav, hike, mtb, this.huts.map((b) => ({ id: b.id, x: Math.floor(b.x + b.w / 2), y: Math.floor(b.y + b.h / 2) })), bv.length ? [...this.viewSites, ...bv] : this.viewSites);
   }
 
+  /**
+   * Ski tourer at a lift top (Task 34, "one lift then up"): the summit / hut tile of a SAFE backcountry route to skin up to from where the guest stands, or null (no safe route, too late in the day, no way).
+   * Only the goal list of safe routes (danger < TOURER_MAX_DANGER, open) is ever offered, so a route that closed or went to danger 4+ since the last refresh is never picked.
+   */
+  tourFrom(s: GuestStore, i: number, rng: { next(): number; chance(p: number): boolean }, hour: number): { tile: number } | null {
+    if (!this.tourTiles.length || hour >= this.leaveHour - 2.5) return null;
+    const gt = this.pickGoal(s, i, rng, hour, s.x[i]!, s.y[i]!, Pref.Hike, 'hike', this.tourTiles);
+    return gt ? { tile: gt.tile } : null;
+  }
+
   /** Nearest of the given buildings to (x,y), choosing randomly among the two closest. */
   private nearest(list: WorldBuilding[], x: number, y: number, rng: { next(): number }): WorldBuilding | undefined {
     if (!list.length) return undefined;
@@ -254,20 +306,23 @@ export class Decider {
   }
 
   /** Pick a lift for a ski run: snow preference by skill, short queues, near the guest. */
-  pickSkiLift(skill: number, x: number, y: number, rng: { next(): number }, slot = -1): LiftInfo | undefined {
+  pickSkiLift(skill: number, x: number, y: number, rng: { next(): number }, slot = -1, flats?: { flatPick: number; widePick: number }): LiftInfo | undefined {
     const c = this.skiLiftsFor(skill);
     let best: LiftInfo | undefined, bs = -Infinity;
+    const dd = maxDifficultyFor(skill);
     for (const l of c) {
-      const s = 0.8 * snowPreference(skill, l.topDepth) - 0.02 * this.waitTicks(l.lift.id, 0) - 0.004 * Math.hypot(l.bottomX - x, l.bottomY - y) - (slot >= 0 ? this.novelty(slot, l.lift.id) : 0) + 0.3 * rng.next();
+      // Snowboarders (Task 33): flats and catwalks cost, a wide piste pays (0 for every other type, bit for bit)
+      const shape = flats ? -flats.flatPick * (l.flat?.[dd] ?? 0) + flats.widePick * (l.wide?.[dd] ?? 0) : 0;
+      const s = 0.8 * snowPreference(skill, l.topDepth) - 0.02 * this.waitTicks(l.lift.id, 0) - 0.004 * Math.hypot(l.bottomX - x, l.bottomY - y) - (slot >= 0 ? this.novelty(slot, l.lift.id) : 0) + shape + 0.3 * rng.next();
       if (s > bs) { bs = s; best = l; }
     }
     return best;
   }
 
-  private pickGoal(s: GuestStore, i: number, rng: { next(): number; chance(p: number): boolean }, hour: number, x: number, y: number, pref: number, mode: 'hike' | 'bike') {
+  private pickGoal(s: GuestStore, i: number, rng: { next(): number; chance(p: number): boolean }, hour: number, x: number, y: number, pref: number, mode: 'hike' | 'bike', only?: readonly number[]) {
     if (!this.useGoals) return null;
     return this.goals.pick({
-      hour, leaveHour: this.leaveHour, pref, type: s.type[i]!, skill: s.skill[i]!, fatigue: s.fatigue[i]!, x, y, storm: this.stormy, mode,
+      hour, leaveHour: this.leaveHour, pref, type: s.type[i]!, skill: s.skill[i]!, fatigue: s.fatigue[i]!, x, y, storm: this.stormy, mode, only,
       avoid: (t) => this.avoidTile(t), penalty: (t) => this.hikePenalty(t), lifts: this.lifts, wait: (id) => this.waitTicks(id, 0),
     }, rng);
   }
@@ -367,11 +422,16 @@ export class Decider {
       out.push({ kind: 'shop', building: rental, score: 2.6 + noise() });
     }
     if (skiLifts.length) {
-      const lift = this.pickSkiLift(skill, x, y, rng, i)!;
+      const lift = this.pickSkiLift(skill, x, y, rng, i, s.type[i]! >= 6 ? extraDef(s.type[i]!)?.flats : undefined)!;
       out.push({
         kind: 'ski', lift, score: (pref === Pref.Ski ? 1.1 : 0.3) - 0.7 * fatigue + 0.25 * snowPreference(skill, lift.topDepth) + 0.2 * this.pisteQualityScore(skill) + noise(),
         offPiste: (skill >= 3 || (skill >= 2 && coreOf(s.type[i]!) === GuestType.Adventure)) && lift.topDepth > 0.9 && rng.chance(0.25 * this.offPisteScale()),
       });
+    }
+    // Ski tourer (Task 34): skin up to the summit / hut of an open backcountry route below danger 4 (one lift first when it helps). The tile list holds SAFE routes only.
+    if (this.tourTiles.length && s.type[i]! >= 6 && extraDef(s.type[i]!)?.tourer && hour < this.leaveHour - 2.5) {
+      const gt = this.pickGoal(s, i, rng, hour, x, y, Pref.Hike, 'hike', this.tourTiles);
+      if (gt) out.push({ kind: 'hike', tile: gt.tile, via: gt.via, oneWay: false, score: 2.6 - 0.8 * fatigue + noise() });
     }
     if (this.hikeTiles.length && this.port?.bedsFree && this.useGoals && s.budget[i]! > 60 && hour < this.leaveHour - 3.2 && (coreOf(s.type[i]!) === GuestType.Solo || coreOf(s.type[i]!) === GuestType.Couple || coreOf(s.type[i]!) === GuestType.Adventure)
       && (Math.imul(s.id[i]! + 17, 2246822519) >>> 0) % 100 < this.trekShare && this.canTrek(s.id[i]!)) {

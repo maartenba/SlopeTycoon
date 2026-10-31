@@ -324,6 +324,24 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'marketing.powder',
+    setup: (s) => { guests(s, 20); s.game.date.day = seasonStartDay('winter') + 5; s.game.money = 50_000; campStub(s, 'powder'); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'powder' }] as never; } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 2_000; } },
+      { name: 'the season turns to spring', apply: (s) => { s.game.date.day = seasonStartDay('spring') + 2; } },
+    ],
+  },
+  {
+    id: 'marketing.parkJam',
+    setup: (s) => { guests(s, 20); s.game.date.day = seasonStartDay('winter') + 5; s.game.money = 50_000; campStub(s, 'parkJam'); },
+    fixes: [
+      { name: 'the campaign starts', apply: (s) => { s.marketing.running = () => [{ id: 'parkJam' }] as never; } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 2_000; } },
+      { name: 'the season turns to summer', apply: (s) => { s.game.date.day = seasonStartDay('summer') + 2; } },
+    ],
+  },
+  {
     id: 'season.winter',
     setup: (s) => { s.game.date.day = seasonStartDay('winter') - 10; removeTypes(s, 'snowCannon'); },
     fixes: [

@@ -121,6 +121,39 @@ export const TOUR_DEFS: Record<string, TourDef> = {
       need: 'Needs a steep stream through rock within 3 tiles',
     },
   },
+  /**
+   * Sleigh Stable (Phase 6 Task 31, docs/winter-tours.md): a horse-drawn sleigh with 6 seats, out and back along attached road / footpath tiles in winter.
+   * Quiet (not motorised: no wildlife scare, sustainability neutral). Closes in a storm (wind > 0.7) and out of winter.
+   */
+  sleighStable: {
+    id: 'sleighStable', routes: ['road', 'path'], motorised: false, minLen: 6, maxLen: 24,
+    durationTicks: 14, intervalTicks: 20, firstHour: 10, lastHour: 16, seats: 6, minRiders: 2,
+    seasons: ['winter'], maxWind: 0.7, maxInstability: 0.8,
+    appeal: [0.2, 0.9, 0.8, 0.6, 0.2, 0.3], happiness: 0.2,
+    sustainPerDeparture: 0, noiseRadius: 0, vehicle: 'sleigh', vehicles: 1,
+  },
+  /**
+   * Snowshoe Hut (Task 31): guided snowshoe walks on the painted HIKE trails touching the hut (the layer persists in winter), 8 guests per departure.
+   * Quiet. Unstable snow cancels the tour (instability > 0.6 on any route tile, stricter than the motor tours) and so does a storm.
+   */
+  snowshoeHut: {
+    id: 'snowshoeHut', routes: ['trail'], trailLayer: 4, motorised: false, minLen: 6, maxLen: 24,
+    durationTicks: 18, intervalTicks: 30, firstHour: 10, lastHour: 15, seats: 8, minRiders: 2,
+    seasons: ['winter'], maxWind: 0.7, maxInstability: 0.6,
+    appeal: [0.5, 0.6, 0.5, 0.2, 0.7, 0.7], happiness: 0.18,
+    sustainPerDeparture: 0, noiseRadius: 0, vehicle: 'walkers', vehicles: 8,
+  },
+  /**
+   * Snowscooter Base (Task 31): guided snowscooter tours, 6 scooters (1 rider each), on a DEDICATED route of road / footpath / hiking-trail tiles (never a piste).
+   * Motorised: scares wildlife and books the capped sustainability penalty (shared cap TOURS.maxSustainPenalty).
+   */
+  snowscooterBase: {
+    id: 'snowscooterBase', routes: ['road', 'path', 'trail'], trailLayer: 4, motorised: true, minLen: 8, maxLen: 28,
+    durationTicks: 14, intervalTicks: 20, firstHour: 10, lastHour: 16, seats: 6, minRiders: 2,
+    seasons: ['winter'], maxWind: 0.7, maxInstability: 0.8,
+    appeal: [0.4, 0.5, 0.2, 0.4, 0.05, 1], happiness: 0.22,
+    sustainPerDeparture: 0.35, noiseRadius: 9, vehicle: 'scooter', vehicles: 6,
+  },
 };
 
 export const TOURS = {

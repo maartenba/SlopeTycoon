@@ -104,7 +104,7 @@ import { TREE_KINDS } from '../world/Props';
 import { ScenarioRunner, type ScenarioWorld } from '../sim/scenario/ScenarioRunner';
 import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
-import { COND_FISHING, COND_MTB_BIKE_LIFT } from '../config/guestTypes';
+import { COND_BACKCOUNTRY, COND_FISHING, COND_MTB_BIKE_LIFT } from '../config/guestTypes';
 import { DAYS_PER_YEAR } from '../config/balance';
 import { Landscape, type LandscapeEnv } from '../sim/landscape/Landscape';
 import { Rivers } from '../world/Rivers';
@@ -465,6 +465,7 @@ export function createSim(opts: SimOptions) {
     onClosedChange: (tiles) => openStatus.setExtraClosed(tiles), bus,
   });
   backcountryRef = backcountry;
+  guestSim.decider.touring.attach(backcountry); // Ski tourers (Task 34, docs/guest-types.md): the routes, their open state and danger; tourers never go at danger >= 4
   (navWorld as { bcOff?: Uint8Array }).bcOff = backcountry.offPisteMask;
 
   // ---- Per-run operations (docs/runs.md): grooming orders, traffic history, last-groomed day ----
@@ -779,6 +780,7 @@ export function createSim(opts: SimOptions) {
       season: () => seasonOf(game.date), stars: () => rating.stars,
       has: (f) => (f === 'kids' ? hasActive(['skiSchoolHQ', 'kidsGround', 'playground', 'magicCarpet']) : f === 'altiport' ? hasActive(['altiport']) : f === 'luxury' ? hasActive(['chalet', 'apartment', 'smallHotel', 'luxuryHotel']) : f === 'shuttle' ? hasActive(['shuttleDepot']) : f === 'parkLift' ? parkNearLiftTop() : f === 'pettingZoo' ? hasActive(['pettingZoo']) : f === 'trainCampaign' ? (marketingRef?.running() ?? []).some((r) => r.id === 'train' && !r.lapsed) : hasActive(['adventurePark', 'boatRental', 'beach', 'rental'])),
       dayClass: () => pricing.dayClass(),
+      powderDay: () => eventsRef?.active().some((e) => e.id === 'powder') ?? false,
       fishStock: () => { const v = hutWaters(); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; },
       festivalWindow: () => (eventsRef?.booked ?? []).some((b) => festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
       festivalMult: () => eventsRef?.arrivalMult() ?? 1,
@@ -806,6 +808,8 @@ export function createSim(opts: SimOptions) {
           case 'poolOrViews': return attractions.all().some((a) => a.spec.amenity === 'pool' && a.b.active) || buildings.all().filter((b) => b.active && !!BUILDINGS[b.type]?.viewpoint).length >= VIEWS_MIN; // Lodging v2 pool amenity (Luxury Hotel) or viewpoints
           case 'toilets': return hasActive(['toilets']);
           case 'cheapLodging': return hasActive(['apartment', 'campground', 'baseLodge']);
+          case 'backcountry': return guestSim.decider.touring.hasSafeRoute(); // an open backcountry route with danger < 4 (Ski tourer cut-off)
+          case 'patrol': return hasActive(['patrolHub']);
           case 'water': return hutWaters().some((v) => v >= ANGLER_CAMPAIGN.minStock);
           case 'bookedFestival': return (eventsRef?.booked ?? []).some((b) => b.end > festDay() && b.start - festDay() <= FESTIVAL_CAMPAIGN.prereqDays);
         }
@@ -824,6 +828,7 @@ export function createSim(opts: SimOptions) {
     if (guestSim.decider.mtbTiles.length > 0 && lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes)) f.push(COND_MTB_BIKE_LIFT);
     // Angler (Task 42): an open tackle hut with a fishable water in reach that still has fish
     if (attractions.all().some((a) => a.spec.angling && a.open && anglingPlanner.plan(a.b).bodies.some((b) => fishStock.get(b.key) > 0.05))) f.push(COND_FISHING);
+    if (guestSim.decider.touring.hasSafeRoute()) f.push(COND_BACKCOUNTRY); // Ski tourer (Task 34): an open backcountry route below danger 4
     return f;
   };
   guestSim.spawner.pricingDemand = {

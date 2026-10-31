@@ -30,7 +30,7 @@ export const AGE_NAMES = ['child', 'teen', 'adult', 'senior'] as const;
 export const AGE_SCALE = [0.65, 0.88, 1, 0.97] as const;
 export const BUILD_NAMES = ['slim', 'average', 'stocky'] as const;
 export const BUILD_SCALE = [0.88, 1, 1.15] as const;
-/** Share of boarders among skiing guests. */
+/** Share of boarders among skiing guests of a save from before Snowboarder was a guest type (Task 33; the render only uses it as a fallback for those old guests). */
 export const BOARDER_SHARE = 0.3;
 
 export interface Appearance {
@@ -103,11 +103,12 @@ export function appearanceOf(id: number, type: number, winter: boolean, kid?: bo
   if (lk?.helmet) out.hairStyle = HairStyle.Helmet; // mountain bikers: a helmet in every season
   else if (lk?.hat !== undefined && age !== Age.Child) out.hairStyle = lk.hat; // anglers: cap / sun hat
   else if (lk?.noHelmet && out.hairStyle === HairStyle.Helmet) out.hairStyle = female ? HairStyle.Bun : HairStyle.Short; // seniors: no ski helmet, the grey hair shows
+  else if (lk?.beanie !== undefined && winter && out.hairStyle === HairStyle.Helmet && rand01(id, 17) < lk.beanie) out.hairStyle = HairStyle.Beanie; // snowboarders: beanies over helmets
   out.top = top;
   out.bottom = Math.floor(rand01(id, 8) * 8);
   out.hat = (top + 3 + Math.floor(rand01(id, 9) * 9)) % 16;
   out.gearColor = Math.floor(rand01(id, 10) * 16);
-  out.pack = rand01(id, 12) < 0.28;
+  out.pack = lk?.pack ? true : rand01(id, 12) < 0.28; // ski tourers always carry a pack
   out.scale = AGE_SCALE[age]! * (female && age >= Age.Teen ? 0.95 : 1) * (0.96 + 0.08 * rand01(id, 13));
   return out;
 }
@@ -139,7 +140,7 @@ export const typeGearOf = (type: number): TypeGear | undefined => (type < 6 ? un
 /** Forced outfit of a guest type (look hook), or undefined = by season / state. */
 export const typeOutfitOf = (type: number): number | undefined => (type < 6 ? undefined : extraDef(type)?.look?.outfit);
 
-/** Boarders vs skiers: stable per guest (~30% boards). */
+/** Boarders vs skiers: stable per guest (~30% boards). FALLBACK for guests of old saves only: a Snowboarder is a type now (`look.gear`). */
 export const isBoarder = (id: number): boolean => rand01(id, 21) < BOARDER_SHARE;
 
 /** Gear/pose batch for a guest from its sim state. Skis/boards only while the movement mode is a ski mode (on snow); lifts = seated; rink = skates; beach = lying. */

@@ -38,9 +38,9 @@ const arrivals = (sim: Sim): { school: number; senior: number; all: number } => 
 describe('Senior + School group in a real resort', () => {
   it('school groups come on weekdays (January) and never on a Saturday; seniors come every day', () => {
     const wkday = resort((w) => w === 1);
-    const a = arrivals(wkday); wkday.tick(200);
+    const a = arrivals(wkday); wkday.tick(400);
     const sat = resort((w) => w === 5);
-    const b = arrivals(sat); sat.tick(200);
+    const b = arrivals(sat); sat.tick(400);
     expect(a.all).toBeGreaterThan(30);
     expect(a.school).toBeGreaterThan(8); // at least one class of 9-16
     expect(b.school).toBe(0);

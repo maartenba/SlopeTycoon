@@ -35,7 +35,8 @@ describe('scenario bots: 30-day smoke for all six', () => {
       expect(errors).toEqual([]);
       expect(scanProblems(sim)).toEqual([]);
       const v = sim.scenario!.view();
-      expect(v.elapsed).toBeGreaterThanOrEqual(29); expect(v.elapsed).toBeLessThanOrEqual(31);
+      // a bot that meets every objective early ends the scenario early (Safe Slopes after the Snowboarder / Ski tourer types: day 25): the clock then stops at the finish
+      if (v.finished) expect(v.elapsed).toBeLessThanOrEqual(31); else { expect(v.elapsed).toBeGreaterThanOrEqual(29); expect(v.elapsed).toBeLessThanOrEqual(31); }
       expect(v.total).toBe(deadlineDays(s.deadline));
       expect(v.objectives.length).toBe(s.objectives.length);
       expect(Number.isFinite(v.score)).toBe(true);

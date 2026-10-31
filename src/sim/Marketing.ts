@@ -25,6 +25,8 @@ export interface MarketingContext {
   festivalMult?(): number;
   /** Campaigns v2: rail arrival point (available = station served, load = guests currently on rail trips or at the station side, capacity = station capacity). */
   rail?(): { available: boolean; load: number; capacity: number };
+  /** Powder Hounds: is it a powder day (Events calendar)? Absent = false. */
+  powderDay?(): boolean;
   /** Summer campaigns: mean fish stock (0..1) of the waters the active Tackle huts reach; null = no hut / no water. Absent = healthy (unit tests). */
   fishStock?(): number | null;
 }
@@ -116,6 +118,7 @@ export class Marketing {
     let f = 1;
     if (def.dayClassMult) f *= def.dayClassMult[this.d.ctx.dayClass?.() ?? 'regular'] ?? 1;
     if (def.window === 'festival' && !(this.d.ctx.festivalWindow?.() ?? false)) f *= FESTIVAL_CAMPAIGN.outside;
+    if (def.powderMult && (this.d.ctx.powderDay?.() ?? false)) f *= def.powderMult;
     return f;
   }
   /** Expected average of `liveFactor` over a run (ROI preview only). */

@@ -70,6 +70,15 @@ describe('ambienceMix', () => {
     expect(mix({ heli: 0 }).heli).toBe(0);
     expect(mix({ heli: 0.8 }).heli).toBeGreaterThan(0.3);
   });
+  it('sleigh bells: silent without a sleigh, present only near one, quieter in rain, ceiling 0.03 (the quietest bed)', () => {
+    expect(mix({ sleigh: 0 }).sleigh).toBe(0);
+    expect(mix({}).sleigh).toBe(0);
+    expect(mix({ sleigh: 0.9 }).sleigh).toBeGreaterThan(0.2);
+    expect(mix({ sleigh: 0.9, zoom: 80 }).sleigh).toBeLessThan(mix({ sleigh: 0.9, zoom: 8 }).sleigh);
+    expect(mix({ sleigh: 0.9, weather: 'rain' }).sleigh).toBeLessThan(mix({ sleigh: 0.9, weather: 'clear' }).sleigh);
+    expect(AMB.layerMax.sleigh).toBeLessThanOrEqual(0.03);
+    for (const id of LAYER_IDS) if (id !== 'sleigh') expect(AMB.layerMax[id]).toBeGreaterThan(AMB.layerMax.sleigh);
+  });
   it('church strikes only in daytime hours', () => {
     expect(churchStrikes(3)).toBe(0); expect(churchStrikes(22)).toBe(0); expect(churchStrikes(12)).toBe(3); expect(churchStrikes(9)).toBe(3);
   });
@@ -89,11 +98,11 @@ describe('Ambience layers (fake backend)', () => {
     amb.update(base, 0.1);
     expect(amb.layerCount).toBe(LAYER_IDS.length);
     const after = fb.nodes.length;
-    expect(fb.live).toBeLessThan(200); // budget: loops + buses (LFO-driven drift costs a few nodes per layer)
+    expect(fb.live).toBeLessThan(210); // (+ sleigh bells, Task 31) budget: loops + buses (LFO-driven drift costs a few nodes per layer)
     for (let i = 0; i < 1000; i++) { fb.t += 0.1; amb.update({ ...base, zoom: 5 + (i % 50), hour: (i / 10) % 24 }, 0.1); engine.reap(fb.t); }
     // one-shot voices come and go, but looping layers are never rebuilt
     expect(amb.layerCount).toBe(LAYER_IDS.length);
-    expect(fb.live).toBeLessThan(240);
+    expect(fb.live).toBeLessThan(250);
     expect(fb.nodes.length - after).toBeGreaterThan(0);
   });
   it('layer gains crossfade with setTargetAtTime (no instant jumps)', async () => {

@@ -84,6 +84,8 @@ export class GuestStore {
   private free: number[] = [];
   private high = 0; // slots [0, high) have ever been used
   private nextId = 1;
+  /** Id the next arriving guest gets (guests below it already exist). */
+  get nextGuestId(): number { return this.nextId; }
   private idToSlot = new Map<number, number>();
   count = 0;
   overnightCount = 0;

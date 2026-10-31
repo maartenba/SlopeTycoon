@@ -15,6 +15,8 @@ export interface ProbeDeps {
   helis: () => Array<{ x: number; y: number }>;
   /** Quad tour carriers out on their ride (optional: absent = none). */
   quads?: () => Array<{ x: number; y: number }>;
+  /** Horse sleigh carriers out on their ride (optional: absent = none). */
+  sleighs?: () => Array<{ x: number; y: number }>;
   /** Open campgrounds (centre tile; the fire crackles in the evening). Optional: absent = none. */
   campfires?: () => Array<{ x: number; y: number }>;
   /** Tree trunks within r tiles of (x, z) (walk-mode wind shelter; optional). */
@@ -62,6 +64,7 @@ export class WorldProbe {
     const heli = nearestSource(l, d.helis()); o.heli = heli ? 0.4 + 0.6 * proximity(heli.dist, 80) : 0;
     const fire = d.campfires ? nearestSource(l, d.campfires()) : null; o.campfire = fire ? proximity(fire.dist, 14) : 0;
     const quad = d.quads ? nearestSource(l, d.quads()) : null; o.quad = quad ? 0.3 + 0.7 * proximity(quad.dist, 40) : 0;
+    const sleigh = d.sleighs ? nearestSource(l, d.sleighs()) : null; o.sleigh = sleigh ? 0.3 + 0.7 * proximity(sleigh.dist, 30) : 0;
     return o;
   }
 }

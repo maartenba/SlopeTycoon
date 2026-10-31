@@ -1,6 +1,6 @@
 # Tour attractions (Phase 6 Task 5)
 
-A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, snowscooter, quad, and later canyoning and rafting. The system is generic and config driven; the catalogue (`TOUR_DEFS` in `src/config/tours.ts`) grows with the content tasks. Rows: the Quad Base (`docs/quads.md`), the Rafting and Canyoning Bases (`docs/water-tours.md`). Without a tour base the system is inert.
+A **tour** is a guided ride or hike along a route: horse sleigh, snowshoe hike, snowscooter, quad, and later canyoning and rafting. The system is generic and config driven; the catalogue (`TOUR_DEFS` in `src/config/tours.ts`) grows with the content tasks. Rows: the Quad Base (`docs/quads.md`), the Rafting and Canyoning Bases (`docs/water-tours.md`), the Sleigh Stable, Snowshoe Hut and Snowscooter Base (`docs/winter-tours.md`). Without a tour base the system is inert.
 
 ## Pieces
 

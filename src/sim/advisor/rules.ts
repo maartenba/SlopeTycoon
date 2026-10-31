@@ -315,6 +315,19 @@ export const RULES: readonly Rule[] = [
     if (c.sim.game.money < (c.shown ? 4_000 : 6_000)) return null;
     return { id: 'marketing.school', severity: 'info', ...TEXT.schoolCampaign(), panel: { drawer: 'marketing', item: 'school' } };
   }, false, true),
+  // Powder Hounds / Snowboard Park Jam (Tasks 53 + 33): an open backcountry route below danger 4 suggests Powder Hounds in winter; a ready Stunt Park suggests the Park Jam. Both stay quiet without the prerequisites.
+  rule('marketing.powder', 1, (c) => {
+    const m = c.sim.marketing;
+    if (c.season !== 'winter' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'powder') || m.blocker('powder') !== null) return null;
+    if (c.sim.game.money < (c.shown ? 5_500 : 8_000)) return null;
+    return { id: 'marketing.powder', severity: 'info', ...TEXT.powderCampaign(), panel: { drawer: 'marketing', item: 'powder' } };
+  }, false, true),
+  rule('marketing.parkJam', 1, (c) => {
+    const m = c.sim.marketing;
+    if (c.season === 'summer' || c.season === 'autumn' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'parkJam') || m.blocker('parkJam') !== null) return null;
+    if (c.sim.game.money < (c.shown ? 5_000 : 7_500)) return null;
+    return { id: 'marketing.parkJam', severity: 'info', ...TEXT.parkJamReady(), panel: { drawer: 'marketing', item: 'parkJam' } };
+  }, false, true),
   // ---- season lookahead ----
   // Almabtrieb (autumn cattle descent): no farm -> suggest one (spring..early autumn); farm + herd -> 'Almabtrieb in N days' / 'is on', Show me goes to the dressed road near the base station
   rule('farm.almabtrieb', 1, (c) => {
@@ -408,6 +421,17 @@ export const RULES: readonly Rule[] = [
     for (let i = 0; i < n * n && roads < 8; i++) if (k[i] === 2) roads++;
     if (roads < 8) return null; // the ride needs a road or footpath to run on
     return { id: 'tour.quad', severity: 'info', ...TEXT.quadTours(), panel: { drawer: 'buildings', item: 'quadBase' } }; // a drawer hint only (like eco.centre): the item is career-gated, the player picks the spot
+  }),
+  // Winter tours (docs/winter-tours.md): a quiet winter extra beyond the pistes (sleigh rides on a road). Optional, never urgent; a drawer hint only (the item is career-gated).
+  rule('tour.winter', 1, (c) => {
+    const sim = c.sim;
+    if (seasonProgress(sim.game.date).season !== 'winter' || sim.guestSim.store.count < 30 || !has(sim, 'baseLodge') || sim.progression.locked('building', 'sleighStable')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'sleighStable' || b.type === 'snowshoeHut' || b.type === 'snowscooterBase')) return null;
+    const n = sim.size, k = sim.networks.kind;
+    let roads = 0;
+    for (let i = 0; i < n * n && roads < 6; i++) if (k[i] === 2) roads++;
+    if (roads < 6) return null; // the sleigh needs a road or footpath to run on
+    return { id: 'tour.winter', severity: 'info', ...TEXT.winterTours(), panel: { drawer: 'buildings', item: 'sleighStable' } };
   }),
   // Water tours (docs/water-tours.md): a river that brisk-flows (or rapids) and is not yet used by a Rafting Base. Optional; a drawer hint (the item is career-gated, the player picks the spot).
   rule('tour.water', 1, (c) => {
