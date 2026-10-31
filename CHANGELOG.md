@@ -2,7 +2,18 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-10-31 (pre-release)
+
+Mountain concerts and the end of Phase 6 (milestone M6.7). Phase 6 added rivers, summer content, hotels, winter adventures, mid-station lifts and now concerts over 0.2.2-0.3.0; the summary is in `docs/phase6-status.md`. Changes since 0.2.9: the Mountain Concert and the Snow Concert, a guide section for them, and a stale-statement sweep of the guide and the landing page.
+
+### Highlights
+
+- Mountain concerts: a summer Mountain Concert (1-10 September) and a winter Snow Concert (1-15 March), booked next to the Summer Music Festival once you own a gondola or cable car.
+- A real stage with truss, speakers and a crowd near your best viewpoint, lit by soft light cones that sway at night, with a very quiet band and crowd murmur close by.
+- Phase 6 in one line: dig rivers, build a campground, a petting zoo, quads, rafting and fishing, two hotels with a steaming pool, sleighs, snowshoes and scooters, mid-station gondolas and a new six-seat chair.
+- New guests for every season: mountain bikers, anglers, seniors, school classes, snowboarders and ski tourers, each with a campaign to match.
+- Backcountry routes with an avalanche danger from 1 to 5, and bridges and level crossings that make the valley work.
+- The player guide and the landing page were re-read end to end for the new content.
 
 ### Changes
 
@@ -10,6 +21,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - **Concert stage**: a stage with truss, speakers, a backdrop, a banner with the festival name, a barrier and a crowd, set up near the best anchor (a mid-station plaza, a viewpoint, a gondola / cable car top, else the base station / village / lodge) on free, flat, tree-free ground. Light cones (additive, translucent, no real lights) sway gently at night (still with reduced motion); summer has bunting and flags, winter a snow roof, warm lamps and heaters. View only, removed after the event, 1 extra draw call. The summer edition ends with one modest firework (never with Feedback Off); the winter edition has none.
 - **Concert sound**: a very quiet distant music bed and crowd murmur (ceiling 0.04) while a concert runs and the camera is near; it follows the ambience volume and mute.
 - **Rudi** suggests a concert when you own a gondola or cable car and one can start within about six weeks. The Events panel gets a Show me for a running concert.
+- **Docs and site**: the Events page covers both concerts (dates, prerequisites, what you see and hear), with two night screenshots; calendar line, glossary and landing page updated; `docs/phase6-status.md` (what shipped, what was deferred, known gaps) and `docs/playtest-m66.md` (final Phase 6 playtest checklist).
+- **Version**: 0.3.0 (pre-release, never 1.0 until the owner says so).
 
 ## [0.2.9] - 2026-10-31 (pre-release)
 

@@ -1,6 +1,31 @@
 # Release notes and checklist
 
-Current release: **0.2.9 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.3.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.3.0 (2026-10-31, macOS, Node v22.23.4)
+
+M6.7 final Phase 6 STOP batch: Mountain Concert (1-10 September) + Snow Concert (1-15 March), the Phase 6 wrap-up (`docs/phase6-status.md`), version bump, CHANGELOG `[0.3.0]` with Highlights, Events guide page with two new night screenshots (`concert-summer-night`, `concert-winter-night`; the page now shows events-calendar, festival-market and the two concerts, `story-inspector` and `ui-rating` moved to the landing page only), glossary / calendar / landing updates, a read-through of the guide and landing for stale statements (the lift count, season dates, crossings wording and unlock tables were all still right), `docs/playtest-m66.md`.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice, after all edits) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 410 files passed, 1 skipped; 4229 tests passed, 32 skipped (HEAD b3e64b1 before the docs batch: the same) |
+| Balance | `npm run test:balance` | 36 passed (goldens unchanged) |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | exit 0, 0 errors |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Phase 6 story | `npm run phase6:sanity` | OK |
+| Summer story | `npm run summer:sanity` | OK (save + reload identical, MaterialGuard 0) |
+| Winter story | `npm run winter:sanity` | OK |
+| Winter tours | `npm run winter:tours` | OK |
+| Backcountry story | `npm run backcountry:sanity` | OK |
+| Flicker | `npm run flicker -- --only 64-winter-day,64-summer-day` | 0 pop events, 0 / 2 LOD flips (rot / zoom sweeps); still px 2401 winter / 832 summer; the concert dressing is not a building, so no `flicker:building` run |
+| Touch, full phone portrait matrix | `npm run touch:e2e -- --viewport phone` | 211/211 checks passed: camera 11, placement 13, walk 22, ride-photo 17, lift 10, strokes 44, trails 21, drawers 15, ui 31, title 9, page 18 (about 25 min). The landscape and tablet viewports were NOT run this time |
+| Size | `npm run size` | 2841.6 kB raw / 1019.3 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run whats-new`, `npm run licenses`, `npm run docs:img`, `npm run site:og`, `npm run build:site && npm run site:check && npm run verify:site` | OK (28 pages, 91 screenshots, 7.8 MB of the 8 MB budget, 220 URLs crawled) |
+
+Goldens unchanged (festivals run only with `autoEvents`; the plain bot books none). Bugs found by the STOP checks: none in the game. Not verifiable by agents (in `docs/playtest-m66.md`): real GPU frame rate, concert sound by ear, light-cone look on a real GPU, a real touch device.
 
 ## 0.2.9 (2026-10-31, macOS, Node v22.23.4)
 

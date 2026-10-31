@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.3.0",
+    "date": "2026-10-31",
+    "highlights": [
+      "Mountain concerts: a summer Mountain Concert (1-10 September) and a winter Snow Concert (1-15 March), booked next to the Summer Music Festival once…",
+      "A real stage with truss, speakers and a crowd near your best viewpoint, lit by soft light cones that sway at night, with a very quiet band and crowd…",
+      "Phase 6 in one line: dig rivers, build a campground, a petting zoo, quads, rafting and fishing, two hotels with a steaming pool, sleighs, snowshoes…",
+      "New guests for every season: mountain bikers, anglers, seniors, school classes, snowboarders and ski tourers, each with a campaign to match.",
+      "Backcountry routes with an avalanche danger from 1 to 5, and bridges and level crossings that make the valley work.",
+      "The player guide and the landing page were re-read end to end for the new content."
+    ]
+  },
+  {
     "version": "0.2.9",
     "date": "2026-10-31",
     "highlights": [
@@ -24,18 +36,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Two new campaigns: Wellness & Views for seniors and couples, and School Trips for quiet weekdays.",
       "The pool's heating shows up in your energy bill, so solar and wind now pay for a bit of luxury.",
       "Two new guide pages: Hotels & the coffee stand, and Seniors & school trips."
-    ]
-  },
-  {
-    "version": "0.2.7",
-    "date": "2026-10-30",
-    "highlights": [
-      "A real summer: build a campground with a glowing campfire, a petting zoo, a viewpoint on the ridge and a treehouse in the forest, then run the new…",
-      "Adventure: quad convoys on your roads, a climbing crag on a real rock face, and rafting and canyoning on a river you dug yourself.",
-      "Fishing: a Tackle & Bait Hut and fishing piers on lakes, ponds and rivers, with a fish stock that regrows, Catch & release or Keep, and ice fishing…",
-      "Two new kinds of guests: mountain bikers on your trails and quiet anglers at the water.",
-      "Angler's Paradise, a second new campaign, fills your lakes with anglers while the fish last.",
-      "A new Summer page and a Quads, climbing, rafting & fishing page in the player guide."
     ]
   }
 ];

@@ -59,5 +59,5 @@ describe('after-reload card', () => {
     const r = whatsNewOnLaunch('0.2.2', '0.2.4', L); expect(r.show.map((e) => e.version)).toEqual(['0.2.4', '0.2.3']); expect(r.store).toBe('0.2.4');
   });
   it('dev builds never show it', () => { expect(whatsNewOnLaunch('0.2.1', 'dev', L)).toEqual({ show: [], store: null }); });
-  it('bundled list is newest first', () => { expect(WHATS_NEW[0]!.version).toBe('0.2.9'); });
+  it('bundled list is newest first', () => { expect(WHATS_NEW[0]!.version).toBe('0.3.0'); });
 });
