@@ -12,6 +12,10 @@ export interface DecisionPort {
   unitPrice(buildingId: number): number;
   /** Guest lacks ski/board or bike gear (needs a rental visit first). */
   needsGear(guestId: number, kind: 'ski' | 'bike'): boolean;
+  /** Rental stock (docs/rental.md): a unit of the guest's kind is left to rent (absent = unlimited). */
+  gearAvailable?(guestId: number, kind: 'ski' | 'bike'): boolean;
+  /** The guest wanted gear but there was none left (shortage counter). */
+  gearShort?(guestId: number): void;
   /** Preference 0..1 of a guest type (GuestType) for this building. */
   appeal(buildingId: number, guestType: number): number;
   /** Trekker beds free in a Mountain Hut (undefined = port without beds). */

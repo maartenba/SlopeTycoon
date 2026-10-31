@@ -19,6 +19,11 @@ export const CROSSING = {
   /** MTB ramp bridge over rail: bikes cannot take stairs, so long ramps on both approach tiles (more expensive than the footbridge). */
   mtbBridge: { cost: 1100, steps: 10 },
   footbridge: { cost: 900, /** Deck height above the rail (world units; a train is ~0.6 tall). Guests climb the stairs on the approach tiles up to it. */ deck: 1.0, steps: 5 },
+  /**
+   * Road overpass over rail (docs/crossings.md). The deck is flat over the rail tile and ramps down `ramp` tiles each side (7 or 9 tiles in all).
+   * `deck` = height of the road above the rail surface (world units; a train is ~0.6 tall, so 0.5 margin). `maxGrade` = steepest ramp (units of rise per tile).
+   */
+  overpass: { base: 900, perTile: 150, deck: 1.1, ramps: [3, 4] as readonly number[], maxGrade: 0.4, wall: 0.18 },
 } as const;
 
 export type CrossKind = 1 | 2;

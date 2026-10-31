@@ -143,7 +143,7 @@ export function routeOnKind(kind: ArrayLike<number>, size: number, netKind: numb
   const s = from.y * size + from.x;
   if (from.x < 0 || from.y < 0 || from.x >= size || from.y >= size || kind[s] !== netKind) return [];
   /** A road runs over a road level crossing (a rail tile with cross 2); rail already runs on its own tiles. */
-  const ok = (i: number): boolean => kind[i] === netKind || (netKind === 2 && cross !== undefined && kind[i] === 3 && cross[i] === 2);
+  const ok = (i: number): boolean => kind[i] === netKind || (netKind === 2 && cross !== undefined && kind[i] === 3 && (cross[i] === 2 || cross[i] === 5));
   const prev = new Int32Array(size * size).fill(-2);
   prev[s] = -1;
   const q = [s];

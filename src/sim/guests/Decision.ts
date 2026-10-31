@@ -419,7 +419,8 @@ export class Decider {
     const needBike = !!port && port.needsGear(s.id[i]!, 'bike');
     const skiLifts = needSki ? [] : this.skiLiftsFor(skill);
     if (rental && s.budget[i]! > 30 && ((needSki && pref === Pref.Ski && this.skiLiftsFor(skill).length) || (needBike && pref === Pref.Bike && this.mtbTiles.length))) {
-      out.push({ kind: 'shop', building: rental, score: 2.6 + noise() });
+      if (needSki && port!.gearAvailable && !port!.gearAvailable(s.id[i]!, 'ski')) port!.gearShort?.(s.id[i]!); // out of skis / boards: the guest does gear-free things (a counted shortage)
+      else out.push({ kind: 'shop', building: rental, score: 2.6 + noise() });
     }
     if (skiLifts.length) {
       const lift = this.pickSkiLift(skill, x, y, rng, i, s.type[i]! >= 6 ? extraDef(s.type[i]!)?.flats : undefined)!;

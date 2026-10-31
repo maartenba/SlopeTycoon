@@ -17,7 +17,7 @@ export interface Pt { x: number; y: number }
 export interface GoalWorld {
   buildings(): ReadonlyArray<{ type: string; active: boolean; x: number; y: number; w: number; h: number }>;
   /** Built lifts; `open` = open for business right now. `x`/`y` = bottom station tile. */
-  lifts(): ReadonlyArray<{ kind: string; open: boolean; x: number; y: number }>;
+  lifts(): ReadonlyArray<{ kind: string; open: boolean; x: number; y: number; /** Stations incl. the terminals (2 = an ordinary lift); bonus goals only, absent in fixtures. */ stations?: number }>;
   /** Connected piste components (>= 4 tiles); `difficulty` 1 green .. 4 black. */
   pistes(): ReadonlyArray<{ difficulty: number; tiles: number; x: number; y: number }>;
   /** Tiles of mountain-bike / hiking trail. */

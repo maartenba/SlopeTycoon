@@ -72,7 +72,7 @@ function suspensionRig(d: GeoData, grid: Grid, net: Networks, h: HeightFn, br: N
 }
 
 /** Box between world points p0 -> p1 (axis-aligned run along x or z) with sloped top heights and per-face flat vertices. */
-function slab(d: GeoData, x0: number, z0: number, x1: number, z1: number, hw: number, yTop0: number, yTop1: number, thick: number, rgb: number, lift = 0): void {
+export function slab(d: GeoData, x0: number, z0: number, x1: number, z1: number, hw: number, yTop0: number, yTop1: number, thick: number, rgb: number, lift = 0): void {
   const alongX = Math.abs(x1 - x0) >= Math.abs(z1 - z0);
   const c = new THREE.Color(rgb);
   // corners: (end, side) -> (x, z); y top / bottom
@@ -94,7 +94,7 @@ function slab(d: GeoData, x0: number, z0: number, x1: number, z1: number, hw: nu
 }
 
 /** Vertical box centred at (x,z) with half sizes (sx, sz) from y0 to y1. */
-function post(d: GeoData, x: number, z: number, sx: number, sz: number, y0: number, y1: number, rgb: number): void {
+export function post(d: GeoData, x: number, z: number, sx: number, sz: number, y0: number, y1: number, rgb: number): void {
   slab(d, x - sx, z, x + sx, z, sz, y1, y1, y1 - y0, rgb); // a slab of zero length along x would collapse: use a short run instead
 }
 

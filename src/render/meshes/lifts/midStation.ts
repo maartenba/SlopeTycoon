@@ -8,6 +8,8 @@ import type { LiftFamily } from '../../../config/lifts';
  * where the carriers slow down, lamp posts for the night. No bullwheel, no drive house, no ticket gates. Symmetric along the line, so one mesh serves both
  * directions. Budget: <= 600 triangles (tests/render/midStation.test.ts).
  */
+/** Lamp-head vertex colour: the lift station material glows these pixels warm at night (same night uniform as the building windows and the path net; no extra draw call, docs/mid-stations.md). */
+export const LAMP_HEAD = 0xfff0b4;
 export interface MidTheme { accent: number; roof: number; wall: number; text: string; bg: string }
 export const MID_THEMES: Record<LiftFamily, MidTheme> = {
   tbar: { accent: C.yellow, roof: C.roofBrown, wall: C.wood, text: 'MID', bg: '#e8a800' },
@@ -43,7 +45,7 @@ export function midStationDesign(family: LiftFamily): (s: SB) => void {
     guideRails(s, -0.95, 0.95, HEAD - 0.3, STEEL_DARK);
     for (const x of [-0.3, 0.3]) for (const u of [-0.8, 0, 0.8]) s.box(x, HEAD - 0.3, u, 0.04, 0.3, 0.04, STEEL);
     // two lamp posts for the night
-    for (const x of [-0.95, 0.95]) { s.box(x * 1.0, 0.12, 0.92, 0.04, roofY - 0.1, 0.04, STEEL_DARK); s.box(x * 1.0, roofY - 0.18, 0.92, 0.1, 0.05, 0.1, C.yellow); }
+    for (const x of [-0.95, 0.95]) { s.box(x * 1.0, 0.12, 0.92, 0.04, roofY - 0.1, 0.04, STEEL_DARK); s.box(x * 1.0, roofY - 0.18, 0.92, 0.16, 0.08, 0.16, LAMP_HEAD); }
     // sign board on both ends
     s.signs(t.text, 0, roofY + 0.45, 0.95, 0.9, 0.28, t.bg);
     s.box(0, roofY + 0.07, 0.95, 0.05, 0.38, 0.05, STEEL_DARK);

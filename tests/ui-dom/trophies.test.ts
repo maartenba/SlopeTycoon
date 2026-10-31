@@ -41,8 +41,8 @@ describe('st-trophies (trophy shelf)', () => {
     const e = el('st-trophies'); document.body.append(e);
     e.bind(trophiesApiFromProfile(profile)); e.open();
     expect(e.isOpen).toBe(true); expect(modalStack.dialogs).toBe(1); expect(e.hasAttribute('open')).toBe(true);
-    expect(q(e, '.sum .big')[0]!.textContent).toBe('3 / 40');
-    expect(q(e, '.card').length).toBe(40);
+    expect(q(e, '.sum .big')[0]!.textContent).toBe('3 / 48');
+    expect(q(e, '.card').length).toBe(48);
     expect(q(e, '[data-row="medals"] .med').length).toBe(6);
     const got = q(e, '.card[data-state="unlocked"]'); expect(got.length).toBe(3);
     const guests = q(e, '[data-ach="guests-1000"]')[0]!;
@@ -61,7 +61,7 @@ describe('st-trophies (trophy shelf)', () => {
     const e = el('st-trophies'); document.body.append(e); e.bind(trophiesApiFromProfile(profile)); e.open();
     const click = (filter: string, value: string): void => { (q(e, `[data-filter="${filter}"] button[data-value="${value}"]`)[0] as HTMLButtonElement).click(); };
     click('show', 'unlocked'); expect(q(e, '.card').length).toBe(2);
-    click('show', 'locked'); expect(q(e, '.card').length).toBe(38);
+    click('show', 'locked'); expect(q(e, '.card').length).toBe(46);
     click('show', 'all'); click('tier', '3'); expect(q(e, '.card').length).toBe(ACHIEVEMENTS.filter((a) => a.tier === 3).length);
     click('show', 'unlocked'); expect(q(e, '.card').length).toBe(0); expect(q(e, '.empty').length).toBe(1);
     click('tier', '2'); expect(q(e, '.card').length).toBe(1);
@@ -70,9 +70,9 @@ describe('st-trophies (trophy shelf)', () => {
   it('updates live while open (a new unlock appears) and offers no import / export / share control', async () => {
     const profile = await profileWith([]);
     const e = el('st-trophies'); document.body.append(e); e.bind(trophiesApiFromProfile(profile)); e.open();
-    expect(q(e, '.sum .big')[0]!.textContent).toBe('0 / 40');
+    expect(q(e, '.sum .big')[0]!.textContent).toBe('0 / 48');
     await profile.update((p) => { p.achievements.unlocked['first-guest'] = { at: 5 }; });
-    expect(q(e, '.sum .big')[0]!.textContent).toBe('1 / 40');
+    expect(q(e, '.sum .big')[0]!.textContent).toBe('1 / 48');
     const text = e.shadowRoot!.textContent ?? '';
     expect(/\b(share|import|export|copy link|upload)\b/i.test(text)).toBe(false);
     expect(e.shadowRoot!.querySelector('input[type="file"], a[download]')).toBeNull();

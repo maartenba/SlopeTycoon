@@ -42,33 +42,33 @@ const GOLDEN_STARTER: Record<string, string> = {
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': 'cdfbce3e',
+  'core': '3ecb65a1',
   'config': 'd9813cdd',
   'grid': '410860f8',
   'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'a0aaa356',
-  'lifts': '98c223a0',
+  'lifts': 'c094a4d3',
   'cond': 'd91eca6f',
   'names': '21b69d9a',
-  'nature': 'eb9f6d55',
-  'leavers': '31a5a993',
+  'nature': '8276406b',
+  'leavers': '8667ab53',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '571f0cde',
-  'sys.spawner': '0577ea1a',
-  'sys.guests': '0765e882',
-  'sys.attractions': '9255e8ab',
-  'sys.economy': '0424668d',
-  'sys.rating': '7d651d6c',
-  'sys.ops': 'b26b078c',
-  'families': '954df4be',
+  'sys.spawner': 'ff3d74de',
+  'sys.guests': 'da911455',
+  'sys.attractions': '224d391a',
+  'sys.economy': '76c0adcb',
+  'sys.rating': '3e5980fc',
+  'sys.ops': 'eb11e5ab',
+  'families': '6f2a65bf',
   'openStatus': 'f48290d9',
-  'sessionMeta': 'ceb8acf1',
-  'goals': 'c19b781d',
-  'yearReports': 'd5b5e4ec',
+  'sessionMeta': '04220274',
+  'goals': '893f1461',
+  'yearReports': '7e720934',
   'advisor': 'ca063e92',
-  'progression': 'f1f26cfe',
+  'progression': 'b5861719',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
@@ -90,7 +90,8 @@ const GOLDEN_BOT: Record<string, string> = {
 // RE-RECORDED (money pass, docs/balance.md "Money pass": starting cash 130k -> 150k, goal grants +2k, softer off-season relief, autumn demand 0.4 -> 0.5). Money 191483.3 -> 222414.97.
 // RE-RECORDED (M6.4 STOP: Senior + School group guest types ship ON (the bot builds a terrace / cafe / toilets and a ski school + kids area, so it now draws both), plus the hotel / coffee-stand unlock rows; docs/balance.md "M6.4 STOP check"). Money 222414.97 -> 227010.16 (+2.1%); with both types removed every part except `progression` is byte-identical to the previous golden.
 // RE-RECORDED (M6.5 STOP: Snowboarder guest type, carved out of solo / couple / budget / adventure arrivals in winter / spring / autumn, plus the tour / backcountry unlock rows; docs/balance.md "M6.5 STOP check"). The arrival draw moved, so every guest-driven part moved, INCLUDING GOLDEN_STARTER (guests arrive there too); Ski tourers do not spawn (the bot paints no route). Money 227010.16 -> 232186.6 (+2.3%).
-const GOLDEN_BOT_MONEY = 232186.6;
+// RE-RECORDED (Phase 6 polish: Senior guests walk at 0.75x on foot (`SENIOR_WALK`), plus the rental stock / zoo feeding / lamp changes that the plain bot never triggers; docs/balance.md "Phase 6 polish check"). Money 232186.6 -> 233115.57 (+0.4%). The new `rental` save keys are written only after a shortage, so nothing else moved.
+const GOLDEN_BOT_MONEY = 233115.57;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; delete p['energy']; return p; };
 

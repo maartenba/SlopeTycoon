@@ -4,6 +4,7 @@ import { TileType, type Grid } from './Grid';
 import { OccFlag } from './Occupancy';
 import { planBridge, type BridgePlan } from './Bridges';
 import { Cross, Layer, NetKind, TRAIL_ORPHAN_MSG, PISTE_COST_PER_TILE, type LayerBit, type Networks, type NetKindId } from './Networks';
+import { planOverpass, type OverpassPlan } from './Overpasses';
 import type { Pt } from '../sim/Dependencies';
 
 /**
@@ -32,6 +33,8 @@ export interface StrokePlan {
   /** Level crossings / rail bridges the stroke creates. */
   crossings: Array<Pt & { cross: number }>;
   bridges: BridgePlan[];
+  /** Road overpasses over rail the stroke builds (ramps + deck); the rail tile is also listed in `crossings` with `Cross.Overpass`. */
+  overpasses: OverpassPlan[];
   steps: StrokeStep[];
   /** Every non-span tile of the stroke (the preview line). */
   line: Pt[];
@@ -39,7 +42,7 @@ export interface StrokePlan {
 
 const maxCorner = (g: Grid, x: number, y: number): number => Math.max(...g.getCorners(x, y));
 const minCorner = (g: Grid, x: number, y: number): number => Math.min(...g.getCorners(x, y));
-const failed = (reason: string, line: Pt[], extra: Partial<StrokePlan> = {}): StrokePlan => ({ ok: false, reason, cost: 0, newTiles: [], crossings: [], bridges: [], steps: [], line, ...extra });
+const failed = (reason: string, line: Pt[], extra: Partial<StrokePlan> = {}): StrokePlan => ({ ok: false, reason, cost: 0, newTiles: [], crossings: [], bridges: [], overpasses: [], steps: [], line, ...extra });
 
 interface Run { s: number; e: number; water: boolean }
 
@@ -136,7 +139,7 @@ function planRun(net: Networks, grid: Grid, kind: Exclude<StrokeKind, 'rail'>, l
 /** The `over` argument of `crossingCheck` for a mode and a kind: false = level crossing. */
 export function overFor(kind: StrokeKind, mode: CrossMode): boolean | number {
   if (mode !== 'bridge') return false;
-  return kind === 'mtb' ? Cross.MtbBridge : Cross.Footbridge;
+  return kind === 'mtb' ? Cross.MtbBridge : kind === 'road' ? Cross.Overpass : Cross.Footbridge;
 }
 
 /** Plan a footpath / road / rail stroke (tiles in drag order). Rail never bridges; trails go through `planTrailStroke`. */
@@ -168,8 +171,17 @@ export function planStroke(net: Networks, grid: Grid, kind: 'path' | 'road' | 'r
   }
   const e = seg(line.slice(from));
   if (e) return failed(e === 'Water' && kind === 'rail' ? BRIDGE_MSG.rail : e, line);
+  const overpasses: OverpassPlan[] = [], claimed = new Set<number>();
+  for (const c of crossings) {
+    if (c.cross !== Cross.Overpass) continue;
+    const k = line.findIndex((t) => t.x === c.x && t.y === c.y);
+    const op = planOverpass(net, grid, line, k, mult, claimed);
+    if (!op.ok) return failed(op.reason ?? 'No room for the ramps', line);
+    for (const t of op.tiles) claimed.add(net.idxOf(t.x, t.y));
+    overpasses.push(op); cost += op.cost - CROSSING.overpass.base * mult; // the crossing already charged the base price
+  }
   if (kind === 'path' && (newTiles.length || bridges.length) && !net.strokeAnchored(line.filter((t, k) => !runs.some((r) => k >= r.s && k <= r.e) && net.inBounds(t.x, t.y)))) return failed('Paths must connect to a path, road or building', line);
-  return { ok: true, cost, newTiles, crossings, bridges, steps, line: line.filter((_, k) => !runs.some((r) => k >= r.s && k <= r.e)) };
+  return { ok: true, cost, newTiles, crossings, bridges, overpasses, steps, line: line.filter((_, k) => !runs.some((r) => k >= r.s && k <= r.e)) };
 }
 
 /** Apply a successful `planStroke` plan in order (each piece re-validates against the state the previous one left). */
@@ -179,6 +191,7 @@ export function buildStroke(net: Networks, kind: 'path' | 'road' | 'rail', plan:
     if (s.type === 'seg') net.buildSegment(nk, s.tiles, overFor(kind, mode));
     else net.buildBridge(s.plan);
   }
+  for (const op of plan.overpasses) net.buildOverpass(op);
 }
 
 const LAYER_OF = { hike: Layer.Hike, mtb: Layer.Mtb } as const;
@@ -222,7 +235,7 @@ export function planTrailStroke(net: Networks, grid: Grid, kind: 'hike' | 'mtb',
   }
   if (!net.strokeAnchored(solid, layer)) return failed(TRAIL_ORPHAN_MSG, line);
   steps.push({ type: 'seg', tiles: painted });
-  return { ok: true, cost: cost + painted.length * PISTE_COST_PER_TILE * mult, newTiles: painted, crossings, bridges, steps, line: solid };
+  return { ok: true, cost: cost + painted.length * PISTE_COST_PER_TILE * mult, newTiles: painted, crossings, bridges, overpasses: [], steps, line: solid };
 }
 
 /** Apply a trail plan: crossings, bridges (their banks included), then the painted tiles with the difficulty override. */
@@ -237,6 +250,7 @@ export function describeExtras(plan: StrokePlan): string {
   const out: string[] = [];
   for (const b of plan.bridges) out.push(`${BRIDGES[b.kind as BridgeKind].label}${b.overStream ? ' over stream' : ''}: span ${b.span.length} tile${b.span.length === 1 ? '' : 's'}${BRIDGES[b.kind as BridgeKind].suspension ? `, deck level ${b.deck}` : ''}, $${Math.round(b.spanCost)}`);
   const by = (c: number): number => plan.crossings.filter((x) => x.cross === c).length;
+  for (const o of plan.overpasses) out.push(`road overpass over the rail: ${o.tiles.length} tiles with ramps, $${Math.round(o.cost)}`);
   const n1 = by(Cross.Path) + by(Cross.Road);
   if (n1) out.push(n1 === 1 ? 'level crossing: guests wait for trains' : `${n1} level crossings`);
   if (by(Cross.Footbridge)) out.push(by(Cross.Footbridge) === 1 ? 'footbridge over the rail' : `${by(Cross.Footbridge)} footbridges over the rail`);

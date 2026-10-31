@@ -341,6 +341,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'rental.boards',
+    setup: (s) => { const n0 = s.buildings.all().filter((b) => b.type === 'rental').length; const short = (): number => (s.buildings.all().filter((b) => b.type === 'rental').length > n0 ? 0 : 6); s.attractions.rentalStock = () => ({ skis: { out: 5, cap: 30 }, boards: { out: 16, cap: 16 }, shortToday: short(), shortBoardsToday: short(), short: 6 }); },
+    fixes: [
+      { name: 'a second rental is built', apply: (s) => { buildAt(s, 'rental', lodge(s), { rmax: 12 }); } },
+      { name: 'the shortage ends (guests leave, gear returns)', apply: (s) => { s.attractions.rentalStock = () => ({ skis: { out: 1, cap: 30 }, boards: { out: 1, cap: 16 }, shortToday: 0, shortBoardsToday: 0, short: 6 }); } },
+    ],
+  },
+  {
     id: 'marketing.parkJam',
     setup: (s) => { guests(s, 20); s.game.date.day = seasonStartDay('winter') + 5; s.game.money = 50_000; campStub(s, 'parkJam'); },
     fixes: [

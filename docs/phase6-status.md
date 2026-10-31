@@ -40,15 +40,15 @@ Version 0.3.0 (pre-release, never 1.0 until the owner says so). The plan is loca
 
 | Item | Why |
 |---|---|
-| Snowboarder "rental board stock" counter | Boarders own a board less often (`BOARD_OWNER`) and use normal rental; a separate stock was not needed for the economy |
-| Senior guests walking slower | The type drives appeal, spend and calendar (weekdays), not a movement speed; changing walk speed would touch the shared nav kernel and goldens |
-| Petting zoo feeding mechanic, advisor rule, animals reacting to guests | Kept simple on purpose (`petting-zoo.md`) |
+| ~~Snowboarder "rental board stock" counter~~ | **Built (polish batch)**: Rental stock of skis and boards, shortages in the inspector and the `rental.boards` advisor rule (`rental.md`) |
+| ~~Senior guests walking slower~~ | **Built (polish batch)**: 0.82x on foot via a per-type factor in `Movement` / `NavGraph.speed` (`guest-types.md`, `balance.md` "Phase 6 polish check") |
+| Petting zoo feeding mechanic | **Built (polish batch)**: $2 feed, happier visits, animals come to the fence (`petting-zoo.md`). Still not built: an advisor rule, animals reacting beyond the fence |
 | Ride-along alighting at mid-stations | The follow continues as a skier after the guest alights; the rider is not asked where to get off (`mid-stations.md`) |
-| Night lights on mid-station lamps | Lamp-coloured geometry only (`mid-stations.md`) |
+| ~~Night lights on mid-station lamps~~ | **Built (polish batch)**: the lamp heads glow at night through the station material (`mid-stations.md`) |
 | Walk mode / ride-along on footbridge stairs and bank ramps | Walk mode follows deck height but was not verified on stairs (`bridges.md`, `playtest-m61.md`) |
-| Road overpass over rail, rail bridges, raft clearance under river bridges | By design / not needed in v1 (`crossings.md`, `bridges.md`) |
+| Rail bridges, raft clearance under river bridges | By design / not needed in v1 (`crossings.md`, `bridges.md`); the road overpass was built afterwards (`crossings.md` "Road overpass") |
 | Tackle hut refusal beyond 3 tiles from water; guests walking to the pier; per-guest angler reviews | Closed reason + inspector line instead (`anglers.md`) |
-| Planned goals and achievements ("Green travel", "A summer night", "Dig your first river", "Two pistes, one gondola", "Scenic route", "Hot springs", "Source to sea") | Not built; the plan marked them optional, none gates a chapter |
+| Planned goals and achievements | **Mostly built (polish batch)**: 5 optional bonus goals (`goals.md`) and 8 achievements (Green travel, Scenic route, Source to sea, First raft, Powder day, Concert night, Suite life, Summer share; `achievements.md`). Not built: "Hot springs" (no spa building), "A summer night", "Dig your first river", "Two pistes, one gondola" as goals / trophies, a Luxury Hotel goal (hotels are gated; a goal may not name a gated item) |
 | Train timetable / second station upgrade for Come by Train | Follow-up (OQ-4: capacity-based in v1) |
 | Verification on a real GPU, by ear, and on a real touch device | Agents have no GPU / audio / device; see `playtest-m66.md` |
 

@@ -7,6 +7,7 @@ import { diagonalNS } from '../TerrainGeometry';
 import { footbridgeDeck, footbridgeStairs } from './footbridge';
 import { bridgeTileGeometry } from './bridges';
 export { BRIDGE_SNOW_U } from './bridges';
+import { overpassTileGeometry } from './overpass';
 
 const NET_LIFT = 0.06;
 /** Shared 0..1 night factor for the road / path / rail material (set by main with Lighting.nightUniform): lifts dark asphalt out of near-black. */
@@ -398,7 +399,8 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
   if (net.bridgeTiles > 0) bridgeTileGeometry(d, grid, net, (px, pz) => surfaceHeightAt(grid, px, pz), x, y); // Phase 6 bridges: span deck / bank ramp (docs/bridges.md)
   if (!k && net.crossCount > 0) rampTile(d, grid, net, x, y); // trails climb to a footbridge / MTB ramp bridge over rail
   if (!k) return;
-  if (net.bid[i]) return; // a bridge span tile: the bridge mesh replaces the plain deck
+  if (net.bid[i]) return; // a bridge span tile
+  if (net.overpassTiles > 0 && net.oid[i] && k === 2) { overpassTileGeometry(d, grid, net, x, y); return; } // road overpass ramp: embankment + deck replaces the plain road (docs/crossings.md): the bridge mesh replaces the plain deck
   const m = net.conn[i]!;
   const hw = HALF_W[k]!;
   const cell = CELL[k]!;
@@ -407,7 +409,7 @@ export function tileNetwork(d: GeoData, grid: Grid, net: Networks, x: number, y:
   const flatY = bridge ? Math.max(...grid.getCorners(x, y)) * HEIGHT_UNIT : undefined;
   const rgb = bridge ? 0xc9a37a : 0xffffff;
   const cx = x + 0.5, cz = y + 0.5;
-  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); else if (cr === 3 || cr === 4) footbridgeDeck(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, m === (Conn.N | Conn.S)); return; }
+  if (k === 3) { railTile(d, grid, x, y, m, net.size); const cr = net.cross[i]!; if (cr === 1 || cr === 2) crossingDeck(d, grid, x, y, m, cr); else if (cr === 5) overpassTileGeometry(d, grid, net, x, y); else if (cr === 3 || cr === 4) footbridgeDeck(d, (px, pz) => surfaceHeightAt(grid, px, pz), x, y, m === (Conn.N | Conn.S)); return; }
   if (k === 1 && net.crossCount > 0) rampTile(d, grid, net, x, y);
   if (k === 1 && m !== 0 && pathTile(d, grid, x, y, m, net.size, hw, cell, lift, rgb, flatY, networkEdgeTan(net, x, y))) return;
   if (k === 2 && !bridge && roadTile(d, grid, net, x, y, m, hw, cell, lift)) return;

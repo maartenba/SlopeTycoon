@@ -20,6 +20,7 @@
 | `bear.threat` | daily | awake bear, no ranger station |
 | `storm.signs` | hourly | storm, no warning sign |
 | `school.none` | daily | many families, no ski school |
+| `rental.boards` | hourly | 3+ guests turned away today for lack of rental skis / boards (1 keeps it up); Show me opens the Rental, Build suggests another (`docs/rental.md`) |
 | `arrival.parking` | daily | lodge but no parking / rail / shuttle / altiport |
 | `cash.debt` / `cash.runway` | hourly | in debt (lists loan / price / rest-lifts options); cash under ~5 days of upkeep |
 | `cash.tips` | hourly | first two years, cash between $0 and ~$6k: build order, Starter loan, price check (docs/money-tips.md) |

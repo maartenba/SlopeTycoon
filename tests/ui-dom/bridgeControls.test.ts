@@ -40,7 +40,7 @@ describe('Paths & Roads drawer: bridges are part of drawing, not a mode', () => 
     expect(lvl!.getAttribute('aria-checked')).toBe('true'); expect(brg!.getAttribute('aria-checked')).toBe('false');
     expect(lvl!.textContent).toContain('Level crossing'); expect(lvl!.textContent).toContain('$150'); // two-line label with the price
     expect(brg!.textContent).toContain('Bridge'); expect(brg!.textContent).toContain('$900');
-    expect(q(dock, '[data-bridge-hint]')!.textContent).toBe('Drag across water, a gap or rails. Meeting a path or road just merges (automatic). Roads always use a level crossing; rail cannot cross water.');
+    expect(q(dock, '[data-bridge-hint]')!.textContent).toBe('Drag across water, a gap or rails. Meeting a path or road just merges (automatic). Roads cross rails on a level crossing or, with Bridge, an overpass (needs room).');
     expect(q(dock, '[data-bridge-list]')!.textContent).toContain('Footpath: Footbridge');
     expect(q(dock, '[data-bridge-list]')!.textContent).toContain('$600/tile, max 3');
     expect(modes).toEqual(['level']);

@@ -121,6 +121,10 @@ export const COND_BACKCOUNTRY = '@backcountryRoute';
 /** A ski tourer never goes out at this danger level or higher, even when the route is open (the override that opens a route does not apply to them). */
 export const TOURER_MAX_DANGER = 4;
 
+/** Type index of the Senior (CORE_TYPE_COUNT + 2) and their pace on foot (0.82 of a normal guest; skiing is not slowed; docs/guest-types.md). */
+export const SENIOR_TYPE = 8;
+export const SENIOR_WALK = 0.82;
+
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
  * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34).

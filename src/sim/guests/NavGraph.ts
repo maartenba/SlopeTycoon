@@ -210,8 +210,8 @@ export class NavGraph implements PathGraph {
   }
 
   /** Tiles per tick when moving a -> b. */
-  speed(mode: number, a: number, b: number, skill: number): number {
-    const walk = NAV_SPEED.walk * this.walkScale;
+  speed(mode: number, a: number, b: number, skill: number, walkMul = 1): number {
+    const walk = NAV_SPEED.walk * this.walkScale * walkMul; // walkMul: per-type pace on foot (seniors 0.82, `config/guestTypes` SENIOR_WALK); skiing is not affected
     if (mode === NavMode.Walk) return walk;
     const onPath = this.isPathTile(b) || this.stationMask[b] === 1;
     if (mode === NavMode.Hike) return onPath ? walk : (this.world.layers[b]! & Layer.Backcountry) !== 0 ? NAV_SPEED.hike * 0.85 : NAV_SPEED.hike; // skins are a little slower than boots

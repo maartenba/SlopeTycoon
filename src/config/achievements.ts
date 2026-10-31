@@ -1,7 +1,11 @@
 /**
- * Achievements (M5.3 Task 16): 40 profile-wide, data-driven achievements in three tiers. The engine is `sim/meta/Achievements.ts`
+ * Achievements (M5.3 Task 16, 48 since Phase 6 polish): profile-wide, data-driven achievements in three tiers. The engine is `sim/meta/Achievements.ts`
  * (pure event trackers: no RNG, never writes the sim). Add one = add a row here (+ a doc line in docs/achievements.md); the table-driven
  * test checks every row has a valid tracker, known event names and a unique reward.
+ *
+ * Phase 6 facts (lazy getters, read only by their own tracker): railShare = % of the guests in the resort that came by train (30+ guests), viewsSeen = distinct viewpoints / treehouses /
+ * suspension bridges hikers reached, riverToSea = 1 when a dug river runs from a spring to a lake or the map edge, raftRides = guests served by Rafting Bases, powderHounds = 1 on a powder day
+ * while the Powder Hounds campaign runs, concert = 1 while a Mountain Concert is on, suites = most Luxury Hotel suites occupied at once, summerShare = % of the last full year's income made in summer.
  *
  * tier 1 = common (1 pt), tier 2 = notable (3 pts), tier 3 = rare / hard (5 pts; the only tier that may show confetti).
  * scope: 'any' = can be earned anywhere (a SANDBOX unlock is tagged `sandbox`), 'career' = career games only (sandbox / free-play never earns it),
@@ -27,7 +31,7 @@ export type Op = '>=' | '<=' | '==' | '!=';
 export interface Cond { f: string; op: Op; v: string | number | boolean }
 export type MedalRank = 1 | 2 | 3;
 
-export type FactKey = 'stars' | 'level' | 'guests' | 'openLifts' | 'money' | 'festivals';
+export type FactKey = 'stars' | 'level' | 'guests' | 'openLifts' | 'money' | 'festivals' | 'railShare' | 'viewsSeen' | 'riverToSea' | 'raftRides' | 'powderHounds' | 'concert' | 'suites' | 'summerShare';
 export type Tracker =
   | { kind: 'event'; event: GameEventName; where?: readonly Cond[]; n?: number; per?: 'profile' | 'game'; /** payload field to add instead of 1 */ by?: string; counter?: string }
   | { kind: 'render'; counter: string; n: number }
@@ -98,6 +102,15 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'bear-necessities', title: 'Bear necessities', description: 'Have rangers haze a bear away from your guests three times.', tier: 2, icon: 'paw', scope: 'any', hidden: true, tracker: { kind: 'event', event: 'wildlife:hazed', n: 3, per: 'profile', counter: 'hazed' } },
   { id: 'eye-of-storm', title: 'Eye of the storm', description: 'Keep a lift open while a storm rages over a busy resort.', tier: 2, icon: 'storm', scope: 'any', hidden: true, tracker: { kind: 'window', start: 'weather:changed', startWhere: [{ f: 'kind', op: '==', v: 'storm' }], end: 'weather:changed', endWhere: [{ f: 'previous', op: '==', v: 'storm' }], needs: [{ fact: 'guests', op: '>=', v: 40 }, { fact: 'openLifts', op: '>=', v: 1 }] } },
   { id: 'back-from-brink', title: 'Back from the brink', description: 'Recover after a long stretch in debt.', tier: 2, icon: 'coin', scope: 'any', hidden: true, tracker: { kind: 'window', start: 'finance:debtWarning', startWhere: [{ f: 'level', op: '>=', v: 2 }], end: 'month:changed', needs: [{ fact: 'money', op: '>=', v: 1 }], retry: true } },
+  // ---- Phase 6 content (docs/achievements.md): all facts, so a loaded game that already satisfies one unlocks it quietly at the next hour
+  { id: 'first-raft', title: 'First raft', description: 'Send your first guests down the river on a raft.', tier: 1, icon: 'smile', scope: 'any', tracker: { kind: 'fact', fact: 'raftRides', op: '>=', v: 1 } },
+  { id: 'source-to-sea', title: 'Source to sea', description: 'Dig a river from a spring all the way to a lake or the edge of the map.', tier: 1, icon: 'rain', scope: 'any', tracker: { kind: 'fact', fact: 'riverToSea', op: '>=', v: 1 } },
+  { id: 'concert-night', title: 'Concert night', description: 'Host a Mountain Concert.', tier: 1, icon: 'moon', scope: 'any', tracker: { kind: 'fact', fact: 'concert', op: '>=', v: 1 } },
+  { id: 'scenic-route', title: 'Scenic route', description: 'Have hikers reach three different viewpoints, treehouses or suspension bridges.', tier: 2, icon: 'eye', scope: 'any', tracker: { kind: 'fact', fact: 'viewsSeen', op: '>=', v: 3 } },
+  { id: 'green-travel', title: 'Green travel', description: 'A quarter of the guests in your resort (30 or more) came by train.', tier: 2, icon: 'guests', scope: 'any', tracker: { kind: 'fact', fact: 'railShare', op: '>=', v: 25 } },
+  { id: 'powder-day', title: 'Powder day', description: 'Run Powder Hounds on a powder day.', tier: 2, icon: 'flake', scope: 'any', tracker: { kind: 'fact', fact: 'powderHounds', op: '>=', v: 1 } },
+  { id: 'luxury-suite', title: 'Suite life', description: 'Fill ten suites of your Luxury Hotel at once.', tier: 2, icon: 'star', scope: 'any', tracker: { kind: 'fact', fact: 'suites', op: '>=', v: 10 } },
+  { id: 'summer-share', title: 'Summer share', description: 'Earn a quarter of a full year\'s income in summer.', tier: 3, icon: 'sun', scope: 'career', tracker: { kind: 'fact', fact: 'summerShare', op: '>=', v: 25 } },
   // ---- tier 3: rare
   { id: 'roy-gold', title: 'Resort of the Year: Gold', description: 'Be named Resort of the Year with a gold headline.', tier: 3, icon: 'trophy', scope: 'career', tracker: { kind: 'report', metric: 'headline', min: 3 }, reward: 'flags:golden' },
   { id: 'level-6', title: 'Alpine destination', description: 'Reach resort level 6.', tier: 3, icon: 'mountain', scope: 'career', tracker: { kind: 'fact', fact: 'level', op: '>=', v: 6 } },

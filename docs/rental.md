@@ -1,0 +1,10 @@
+# Rental stock (skis vs boards)
+
+Phase 6 polish. The **Rental** keeps a stock: `RENTAL_STOCK = { skis: 30, boards: 16 }` per OPEN rental building (`src/sim/attractions/Rental.ts`). Bikes are not counted.
+
+* A guest rents one unit when the visit ends (`AttractionSystem.release` adds him to `rented`; the **Snowboarder** type also goes into `rentedBoards`). The unit is out until the guest leaves the resort (the sweep that forgets departed guests also returns the gear).
+* Boarders (`gearOfType(type) === 'board'`) take **boards**, everybody else skis, so a board shortage never eats the ski stock. Stock is pooled over the open rentals: a second Rental doubles it.
+* Out of stock: the Decision step does not offer the Rental to a guest who needs that kind of gear (`DecisionPort.gearAvailable` / `gearShort`: he does gear-free things, exactly as with no rental open, and the **shortage is counted**), and an arrival at the door is refused (`turnedAway`, counted) if the last unit went in between. With no OPEN rental the old behaviour is kept (guests walk to the closed rental).
+* Shown in the **inspector** ("Gear out: n/30 skis · n/16 boards", and "n guests turned away today for lack of boards: add a Rental") and by the **Advisor** rule `rental.boards` (hourly; 3 or more guests turned away today, 1 to keep it up; "Out of rental boards / skis", Show me goes to the Rental or the Buildings drawer, Build suggests a Rental).
+* Numbers: the standard bot peaks at 5-8 skis and 10-11 boards out (one Rental, `scripts/analysis/rentalStock.ts`), so it never sees a shortage and the economy is unchanged (the 30 / 16 stock is sized above that peak); a resort that grows without adding Rentals will.
+* Save: the existing `attractions` module; `boards` (ids of rented boards) and `short` (today's / the all-time shortage counters) are written **only when non-empty**, so a resort without a shortage saves and hashes exactly as before. Old saves load with an empty board set (every rented unit counts as skis until those guests leave).

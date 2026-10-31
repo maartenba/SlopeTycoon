@@ -385,7 +385,7 @@ export function createSim(opts: SimOptions) {
     walkNet: () => networks,
     groundAt: (x, y) => { // guests climb the rail footbridge stairs and walk on bridge decks
       const g = groundHeight(grid, x, y) + (networks.crossCount > 0 ? networks.footLift(x, y) * CROSSING.footbridge.deck : 0);
-      if (networks.bridgeTiles === 0) return g;
+      if (networks.bridgeTiles === 0 && networks.overpassTiles === 0) return g;
       const d = networks.deckY(x, y);
       return d !== null && d > g ? d : g;
     },
@@ -1102,7 +1102,7 @@ export function createSim(opts: SimOptions) {
   // ---- Resort goal chain (M5.1): hourly evaluation off the bus, read-only world adapter, grants via the `grant` ledger category ----
   const goalWorld = (): GoalWorld => ({
     buildings: () => buildings.all(),
-    lifts: () => lifts.all().map((l) => ({ kind: l.kind, open: liftOpenForBusiness(l), x: l.bottom.x, y: l.bottom.y })),
+    lifts: () => lifts.all().map((l) => ({ kind: l.kind, open: liftOpenForBusiness(l), x: l.bottom.x, y: l.bottom.y, stations: l.stations?.length ?? 2 })),
     // One entry per (connected piste, difficulty 1 green .. 4 black) with that difficulty's tile count: a goal like 'paint a green run' must not depend on which
     // difficulty happens to be the majority of a big connected network (the stored code is 0..3, hence the + 1).
     pistes: () => {
@@ -1225,6 +1225,15 @@ export function createSim(opts: SimOptions) {
     facts: () => {
       const r = yearReports.latest();
       return {
+        // Phase 6 facts: lazy getters (this runs on every observed event; only the fact tracker of an unlocked-less achievement reads one)
+        get railShare(): number { const n = guestSim.store.count, rail = guestSim.spawner.modeLoadOf(1), all = rail + guestSim.spawner.modeLoadOf(0) + guestSim.spawner.modeLoadOf(2); return n >= 30 && all > 0 ? Math.round((100 * rail) / all) : 0; },
+        get viewsSeen(): number { let n = 0; for (const v of guestSim.decider.goals.viewpoints.visits.values()) if (v > 0) n++; return n; },
+        get riverToSea(): number { return rivers.rivers.some((r) => r.source.kind === 'spring' && (r.sink.kind === 'lake' || r.sink.kind === 'edge')) ? 1 : 0; },
+        get raftRides(): number { let n = 0; for (const a of attractions.all()) if (a.b.type === 'raftingBase') n += a.stats.served; return n; },
+        get powderHounds(): number { return events.active().some((e) => e.id === 'powder') && marketing.running().some((m) => m.id === 'powder') ? 1 : 0; },
+        get concert(): number { return events.active().some((e) => e.id === 'mountainConcertSummer' || e.id === 'mountainConcertWinter') ? 1 : 0; },
+        get suites(): number { let m = 0; for (const a of attractions.all()) if (a.b.type === 'luxuryHotel') m = Math.max(m, attractions.rooms.occupied(a.id)); return m; },
+        get summerShare(): number { if (!r || r.partial) return 0; let all = 0, s = 0; for (const x of r.months) { all += x.income; if (x.month >= 2 && x.month <= 5) s += x.income; } return all > 0 ? Math.round((100 * s) / all * 10) / 10 : 0; },
         stars: rating.stars, level: progression.level, guests: guestSim.store.count, money: game.money, festivals: nature.livestock.festivals,
         openLifts: lifts.all().filter((l) => liftOpenForBusiness(l)).length,
         report: r ? { year: r.year, partial: r.partial, profit: r.totals.profit, headline: r.headline.tier, awards: Object.fromEntries(r.awards.map((a) => [a.id, a.tier])) } : null,

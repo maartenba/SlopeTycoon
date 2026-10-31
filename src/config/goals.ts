@@ -119,4 +119,15 @@ export const BONUS_GOALS: readonly GoalDef[] = [
   { id: 'viewpointHigh', panel: { drawer: 'buildings', item: 'viewpoint' }, chapter: 'bonus', title: 'A viewpoint on the heights', flavour: 'The postcards almost sell themselves from up here.', todo: 'Build a Viewpoint on high ground (the upper part of the mountain) beside a footpath or hiking trail.', reward: 2500,
     check: ({ w }) => { const vp = w.buildings().filter((b) => b.active && b.type === 'viewpoint'); if (!vp.length) return 0; return vp.some((b) => (w.altFrac?.(b.x + (b.w >> 1), b.y + (b.h >> 1)) ?? 0) >= VIEWPOINT_GOAL_ALT) ? 1 : 0.5; },
     focus: (w) => firstOf(w, 'viewpoint') ?? lodge(w) },
+  // Phase 6 optional goals (never gate anything; they only look at what the player builds, so the plain bot never earns them)
+  { id: 'littleFarmers', panel: { drawer: 'buildings', item: 'pettingZoo' }, chapter: 'bonus', title: 'Open a petting zoo', flavour: 'Goats do not read the rating, but they do like a scoop of feed.', todo: 'Build a Petting Zoo for the summer families. Kids buy feed for the animals at the gate.', reward: 1500,
+    check: ({ w }) => (has(w, 'pettingZoo') ? 1 : 0), focus: (w) => firstOf(w, 'pettingZoo') ?? lodge(w) },
+  { id: 'summerFamilies', panel: { drawer: 'buildings', item: 'campground' }, chapter: 'bonus', title: 'A summer for families', flavour: 'Tents, goats and a slide: the high season nobody warned you about.', todo: 'Build a Campground, a Petting Zoo and a Playground.', reward: 2500,
+    check: ({ w }) => ratio(['campground', 'pettingZoo', 'playground'].filter((t) => has(w, t)).length, 3), focus: (w) => firstOf(w, 'campground', 'pettingZoo', 'playground') ?? lodge(w) },
+  { id: 'threeViews', panel: { drawer: 'buildings', item: 'viewpoint' }, chapter: 'bonus', title: 'Three viewpoints', flavour: 'Somebody has to put a bench where the postcard was taken.', todo: 'Build three Viewpoints, so hikers have a scenic route.', reward: 2000,
+    check: ({ w }) => ratio(w.buildings().filter((b) => b.active && b.type === 'viewpoint').length, 3), focus: (w) => firstOf(w, 'viewpoint') ?? lodge(w) },
+  { id: 'midStop', panel: { drawer: 'lifts' }, chapter: 'bonus', title: 'A stop on the way up', flavour: 'Why climb in one go when you can climb in two?', todo: 'Build a gondola, cable car or detachable chairlift with a mid-station.', reward: 3000,
+    check: ({ w }) => (w.lifts().some((l) => (l.stations ?? 2) > 2) ? 1 : 0), focus: liftPt },
+  { id: 'boardCrowd', panel: { drawer: 'buildings', item: 'rental' }, chapter: 'bonus', title: 'Boards for the park crowd', flavour: 'Half of them forgot their board at home. The other half never owned one.', todo: 'Build a Stunt Park and a Rental (it stocks boards for the Snowboarders).', reward: 1500,
+    check: ({ w }) => ratio(['stuntPark', 'rental'].filter((t) => has(w, t)).length, 2), focus: (w) => firstOf(w, 'stuntPark', 'rental') ?? lodge(w) },
 ];

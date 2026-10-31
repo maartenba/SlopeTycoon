@@ -36,6 +36,9 @@ const trainStub = (s: Sim, share: number): void => { s.game.money = 50_000; s.ma
 const stubBlocker = (s: Sim, id: string): void => { const real = s.marketing.blocker.bind(s.marketing); s.marketing.blocker = (x: string) => (x === id ? null : real(x)); };
 const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.spawner, real = sp.status.bind(sp); sp.status = () => { const r = real(); return { ...r, arrivals: { ...r.arrivals!, road: { ...r.arrivals!.road, available: true, capacity: 100 } } }; }; sp.modeLoadOf = (m: number) => (m === 0 ? roadLoad : 0); };
 
+/** Rental stock (docs/rental.md): the rule only reads `rentalStock()`; fake a day with `n` guests turned away for lack of boards. */
+const rentalShort = (s: Sim, n: number): void => { s.attractions.rentalStock = () => ({ skis: { out: 5, cap: 30 }, boards: { out: 16, cap: 16 }, shortToday: n, shortBoardsToday: n, short: n }); };
+
 interface Case { id: string; cheap?: boolean; trigger(sim: Sim): void; calm?(sim: Sim): void }
 /** One mutation that makes each rule fire (on the starter resort) and, optionally, a mutation that keeps it quiet. */
 const ecoCase = (s: Sim, score: number): void => {
@@ -75,6 +78,7 @@ const CASES: Case[] = [
   { id: 'marketing.school', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; stubBlocker(s, 'school'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 1_000; } },
   { id: 'marketing.powder', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; stubBlocker(s, 'powder'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; } },
   { id: 'concert.available', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; s.lifts.all()[0]!.kind = 'gondola6'; }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; } },
+  { id: 'rental.boards', cheap: true, trigger: (s) => { rentalShort(s, 6); }, calm: (s) => { rentalShort(s, 0); } },
   { id: 'marketing.parkJam', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; stubBlocker(s, 'parkJam'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; } },
   { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.events.setAuto(false); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },

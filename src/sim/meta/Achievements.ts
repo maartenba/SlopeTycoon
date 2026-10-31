@@ -19,7 +19,9 @@ import { emptyAchievements, sanitizeAchievements, type AchievementsProfile, type
 export type RunKind = 'career' | 'scenario' | 'sandbox';
 export interface ReportLite { year: number; partial: boolean; profit: number; headline: 'none' | 'bronze' | 'silver' | 'gold'; awards: Record<string, number> }
 /** Read-only daily facts (built from the real sim in createSim, from fixtures in tests). */
-export interface AchFacts { stars: number; level: number; guests: number; openLifts: number; money: number; festivals: number; report: ReportLite | null }
+export interface AchFacts { stars: number; level: number; guests: number; openLifts: number; money: number; festivals: number; report: ReportLite | null;
+  /** Phase 6 facts (config/achievements.ts): optional, and in the real game lazy getters, because `facts()` runs on every observed event (0 when absent). */
+  railShare?: number; viewsSeen?: number; riverToSea?: number; raftRides?: number; powderHounds?: number; concert?: number; suites?: number; summerShare?: number }
 export interface AchHost {
   runKind(): RunKind;
   facts(): AchFacts;
@@ -57,7 +59,7 @@ const cmp = (a: unknown, op: Cond['op'], v: string | number | boolean): boolean 
 };
 /** Does `p` satisfy every condition? (A missing field fails `==` / `>=` / `<=` and passes `!=`.) */
 export const matches = (where: readonly Cond[] | undefined, p: Payload): boolean => !where || where.every((c) => cmp(p[c.f], c.op, c.v));
-const factsOk = (needs: readonly FactCond[] | undefined, f: AchFacts): boolean => !needs || needs.every((c) => (c.op === '>=' ? f[c.fact] >= c.v : f[c.fact] <= c.v));
+const factsOk = (needs: readonly FactCond[] | undefined, f: AchFacts): boolean => !needs || needs.every((c) => (c.op === '>=' ? (f[c.fact] ?? 0) >= c.v : (f[c.fact] ?? 0) <= c.v));
 
 interface CounterRule { key: string; event: GameEventName; where?: readonly Cond[]; by?: string; per: 'profile' | 'game' }
 /** The counter an `event` tracker reads (shared counters must share one rule; checked by tests). */
@@ -87,7 +89,7 @@ export class Achievements {
         if (!this.rules.has(key)) this.rules.set(key, { key, event: t.event, where: t.where, by: t.by, per: t.per ?? 'profile' });
       }
     }
-    for (const ev of new Set<GameEventName>([...this.byEvent.keys(), 'day:changed'])) {
+    for (const ev of new Set<GameEventName>([...this.byEvent.keys(), 'day:changed', 'time:hour'])) {
       this.offs.push(bus.on(ev, ((p: unknown) => this.onEvent(ev, (p ?? {}) as Payload)) as never));
     }
   }
@@ -170,6 +172,7 @@ export class Achievements {
 
   private onEvent(ev: GameEventName, p: Payload): void {
     if (!this.armed) return;
+    if (ev === 'time:hour') { this.checkFacts(); return; } // Phase 6 facts (powder day, concert, suites) are short-lived: look every hour, not only at midnight
     // 1) counters (one increment per distinct counter, however many achievements read it)
     for (const r of this.rules.values()) {
       if (r.event !== ev || !matches(r.where, p)) continue;
@@ -212,7 +215,7 @@ export class Achievements {
     for (const d of ACHIEVEMENTS) {
       const t = d.tracker;
       if (t.kind !== 'fact' || this.data.unlocked[d.id]) continue;
-      const v = f[t.fact as FactKey];
+      const v = f[t.fact as FactKey] ?? 0;
       if (t.op === '>=' ? v >= t.v : v <= t.v) this.unlock(d.id);
     }
   }

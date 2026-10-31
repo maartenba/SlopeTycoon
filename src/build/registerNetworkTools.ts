@@ -212,12 +212,13 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     if (!grid.inBounds(x, y)) return false;
     if (grid.occupancy.has(x, y, OccFlag.Building)) return false; // rail under a station stays until the station goes
     const br = networks.bridgeAt(x, y); // a player-built bridge goes whole and refunds half of what it cost
+    const ov = networks.overpassAt(x, y); // so does a road overpass (ramps + deck; the rail tile is plain rail again)
     networks.beginJournal();
     const k = networks.unbuild(x, y);
     if (k) {
-      const refund = Math.round((br ? br.cost : networks.costOf(k)) * REFUND);
+      const refund = Math.round((br ? br.cost : ov ? ov.cost : networks.costOf(k)) * REFUND);
       economy.refund(refund);
-      ctx.undo?.recordNetworkBulldoze(br ? 'Bridge' : k === 1 ? 'Footpath' : k === 2 ? 'Road' : 'Rail', networks.endJournal(), refund);
+      ctx.undo?.recordNetworkBulldoze(br ? 'Bridge' : ov ? 'Overpass' : k === 1 ? 'Footpath' : k === 2 ? 'Road' : 'Rail', networks.endJournal(), refund);
       afterChange();
       return true;
     }

@@ -32,9 +32,9 @@ function mk(kind: RunKind = 'career', facts: Partial<AchFacts> = {}) {
 const days = (bus: GameBus, n: number): void => { for (let i = 0; i < n; i++) bus.emit('day:changed', { year: 1, day: i }); };
 
 describe('achievement catalogue (table-driven)', () => {
-  it('has 40 unique ids across three tiers, with titles, descriptions, scopes and icons', () => {
-    expect(ACHIEVEMENTS.length).toBe(40);
-    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(40);
+  it('has 48 unique ids across three tiers, with titles, descriptions, scopes and icons', () => {
+    expect(ACHIEVEMENTS.length).toBe(48);
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(48);
     for (const a of ACHIEVEMENTS) {
       expect(a.id, a.id).toMatch(/^[a-z][a-z0-9-]{1,39}$/);
       expect(a.title.length, a.id).toBeGreaterThan(2); expect(a.description.length, a.id).toBeGreaterThan(10);

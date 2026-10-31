@@ -99,7 +99,7 @@ export const SAVE_MODULES: SaveModule[] = [
   },
   {
     key: 'networks', version: 2, // v2: `cross` (level crossings / rail footbridges) and `bridges` (Phase 6): both written only when non-empty, so a world without them saves and hashes exactly as v1
-    serialize: (sim) => { const n = sim.networks; return { kind: n.kind.slice(), conn: n.conn.slice(), bridge: n.bridge.slice(), ...(n.crossCount > 0 ? { cross: n.cross.slice() } : {}), ...(n.bridgeTiles > 0 ? { bid: n.bid.slice(), bridges: n.liveBridges() } : {}), layers: n.layers.slice(), difficulty: n.difficulty.slice(), quality: n.quality.slice(), roadEntry: n.roadEntry, railEntry: n.railEntry, version: n.version }; },
+    serialize: (sim) => { const n = sim.networks; return { kind: n.kind.slice(), conn: n.conn.slice(), bridge: n.bridge.slice(), ...(n.crossCount > 0 ? { cross: n.cross.slice() } : {}), ...(n.bridgeTiles > 0 ? { bid: n.bid.slice(), bridges: n.liveBridges() } : {}), ...(n.overpassTiles > 0 ? { oid: n.oid.slice(), overpasses: n.liveOverpasses() } : {}), layers: n.layers.slice(), difficulty: n.difficulty.slice(), quality: n.quality.slice(), roadEntry: n.roadEntry, railEntry: n.railEntry, version: n.version }; },
     load: (sim, d) => sim.networks.restoreAll(d as Parameters<Sim['networks']['restoreAll']>[0]),
   },
   {

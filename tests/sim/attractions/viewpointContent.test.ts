@@ -140,7 +140,7 @@ describe('a real viewpoint on a ridge', () => {
 describe('bonus goal: a viewpoint on the heights', () => {
   it('is a bonus goal (not in the 20-goal chain, not a chapter), with a Show-me panel', () => {
     expect(GOALS).toHaveLength(20);
-    expect(BONUS_GOALS.map((g) => g.id)).toEqual(['viewpointHigh']);
+    expect(BONUS_GOALS[0]!.id).toBe('viewpointHigh'); // the Phase 6 goals follow (tests/sim/phase6Polish.test.ts)
     expect(GOALS.some((g) => g.id === 'viewpointHigh')).toBe(false);
     expect(BONUS_GOALS[0]!.panel).toEqual({ drawer: 'buildings', item: 'viewpoint' });
     expect(VIEWPOINT_GOAL_ALT).toBeGreaterThan(0.4);

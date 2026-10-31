@@ -16,7 +16,8 @@ import { Attraction, type AttractionInfo, type InstanceSave } from './Attraction
 import { TrailUsage } from './Hiking';
 import { HOTEL_TYPES, RoomBook } from './Lodging';
 import { hikeFee, mtbFee } from './MtbTrail';
-import { ownsGear } from './Rental';
+import { ownsGear, RENTAL_STOCK, type StockKind, type RentalStockInfo } from './Rental';
+import { ZOO_FEED, buysFeed } from './PettingZoo';
 import { ATTRACTION_SPECS } from './registry';
 import { eveningPremium, venueServing } from '../Evening';
 import type { TourSystem } from './Tour';
@@ -75,6 +76,10 @@ export class AttractionSystem implements GuestAttractionPort {
   readonly trails = new TrailUsage();
   /** Guests that rented gear (ids). */
   private rented = new Set<number>();
+  /** The subset of `rented` that took a BOARD (Snowboarders); the rest took skis (rental stock, docs/rental.md). */
+  private rentedBoards = new Set<number>();
+  /** Rental shortage counters: today (absolute day it belongs to), boards only today, and ever. */
+  private short = { day: -1, today: 0, boards: 0, all: 0 };
   private lastCheckDay = -1;
   /** Campfire evening (Campground): the absolute day the last gathering ran; -1 = never. Saved only once a campfire has burned (older saves / worlds without a campground hash exactly as before). */
   private lastGatherDay = -1;
@@ -118,6 +123,30 @@ export class AttractionSystem implements GuestAttractionPort {
     return !ownsGear(guestId, kind) && !this.rented.has(guestId);
   }
 
+  private stockKind(guestId: number): StockKind {
+    const sl = this.d.store.slotOf(guestId);
+    return sl >= 0 && gearOfType(this.d.store.type[sl]!) === 'board' ? 'boards' : 'skis';
+  }
+  /** Units of rental gear of `kind` held by the open rentals, and how many are out with guests. */
+  rentalStock(): RentalStockInfo {
+    let open = 0;
+    for (const a of this.items.values()) if (a.spec.grantsGear && a.open) open++;
+    const t = this.short.day === this.absDay;
+    return { skis: { out: this.rented.size - this.rentedBoards.size, cap: open * RENTAL_STOCK.skis }, boards: { out: this.rentedBoards.size, cap: open * RENTAL_STOCK.boards }, shortToday: t ? this.short.today : 0, shortBoardsToday: t ? this.short.boards : 0, short: this.short.all };
+  }
+  /** Decision port: is there a unit of the guest's kind left (skis for everybody but boarders; bikes are not counted)? No open rental = no stock either. */
+  gearAvailable(guestId: number, kind: 'ski' | 'bike'): boolean {
+    if (kind === 'bike') return true;
+    const st = this.rentalStock(), k = this.stockKind(guestId);
+    return st.skis.cap === 0 || st[k].out < st[k].cap; // no OPEN rental: unchanged behaviour (closed rentals refuse at the door)
+  }
+  /** Decision port: the guest wanted gear and there was none (a shortage, counted once per decision). */
+  gearShort(guestId: number): void {
+    if (this.short.day !== this.absDay) this.short = { day: this.absDay, today: 0, boards: 0, all: this.short.all };
+    this.short.today++; this.short.all++;
+    if (this.stockKind(guestId) === 'boards') this.short.boards++;
+  }
+
   /** Total room capacity of active, open lodging (feed to the spawner's overnight cap). */
   lodgingCapacity(): number {
     let n = 0;
@@ -141,6 +170,7 @@ export class AttractionSystem implements GuestAttractionPort {
     if (!a.open || !this.servingNow(a) || (a.spec.overnightOnly && !s.overnight[slot])) { a.stats.turnedAway++; s.happiness[slot] = Math.max(0, s.happiness[slot]! - 0.02); return 'handled'; }
     if (a.queue.length >= a.queueMax()) { a.stats.balked++; s.happiness[slot] = Math.max(0, s.happiness[slot]! - 0.03); return 'handled'; }
     if (s.budget[slot]! < a.unitPrice()) { a.stats.turnedAway++; return 'handled'; }
+    if (a.spec.grantsGear && !this.rented.has(id) && !this.gearAvailable(id, 'ski')) { a.stats.turnedAway++; this.gearShort(id); return 'handled'; }
     if (this.d.willBuy && a.price > 0 && !this.d.willBuy(s.type[slot]!, id, b.type, a.price, Math.floor(tick / 240))) { a.stats.turnedAway++; return 'handled'; }
     s.state[slot] = GState.Using; s.act[slot] = Act.None; s.target[slot] = b.id; s.actTick[slot] = tick;
     this.place(slot, a, id);
@@ -173,7 +203,7 @@ export class AttractionSystem implements GuestAttractionPort {
       const hap = (e.happiness ?? 0) + (effects.spec.tour ? this.d.tours?.thrillBonus(effects) ?? 0 : 0); // water tours: rapids raise the happiness (exactly +0 elsewhere)
       if (hap && !grubby) s.happiness[slot] = Math.min(1, Math.max(0, s.happiness[slot]! + hap));
       if (effects.spec.amenity === 'pool') s.happiness[slot] = Math.min(1, s.happiness[slot]! + (effects.spec.poolHappiness ?? 0.06));
-      if (effects.spec.grantsGear) this.rented.add(id);
+      if (effects.spec.grantsGear) { this.rented.add(id); if (this.stockKind(id) === 'boards') this.rentedBoards.add(id); }
       if (effects.spec.angling) this.fishTrip(slot, id, effects);
       s.visits[slot] = Math.min(255, s.visits[slot]! + 1);
     }
@@ -218,6 +248,7 @@ export class AttractionSystem implements GuestAttractionPort {
       if (s.budget[slot]! < price) { a.stats.turnedAway++; this.release(q.id, tick, null); continue; }
       if (price > 0) { s.budget[slot] = s.budget[slot]! - price; this.d.earn(a.category, price); a.stats.revenue += price; a.recordRevenue(this.hour, price); }
       if (a.spec.angling) this.angleExtras(a, slot, q.id);
+      if (a.spec.kind === 'zoo') this.feedAnimals(a, slot, q.id);
       a.users.push({ id: q.id, end: tick + a.serviceTime() });
     }
   }
@@ -227,6 +258,15 @@ export class AttractionSystem implements GuestAttractionPort {
     const m = a.spec.mishap!;
     if (mishapRoll(a.id, guestId, tick) >= (a.guided() ? m.guided : m.unguided)) return;
     if (this.d.mishap?.(a, guestId)) a.stats.mishaps = (a.stats.mishaps ?? 0) + 1;
+  }
+
+  /** Petting zoo: a scoop of feed at the gate ($2, shops income) for most kids and a few adults, a happier visit. Hash roll, no Rng. */
+  private feedAnimals(a: Attraction, slot: number, id: number): void {
+    const s = this.d.store;
+    if (!buysFeed(id, s.type[slot]!) || s.budget[slot]! < ZOO_FEED.price) return;
+    s.budget[slot] = s.budget[slot]! - ZOO_FEED.price; this.d.earn('shops', ZOO_FEED.price); a.stats.revenue += ZOO_FEED.price; a.recordRevenue(this.hour, ZOO_FEED.price);
+    a.stats.fed = (a.stats.fed ?? 0) + 1;
+    s.happiness[slot] = Math.min(1, s.happiness[slot]! + ZOO_FEED.happiness);
   }
 
   /** Rod hire (guests without their own rod) and bait, paid at the hut on top of the day ticket when the guest can afford it. */
@@ -307,6 +347,7 @@ export class AttractionSystem implements GuestAttractionPort {
         n.priceScale = () => this.d.priceScale?.(b.type) ?? 1;
         if (spec.eveningShift) n.hourScale = () => eveningPremium(this.hour);
         if (spec.tour) n.tourInfo = () => this.d.tours?.info(n) ?? null;
+        if (spec.grantsGear) n.rentalInfo = () => this.rentalStock();
         if (spec.angling) n.anglingInfo = () => this.anglingInfo(b.id);
         if (cur) { n.keep = cur.keep; n.price = cur.price; n.staff = cur.staff; n.stats = cur.stats; n.users = cur.users; n.queue = cur.queue; n.open = cur.open; n.reported = cur.reported; }
         this.items.set(b.id, n);
@@ -389,7 +430,7 @@ export class AttractionSystem implements GuestAttractionPort {
     for (const a of this.items.values()) { for (const u of a.users) known.add(u.id); for (const q of a.queue) known.add(q.id); }
     for (let i = 0; i < s.limit; i++) if (s.alive[i] && s.state[i] === GState.Using && !known.has(s.id[i]!)) this.release(s.id[i]!, tick, null);
     this.beds.purge((g) => s.slotOf(g) >= 0, (id) => this.items.has(id));
-    if (tick % 240 === 0) for (const id of this.rented) if (s.slotOf(id) < 0) this.rented.delete(id);
+    if (tick % 240 === 0) for (const id of this.rented) if (s.slotOf(id) < 0) { this.rented.delete(id); this.rentedBoards.delete(id); }
   }
 
   /** Evening: overnight guests take rooms in open lodging with free capacity; nightly revenue goes to the 'lodging' ledger. */
@@ -529,13 +570,13 @@ export class AttractionSystem implements GuestAttractionPort {
     return {
       id: 'attractions',
       update: (state, tick) => this.update(state, tick),
-      serialize: () => ({ items: this.all().map((a) => a.save()), trails: this.trails.serialize(), last: this.lastCheckDay, rented: [...this.rented], nights: this.nightsSold, ...(this.lastGatherDay >= 0 ? { gather: this.lastGatherDay } : {}), beds: this.beds.serialize(), trekNights: this.trekNights, hour: this.hour, day: this.day }),
+      serialize: () => ({ items: this.all().map((a) => a.save()), trails: this.trails.serialize(), last: this.lastCheckDay, rented: [...this.rented], ...(this.rentedBoards.size ? { boards: [...this.rentedBoards] } : {}), ...(this.short.all ? { short: this.short } : {}), nights: this.nightsSold, ...(this.lastGatherDay >= 0 ? { gather: this.lastGatherDay } : {}), beds: this.beds.serialize(), trekNights: this.trekNights, hour: this.hour, day: this.day }),
       load: (data) => {
-        const d = data as { items: InstanceSave[]; trails: ReturnType<TrailUsage['serialize']>; last: number; rented: number[]; nights?: number; gather?: number; beds?: Array<[number, number[]]>; trekNights?: number; hour?: number; day?: number };
+        const d = data as { items: InstanceSave[]; trails: ReturnType<TrailUsage['serialize']>; last: number; rented: number[]; boards?: number[]; short?: { day: number; today: number; boards: number; all: number }; nights?: number; gather?: number; beds?: Array<[number, number[]]>; trekNights?: number; hour?: number; day?: number };
         this.items.clear(); this.nightsSold = d.nights ?? 0;
         this.sync();
         for (const it of d.items) this.items.get(it.id)?.load(it);
-        this.trails.load(d.trails); this.lastCheckDay = d.last; this.rented = new Set(d.rented);
+        this.trails.load(d.trails); this.lastCheckDay = d.last; this.rented = new Set(d.rented); this.rentedBoards = new Set(d.boards ?? []); this.short = d.short ? { ...d.short } : { day: -1, today: 0, boards: 0, all: 0 };
         this.lastGatherDay = d.gather ?? -1; this.rooms.clear(); this.beds.load(d.beds); this.trekNights = d.trekNights ?? 0; this.hour = d.hour ?? 12; this.day = d.day ?? 0;
       },
     };

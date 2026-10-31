@@ -65,7 +65,7 @@ function tidy(sim: Sim, feet: ReadonlyArray<{ x: number; y: number }>, pinTrails
 
   // roads connected to the entry by road alone (plus road level crossings) are the fixed backbone; everything else must be reached
   const roadComp = new Uint8Array(n * n);
-  const isRoadish = (i: number): boolean => kind[i] === NetKind.Road || (kind[i] === NetKind.Rail && net.cross[i] === 2);
+  const isRoadish = (i: number): boolean => kind[i] === NetKind.Road || (kind[i] === NetKind.Rail && (net.cross[i] === 2 || net.cross[i] === 5));
   const rq: number[] = [];
   if (isRoadish(s0)) { roadComp[s0] = 1; rq.push(s0); }
   for (let h = 0; h < rq.length; h++) {

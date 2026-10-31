@@ -6,6 +6,8 @@ import type { SeasonId } from '../../core/events';
 import type { LodgingTier } from '../../config/prices';
 import type { TourInfo } from './Tour';
 import { CLIMB } from './Climbing';
+import type { RentalStockInfo } from './Rental';
+import { ZOO_FEED } from './PettingZoo';
 
 /** Preference per guest type: [solo, couple, family, vip, budget, adventure]. */
 export type Appeal = readonly [number, number, number, number, number, number];
@@ -52,7 +54,7 @@ export interface AttractionSpec {
   angling?: boolean;
 }
 
-export interface AttractionStats { /** Climbing crag: minor mishaps so far (patrol call-outs). Absent elsewhere. */ mishaps?: number; /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
+export interface AttractionStats { /** Petting zoo: scoops of feed sold so far (docs/petting-zoo.md). Absent elsewhere / in old saves. */ fed?: number; /** Climbing crag: minor mishaps so far (patrol call-outs). Absent elsewhere. */ mishaps?: number; /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[] }
 
 /** Plain data for the inspector / reports. */
 export interface AttractionInfo {
@@ -77,6 +79,10 @@ export interface AttractionInfo {
   crag?: { guided: boolean; mishaps: number };
   /** Toilets (comfort need): guests served today and the per-day figure above which the block is overrun. */
   toilet?: { usesToday: number; perDay: number };
+  /** Rental (docs/rental.md): skis / boards out vs in stock (pooled over the open rentals) and the shortages. */
+  rental?: RentalStockInfo;
+  /** Petting zoo (docs/petting-zoo.md): scoops of feed sold so far and the price of one. */
+  zoo?: { fed: number; feedPrice: number };
 }
 
 export interface InstanceSave { id: number; price: number; staff: number; stats: AttractionStats; open?: boolean; reason?: string; reported?: boolean; keep?: boolean }
@@ -92,6 +98,8 @@ export class Attraction {
   slotsNow: number | undefined;
   /** Tackle hut inspector data (set by the attraction system). */
   anglingInfo: (() => AttractionInfo['angling'] | undefined) | undefined;
+  /** Rental: stock of skis / boards (set by the attraction system). */
+  rentalInfo: (() => RentalStockInfo) | undefined;
   /** Tour bases: inspector data (set by the attraction system). */
   tourInfo: (() => TourInfo | null) | undefined;
   /** Live price multiplier (markup % x seasonal schedule), set by the system; 1 = list price. */
@@ -164,6 +172,8 @@ export class Attraction {
       staff: this.staff, staffRequired: this.def.staff, upkeepPerDay: this.upkeepPerDay(),
       ...(this.tourInfo ? { tour: this.tourInfo() ?? undefined } : {}),
       ...(this.spec.optionalStaff ? { crag: { guided: this.guided(), mishaps: this.stats.mishaps ?? 0 } } : {}),
+      ...(this.spec.kind === 'zoo' ? { zoo: { fed: this.stats.fed ?? 0, feedPrice: ZOO_FEED.price } } : {}),
+      ...(this.rentalInfo ? { rental: this.rentalInfo() } : {}),
       ...(this.anglingInfo ? { angling: this.anglingInfo() } : {}),
     };
   }

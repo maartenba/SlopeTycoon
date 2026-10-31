@@ -8,6 +8,20 @@ export const PETTING_ZOO_SPECS: Record<string, AttractionSpec> = {
   pettingZoo: { kind: 'zoo', serviceTicks: 6, slots: 20, effects: { happiness: 0.12 }, appeal: [0.3, 0.55, 0.8, 0.3, 0.4, 0.1], seasonOpen: ['summer'] },
 };
 
+/**
+ * Feeding (docs/petting-zoo.md): at the gate a visitor may buy a scoop of feed for $2 (shops income). Family and school guests (the kids) nearly always do (`kidShare`), everybody else rarely
+ * (`otherShare`). A fed visit adds `happiness`; while guests are inside, the animals walk to the front fence (render only). Stateless hash roll per guest: no Rng draw, no save field besides the counter.
+ */
+export const ZOO_FEED = { price: 2, happiness: 0.05, kidShare: 0.7, otherShare: 0.15, kidTypes: [2, 9] as readonly number[] } as const;
+export function buysFeed(guestId: number, guestType: number): boolean {
+  const share = ZOO_FEED.kidTypes.includes(guestType) ? ZOO_FEED.kidShare : ZOO_FEED.otherShare;
+  return (Math.imul(guestId + 211, 2246822519) >>> 0) % 1000 < share * 1000;
+}
+/** How many animals come to the fence for `users` guests inside (render only): one more per guest, at most 6 of the 8. */
+export const fenceCrowd = (users: number): number => Math.min(6, Math.max(0, users));
+/** Where animal `i` stands at the fence (building-local, facing out to the guests at +z). Spread along the front rail. */
+export function fenceSpot(i: number): { x: number; z: number; yaw: number } { return { x: -0.9 + (i % 6) * 0.36, z: ZOO_PEN.z1, yaw: 0 }; }
+
 /** The pen's residents (display only; the sim never reads them). 8 animals: goats, sheep, rabbits and a donkey. */
 export type ZooKind = 'goat' | 'sheep' | 'rabbit' | 'donkey';
 export const ZOO_ANIMALS: readonly ZooKind[] = ['goat', 'goat', 'sheep', 'sheep', 'rabbit', 'rabbit', 'rabbit', 'donkey'];

@@ -209,7 +209,7 @@ export const RULES: readonly Rule[] = [
   rule('crossing.waits', 2, (c) => {
     const cx = c.sim.crossings, w = cx.worstWaited();
     if (!cx.active || !w || w.ticks < CROSSING.advisorWaitTicksPerDay * (c.shown ? 0.7 : 1)) return null;
-    return { id: 'crossing.waits', severity: 'info', ...TEXT.crossingWaits(Math.round(w.ticks / 10)), target: { x: w.tile % c.sim.size, y: Math.floor(w.tile / c.sim.size) } };
+    return { id: 'crossing.waits', severity: 'info', ...TEXT.crossingWaits(Math.round(w.ticks / 10), c.sim.networks.cross[w.tile] === 2), target: { x: w.tile % c.sim.size, y: Math.floor(w.tile / c.sim.size) } };
   }),
   // Hikers leave starving (decaying share of recent hiker / biker departures with hunger > 0.75): suggest a hut / cafe beside the trails
   rule('hikers.hungry', 2, (c) => {
@@ -339,6 +339,13 @@ export const RULES: readonly Rule[] = [
     }
     return null;
   }, false, true),
+  // Rental stock (docs/rental.md): guests were turned away for lack of skis / boards today -> build another Rental
+  rule('rental.boards', 2, (c) => {
+    const st = c.sim.attractions.rentalStock();
+    if (!st || st.shortToday < (c.shown ? 1 : 3)) return null;
+    const boards = st.shortBoardsToday * 2 > st.shortToday, b = c.sim.buildings.all().find((x) => x.active && x.type === 'rental');
+    return { id: 'rental.boards', severity: 'warn', ...TEXT.rentalShort(st.shortToday, boards), ...(b ? { target: { x: b.x + b.w / 2, y: b.y + b.h / 2, kind: 'building' as const, id: b.id } } : {}), action: { type: 'build', building: 'rental' }, panel: { drawer: 'buildings', item: 'rental' } };
+  }, true, true),
   rule('marketing.parkJam', 1, (c) => {
     const m = c.sim.marketing;
     if (c.season === 'summer' || c.season === 'autumn' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'parkJam') || m.blocker('parkJam') !== null) return null;

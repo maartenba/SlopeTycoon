@@ -82,5 +82,8 @@ Footpath (`suspensionFoot`) and Hiking trail (`suspensionHike`) only; MTB, road 
 ## Render
 (Stream crossings use the same meshes.) `bridges.ts` appends per tile to the chunk's network mesh (flat-shaded boxes, about 60 triangles per span tile, ~200 per bridge; a bridge across a chunk edge simply continues): so at most one draw call per chunk, far below one per kind per chunk. Deck pieces follow `Networks.deckAlong`, supports every second span tile reach down to the bed (two posts, or a stone pier for the road bridge). MaterialGuard sees the usual network material; no `gl_FragCoord`.
 
+## Road overpass over rail
+The road bridge family stays over water only. Roads cross a rail line at a level crossing or, with the Crossings toggle on *Bridge*, on a **road overpass** (raised deck + ramps, $900 + $150 per tile, 7-9 tiles): a separate record family in `Networks` (`oid`, `Overpass`), described in [crossings.md](crossings.md) ("Road overpass"). The ghost, undo, bulldoze and save follow the same rules as the bridges above.
+
 ## Not in v1
-Road overpasses over rail (the road always takes the level crossing, see crossings.md); raft clearance under river bridges (rafting is not built); rail bridges (refused by design); ride-along does not climb the bank ramps; walk mode follows deck height since M6.1 (`main.ts` walk ground; the rail footbridge stairs could not be verified headlessly, see `docs/playtest-m61.md`); terraform under a bridge needs no extra freeze (the terrain tools already refuse any tile that carries a network).
+Raft clearance under river bridges (rafting is not built); rail bridges (refused by design); ride-along does not climb the bank ramps; walk mode follows deck height since M6.1 (`main.ts` walk ground; the rail footbridge stairs could not be verified headlessly, see `docs/playtest-m61.md`); terraform under a bridge needs no extra freeze (the terrain tools already refuse any tile that carries a network).

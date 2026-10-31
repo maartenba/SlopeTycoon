@@ -17,7 +17,11 @@ Closed with "Closed for the season" outside summer and "Closed: no staff" withou
 `render/PettingZooView.ts` draws `ZOO_ANIMALS` = 2 goats, 2 sheep, 3 rabbits, 1 donkey per **open** pen (4 instanced draw calls for all pens; cap 64 per kind), only between 07:00 and 20:00 (they sleep in the shed) and only below a view height of 70 tiles. Goat and sheep reuse the nature meshes (`NATURE_GEOMETRY`); `createRabbitGeometry` and `createDonkeyGeometry` (`meshes/Animals.ts`) are new and used by the zoo only (not nature species, so Livestock / Fauna are untouched).
 `zooPose(seed, i, t)` is a **pure function**: every animal walks to a seeded waypoint (smoothstep) and then stands / grazes, always inside `ZOO_PEN`; nothing is stored, nothing is saved or hashed, no RNG is drawn. The pen's world mapping uses the building group's matrix, so rotation and terrain height are right.
 
-Not done (kept simple on purpose): a feeding mechanic (feed bucket is scenery), a petting-zoo advisor rule, animals reacting to guests.
+## Feeding (Phase 6 polish)
+
+A visitor may buy a scoop of **feed for $2** at the gate (`ZOO_FEED` in `PettingZoo.ts`): family and school guests (the kids) 70 %, everybody else 15 %, decided by a pure hash of the guest id (no Rng draw, so the random stream of a resort without a zoo is untouched). Only when the guest can afford it after the ticket. A fed visit gives **+0.05 happiness** (on top of the zoo's +0.12) and the $2 is **shops** income (the $8 ticket stays `recreation`); `stats.fed` counts scoops (saved only once set), the inspector shows "Feed: $2 a scoop at the gate · n scoops sold". **View-only animals come to the fence**: while guests are inside, up to 6 of the 8 animals walk to the front rail (`fenceSpot`, `fenceCrowd`; eased, smoothed per zoo in `PettingZooView`, back to wandering afterwards). Render only, nothing saved. Tests: `tests/sim/phase6Polish.test.ts`.
+
+Not done (kept simple on purpose): a petting-zoo advisor rule, animals reacting to guests beyond the fence.
 
 ## Tests
 `tests/sim/attractions/pettingZoo.test.ts`: catalog row and access, family appeal 0.8, summer service and revenue ($8 into recreation), winter closure, no keeper, determinism, a real summer resort (opens, serves, determinism, save / load), poses inside the pen over 10 minutes, the view (8 animals, none when closed / night / far, cap), mesh budget.

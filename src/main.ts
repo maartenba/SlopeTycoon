@@ -732,7 +732,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
   { // petting zoo animals (4 instanced draw calls; only open pens during the day)
     const zoos = buildings.all().filter((b) => b.type === 'pettingZoo');
-    zooView.update(dt, zoos.map((b) => ({ id: b.id, open: !!attractions.get(b.id)?.open })), currentHour(), vh, (id, lx, lz, out) => { const g = buildingsView.get(id); if (!g) return false; out.set(lx, 0, lz); g.localToWorld(out); return true; }, tg.x, tg.z);
+    zooView.update(dt, zoos.map((b) => ({ id: b.id, open: !!attractions.get(b.id)?.open, users: attractions.get(b.id)?.usersNow ?? 0 })), currentHour(), vh, (id, lx, lz, out) => { const g = buildingsView.get(id); if (!g) return false; out.set(lx, 0, lz); g.localToWorld(out); return true; }, tg.x, tg.z);
   }
   { // snowmaking cannon spray (1 draw call; only running cannons near the view centre)
     const run = new Set(opsRef?.snowmaking.runningIds() ?? []);
@@ -1690,7 +1690,7 @@ const WALK_STORAGE = (() => { try { return window.localStorage; } catch { return
 let walkSettings: WalkSettings = loadWalkSettings(WALK_STORAGE);
 const walkWorld = buildWalkWorld(grid, networks, props, (x, z) => { // the walker climbs bridge decks and the rail footbridge stairs like guests do (docs/bridges.md, docs/crossings.md)
   const g = surfaceHeightAt(grid, x, z) + (networks.crossCount > 0 ? networks.footLift(x, z) * CROSSING.footbridge.deck : 0);
-  if (networks.bridgeTiles === 0) return g;
+  if (networks.bridgeTiles === 0 && networks.overpassTiles === 0) return g;
   const d = networks.deckY(x, z);
   return d !== null && d > g ? d : g;
 }, allDecorItems);

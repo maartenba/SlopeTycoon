@@ -67,7 +67,7 @@ export class RailCrossings {
   /** The footpath crossing where guests waited most yesterday (tile index) and how long (ticks, summed over guests); null = none. */
   worstWaited(): { tile: number; ticks: number } | null {
     let best: { tile: number; ticks: number } | null = null;
-    for (const [tile, ticks] of this.tileYesterday) if (this.net.cross[tile] === Cross.Path && (!best || ticks > best.ticks || (ticks === best.ticks && tile < best.tile))) best = { tile, ticks };
+    for (const [tile, ticks] of this.tileYesterday) if ((this.net.cross[tile] === Cross.Path || this.net.cross[tile] === Cross.Road) && (!best || ticks > best.ticks || (ticks === best.ticks && tile < best.tile))) best = { tile, ticks };
     return best;
   }
   /** Tests: pretend guests waited `ticks` at `tile` yesterday. */
@@ -138,7 +138,7 @@ export class RailCrossings {
     for (const p of this.positionsOn(v)) {
       if (p.cross !== Cross.Road || !this.closed.has(p.tile)) continue;
       const entry = p.c - 0.55;
-      if (v.dist <= entry + 1e-6 && lim > entry) lim = entry;
+      if (v.dist <= entry + 1e-6 && lim > entry) { lim = entry; if (v.dist >= entry - 0.5) this.tileToday.set(p.tile, (this.tileToday.get(p.tile) ?? 0) + 1); } // a car waiting at the line counts for the advisor (roads: an overpass ends the wait)
     }
     return lim;
   }

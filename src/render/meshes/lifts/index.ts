@@ -12,6 +12,8 @@ import { buildGondolaGeometry } from './Gondola';
 import { buildTramGeometry } from './Tram';
 import { buildTBarGeometry } from './TBar';
 import { buildFunicularCarGeometry, buildTrackGeometry } from './Funicular';
+import { LAMP_HEAD } from './midStation';
+import { NET_NIGHT } from '../Paths';
 import { createSignTexture } from '../../textures/sign';
 import { glassGroups, liftGlassMaterial, liftMaterial } from './geo';
 import type { LiftKind } from '../../../config/lifts';
@@ -60,6 +62,8 @@ export function distToPolyline(poly: ArrayLike<number>, x: number, z: number): n
   return Math.sqrt(best);
 }
 
+const LAMP = new THREE.Color(LAMP_HEAD);
+
 /** Roof / canopy fade radius (tiles) around the ground camera for station meshes. */
 export const STATION_ROOF_HIDE_RADIUS = 3;
 
@@ -90,11 +94,13 @@ export class LiftView {
     this.stationMat.name = 'lift-station';
     this.stationMat.onBeforeCompile = (sh): void => {
       sh.uniforms.uNearHide = u;
+      sh.uniforms.uLampNight = NET_NIGHT; sh.uniforms.uLamp = { value: new THREE.Vector3(LAMP.r, LAMP.g, LAMP.b) };
       sh.vertexShader = sh.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vNHW;')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvNHW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
       sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vNHW;\nuniform vec4 uNearHide;')
+        .replace('#include <common>', '#include <common>\nvarying vec3 vNHW;\nuniform vec4 uNearHide;\nuniform float uLampNight;\nuniform vec3 uLamp;')
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n#ifdef USE_COLOR\ntotalEmissiveRadiance += vec3(1.0, 0.62, 0.22) * (1.0 - step(0.03, length(vColor.rgb - uLamp))) * smoothstep(0.04, 0.55, uLampNight) * 1.8; // mid-station lamp heads glow at night\n#endif')
         .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
   if (uNearHide.w > 0.0 && vNHW.y - uNearHide.y > 0.15) { // roofs / canopies / snow caps above the ground camera dither away within the radius
     float nhD = length(vNHW.xz - uNearHide.xz);
@@ -103,7 +109,7 @@ export class LiftView {
     if (nhN < nhK) discard;
   }`);
     };
-    this.stationMat.customProgramCacheKey = (): string => 'lift-station-nearhide';
+    this.stationMat.customProgramCacheKey = (): string => 'lift-station-nearhide-lamps';
   }
 
   /** Cosmetic chair colour (chairs only, gondolas / cabins untouched). Rebuilds the carrier geometries and re-assigns them: no lift rebuild, no restart. `null` = default. */

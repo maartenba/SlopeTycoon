@@ -1,4 +1,5 @@
 import { GUEST_WALK_SPEED, NAV_MAX_QUERIES_PER_TICK } from '../../config/balance';
+import { SENIOR_TYPE, SENIOR_WALK } from '../../config/guestTypes';
 import { GuestStore, WP_MAX } from './Guest';
 import { type NavGraph, isSkiMode } from './NavGraph';
 import { PisteTraffic } from '../ops/PisteQuality';
@@ -248,7 +249,7 @@ export class NavMovement implements Movement {
 
     // follow the path
     let j = this.idx[i]!, time = 1, x = s.x[i]!, y = s.y[i]!;
-    const skill = s.skill[i]!, ski = isSkiMode(mode);
+    const skill = s.skill[i]!, ski = isSkiMode(mode), walkMul = s.type[i] === SENIOR_TYPE ? SENIOR_WALK : 1;
     while (time > 1e-6 && j + 1 < p.length) {
       const a = p[j]!, b = p[j + 1]!;
       const ax = a % n, ay = (a / n) | 0, bx = b % n, by = (b / n) | 0;
@@ -257,7 +258,7 @@ export class NavMovement implements Movement {
         this.liftTag[i] = g.liftTag(mode, a, b); this.liftFrom[i] = a; this.liftTo[i] = b;
         return 'lift';
       }
-      const v = g.speed(mode, a, b, skill);
+      const v = g.speed(mode, a, b, skill, walkMul);
       const tx = bx + 0.5, ty = by + 0.5;
       if (g.crossingClosed(b) && !(Math.floor(x) === bx && Math.floor(y) === by)) {
         // closed level crossing ahead: wait at the CENTRE of the approach tile (never nearer: family kids are glued to the leader +-0.25 tiles and must

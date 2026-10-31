@@ -2,6 +2,7 @@ import type { ProfileView } from '../ui/components/StProfile';
 import * as THREE from 'three';
 import { heightAt, pickHeightfield } from '../render/Picking';
 import { Cross, lineTiles, NetKind, type NetKindId, type Networks } from '../world/Networks';
+import { overpassAlong, type Overpass } from '../world/OverpassProfile';
 import { buildStroke, describeExtras, planStroke, type CrossMode, type StrokePlan } from '../world/StrokePlan';
 import { HEIGHT_UNIT } from '../config/balance';
 import { CROSSING } from '../config/crossings';
@@ -39,13 +40,13 @@ export interface DragToolOptions {
 }
 
 /** What the preview adds on top of the plain tile line: bridge decks (blue, at deck height), crossings (gold) and the banks. */
-export interface Ghost { decks: Array<{ tiles: Pt[]; deck: number }>; marks: Pt[]; /** Rail footbridge / MTB ramp bridge tiles: drawn as a raised deck over the rail. */ lifted?: Pt[] }
+export interface Ghost { decks: Array<{ tiles: Pt[]; deck: number }>; marks: Pt[]; /** Road overpasses: ramp + deck tiles drawn at the deck profile. */ overpasses?: Overpass[]; /** Rail footbridge / MTB ramp bridge tiles: drawn as a raised deck over the rail. */ lifted?: Pt[] }
 export interface Evaluation { ok: boolean; cost: number; text: string; ghost?: Ghost }
 
 /** Preview extras of a successful plan (bridge decks, crossing tiles). */
 export function ghostOf(plan: StrokePlan): Ghost {
   const over = (c: number): boolean => c === Cross.Footbridge || c === Cross.MtbBridge;
-  return { decks: plan.bridges.map((b) => ({ tiles: b.span, deck: b.deck })), marks: plan.crossings.filter((c) => !over(c.cross)).map((c) => ({ x: c.x, y: c.y })), lifted: plan.crossings.filter((c) => over(c.cross)).map((c) => ({ x: c.x, y: c.y })) };
+  return { decks: plan.bridges.map((b) => ({ tiles: b.span, deck: b.deck })), overpasses: plan.overpasses.map((o) => ({ id: 0, x: o.x, y: o.y, axis: o.axis, n: o.n, top: o.top, endA: o.endA, endB: o.endB, cost: o.cost })), marks: plan.crossings.filter((c) => !over(c.cross) && c.cross !== Cross.Overpass).map((c) => ({ x: c.x, y: c.y })), lifted: plan.crossings.filter((c) => over(c.cross)).map((c) => ({ x: c.x, y: c.y })) };
 }
 
 /** Shared pointer-drag plumbing: preview mesh, tooltip, Esc/right-click cancel. */
@@ -241,6 +242,17 @@ export abstract class DragTool {
     if (ev.ghost && ev.ok) {
       for (const d of ev.ghost.decks) for (const t of d.tiles) quad(t, d.deck * HEIGHT_UNIT, 0x5ac8ff); // the deck, raised over the water / gap
       for (const t of ev.ghost.marks) quad(t, null, 0xffd060);
+      for (const o of ev.ghost.overpasses ?? []) { // ramps + deck: every tile at the real deck profile (blue), the rail tile gold-edged
+        for (let j = -o.n; j <= o.n; j++) {
+          const t = o.axis === 'h' ? { x: o.x + j, y: o.y } : { x: o.x, y: o.y + j };
+          const b = pos.length / 3, cc = new THREE.Color(j === 0 ? 0xffd060 : 0x5ac8ff);
+          for (const [px, pz] of [[t.x, t.y], [t.x + 1, t.y], [t.x + 1, t.y + 1], [t.x, t.y + 1]] as const) {
+            pos.push(px, overpassAlong(o, o.axis === 'h' ? px - (o.x + 0.5) : pz - (o.y + 0.5)) + 0.2, pz);
+            col.push(cc.r, cc.g, cc.b);
+          }
+          idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
+        }
+      }
       for (const t of ev.ghost.lifted ?? []) quad(t, (heightAt(g, t.x + 0.5, t.y + 0.5)) + CROSSING.footbridge.deck, 0x5ac8ff); // the raised deck over the rail
     }
     const geo = this.preview.geometry;
@@ -272,8 +284,7 @@ export class SegmentTool extends DragTool {
   get overRail(): boolean { return this.crossMode === 'bridge'; }
   set overRail(on: boolean) { this.crossMode = on ? 'bridge' : 'level'; }
   private get sk(): 'path' | 'road' | 'rail' { return this.kind === NetKind.Path ? 'path' : this.kind === NetKind.Road ? 'road' : 'rail'; }
-  /** Roads have no overpass (v1): the level crossing is the only way over a rail line. */
-  private get mode(): CrossMode { return this.kind === NetKind.Road ? 'level' : this.crossMode; }
+  private get mode(): CrossMode { return this.crossMode; }
 
   protected tiles(): Pt[] {
     return this.start && this.cur ? lineTiles(this.start, this.cur, this.vFirst) : [];

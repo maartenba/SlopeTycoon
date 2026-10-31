@@ -886,7 +886,7 @@ export class StDock extends StElement {
       return b;
     };
     const lvl = mk('level', 'Level crossing', `$${CROSSING.cost.path} · guests wait`, 'Over a rail line: cross at ground level. Trains never stop: guests wait at the barriers. The cheaper choice.');
-    const brg = mk('bridge', 'Bridge', `$${CROSSING.footbridge.cost} · no waiting`, `Over a rail line: cross on a bridge. Nobody ever waits for a train, but it costs more (MTB ramp bridge $${CROSSING.mtbBridge.cost.toLocaleString('en-US')}). Roads always use a level crossing.`);
+    const brg = mk('bridge', 'Bridge', `$${CROSSING.footbridge.cost} · no waiting`, `Over a rail line: cross on a bridge. Nobody ever waits for a train, but it costs more (MTB ramp bridge $${CROSSING.mtbBridge.cost.toLocaleString('en-US')}). Roads get an overpass with ramps ($${CROSSING.overpass.base} + $${CROSSING.overpass.perTile} per tile, 7-9 tiles, needs room beside the rail).`);
     const sync = (): void => { for (const b of [lvl, brg]) { const on = b.dataset.crossMode === this.crossMode; b.classList.toggle('active', on); b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; } };
     const set = (m: 'level' | 'bridge'): void => { this.crossMode = m; api.network.setCrossMode?.(m); sync(); };
     lvl.addEventListener('click', () => set('level'));
@@ -915,7 +915,7 @@ export class StDock extends StElement {
   private pathControls(): void {
     const side = el('div', 'pc wide');
     side.dataset.pathControls = '';
-    this.crossingsSection(side, [['Footpath', 'footbridge'], ['Road', 'roadBridge']], 'Drag across water, a gap or rails. Meeting a path or road just merges (automatic). Roads always use a level crossing; rail cannot cross water.');
+    this.crossingsSection(side, [['Footpath', 'footbridge'], ['Road', 'roadBridge']], 'Drag across water, a gap or rails. Meeting a path or road just merges (automatic). Roads cross rails on a level crossing or, with Bridge, an overpass (needs room).');
     this.body.appendChild(side);
   }
 

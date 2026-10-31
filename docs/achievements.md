@@ -1,6 +1,6 @@
 # Achievements, trophies and cosmetic rewards (M5.3, Task 16)
 
-40 profile-wide achievements in three tiers, a trophy shelf dialog, and 13 purely visual cosmetic rewards. Everything is **local** (no import / export / sharing, D8) and **quiet** (a small toast, never a fanfare).
+48 profile-wide achievements in three tiers, a trophy shelf dialog, and 13 purely visual cosmetic rewards. Everything is **local** (no import / export / sharing, D8) and **quiet** (a small toast, never a fanfare).
 
 ![Trophy shelf, 1280x800](img/achievements-shelf.webp)
 ![Trophy shelf scrolled, 1920x1080](img/achievements-shelf-1080.webp)
@@ -15,7 +15,7 @@
 | 2 | Notable | 3 | a season or a system mastered |
 | 3 | Rare | 5 | hard / long-term; the **only** tier that may show confetti |
 
-The shelf header shows `n / 40` and `points / 102`. Hidden achievements (4) read `???` until unlocked.
+The shelf header shows `n / 48` and `points / 122`. Hidden achievements (4) read `???` until unlocked.
 
 ## Scope and sandbox
 * `any`: earnable everywhere. A **sandbox** unlock is tagged `sandbox` on its record (shown as a chip on the shelf); sandbox progress still counts for the lifetime counters.
@@ -66,6 +66,17 @@ The shelf header shows `n / 40` and `points / 102`. Hidden achievements (4) read
 | 38 | `scenario-gold` | Gold standard | Rare | scenario | scenario | `frame:gold` | Win any scenario with a gold medal. |
 | 39 | `scenarios-gold` | Grand slam | Rare | scenario | scenario |  | Win every scenario with a gold medal. |
 | 40 | `guests-100000` | A hundred thousand | Rare | any | event | `palette:alpine-red` | Welcome 100,000 guests, across all your games. |
+| 41 | `first-raft` | First raft | Common | any | fact |  | Send your first guests down the river on a raft. |
+| 42 | `source-to-sea` | Source to sea | Common | any | fact |  | Dig a river from a spring all the way to a lake or the edge of the map. |
+| 43 | `concert-night` | Concert night | Common | any | fact |  | Host a Mountain Concert. |
+| 44 | `scenic-route` | Scenic route | Notable | any | fact |  | Have hikers reach three different viewpoints, treehouses or suspension bridges. |
+| 45 | `green-travel` | Green travel | Notable | any | fact |  | A quarter of the guests in your resort (30 or more) came by train. |
+| 46 | `powder-day` | Powder day | Notable | any | fact |  | Run Powder Hounds on a powder day. |
+| 47 | `luxury-suite` | Suite life | Notable | any | fact |  | Fill ten suites of your Luxury Hotel at once. |
+| 48 | `summer-share` | Summer share | Rare | career | fact |  | Earn a quarter of a full year's income in summer. |
+
+### Phase 6 achievements (rows 41-48)
+All eight are **fact** trackers (`FactKey` in `config/achievements.ts`), read from lazy getters built in `createSim` (the host's `facts()` runs on every observed event, so a getter only costs something when its own tracker reads it) and checked **every in-game hour and at midnight** (`Achievements.onEvent('time:hour')` -> `checkFacts`, so short-lived states such as a powder day or a concert are seen). They are also checked once when armed, so a loaded game that already qualifies unlocks quietly. `railShare` = % of the guests in the resort that came by train (`Spawner.modeLoadOf`, needs 30+ guests; the plan's "25 % of a month's arrivals" is approximated by the live share: the game keeps no per-month mode counter); `viewsSeen` = distinct viewpoints / treehouses / suspension bridges with at least one hiker visit (`Viewpoints.visits`); `riverToSea` = a dug river whose source is a spring and whose sink is a lake or the map edge; `raftRides` = guests served by Rafting Bases; `powderHounds` = a powder day (`EventCalendar.active`) while the Powder Hounds campaign runs; `concert` = a Mountain Concert is on; `suites` = the most Luxury Hotel suites occupied at once; `summerShare` = % of the last full (non-partial) year's income made in the four summer months (`YearReport.months`). **Hot springs** was not built: there is no spa building yet. Toasts stay the restrained small ones (no confetti below tier 3, and the only tier-3 row is a year-long goal). Tests: `tests/sim/phase6Polish.test.ts`.
 
 Cosmetic mapping is in the *Reward* column; the full list is below.
 
@@ -95,7 +106,7 @@ UI accent themes were left out (optional in the brief).
 * **Confetti only for tier 3**, and only if `confettiAllowed(policy, true)`: Off / reduced motion never get it.
 
 ## Trophy shelf (`st-trophies`)
-Shared modal, size `lg`: decorative SVG shelf, `n / 40` + points, scenario medals row (from the profile), filters (All / Unlocked / Locked and tier), cards with icon, title, description, tier medal, unlocked date, `Career only` / `Scenarios` / `Cosmetic reward` / `Sandbox` chips and a progress bar for counters (per-game bars read 0 on the title screen). Reachable from: main menu **Trophies**, the pause menu, Settings > Gameplay > **Trophies** link, and the Cosmetics section. **Reset profile…** (Settings > Cosmetics) asks for confirmation and clears achievements, cosmetics and scenario medals; save slots are never touched.
+Shared modal, size `lg`: decorative SVG shelf, `n / 48` + points, scenario medals row (from the profile), filters (All / Unlocked / Locked and tier), cards with icon, title, description, tier medal, unlocked date, `Career only` / `Scenarios` / `Cosmetic reward` / `Sandbox` chips and a progress bar for counters (per-game bars read 0 on the title screen). Reachable from: main menu **Trophies**, the pause menu, Settings > Gameplay > **Trophies** link, and the Cosmetics section. **Reset profile…** (Settings > Cosmetics) asks for confirmation and clears achievements, cosmetics and scenario medals; save slots are never touched.
 
 ## Profile format (`ProfileStore`, version 2)
 ```json
@@ -111,4 +122,4 @@ v1 profiles (only an empty placeholder) migrate to an empty achievements section
 1. Add a row to `ACHIEVEMENTS` in `src/config/achievements.ts` (unique kebab-case id, tier, scope, icon from `ui/icons.ts`, a tracker, optional hidden / reward).
 2. Use an existing tracker kind. Events must exist in `GAME_EVENT_NAMES`; a new event goes into `core/events.ts` first. If two achievements share a `counter`, they must share the same event / `where` (tested).
 3. For a cosmetic reward add it to `src/config/cosmetics.ts` (one achievement per cosmetic).
-4. Update the count in the tests (`40`) and the catalogue table here; run `npm test`.
+4. Update the count in the tests (`48`) and the catalogue table here; run `npm test`.

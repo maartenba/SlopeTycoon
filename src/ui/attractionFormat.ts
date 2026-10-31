@@ -25,6 +25,8 @@ export function formatAttractionStats(i: AttractionInfo): string[] {
     formatStaff(i.staff, i.staffRequired),
     `Upkeep incl. wages: ${formatMoney(i.upkeepPerDay)}/day`,
     ...(i.toilet ? [`Used today: ${i.toilet.usesToday}/${i.toilet.perDay} · ${i.toilet.usesToday > i.toilet.perDay ? 'overrun: add more toilets' : 'clean'}`] : []),
+    ...(i.rental ? [`Gear out: ${i.rental.skis.out}/${i.rental.skis.cap} skis · ${i.rental.boards.out}/${i.rental.boards.cap} boards${i.rental.shortToday ? ` · ${i.rental.shortToday} guest${i.rental.shortToday === 1 ? '' : 's'} turned away today for lack of ${i.rental.shortBoardsToday === i.rental.shortToday ? 'boards' : 'gear'}: add a Rental` : ''}`] : []),
+    ...(i.zoo ? [`Feed: $${i.zoo.feedPrice} a scoop at the gate · ${i.zoo.fed} scoop${i.zoo.fed === 1 ? '' : 's'} sold (kids love it: a happier visit)`] : []),
     ...(i.camp ? [`Pitches: ${i.camp.used}/${i.camp.pitches} tonight · ${i.camp.toilets ? 'toilets in reach: a better night' : 'no toilets within 10 tiles: campers grumble'}`] : []),
     ...(i.hotel ? formatHotelLines(i.hotel) : []),
     ...(i.angling ? formatAnglingLines(i.angling) : []),
