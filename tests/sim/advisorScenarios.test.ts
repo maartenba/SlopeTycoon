@@ -409,6 +409,15 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'tour.winter', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 40); s.game.date.day = seasonStartDay('winter') + 5; },
+    fixes: [
+      { name: 'a snowscooter base stands', apply: (s) => { buildAt(s, 'snowscooterBase', lodge(s), { rmax: 14 }); } },
+      { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
+      { name: 'summer comes', apply: (s) => { s.game.date.day = seasonStartDay('summer') + 5; } },
+    ],
+  },
+  {
     id: 'tour.water', daily: true,
     setup: (s) => { s.progression.unlockAll = true; guests(s, 40); s.game.date.day = seasonStartDay('summer') + 5; riverStub(s, [1, 1, 1, 1, 1, 2, 2, 1]); },
     fixes: [

@@ -124,6 +124,7 @@ describe('starter + bot, deterministic report', () => {
     expect(JSON.stringify(a.stats.serialize(), (_k, v) => (ArrayBuffer.isView(v) ? Array.from(v as unknown as ArrayLike<number>) : v))).toBe(JSON.stringify(b.stats.serialize(), (_k, v) => (ArrayBuffer.isView(v) ? Array.from(v as unknown as ArrayLike<number>) : v)));
     expect(stateHash(a)).toEqual(stateHash(b));
     // Snapshot RE-RECORDED (M6.4 STOP): Senior + School group guest types ship ON, so the arrival draw moved (y1 guests 1552 -> 1536, y2 3156 -> 3162, y2 incidents 8 -> 18, safety award 2 -> 0); docs/balance.md "M6.4 STOP check" (the incident rise was investigated: school classes cause 0 injuries, it is the shifted arrival draw).
+    // RE-RECORDED (M6.5 STOP, docs/balance.md "M6.5 STOP check"): the Snowboarder type shifts the arrival draw. Year 1 guests 1536 -> 1537, income 1616 -> 1721 (x$100), incidents 10 -> 8; year 2 guests 3162 -> 3078, income 3253 -> 3139, incidents 18 -> 13, safety award tier 0 -> 1, points 14 -> 15 of 30 (noise, no risk code changed).
     expect(a.yearReports.all().map(key)).toMatchSnapshot();
     const [y1, y2] = a.yearReports.all();
     expect(y1!.partial).toBe(true); expect(y2!.partial).toBe(false); expect(y2!.deltas.length).toBe(4);

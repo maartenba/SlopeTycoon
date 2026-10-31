@@ -35,7 +35,7 @@ export const EVENING_VENUES: readonly string[] = [...FOOD, ...BAR];
 export const REST = new Set(['baseLodge', 'lodge', 'chalet', 'apartment', 'smallHotel', 'luxuryHotel']);
 export const SHOP = new Set(['shop', 'rental']);
 /** Real attractions (activity goals); everything else visitable counts as generic wandering. */
-export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet', 'quadBase', 'crag', 'tackleHut', 'raftingBase', 'canyoningBase']);
+export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet', 'quadBase', 'crag', 'tackleHut', 'raftingBase', 'canyoningBase', 'sleighStable', 'snowshoeHut', 'snowscooterBase']);
 export const LESSON = new Set(['skiSchoolHQ']);
 /** Comfort need (docs/comfort.md): buildings a guest walks to on purpose when the urge is high. */
 export const RELIEF = new Set(['toilets']);

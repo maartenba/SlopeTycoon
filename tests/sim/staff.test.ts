@@ -12,63 +12,63 @@ import { makeResort, run } from '../game/harness';
  * (fill 1, no wages, factor 1). New modules (`staff`, `staffUpgrades`, `events`, `stories`, `rivals`, `energy`) are excluded.
  */
 const GOLDEN_STARTER: Record<string, string> = {
-  'core': '7bfc0bbd',
+  'core': '403025bb',
   'config': '0c4169f7',
   'grid': 'faf291c3',
   'props': 'f326a89f',
   'networks': '4854bb95',
   'buildings': 'defd0fcb',
-  'lifts': '39d22bf2',
+  'lifts': '8497e193',
   'cond': 'ba97dd7b',
   'names': '323feaff',
-  'nature': '41b50fb0',
-  'leavers': '75b66968',
+  'nature': '841b25c8',
+  'leavers': 'f6d6db07',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '00f02232',
-  'sys.spawner': 'a22970d2',
-  'sys.guests': '3c9da463',
-  'sys.attractions': 'a48da1b4',
-  'sys.economy': '210da444',
-  'sys.rating': 'e5465c96',
+  'sys.spawner': 'a65780b0',
+  'sys.guests': 'bd23bf57',
+  'sys.attractions': '9c30fbd0',
+  'sys.economy': '784298e1',
+  'sys.rating': 'c271823d',
   'sys.ops': 'faf8607b',
-  'families': '9592c8dc',
+  'families': '2572889a',
   'openStatus': 'f48290d9',
   'sessionMeta': '77074ba4',
-  'goals': '24481a95',
+  'goals': 'e404251f',
   'yearReports': 'e696b440',
   'advisor': 'ca063e92',
   'progression': 'b8977d94',
   'scenario': '77074ba4'
 };
 const GOLDEN_BOT: Record<string, string> = {
-  'core': 'd733404b',
+  'core': 'cdfbce3e',
   'config': 'd9813cdd',
   'grid': '410860f8',
   'props': 'f0f8b114',
   'networks': '7e224f7e',
   'buildings': 'a0aaa356',
-  'lifts': 'a3260382',
+  'lifts': '98c223a0',
   'cond': 'd91eca6f',
   'names': '21b69d9a',
-  'nature': 'bda43fe4',
-  'leavers': 'bfc2c989',
+  'nature': 'eb9f6d55',
+  'leavers': '31a5a993',
   'sys.clock': '77074ba4',
   'sys.season': '757e0fce',
   'sys.weather': '571f0cde',
-  'sys.spawner': 'd3a051f4',
-  'sys.guests': '9ca68184',
-  'sys.attractions': '79a14ba2',
-  'sys.economy': 'd17b5a9c',
-  'sys.rating': '45e080a9',
-  'sys.ops': '97621114',
-  'families': '62673d4b',
+  'sys.spawner': '0577ea1a',
+  'sys.guests': '0765e882',
+  'sys.attractions': '9255e8ab',
+  'sys.economy': '0424668d',
+  'sys.rating': '7d651d6c',
+  'sys.ops': 'b26b078c',
+  'families': '954df4be',
   'openStatus': 'f48290d9',
-  'sessionMeta': 'eb84db05',
-  'goals': '32119d62',
-  'yearReports': '8902b6c2',
+  'sessionMeta': 'ceb8acf1',
+  'goals': 'c19b781d',
+  'yearReports': 'd5b5e4ec',
   'advisor': 'ca063e92',
-  'progression': 'a49305a7',
+  'progression': 'f1f26cfe',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
@@ -89,7 +89,8 @@ const GOLDEN_BOT: Record<string, string> = {
 // RE-RECORDED (Phase 6 M6.1: comfort need + toilets, facilities rating facet, trail access, campaigns v2, bridges / crossings; docs/balance.md "M6.1 re-record"). Money 203294.15 -> 191483.3 (-5.8%).
 // RE-RECORDED (money pass, docs/balance.md "Money pass": starting cash 130k -> 150k, goal grants +2k, softer off-season relief, autumn demand 0.4 -> 0.5). Money 191483.3 -> 222414.97.
 // RE-RECORDED (M6.4 STOP: Senior + School group guest types ship ON (the bot builds a terrace / cafe / toilets and a ski school + kids area, so it now draws both), plus the hotel / coffee-stand unlock rows; docs/balance.md "M6.4 STOP check"). Money 222414.97 -> 227010.16 (+2.1%); with both types removed every part except `progression` is byte-identical to the previous golden.
-const GOLDEN_BOT_MONEY = 227010.16;
+// RE-RECORDED (M6.5 STOP: Snowboarder guest type, carved out of solo / couple / budget / adventure arrivals in winter / spring / autumn, plus the tour / backcountry unlock rows; docs/balance.md "M6.5 STOP check"). The arrival draw moved, so every guest-driven part moved, INCLUDING GOLDEN_STARTER (guests arrive there too); Ski tourers do not spawn (the bot paints no route). Money 227010.16 -> 232186.6 (+2.3%).
+const GOLDEN_BOT_MONEY = 232186.6;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; delete p['energy']; return p; };
 

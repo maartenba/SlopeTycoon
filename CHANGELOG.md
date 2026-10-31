@@ -4,6 +4,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- **Winter tours** (Phase 6 Task 31, `docs/winter-tours.md`): a Sleigh Stable ($25: a horse-drawn sleigh with six seats and quiet bells on a road or footpath), a Snowshoe Hut ($15: guided walks of eight along a hiking trail, cancelled by storms and unstable snow) and a Snowscooter Base ($45: six scooters on a road, footpath or trail, never a piste; scares wildlife and costs a little sustainability, shared cap of 3). All winter only, career levels 2 / 2 / 3, with an advisor hint and `npm run winter:tours`.
+
 ### Added
 
 - **Backcountry routes** (level 3): a fourth card in the Pistes & Trails drawer paints winter ski-touring and off-piste routes with flag poles every few tiles and a violet dashed track. A route must start at a lift top, hut, piste end or trail; it is not a piste (no grooming, no difficulty). See `docs/backcountry.md`.

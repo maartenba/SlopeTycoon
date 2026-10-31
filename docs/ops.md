@@ -45,3 +45,6 @@ UI: the inspector of a cannon shows `Running / Idle: too warm (needs <= -2 °C a
 * **Snowmaking switch** (above) and its status lines; mothballed cannons cost 15 % upkeep.
 * **Energy**: generators offset up to 60 % of the lift energy line (docs/energy.md); the Operations projection still shows the gross lift energy.
 * **Almabtrieb** announcements and the Events strip: docs/festivals.md.
+
+## Backcountry routes and danger levels (Phase 6 Task 32)
+The avalanche instability model also feeds a 1-5 danger level per painted backcountry route (closed at 4 by default, player override, burials stay injuries): see `docs/backcountry.md` (`Avalanche.dangerScore` / `dangerLevel`, `DANGER`, `sim/ops/Backcountry.ts`).
