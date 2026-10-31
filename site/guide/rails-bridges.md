@@ -14,7 +14,7 @@ There is no bridge tool: bridges are part of drawing a path. Both the **Paths & 
 
 {{fig:footbridge-rail}}
 
-**Footbridge over the rail.** Set **Crossings** to **Bridge** (in the Paths & Roads or the Pistes & Trails drawer) and a footpath or hiking trail drawn across the line becomes a timber footbridge with stairs ($900) instead: guests climb over and never wait. Ranger Rudi suggests it when guests lose a lot of time at a crossing. MTB trails get a longer ramp bridge ($1,100). (Roads always need a level crossing.)
+**Footbridge over the rail.** Set **Crossings** to **Bridge** (in the Paths & Roads or the Pistes & Trails drawer) and a footpath or hiking trail drawn across the line becomes a timber footbridge with stairs ($900) instead: guests climb over and never wait. Ranger Rudi suggests it when guests lose a lot of time at a crossing. MTB trails get a longer ramp bridge ($1,100). **Road overpass.** Roads cross on a level crossing by default. With **Crossings** set to **Bridge**, the road climbs over the rail on an overpass instead ($900 + $150 per tile, 7 or 9 tiles including the ramps): cars drive over it, trains pass underneath and nobody waits. It needs free, gentle ground on both sides of the rail and a drag long enough to carry the ramps, otherwise you will see *No room for the ramps* or *Too steep*.
 
 {{fig:bridges-stream}}
 
