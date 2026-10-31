@@ -98,7 +98,7 @@ describe('Ambience layers (fake backend)', () => {
     amb.update(base, 0.1);
     expect(amb.layerCount).toBe(LAYER_IDS.length);
     const after = fb.nodes.length;
-    expect(fb.live).toBeLessThan(210); // (+ sleigh bells, Task 31) budget: loops + buses (LFO-driven drift costs a few nodes per layer)
+    expect(fb.live).toBeLessThan(220); // (+ sleigh bells, Task 31; + concert bed, Task 41: 12 nodes) budget: loops + buses (LFO-driven drift costs a few nodes per layer)
     for (let i = 0; i < 1000; i++) { fb.t += 0.1; amb.update({ ...base, zoom: 5 + (i % 50), hour: (i / 10) % 24 }, 0.1); engine.reap(fb.t); }
     // one-shot voices come and go, but looping layers are never rebuilt
     expect(amb.layerCount).toBe(LAYER_IDS.length);

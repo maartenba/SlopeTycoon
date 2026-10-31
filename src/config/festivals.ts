@@ -9,8 +9,8 @@ import type { SeasonId } from '../core/events';
  * Every festival carries a `dressing` spec: the render layer dresses the road / plaza near the base station with instanced bunting, flags,
  * banners (festival name), market stalls, a procession or a grandstand for the festival's duration (render/festival/*).
  */
-export type FestivalId = 'almabtrieb' | 'christmasMarket' | 'carnival' | 'musicFestival' | 'worldCup' | 'newYear' | 'critic' | 'powder';
-export const FESTIVAL_IDS: readonly FestivalId[] = ['almabtrieb', 'christmasMarket', 'carnival', 'musicFestival', 'worldCup', 'newYear', 'critic', 'powder'];
+export type FestivalId = 'almabtrieb' | 'christmasMarket' | 'carnival' | 'musicFestival' | 'mountainConcertSummer' | 'mountainConcertWinter' | 'worldCup' | 'newYear' | 'critic' | 'powder';
+export const FESTIVAL_IDS: readonly FestivalId[] = ['almabtrieb', 'christmasMarket', 'carnival', 'musicFestival', 'mountainConcertSummer', 'mountainConcertWinter', 'worldCup', 'newYear', 'critic', 'powder'];
 
 export type Range = readonly [min: number, max: number];
 
@@ -25,11 +25,13 @@ export interface DressingSpec {
   procession?: { kind: 'cow' | 'costume' | 'racer'; count: Range };
   /** World Cup: grandstand + finish banner at the foot of the black piste. */
   grandstand?: boolean;
+  /** Mountain concert (Task 41): a stage with truss, light cones, speakers, banner and a crowd area at the best mountain anchor (docs/festivals.md). */
+  stage?: { edition: 'summer' | 'winter' };
   /** Pennant / flag / canopy colours. */
   palette: readonly number[];
 }
 
-export type FestivalNeed = 'lodge' | 'blackPiste';
+export type FestivalNeed = 'lodge' | 'blackPiste' | 'gondola';
 
 export interface FestivalDef {
   id: FestivalId;
@@ -56,6 +58,8 @@ export interface FestivalDef {
   dressing?: DressingSpec;
   /** Restrained fireworks: at night on the last day ('finale'), the first day ('first') or never. */
   fireworks: 'finale' | 'first' | 'none';
+  /** Shells of the finale show (default `FIREWORKS.shells`); the mountain concert keeps it to one modest shell. */
+  shells?: number;
 }
 
 const WARM = [0xd9534a, 0xf2c14e, 0x4f86a8, 0xf4efe2, 0x6fae5a] as const;
@@ -84,6 +88,22 @@ export const FESTIVALS: readonly FestivalDef[] = [
     blurb: 'Open-air concerts on the village green. A big off-season crowd for a few days.',
     dressing: { bunting: [10, 16], flags: [6, 8], banners: [2, 2], stalls: [4, 6], palette: [0xf06292, 0x4fc3f7, 0xf2c14e, 0xaed581, 0xba68c8] },
     fireworks: 'finale',
+  },
+  {
+    // Task 41 (owner decision D-P7): both editions run alongside the Summer Music Festival (Jun 1 - Aug 15). Real calendar (docs/time-flow.md §10).
+    // Summer: the Summer Music Festival may START Jun 1 - Aug 11 (sim day 30-70) and so runs until Aug 15 (day 74): the only summer days left are 1-15 September
+    // (sim day 75-89), so the concert may start 1-10 Sep (75-84): the earliest non-overlapping window, directly after the festival's last day (a 30-day gap does not fit in summer).
+    id: 'mountainConcertSummer', name: 'Mountain Concert', icon: '🎸', kind: 'booked', seasons: ['summer'], startWindow: [75, 84], days: 2, leadDays: 5, cost: 9_000, arrivalMult: 1.25, cheer: 0.02, minStars: 3, minLevel: 3, needs: ['gondola'],
+    blurb: 'A summer-evening open-air concert on the mountain, with a stage, light cones and a crowd. Needs a gondola or cable car.',
+    dressing: { bunting: [8, 12], flags: [4, 6], banners: [0, 0], stalls: [0, 0], stage: { edition: 'summer' }, palette: [0xf06292, 0x4fc3f7, 0xf2c14e, 0xaed581, 0xba68c8] },
+    fireworks: 'finale', shells: 1,
+  },
+  {
+    // Winter: March is a WINTER month in the real calendar (Dec-Mar): a late-season spring-skiing concert, start 1-15 March (sim day 165-179). 2 days from the 15th ends in the next year's April: fine (absolute days).
+    id: 'mountainConcertWinter', name: 'Snow Concert', icon: '🎿', kind: 'booked', seasons: ['winter'], startWindow: [165, 178], days: 2, leadDays: 5, cost: 9_000, arrivalMult: 1.25, cheer: 0.02, minStars: 3, minLevel: 3, needs: ['gondola'],
+    blurb: 'A late-season spring-skiing concert in March: warm lamps, heaters and a snowy stage on the mountain. Needs a gondola or cable car.',
+    dressing: { bunting: [0, 0], flags: [0, 0], banners: [0, 0], stalls: [0, 0], stage: { edition: 'winter' }, palette: [0xffcf7a, 0xf4efe2, 0x8fc3ff, 0xff9a5a] },
+    fireworks: 'none',
   },
   {
     id: 'worldCup', name: 'World Cup Race', icon: '🏆', kind: 'booked', seasons: ['winter'], startWindow: [140, 164], days: 3, leadDays: 5, cost: 15_000, arrivalMult: 1.3, cheer: 0.01, minStars: 3.5, minLevel: 4, needs: ['lodge', 'blackPiste'],

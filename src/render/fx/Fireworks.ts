@@ -24,6 +24,8 @@ export interface ShowFrame {
   allowed: boolean;
   /** Where the show is centred (ground height included). */
   origin: { x: number; y: number; z: number };
+  /** Shells of the show (default `FIREWORKS.shells`; the Mountain Concert fires one modest shell). */
+  shells?: number;
 }
 
 export class Fireworks {
@@ -45,7 +47,7 @@ export class Fireworks {
     const r = this.running!;
     r.wait -= dt;
     if (r.wait > 0) return;
-    if (r.shell >= FIREWORKS.shells) { this.running = null; return; }
+    if (r.shell >= (f.shells ?? FIREWORKS.shells)) { this.running = null; return; }
     const c = FIREWORKS.colors[(this.shells) % FIREWORKS.colors.length]!;
     this.particles.emit({ x: f.origin.x + (this.rng() - 0.5) * FIREWORKS.spread * 2, y: f.origin.y + FIREWORKS.height + this.rng() * 2, z: f.origin.z + (this.rng() - 0.5) * FIREWORKS.spread * 2, count: FIREWORKS.sparks, kind: 'spark', color: c });
     r.shell++; this.shells++; r.wait = FIREWORKS.gapS * (0.8 + this.rng() * 0.5);

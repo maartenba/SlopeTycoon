@@ -8,6 +8,8 @@ export interface EventsApi {
   /** Book a festival starting on an absolute day; returns an error text or null. */
   book(id: string, start: number): string | null;
   cancel(id: string, start: number): string | null;
+  /** 'Show me': the running concert's stage, or the Lifts drawer when a gondola / cable car is missing. */
+  showMe?(what: 'stage' | 'lifts', id: string): void;
 }
 
 const css = `
@@ -70,7 +72,12 @@ export class StEvents extends StElement {
     }
     out.push(strip);
     if (!v.running.length) out.push(el('div', 'muted', 'No festival this week.'));
-    for (const r of v.running) out.push(el('div', 'row', `${r.icon} ${r.name} · ${r.note} (${r.when})`));
+    for (const r of v.running) {
+      const row = el('div', 'row');
+      row.append(el('span', 'grow', `${r.icon} ${r.name} · ${r.note} (${r.when})`));
+      if (r.stage && a.showMe) { const b = el('button', '', 'Show me'); b.addEventListener('click', () => a.showMe!('stage', r.id)); row.append(b); }
+      out.push(row);
+    }
     if (v.review) out.push(el('div', 'muted', `Last critic review: ${v.review.score} / 5 (${v.review.when})`));
     out.push(el('h4', '', 'Coming up'));
     if (!v.upcoming.length) out.push(el('div', 'muted', 'Nothing booked.'));
@@ -93,10 +100,15 @@ export class StEvents extends StElement {
         el('div', 'muted', c.def.blurb),
         el('div', '', `${formatMoney(c.def.cost)} · ${c.def.days} days · +${Math.round((c.def.arrivalMult - 1) * 100)}% arrivals`),
       );
-      const reqs = [c.def.minStars > 0 ? `${c.def.minStars}★` : '', `level ${c.def.minLevel}`, ...c.def.needs.map((n) => (n === 'lodge' ? 'Base Lodge' : 'black piste'))].filter(Boolean).join(', ');
+      const reqs = [c.def.minStars > 0 ? `${c.def.minStars}★` : '', `level ${c.def.minLevel}`, ...c.def.needs.map((n) => (n === 'lodge' ? 'Base Lodge' : n === 'gondola' ? 'gondola or cable car' : 'black piste'))].filter(Boolean).join(', ');
       card.append(el('div', 'muted', `Needs: ${reqs}`));
       if (c.window) card.append(el('div', 'muted', `Starts ${c.window}`));
-      if (c.general) card.append(el('div', 'warn', c.general));
+      if (c.next && !c.general) card.append(el('div', 'muted', `Next: ${c.next}`));
+      if (c.general) {
+        const wr = el('div', 'row'); wr.append(el('span', 'warn grow', c.general));
+        if (c.def.needs.includes('gondola') && /gondola/i.test(c.general) && a.showMe) { const b = el('button', '', 'Show me'); b.addEventListener('click', () => a.showMe!('lifts', c.def.id)); wr.append(b); }
+        card.append(wr);
+      }
       const good = c.options.filter((o) => !o.blocker);
       const chosen = this.pick.get(c.def.id);
       const initial = c.options.some((o) => o.start === chosen) ? chosen! : good[0]?.start ?? c.options[0]?.start;

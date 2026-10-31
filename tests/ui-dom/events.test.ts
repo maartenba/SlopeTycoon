@@ -23,7 +23,7 @@ describe('events format', () => {
     c.book('christmasMarket', 125);
     const v = buildEventsView(c, 120, 50_000);
     expect(v.upcoming.some((u) => u.id === 'christmasMarket' && u.cancellable)).toBe(true);
-    expect(v.cards.map((x) => x.def.id)).toEqual(['christmasMarket', 'carnival', 'musicFestival', 'worldCup']);
+    expect(v.cards.map((x) => x.def.id)).toEqual(['christmasMarket', 'carnival', 'musicFestival', 'mountainConcertSummer', 'mountainConcertWinter', 'worldCup']);
     expect(v.cards.find((x) => x.def.id === 'worldCup')!.general).toMatch(/black piste/);
   });
 });
@@ -39,7 +39,8 @@ describe('st-events', () => {
     expect(r.textContent).toMatch(/No festival this week/);
     expect(r.textContent).toMatch(/Winter Carnival/); expect(r.textContent).toMatch(/Needs: .*black piste/);
     const cards = [...r.querySelectorAll('.card')];
-    expect(cards.length).toBe(4);
+    expect(cards.length).toBe(6); // + Mountain Concert summer / winter (Task 41)
+    expect(r.textContent).toMatch(/Mountain Concert/); expect(r.textContent).toMatch(/Snow Concert/); expect(r.textContent).toMatch(/gondola or cable car/);
     const xmas = cards.find((x) => /Christmas Market/.test(x.textContent ?? ''))!;
     (xmas.querySelector('button') as HTMLButtonElement).click();
     expect(book).toHaveBeenCalledOnce();
@@ -51,5 +52,41 @@ describe('st-events', () => {
     // a locked card disables its button
     const wc = [...r.querySelectorAll('.card')].find((x) => /World Cup/.test(x.textContent ?? ''))!;
     expect((wc.querySelector('button') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('st-events: Mountain Concert (Task 41)', () => {
+  const make = (gondola: boolean) => {
+    const d = { money: 50_000 };
+    const deps: CalendarDeps = { today: () => 120, funds: () => d.money, pay: (a) => { d.money -= a; return true; }, stars: () => 4, hasLodge: () => true, hasBlackPiste: () => false, hasGondola: () => gondola, powder: () => false, hasHerd: () => false, critic: () => ({ stars: 4, happiness: 0.8, openShare: 1, incidents: 0 }), cheer: () => {}, news: () => {}, seed: 1, auto: true };
+    return new EventCalendar(deps);
+  };
+  it('lists both editions; without a gondola the reason + a Show me (Lifts drawer) shows, with one the next full date shows', () => {
+    const c = make(false);
+    const p = el('st-events'); document.body.append(p);
+    const showMe = vi.fn();
+    p.bind({ view: () => buildEventsView(c, 120, 50_000), book: () => null, cancel: () => null, showMe });
+    const r = root(p);
+    expect(r.textContent).toMatch(/Mountain Concert/); expect(r.textContent).toMatch(/Snow Concert/);
+    expect(r.textContent).toMatch(/Starts Sep 1/); expect(r.textContent).toMatch(/Starts Mar 1/);
+    expect(r.textContent).toMatch(/Needs a gondola or cable car/);
+    const btn = [...r.querySelectorAll('button')].find((b) => b.textContent === 'Show me') as HTMLButtonElement;
+    btn.click(); expect(showMe).toHaveBeenCalledWith('lifts', expect.stringMatching(/mountainConcert/));
+    const c2 = make(true);
+    p.bind({ view: () => buildEventsView(c2, 120, 50_000), book: () => null, cancel: () => null, showMe });
+    expect(r.textContent).toMatch(/Next: .*Mar.*Winter/);
+    p.remove();
+  });
+  it('a running concert has a Show me that goes to the stage', () => {
+    const c = make(true);
+    c.debugStart('mountainConcertWinter', 2);
+    const p = el('st-events'); document.body.append(p);
+    const showMe = vi.fn();
+    p.bind({ view: () => buildEventsView(c, 120, 50_000), book: () => null, cancel: () => null, showMe });
+    const r = root(p);
+    expect(r.textContent).toMatch(/Snow Concert · day 1 of 2/);
+    ([...r.querySelectorAll('.row button')].find((b) => b.textContent === 'Show me') as HTMLButtonElement).click();
+    expect(showMe).toHaveBeenCalledWith('stage', 'mountainConcertWinter');
+    p.remove();
   });
 });

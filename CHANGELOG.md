@@ -4,6 +4,13 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- **Mountain Concert** (Phase 6 Task 41, `docs/festivals.md`): two new bookable events next to the Summer Music Festival (which stays): the **Mountain Concert** 🎸 (summer, 2 days, start 1-10 September, $9,000, x1.25 arrivals) and the **Snow Concert** 🎿 (winter, 2 days, start 1-15 March, a late-season spring-skiing concert). Both need level 3, 3 stars and a **gondola or cable car**; the Events panel shows the reason when they are locked (with a Show me to the Lifts drawer) and the next possible full date when they are not.
+- **Concert stage**: a stage with truss, speakers, a backdrop, a banner with the festival name, a barrier and a crowd, set up near the best anchor (a mid-station plaza, a viewpoint, a gondola / cable car top, else the base station / village / lodge) on free, flat, tree-free ground. Light cones (additive, translucent, no real lights) sway gently at night (still with reduced motion); summer has bunting and flags, winter a snow roof, warm lamps and heaters. View only, removed after the event, 1 extra draw call. The summer edition ends with one modest firework (never with Feedback Off); the winter edition has none.
+- **Concert sound**: a very quiet distant music bed and crowd murmur (ceiling 0.04) while a concert runs and the camera is near; it follows the ambience volume and mute.
+- **Rudi** suggests a concert when you own a gondola or cable car and one can start within about six weeks. The Events panel gets a Show me for a running concert.
+
 ## [0.2.9] - 2026-10-31 (pre-release)
 
 Winter adventures and the backcountry, the fifth content wave of Phase 6 (milestone M6.5). Changes since 0.2.8: a Sleigh Stable, a Snowshoe Hut and a Snowscooter Base, paintable backcountry routes with an avalanche danger from 1 to 5, Snowboarder and Ski tourer guests, and the Powder Hounds campaign.

@@ -18,7 +18,7 @@ import { poolHeatCost } from '../config/energy';
 import { Eco } from '../sim/meta/Eco';
 import { BUILDINGS } from '../config/buildings';
 import { CLOSED_BUILDING_UPKEEP_SHARE, HEIGHT_UNIT, OFFSEASON_RELIEF, REMOTE_SUPPLY_MULT, oldDays } from '../config/balance';
-import { LIFTS } from '../config/lifts';
+import { LIFTS, normalizeLiftKind } from '../config/lifts';
 import { SUSPENSION } from '../config/bridges';
 import type { ViewpointSite } from '../sim/attractions/Viewpoint';
 import { Buildings } from '../sim/Buildings';
@@ -913,6 +913,7 @@ export function createSim(opts: SimOptions) {
     stars: () => rating.stars,
     gate: (lvl) => (progression.open || progression.level >= lvl ? null : lockedReason(lvl)),
     hasLodge: () => buildings.all().some((b) => b.type === 'baseLodge'),
+    hasGondola: () => lifts.all().some((l) => { const k = normalizeLiftKind(l.kind); return k === 'gondola6' || k === 'gondola10' || k === 'cablecar'; }),
     hasBlackPiste: () => {
       if (blackCache.day === absDay()) return blackCache.v;
       let v = false; const lay = networks.layers, kd = networks.kind, df = networks.difficulty;

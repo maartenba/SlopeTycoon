@@ -40,6 +40,8 @@ export interface CalendarDeps {
   gate?: (minLevel: number) => string | null;
   hasLodge: () => boolean;
   hasBlackPiste: () => boolean;
+  /** A gondola or cable car stands in the resort (Mountain Concert). Absent = no restriction (older fixtures). */
+  hasGondola?: () => boolean;
   /** A snowfall that makes a powder day (read-only weather). */
   powder: () => boolean;
   /** Cows exist (Alpine Farm built): Almabtrieb can run. */
@@ -185,7 +187,7 @@ export class EventCalendar {
     if (this.d.funds() < def.cost) return 'Not enough cash';
     return null;
   }
-  /** Date-independent prerequisites (level, stars, lodge, black piste); null = met. Cash is checked separately. */
+  /** Date-independent prerequisites (level, stars, lodge, black piste, gondola); null = met. Cash is checked separately. */
   requirement(id: FestivalId): string | null {
     const def = FESTIVAL_BY_ID[id];
     const g = this.d.gate?.(def.minLevel);
@@ -193,6 +195,7 @@ export class EventCalendar {
     if (this.d.stars() < def.minStars) return `Needs ${def.minStars} stars`;
     if (def.needs.includes('lodge') && !this.d.hasLodge()) return 'Needs a Base Lodge';
     if (def.needs.includes('blackPiste') && !this.d.hasBlackPiste()) return 'Needs a black piste';
+    if (def.needs.includes('gondola') && this.d.hasGondola && !this.d.hasGondola()) return 'Needs a gondola or cable car';
     return null;
   }
   book(id: FestivalId, start: number): boolean {

@@ -74,6 +74,7 @@ const CASES: Case[] = [
   { id: 'marketing.wellness', trigger: (s) => { guests(s, 20); s.game.money = 50_000; stubBlocker(s, 'wellness'); }, calm: (s) => { guests(s, 20); s.game.money = 50_000; } },
   { id: 'marketing.school', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; stubBlocker(s, 'school'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('summer') + 5); s.game.money = 1_000; } },
   { id: 'marketing.powder', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; stubBlocker(s, 'powder'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; } },
+  { id: 'concert.available', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; s.lifts.all()[0]!.kind = 'gondola6'; }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; } },
   { id: 'marketing.parkJam', trigger: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; stubBlocker(s, 'parkJam'); }, calm: (s) => { guests(s, 20); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; } },
   { id: 'farm.almabtrieb', trigger: (s) => { s.events.setAuto(true); setDay(s, seasonStartDay('summer') + 5); }, calm: (s) => { s.events.setAuto(false); setDay(s, seasonStartDay('summer') + 5); } },
   { id: 'season.winter', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); removeTypes(s, 'snowCannon'); }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); } },
@@ -121,7 +122,7 @@ describe('advisor rules', () => {
       eval1(s, !c.cheap);
       const adv = s.advisor.ranked().find((x) => x.id === c.id)!;
       expect(adv.target || adv.panel).toBeTruthy();
-      if (adv.panel?.drawer === 'marketing') expect(s.marketing.list().some((d) => d.id === adv.panel!.item)).toBe(true);
+      if (adv.panel?.drawer === 'marketing') expect(adv.panel.item === undefined || s.marketing.list().some((d) => d.id === adv.panel!.item)).toBe(true);
     });
     it(`${c.id}: stays quiet when its condition is absent`, () => {
       const s = fresh();

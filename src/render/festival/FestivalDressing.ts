@@ -4,11 +4,12 @@ import { FESTIVAL_BY_ID, type FestivalId } from '../../config/festivals';
 import { ATLAS_ROWS, bannerBoards, paintAtlas, type BannerPlacement } from '../meshes/festival/banner';
 import { bannerPostsGeometry, buntingGeometry, finishArchGeometry, grandstandGeometry, poleGeometry, POLE_H, stallGeometry } from '../meshes/festival/parts';
 import { placeDressing, propCount, type DressingLayout, type DressingWorld } from './placeDressing';
+import { concertLightsGeometry, crowdGeometry, makeLightMaterial, stageGeometry, STAGE_H, type LightUniforms } from '../meshes/festival/stage';
 import { Procession, type ProcessionKind } from './Procession';
 
 export interface DressedEvent { id: FestivalId; start: number }
-/** Extra draw calls the dressing may add: solid props, banner boards, procession figures. */
-export const FESTIVAL_DRAW_CALLS = 3;
+/** Draw calls the dressing may add: solid props, banner boards, procession figures, and (Mountain Concert, Task 41) one additive light mesh (cones + glows). The concert adds 1 to the original 3. */
+export const FESTIVAL_DRAW_CALLS = 4;
 
 /** Banner boards hang this high above the ground (tiles). */
 const BANNER_TOP = 1.1;
@@ -24,6 +25,13 @@ export class FestivalDressing {
   readonly solid: THREE.Mesh;
   readonly banners: THREE.Mesh;
   readonly procession: Procession;
+  /** Additive light cones + lamp / heater glows of a concert stage (1 draw call, empty otherwise). */
+  readonly lights: THREE.Mesh;
+  private lightU: LightUniforms;
+  private lightMat: THREE.MeshBasicMaterial;
+  private time = 0;
+  private lightDark = 0;
+  private reduced = false;
   private bannerMat = new THREE.MeshLambertMaterial({ side: THREE.FrontSide });
   private atlas: THREE.CanvasTexture | null = null;
   layouts: DressingLayout[] = [];
@@ -32,7 +40,11 @@ export class FestivalDressing {
   constructor(private ground: (x: number, z: number) => number, private world: () => DressingWorld, private seed: number) {
     this.solid = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshLambertMaterial({ vertexColors: true }));
     this.banners = new THREE.Mesh(new THREE.BufferGeometry(), this.bannerMat);
-    for (const m of [this.solid, this.banners]) { m.frustumCulled = false; m.visible = false; this.group.add(m); }
+    const lm = makeLightMaterial();
+    this.lightMat = lm.material; this.lightU = lm.uniforms;
+    this.lights = new THREE.Mesh(new THREE.BufferGeometry(), this.lightMat);
+    this.lights.renderOrder = 3; this.lights.name = 'festival:lights';
+    for (const m of [this.solid, this.banners, this.lights]) { m.frustumCulled = false; m.visible = false; this.group.add(m); }
     this.procession = new Procession(ground);
     this.group.add(this.procession.group);
     this.group.name = 'festivalDressing';
@@ -94,6 +106,20 @@ export class FestivalDressing {
       if (spec.procession && l.figures > 0) proc = { kind: spec.procession.kind, layout: l };
     }
     this.labels = labels;
+    const lightGeos: THREE.BufferGeometry[] = [];
+    for (const l of layouts) {
+      if (!l.stage) continue;
+      const st = l.stage, spec = FESTIVAL_BY_ID[l.festival].dressing!, y = g(st.x, st.z);
+      solid.push(stageGeometry(st.x, y, st.z, st.ry, st.edition, spec.palette));
+      const people = crowdGeometry(st.crowd, g, spec.palette, st.edition);
+      if (people) solid.push(people);
+      const b = st.banner, by = y + STAGE_H.floor + STAGE_H.truss - 0.3;
+      boards.push({ x: b.x, y: by - b.h / 2 + 0.17, z: b.z, ry: b.ry, w: b.w, h: b.h, row: labelRow(FESTIVAL_BY_ID[l.festival].name) });
+      lightGeos.push(concertLightsGeometry({ x: st.x, y, z: st.z, ry: st.ry, edition: st.edition }));
+    }
+    this.lights.geometry.dispose(); this.lights.geometry = lightGeos.length ? mergeGeometries(lightGeos, false) : new THREE.BufferGeometry(); this.lights.visible = lightGeos.length > 0;
+    for (const lg of lightGeos) lg.dispose();
+    this.applyLight();
     const swap = (m: THREE.Mesh, geo: THREE.BufferGeometry | null): void => { m.geometry.dispose(); m.geometry = geo ?? new THREE.BufferGeometry(); m.visible = !!geo; };
     swap(this.solid, solid.length ? mergeGeometries(solid, false) : null);
     swap(this.banners, boards.length ? bannerBoards(boards) : null);
@@ -108,11 +134,19 @@ export class FestivalDressing {
     else this.procession.set(null, [], 0);
   }
 
-  /** Per frame: the procession walks (daytime only). */
-  update(dt: number, hour: number): void { this.procession.update(dt, hour); }
+  /** Night factor 0..1 (the lights show at dusk and night) and reduced motion (static cones). */
+  setLight(dark: number, reducedMotion = false): void { this.lightDark = dark; this.reduced = reducedMotion; this.applyLight(); }
+  private applyLight(): void {
+    this.lightMat.opacity = 0.05 + 0.4 * Math.max(0, Math.min(1, this.lightDark));
+    this.lightU.uMotion.value = this.reduced ? 0 : 1;
+  }
+
+  /** Per frame: the procession walks (daytime only); the light cones sway gently (static with reduced motion). */
+  update(dt: number, hour: number): void { this.procession.update(dt, hour); this.time += dt; this.lightU.uTime.value = this.time; }
 
   dispose(): void {
     this.solid.geometry.dispose(); (this.solid.material as THREE.Material).dispose();
+    this.lights.geometry.dispose(); this.lightMat.dispose();
     this.banners.geometry.dispose(); this.bannerMat.dispose(); this.atlas?.dispose();
     this.procession.dispose();
   }

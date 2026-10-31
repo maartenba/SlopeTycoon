@@ -41,6 +41,6 @@ function mulb(seed: number): () => number { let a = seed >>> 0; return () => { a
 export const AMB_CASES: Record<string, Partial<AmbienceState>> = {
   wind: { wind: 0.5 }, crickets: { season: 'summer', hour: 20, wind: 0 }, insects: { season: 'summer', hour: 12, wind: 0 }, birds: { season: 'summer', hour: 9, wind: 0 },
   crowd: { crowd: 80 }, lift: { lifts: 1 }, water: { water: 1, season: 'spring' }, snowcat: { snowcat: 1, hour: 23 }, rain: { weather: 'rain', season: 'spring' },
-  leaves: { season: 'autumn', wind: 0.6 }, heli: { heli: 1 }, storm: { weather: 'storm', wind: 1, altitude: 0.8 },
+  leaves: { season: 'autumn', wind: 0.6 }, heli: { heli: 1 }, concert: { season: 'summer', hour: 20, wind: 0, concert: 1 }, storm: { weather: 'storm', wind: 1, altitude: 0.8 },
 };
 export const AMB_BASE: AmbienceState = { season: 'winter', weather: 'clear', hour: 12, zoom: 12, altitude: 0.4, wind: 0.3, water: 0, crowd: 0, lifts: 0, buildings: 0, cows: 0, snowcat: 0, heli: 0 };

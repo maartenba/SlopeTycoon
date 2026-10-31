@@ -8,6 +8,8 @@ import type { Sim } from '../../game/createSim';
 import type { PlacedBuilding } from '../Buildings';
 import type { SeasonId } from '../../core/events';
 import { BUILDINGS } from '../../config/buildings';
+import { FESTIVAL_BY_ID } from '../../config/festivals';
+import { normalizeLiftKind } from '../../config/lifts';
 import { Layer } from '../../world/Networks';
 import { isAccessReason } from '../PlacementRules';
 import { liftOpenForBusiness } from '../ops/LiftOps';
@@ -321,6 +323,21 @@ export const RULES: readonly Rule[] = [
     if (c.season !== 'winter' || c.sim.guestSim.store.count < 10 || m.running().some((r) => r.id === 'powder') || m.blocker('powder') !== null) return null;
     if (c.sim.game.money < (c.shown ? 5_500 : 8_000)) return null;
     return { id: 'marketing.powder', severity: 'info', ...TEXT.powderCampaign(), panel: { drawer: 'marketing', item: 'powder' } };
+  }, false, true),
+  // Mountain Concert (Task 41, docs/festivals.md): a gondola / cable car exists, a concert edition is bookable within ~6 weeks and nothing is booked -> point at the Events calendar
+  rule('concert.available', 1, (c) => {
+    const sim = c.sim, ev = sim.events;
+    if (!sim.lifts.all().some((l) => { const k = normalizeLiftKind(l.kind); return k === 'gondola6' || k === 'gondola10' || k === 'cablecar'; }) || sim.guestSim.store.count < (c.shown ? 10 : 15)) return null;
+    const ids = ['mountainConcertSummer', 'mountainConcertWinter'] as const, today = sim.game.date.year * 180 + sim.game.date.day;
+    if (ev.booked.some((b) => (ids as readonly string[]).includes(b.id))) return null;
+    for (const id of ids) {
+      const def = FESTIVAL_BY_ID[id];
+      if (ev.requirement(id) !== null || sim.game.money < def.cost + (c.shown ? 1_500 : 2_500)) continue;
+      const s = ev.nextStart(id);
+      if (s === null || s - today > (c.shown ? 50 : 40)) continue;
+      return { id: 'concert.available', severity: 'info', ...TEXT.concertAvailable(def.name, s - today), panel: { drawer: 'marketing' } }; // the Events calendar sits in the Marketing drawer
+    }
+    return null;
   }, false, true),
   rule('marketing.parkJam', 1, (c) => {
     const m = c.sim.marketing;

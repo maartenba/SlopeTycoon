@@ -333,6 +333,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'concert.available', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; s.lifts.all()[0]!.kind = 'gondola6'; },
+    fixes: [
+      { name: 'a concert is booked', apply: (s) => { expect(s.events.book('mountainConcertWinter', s.events.nextStart('mountainConcertWinter')!)).toBe(true); } },
+      { name: 'the gondola is gone', apply: (s) => { s.lifts.all()[0]!.kind = 'chair4'; } },
+    ],
+  },
+  {
     id: 'marketing.parkJam',
     setup: (s) => { guests(s, 20); s.game.date.day = seasonStartDay('winter') + 5; s.game.money = 50_000; campStub(s, 'parkJam'); },
     fixes: [

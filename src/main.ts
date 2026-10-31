@@ -478,6 +478,7 @@ const updateFestival = (dt: number): void => {
     festivalCheck = 0.5;
     festivalDressing.setEvents(sim.events.active().map((e) => ({ id: e.id, start: e.start })), `${buildings.all().length}:${sim.lifts.all().length}`);
   }
+  festivalDressing.setLight(lighting.nightUniform.value, getReducedMotion());
   festivalDressing.update(dt, currentHour());
 };
 
@@ -1234,17 +1235,18 @@ const emotes = new Emotes(guestSim.store, {
 renderer.scene.add(emotes.mesh);
 // Fireworks (M5.4 Task 21): restrained, New Year + festival finales, night only, never with Feedback = Off / reduced motion. Sparks use the shared particle pool.
 const fireworks = new Fireworks(fx.particles);
-let showKey: string | null = null, showCheck = 0, showAt = { x: 0, y: 0, z: 0 };
+let showKey: string | null = null, showCheck = 0, showAt = { x: 0, y: 0, z: 0 }, showShells: number | undefined;
 const updateFireworks = (dt: number): void => {
   showCheck -= dt;
   if (showCheck <= 0) {
     showCheck = 0.5;
     const e = sim.events.fireworksToday();
     showKey = e ? `${e.id}@${e.start}:${Math.floor(game.date.day)}` : null;
-    const w = festivalDressing.layouts[0], a = w?.anchor ?? { x: terrainInfo.villageAnchor.x, y: terrainInfo.villageAnchor.y };
+    showShells = e?.def.shells;
+    const w = festivalDressing.layouts.find((l) => l.festival === e?.id) ?? festivalDressing.layouts[0], a = w?.stage ? { x: w.stage.x, y: w.stage.z } : w?.anchor ?? { x: terrainInfo.villageAnchor.x, y: terrainInfo.villageAnchor.y };
     showAt = { x: a.x, y: surfaceHeight(grid, a.x, a.y), z: a.y };
   }
-  fireworks.update(dt, { show: showKey, hour: currentHour(), dark: lighting.nightUniform.value, allowed: fireworksAllowed(fx.policy(), getReducedMotion()), origin: showAt });
+  fireworks.update(dt, { show: showKey, hour: currentHour(), dark: lighting.nightUniform.value, allowed: fireworksAllowed(fx.policy(), getReducedMotion()), origin: showAt, shells: showShells });
 };
 const fxApi = { emotes, demo: () => fx.demo(), policy: () => fx.policy(), setIntensity: (v: FeedbackIntensity) => fx.setIntensity(v), get intensity() { return fx.intensity; }, stats: fx.stats };
 {
@@ -1281,6 +1283,7 @@ try {
       cats: () => (opsRef?.grooming.nightActive ? opsRef.grooming.cats : []),
       helis: () => safetyRef?.heli.helis ?? [],
       campfires: () => buildings.all().filter((b) => b.type === 'campground' && b.active && attractions.get(b.id)?.open).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
+      concerts: () => festivalDressing.layouts.filter((l) => l.stage).map((l) => ({ x: l.stage!.x, y: l.stage!.z })),
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad' || c.kind === 'scooter')),
       sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
@@ -2409,6 +2412,11 @@ if (ui && !DEMO) {
     view: () => buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money),
     book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
     cancel: (id, start) => { if (!sim.events.cancel(id as FestivalId, start)) return 'Cannot cancel'; refreshUi(); return null; },
+    showMe: (what, id) => {
+      const st = festivalDressing.layouts.find((l) => l.festival === id)?.stage;
+      if (what === 'stage' && st) goTo({ x: st.x - 0.5, y: st.z - 0.5 });
+      else if (what === 'lifts') showPanel({ drawer: 'lifts' });
+    },
   });
   mktPanel.bind({
     view: () => buildMarketingView(sim.marketing, game.money), start: (id) => sim.marketing.start(id),

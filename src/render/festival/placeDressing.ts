@@ -26,6 +26,12 @@ export interface DressingWorld {
   /** World Cup: the foot of the black piste (finish) and the racers' line from the top down. */
   finish?: Pt | null;
   racerLine?: readonly Pt[];
+  /** Optional: a tree stands on this tile (the concert stage looks for tree-free ground first, view only). */
+  tree?: (i: number) => boolean;
+  /** Mountain concert anchors (Task 41; all optional): top stations of gondolas / cable cars, viewpoint buildings, mid-station plazas of N-station lifts. */
+  liftTops?: readonly Pt[];
+  viewpoints?: readonly Pt[];
+  midStations?: readonly Pt[];
 }
 
 export const DRESSING = { anchorRadius: 16, chainRadius: 12, stallSpacing: 1.15, poleOffset: 0.42, maxChain: 24 } as const;
@@ -33,10 +39,28 @@ export const DRESSING = { anchorRadius: 16, chainRadius: 12, stallSpacing: 1.15,
 export interface Pole { x: number; z: number; /** 0 = left of the road, 1 = right. */ side: 0 | 1; /** Flag colour index, -1 = plain pole. */ flag: number }
 export interface BannerSpec { x: number; z: number; ry: number; w: number; h: number }
 export interface StallSpec { x: number; z: number; ry: number; color: number }
+/** Where a concert stage stands (best-scoring anchor first: a mid-station plaza, a viewpoint, a gondola / cable car top, then the base station / village / lodge). */
+export type StageAnchor = 'midStation' | 'viewpoint' | 'liftTop';
+export const STAGE = {
+  /** Footprint in tiles: stage 4 wide x 2 deep, crowd area 4 wide x 3 deep in front of it. */
+  width: 4, stageDepth: 2, crowdDepth: 3,
+  /** Search radius (tiles) around a mountain anchor / a fallback anchor. */
+  radius: 10, fallbackRadius: 12,
+  /** Anchor weights (higher wins; a tile of distance costs `distCost`). */
+  weight: { midStation: 3, viewpoint: 2.5, liftTop: 2, station: 1, village: 0.8, lodge: 0.6 } as Record<string, number>, distCost: 0.15,
+} as const;
+export interface StageSpecLayout {
+  /** Centre of the stage floor (tile corner coordinates; the front of the stage is local +z), yaw like the other props. */
+  x: number; z: number; ry: number; edition: 'summer' | 'winter';
+  /** Crowd members (world x / z) and a colour index. */
+  crowd: Array<{ x: number; z: number; c: number }>;
+  /** The banner board hangs on the truss: world position, yaw, size. */
+  banner: BannerSpec;
+}
 export interface DressingLayout {
   festival: FestivalId;
   /** Which anchor candidate was used. */
-  source: 'station' | 'village' | 'lodge';
+  source: 'station' | 'village' | 'lodge' | StageAnchor;
   anchor: Pt;
   /** Road / path (or plaza) tile centres the bunting follows. */
   chain: Pt[];
@@ -47,6 +71,8 @@ export interface DressingLayout {
   stalls: StallSpec[];
   grandstand: { x: number; z: number; ry: number } | null;
   finish: { x: number; z: number; ry: number } | null;
+  /** Mountain concert stage (null for every other festival). */
+  stage: StageSpecLayout | null;
   /** Procession path (closed loop: out along one edge of the road, back along the other; racers: the one-way piste line). */
   loop: Pt[];
   /** Number of procession figures to show. */
@@ -134,6 +160,7 @@ export function placeDressing(w: DressingWorld, festival: FestivalId, seed: numb
   if (!spec) return null;
   const r = rng((seed ^ hashStr(festival)) >>> 0), ri = (rg: readonly [number, number]): number => rg[0] + Math.floor(r() * (rg[1] - rg[0] + 1));
   const ok = makeOk(w, taken), N = w.size;
+  if (spec.stage) return placeStage(w, festival, spec.stage.edition, ok, r);
   const anchors: Array<{ p: Pt; source: DressingLayout['source'] }> = [];
   if (w.station) anchors.push({ p: w.station, source: 'station' });
   if (w.village) anchors.push({ p: w.village, source: 'village' });
@@ -232,12 +259,85 @@ export function placeDressing(w: DressingWorld, festival: FestivalId, seed: numb
     }
     if (loop.length < 2) figures = 0;
   }
-  return { festival, source: used.source, anchor, chain, poles, strings, banners, stalls, grandstand, finish, loop, figures, tiles: [...tiles].sort((a, b) => a - b) };
+  return { festival, source: used.source, anchor, chain, poles, strings, banners, stalls, grandstand, finish, stage: null, loop, figures, tiles: [...tiles].sort((a, b) => a - b) };
+}
+
+/** The 4 yaw steps a stage may face (multiples of a quarter turn so the footprint stays on whole tiles). */
+const STAGE_YAWS = [0, Math.PI / 2, Math.PI, Math.PI * 1.5] as const;
+/** World point of local (u, v) of a stage centred at (cx, cz) with yaw `ry` (same convention as the other props: x' = x cos + z sin, z' = -x sin + z cos). */
+export function stagePoint(cx: number, cz: number, ry: number, u: number, v: number): Pt {
+  const c = Math.round(Math.cos(ry) * 1e6) / 1e6, s = Math.round(Math.sin(ry) * 1e6) / 1e6;
+  return { x: cx + u * c + v * s, y: cz - u * s + v * c };
+}
+/** Local cell centres of the footprint: stage cells (v -0.5, 0.5) then crowd cells (v 1.5, 2.5, 3.5). */
+function stageCells(): Array<{ u: number; v: number; crowd: boolean }> {
+  const out: Array<{ u: number; v: number; crowd: boolean }> = [];
+  for (let k = 0; k < STAGE.stageDepth + STAGE.crowdDepth; k++) for (let i = 0; i < STAGE.width; i++) out.push({ u: i - (STAGE.width - 1) / 2, v: k - STAGE.stageDepth / 2 + 0.5, crowd: k >= STAGE.stageDepth });
+  return out;
+}
+
+/**
+ * Mountain concert (Task 41): scores every anchor (mid-station plaza > viewpoint > gondola / cable car top > base station > village > lodge) by the best free,
+ * flat, network-free 4 x 5 tile site (stage 4x2 + crowd 4x3) within reach; returns null when no anchor has a site. Pure and deterministic.
+ */
+function placeStage(w: DressingWorld, festival: FestivalId, edition: 'summer' | 'winter', ok: (x: number, y: number) => boolean, r: () => number): DressingLayout | null {
+  const N = w.size, cells = stageCells();
+  const kinds: Array<{ source: DressingLayout['source']; pts: readonly Pt[]; radius: number; weight: number }> = [
+    { source: 'midStation', pts: w.midStations ?? [], radius: STAGE.radius, weight: STAGE.weight.midStation! },
+    { source: 'viewpoint', pts: w.viewpoints ?? [], radius: STAGE.radius, weight: STAGE.weight.viewpoint! },
+    { source: 'liftTop', pts: w.liftTops ?? [], radius: STAGE.radius, weight: STAGE.weight.liftTop! },
+    { source: 'station', pts: w.station ? [w.station] : [], radius: STAGE.fallbackRadius, weight: STAGE.weight.station! },
+    { source: 'village', pts: w.village ? [w.village] : [], radius: STAGE.fallbackRadius, weight: STAGE.weight.village! },
+    { source: 'lodge', pts: w.lodge ? [w.lodge] : [], radius: STAGE.fallbackRadius, weight: STAGE.weight.lodge! },
+  ];
+  const toward = w.village ?? w.station ?? w.lodge; // the crowd faces the valley (village / base) when it can
+  const treeCache = new Map<number, boolean>();
+  const treeAt = (i: number): boolean => { let v = treeCache.get(i); if (v === undefined) { v = w.tree?.(i) ?? false; treeCache.set(i, v); } return v; };
+  const search = (avoidTrees: boolean): { score: number; source: DressingLayout['source']; anchor: Pt; cx: number; cz: number; ry: number } | null => {
+    let best: { score: number; source: DressingLayout['source']; anchor: Pt; cx: number; cz: number; ry: number } | null = null;
+    for (const k of kinds) for (const a of k.pts) {
+      const R = Math.ceil(k.radius), ax = Math.round(a.x), ay = Math.round(a.y);
+      for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+        const cx = ax + dx, cz = ay + dy, d = Math.hypot(cx - a.x, cz - a.y);
+        if (d > k.radius) continue;
+        const score = k.weight - d * STAGE.distCost;
+        if (best && score <= best.score) continue;
+        let pick = -1, pickDot = -Infinity;
+        for (const ry of STAGE_YAWS) {
+          let fits = true;
+          for (const c of cells) {
+            const p = stagePoint(cx, cz, ry, c.u, c.v), tx = Math.floor(p.x), ty = Math.floor(p.y), i = ty * N + tx;
+            if (!ok(tx, ty) || w.kind(i) !== 0 || (w.steep?.(i) ?? false) || (avoidTrees && treeAt(i))) { fits = false; break; }
+          }
+          if (!fits) continue;
+          const dot = toward ? Math.sin(ry) * (toward.x - cx) + Math.cos(ry) * (toward.y - cz) : 0;
+          if (dot > pickDot + 1e-9) { pickDot = dot; pick = ry; }
+        }
+        if (pick >= 0) best = { score, source: k.source, anchor: a, cx, cz, ry: pick };
+      }
+    }
+    return best;
+  };
+  const best = search(true) ?? search(false);
+  if (!best) return null;
+  const tiles = new Set<number>();
+  for (const c of cells) { const p = stagePoint(best.cx, best.cz, best.ry, c.u, c.v); tiles.add(Math.floor(p.y) * N + Math.floor(p.x)); }
+  const crowd: StageSpecLayout['crowd'] = [];
+  for (const c of cells.filter((q) => q.crowd)) for (let n = 0; n < 2; n++) {
+    const p = stagePoint(best.cx, best.cz, best.ry, c.u + (r() - 0.5) * 0.7, c.v + (r() - 0.5) * 0.7);
+    crowd.push({ x: p.x, z: p.y, c: Math.floor(r() * 5) });
+  }
+  const bp = stagePoint(best.cx, best.cz, best.ry, 0, 1.02);
+  const banner: BannerSpec = { x: bp.x, z: bp.y, ry: best.ry, w: 2.6, h: 0.34 };
+  return {
+    festival, source: best.source, anchor: best.anchor, chain: [], poles: [], strings: [], banners: [], stalls: [], grandstand: null, finish: null,
+    stage: { x: best.cx, z: best.cz, ry: best.ry, edition, crowd, banner }, loop: [], figures: 0, tiles: [...tiles].sort((a, b) => a - b),
+  };
 }
 
 /** Total number of props of a layout (poles, strings, banners, stalls, stands, figures). */
 export function propCount(l: DressingLayout | null): number {
-  return l ? l.poles.length + l.strings.length + l.banners.length + l.stalls.length + (l.grandstand ? 1 : 0) + (l.finish ? 1 : 0) + l.figures : 0;
+  return l ? l.poles.length + l.strings.length + l.banners.length + l.stalls.length + (l.grandstand ? 1 : 0) + (l.finish ? 1 : 0) + (l.stage ? 1 + l.stage.crowd.length : 0) + l.figures : 0;
 }
 
 /** The racers' line down a black piste: from its highest tile, step to the lowest connected black tile until none is lower. Returns tiles top -> bottom. */
