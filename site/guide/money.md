@@ -74,7 +74,7 @@ Festivals have their own cards just below the campaigns: see [Events, stories & 
 |---|---|
 | Relaxed | More starting money ($225,000), cheaper upkeep, patient guests, fewer incidents |
 | Normal | The intended balance: $150,000 to start |
-| Challenging | Less money ($112,500), higher upkeep and interest, pickier guests, more incidents |
+| Challenging | About 30% tighter than Normal: less money ($112,500), dearer loans, 20% higher upkeep and 15% higher wages, 15% fewer arrivals, guests who balk at high prices, impatient queues and more incidents. A careful player still turns a profit in year two (a typical run earns about 70% of what Normal does) |
 
 > [!TIP] Rudi's “cash runway” advice appears when you have under five days of upkeep in the bank. Believe him.
 

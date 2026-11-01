@@ -28,7 +28,7 @@ const GOLDEN_STARTER: Record<string, string> = {
   'sys.weather': '00f02232',
   'sys.spawner': 'a65780b0',
   'sys.guests': 'bd23bf57',
-  'sys.attractions': '9c30fbd0',
+  'sys.attractions': '099d0407',
   'sys.economy': '784298e1',
   'sys.rating': 'c271823d',
   'sys.ops': 'faf8607b',
@@ -58,7 +58,7 @@ const GOLDEN_BOT: Record<string, string> = {
   'sys.weather': '571f0cde',
   'sys.spawner': '967488f8',
   'sys.guests': 'dd96c778',
-  'sys.attractions': '02333a3a',
+  'sys.attractions': 'b13bea25',
   'sys.economy': 'eba0c4bc',
   'sys.rating': '8809dc75',
   'sys.ops': '6b54f4a8',
@@ -92,6 +92,8 @@ const GOLDEN_BOT: Record<string, string> = {
 // RE-RECORDED (M6.4 STOP: Senior + School group guest types ship ON (the bot builds a terrace / cafe / toilets and a ski school + kids area, so it now draws both), plus the hotel / coffee-stand unlock rows; docs/balance.md "M6.4 STOP check"). Money 222414.97 -> 227010.16 (+2.1%); with both types removed every part except `progression` is byte-identical to the previous golden.
 // RE-RECORDED (M6.5 STOP: Snowboarder guest type, carved out of solo / couple / budget / adventure arrivals in winter / spring / autumn, plus the tour / backcountry unlock rows; docs/balance.md "M6.5 STOP check"). The arrival draw moved, so every guest-driven part moved, INCLUDING GOLDEN_STARTER (guests arrive there too); Ski tourers do not spawn (the bot paints no route). Money 227010.16 -> 232186.6 (+2.3%).
 // RE-RECORDED (Phase 6 polish: Senior guests walk at 0.75x on foot (`SENIOR_WALK`), plus the rental stock / zoo feeding / lamp changes that the plain bot never triggers; docs/balance.md "Phase 6 polish check"). Money 232186.6 -> 233115.57 (+0.4%). The new `rental` save keys are written only after a shortage, so nothing else moved.
+// RE-RECORDED (M7.2: restaurants keep a moving average of guests served per day in their stats, `AttractionStats.age / servedMark / recent`, for the food.surplus advice). ONLY the `sys.attractions` part moved (it hashes the stats); every other part and the bot money 234121.49 are byte-identical (docs/balance.md "M7.2").
+
 const GOLDEN_BOT_MONEY = 234121.49;
 
 const withoutNew = (parts: Record<string, string>): Record<string, string> => { const p = { ...parts }; delete p['staff']; delete p['staffUpgrades']; delete p['events']; delete p['stories']; delete p['rivals']; delete p['runs']; delete p['energy']; return p; };

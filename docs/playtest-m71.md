@@ -26,11 +26,16 @@ Version 0.3.1. The consistency pass: the building contract test, the access / pl
 - [ ] `npm run analysis:roi` (about 17 min) rewrites the table in `docs/economy-audit.md`; compare the flags with your own feel (which buildings do you never build?).
 - [ ] `npm run test:balance` 42 / 42.
 
-## Questions for you (from the audit)
-1. Should **Challenging** be clearly harder? (Tighten its multipliers.)
-2. Rudi tips for the **Helipad** and the energy extras, or leave them as discoverable extras?
-3. The **Campground** only pays with hikers; fine as a summer-plan building?
-4. Should a bigger resort keep rewarding **more cafés** (food demand scaling with size), or is saturation what you want?
+## Questions for you (from the audit): the owner's answers and what was done (M7.2)
+1. **Challenging clearly harder?** Yes, about 30 % tighter than Normal. Done: loan rate x1.4, upkeep x1.2, wages x1.15, arrivals x0.85, price sensitivity x1.35 (cash x0.75, incidents x1.4, patience x0.8 as before). The bot's year 2 is now about 70 % of Normal on 64 / 128 (+97k vs +140k on 64) and still profitable in years 2 and 3 on 64 / 128 / 256 (`docs/economy-audit.md` section 4, balance suite). Re-test by hand: on Challenging the first winter should feel clearly tight (the lowest cash of the bot is $12k-$22k on 64), summer survivable, and the guide / New Game card say "About 30 % tighter than Normal".
+2. **Rudi tips for the Helipad and the energy extras?** Yes. Done: `heli.rescue`, `trees.nursery`, `eco.recycling`, `energy.more` (`docs/advisor.md`). Re-test by hand: they should appear once, only for a real problem (late rescues; felled forest; sustainability the weakest area; a first generator with the grid offset far from its cap), never nag, be dismissible, and Show me must open the Buildings drawer on the item without building it.
+3. **Campground** only pays with hikers: fine, no change.
+4. **Food buildings**: audited. Extra cafes, huts and lodges never pay for themselves (a resort of 64 loses about $4k per extra cafe a year, $5k-$19k per extra lodge, with no extra income), so spamming loses money; nothing was retuned. New tip `food.surplus` ("You have more food buildings than guests can use"). Re-test by hand: build four or five cafes beside the village and play a winter fortnight; Rudi should say so once.
+
+## New checks (M7.2)
+- [ ] Open the New Game dialog: the Challenging card reads "About 30 % tighter than Normal: ...".
+- [ ] A fresh Challenging Career game on 64: does it feel clearly harder than Normal, but not hopeless? Note the lowest cash.
+- [ ] Rudi's four new extras tips and `food.surplus` behave as described above.
 
 ## Not verifiable by agents
 Real GPU frame rate, pointer lock (walk mode), audio by ear, touch on a real device (the unchanged `npm run touch:e2e` emulation passes), and whether the economy *feels* fair: all in your hands.

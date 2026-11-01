@@ -371,7 +371,7 @@ export interface DifficultyDef {
 export const DIFFICULTY: Record<DifficultyId, DifficultyDef> = {
   relaxed: { label: 'Relaxed', blurb: 'More money, forgiving guests, lower upkeep.', money: 1.5, loanRate: 0.8, upkeep: 0.75, wages: 0.75, spawn: 1.2, incidents: 0.6, patience: 1.3, priceSens: 0.8, foreclosureDays: 0, foreclosureFloor: 150_000 },
   normal: { label: 'Normal', blurb: 'The intended balance.', money: 1, loanRate: 1, upkeep: 1, wages: 1, spawn: 1, incidents: 1, patience: 1, priceSens: 1, foreclosureDays: 0, foreclosureFloor: 150_000 },
-  challenging: { label: 'Challenging', blurb: 'Less money, higher upkeep, tougher guests and more incidents.', money: 0.75, loanRate: 1.2, upkeep: 1.15, wages: 1.15, spawn: 0.93, incidents: 1.4, patience: 0.8, priceSens: 1.15, foreclosureDays: 360, foreclosureFloor: 150_000 },
+  challenging: { label: 'Challenging', blurb: 'About 30% tighter than Normal: less cash, dearer loans, higher costs, fewer and pickier guests, more incidents.', money: 0.75, loanRate: 1.4, upkeep: 1.2, wages: 1.15, spawn: 0.85, incidents: 1.4, patience: 0.8, priceSens: 1.35, foreclosureDays: 360, foreclosureFloor: 150_000 },
 };
 /** Allowed custom starting-money range (Normal difficulty default = STARTING_MONEY). */
 export const START_MONEY_RANGE = { min: 50_000, max: 1_000_000, step: 10_000 } as const;

@@ -90,6 +90,7 @@ export class AttractionSystem implements GuestAttractionPort {
   private hour = 12;
   private day = 0;
   private absDay = 0;
+  private lastUseDay = -1;
   /** The sim rng of the running update (catches draw from it: deterministic, drawn only when a hut visit ends). */
   private rng: { next(): number } | null = null;
 
@@ -419,8 +420,18 @@ export class AttractionSystem implements GuestAttractionPort {
     if (tick % 20 === 0) this.sweep(tick);
     const hour = hourOfDay(state.date);
     const absDay = state.date.year * DAYS_PER_YEAR + state.date.day;
+    if (this.lastUseDay !== absDay) { this.lastUseDay = absDay; this.dayUse(); }
     if (hour >= CHECK_IN_HOUR && this.lastCheckDay !== absDay) { this.lastCheckDay = absDay; this.checkIn(); }
     if (hour >= CAMP.gatherFrom && this.lastGatherDay !== absDay && [...this.items.values()].some((a) => a.spec.campfire)) { this.lastGatherDay = absDay; this.campfire(); }
+  }
+
+  /** Once a day: the moving average of guests served per day of every dining place (Advisor `food.surplus`: is the newest one used at all?). */
+  private dayUse(): void {
+    for (const a of this.items.values()) {
+      if (a.spec.kind !== 'restaurant') continue;
+      const st = a.stats, d = st.served - (st.servedMark ?? st.served);
+      st.servedMark = st.served; st.recent = st.recent === undefined ? d : st.recent * 0.9 + d * 0.1; st.age = (st.age ?? 0) + 1;
+    }
   }
 
   /** Safety net: Using guests no attraction knows about (after load, building removal) go back to wandering. */
@@ -570,13 +581,13 @@ export class AttractionSystem implements GuestAttractionPort {
     return {
       id: 'attractions',
       update: (state, tick) => this.update(state, tick),
-      serialize: () => ({ items: this.all().map((a) => a.save()), trails: this.trails.serialize(), last: this.lastCheckDay, rented: [...this.rented], ...(this.rentedBoards.size ? { boards: [...this.rentedBoards] } : {}), ...(this.short.all ? { short: this.short } : {}), nights: this.nightsSold, ...(this.lastGatherDay >= 0 ? { gather: this.lastGatherDay } : {}), beds: this.beds.serialize(), trekNights: this.trekNights, hour: this.hour, day: this.day }),
+      serialize: () => ({ items: this.all().map((a) => a.save()), trails: this.trails.serialize(), last: this.lastCheckDay, ...(this.lastUseDay >= 0 ? { use: this.lastUseDay } : {}), rented: [...this.rented], ...(this.rentedBoards.size ? { boards: [...this.rentedBoards] } : {}), ...(this.short.all ? { short: this.short } : {}), nights: this.nightsSold, ...(this.lastGatherDay >= 0 ? { gather: this.lastGatherDay } : {}), beds: this.beds.serialize(), trekNights: this.trekNights, hour: this.hour, day: this.day }),
       load: (data) => {
-        const d = data as { items: InstanceSave[]; trails: ReturnType<TrailUsage['serialize']>; last: number; rented: number[]; boards?: number[]; short?: { day: number; today: number; boards: number; all: number }; nights?: number; gather?: number; beds?: Array<[number, number[]]>; trekNights?: number; hour?: number; day?: number };
+        const d = data as { items: InstanceSave[]; trails: ReturnType<TrailUsage['serialize']>; last: number; use?: number; rented: number[]; boards?: number[]; short?: { day: number; today: number; boards: number; all: number }; nights?: number; gather?: number; beds?: Array<[number, number[]]>; trekNights?: number; hour?: number; day?: number };
         this.items.clear(); this.nightsSold = d.nights ?? 0;
         this.sync();
         for (const it of d.items) this.items.get(it.id)?.load(it);
-        this.trails.load(d.trails); this.lastCheckDay = d.last; this.rented = new Set(d.rented); this.rentedBoards = new Set(d.boards ?? []); this.short = d.short ? { ...d.short } : { day: -1, today: 0, boards: 0, all: 0 };
+        this.trails.load(d.trails); this.lastCheckDay = d.last; this.lastUseDay = d.use ?? -1; this.rented = new Set(d.rented); this.rentedBoards = new Set(d.boards ?? []); this.short = d.short ? { ...d.short } : { day: -1, today: 0, boards: 0, all: 0 };
         this.lastGatherDay = d.gather ?? -1; this.rooms.clear(); this.beds.load(d.beds); this.trekNights = d.trekNights ?? 0; this.hour = d.hour ?? 12; this.day = d.day ?? 0;
       },
     };

@@ -29,7 +29,7 @@ All numbers come from the headless harness: `createSim` + `src/game/bot.ts` (scr
 | `Loans.rateMult`, `Spawner.rateMult`, `GuestSim.patienceMult/injuryMult`, price sensitivity | - | from difficulty | |
 
 Difficulty multipliers (money, loan rate, upkeep, wages, arrivals, incident risk, queue patience, price sensitivity):
-Relaxed 1.5 / 0.8 / 0.75 / 0.75 / 1.2 / 0.6 / 1.3 / 0.8; Normal all 1; Challenging 0.75 / 1.2 / 1.15 / 1.15 / 0.93 / 1.4 / 0.8 / 1.15.
+Relaxed 1.5 / 0.8 / 0.75 / 0.75 / 1.2 / 0.6 / 1.3 / 0.8; Normal all 1; Challenging 0.75 / 1.4 / 1.2 / 1.15 / 0.85 / 1.4 / 0.8 / 1.35 (M7.2; before: 0.75 / 1.2 / 1.15 / 1.15 / 0.93 / 1.4 / 0.8 / 1.15).
 
 ## Before / after (bot, Normal, 64 map seed 61)
 
@@ -362,3 +362,26 @@ The shop income is steep in the score (0.30 = $350 a year, 0.40 = $2.5k, 0.45 = 
 **Goldens re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` (money 233115.57 -> 234121.49, +0.4 %; parts `core`, `lifts`, `nature`, `leavers`, `sys.spawner`, `sys.guests`, `sys.attractions`, `sys.economy`, `sys.rating`, `sys.ops`, `families`, `sessionMeta`, `goals`, `yearReports`, `progression` moved; `GOLDEN_STARTER` did not move) and the `tests/sim/meta/yearReport.test.ts` snapshot (64 / seed 21: year 1 guests 1553 -> 1539, income 1693 -> 1752, profit -96 -> -38 (x$100); year 2 guests 3089 -> 3172, income 3230 -> 3324, profit 1416 -> 1529). Two margin tests were re-pinned: `rivals` (green bot energy margin 2.5 -> 4.5 points: 75.2 vs 79.3; tree / habitat facets stay exact) and `Exploration` (128 / 1 pistes per guest 1.6 -> 1.5).
 
 **New balance suite parts (BALANCE=1):** content bot (128 / seed 1: all 60 building types stand after 3 years, not bankrupt; 64 maps: >= 50 types on all three difficulties, never bankrupt) and difficulty targets (profit-by-year bands, summer survival, cash never below zero, 0 bankruptcies; table in `docs/economy-audit.md` section 4). `npm run test:balance`: 42 / 42 pass. Observation, no change: Normal vs Challenging differ by only 10-20 % for the bot (owner question 1 in the audit).
+
+
+## M7.2 re-record (0.3.1 patch: owner decisions on the M7.1 playtest)
+**What moved:** (1) the **Challenging** difficulty row (`config/balance.ts`): loan rate x1.2 -> x1.4, upkeep x1.15 -> x1.2, wages x1.15 (kept), arrivals x0.93 -> x0.85, price sensitivity x1.15 -> x1.35, start cash x0.75 / incidents x1.4 / patience x0.8 (kept); (2) restaurants keep a moving average of guests served per day (`AttractionStats.age / servedMark / recent`, optional fields, updated once a day, saved with the attraction module; old saves load) for the `food.surplus` advice; (3) five new Advisor rules (observers: they never change the sim).
+
+**Normal and Relaxed are untouched.** Bot economy against `7428e7f` (the M7.1 commit): `GOLDEN_BOT_MONEY` is byte-identical, **234121.49 (0.0 %)**, within the +-5 % guide; every part of `GOLDEN_BOT` and `GOLDEN_STARTER` in `tests/sim/staff.test.ts` is identical **except `sys.attractions`**, which hashes the attraction stats and so moved because of the three new stat fields: starter `9c30fbd0 -> 099d0407`, bot `02333a3a -> b13bea25`. That is the only golden re-recorded in this commit; nothing about the guests, money, lifts or rating changed.
+
+**Difficulty bands** (default career bot, 64, seeds 61 / 7 / 5; net per year in k$):
+
+| Difficulty | Year 1 | Year 2 | Year 3 | Summer / month | Lowest cash |
+|---|---|---|---|---|---|
+| Relaxed | +39.6 / +28.8 / +23.3 | +201.2 / +195.4 / +199.1 | +187.6 / +214.1 / +200.1 | +10.8 / +9.7 / +12.0 | $124k .. $133k |
+| Normal | +7.5 / +3.3 / -3.7 | +148.3 / +136.9 / +135.0 | +136.8 / +159.9 / +126.2 | +9.0 / +5.5 / +7.1 | $48.5k .. $57.4k |
+| Challenging, **before** (measured this session) | +5.7 / -2.4 / -15.6 | +126.6 / +116.6 / +120.1 (86 % of Normal) | +115.5 / +133.4 / +102.8 | +8.1 / +4.2 / +7.1 | $11.8k .. $22.0k |
+| Challenging, **after** | +0.7 / -4.8 / -25.4 | +96.7 / +98.2 / +98.4 (**70 %**) | +95.1 / +109.2 / +105.5 | +5.3 / +3.6 / +5.0 | $11.8k .. $22.0k |
+
+Year-2 ratio Challenging / Normal (sums over the seeds): 64 **0.70** (293.4k / 420.2k), 128 (seeds 1, 4) **0.72** (290.0k / 401.8k, three-year runs agree). 128 / seed 1 Challenging: year 2 +127.1k, year 3 +139.9k, summer +3.7k a month. 256 / seed 1: Normal year 2 +127.2k, Challenging +68.0k (53 %: big maps carry more upkeep), year 3 +34.5k, summer +3.5k a month, lowest cash about -$100k for both (the foreclosure floor is -$150k for 360 days), no bankruptcy anywhere.
+
+Bands asserted now: Normal y2 115k..175k, Challenging y1 -50k..+40k, y2 75k..125k, y3 70k..140k; the ratio test (0.6 .. 0.8 on 64 and 128); Challenging 128 / 256 profitable in years 2 and 3 with positive summers and no bankruptcy.
+
+**Food saturation** (`foodYear`, `npm run analysis:food`; table in `docs/economy-audit.md` section 7): net of the starter resort (mean of seeds 61 / 5) with 0 / 3 / 8 extra places: Cafe +158.0k / +143.4k / +124.7k, Mountain Hut +158.0k / +145.4k / +125.0k, Lodge/Restaurant +158.0k / +96.9k / +79.4k; income +250.0k -> +243.2k / +248.0k / +243.3k with 8 extras. A balance test asserts the ordering and that income stays within 6 %. No economy tuning was needed.
+
+**Gate:** `npm run test:balance` 48 / 48 (was 42; +6: the ratio test, Challenging 128 and 256, three food tests); the other suites are listed in the commit message.

@@ -74,6 +74,7 @@
     "touch:e2e": "vite-node scripts/touch-e2e.ts",
     "analysis:difficulty": "vite-node scripts/analysis/difficultyTargets.ts",
     "analysis:roi": "vite-node scripts/analysis/buildingRoi.ts",
+    "analysis:food": "vite-node scripts/analysis/foodSaturation.ts",
     "docs:rules": "vite-node scripts/analysis/rulesTableWrite.ts",
     "analysis:contract": "vite-node scripts/analysis/contract.ts",
     "offline:splash": "vite-node scripts/offline-splash.ts",

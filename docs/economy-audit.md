@@ -24,7 +24,7 @@ One consistency pass over every building, lift, campaign and guest type: a contr
 | No advisor / goal / tutorial touchpoint | Chalet, Helipad, Solar Plant, Wind Turbine, Small Hydro, Biomass Heating, Tree Nursery, Recycling Centre, Fishing Pier, Treehouse, Climbing Crag, Canyoning Base, Coffee Stand | deliberate: optional extras nothing requires (the unlock table says "no goal or Advisor rule needs it" for most of them). Listed in `OPTIONAL_EXTRAS` with a reason; the test fails if a new building has neither a touchpoint nor an entry |
 | No valid site on the default sandbox map | Canyoning Base (needs a steep stream with rock walls) | the contract falls back to the 128 / seeds 5, 1, 4 maps (which have gorges); not a game bug |
 
-Not a gap but worth knowing: **Helipad** and the energy extras have no Advisor suggestion at all; the Helipad is a level-4 air-rescue upgrade the Advisor never proposes (an owner question below).
+Not a gap but worth knowing: **Helipad** and the energy extras had no Advisor suggestion at all in 0.3.1; M7.2 added `heli.rescue`, `trees.nursery`, `eco.recycling` and `energy.more` (they left `OPTIONAL_EXTRAS`).
 
 ## 2. Access / placement rule audit (Task 7.1.2)
 
@@ -132,11 +132,14 @@ No valid site on any ROI-sandbox map (measured in the contract suite instead): b
 |---|---|---|---|---|---|---|
 | Relaxed | +15k .. +80k | +195k .. +235k | +185k .. +225k | +10k .. +14k | $124k .. $139k | 0 / 10 runs |
 | Normal | -15k .. +50k | +135k .. +165k | +125k .. +160k | +5k .. +10k | $49k .. $64k | 0 / 10 |
-| Challenging | -22k .. +45k | +95k .. +145k | +100k .. +137k | +2k .. +7k | $12k .. $26k | 0 / 10 |
+| Challenging (0.3.1, before M7.2) | -22k .. +45k | +95k .. +145k | +100k .. +137k | +2k .. +7k | $12k .. $26k | 0 / 10 |
+| **Challenging (M7.2, about 70 % of Normal)** | -26k .. +1k (64) | +97k .. +98k (64) | +95k .. +110k (64) | +3.6k .. +5.3k | $12k .. $22k | 0 / 3 (64) |
 
 Bands in the test (about ±25 % around these): year 2 Relaxed 150k..280k, Normal 100k..215k, Challenging 70k..175k; every summer month positive on average; cash never below zero; no bankruptcy. A human-like bot (no summer attractions, lifts left on, reserve $2k) lands inside the same bands.
 
-**Observation for the owner (no change made):** Normal vs Challenging differ by only about 10-20 % in year 2 (Relaxed is +35 % above Normal), and nobody goes bankrupt on any difficulty. A competent bot finds every setting comfortable; a real player will not (the early game is tight, see the first-year numbers). If Challenging should feel clearly harder, its multipliers in `config/balance.ts` can be tightened; that is a design call.
+**Owner decision (M7.2): Challenging about 30 % tighter than Normal.** The bot's year-2 net on 64 (seeds 61 / 7 / 5, mean) was +121.1k on Challenging against +140.1k on Normal (86 %). New row (`config/balance.ts`): loan rate x1.2 -> **x1.4**, upkeep x1.15 -> **x1.2**, wages x1.15 (kept), arrivals x0.93 -> **x0.85**, price sensitivity x1.15 -> **x1.35**, start cash x0.75, incidents x1.4 and patience x0.8 (kept). Tuning runs (`scripts/analysis/difficultyTune.ts`, year-2 mean on 64): upkeep 1.25 / wages 1.2 / spawn 0.9 / sens 1.25 gave +108k, upkeep 1.3 / wages 1.25 / spawn 0.88 / sens 1.3 / loan 1.4 gave +98.6k on 64 but only +46.7k (37 % of Normal) on 256, because a fixed upkeep multiplier bites harder the more buildings a resort has; trading upkeep for arrivals and price sensitivity (which scale with income) gives a more even gap: 64 +97.8k (70 %), 128 +145.0k vs +200.9k (72 %), 256 +68.0k vs +127.2k (53 %), profitable in years 2 and 3 everywhere, summer months +3.5k .. +7.4k, no bankruptcy. The lowest cash on 256 is about -$100k for both Normal (-$63k) and Challenging, far above the -$150k foreclosure floor. A competent player (who reads Rudi, keeps summer cash and prices well) still profits; the Relaxed and Normal rows are untouched.
+
+Bands in the balance suite after M7.2: Challenging year 1 -50k .. +40k, year 2 75k .. 125k, year 3 70k .. 140k (64, three seeds); a ratio test (year-2 Challenging / Normal between 0.6 and 0.8 on 64 and on 128); Challenging on 128 / 256 profitable in years 2 and 3 with positive summers and no bankruptcy.
 
 ## 5. Fix list (Task 7.1.5), each with a reason
 
@@ -149,13 +152,42 @@ Bands in the test (about ±25 % around these): year 2 Relaxed 150k..280k, Normal
 | Guide, info cards, ghost text | see section 2 | consistency |
 | Tests re-pinned | `rivals` green-bot energy margin 2.5 -> 4.5 points (75.2 vs 79.3), `Exploration` 128 / 1 pistes per guest 1.6 -> 1.5 | the changed guest stream moved the energy-per-guest facet / sat on the old bound: tree and habitat facets stay exact |
 
-Left alone on purpose (documented, owner questions below): saturated food and safety buildings, the energy extras (sustainability choices, payback 6-25 years by design), summer buildings (need trails), and Challenging's modest gap to Normal.
+Left alone on purpose (documented, owner questions answered in section 6): saturated food and safety buildings, the energy extras (sustainability choices, payback 6-25 years by design) and summer buildings (need trails). Challenging was tightened in M7.2 (section 4); the extras got Rudi tips (section 6).
 
 Goldens, bot-economy deltas and the re-record are in [balance.md](balance.md) "M7.1 re-record".
 
-## 6. Questions for the owner
+## 6. Questions for the owner: answered (M7.1 playtest, decisions applied in M7.2)
 
-1. **Challenging** is only 10-20 % below Normal for the bot (section 4). Tighten it?
-2. The **Helipad** and the energy extras have no Advisor suggestion. Add Rudi tips (level 4 air rescue after a remote incident; a wind turbine on high ground), or keep them as discoverable extras?
-3. **Campground** (budget summer lodging) loses money when there are no hikers: it needs the trail network and toilets to shine. Fine as a summer-plan building, or should it bring its own small crowd?
-4. Food buildings are saturated by design. Is "a second café adds nothing" the behaviour you want, or should a larger resort keep rewarding more cafés (per-guest hunger demand scaling with size)?
+1. **Challenging** should be about 30 % tighter than Normal: done (section 4).
+2. **Helipad and the energy extras** get Rudi tips: done (`heli.rescue`, `trees.nursery`, `eco.recycling`, `energy.more`; `docs/advisor.md` "M7.2 additions"). The Chalet, Fishing Pier, Treehouse, Climbing Crag, Canyoning Base and Coffee Stand remain optional extras (a rule would only nag).
+3. **Campground** is fine as it is: no change.
+4. **Food buildings**: audited (section 7); spamming loses money, nothing retuned, and Rudi now says so (`food.surplus`).
+
+## 7. Food buildings (M7.2, owner question 4)
+
+Worry: is "keep building cafes" a balanced exploit? Method (`npm run analysis:food`, `scripts/analysis/foodSaturation.ts`): the sandbox starter resort (all defaults on, 64 / seeds 61, 5, 7) runs one year (180 days from 1 December) with 0, 1, 2, 3, 5 and 8 EXTRA buildings of one food type, placed one by one with the real rules and connected like the Bot does. Net = income minus expenses without construction, mean of the three seeds. Two baselines: the starter resort as it is (a Base Lodge, a Lodge/Restaurant, a Cafe, a Heated Terrace), and the same resort with every extra food place removed (only the Base Lodge dines, 60 seats). The same numbers are asserted in the balance suite (`foodYear`).
+
+**Net per year (k$) by number of extra buildings** (before = after: no tuning was needed)
+
+| Extra buildings | Cafe ($2.5k, $12/day) | Mountain Hut ($3.5k, $14/day) | Lodge/Restaurant ($6k, $30/day) | Heated Terrace ($3.5k, $14/day) |
+|---|---|---|---|---|
+| **Starter resort as is** | | | | |
+| 0 | +154.7 | +154.7 | +154.7 | +154.7 |
+| 1 | +148.4 | +149.8 | +137.8 | +156.0 |
+| 2 | +145.8 | +144.2 | +127.0 | +152.0 |
+| 3 | +139.8 | +142.8 | +108.4 | +151.3 |
+| 5 | +131.7 | +134.6 | +94.5 | +148.8 |
+| 8 | +123.2 | +124.5 | +79.2 | +139.9 |
+| **Only the Base Lodge dines (extras removed)** | | | | |
+| 0 | +178.2 | +178.2 | +178.2 | +178.2 |
+| 1 | +165.5 | +165.6 | +159.5 | +171.6 |
+| 2 | +165.2 | +167.6 | +152.9 | +167.8 |
+| 3 | +155.9 | +162.6 | +142.7 | +164.1 |
+| 5 | +148.4 | +155.1 | +113.6 | +160.8 |
+| 8 | +138.2 | +141.2 | +97.7 | +165.1 (noise) |
+
+**Marginal per extra building** (net, between the sample points; income and expense in the script output): the income of the whole resort stays at about $241k-254k whatever the number of food places (a day's meals are shared: the first extra changes it by -$2k..-$10k from cannibalised snacks, later ones by +-$3k of noise), while each extra place adds its own upkeep and wages: Cafe +$3.0k..+$4.2k a year of expense, Mountain Hut +$2.8k..+$5.0k, Lodge/Restaurant +$5.5k..+$16.2k, Heated Terrace +$0.2k..+$2.3k. So the marginal net is **negative for every building from the first one** (Cafe -$0.3k..-$12.7k, Hut +$2.0k noise .. -$12.6k, Lodge -$5k..-$19k, Terrace -$1k..-$7k, its +$1.4k at eight places is noise) and never turns positive on average. The build cost ($2.5k..$6k, half refunded on demolition) comes on top. Eight cafes cost the resort about $31k a year (-20 %), eight lodges about $75k. Utilisation of the extras (served per day per seat, `--util 1`): the first extra cafe serves about 9 guests a day on 30 seats (30 %), the second about 5.5 (18 %), the third 4 (13 %), the fifth 2-3 (8 %), the eighth 1-2 (4 %).
+
+**Verdict:** diminishing returns are not just flat, they are negative from the first extra place in the starter resort (a Base Lodge plus a Lodge / Restaurant and a Cafe already cover a 64 map's demand), and a player who spams food buildings loses money. Nothing encourages the spam, so no tuning was made (capacity share, queue effects, upkeep and demand cap are unchanged; goldens unmoved). Open design note, not a bug: because a Base Lodge covers the demand of a small resort, the first Cafe does not pay for itself either ("never profitable" in section 3), and a larger resort (256) was not swept; the owner's answer for 0.3.1 is that saturation is by design.
+
+**Rudi says so**: `food.surplus` ("You have more food buildings than guests can use"; `docs/advisor.md`): winter, three or more dining places, and the least-used cafe / hut serves under 10 % of its seats a day (moving average of about 10 days, 20 days of age). In the sandbox the untouched starter stays quiet and a resort with two extra cafes hears it after 20 days. The balance suite asserts that 3 extra places earn less than none and 8 less than 3 (cafe, hut, lodge; mean of two seeds) while income moves by less than 6 %.

@@ -6,6 +6,7 @@ import { LOAN_OFFERS } from '../../src/config/prices';
 import { GEAR_OWNERS } from '../../src/config/prices';
 import { LIFT_OPS } from '../../src/config/liftOps';
 import { DAYS_PER_YEAR, type DifficultyId } from '../../src/config/balance';
+import { foodYear } from '../../scripts/analysis/foodSaturation';
 import { BUILDINGS } from '../../src/config/buildings';
 
 /**
@@ -276,8 +277,8 @@ describe.skipIf(!FULL)('[balance] content bot (M7.1 Task 7.1.4): every building 
 describe.skipIf(!FULL)('[balance] difficulty targets: profit by year bands, summer survival, bankruptcy rate', () => {
   const BANDS: Record<DifficultyId, { y1: [number, number]; y2: [number, number]; y3: [number, number] }> = {
     relaxed: { y1: [0, 110_000], y2: [150_000, 280_000], y3: [140_000, 280_000] },
-    normal: { y1: [-40_000, 70_000], y2: [100_000, 215_000], y3: [90_000, 200_000] },
-    challenging: { y1: [-50_000, 50_000], y2: [70_000, 175_000], y3: [70_000, 175_000] },
+    normal: { y1: [-40_000, 70_000], y2: [115_000, 175_000], y3: [90_000, 190_000] },
+    challenging: { y1: [-50_000, 40_000], y2: [75_000, 125_000], y3: [70_000, 140_000] }, // M7.2: about 70 % of Normal (owner decision, docs/balance.md "M7.2")
   };
   for (const difficulty of ['relaxed', 'normal', 'challenging'] as DifficultyId[]) {
     it(`${difficulty}: profit-by-year band, every summer month on average above zero, cash never below zero, no bankruptcy (3 seeds)`, () => {
@@ -297,6 +298,51 @@ describe.skipIf(!FULL)('[balance] difficulty targets: profit by year bands, summ
         if (sim.finance.ended) bankrupt++;
       }
       expect(bankrupt).toBe(0);
+    }, 900_000);
+  }
+});
+
+/**
+ * M7.2 (owner decision on the M7.1 playtest): Challenging is about 30 % tighter than Normal for the default bot (year-2 net about 70 % of Normal on 64 / 128), still profitable in
+ * years 2 and 3 on 64 / 128 / 256, every summer on average above zero, and nobody goes bankrupt.
+ */
+describe.skipIf(!FULL)('[balance] Challenging is about 30 % tighter than Normal (M7.2)', () => {
+  const y2 = (size: 64 | 128, seed: number, difficulty: DifficultyId): number => { const sim = createSim({ size, seed, difficulty, now: () => 0 }); const bot = new Bot(sim, { respectUnlocks: true }); runBot(sim, bot, 2 * DAYS_PER_YEAR); return sum(year(bot.rows, 2), (r) => r.net); };
+  it('year-2 net: Challenging / Normal is 0.6 .. 0.8 on 64 (3 seeds, summed) and on 128 (2 seeds, summed)', () => {
+    for (const [size, seeds] of [[64, [61, 7, 5]], [128, [1, 4]]] as const) {
+      const n = seeds.reduce((a, sd) => a + y2(size, sd, 'normal'), 0), c = seeds.reduce((a, sd) => a + y2(size, sd, 'challenging'), 0);
+      console.log(`[balance] ${size}: normal ${Math.round(n)} challenging ${Math.round(c)} ratio ${(c / n).toFixed(2)}`);
+      expect(c / n, `${size} ratio`).toBeGreaterThan(0.6); expect(c / n, `${size} ratio`).toBeLessThan(0.8);
+    }
+  }, 900_000);
+  for (const [size, seed] of [[128, 1], [256, 1]] as const) {
+    it(`Challenging ${size} / seed ${seed}: profitable in year 2 and year 3, summer months above zero, not bankrupt`, () => {
+      const sim = createSim({ size, seed, difficulty: 'challenging', now: () => 0 });
+      const bot = new Bot(sim, { respectUnlocks: true });
+      runBot(sim, bot, 3 * DAYS_PER_YEAR);
+      const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net), s = summer(bot.rows, 2);
+      console.log(`[balance] challenging ${size}/${seed}: y2 ${Math.round(net(2))} y3 ${Math.round(net(3))} summer/month ${Math.round(sum(s, (r) => r.net) / s.length)}`);
+      expect(net(2)).toBeGreaterThan(0); expect(net(3)).toBeGreaterThan(0);
+      expect(sum(s, (r) => r.net) / s.length).toBeGreaterThan(0);
+      expect(sim.finance.ended).toBe(false);
+    }, 900_000);
+  }
+});
+
+/**
+ * M7.2 (owner question 4 of the M7.1 playtest, docs/economy-audit.md "Food buildings"): food demand is finite (guests share the same meals), so every dining place
+ * beyond the demand only adds running costs: more cafes / huts / lodges NEVER raise the net of the starter resort, and a spammed resort earns clearly less.
+ */
+describe.skipIf(!FULL)('[balance] food buildings saturate: spamming them loses money (M7.2)', () => {
+  for (const type of ['cafe', 'mountainHut', 'lodge']) {
+    it(`${type}: 8 extra places earn less than 3, which earn less than none (net, mean of 2 seeds, 1 year); the income barely moves`, () => {
+      const run = (n: number): { net: number; income: number } => { const a = foodYear(type, n, 61), b = foodYear(type, n, 5); return { net: (a.net + b.net) / 2, income: (a.income + b.income) / 2 }; };
+      const r0 = run(0), r3 = run(3), r8 = run(8);
+      console.log(`[balance] ${type}: net +0 ${Math.round(r0.net)} / +3 ${Math.round(r3.net)} / +8 ${Math.round(r8.net)}; income +0 ${Math.round(r0.income)} / +8 ${Math.round(r8.income)}`);
+      expect(r3.net).toBeLessThan(r0.net);
+      expect(r8.net).toBeLessThan(r3.net);
+      expect(r8.net).toBeLessThan(r0.net - 8_000);
+      expect(Math.abs(r8.income - r0.income) / r0.income, 'extra places do not create demand').toBeLessThan(0.06);
     }, 900_000);
   }
 });
