@@ -169,6 +169,11 @@ import { heightAt } from '@/render/Picking';
 import { MaterialGuard, type GuardRenderer } from '@/render/MaterialGuard';
 import { seasonYear, hourOfDay } from '@/sim/Clock';
 import { sunTimes, isNightHour, fmtClock } from '@/sim/Daylight';
+import { AtmosphereController, type AtmosInput, type AtmosForce } from '@/render/atmosphere/AtmosphereState';
+import { AtmosphereSettings, defaultAtmosLevel } from '@/render/atmosphere/AtmosphereSettings';
+import { isWetKind } from '@/render/atmosphere/FogState';
+import { dayKeyOf } from '@/render/atmosphere/hash';
+import { ATMOS_LEVELS, LEVEL_FEATURES, type AtmosLevel } from '@/config/atmosphere';
 import { Lighting } from '@/render/Lighting';
 import { speedKeyAction } from '@/ui/shortcuts';
 import { GAME_EVENT_NAMES } from '@/core/events';
@@ -506,6 +511,27 @@ lighting.skyElement = renderer.webgl.domElement.parentElement; // sky gradient (
 lighting.addUniforms(terrain.material.uniforms);
 lighting.addUniforms(water.uniforms);
 lighting.addUniforms(uniforms);
+// ---- Atmosphere (M7.0, render only: valley fog, special skies, alpenglow, stars / moon, cloud shadows, frost, mist, rainbow; docs/atmosphere.md) ----
+const atmosSettings = new AtmosphereSettings((() => { try { return window.localStorage; } catch { return null; } })(), () => defaultAtmosLevel(!!window.matchMedia?.('(pointer: coarse)').matches, quality));
+const atmos = new AtmosphereController({
+  features: () => (DEMO ? LEVEL_FEATURES.off : atmosSettings.features), level: () => (DEMO ? 'off' : atmosSettings.level), reducedMotion: () => getReducedMotion(),
+  skyParent: DEMO ? null : renderer.webgl.domElement.parentElement, maxWorld: () => maxWorld, grid,
+});
+renderer.scene.add(atmos.mist.group);
+lighting.gradeHook = atmos.grade;
+atmosSettings.subscribe(() => { lastHour = -1; atmos.jump(); });
+const atmosIn: AtmosInput = { seed: SEED, dayKey: 0, season: 'winter', weather: 'clear', wind: 0, valleyT: 0, hour: 12, sunrise: 8, sunset: 17, night: 0, prevWet: false };
+let atmosDay = Number.NaN, atmosPrevKind: import('@/core/events').WeatherKind | null = null, atmosPrevWet = false;
+/** Fills the atmosphere input from the live game state (read-only). */
+const atmosSample = (hour: number): AtmosInput => {
+  const key = dayKeyOf(game.date.year, game.date.day), kind = weather.current.kind;
+  if (key !== atmosDay) { atmosPrevWet = atmosPrevKind !== null && isWetKind(atmosPrevKind); atmosDay = key; }
+  atmosPrevKind = kind;
+  const t = sunTimes(game.date.day);
+  atmosIn.dayKey = key; atmosIn.season = seasonOf(game.date); atmosIn.weather = kind; atmosIn.wind = weather.current.wind; atmosIn.valleyT = weather.current.valleyT;
+  atmosIn.hour = hour; atmosIn.sunrise = t.sunrise; atmosIn.sunset = t.sunset; atmosIn.night = lighting.nightUniform.value; atmosIn.prevWet = atmosPrevWet;
+  return atmosIn;
+};
 let useClock = true; // season follows the game clock (debug panel can override)
 let timeOverride: number | null = null; // debug time-of-day lock (hours), null = auto
 let lastHour = -1, lastLightDay = -1;
@@ -1037,6 +1063,7 @@ renderer.onFrame = (dt): void => {
   buildingsView.update(dt);
   const hour = currentHour();
   if (game.date.day !== lastLightDay) { lastLightDay = game.date.day; lastHour = -1; }
+  const atmosNow = atmosSample(hour); atmos.setDay(atmosNow);
   if (lastHour < 0 || Math.abs(hour - lastHour) > 0.005) { lastHour = hour; lighting.apply(hour, sunTimes(game.date.day)); buildingMeshes.setNight(lighting.nightUniform.value); NET_NIGHT.value = lighting.nightUniform.value; }
   if (useClock) applySimSeason(dt);
   const cam = renderer.camera;
@@ -1061,6 +1088,7 @@ renderer.onFrame = (dt): void => {
   updateRiverView(dt, cam, vh);
   flushSnow(dt);
   updatePrecip(dt);
+  { const fc = viewCentre(); atmos.update(dt, atmosNow, { x: fc.x, z: fc.z }, vh, lighting.last, lighting.horizonAt ?? 0.7); }
   trees.update(cam, vh);
   liftToolsRef?.view.updateNear(cam);
   buildingMeshes.setNearHide(isPerspective(cam) ? cam.position : null);
@@ -1560,7 +1588,7 @@ const viewpointSpots = (): Array<{ x: number; z: number; look: number; reach: nu
 };
 const photoSample: RideSample = { x: 0, y: 0, z: 0, hx: 0, hz: 0, speed: 0, slope: 0, kind: 'foot' };
 const photo = new PhotoMode({
-  renderer, lighting, ground: photoGround, mapSize: MAP_SIZE,
+  renderer, lighting, ground: photoGround, mapSize: MAP_SIZE, skyDecor: () => atmos.lastDecor,
   resortName: () => `Resort Year ${game.date.year}`,
   heroFocus: () => { const lodge = buildings.all().find((b) => b.type === 'baseLodge'), a = terrainInfo.villageAnchor; return lodge ? { x: lodge.x + lodge.w / 2, z: lodge.y + lodge.h / 2 } : { x: a.x, z: a.y }; },
   followTarget: () => (rideAlong.active && rideAlong.sample(1, photoSample) ? photoSample : null),
@@ -2314,7 +2342,7 @@ if (ui && !DEMO) {
   hud.bindDate(bus, () => game.date);
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
-    season: SEASON_LABELS[seasonOf(game.date)], kind: weather.current.kind, tempC: weather.valleyTempAt(hourOfDay(game.date)),
+    season: SEASON_LABELS[seasonOf(game.date)], fog: atmos.foggy, kind: weather.current.kind, tempC: weather.valleyTempAt(hourOfDay(game.date)),
     snowlineM: altitudeMetres(weather.current.snowline), summerDiscount: isSummer(game.date),
     daylight: ((t) => `Sunrise ${fmtClock(t.sunrise)} · sunset ${fmtClock(t.sunset)} (${(t.sunset - t.sunrise).toFixed(1)} h of daylight)`)(sunTimes(game.date.day)),
     progress: formatSeasonProgress(((p) => ({ ...p, season: SEASON_LABELS[p.season], next: SEASON_LABELS[p.next] }))(seasonProgress(game.date))),
@@ -2775,6 +2803,7 @@ if (ui && !DEMO) {
       music: { next: () => audio.music.next(), now: () => { const t = audio.music.currentTrack; return t ? THEMES[t].name : ''; } },
       profile: { cosmetics: achCosmetics, reset: async () => { ach.resetProfile(); await profileStore().resetProfile(); } },
       quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
+    atmosphere: { get: () => atmosSettings.level, set: (l) => atmosSettings.set(l as AtmosLevel), options: ATMOS_LEVELS },
       fastNights: { get: fastNightsApi.get, set: fastNightsApi.set },
       rideSlowMo: rideSlowMoApi,
       walk: { get: () => ({ ...walkSettings }), set: (p) => { applyWalkSettings(p); } },
@@ -2797,6 +2826,7 @@ if (ui && !DEMO) {
       set: (p) => { if (p.frame && frameLock(p.frame)) return; photo.settings = sanitizeSettings(photo.settings, p); applyPhotoSettings(); },
       frameLock: (id) => frameLock(id),
       hourNow: () => currentHour(),
+      suggestions: () => atmos.suggestions(atmosSample(currentHour())),
       spotCount: () => photo.spotCount(), spot: () => { photo.nextSpot(); },
       hero: () => photo.hero(), canFollow: () => photoPrev.from === 'ride' && rideAlong.active, following: () => photo.follow, follow: (on) => photo.followGuest(on),
       save: () => savePhoto(), exit: () => exitPhoto(), gallery: photoGallery,
@@ -2974,7 +3004,20 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'o' || e.key === 'O') setOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(overlayMode) + 1) % OVERLAY_MODES.length]!);
 });
 
-(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, selectRoute, bcFlags, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+/** Visual-QA handle: `__slope.atmos.force({fog:1, hour:8, special:1, frost:1, rainbow:1, mist:1, moonPhase:0.5, stars:1, inversion:true})`, `.level('off'|'low'|'high')`, `.state()`. Render-only. */
+const atmosDebug = {
+  force: (o: (AtmosForce & { hour?: number | null; day?: number }) | null): unknown => {
+    if (o && o.hour !== undefined) { timeOverride = o.hour; lastHour = -1; }
+    if (o && o.day !== undefined) jumpSimToDay(o.day, o.hour ?? undefined);
+    if (o) { const f: AtmosForce = { ...o }; delete (f as { hour?: unknown }).hour; delete (f as { day?: unknown }).day; atmos.force(f); } else atmos.force(null);
+    lastHour = -1; return atmos.last;
+  },
+  level: (l?: AtmosLevel): string => { if (l && (ATMOS_LEVELS as readonly string[]).includes(l)) atmosSettings.set(l); return atmosSettings.level; },
+  state: () => atmos.last,
+  suggestions: () => atmos.suggestions(atmosSample(currentHour())),
+  settings: atmosSettings,
+};
+(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, selectRoute, bcFlags, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

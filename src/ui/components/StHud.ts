@@ -122,7 +122,7 @@ export class StHud extends StElement {
     const refresh = (): void => {
       const i = w.get();
       const line = formatWeatherLine(i);
-      this.weatherEl.replaceChildren(icon(weatherIconName(i.kind), 14), ` ${i.season}`);
+      this.weatherEl.replaceChildren(icon(weatherIconName(i.kind), 14), ` ${i.season}${i.fog ? ' · fog' : ''}`);
       this.tempEl.textContent = `${Math.round(i.tempC)}°C`;
       this.snowEl.replaceChildren(icon('mountain', 14), ` ${Math.round(i.snowlineM).toLocaleString('en-US')} m`);
       this.weatherEl.title = this.tempEl.title = line;

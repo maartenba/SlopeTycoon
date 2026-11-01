@@ -4,6 +4,8 @@
  * on the pixel buffer (`compositeExport`): sky under the transparent WebGL pixels, colour filter, vignette, frame overlay.
  */
 
+import { paintSkyDecor, type SkyDecor } from '../atmosphere/SkyOverlay';
+
 export type V3 = [number, number, number];
 
 // ---------------------------------------------------------------- filters (CSS filter() functions = W3C filter-effects matrices)
@@ -204,7 +206,7 @@ export function clampExportSize(rectW: number, rectH: number, scale: number, max
 }
 
 // ---------------------------------------------------------------- sky + composite
-export interface SkySpec { top: V3; horizon: V3; /** where the horizon colour is reached, 0..1 of the image height */ horizonAt: number }
+export interface SkySpec { top: V3; horizon: V3; /** where the horizon colour is reached, 0..1 of the image height */ horizonAt: number; /** Atmosphere (M7.0): stars / moon / rainbow painted into the sky first. Absent = the plain gradient. */ decor?: SkyDecor }
 const to255 = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 255);
 
 /** Sky colour (0..255) at the vertical position t (0 = top .. 1 = bottom), the same linear gradient as `skyCss`: top at 0, horizon colour from `horizonAt` down. */
@@ -220,12 +222,15 @@ export function skyAt(sky: SkySpec, t: number, out: V3): V3 {
  */
 export function paintSkyBehind(data: Uint8ClampedArray, w: number, h: number, sky: SkySpec): void {
   const c: V3 = [0, 0, 0];
+  let deco: Uint8ClampedArray | null = null;
+  if (sky.decor) { deco = new Uint8ClampedArray(w * h * 3); for (let y = 0; y < h; y++) { skyAt(sky, (y + 0.5) / h, c); for (let x = 0; x < w; x++) { const j = (y * w + x) * 3; deco[j] = c[0]; deco[j + 1] = c[1]; deco[j + 2] = c[2]; } } paintSkyDecor(deco, w, h, { ...sky.decor, horizonAt: sky.horizonAt }); }
   for (let y = 0; y < h; y++) {
     skyAt(sky, (y + 0.5) / h, c);
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4, a = data[i + 3]!;
       if (a === 255) continue;
       const k = a / 255;
+      if (deco) { const j = (y * w + x) * 3; c[0] = deco[j]!; c[1] = deco[j + 1]!; c[2] = deco[j + 2]!; }
       data[i] = data[i]! * k + c[0] * (1 - k); data[i + 1] = data[i + 1]! * k + c[1] * (1 - k); data[i + 2] = data[i + 2]! * k + c[2] * (1 - k); data[i + 3] = 255;
     }
   }

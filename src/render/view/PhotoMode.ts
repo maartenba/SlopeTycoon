@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import type { Renderer } from '../Renderer';
 import { skyGradient, type Lighting } from '../Lighting';
+import type { SkyDecor } from '../atmosphere/SkyOverlay';
 import type { ViewCameraRig } from './ViewCameraRig';
 import { VIEWPOINT } from '../../config/viewpoints';
 import { horizonFraction } from './cameraMath';
@@ -127,6 +128,8 @@ export interface PhotoResult { png: Blob; thumb: Blob; w: number; h: number; cla
 export interface PhotoModeDeps {
   renderer: Renderer;
   lighting: Lighting;
+  /** Atmosphere sky decor (stars, moon, rainbow) so the saved PNG matches the screen. Optional (tests). */
+  skyDecor?: () => SkyDecor | null;
   ground: GroundFn;
   mapSize: number;
   resortName(): string;
@@ -302,7 +305,7 @@ export class PhotoMode {
     for (let i = 3; i < img.data.length; i += 4) if (img.data[i]! < 255) rawTransparentPx++;
     const lp = this.d.lighting.last;
     const g = lp ? skyGradient(lp) : { top: [0.3, 0.55, 0.9] as [number, number, number], horizon: [0.8, 0.9, 1] as [number, number, number] };
-    compositeExport(img.data, size.w, size.h, { sky: { top: g.top, horizon: g.horizon, horizonAt: hf }, filter: s.filter, vignette: s.vignette, frame: s.frame });
+    compositeExport(img.data, size.w, size.h, { sky: { top: g.top, horizon: g.horizon, horizonAt: hf, decor: this.d.skyDecor?.() ?? undefined }, filter: s.filter, vignette: s.vignette, frame: s.frame });
     let transparentPx = 0;
     for (let i = 3; i < img.data.length; i += 4) if (img.data[i]! < 255) transparentPx++;
     const out = document.createElement('canvas'); out.width = size.w; out.height = size.h;

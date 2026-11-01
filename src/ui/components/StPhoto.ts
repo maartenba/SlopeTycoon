@@ -20,6 +20,8 @@ export interface PhotoPanelApi {
   set(patch: Partial<PhotoSettings>): void;
   /** The in-game hour currently shown (used by the time slider while following the game clock). */
   hourNow(): number;
+  /** Atmosphere (M7.0): moments of THIS day worth a picture (golden hour on a colourful-sky day, a foggy valley morning ...). Each jumps the photo hour only (render-only, restored on exit). */
+  suggestions?(): Array<{ id: string; label: string; hour: number; note: string }>;
   hero(): void;
   /** Viewpoint photo spots (Phase 6 Task 6): how many there are, and frame the next one. Absent / 0 = no button. */
   spotCount?(): number;
@@ -214,7 +216,15 @@ input[type=range]{width:100%;box-sizing:border-box}
     const time = this.slider('Time of day', 0, 24, 0.25, () => s().hour ?? api.hourNow(), (v) => api.set({ hour: v >= 24 ? 0 : v }), (v) => `${fmtHour(v)}${s().hour === null ? ' (live)' : ''}`);
     this.timeInput = time.input; this.timeOut = time.out;
     const live = this.el('button', '', 'Follow game clock'); live.type = 'button'; live.addEventListener('click', () => { api.set({ hour: null }); this.sync(); });
-    lookSec.append(time.row, live,
+    const sug = this.el('div', 'row'); sug.dataset.row = 'atmos-suggestions';
+    const refreshSug = (): void => {
+      sug.replaceChildren();
+      const list = api.suggestions?.() ?? [];
+      sug.hidden = list.length === 0;
+      for (const g of list) { const b = this.el('button', '', g.label); b.type = 'button'; b.title = `${g.note}. Jumps the photo's time of day (the game clock is untouched).`; b.dataset.suggest = g.id; b.addEventListener('click', () => { api.set({ hour: g.hour }); this.sync(); }); sug.append(b); }
+    };
+    refreshSug(); this.syncers.push(refreshSug);
+    lookSec.append(time.row, sug, live,
       this.check('Show snow / rain', () => s().precip, (v) => api.set({ precip: v })),
       this.check('Pause game while composing', () => s().pauseGame, (v) => api.set({ pauseGame: v })));
     const styleSec = this.el('div', 'sec'); styleSec.append(this.el('h3', '', 'Look'));

@@ -16,6 +16,8 @@ export interface GameSettingsApi {
   /** Music preview: skip to another track, and the name of what plays now ('' = silence between pieces). */
   music?: { next(): void; now(): string };
   quality?: { get(): string; set(q: string): void; options: readonly string[] };
+  /** Atmosphere (M7.0): Off / Low / High. Valley fog, special skies, stars and moon, cloud shadows (Low); frost, mist and rainbows too (High). Reduced motion keeps it all static. */
+  atmosphere?: { get(): string; set(l: string): void; options: readonly string[] };
   fastNights?: { get(): boolean; set(on: boolean): void };
   /** Ride-along pacing: slow motion (target-speed: guest <= ~9 tiles/s) on / off. */
   rideSlowMo?: { get(): boolean; set(on: boolean): void };
@@ -68,6 +70,7 @@ export class StSettings extends StElement {
   private engine: SettingsEngine | null = null;
   private game: GameSettingsApi | null = null;
   private gfxSel: StSelect | null = null;
+  private atmSel: StSelect | null = null;
   private nightsBox: HTMLInputElement | null = null;
   private slowBox: HTMLInputElement | null = null;
   private fxSel: StSelect | null = null;
@@ -256,7 +259,7 @@ export class StSettings extends StElement {
   private buildGame(): void {
     const g = this.game;
     this.gfxSec.replaceChildren(); this.gameSec.replaceChildren();
-    this.gfxSel = null; this.fxSel = null; this.nightsBox = null; this.slowBox = null; this.hintsBox = null;
+    this.gfxSel = null; this.atmSel = null; this.fxSel = null; this.nightsBox = null; this.slowBox = null; this.hintsBox = null;
     if (g?.quality) {
       const q = g.quality;
       const sel = makeSelect(q.options.map((o) => ({ value: o, label: o[0]!.toUpperCase() + o.slice(1) })), q.get(), 'Graphics quality', (v) => q.set(v));
@@ -264,6 +267,14 @@ export class StSettings extends StElement {
       this.gfxSel = sel;
       const row = document.createElement('div'); row.className = 'row'; const l = document.createElement('label'); l.textContent = 'Quality'; row.append(l, sel);
       this.gfxSec.append(row);
+      if (g.atmosphere) {
+        const a = g.atmosphere;
+        const asel = makeSelect(a.options.map((o) => ({ value: o, label: o[0]!.toUpperCase() + o.slice(1) })), a.get(), 'Atmosphere', (v) => a.set(v));
+        asel.title = 'Valley fog, colourful sunrises, stars and the moon, cloud shadows. High adds frost sparkle, water mist and rainbows. Respects Reduced motion. Purely visual.';
+        this.atmSel = asel;
+        const arow = document.createElement('div'); arow.className = 'row'; arow.dataset.row = 'atmosphere'; const al = document.createElement('label'); al.textContent = 'Atmosphere'; arow.append(al, asel);
+        this.gfxSec.append(arow);
+      }
     } else this.gfxSec.append(Object.assign(document.createElement('span'), { className: 'hint', textContent: 'Graphics quality is set per game (top bar once a game runs).' }));
     if (g?.feedback) {
       const f = g.feedback;
@@ -334,6 +345,7 @@ export class StSettings extends StElement {
     if (this.hintsBox && this.game?.hints) this.hintsBox.checked = this.game.hints.get();
     if (this.fxSel && this.game?.feedback) this.fxSel.value = this.game.feedback.get();
     if (this.gfxSel && this.game?.quality) this.gfxSel.value = this.game.quality.get();
+    if (this.atmSel && this.game?.atmosphere) this.atmSel.value = this.game.atmosphere.get();
     this.hint.hidden = !(this.engine?.needsHint) && !s.muted;
     this.hint.title = s.muted ? 'Sound is muted (M)' : 'Click to enable sound';
   }

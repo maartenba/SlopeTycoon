@@ -34,10 +34,10 @@ export type WeatherKindName = 'clear' | 'cloudy' | 'snow' | 'heavySnow' | 'rain'
 const WEATHER_ICONS: Record<WeatherKindName, string> = { clear: '☀', cloudy: '☁', snow: '🌨', heavySnow: '❄', rain: '🌧', storm: '⛈' };
 export const weatherIcon = (k: WeatherKindName): string => WEATHER_ICONS[k];
 
-export interface WeatherHudInfo { season: string; kind: WeatherKindName; tempC: number; snowlineM: number; summerDiscount: boolean; /** Season progress text, see formatSeasonProgress. */ progress?: string; /** Sunrise/sunset tooltip text, e.g. 'Sunrise 07:45 · sunset 16:45 (9.0 h of daylight)'. */ daylight?: string }
+export interface WeatherHudInfo { season: string; /** Strong valley fog right now (render-side, visual only). */ fog?: boolean; kind: WeatherKindName; tempC: number; snowlineM: number; summerDiscount: boolean; /** Season progress text, see formatSeasonProgress. */ progress?: string; /** Sunrise/sunset tooltip text, e.g. 'Sunrise 07:45 · sunset 16:45 (9.0 h of daylight)'. */ daylight?: string }
 /** HUD text: '❄ Winter  -4°C  ⛰ snow above 1,150 m'. */
 export function formatWeatherLine(i: WeatherHudInfo): string {
-  return `${weatherIcon(i.kind)} ${i.season}  ${Math.round(i.tempC)}°C  snowline ${Math.round(i.snowlineM).toLocaleString('en-US')} m`;
+  return `${weatherIcon(i.kind)} ${i.season}  ${Math.round(i.tempC)}°C  snowline ${Math.round(i.snowlineM).toLocaleString('en-US')} m${i.fog ? ' · fog' : ''}`;
 }
 
 /** 'Winter · day 23/90 · next: Spring in 67 days'. */

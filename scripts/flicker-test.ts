@@ -174,8 +174,10 @@ try {
     const errs: string[] = [];
     page.on('pageerror', (e) => errs.push(String(e)));
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); else if (m.text().startsWith('SCENE')) console.log(m.text()); });
+    if (a.atmos) await page.evaluateOnNewDocument((v: string) => { try { localStorage.setItem('slope.atmosphere', v); } catch { /* none */ } }, a.atmos); // M7.0: --atmos off|low|high (default = the game's own default)
     await page.goto(`${srv.url}?${new URLSearchParams({ size: String(sc.size), seed: String(sc.seed), start: sc.start, hints: '0' })}`, { waitUntil: 'load', timeout: 90000 });
     await page.waitForFunction(() => !!(window as any).__slope, { timeout: 90000 });
+    if (a["atmos-force"]) await page.evaluate(a["atmos-force"]); // M7.0 worst case: e.g. "__slope.atmos.force({fog:1,frost:1,special:1,cloudShadow:0.3})"
     await page.evaluate(async (o) => {
       const s = (window as any).__slope;
       s.populateDemo(o.extra === 'mid' ? 'starter' : 'medium'); s.spawnGuests(150, 'skiers');
