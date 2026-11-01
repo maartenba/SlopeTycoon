@@ -24,6 +24,7 @@ import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/sug
 import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { ENERGY } from '../../config/energy';
+import { SUSTAIN } from '../../config/rivals';
 import { CROSSING } from '../../config/crossings';
 import { CAMP } from '../attractions/Campground';
 import { FISH } from '../../config/balance';
@@ -564,9 +565,58 @@ export const RULES: readonly Rule[] = [
     if (!w || w.id !== 'sustainability' || w.score >= (c.shown ? 72 : 65)) return null;
     return { id: 'eco.centre', severity: 'info', ...TEXT.ecoCentre(p.score), panel: { drawer: 'buildings', item: 'ecoCentre' } };
   }),
+  // ---- optional extras (M7.2, docs/advisor.md): shown once when the resort has the problem the building solves; never builds, never for a locked item ----
+  // Helipad (docs/safety.md): serious incidents (reached late, hospitalised) and slow patrol arrivals while a serious case is open now.
+  rule('heli.rescue', 2, (c) => {
+    const sim = c.sim;
+    if (sim.buildings.all().some((b) => b.type === 'helipad') || !has(sim, 'patrolHub') || sim.progression.locked('building', 'helipad')) return null;
+    const st = sim.ops.safety?.incidents.stats();
+    if (!st || st.created < (c.shown ? 6 : 8) || st.open < 1) return null;
+    if (st.severe < (c.shown ? 1 : 2) && st.meanResponseTicks < (c.shown ? 10 : 12)) return null;
+    return { id: 'heli.rescue', severity: 'info', ...TEXT.heli(st.severe, Math.max(1, Math.round(st.meanResponseTicks * 6))), panel: { drawer: 'buildings', item: 'helipad' } };
+  }),
+  // Tree Nursery (docs/eco.md): the trees part is the weakest sustainability part and more trees were felled than planted.
+  rule('trees.nursery', 1, (c) => {
+    const sim = c.sim, p = sim.sustain.last();
+    if (!p || sim.buildings.all().some((b) => b.type === 'treeNursery') || sim.progression.locked('building', 'treeNursery')) return null;
+    if (p.raw.treeLoss <= (c.shown ? SUSTAIN.trees.allowance * 0.7 : SUSTAIN.trees.allowance + 0.01) || p.trees > Math.min(p.energy, p.habitat)) return null;
+    return { id: 'trees.nursery', severity: 'info', ...TEXT.nursery(Math.round(p.raw.treeLoss * 100)), panel: { drawer: 'buildings', item: 'treeNursery' } };
+  }),
+  // Recycling & Compost Centre (docs/eco.md): sustainability is the weakest rating component and no other sustainability advice is pending.
+  rule('eco.recycling', 1, (c) => {
+    const sim = c.sim, p = sim.sustain.last();
+    if (!p || p.raw.energyPerGuest < 0 || sim.buildings.all().some((b) => b.type === 'recyclingCentre') || sim.progression.locked('building', 'recyclingCentre')) return null;
+    if (firing(c, 'energy.green') || firing(c, 'energy.more') || firing(c, 'trees.nursery') || firing(c, 'eco.centre')) return null; // one root cause at a time
+    const w = sim.rating.breakdown().components.filter((x) => x.id !== 'queues' && x.id !== 'pisteQuality').sort((a, b) => a.score - b.score)[0];
+    if (!w || w.id !== 'sustainability' || w.score >= (c.shown ? 72 : 65)) return null;
+    return { id: 'eco.recycling', severity: 'info', ...TEXT.recycling(p.score), panel: { drawer: 'buildings', item: 'recyclingCentre' } };
+  }),
+  // More generators (Wind Turbine, Small Hydro, Solar Plant, Biomass Heating): a first generator stands, energy is still the weakest green part and the grid offset is nowhere near its cap.
+  rule('energy.more', 1, (c) => {
+    const sim = c.sim, p = sim.sustain.last();
+    if (!p || p.raw.energyPerGuest < 0 || !sim.energy.hasRenewable()) return null;
+    if (p.energy > Math.min(p.trees, p.habitat) || p.energy >= (c.shown ? ENERGY.advisor.keepBelow : ENERGY.advisor.energyBelow)) return null;
+    const l = sim.energy.last, cap = ENERGY.maxOffsetShare * l.demand;
+    if (l.demand <= 0 || l.applied >= cap * 0.85) return null; // the offset is capped: another generator would be wasted
+    const item = (['windTurbine', 'smallHydro', 'solarPlant', 'biomassHeating'] as const).find((t) => !sim.progression.locked('building', t));
+    if (!item) return null;
+    return { id: 'energy.more', severity: 'info', ...TEXT.energyMore(Math.round((l.applied / cap) * 100)), panel: { drawer: 'buildings', item } };
+  }),
+  // Food surplus (docs/economy-audit.md "Food buildings"): three or more dining places and the least-used cafe / hut serves hardly anybody in winter. Guests share the same meals, so an extra place only adds running costs.
+  rule('food.surplus', 1, (c) => {
+    if (c.season !== 'winter') return null;
+    const standing = new Set(c.sim.buildings.all().map((b) => b.id)); // attractions sync one tick after a demolition
+    const places = c.sim.attractions.all().filter((a) => ['cafe', 'lodge', 'mountainHut'].includes(a.b.type) && a.b.active && standing.has(a.b.id));
+    if (places.length < 3) return null;
+    // utilisation = guests served per day (moving average of ~10 days) / seats; the lodge is a big dining hall and is only counted, not judged
+    const use = (a: (typeof places)[number]): number => (a.stats.recent ?? Infinity) / Math.max(1, a.baseCapacity());
+    const n = places.filter((a) => a.b.type !== 'lodge' && (a.stats.age ?? 0) >= (c.shown ? 15 : 20) && a.stats.recent !== undefined).sort((a, z) => use(a) - use(z) || a.id - z.id)[0];
+    if (!n || use(n) >= (c.shown ? 0.14 : 0.1)) return null;
+    return { id: 'food.surplus', severity: 'info', ...TEXT.foodSurplus(c.sim.names.buildingName(n.b.id), Math.max(1, Math.round(n.stats.recent!))), target: { x: n.b.x + n.b.w / 2 - 0.5, y: n.b.y + n.b.h / 2 - 0.5, kind: 'building', id: n.b.id } };
+  }),
   // ---- rating + goals ----
   rule('rating.lowest', 2, (c) => {
-    const ROOT: Record<string, string[]> = { safety: ['patrol.none', 'bear.threat'], value: ['price.fair'], sustainability: ['energy.green', 'eco.centre'] };
+    const ROOT: Record<string, string[]> = { safety: ['patrol.none', 'bear.threat'], value: ['price.fair'], sustainability: ['energy.green', 'eco.centre', 'trees.nursery', 'eco.recycling', 'energy.more'] };
     const comps = c.sim.rating.breakdown().components.filter((x) => x.id !== 'queues' && x.id !== 'pisteQuality' && x.score < (c.shown ? 62 : 55) && x.hint && !POSITIVE_HINTS.has(x.hint)
       && !(ROOT[x.id] ?? []).some((r) => firing(c, r)));
     if (!comps.length) return null;

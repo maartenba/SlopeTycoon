@@ -4,6 +4,14 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+Owner decisions on the M7.1 playtest questions (small patch, still 0.3.1).
+
+### Changes
+
+- **Challenging is about 30 % tighter than Normal** (`DIFFICULTY.challenging`): loan interest x1.2 -> x1.4, upkeep x1.15 -> x1.2, wages x1.15 (unchanged), arrivals x0.93 -> x0.85, price sensitivity x1.15 -> x1.35, start cash x0.75 and incidents x1.4 unchanged. The default bot's year-2 net is now about 70 % of Normal on 64 / 128 (was 80-90 %) and Challenging stays profitable in years 2 and 3 on 64 / 128 / 256 with every summer above zero and no bankruptcy. Relaxed and Normal are untouched. The New Game card and the guide describe it; the balance suite asserts the bands and the ratio (`docs/balance.md` "M7.2").
+- **Rudi tips for the optional extras**: `heli.rescue` (Helipad, when serious cases are reached late), `trees.nursery` (Tree Nursery, more forest felled than planted), `eco.recycling` (Recycling & Compost Centre, sustainability is the weakest area), `energy.more` (Wind Turbine / Small Hydro / Solar Plant / Biomass Heating once a first generator stands and the grid offset is far from its cap). Restrained: each fires once for a real problem, is dismissible, never for a locked item and never builds (Show me opens the Buildings drawer on it). They left `OPTIONAL_EXTRAS`; each has an advisor test case and a scenario.
+- **Food buildings audited** (`npm run analysis:food`, `docs/economy-audit.md` "Food buildings"): extra cafes, huts and lodges add no income (guests share the same meals) and each one costs its upkeep, so spamming them always loses money; nothing was retuned. New Rudi tip `food.surplus`: "You have more food buildings than guests can use" when the least-used cafe / hut of three or more dining places serves under 10 % of its seats on winter days. A new moving average of guests served per day (`AttractionStats.recent`, optional, old saves load) feeds it; a balance test asserts that extra food buildings lower the net.
+
 ## [0.3.1] - 2026-10-31 (pre-release)
 
 The consistency pass (milestone M7.1): every building, lift, campaign and guest type was checked by one data-driven test, the placement rules were audited against the docs and the guide, every building got an ROI number, and the dead ones were fixed. The report is `docs/economy-audit.md`.

@@ -53,3 +53,16 @@ Every rule has a scenario: it fires, and 2-3 different valid fixes each clear it
 | `snow.mode` | hourly | cannons burn while the snowline is above the pistes (suggest Auto / Off) or Auto is waiting for cold |
 | `lift.service` | hourly | a lift is overdue for its annual service (Operations > Maintenance) |
 | `energy.green` | daily | energy is the weakest sustainability part: suggests a Solar Array (docs/energy.md) |
+
+## M7.2 additions: tips for the optional extras (owner decision)
+The Helipad, the Tree Nursery, the Recycling & Compost Centre and the other generators were "optional extras" without a Rudi touchpoint (`OPTIONAL_EXTRAS` in `scripts/analysis/contractLib.ts`). They now have restrained rules. Common rules: info severity, impact 1-2, **no build action** (Show me opens the Buildings drawer on the item), never for a locked item (`progression.locked`), silent once the building is placed (a placed but idle one is `building.inactive`'s business), enter / keep hysteresis, dismissible and snoozed like every advice.
+
+| Rule | Cadence | Fires when |
+|---|---|---|
+| `heli.rescue` | hourly | no Helipad, a Patrol Hub stands, the Helipad is unlocked (level 4), at least 8 incidents so far and one is open now, and (>= 2 cases resolved late (`severe`) or the mean response time >= 12 ticks); keep at 1 / 10 / 6 incidents. A healthy default-bot resort sits at mean 3-6 ticks, severe 0, so it stays quiet |
+| `trees.nursery` | hourly | no Tree Nursery, the net felled-minus-planted share of the original forest is above the free allowance (3 % + 1 point; keep 70 % of the allowance) and the **trees** part is the weakest sustainability part |
+| `eco.recycling` | hourly | sustainability is the weakest rating component (< 65, keep 72), a rate is measurable, no Recycling Centre, and none of `energy.green`, `energy.more`, `trees.nursery`, `eco.centre` fires (one root cause at a time) |
+| `energy.more` | hourly | a first generator stands (so `energy.green` is silent), energy is the weakest sustainability part below 0.5 (keep 0.6), and yesterday's offset is under 85 % of its cap (`ENERGY.maxOffsetShare` x demand): nothing is suggested when more power would be wasted. Show me opens the first unlocked of Wind Turbine, Small Hydro, Solar Plant, Biomass Heating |
+| `food.surplus` | hourly | winter, three or more dining places (cafe, lodge, mountain hut), and the least-used cafe / hut (age >= 20 days, keep 15) serves under 10 % of its seats per day (moving average of ~10 days, `AttractionStats.recent`; keep 14 %). The lodge counts but is never judged (120 seats). Show me = that building. Calibrated on the sandbox: the untouched starter resort stays quiet, a resort with two extra cafes hears it after 20 days |
+
+Left as optional extras on purpose (no rule would be more than nagging): Chalet (the generic "guests have no bed" rule teaches lodging), Fishing Pier, Treehouse, Climbing Crag, Canyoning Base, Coffee Stand.

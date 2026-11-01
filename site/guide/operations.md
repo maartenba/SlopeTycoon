@@ -17,7 +17,7 @@ Guests can get injured, stuck or buried, or meet a bear. An incident progresses 
 
 - **Ski Patrol Hub**: sends patrol sleds out onto the pistes (you can add or remove staff, up to six per hub).
 - **First-Aid Hut**: treats minor injuries on site; its medic walks to the guest.
-- **Helipad**: a rescue helicopter flies serious cases to hospital off the edge of the map. It costs more per mission and unlocks at resort level 4 in Career.
+- **Helipad**: a rescue helicopter flies serious cases to hospital off the edge of the map. It costs more per mission and unlocks at resort level 4 in Career. Rudi suggests it when serious cases keep being reached late (he never builds it for you).
 - **Warning signs** reduce storm trouble on the slopes.
 
 Use the **coverage overlay** (<kbd>O</kbd> cycles overlays) to see which pistes are outside patrol and first-aid reach.
@@ -77,6 +77,8 @@ Lifts and snow cannons burn energy, and that is a cost line in your books (and a
 | **Biomass Heating** | Burns timber from the forest you clear. A small, slow-payback offset. |
 | **Tree Nursery** | Raises saplings that count against the forest you felled, and makes replanting cheaper. |
 | **Recycling & Compost Centre** | A flat bonus to the sustainability score (one is enough). |
+
+Rudi mentions these only when they would help: a **Tree Nursery** when you have felled more forest than you planted, a **Recycling & Compost Centre** when sustainability is your weakest rating area and nothing bigger is pending, and **another generator** (wind, hydro, solar plant, biomass) when you already have a first one, energy is still your weakest green spot and the grid offset is nowhere near its 60 % cap. Each tip appears once, can be dismissed, and never builds anything.
 
 A **Luxury Hotel**'s heated pool is part of the bill too: about $17 a day at a winter noon (never less than a quarter of that, even in summer), booked on the energy line and offset by generators like the lifts (see [Hotels & the coffee stand](page:hotels)).
 

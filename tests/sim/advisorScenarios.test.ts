@@ -491,6 +491,46 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'heli.rescue', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; const st = s.ops.safety!.incidents; const real = st.stats.bind(st); st.stats = () => ({ ...real(), created: 20, resolved: 12, open: 1, severe: 3, meanResponseTicks: 14 }); },
+    fixes: [
+      { name: 'a Helipad stands', apply: (s) => { buildAt(s, 'helipad', lodge(s), { connect: false, rmax: 14 }); } },
+      { name: 'incidents are handled in time again', apply: (s) => { const st = s.ops.safety!.incidents; const real = st.stats.bind(st); st.stats = () => ({ ...real(), created: 20, resolved: 20, open: 0, severe: 0, meanResponseTicks: 4 }); } },
+    ],
+  },
+  {
+    id: 'trees.nursery', daily: true,
+    setup: (s) => { s.sustain.last = () => ({ energy: 0.9, trees: 0.2, habitat: 0.9, score: 55, raw: { energyPerGuest: 3, treeLoss: 0.15, habitatOverlap: 0, protection: 0 } }); },
+    fixes: [
+      { name: 'a Tree Nursery stands', apply: (s) => { buildAt(s, 'treeNursery', lodge(s), { connect: false, rmax: 14 }); } },
+      { name: 'the forest is replanted (no net loss)', apply: (s) => { s.sustain.last = () => ({ energy: 0.9, trees: 0.95, habitat: 0.9, score: 88, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); } },
+    ],
+  },
+  {
+    id: 'eco.recycling', daily: true,
+    setup: (s) => { s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score: 50, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); s.energy.hasRenewable = () => true; s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score: 50, weight: 0.08, hint: 'Plant trees' }, { id: 'happiness', label: 'Guest happiness', score: 85, weight: 0.22, hint: 'Guests are happy' }], bonus: 0, bonusHints: [], hints: [] }); },
+    fixes: [
+      { name: 'a Recycling Centre stands', apply: (s) => { buildAt(s, 'recyclingCentre', lodge(s), { rmax: 14 }); } },
+      { name: 'sustainability is no longer the weakest area', apply: (s) => { s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score: 90, weight: 0.08, hint: 'Gentle on the mountain' }, { id: 'happiness', label: 'Guest happiness', score: 60, weight: 0.22, hint: 'x' }], bonus: 0, bonusHints: [], hints: [] }); } },
+    ],
+  },
+  {
+    id: 'energy.more', daily: true,
+    setup: (s) => { s.sustain.last = () => ({ energy: 0.2, trees: 0.9, habitat: 0.9, score: 60, raw: { energyPerGuest: 6, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); s.energy.hasRenewable = () => true; s.energy.last = { demand: 100, gross: 10, applied: 10, wasted: 0 }; },
+    fixes: [
+      { name: 'the grid offset reaches its cap', apply: (s) => { s.energy.last = { demand: 100, gross: 90, applied: 60, wasted: 30 }; } },
+      { name: 'energy is no longer the weakest part', apply: (s) => { s.sustain.last = () => ({ energy: 0.8, trees: 0.4, habitat: 0.9, score: 70, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); } },
+    ],
+  },
+  {
+    id: 'food.surplus', daily: true,
+    setup: (s) => { buildAt(s, 'cafe', lodge(s), { rmax: 14 }); s.tick(1); for (const a of s.attractions.all()) if (['cafe', 'lodge', 'mountainHut'].includes(a.b.type)) { a.stats.age = 30; a.stats.recent = 1.2; } },
+    fixes: [
+      { name: 'the surplus dining places are demolished (two are left)', apply: (s) => { const f = s.attractions.all().filter((a) => ['cafe', 'lodge', 'mountainHut'].includes(a.b.type)).sort((a, b) => b.id - a.id); for (const a of f.slice(0, -2)) s.buildings.remove(a.b.id); s.refreshCoverage(undefined, true); } },
+      { name: 'guests use them again', apply: (s) => { for (const a of s.attractions.all()) if (['cafe', 'lodge', 'mountainHut'].includes(a.b.type)) a.stats.recent = 14; } },
+    ],
+  },
+  {
     id: 'eco.centre', daily: true,
     setup: (s) => { s.progression.unlockAll = true; s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score: 40, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); s.energy.hasRenewable = () => true; s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score: 40, weight: 0.08, hint: 'Plant trees' }, { id: 'happiness', label: 'Guest happiness', score: 85, weight: 0.22, hint: 'Guests are happy' }], bonus: 0, bonusHints: [], hints: [] }); },
     fixes: [

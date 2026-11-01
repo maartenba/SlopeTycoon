@@ -8,6 +8,7 @@ import { validatePlacement } from '../../src/sim/PlaceBuilding';
 import { autoFlattenDefault } from '../../src/sim/PlacementRules';
 import { seasonStartDay } from '../../src/sim/Clock';
 import { Layer } from '../../src/world/Networks';
+import { anchors, findSite, placeSite } from '../../src/tutorial/suggest';
 import { paintBackcountryRoute } from './backcountryHelpers';
 import { Q } from '../../src/sim/ops/PisteQuality';
 import { GuestType } from '../../src/sim/guests/Guest';
@@ -38,6 +39,14 @@ const parkingStub = (s: Sim, roadLoad: number): void => { const sp = s.guestSim.
 
 /** Rental stock (docs/rental.md): the rule only reads `rentalStock()`; fake a day with `n` guests turned away for lack of boards. */
 const rentalShort = (s: Sim, n: number): void => { s.attractions.rentalStock = () => ({ skis: { out: 5, cap: 30 }, boards: { out: 16, cap: 16 }, shortToday: n, shortBoardsToday: n, short: n }); };
+
+
+/** M7.2 optional-extra rules: stubs of the facts they read (incident stats, sustainability parts, grid day, dining use). */
+const incidentStub = (s: Sim, o: { severe: number; mean: number; open: number }): void => { s.progression.unlockAll = true; const st = s.ops.safety!.incidents; const real = st.stats.bind(st); st.stats = () => ({ ...real(), created: 20, resolved: 12, open: o.open, severe: o.severe, meanResponseTicks: o.mean }); };
+const sustainStub = (s: Sim, p: { energy: number; trees: number; habitat: number; score: number; treeLoss: number }): void => { s.sustain.last = () => ({ energy: p.energy, trees: p.trees, habitat: p.habitat, score: p.score, raw: { energyPerGuest: 6, treeLoss: p.treeLoss, habitatOverlap: 0, protection: 0 } }); };
+const sustainWeakest = (s: Sim, score: number): void => { s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score, weight: 0.08, hint: 'Plant trees' }, { id: 'happiness', label: 'Guest happiness', score: 85, weight: 0.22, hint: 'Guests are happy' }], bonus: 0, bonusHints: [], hints: [] }); };
+const FOOD_TYPES = ['cafe', 'lodge', 'mountainHut'];
+const foodUse = (s: Sim, age: number, recent: number): void => { const site = findSite(s, 'cafe', anchors(s).lodge, { rmax: 14 })!; placeSite(s, site); s.tick(1); for (const a of s.attractions.all()) if (FOOD_TYPES.includes(a.b.type)) { a.stats.age = age; a.stats.recent = recent; } };
 
 interface Case { id: string; cheap?: boolean; trigger(sim: Sim): void; calm?(sim: Sim): void }
 /** One mutation that makes each rule fire (on the starter resort) and, optionally, a mutation that keeps it quiet. */
@@ -95,6 +104,11 @@ const CASES: Case[] = [
   { id: 'building.inactive', trigger: (s) => { s.buildings.all().find((b) => !['groomerGarage', 'snowcatOutpost', 'patrolHub', 'skiSchoolHQ', 'parking', 'trainStation', 'shuttleDepot', 'altiport', 'rangerStation'].includes(b.type))!.active = false; } },
   { id: 'lift.service', trigger: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: -400, count: 0 }; } }, calm: (s) => { setDay(s, seasonStartDay('winter') - 10); for (const l of s.lifts.all()) { l.ops!.maint = { last: s.game.date.year * 180 + s.game.date.day, count: 1, level: 'basic' }; } } },
   { id: 'lift.worn', trigger: (s) => { s.lifts.all()[0]!.ops!.condition = 20; }, calm: (s) => { s.lifts.all()[0]!.ops!.condition = 90; } },
+  { id: 'heli.rescue', trigger: (s) => incidentStub(s, { severe: 3, mean: 14, open: 1 }), calm: (s) => incidentStub(s, { severe: 0, mean: 5, open: 1 }) },
+  { id: 'trees.nursery', trigger: (s) => sustainStub(s, { energy: 0.9, trees: 0.2, habitat: 0.9, score: 55, treeLoss: 0.15 }), calm: (s) => sustainStub(s, { energy: 0.9, trees: 0.95, habitat: 0.9, score: 85, treeLoss: 0 }) },
+  { id: 'eco.recycling', trigger: (s) => { sustainStub(s, { energy: 0.9, trees: 0.9, habitat: 0.9, score: 50, treeLoss: 0 }); s.energy.hasRenewable = () => true; sustainWeakest(s, 50); }, calm: (s) => { sustainStub(s, { energy: 0.9, trees: 0.9, habitat: 0.9, score: 90, treeLoss: 0 }); sustainWeakest(s, 90); } },
+  { id: 'energy.more', trigger: (s) => { sustainStub(s, { energy: 0.2, trees: 0.9, habitat: 0.9, score: 60, treeLoss: 0 }); s.energy.hasRenewable = () => true; s.energy.last = { demand: 100, gross: 10, applied: 10, wasted: 0 }; }, calm: (s) => { sustainStub(s, { energy: 0.2, trees: 0.9, habitat: 0.9, score: 60, treeLoss: 0 }); s.energy.hasRenewable = () => true; s.energy.last = { demand: 100, gross: 80, applied: 60, wasted: 20 }; } },
+  { id: 'food.surplus', trigger: (s) => foodUse(s, 30, 1.2), calm: (s) => foodUse(s, 30, 12) },
   { id: 'eco.centre', trigger: (s) => { ecoCase(s, 40); }, calm: (s) => { ecoCase(s, 90); } },
   { id: 'energy.green', trigger: (s) => { s.sustain.last = () => ({ energy: 0.1, trees: 0.9, habitat: 0.9, score: 60, raw: { energyPerGuest: 10.5, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); }, calm: (s) => { s.sustain.last = () => ({ energy: 0.9, trees: 0.9, habitat: 0.9, score: 90, raw: { energyPerGuest: 3, treeLoss: 0, habitatOverlap: 0, protection: 0 } }); } },
   { id: 'rating.lowest', trigger: () => { /* starter resort: variety is weakest */ }, calm: (s) => { s.rating.breakdown = () => ({ score: 90, stars: 4.5, components: [{ id: 'happiness', label: 'Guest happiness', score: 90, weight: 0.25, hint: '' }], bonus: 0, bonusHints: [], hints: [] }); } },
