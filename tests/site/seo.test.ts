@@ -9,6 +9,7 @@ import { allGenerated } from '../../scripts/site/generated';
 import { SEO_LIMITS, extractRefs, lintPage, pngSize, sitemapLint, uniqueLint, EXTERNAL_OK } from '../../scripts/site/crawl';
 import { icoFromPngs, siteManifest } from '../../scripts/site/icons';
 import { CARDS } from '../../scripts/site/ogCards';
+import { devlogPages, landingPages } from '../../scripts/site/pages';
 
 const env = siteEnv({});
 const man = loadManifest();
@@ -23,17 +24,19 @@ const pages: Array<{ file: string; html: string }> = [
   { file: 'guide/index.html', html: guideIndex(env, { rel: '../', markSvg: '<svg/>', pages: metas }) },
   ...parsed.map((p) => { const r = renderMarkdown(p.body, { rel: '../../', shots: fake, slugs, gen }); return { file: `guide/${p.slug}/index.html`, html: guidePage(env, { rel: '../../', markSvg: '<svg/>', pages: metas, slug: p.slug, title: p.data.title, summary: p.data.summary, description: p.data.description, html: r.html, toc: r.toc }) }; }),
   ...infoPages(env, '<svg/>', metas, fake, slugs, gen).map((p) => ({ file: `${p.slug}/index.html`, html: p.html })),
+  ...landingPages(env, '<svg/>', metas, fake, slugs, gen).map((p) => ({ file: `${p.path}/index.html`, html: p.html })),
+  ...devlogPages(env, '<svg/>', metas, fake).pages.map((p) => ({ file: `${p.path}/index.html`, html: p.html })),
 ];
 const siteUrl = env.siteUrl;
 
 describe('site SEO', () => {
-  it('has the expected set of pages', () => { expect(pages.map((p) => p.file)).toEqual(expect.arrayContaining(['index.html', 'guide/index.html', 'about/index.html', 'privacy/index.html', 'guide/getting-started/index.html'])); expect(pages.length).toBe(parsed.length + 4); });
+  it('has the expected set of pages', () => { expect(pages.map((p) => p.file)).toEqual(expect.arrayContaining(['index.html', 'guide/index.html', 'about/index.html', 'privacy/index.html', 'guide/getting-started/index.html'])); expect(pages.length).toBe(parsed.length + 4 + landingPages(env, '<svg/>', metas, fake, slugs, gen).length + devlogPages(env, '<svg/>', metas, fake).pages.length); });
   it('every page passes the lint: title < 60, description 120-155, canonical, social cards, JSON-LD, icons, consent', () => {
     for (const p of pages) expect(lintPage(p.file, p.html, { siteUrl }), p.file).toEqual([]);
     expect(SEO_LIMITS).toEqual({ titleMax: 59, descMin: 120, descMax: 155 });
   });
   it('titles and descriptions are unique', () => { expect(uniqueLint(pages)).toEqual([]); });
-  it('landing / guide index titles are the planned ones', () => { expect(pages[0]!.html).toContain('<title>Slope Tycoon – Ski &amp; mountain resort tycoon game</title>'); expect(GUIDE_INDEX_TITLE.length).toBeLessThan(60); expect(GUIDE_INDEX_DESC.length).toBeGreaterThanOrEqual(120); });
+  it('landing / guide index titles are the planned ones', () => { expect(pages[0]!.html).toContain('<title>Slope Tycoon – Free Ski Resort Tycoon Game in Your Browser</title>'); expect(GUIDE_INDEX_TITLE.length).toBeLessThan(60); expect(GUIDE_INDEX_DESC.length).toBeGreaterThanOrEqual(120); });
   it('lint catches bad pages', () => {
     const bad = pages[0]!.html.replace(/<title>[^<]*<\/title>/, `<title>${'x'.repeat(70)}</title>`).replace(/<meta name="description" content="[^"]*"/, '<meta name="description" content="short"');
     const p = lintPage('x', bad, { siteUrl }).join('\n'); expect(p).toContain('title is 70'); expect(p).toContain('meta description is 5');
@@ -71,7 +74,7 @@ describe('site SEO', () => {
   it('about page has the owner text; landing has the story section linking /about/', () => {
     const about = pages.find((p) => p.file === 'about/index.html')!.html;
     expect(about).toContain('I am Maarten.'); expect(about).toContain('Ski Resort Tycoon'); expect(about).toContain('one day, I'); expect(about).toContain('Thanks to AI assistance, here we are!'); expect(about).toContain('github.com/maartenba/SlopeTycoon');
-    expect(pages[0]!.html).toContain('id="about"'); expect(pages[0]!.html).toContain('href="./about/"');
+    expect(pages[0]!.html).toContain('<blockquote>'); expect(pages[0]!.html).toContain('one day, I’ll build a game like this'); expect(pages[0]!.html).toContain('href="./about/"');
   });
   it('privacy page explains the analytics honestly and exposes the settings anchor', () => {
     const h = pages.find((p) => p.file === 'privacy/index.html')!.html;

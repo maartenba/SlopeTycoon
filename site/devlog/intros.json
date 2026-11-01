@@ -1,0 +1,62 @@
+{
+  "0.1.0": {
+    "tagline": "the first playable build",
+    "lead": "This is where it starts. I called it 0.9.0 for a while, then admitted it was a first pre-release and renumbered it. You can already build lifts, pistes and paths on a procedural mountain, guests ski it and rate it, and the whole thing works offline. It is rough, and I am showing it anyway.",
+    "shot": "hero-winter"
+  },
+  "0.2.0": {
+    "tagline": "goals, ride-along and touch",
+    "lead": "The second pre-release added a lot at once: goals and a ranger who gives advice, a ride-along view where you follow a guest down the hill, photo and walk modes, resort levels, six scenarios and a yearly report. Phones and tablets got touch controls, and there is a colour-blind-safe palette. It was a big pile of changes, so the highlights are the place to start.",
+    "shot": "ride-ski"
+  },
+  "0.2.1": {
+    "tagline": "new music, shorter towers",
+    "lead": "A small release about sound and about lift towers. The music was rewritten as nine procedural tracks that follow the season and the time of day, the ambience got quieter, and tall lift towers were capped so the lines look less like pylons.",
+    "shot": "ui-settings-desktop"
+  },
+  "0.2.2": {
+    "tagline": "a real calendar and named runs",
+    "lead": "This one changed how the game thinks about time. The year now has real months, with winter from December to March, and pistes are split into named runs you can open, groom and rename one by one. Energy, yearly lift service and a snowmaking switch came along with it.",
+    "shot": "runs-overlay"
+  },
+  "0.2.3": {
+    "tagline": "toilets and level crossings",
+    "lead": "Guests now need a toilet, which I did not expect to be so entertaining. Level crossings, footbridges and bridges make the valley work, and four new marketing campaigns give you more to try. A few frameworks went in quietly for later content.",
+    "shot": "crossing-closed"
+  },
+  "0.2.5": {
+    "tagline": "an easier first year",
+    "lead": "There is no 0.2.4: I skipped it. This release is about being kinder in the first year, with more start money and cheaper quiet months. Bridges are now built while you draw the path, and a small card tells you when a new version is ready.",
+    "shot": "bridges-stream"
+  },
+  "0.2.6": {
+    "tagline": "rivers and mid-stations",
+    "lead": "You can dig a river now, from a spring to a lake, with calm stretches and white-water rapids. Gondolas, cable cars and detachable chairs can get mid-stations, and there is a new six-seat chair. It is the second batch of content for the summer-and-winter plan.",
+    "shot": "river-rapids"
+  },
+  "0.2.7": {
+    "tagline": "the summer update",
+    "lead": "Summer is half the reason I started this game, so this release is the one I was waiting for. A campground with a campfire, a petting zoo, a viewpoint, a treehouse, quad tours, a climbing crag, rafting and fishing all arrived together, with mountain bikers and anglers to use them.",
+    "shot": "summer-campground-night"
+  },
+  "0.2.8": {
+    "tagline": "hotels and a coffee stand",
+    "lead": "Two hotels, one with a heated pool that steams in the cold, and a little coffee stand where skiers pull over for a break. Seniors and school classes visit now, on their own calendar. The pool heating shows up in your energy bill, which I like.",
+    "shot": "hotel-luxury-steam"
+  },
+  "0.2.9": {
+    "tagline": "winter tours and backcountry",
+    "lead": "Winter got its own extras: a sleigh stable, a snowshoe hut and a snowscooter base. You can also paint backcountry routes, and the avalanche danger (1 to 5) decides whether they stay open. Snowboarders and ski tourers now show up as guests.",
+    "shot": "backcountry-open"
+  },
+  "0.3.0": {
+    "tagline": "mountain concerts",
+    "lead": "Concerts on the mountain: a Mountain Concert in early September and a Snow Concert in March, each with a stage, speakers and soft lights over the crowd. This release also closed the big content phase that started with rivers, so the highlights include a one-line summary of all of it.",
+    "shot": "concert-summer-night"
+  },
+  "0.3.1": {
+    "tagline": "a consistency pass",
+    "lead": "No new big feature this time. I went through every building, lift and guest type with one test, fixed the ones that never earned money, and made the rules read the same everywhere. It is the kind of release that is boring to write about and nicer to play.",
+    "shot": "ui-buildings-drawer"
+  }
+}

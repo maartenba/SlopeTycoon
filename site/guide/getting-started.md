@@ -1,11 +1,12 @@
 ---
 title: "Getting started"
+seo: "How to start your first ski resort – Slope Tycoon guide"
 order: 1
 summary: "Your first ten minutes: start a game, build a lift, paint a piste and open for business."
 description: "Your first ten minutes in Slope Tycoon: start a new ski resort game, build a lift, paint a piste and open for business. A friendly beginner's guide."
 screenshots: [ui-menu, ui-newgame, ui-hud]
 ---
-Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, buy tickets, ski your slopes, eat in your restaurants and tell the world what they think. Your job is to keep that loop humming through every season.
+Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, buy tickets, ski your slopes, eat in your restaurants and tell the world what they think. Your job is to keep that loop running through every season.
 
 ## Start a game
 
@@ -45,7 +46,7 @@ The screen is a small valley with a **Base Lodge**, a road and a real **Parking*
 
 > [!NOTE] Money is tight at first. If you run out, the game lets you go into debt rather than stopping, but construction is refused while you are in the red. See [Money](page:money).
 
-## Money tips
+## How to make money
 
 New resorts start with $150,000 and one winter ahead. Build one lift, a gentle piste, parking and a lodge first, then add one building at a time while cash stays above its price plus about $5,000. The **Starter loan** ($50,000) is cheap money for the first winter, and the ticket price is fine at its default. Ranger Rudi's **Cash tips** card shows up when cash is thin. Full list: [Money](page:money).
 

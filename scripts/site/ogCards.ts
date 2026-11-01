@@ -8,10 +8,16 @@ import { SHOTS_DIR } from './optimize';
 
 export const OG_DIR = 'site/assets/og';
 export const CARDS: Record<string, { shot: string; kicker: string; title: string; sub: string; chips: string[] }> = {
-  landing: { shot: 'hero-winter', kicker: 'A browser ski resort tycoon', title: 'Slope Tycoon', sub: 'Build your own ski & mountain resort, through all four seasons.', chips: ['Free', 'Plays offline', 'No accounts'] },
-  guide: { shot: 'season-summer', kicker: 'Player guide', title: 'Run your resort like a pro', sub: 'Lifts, pistes, seasons, money, shortcuts and more.', chips: ['Getting started', 'Lifts & pistes', 'Shortcuts'] },
+  landing: { shot: 'hero-winter', kicker: 'A browser ski resort tycoon', title: 'Slope Tycoon', sub: 'Build your own ski and mountain resort, all four seasons.', chips: ['Free', 'Plays offline', 'No accounts'] },
+  'ski-resort-tycoon': { shot: 'slope-guests', kicker: 'Play in your browser', title: 'Ski Resort Tycoon', sub: 'Shape the mountain, build lifts and pistes, run all four seasons.', chips: ['Free', 'No download', 'Plays offline'] },
+  'games-like': { shot: 'ride-lift', kicker: 'A fair look', title: 'Games like Ski Resort Tycoon', sub: 'Ski management games worth a look, and where Slope Tycoon fits.', chips: ['Ski-E-O', 'Skingdom', 'Snowtopia'] },
+  'ski-lifts': { shot: 'lift-midstation', kicker: 'Explained simply', title: 'How ski lifts work', sub: 'Chairlifts, gondolas, T-bars, cable cars and funiculars.', chips: ['12 lift types', 'Build them all'] },
+  'browser-tycoon': { shot: 'ui-finance', kicker: 'No download', title: 'Free browser tycoon games', sub: 'Where to find tycoon games that run in a tab, and one ski resort.', chips: ['Free', 'In a tab', 'Offline'] },
+  summer: { shot: 'summer-campground-night', kicker: 'Not only winter', title: 'A resort game for summer', sub: 'Bike trails, a campground, rafting, quads and a concert.', chips: ['Hiking', 'Rafting', 'Concerts'] },
+  devlog: { shot: 'concert-winter-night', kicker: 'Release notes', title: 'The devlog', sub: 'What changed in each version of Slope Tycoon, in plain words.', chips: ['One post per release', 'Atom feed'] },
+  guide: { shot: 'season-summer', kicker: 'Player guide', title: 'How to run your resort', sub: 'Lifts, pistes, seasons, money, shortcuts and more.', chips: ['Getting started', 'Lifts & pistes', 'Shortcuts'] },
   privacy: { shot: 'night-village', kicker: 'Privacy & analytics', title: 'Your saves stay yours', sub: 'No ads, no accounts. Anonymous statistics only if you allow them.', chips: ['Opt-in', 'Local saves', 'No ads'] },
-  about: { shot: 'season-autumn', kicker: 'About the game', title: 'Why I built this', sub: 'A summer-and-winter love letter to Ski Resort Tycoon, by Maarten.', chips: ['Made with AI', 'Open on GitHub'] },
+  about: { shot: 'season-autumn', kicker: 'About the game', title: 'Why I built this', sub: 'Why I built a ski resort game for summer and winter, by Maarten.', chips: ['Made with AI', 'Open on GitHub'] },
 };
 const b64 = (f: string): string => readFileSync(f).toString('base64');
 export function cardHtml(key: string): string {

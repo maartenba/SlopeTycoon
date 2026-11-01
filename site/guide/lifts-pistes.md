@@ -1,5 +1,6 @@
 ---
 title: "Lifts & pistes"
+seo: "Ski lift types and pistes – Slope Tycoon guide"
 order: 4
 summary: "The twelve lift types, mid-stations, towers and clearance, planned lift maintenance, pistes and runs, grooming and snowmaking."
 description: "Slope Tycoon lifts and pistes: twelve lift types, mid-stations, towers and clearance, planned maintenance, pistes and runs, grooming and snowmaking."

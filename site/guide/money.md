@@ -1,5 +1,6 @@
 ---
 title: "Money"
+seo: "Money: prices, marketing & loans – Slope Tycoon guide"
 order: 8
 summary: "Prices, passes, seasonal pricing, marketing campaigns and their prerequisites, loans, debt and difficulty."
 description: "Slope Tycoon money guide: set day-pass and season prices, run marketing campaigns, take loans, manage debt and choose a difficulty that suits you."

@@ -10,10 +10,13 @@ export interface Ctx {
   slugs: ReadonlySet<string>;
   /** Named generated blocks (`{{gen:name}}`), already markdown/HTML strings. */
   gen?: Readonly<Record<string, string>>;
+  /** Directory slugs of the landing pages / devlog (`[text](lp:ski-resort-tycoon)` -> `<rel>ski-resort-tycoon/`). When given, unknown slugs throw. */
+  landing?: ReadonlySet<string>;
 }
 export interface TocItem { level: 2 | 3; id: string; text: string }
 export interface Rendered { html: string; toc: TocItem[]; figures: string[]; sections: { id: string; heading: string; text: string }[] }
-export interface Front { title: string; order: number; summary?: string; /** meta description override (120-155 chars); defaults to the summary */ description?: string; /** visible <h1> when it differs from the SEO title (info pages) */ heading?: string; screenshots?: string[] }
+export interface FaqItem { q: string; a: string }
+export interface Front { title: string; order: number; /** guide pages: <title> override (the nav keeps `title`); the research puts the search words first */ seo?: string; /** landing pages: og card key, hero screenshot id, intro line, kind, published date, ItemList names, FAQ, related links */ og?: string; hero?: string; lead?: string; kind?: 'page' | 'article' | 'list'; published?: string; items?: string[]; faq?: FaqItem[]; related?: Array<{ href: string; text: string; note?: string }>; summary?: string; /** meta description override (120-155 chars); defaults to the summary */ description?: string; /** visible <h1> when it differs from the SEO title (info pages) */ heading?: string; screenshots?: string[] }
 
 export const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 export const slugify = (s: string): string => s.toLowerCase().replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -55,6 +58,10 @@ export function renderMarkdown(body: string, ctx: Ctx): Rendered {
     if (!ctx.slugs.has(slug)) throw new Error(`link to unknown guide page '${slug}'`);
     return `href="${ctx.rel}guide/${slug}/${h ?? ''}"`;
   });
+  html = html.replace(/href="lp:([\w-]+)(#[\w-]+)?"/g, (_m, slug: string, h?: string) => {
+    if (ctx.landing && !ctx.landing.has(slug)) throw new Error(`link to unknown landing page '${slug}'`);
+    return `href="${ctx.rel}${slug}/${h ?? ''}"`;
+  });
   html = html.replace(/href="game:"/g, `href="${ctx.rel}play/"`);
   html = html.replace(/<a href="(https?:\/\/[^"]+)"/g, '<a rel="noopener" href="$1"');
   html = html.replace(/<table>/g, '<div class="table-wrap"><table>').replace(/<\/table>/g, '</table></div>');
@@ -73,6 +80,15 @@ export function renderMarkdown(body: string, ctx: Ctx): Rendered {
   }
   return { html, toc, figures, sections };
 }
+
+/** Inline markdown (links `page:` / `lp:` / `game:` resolved like in renderMarkdown) for FAQ answers and short intro lines. */
+export function renderInline(src: string, ctx: Pick<Ctx, 'rel' | 'slugs' | 'landing'>): string {
+  let html = marked.parseInline(src, { gfm: true, async: false }) as string;
+  html = html.replace(/href="page:([\w-]+)(#[\w-]+)?"/g, (_m, slug: string, h?: string) => { if (!ctx.slugs.has(slug)) throw new Error(`link to unknown guide page '${slug}'`); return `href="${ctx.rel}guide/${slug}/${h ?? ''}"`; });
+  html = html.replace(/href="lp:([\w-]+)(#[\w-]+)?"/g, (_m, slug: string, h?: string) => { if (ctx.landing && !ctx.landing.has(slug)) throw new Error(`link to unknown landing page '${slug}'`); return `href="${ctx.rel}${slug}/${h ?? ''}"`; });
+  return html.replace(/href="game:"/g, `href="${ctx.rel}play/"`).replace(/<a href="(https?:\/\/[^"]+)"/g, '<a rel="noopener" href="$1"');
+}
+export const plainText = stripTags;
 
 export interface PageMeta { slug: string; title: string; order: number; summary?: string }
 export const sortPages = <T extends PageMeta>(p: readonly T[]): T[] => [...p].sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));

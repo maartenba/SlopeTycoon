@@ -1,5 +1,6 @@
 ---
 title: "Operations & safety"
+seo: "Ski patrol, avalanches & lift safety – Slope Tycoon"
 order: 6
 summary: "Patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, energy and green buildings, crews and courses."
 description: "Run the mountain in Slope Tycoon: ski patrol, first aid, the rescue helicopter, avalanches, wildlife, rangers, lift maintenance, energy, crews and courses."
