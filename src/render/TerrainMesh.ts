@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { onPalette, paletteData } from '@/config/palette';
+import { atmosTerrainUniforms } from './atmosphere/uniforms';
 import { FOG_FRAG, FOG_PARS_FRAG, FOG_PARS_VERT, fogUniforms, fogVert } from './Fog';
 import type { Grid } from '@/world/Grid';
 import { CHUNK_SIZE } from '@/world/Grid';
@@ -47,6 +48,9 @@ uniform vec3 uEdge0, uEdge1, uEdge2, uEdge3; // piste edge-rope colours by diffi
 uniform float uDetailFade; // ground cameras: 1 = micro-detail on (fades out with distance, 0 in iso so iso is unchanged)
 uniform vec3 uLodTint; // debug: multiplies the final colour (1,1,1 = off)
 uniform vec3 uSunDir, uSunColor, uSkyColor, uGroundColor, uHazeColor;
+uniform vec4 uAtmA; // M7.0: x alpenglow amount, y alpenglow height (world y), z frost, w cloud-shadow strength (all 0 = the old look)
+uniform vec4 uAtmB; // x time (frozen with reduced motion), yz cloud drift offset, w frost twinkle on/off
+uniform vec3 uAlpColor;
 ${FOG_PARS_FRAG}
 varying vec3 vWorld;
 varying vec3 vNormal;
@@ -281,6 +285,26 @@ void main() {
     float s2 = step(0.992, hash(sc2 + 7.7)) * (1.0 - smoothstep(0.15, 0.5, fwW * 70.0));
     lit += vec3(0.8, 0.84, 0.9) * s2 * snowAmt * smoothstep(0.3, 0.8, diff) * detailK;
   }
+  { // atmosphere (M7.0): alpenglow on high snow facing a low sun, drifting cloud shadows, frost glints. World-space only (no screen-space noise); every term is 0 when the setting is Off
+    if (uAtmA.x > 0.001) {
+      float alpH = smoothstep(uAtmA.y, uAtmA.y + 5.0, vWorld.y + (vnoise(vWorld.xz * 0.4) - 0.5) * 3.0);
+      float alpG = uAtmA.x * alpH * snowAmt * (0.3 + 0.7 * smoothstep(0.0, 0.55, ndl));
+      lit = mix(lit, lit * vec3(1.22, 0.82, 0.8) + uAlpColor * 0.16, clamp(alpG, 0.0, 1.0));
+    }
+    if (uAtmA.w > 0.001) {
+      vec2 cp = vWorld.xz * 0.022 + uAtmB.yz;
+      float cn = vnoise(cp) * 0.6 + vnoise(cp * 2.3 + 5.0) * 0.4;
+      lit *= mix(vec3(1.0), vec3(0.9, 0.94, 1.0), uAtmA.w * 1.5) * (1.0 - uAtmA.w * smoothstep(0.48, 0.74, cn));
+    }
+    if (uAtmA.z > 0.001) {
+      vec2 fc = floor(vWorld.xz * 34.0);
+      float fh = hash(fc + 11.3);
+      float fs = step(0.93, fh) * (1.0 - smoothstep(0.2, 0.5, fwW * 34.0));
+      float tw = mix(1.0, 0.55 + 0.45 * sin(uAtmB.x * 1.7 + fh * 40.0), uAtmB.w);
+      lit += vec3(0.7, 0.85, 1.0) * fs * tw * snowAmt * uAtmA.z * smoothstep(0.1, 0.6, diff) * 0.9;
+      lit = mix(lit, lit * vec3(0.95, 0.98, 1.04) + 0.02, uAtmA.z * snowAmt * 0.5);
+    }
+  }
   // aerial perspective: very light haze with orthographic depth (far side of the map sits a little closer to the sky colour)
   lit = mix(lit, uHazeColor, 0.15 * smoothstep(0.35, 1.0, gl_FragCoord.z) * step(uFogDensity, 0.0)); // perspective views use the real distance fog instead
 
@@ -360,6 +384,7 @@ export class TerrainMesh {
         uSkyColor: { value: new THREE.Color(0.46, 0.54, 0.68) },
         uGroundColor: { value: new THREE.Color(0.30, 0.26, 0.26) },
         ...fogUniforms,
+        ...atmosTerrainUniforms,
         uHazeColor: { value: new THREE.Color().setRGB(0.663, 0.831, 0.961, THREE.SRGBColorSpace) },
       },
     });

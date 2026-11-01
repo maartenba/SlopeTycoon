@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BUILDINGS } from '@/config/buildings';
+import { fogUniforms } from '../Fog';
 import { PartBuilder } from './common';
 import type { BuilderEntry, BuiltParts, BuildFn } from './common';
 import { C, flagstoneFoundation, hash01 } from './common';
@@ -105,18 +106,30 @@ function patchSnow(mat: THREE.MeshLambertMaterial, snow: SnowUniform, key: strin
     sh.uniforms.uSnow = snow;
     if (nearHide) sh.uniforms.uNearHide = nearHide;
     sh.uniforms.uNight = night;
+    sh.uniforms.uValleyFog = fogUniforms.uValleyFog; sh.uniforms.uValleyFogT = fogUniforms.uValleyFogT; sh.uniforms.uValleyFogColor = fogUniforms.uValleyFogColor;
     sh.uniforms.uGlass = { value: new THREE.Vector3(GLASS.r, GLASS.g, GLASS.b) };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying float vUp;\nvarying float vLY;\nvarying vec3 vSnP;' + (nearHide ? '\nvarying vec3 vNHW;' : ''))
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLY = transformed.y;\nvUp = normalize(mat3(modelMatrix) * objectNormal).y;\nvSnP = (modelMatrix * vec4(transformed, 1.0)).xyz;' + (nearHide ? '\nvNHW = (modelMatrix * vec4(transformed, 1.0)).xyz;' : ''));
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uSnow;\nuniform float uNight;\nuniform vec3 uGlass;\nfloat gGlass;\nvarying float vUp;\nvarying float vLY;\nvarying vec3 vSnP;' + SNOW_NOISE_GLSL + (nearHide ? '\nvarying vec3 vNHW;\nuniform vec4 uNearHide;' : ''))
+      .replace('#include <common>', '#include <common>\nuniform vec3 uValleyFog;\nuniform float uValleyFogT;\nuniform vec3 uValleyFogColor;')
+      .replace('#include <tonemapping_fragment>', VALLEY_FOG_GLSL + '\n#include <tonemapping_fragment>')
       .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>' + (nearHide ? NEAR_HIDE_GLSL : ''))
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n#ifdef USE_COLOR\ntotalEmissiveRadiance += vec3(1.0, 0.56, 0.18) * gGlass * smoothstep(0.04, 0.55, uNight) * 1.25;\n#endif')
       .replace('#include <color_fragment>', '#include <color_fragment>\ngGlass = 0.0;\n#ifdef USE_COLOR\ngGlass = 1.0 - step(0.05, length(vColor.rgb - uGlass));\n#endif\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.38, 0.26, 0.16), gGlass * smoothstep(0.04, 0.5, uNight));\ndiffuseColor.rgb *= mix(0.8, 1.0, smoothstep(0.0, 0.32, vLY)) * mix(0.93, 1.0, smoothstep(0.0, 1.2, vLY)); // soft ambient-occlusion gradient at the wall base (no extra draw calls)\nfloat snN = snowRoofNoise(vSnP.xz);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.98, 1.0) * (0.93 + 0.05 * snN), smoothstep(0.55, 0.8, vUp) * uSnow);');
   };
   mat.customProgramCacheKey = (): string => key;
 }
+
+/** Valley fog on buildings (M7.0): the same world-space height band as FOG_FRAG; gl_FragColor is still linear here. uValleyFog.x = 0 skips it. */
+const VALLEY_FOG_GLSL = `
+  if (uValleyFog.x > 0.001) {
+    vec2 vfp = vSnP.xz + uValleyFogT * vec2(0.35, 0.2);
+    float vfn = snowRoofNoise(vfp * 0.083) * 0.65 + snowRoofNoise(vfp * 0.217 + 4.0) * 0.35;
+    float vfh = 1.0 - smoothstep(uValleyFog.y - uValleyFog.z, uValleyFog.y + uValleyFog.z, vSnP.y + (vfn - 0.5) * uValleyFog.z * 1.6);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, uValleyFogColor, clamp(vfh * uValleyFog.x * (0.7 + 0.45 * vfn), 0.0, 0.9));
+  }`;
 
 /** Roofs above a ground camera dither away within the radius (uNearHide = camera xyz + radius, 0 = off / iso). Same maths as the lift station material. */
 const NEAR_HIDE_GLSL = `

@@ -126,10 +126,13 @@ export class Lighting {
   horizonAt: number | null = null;
   /** Called with the sRGB horizon colour whenever the sky is applied (fog tint). */
   onHorizon: ((c: V3) => void) | null = null;
+  /** Optional render-only colour grade applied on top of the pure model (Atmosphere, M7.0). Must return its input unchanged for a plain day. */
+  gradeHook: ((p: LightingParams, hour: number) => LightingParams) | null = null;
 
   apply(hourIn: number, sun?: SunTimesArg): LightingParams {
     const hour = this.disableNight ? 12 : hourIn;
-    const p = lightingAt(hour, sun);
+    const p0 = lightingAt(hour, sun);
+    const p = this.gradeHook ? this.gradeHook(p0, hour) : p0; // M7.0: special sunrise / sunset grade (identity on plain days and when Atmosphere is Off)
     this.last = p;
     const L = standardLights(p);
     this.sun.position.set(p.sunDir[0] * this.sunDistance, p.sunDir[1] * this.sunDistance, p.sunDir[2] * this.sunDistance);

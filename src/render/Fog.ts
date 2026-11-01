@@ -11,17 +11,40 @@ import * as THREE from 'three';
 export const fogUniforms = {
   uFogColor: { value: new THREE.Color(0.66, 0.83, 0.96) },
   uFogDensity: { value: 0 },
+  /** M7.0 valley fog (render-only, docs/atmosphere.md): x = amount 0..1 (0 = off: exact old look), y = fog line (world y), z = soft edge (world units). */
+  uValleyFog: { value: new THREE.Vector3(0, 0, 5) },
+  uValleyFogT: { value: 0 },
+  /** Linear fog colour of the valley bank (lit by the sky; Atmosphere controller). */
+  uValleyFogColor: { value: new THREE.Color(0.8, 0.85, 0.92) },
 };
 
 /** GLSL: declare in both stages. */
-export const FOG_PARS_VERT = /* glsl */ `varying float vFogDist;`;
+export const FOG_PARS_VERT = /* glsl */ `varying float vFogDist;
+varying vec3 vFogW;`;
 export const FOG_PARS_FRAG = /* glsl */ `uniform vec3 uFogColor;
 uniform float uFogDensity;
-varying float vFogDist;`;
+uniform vec3 uValleyFog;
+uniform float uValleyFogT;
+uniform vec3 uValleyFogColor;
+varying float vFogDist;
+varying vec3 vFogW;
+float atmHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float atmNoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(atmHash(i), atmHash(i + vec2(1.0, 0.0)), f.x), mix(atmHash(i + vec2(0.0, 1.0)), atmHash(i + vec2(1.0, 1.0)), f.x), f.y);
+}`;
 /** Vertex: `viewPos` is the view-space position (vec4). */
-export const fogVert = (viewPos: string): string => `vFogDist = length(${viewPos}.xyz);`;
+export const fogVert = (viewPos: string): string => `vFogDist = length(${viewPos}.xyz);
+  vFogW = transpose(mat3(viewMatrix)) * ${viewPos}.xyz + cameraPosition;`;
 /** Fragment: apply on gl_FragColor.rgb BEFORE the colour-space conversion (fog colour is linear). */
-export const FOG_FRAG = /* glsl */ `gl_FragColor.rgb = mix(gl_FragColor.rgb, uFogColor, 1.0 - exp(-uFogDensity * uFogDensity * vFogDist * vFogDist));`;
+export const FOG_FRAG = /* glsl */ `gl_FragColor.rgb = mix(gl_FragColor.rgb, uFogColor, 1.0 - exp(-uFogDensity * uFogDensity * vFogDist * vFogDist));
+  if (uValleyFog.x > 0.001) { // valley fog bank: world-space height band + slow world-space noise (never screen-space: no crawl under camera motion)
+    vec2 vfp = vFogW.xz + uValleyFogT * vec2(0.35, 0.2);
+    float vfn = atmNoise(vfp * 0.05) * 0.65 + atmNoise(vfp * 0.13 + 4.0) * 0.35;
+    float vfh = 1.0 - smoothstep(uValleyFog.y - uValleyFog.z, uValleyFog.y + uValleyFog.z, vFogW.y + (vfn - 0.5) * uValleyFog.z * 1.6);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, uValleyFogColor, clamp(vfh * uValleyFog.x * (0.7 + 0.45 * vfn), 0.0, 0.9));
+  }`;
 
 /** Distance (tiles) at which the fog is ~95 % opaque for a map size. */
 export const fogRangeFor = (mapSize: number): number => Math.min(260, Math.max(90, mapSize * 0.9));
