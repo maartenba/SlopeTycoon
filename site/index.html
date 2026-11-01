@@ -8,141 +8,93 @@
 <noscript><div class="noscript">The website works without JavaScript and nothing is tracked; only the screenshot viewer and guide search need it. The game itself needs JavaScript and WebGL.</div></noscript>
 {{header}}
 <main id="main">
-<section class="hero" aria-label="Slope Tycoon">
-  <div class="slides" aria-hidden="true">{{slides}}</div>
-  <div class="wrap">
-    {{logo}}
-    <h1>Build the ski resort of your dreams.</h1>
-    <p class="lead">Shape the mountain, string up lifts, groom the pistes, keep thousands of guests happy through winter <em>and</em> summer. A cosy tycoon game that lives in your browser.</p>
-    <div class="cta"><a class="btn primary big" href="./play/">▶ Play now</a><a class="btn ghost big" href="./guide/">Read the guide</a></div>
-    <div class="badges"><span class="badge">Free</span><span class="badge">Best on desktop</span><span class="badge">Plays offline</span><span class="badge">No ads, no accounts</span><span class="badge">v{{version}} pre-release</span></div>
+<section class="hero2" aria-label="Slope Tycoon">
+  <div class="wrap hero2-grid">
+    <div class="hero2-txt">
+      <p class="eyebrow">A browser game, still a pre-release</p>
+      <h1>Slope Tycoon: a ski resort tycoon in a browser tab</h1>
+      <p class="lead">I wanted to keep running a mountain after the holiday was over, so I built the game for it. You shape a valley, put in lifts, paint pistes and try to keep a village alive through winter and summer.</p>
+      <p class="what-you-do">You start with a lodge and a bit of money. Build a lift, paint a run down from the top, add somewhere to eat, and watch the guests work out what you meant.</p>
+      <div class="cta"><a class="btn primary big" href="./play/">▶ Play now</a><a class="btn ghost big" href="./guide/">Read the guide</a></div>
+      <p class="hero-note">Free, no download, no account, no ads. It works offline once you have opened it, and it is best on a desktop. This is v{{version}}, so expect rough edges.</p>
+    </div>
+    {{hero}}
   </div>
 </section>
 
-<section id="what"><div class="wrap">
-  <p class="eyebrow">What is it?</p>
-  <h2>A ski-resort tycoon with a real mountain under it</h2>
-  <p class="lead-in">You start with a valley, a lodge and a little money. Raise and flatten terrain, dig ponds and rivers, plant gardens, paint pistes, build twelve kinds of lifts, add restaurants, ski schools and ranger stations, and watch tiny guests actually ski your slopes. The snowline moves with the seasons, so the mountain you build for winter has to earn its keep in summer too.</p>
-  <div class="facts" aria-label="Facts">{{facts}}</div>
+<section id="what" class="s-what"><div class="wrap what-grid">
+  <div class="txt">
+    <h2>What you actually do</h2>
+    <p>The mountain is generated from a seed, so every new game is a different valley. You raise and flatten the ground, lay a road, put a lift at the foot of a slope and paint a piste down the hill: green, blue, red or black. Guests arrive, buy a pass, ride, ski, eat, and tell you what they think.</p>
+    <p>The first hour is just getting that loop to work. After that it gets wider: more lifts, a ski school, a ranger station, snowmaking for the thin months, a hotel on the hill. There are twelve kinds of lift, from a T-bar to a ten-person gondola. <a href="./how-ski-lifts-work/">How ski lifts work</a> explains them without the game.</p>
+    <p>The snow line moves with the real calendar, so in April the high slopes still ski while the valley hikes. That is the part I care about most. A resort that only works in winter is a resort that goes broke in May.</p>
+    <p class="aside">The guide has <a href="./guide/getting-started/">your first ten minutes</a>, and there is a longer page about <a href="./ski-resort-tycoon/">playing a ski resort tycoon in your browser</a>.</p>
+  </div>
+  <div class="stack">{{pic:slope-guests|Guests on a blue run. I spent far too long watching this.|560}}{{pic:ui-hud|The HUD, kept small. Cash, rating, date, speed.|440}}</div>
 </div></section>
 
-<section id="how" class="alt"><div class="wrap">
-  <p class="eyebrow">How it plays</p>
-  <h2>Three steps, then a lot of “one more season”</h2>
-  <div class="steps">
-    <div class="step"><h3>Build</h3><p>Lay a road, add a lift and paint a piste down the hill. Ranger Rudi and the goals card point at what to do next. <a href="./guide/getting-started/">Getting started guide</a>.</p></div>
-    <div class="step"><h3>Open &amp; watch</h3><p>Guests arrive, queue, ski, eat and write reviews. Zoom in, ride along on a lift or walk through the village yourself.</p></div>
-    <div class="step"><h3>Grow</h3><p>Price your passes, run campaigns, take a loan, level up and unlock gondolas, funiculars and helipads. Then do it all again in summer. <a href="./guide/money/">How money works</a>.</p></div>
+<section class="s-quote"><div class="wrap">
+  <blockquote><p>Back then, I also swore that “one day, I’ll build a game like this”. Thanks to AI assistance, here we are!</p><footer>Maarten, on <a href="./about/">why I built this</a></footer></blockquote>
+  <svg class="ridge" viewBox="0 0 800 70" width="800" height="70" aria-hidden="true" focusable="false"><path d="M0 62 L70 40 L105 52 L180 14 L228 44 L290 30 L350 58 L430 20 L480 38 L540 8 L610 46 L670 28 L740 52 L800 36" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M180 14 L196 26 M540 8 L556 22 M430 20 L444 31" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+</div></section>
+
+<section id="seasons" class="s-seasons"><div class="wrap">
+  <h2>The same valley, all year</h2>
+  <div class="collage">
+    <div class="c-a">{{pic:season-summer|Summer. The lifts change jobs and carry hikers and bikes.|760}}</div>
+    <div class="c-b">{{pic:season-spring|Spring: skiing up high, flowers down low.|420}}</div>
+    <div class="c-c">{{pic:season-autumn|Autumn, and the cows come down in October.|420}}</div>
+    <div class="c-d">{{pic:night-village|After dark. The windows light up and I stop working.|760}}</div>
   </div>
 </div></section>
 
-<section id="unique"><div class="wrap">
-  <p class="eyebrow">Only here</p>
-  <h2>Things you won’t find in other resort games</h2>
-  <div class="cards">
-    <div class="card"><h3>Everything is procedural</h3><p>Every tree, building, texture, sound effect and piece of music is generated by code at runtime. The only files are two fonts.</p></div>
-    <div class="card"><h3>Walk your own resort</h3><p>Press <kbd>V</kbd> and drop into first person. Stroll the village, board a lift, take photos from eye level.</p></div>
-    <div class="card"><h3>A real snowline, a real calendar</h3><p>Snow depends on altitude and temperature, and the months are the real ones: winter December to March, longest day on 21 June. Spring skiing happens high up while the valley hikes. Plan for it or go broke in April.</p></div>
-    <div class="card"><h3>Pistes are runs</h3><p>Every stretch of piste between two junctions is its own run, with a name, difficulty, traffic and an open / close switch. Skiers choose between them.</p></div>
-    <div class="card"><h3>Green energy, with a catch</h3><p>Solar, wind, hydro and biomass take a capped share off your lift energy bill and raise your sustainability score. Energy is never free, so you do the maths. Late game, the Eco Centre adds a funded Eco programme with a carbon-neutral certificate.</p></div>
-    <div class="card"><h3>Plays offline</h3><p>Install it like an app. After the first visit the whole game and your saves work without a connection.</p></div>
-    <div class="card"><h3>No ads, no accounts, private saves</h3><p>Saves live on your device (export them as <code>.slope</code> files) and are never uploaded. The only thing that can be sent is anonymous usage statistics, and only if you allow it. <a href="./privacy/">Privacy &amp; analytics</a>.</p></div>
-  </div>
+<section class="s-row"><div class="wrap row r-7-5">
+  <div class="pic-col">{{pic:ride-lift|Riding a lift in ride-along view. You can follow any guest.|760}}</div>
+  <div class="txt"><h2>Lifts, runs and a lot of small details</h2>
+  <p>Every stretch of piste between two junctions is a run with its own name, difficulty and traffic, and guests pick between them. Lifts wear out, wind closes some of them and they all need a yearly service.</p>
+  <p>You can sit in the chair yourself, walk through the village in first person, or take a photo and save it as a PNG on your device. <a href="./guide/modes/">Ride, walk and photo modes</a>.</p></div>
 </div></section>
 
-<section id="seasons" class="alt"><div class="wrap feature">
-  <div class="txt"><p class="eyebrow">Seasons &amp; snowline</p><h2>Four seasons. One valley. Very different jobs.</h2>
-  <p>A year lasts 180 days in twelve real months (a new game starts on 1 December) with real weather, snowfall and a snowline that creeps up the mountain in spring. Winter, December to March, is for skiing, spring for high-altitude “spring skiing”, summer for hiking and mountain biking, autumn for getting ready. A date chip in the top bar always tells you where you are.</p>
-  <ul><li><b>Hotels</b>: a Small Hotel with a lobby restaurant and a Luxury Hotel whose heated pool steams in the cold, plus a Coffee Stand for a quick cup.</li><li><b>Summer attractions</b>: a campground with a campfire, a petting zoo, viewpoints and treehouses for hikers, quads, a climbing crag, rafting and canyoning on your own river, and a tackle hut with fishing piers (anglers even ice-fish in winter).</li><li><b>Winter adventures</b>: a horse-drawn sleigh, guided snowshoe walks and a snowscooter convoy, plus <b>backcountry routes</b> with an avalanche danger from 1 to 5 that close themselves when it gets high.</li><li><b>Rivers</b> you dig from a natural spring run calm, brisk or as rapids, swell with the spring melt and freeze over in a hard winter.</li><li><b>Snowmaking</b> cannons and a reservoir keep the base open in thin years, and you can switch cannons off or let them wait for the cold.</li><li><b>Day and night</b>: groomers work the slopes after dark, windows glow.</li><li><b>Time your way</b>: 1×, 3× and 10× speeds, plus “Skip to…” the next month, season or event.</li></ul><p><a href="./guide/guests-seasons/">Guests &amp; seasons in the guide</a></p></div>
-  {{pic:season-summer}}
-</div>
-<div class="wrap pics2">{{pic:season-spring}}{{pic:river-frozen}}{{pic:night-village}}</div></section>
-
-<section id="lifts"><div class="wrap feature flip">
-  <div class="txt"><p class="eyebrow">Lifts &amp; pistes</p><h2>Twelve kinds of lifts, towers and all</h2>
-  <p>From a humble T-bar to a ten-person gondola, a cable car and a funicular, with mid-stations on the big ones. Lifts get towers that follow the terrain and real clearance rules: cables must clear trees, roofs and other lifts, so you decide where to cut a forest lane.</p>
-  <ul><li><b>Pistes</b> by difficulty colour, split into <b>runs</b> you can rename, close and groom one by one.</li><li><b>Grooming</b> and <b>snowmaking</b> keep them in shape.</li><li><b>Planned maintenance</b>: every lift needs its annual service, or it becomes overdue and breaks down more.</li></ul><p><a href="./guide/lifts-pistes/">Lifts &amp; pistes in the guide</a></p></div>
-  {{pic:ui-lifts-drawer}}
+<section class="s-row"><div class="wrap row r-4-6 flip">
+  <div class="txt"><h2>Summer is a game of its own</h2>
+  <p>A campground with a campfire, a petting zoo, a viewpoint, quads, a climbing crag, rafting on a river you dug yourself, fishing and a concert on the mountain. I wanted the summer half to be more than the winter game with the snow removed.</p>
+  <p><a href="./summer-mountain-resort-game/">A mountain resort game for summer, too</a> · <a href="./guide/summer/">Summer in the guide</a></p></div>
+  <div class="pic-col">{{pic:summer-campground-night|The campground at night. The campfire is the best light in the valley.|560}}</div>
 </div></section>
 
-<section id="guests" class="alt"><div class="wrap feature">
-  <div class="txt"><p class="eyebrow">Living guests</p><h2>Every guest is an actual person on an actual slope</h2>
-  <p>Families, couples, budget skiers, VIPs and adventurers, plus calm seniors on weekdays and orange-bibbed school classes arriving by coach, purple-jacketed snowboarders who hate flat catwalks, and red-shelled ski tourers who skin up your backcountry routes. Skiers, snowboarders, hikers and bikers, each with their own gear, build and jacket. They queue, eat, get tired, get hurt and then tell you about it in their reviews.</p>
-  <ul><li>Eight skin tones, nine head styles, sixteen jacket colours: a crowd that actually looks like a crowd.</li><li>Reviews on the news feed tell you what to fix.</li></ul></div>
-  {{pic:slope-guests}}
+<section class="s-row"><div class="wrap row r-6-6">
+  <div class="pic-col">{{pic:ui-finance|Finance. Check it before you build a gondola.|560}}</div>
+  <div class="txt"><h2>Money, goals and a year-end report</h2>
+  <p>Set day and season pass prices, run marketing campaigns, take a loan and watch the interest. Career mode levels your resort up and unlocks bigger lifts, and there are six scenarios if you would rather have a specific problem to solve. Every year ends with a Resort of the Year report. <a href="./guide/money/">How money works</a>.</p></div>
 </div></section>
 
-<section id="ops"><div class="wrap feature flip">
-  <div class="txt"><p class="eyebrow">Mountain life</p><h2>Run a resort, not just a slope</h2>
-  <p>Ski patrol sleds, trained crews, first-aid huts and a rescue helicopter keep guests safe. Rare avalanches and storms close slopes. Bears wake in autumn, wolves roam the remote forest, and rangers keep everybody apart. Dramatic, never gory: nobody dies in this game.</p>
-  <ul><li><b>Patrol, first aid, helipad</b> coverage on a map overlay.</li><li><b>Wildlife</b> you can manage with a ranger station and bear-proof bins.</li><li><b>Energy &amp; sustainability</b>: solar arrays, wind turbines, small hydro, biomass, a tree nursery and a recycling centre.</li></ul><p><a href="./guide/operations/">Operations &amp; safety in the guide</a></p></div>
-  {{pic:ops-bear}}
+<section class="s-notes"><div class="wrap notes">
+  <div><h2>Things I like</h2><ul>
+    <li>Watching skiers pick a run, and queue where I built one lift too few.</li>
+    <li>Dragging a river from a spring to a lake and seeing it freeze in a hard winter.</li>
+    <li>All of the music and sound is generated by code. There are no audio files.</li>
+    <li>Spring skiing high up while the valley hikes.</li>
+  </ul></div>
+  <div><h2>Things I’m still fixing</h2><ul>
+    <li>Phones work but feel cramped. Tablets are better.</li>
+    <li>Pistes can still be painted over a stream, which they should not.</li>
+    <li>Prices and upkeep get tuned between releases, so the money changes a little each time. The <a href="./devlog/">devlog</a> says when.</li>
+    <li>Walk mode needs a mouse the browser can capture. If it misbehaves for you, please tell me on <a href="{{repo}}/issues">GitHub</a>.</li>
+  </ul></div>
 </div></section>
 
-<section id="events" class="alt"><div class="wrap feature">
-  <div class="txt"><p class="eyebrow">Festivals, rivals &amp; people</p><h2>A valley that has something going on</h2>
-  <p>Book a Christmas Market, a Winter Carnival, a Summer Music Festival or a World Cup race and watch the village dress up: bunting, banners, market stalls, processions and a grandstand. With a gondola or cable car you can also book a <b>Mountain Concert</b> in early September or a <b>Snow Concert</b> in March: a stage with light cones that sway over the crowd at night. The Almabtrieb brings the decorated cows down in early October, announced days ahead. Neighbouring resorts compete for the same guests, and some guests arrive with a name and a wish of their own.</p>
-  <ul><li><b>Statistics</b> (<kbd>I</kbd>): charts of guests, cash, rating and revenue over years, and every mountain has a named region and peaks.</li><li><b>Six staff courses</b> and four crews, all optional and automatic by default.</li><li><b>Sustainability</b> counts in your rating, and a <b>Green Resort</b> award waits in the year report.</li><li><b>Undo and redo</b> for everything you build, a slope profile while you draw and a <i>Suggest a run</i> helper.</li></ul><p><a href="./guide/events/">Festivals &amp; events in the guide</a></p></div>
-  {{pic:festival-market}}
-</div></section>
-
-<section id="modes" class="alt"><div class="wrap">
-  <p class="eyebrow">Get closer</p><h2>Ride along. Walk around. Take a photo.</h2>
-  <p class="lead-in">Three ground-level modes turn your diorama into a place. Ride along with any guest from the lift to the bottom of the run, walk your own streets in first person, or compose a shot with filters, frames and golden-hour lighting and save it as a PNG on your device. <a href="./guide/modes/">Ride, walk and photo modes in the guide</a>.</p>
-  <div class="pics2">{{pic:ride-ski}}{{pic:walk-lodge}}{{pic:photo-mode}}</div>
-</div></section>
-
-<section id="career"><div class="wrap feature">
-  <div class="txt"><p class="eyebrow">Career, scenarios &amp; trophies</p><h2>Goals to chase, stories to finish</h2>
-  <p>In Career mode your resort levels up from “Open for business” to a world-class destination, unlocking bigger lifts along the way. Prefer a challenge? Six handcrafted scenarios, from a gentle first valley to the Alpine Giant. Every year closes with a Resort of the Year report, and {{achievements}} trophies unlock cosmetic rewards like new building palettes and photo frames.</p><p><a href="./guide/career/">Career &amp; scenarios in the guide</a></p></div>
-  {{pic:ui-scenarios}}
-</div>
-<div class="wrap pics2">{{pic:ui-year-report}}{{pic:ui-trophies}}{{pic:ui-level-panel}}</div></section>
-
-<section id="economy" class="alt"><div class="wrap feature flip">
-  <div class="txt"><p class="eyebrow">Economy</p><h2>Prices, passes, loans and the occasional marketing blitz</h2>
-  <p>Set day-pass and season-pass prices, vary them by weekday and season, and see at once whether a price is cheap or expensive. Run campaigns for families, budget skiers, VIPs, summer adventurers, snowboarders, hikers and bikers, or tempt people onto the train with <em>Come by Train</em>, once you have what they need. Build toilets, bridges and level crossings so the valley works. Take a loan, mind the debt, and don’t forget summer still has to pay for itself.</p></div>
-  {{pic:ui-pricing}}
-</div></section>
-
-<section id="access"><div class="wrap">
-  <p class="eyebrow">For everyone</p><h2>Offline, private and adjustable</h2>
-  <div class="cards">
-    <div class="card"><h3>Install it</h3><p>Chrome and Edge offer an Install button. On iPhone and iPad use Share → Add to Home Screen.</p></div>
-    <div class="card"><h3>Accessible</h3><p>Reduced motion, adjustable text size, feedback intensity, a colour-blind-safe palette and a keyboard for every tool.</p></div>
-    <div class="card"><h3>Your saves are yours</h3><p>Slots, quick save, autosave and <code>.slope</code> file export, all stored locally. <a href="./guide/saves/">Saves &amp; offline</a>.</p></div>
-    <div class="card"><h3>Touch &amp; tablets</h3><p>Pan, pinch, twist and two-step placement with on-screen controls. Best on desktop, comfortable on a tablet, playable on a phone.</p></div>
-    <div class="card"><h3>Colour-blind safe</h3><p>An Okabe-Ito palette for piste difficulty, overlays and status colours, switchable in Settings.</p></div>
-  </div>
-</div></section>
-
-<section id="about"><div class="wrap aboutbox">
-  <div class="story"><p class="eyebrow">About</p><h2>Why I built this</h2>
-  <p>I am Maarten. I like skiing, and every time I came back home from a family ski vacation I wanted the week in the mountains and on the slopes to last longer. Around the year 2000 I started playing <a href="https://en.wikipedia.org/wiki/Ski_Resort_Tycoon" rel="noopener">Ski Resort Tycoon</a> after the vacation to do just that.</p>
-  <p>And then summer vacations in the mountains, same thing… There was no summer ski town game, I believe, but it’s something I would have liked. Back then, I also swore that “one day, I’ll build a game like this”. Thanks to AI assistance, here we are!</p>
-  <p><a href="./about/">Read the full story →</a> · <a href="{{repo}}">Follow the project on GitHub</a></p>
-  <p class="sign">Maarten</p></div>
-  {{pic:ui-hud}}
-</div></section>
-
-<section id="gallery" class="alt"><div class="wrap">
-  <p class="eyebrow">Gallery</p><h2>Screenshots</h2>
-  <p class="lead-in">All captured from the real game. Click one to enlarge; use the arrow keys to browse.</p>
+<section id="gallery" class="s-gallery"><div class="wrap">
+  <h2>Screenshots</h2>
+  <p class="lead-in">All captured from the real game. Click one to enlarge, and use the arrow keys to browse.</p>
   <div class="gallery">{{gallery}}</div>
 </div></section>
 
-<section id="faq"><div class="wrap">
-  <p class="eyebrow">FAQ</p><h2>Questions</h2>
-  <details><summary>Is it free? Do I need an account?</summary><p>Yes it is free, and no, there are no accounts and no ads. Saves stay on your device.</p></details>
-  <details><summary>Is anything tracked?</summary><p>Only if you allow it: anonymous usage statistics (Google Analytics) are off until you click “Allow”, and never include names, saves or text. See <a href="./privacy/">Privacy &amp; analytics</a>.</p></details>
-  <details><summary>Does it work on my phone or tablet?</summary><p>Yes, with touch support: one-finger pan, pinch to zoom, two-finger twist to rotate, a pan / paint toggle and a two-step placement so nothing is built by accident. Tablets are comfortable and phones are playable, though the game is still best on a desktop with a mouse. See <a href="./guide/touch/">Touch &amp; tablets</a>.</p></details>
-  <details><summary>Can I play offline?</summary><p>Yes. Open the game once while online and it caches itself. Install it as an app for a home-screen icon.</p></details>
-  <details><summary>Where are my saves?</summary><p>In your browser’s storage on this device. Use Save / Load → Export to keep a <code>.slope</code> file as a backup or to move to another computer.</p></details>
-  <details><summary>Does the game use real months?</summary><p>Yes. A year is 180 days in twelve real months, northern hemisphere: winter December to March, spring April and May, summer June to September, autumn October and November. Festivals, daylight and the snowline follow that calendar.</p></details>
-  <details><summary>Is it finished?</summary><p>It is a pre-release (v{{version}}). Expect rough edges, and please check the <a href="{{changelog}}">changelog</a> for what changes.</p></details>
+<section id="faq" class="s-faq"><div class="wrap">
+  <h2>Questions</h2>
+  {{faq}}
 </div></section>
 
-<section class="cta-end"><div class="wrap"><h2>The snow is waiting.</h2><p class="lead-in" style="margin:0 auto 22px">Your first lift takes about two minutes to build.</p><a class="btn primary big" href="./play/">▶ Play now</a><p class="support-line">Enjoying it? <a class="sponsor-inline" href="https://github.com/sponsors/maartenba" target="_blank" rel="noopener" data-sponsor>♥ Sponsor on GitHub</a>. The game stays free, no ads.</p></div></section>
+<section class="cta-end"><div class="wrap"><h2>The snow is waiting.</h2><p class="lead-in" style="margin:0 auto 22px">Your first lift takes about two minutes to build.</p><a class="btn primary big" href="./play/">▶ Play now</a><p class="support-line">Enjoying it? <a class="sponsor-inline" href="https://github.com/sponsors/maartenba" target="_blank" rel="noopener" data-sponsor>♥ Sponsor on GitHub</a>. The game stays free, no ads. <a href="{{changelog}}">Changelog</a> · <a href="./devlog/">Devlog</a></p></div></section>
 </main>
 {{footer}}
 {{scripts}}
