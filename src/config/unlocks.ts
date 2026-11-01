@@ -62,6 +62,21 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'campaign', id: 'vip', level: 5 },
 ];
 
+
+/**
+ * The explicit counterpart of UNLOCKS (M7.1 contract, tests/repo/buildingContract.test.ts): every building / lift / campaign NOT listed in UNLOCKS is listed here with the reason it is
+ * always available. A new item must land in exactly one of the two tables, so "forgot to decide" cannot happen. Keys are `kind:id` (see `key`).
+ */
+const OPEN = (kind: UnlockKind, reason: string, ids: readonly string[]): Array<[string, string]> => ids.map((id) => [`${kind}:${id}`, reason]);
+export const ALWAYS_AVAILABLE: Readonly<Record<string, string>> = Object.fromEntries([
+  ...OPEN('building', 'starter chain (the tutorial and the first goals build it)', ['baseLodge', 'lodge', 'cafe', 'shop', 'rental', 'ticketOffice', 'parking', 'skiSchoolHQ', 'patrolHub', 'firstAid', 'chalet', 'toilets', 'warningSign']),
+  ...OPEN('building', 'needed by a goal, an Advisor rule or a campaign prerequisite (gating it could deadlock the chapter chain)', ['rangerStation', 'apartment', 'magicCarpet', 'kidsGround', 'playground', 'groomerGarage', 'liftWorkshop', 'snowcatOutpost', 'reservoir', 'snowCannon', 'trainStation', 'shuttleDepot', 'stuntPark', 'adventurePark', 'campground', 'pettingZoo', 'viewpoint', 'coffeeStand']),
+  ...OPEN('building', 'cheap, self-limiting or terrain-limited extra (a water, ice or farm site; small upkeep): never needs a gate', ['mountainHut', 'apresBar', 'boatRental', 'beach', 'iceRink', 'heatedTerrace', 'alpineFarm', 'fishingPier']),
+  ...OPEN('building', 'green-energy starter: the Advisor suggests the solar array; hydro needs a stream; the rest are small, capped extras (docs/energy.md)', ['solarArray', 'smallHydro', 'biomassHeating', 'treeNursery', 'recyclingCentre']),
+  ...OPEN('lift', 'starter lifts (T-bar, chairs and the bubble six-pack are open from level 1)', ['tbar', 'chair2', 'chair4', 'chair4d', 'chair6b']),
+  ...OPEN('campaign', 'basic marketing: each campaign has its own prerequisites (buildings, season) that act as the gate', ['families', 'budget', 'summer', 'brand', 'train', 'parkJam', 'hikeBike', 'festival', 'summerCamp', 'angler', 'wellness', 'school', 'powder']),
+]);
+
 export const key = (kind: UnlockKind, id: string): string => `${kind}:${id}`;
 const BY_KEY = new Map(UNLOCKS.map((u) => [key(u.kind, u.id), u.level]));
 

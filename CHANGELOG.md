@@ -4,7 +4,26 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-31 (pre-release)
+
+The consistency pass (milestone M7.1): every building, lift, campaign and guest type was checked by one data-driven test, the placement rules were audited against the docs and the guide, every building got an ROI number, and the dead ones were fixed. The report is `docs/economy-audit.md`.
+
+### Highlights
+
+- Shops finally earn their keep: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).
+- Fairer prices and busier buses: the Après-Ski Bar now pays for itself, the Shuttle Bus Depot no longer swaps your families and couples for budget crowds, and the Wind Turbine makes more power.
+- The same words everywhere: every building says what it needs in one order ("a footpath, road, hiking trail or piste next to it") on the card, the ghost, the inspector and in Rudi's tips.
+- A new Building reference in the guide lists every building with price, upkeep, what connects it, where it may stand, its season and when it unlocks; the Buildings page now describes the seven real drawer tabs.
+- The Mountain Hut and the Après-Ski Bar finally have an icon and a description in the Buildings drawer.
+
 ### Changes
+
+- **Building contract test** (`tests/repo/buildingContract.test.ts`, `scripts/analysis/contractLib.ts`, `npm run analysis:contract`): one data-driven check of all 60 buildings, 12 lifts, 15 campaigns and 6 guest types: icon, description, mesh within budget, height entry, price, upkeep, an explicit unlock decision (`UNLOCKS` or the new `ALWAYS_AVAILABLE` with a reason), access wording, info card, guide mention, advisor / goal / tutorial touchpoint, a real placement and the 50 % demolition refund. It found 17 gaps; all are fixed or listed with a reason, the allow-list is empty.
+- **Access / placement audit**: the rules table in `docs/placement-rules.md` is now generated from config (`npm run docs:rules`, stale-checked by a test); the Not-connected reason uses one canonical order (footpath, road, rail line, hiking trail, piste) and the info card uses the same sentence; ghost tips are tested against the rules; stale lines in the doc and the guide were corrected (`docs/economy-audit.md` section 2).
+- **Economy fixes** (each with its reason in `docs/economy-audit.md` section 5): Shop souvenir stop score 0.2 -> 0.45; Shuttle Bus Depot passengers use the normal guest mix; Après-Ski Bar price $10 -> $18 and upkeep $28 -> $24; Wind Turbine rated output 2.4 -> 3.4. Bot economy within ±5 % of the 0.3.0 numbers; goldens re-recorded (`docs/balance.md` "M7.1 re-record").
+- **ROI sandbox** (`npm run analysis:roi`): every building added to a standard resort for a year, five seeds, with standard errors: net per year, payback, happiness and rating deltas, and flags for never-profitable, absurdly profitable and dominated buildings.
+- **Bot variants**: `Bot` option `content: 'all'` (default off) builds every catalog building over three years; the balance suite asserts all 60 types, and checks profit-by-year bands, summer survival and bankruptcy for Relaxed / Normal / Challenging (`npm run analysis:difficulty`).
+- **Docs**: new `docs/economy-audit.md`, `docs/playtest-m71.md`, index entries, the guide's Building page and a generated Building reference, version 0.3.1.
 
 - **Road overpass**: with the Crossings toggle on Bridge, a road stroke over a straight rail line now builds a raised overpass with ramps (7 or 9 tiles, $900 + $150 per tile, needs free tiles beside the rail, refuses *No room for the ramps* / *Too steep*) instead of a level crossing: cars drive over the deck, trains pass underneath, nobody waits; the level crossing stays the default. The advisor suggests it for roads with long waits (`docs/crossings.md`).
 - **Licence**: Slope Tycoon is now proprietary, all rights reserved (source available to read on GitHub, not open source); new `LICENSE`, `"license": "UNLICENSED"`, footer, About, Privacy, README and `THIRD_PARTY_NOTICES` wording.

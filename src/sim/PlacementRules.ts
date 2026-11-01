@@ -19,9 +19,6 @@ export interface NetworkAccess {
   diagnose?(kind: 'road' | 'path' | 'rail', r: Rect): 'unlinked' | 'corner' | 'gap' | null;
 }
 
-const ACCESS_TEXT: Record<AccessKind, string> = {
-  road: 'road access', path: 'footpath access', 'rail+path': 'rail and footpath access', pisteEdge: 'a piste next to it', trail: 'a hiking trail next to it', none: '',
-};
 /** Noun phrase per access kind for the 'Needs ...' text (a road always also counts as a footpath). */
 const NEED_NOUN: Record<AccessKind, string> = { road: 'road', path: 'footpath', 'rail+path': 'rail line and a footpath', pisteEdge: 'piste', trail: 'hiking trail', none: '' };
 
@@ -51,10 +48,17 @@ export function accessReason(def: BuildingDef): string {
     if (!nouns.includes(NEED_NOUN[k])) nouns.push(NEED_NOUN[k]);
     if (k === 'path' && !nouns.includes('road')) nouns.push('road'); // a road also serves as a footpath
   }
-  const rank = (n: string): number => (n === 'piste' ? 2 : n === 'hiking trail' ? 1 : 0);
-  nouns.sort((a, b) => rank(a) - rank(b)); // stable: trail then piste last ('a footpath, road, hiking trail or piste')
+  // ONE canonical order for every building (M7.1 audit): 'a footpath, road, hiking trail or piste' (never 'road or footpath' for one row and 'footpath or road' for the next)
+  const rank = (n: string): number => (n === 'footpath' ? 0 : n === 'road' ? 1 : n === 'hiking trail' ? 3 : n === 'piste' ? 4 : 2);
+  nouns.sort((a, b) => rank(a) - rank(b));
   const list = nouns.length === 1 ? nouns[0]! : `${nouns.slice(0, -1).join(', ')} or ${nouns[nouns.length - 1]}`;
   return `Needs a ${list} next to it`;
+}
+
+/** The access options as a short phrase for tables ('footpath, road or piste'); 'none' = '-' (remote site). Same noun list as accessReason. */
+export function accessSummary(def: BuildingDef): string {
+  const r = accessReason(def);
+  return r ? r.replace(/^Needs a /, '').replace(/ next to it$/, '') : '-';
 }
 
 /**
@@ -170,9 +174,7 @@ export function describeRules(typeId: string): string[] {
   const out: string[] = [];
   if (d.access === 'none') out.push('No road needed (remote site)');
   else {
-    out.push(d.access === 'pisteEdge' && !d.altAccess?.length
-      ? 'Must be adjacent to a piste'
-      : `Needs ${[d.access, ...(d.altAccess ?? [])].map((k) => ACCESS_TEXT[k]).join(' or ').replace('a piste next to it', 'adjacency to a piste')}`);
+    out.push(accessReason(d)); // the same words the ghost, the inspector and the Advisor use
     out.push('Inactive ("Not connected") until access exists');
   }
   out.push(d.pisteRule === 'forbid' ? 'Cannot be built on a piste' : d.pisteRule === 'allow' ? 'May be built on a piste' : 'Not on a piste tile; sits beside one');

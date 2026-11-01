@@ -84,7 +84,7 @@ How it works: generators cover a **share of the day's lift energy bill**, at mos
 
 ### Eco Centre and the Eco programme
 
-The **Eco Centre** (Energy tab, resort level 4, $20,000, $18 a day, one per resort, needs a road or footpath) opens the **Eco programme**: select it and press **Open the Eco programme**. Five policies each have a start fee, a daily running cost and a trade-off:
+The **Eco Centre** (Energy tab, resort level 4, $20,000, $18 a day, one per resort, needs a footpath or road) opens the **Eco programme**: select it and press **Open the Eco programme**. Five policies each have a start fee, a daily running cost and a trade-off:
 
 | Policy | Fee | Per day | Points | Trade-off |
 |---|---:|---:|---:|---|

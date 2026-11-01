@@ -18,7 +18,7 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   mountainHut: { price: 9, max: 30, billing: 'perUse', category: 'restaurants' },
   heatedTerrace: { price: 8, max: 30, billing: 'perUse', category: 'restaurants' },
   /** Drinks round + snack at the Après-Ski Bar (own 'bars' ledger line). */
-  apresBar: { price: 10, max: 35, billing: 'perUse', category: 'bars' },
+  apresBar: { price: 18, max: 45, billing: 'perUse', category: 'bars' },
   shop: { price: 15, max: 60, billing: 'perUse', category: 'shops' },
   rental: { price: 20, max: 80, billing: 'perUse', category: 'rental' },
   chalet: { price: 0, max: 0, billing: 'perUse', category: 'lodging' },

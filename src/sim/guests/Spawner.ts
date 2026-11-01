@@ -278,7 +278,8 @@ export class Spawner {
     if (!p) return 0;
     if (p === r.road && r.road.destinations.some((d) => d.type === 'shuttleDepot') && rng.chance(0.15)) {
       kind = VehicleKind.Bus; size = rng.int(8, 14);
-      riders = Array.from({ length: size }, () => rng.pick([GuestType.Solo, GuestType.Budget, GuestType.Adventure]));
+      // M7.1 (docs/economy-audit.md): a shuttle bus carries the NORMAL mix of the day (it used to be Solo / Budget / Adventure only, which cost a resort with a depot ~$17k a year in lodging and lessons)
+      riders = Array.from({ length: size }, () => this.pickType(state, season, r));
     } else riders = Array.from({ length: size }, () => type);
     const coach = p === r.road && kind === VehicleKind.Car && type >= CORE_TYPE_COUNT && !!extraDef(type)?.kidGroup;
     if (coach) kind = VehicleKind.Bus; // a school group arrives by coach (or by train when the rail leg is chosen)

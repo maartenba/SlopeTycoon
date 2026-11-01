@@ -23,6 +23,7 @@ import { policyFor, type BotPolicy, type Wish } from './botPolicies';
 import { applyPlanting, planPlanting } from '../sim/nature/Planting';
 import { liftPlantBlocker } from '../sim/Lift';
 import { SUSTAIN } from '../config/rivals';
+import { findSite } from '../tutorial/suggest';
 
 export interface BotOptions {
   /** Take the Starter loan before building (tutorial-style opening). */
@@ -52,6 +53,12 @@ export interface BotOptions {
   summerLifts?: 'rest' | 'keep';
   /** Summer plan (Phase 6 M6.3 STOP check, default false so the golden runs stay put): hiking + MTB trails along every lift line (the chairs are the bike lifts) in the opening, then campground, petting zoo and viewpoint are added at the END of the wish list (additive: no winter building is displaced) (one building a month, respecting unlocks when asked). */
   summer?: boolean;
+  /**
+   * Content variant (M7.1 Task 7.1.4, default false so the golden runs stay put): 'all' = the broad-mix bot. It paints the hiking + MTB trails like `summer`, and on every month in which the
+   * normal wish list built nothing it adds ONE more building from CONTENT_WISHES (every catalog building the normal wishes do not cover, cheapest first, one of each), using a whole-map site
+   * search for the terrain-bound ones (lake shore, river, rock face, forest). Over three years it builds (almost) every building id: the balance suite asserts the set.
+   */
+  content?: 'all' | false;
   /** Apply a price strategy once (exploit tests). */
   prices?: (sim: Sim) => void;
 }
@@ -79,12 +86,19 @@ export const WISHES: readonly Wish[] = [
 /** Wishes of the `summer` option (campground, petting zoo, viewpoint). */
 export const SUMMER_WISHES: readonly Wish[] = [['campground', [1, 1, 2]], ['pettingZoo', [1, 1, 2]], ['viewpoint', [1, 1, 2]]];
 
+/** Wishes of the `content: 'all'` option: every building the normal / summer wish lists do not name, one of each, cheapest first (derived from the catalog, so a new building joins automatically). */
+export const CONTENT_WISHES: readonly Wish[] = ((): Wish[] => {
+  const named = new Set(WISHES.map(([t]) => t)); // the summer wishes are NOT skipped: without `summer` they are only reached through this list
+  return Object.values(BUILDINGS).filter((d) => !named.has(d.id)).sort((a, b) => a.cost - b.cost).map((d): Wish => [d.id, [1, 1, 1]]);
+})();
+
 export class Bot {
   report: StarterReport | null = null;
   readonly rows: MonthRow[] = [];
   incidents = 0;
   private lastMonthKey = -1;
   private lastSummer = false;
+  private readonly contentFailed = new Set<string>();
   private placedIncidents = 0;
   private arrivals = 0;
   private readonly lodge: Pt | null = null;
@@ -106,7 +120,7 @@ export class Bot {
     const cash0 = sim.game.money;
     const top = 5_000_000;
     sim.game.money = top;
-    const trails = this.policy?.trails || this.opt.summer;
+    const trails = this.policy?.trails || this.opt.summer || this.opt.content === 'all';
     this.report = buildStarterResort(sim, {
       ...this.policy?.starter, ...this.opt.starterOpts, funds: top,
       ...(trails ? { extra: (kit) => {
@@ -166,7 +180,26 @@ export class Bot {
         }
       }
     }
-    return false;
+    return this.opt.content === 'all' ? this.buildFar(type) : false;
+  }
+
+  /** Content bot only: whole-map site search for terrain-bound buildings (lake shore, river bank, rock face, forest), then the same road / footpath link as `build`. */
+  private buildFar(type: string): boolean {
+    const sim = this.sim, def = BUILDINGS[type], c = this.edges();
+    if (!def || !c) return false;
+    const rail = def.overRail ? sim.networks.railEntry : null; // the station stands on the end of the rail stub
+    const anchor = rail ?? c;
+    const site = sim.progression.withBypass(() => findSite(sim, type, { x: anchor.x, y: anchor.y }, { rmax: rail ? 14 : sim.size }));
+    if (!site) return false;
+    const out = sim.progression.withBypass(() => placeBuilding(sim.env, sim.props, type, site.x, site.y, site.rot, site.autoFlatten, false));
+    if (!out.ok || !out.building) return false;
+    const b = out.building, lodge = sim.buildings.all().find((x) => x.type === 'baseLodge');
+    sim.refreshCoverage(b, out.changed.length > 0);
+    const kinds = [def.access, ...(def.altAccess ?? [])];
+    if (kinds.includes('road')) this.ensure(NetKind.Road, b, [sim.networks.roadEntry ?? { x: -1, y: -1 }]);
+    else if ((kinds.includes('path') || kinds.includes('rail+path')) && lodge) this.ensure(NetKind.Path, b, ringOf(lodge));
+    sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true);
+    return true;
   }
 
   /** One solar array when rich and the energy part is the weakest of the facet (and nothing renewable stands yet). */
@@ -230,13 +263,28 @@ export class Bot {
     if (this.opt.expand === false) return;
     const si = sim.size >= 256 ? 2 : sim.size >= 128 ? 1 : 0;
     const wishes = this.opt.summer ? [...(this.policy?.wishes ?? WISHES), ...SUMMER_WISHES] : this.policy?.wishes ?? WISHES;
+    let built = false;
     for (const [type, max] of wishes) {
       if (this.count(type) >= max[si]!) continue;
       if (this.opt.respectUnlocks && !sim.progression.isUnlocked('building', type)) continue; // locked at this resort level: skip, the next level may open it
       const cost = BUILDINGS[type]!.cost;
       if (cash() < cost * 1.3 + reserve) break;
       if (!this.build(type)) continue;
+      built = true;
       break; // one building per month: a steady, human pace
+    }
+    if (this.opt.content === 'all' && !built) {
+      // content variant: nothing in the normal list was affordable or wanted this month: add up to THREE catalog buildings (cheapest first; unaffordable ones wait their turn without blocking the rest)
+      let extra = 0;
+      for (const [type, max] of CONTENT_WISHES) {
+        if (extra >= 3) break;
+        if (this.count(type) >= max[si]!) continue;
+        if (this.opt.respectUnlocks && !sim.progression.isUnlocked('building', type)) continue;
+        if (BUILDINGS[type]!.requires.some((r) => this.count(r) === 0)) continue; // prerequisite first (the pier waits for the tackle hut)
+        if (this.contentFailed.has(type) || cash() < BUILDINGS[type]!.cost * 1.15 + Math.min(reserve, 10_000)) continue;
+        if (this.build(type)) { extra++; continue; }
+        this.contentFailed.add(type); // no valid site anywhere (terrain): never retried
+      }
     }
   }
 

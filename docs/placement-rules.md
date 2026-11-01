@@ -14,9 +14,9 @@ All rules are data in `src/config/buildings.ts` (`access`, `altAccess`, `pisteRu
 - **site.forest** (`{ minTrees, radius, keepTrees }`, treehouse): needs `minTrees` real trees within `radius` tiles or the placement is refused with `Needs forest around it`; trees are not felled (see [viewpoints.md](viewpoints.md)).
 - **site.nearRock** (`{ minTiles, radius, minSpread }`, climbing crag): needs `minTiles` bare-rock tiles whose four corners spread >= `minSpread` half-steps (cliff tiles, `world/Cliffs.ts`) within `radius` tiles of the footprint, or the placement is refused with `Needs a steep rock face nearby` (see [climbing.md](climbing.md)).
 - **site.nearWaterway** (`true`, Rafting / Canyoning Base): the tour def's `water` requirements (`config/tours.ts`) must hold for a route from this footprint on the NOMINAL flow of the rivers and streams (a put-in within 3 tiles, enough brisk flow / steep drop / a gorge), or the placement is refused with `Needs a river or stream with brisk flow within 3 tiles` / `Needs a steep stream through rock within 3 tiles`; the hint says what is missing (see [water-tours.md](water-tours.md)). `PlacementEnv.waterSite` is optional (absent = passes, older tests).
-- **site.allowRock**: footprint may sit on Rock tiles (huts, cannon, sign only).
-- **min/maxAltitude**: supported (mean footprint corner height) but no catalog entry sets one yet.
-- **maxCount**: Base Lodge, Train Station, Altiport = 1.
+- **site.allowRock**: footprint may sit on Rock tiles (see the `rock ok` column: huts, cannon, signs, toilets, viewpoint, coffee stand, tackle hut, wind turbine, small hydro).
+- **min/maxAltitude**: mean footprint corner height; only the Wind Turbine sets one (`minAltitude` 20, the upper third of the terrain).
+- **maxCount**: Base Lodge, Train Station, Altiport, Eco Centre = 1 (see the `max` column).
 - Always: footprint ≥1 tile from the map edge; no overlap with buildings, roads, paths, rail, lift corridors/stations/towers; trees are auto-cleared; all failing reasons are listed, not just the first.
 - Snowmaking Cannon / lake users: water source = a Reservoir **within pipe range (24 tiles)** or a lake within 12 tiles.
 
@@ -25,43 +25,72 @@ Lift validation also checks trees / shrubs (mature canopy), building roofs and o
 
 ## Buildings × rules
 
-| Building | access | pisteRule | slope | autoFlatten | water | rock ok | max | Season |
-|---|---|---|---|---|---|---|---|---|
-| Base Lodge | road | forbid | flat | default | never | no | 1 | all |
-| Lodge/Restaurant | road | forbid | flat | default | never | no | – | all |
-| Café | path / pisteEdge | forbid | flat | default | never | no | – | all |
-| Mountain Hut (12 trekker beds) | pisteEdge / path / trail | edge | ≤2 | optional | never | yes | – | all |
-| Shop | path (road counts) | forbid | flat | default | never | no | – | all |
-| Rental | road | forbid | flat | default | never | no | – | all |
-| Chalet | path (road counts) | forbid | flat | default | never | no | – | all |
-| Apartment | path (road counts) | forbid | flat | default | never | no | – | all |
-| Ski School HQ | path | forbid | flat | default | never | no | – | winter |
-| Magic Carpet | path / pisteEdge | allow | gentle slope | never | never | no | – | winter |
-| Kids Ground | path | forbid | ≤2 | optional | never | no | – | winter |
-| Playground | path | forbid | flat | default | never | no | – | shoulder |
-| Ski Patrol Hub | road | forbid | flat | default | never | no | – | all |
-| Ranger Station | road / path / trail | forbid | ≤2 | default | never | no | – | all |
-| Toilets | path / trail / pisteEdge | edge | ≤2 | optional | never | yes | – | all |
-| First-Aid Hut | none | edge | ≤2 | optional | never | yes | – | all |
-| Helipad | none | forbid | flat | default | never | no | – | all |
-| Groomer Garage | road | forbid | flat | default | never | no | – | winter |
-| Snowcat Outpost | none | forbid | ≤2 | optional | never | yes | – | winter |
-| Reservoir | none | forbid | flat | default | never | no | – | all |
-| Snowmaking Cannon | none | allow | any | never | never | yes | – | winter |
-| Boat Rental | path | forbid | ≤2 | optional | lake shore | no | – | summer |
-| Beach | path | forbid | flat | default | lake shore | no | – | summer |
-| Ice Rink | path | forbid | flat | default | never | no | – | winter |
-| Heated Terrace | path | forbid | flat | default | never | no | – | winter |
-| Après-Ski Bar | road or path | forbid | flat | default | never | no | – | winter |
-| Stunt Park | path / pisteEdge | allow | flat | default | never | no | – | winter |
-| Adventure Park | path / trail | forbid | flat | default | never | no | – | summer |
-| Train Station | rail+path (may stand on the end of the rail) | forbid | flat | default | never | no | 1 | all |
-| Altiport | road | forbid | flat | default | never | no | 1 | all |
-| Shuttle Bus Depot | road | forbid | flat | default | never | no | – | all |
-| Warning Sign | none | allow | any | never | never | yes | – | all |
-| Parking | road | forbid | flat | default | never | no | – | all |
-| Alpine Farm | path / road / trail | forbid | ≤2 | optional | never | no | – | summer |
-| Ticket Office | path | forbid | flat | default | never | no | – | all |
+Generated from `src/config/buildings.ts` by `npm run docs:rules` (`scripts/analysis/rulesTable.ts`; `tests/repo/rulesTable.test.ts` fails when it is stale). Do not hand-edit the block. "access" lists every alternative: a `path` row also accepts a road (a road always counts as a footpath), and the *Not-connected reason* column is the exact text the ghost, the inspector and the Advisor show (`accessReason`).
+
+<!-- gen:rules -->
+| Building | access (alternatives) | Not-connected reason | pisteRule | slope | autoFlatten | water | rock ok | max | season | extra |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Base Lodge | road | Needs a road next to it | forbid | flat | default | never | no | 1 | all | – |
+| Lodge/Restaurant | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Café | footpath, road or piste | Needs a footpath, road or piste next to it | forbid | flat | default | never | no | – | all | – |
+| Mountain Hut | footpath, road, hiking trail or piste | Needs a footpath, road, hiking trail or piste next to it | edge | ≤2 | optional | never | yes | – | all | – |
+| Après-Ski Bar | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | winter | – |
+| Shop | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
+| Rental | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Chalet | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
+| Apartment | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
+| Ski School HQ | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | winter | – |
+| Magic Carpet | footpath, road or piste | Needs a footpath, road or piste next to it | allow | gentle slope | never | never | no | – | winter | needs Ski School HQ |
+| Kids Ground | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | – | winter | needs Ski School HQ |
+| Playground | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | shoulder | needs Ski School HQ |
+| Ski Patrol Hub | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| First-Aid Hut | - | – | edge | ≤2 | optional | never | yes | – | all | needs Ski Patrol Hub |
+| Helipad | - | – | forbid | flat | default | never | no | – | all | needs Ski Patrol Hub |
+| Ranger Station | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | default | never | no | – | all | – |
+| Groomer Garage | road | Needs a road next to it | forbid | flat | default | never | no | – | winter | – |
+| Lift Maintenance Workshop | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Snowcat Outpost | - | – | forbid | ≤2 | optional | never | yes | – | winter | needs Groomer Garage |
+| Reservoir | - | – | forbid | flat | default | never | no | – | all | – |
+| Snowmaking Cannon | - | – | allow | any | never | never | yes | – | winter | water source |
+| Boat Rental | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | lake shore | no | – | summer | water source |
+| Beach | footpath or road | Needs a footpath or road next to it | forbid | flat | default | lake shore | no | – | summer | water source |
+| Ice Rink | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | winter | – |
+| Heated Terrace | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | winter | – |
+| Stunt Park | footpath, road or piste | Needs a footpath, road or piste next to it | allow | flat | default | never | no | – | winter | – |
+| Adventure Park | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | flat | default | never | no | – | summer | – |
+| Train Station | rail line and a footpath | Needs a rail line and a footpath next to it | forbid | flat | default | never | no | 1 | all | on rail end |
+| Altiport | road | Needs a road next to it | forbid | flat | default | never | no | 1 | all | – |
+| Shuttle Bus Depot | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Warning Sign | - | – | allow | any | never | never | yes | – | all | – |
+| Parking | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Alpine Farm | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | optional | never | no | – | summer | – |
+| Solar Array | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | – | all | – |
+| Solar Plant | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | – | all | – |
+| Wind Turbine | footpath or road | Needs a footpath or road next to it | forbid | ≤3 | optional | never | yes | – | all | high ground (≥20) |
+| Small Hydro | footpath or road | Needs a footpath or road next to it | forbid | ≤3 | optional | stream bank | yes | – | all | – |
+| Biomass Heating | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Tree Nursery | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | – | all | – |
+| Recycling & Compost Centre | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
+| Eco Centre | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | 1 | all | – |
+| Toilets | footpath, road, hiking trail or piste | Needs a footpath, road, hiking trail or piste next to it | edge | ≤2 | optional | never | yes | – | all | – |
+| Campground | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | optional | never | no | – | summer | – |
+| Petting Zoo | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | – | summer | – |
+| Quad Base | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | default | never | no | – | summer | – |
+| Tackle & Bait Hut | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | optional | never | yes | – | all | – |
+| Fishing Pier | - | – | forbid | ≤2 | optional | lake shore | no | – | all | needs Tackle & Bait Hut |
+| Viewpoint | footpath, road, hiking trail or piste | Needs a footpath, road, hiking trail or piste next to it | edge | ≤3 | optional | never | yes | – | all | – |
+| Treehouse | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | never | never | no | – | all | 6+ trees within 3 |
+| Climbing Crag | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | optional | never | no | – | summer | rock face within 3 |
+| Rafting Base | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | optional | never | no | – | summer | river / stream within 3 |
+| Canyoning Base | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | optional | never | no | – | summer | river / stream within 3 |
+| Small Hotel | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Luxury Hotel | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
+| Coffee Stand | footpath, road, hiking trail or piste | Needs a footpath, road, hiking trail or piste next to it | edge | ≤2 | optional | never | yes | – | all | – |
+| Sleigh Stable | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | default | never | no | – | winter | – |
+| Snowshoe Hut | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | default | never | no | – | winter | – |
+| Snowscooter Base | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | default | never | no | – | winter | – |
+| Ticket Office | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
+<!-- /gen:rules -->
 
 ## Lifts
 

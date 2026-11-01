@@ -282,7 +282,7 @@ describe('lift access', () => {
 describe('describeRules / placementHints', () => {
   it('produce readable lines', () => {
     expect(describeRules('snowCannon')).toEqual(expect.arrayContaining(['Any slope', 'Never changes terrain', 'May be built on a piste']));
-    expect(describeRules('rental')).toEqual(expect.arrayContaining(['Needs road access', 'Auto-flatten on by default']));
+    expect(describeRules('rental')).toEqual(expect.arrayContaining(['Needs a road next to it', 'Auto-flatten on by default']));
     expect(describeRules('mountainHut').join()).toMatch(/piste/);
     expect(placementHints('cafe')).toMatchObject({ access: 'path', pisteRule: 'forbid' });
     expect(placementHints('nope')).toBeNull();

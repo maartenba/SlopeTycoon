@@ -3,6 +3,8 @@ import { KEY_BINDINGS, type KeyBinding, type KeyContext } from '../../src/ui/sho
 import { LEVELS } from '../../src/config/progression';
 import { UNLOCKS, unlockName } from '../../src/config/unlocks';
 import { BUILDINGS } from '../../src/config/buildings';
+import { accessSummary } from '../../src/sim/PlacementRules';
+import { unlockLevel } from '../../src/config/unlocks';
 import { LIFTS, LIFT_KIND_IDS } from '../../src/config/lifts';
 import { CAMPAIGNS } from '../../src/config/marketing';
 import { SCENARIOS } from '../../src/config/scenarios';
@@ -80,6 +82,14 @@ export function staffUpgrades(): string {
     STAFF_UPGRADES.map((u) => [u.name, u.effect, money(u.cost), `${u.days} days`, `${money(u.upkeep)} / day`, String(u.minLevel)]));
 }
 
+const SEASON_WORD: Record<string, string> = { all: 'all year', winter: 'winter', summer: 'summer', shoulder: 'snow-free months' };
+/** Building reference: price, upkeep, what connects it, whether it may stand on a piste, season and unlock level (all from config/buildings.ts + unlocks.ts). */
+export function buildings(): string {
+  const ground = (d: (typeof BUILDINGS)[string]): string => d.pisteRule === 'allow' ? 'May stand on a piste' : d.pisteRule === 'edge' ? 'Beside a piste, not on it' : 'Not on a piste';
+  return table(['Building', 'Price', 'Upkeep / day', 'Connects by', 'Piste', 'Season', 'Unlock'],
+    Object.values(BUILDINGS).map((d) => [d.name, money(d.cost), money(d.upkeep), accessSummary(d), ground(d), SEASON_WORD[d.season] ?? d.season, unlockLevel('building', d.id) > 1 ? `Level ${unlockLevel('building', d.id)}` : 'From the start']));
+}
+
 export function allGenerated(): Record<string, string> {
-  return { shortcuts: shortcuts(), levels: levels(), unlocks: unlocks(), lifts: lifts(), campaigns: campaigns(), scenarios: scenarios(), achievements: achievements(), cosmetics: cosmetics(), festivals: festivals(), staffUpgrades: staffUpgrades() };
+  return { shortcuts: shortcuts(), levels: levels(), unlocks: unlocks(), lifts: lifts(), campaigns: campaigns(), buildings: buildings(), scenarios: scenarios(), achievements: achievements(), cosmetics: cosmetics(), festivals: festivals(), staffUpgrades: staffUpgrades() };
 }

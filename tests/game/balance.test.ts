@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createSim, type Sim } from '../../src/game/createSim';
-import { Bot, WISHES, runBot, type BotOptions, type MonthRow } from '../../src/game/bot';
+import { Bot, CONTENT_WISHES, WISHES, runBot, type BotOptions, type MonthRow } from '../../src/game/bot';
 import { makeResort, run, attachCounters } from './harness';
 import { LOAN_OFFERS } from '../../src/config/prices';
 import { GEAR_OWNERS } from '../../src/config/prices';
 import { LIFT_OPS } from '../../src/config/liftOps';
 import { DAYS_PER_YEAR, type DifficultyId } from '../../src/config/balance';
+import { BUILDINGS } from '../../src/config/buildings';
 
 /**
  * Balance pass (Task 35, docs/balance.md). Default run = fast checks on a 64 map (~20 s). The 3-year x 3-size x seeds sweep and the
@@ -232,4 +233,70 @@ describe('balance: Eco programme (docs/eco.md)', () => {
       expect(Math.abs(diff)).toBeLessThan(0.15);
     }
   }, 900_000);
+});
+
+describe('balance: content bot (M7.1, docs/economy-audit.md)', () => {
+  it('CONTENT_WISHES names every catalog building the normal wish list does not, once, cheapest first', () => {
+    const normal = new Set(WISHES.map(([t]) => t));
+    const ids = CONTENT_WISHES.map(([t]) => t);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set([...ids, ...normal])).toEqual(new Set(Object.keys(BUILDINGS)));
+    const costs = ids.map((i) => BUILDINGS[i]!.cost);
+    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+  });
+});
+
+describe.skipIf(!FULL)('[balance] content bot (M7.1 Task 7.1.4): every building id gets built over three years', () => {
+  it('128 / seed 1 (river, lake, rock, forest, rail stub): all catalog buildings stand, nobody is bankrupt, and the books are real numbers', () => {
+    const sim = createSim({ size: 128, seed: 1, now: () => 0 });
+    const bot = new Bot(sim, { content: 'all' });
+    runBot(sim, bot, 3 * DAYS_PER_YEAR);
+    const built = new Set(sim.buildings.all().map((b) => b.type));
+    const missing = Object.keys(BUILDINGS).filter((id) => !built.has(id));
+    console.log(`[balance] content bot 128/1: ${built.size}/${Object.keys(BUILDINGS).length} building types built, missing: ${missing.join(', ') || 'none'}\n${table(bot.rows.filter((r) => r.month % 3 === 0))}`);
+    expect(missing).toEqual([]);
+    expect(sim.finance.ended).toBe(false);
+    expect(Number.isFinite(sum(bot.rows, (r) => r.net))).toBe(true);
+  }, 900_000);
+  it('64 maps: at least 50 building types, never bankrupt on Relaxed / Normal / Challenging (a bot that builds everything only dents the books)', () => {
+    for (const difficulty of ['relaxed', 'normal', 'challenging'] as DifficultyId[]) {
+      const sim = createSim({ size: 64, seed: 61, difficulty, now: () => 0 });
+      const bot = new Bot(sim, { content: 'all', respectUnlocks: true });
+      runBot(sim, bot, 3 * DAYS_PER_YEAR);
+      expect(new Set(sim.buildings.all().map((b) => b.type)).size, difficulty).toBeGreaterThanOrEqual(50);
+      expect(sim.finance.ended, difficulty).toBe(false);
+    }
+  }, 900_000);
+});
+
+/**
+ * Difficulty targets (M7.1; measured by `npm run analysis:difficulty`, docs/economy-audit.md "Difficulty targets"). The default career bot (respects the unlock gate, lifts left on,
+ * seeds 61 / 7 / 5 on a 64 map) must land in the profit-by-year BAND of its difficulty, survive every summer and never go bankrupt. Bands are +-~25 % around the measured values.
+ */
+describe.skipIf(!FULL)('[balance] difficulty targets: profit by year bands, summer survival, bankruptcy rate', () => {
+  const BANDS: Record<DifficultyId, { y1: [number, number]; y2: [number, number]; y3: [number, number] }> = {
+    relaxed: { y1: [0, 110_000], y2: [150_000, 280_000], y3: [140_000, 280_000] },
+    normal: { y1: [-40_000, 70_000], y2: [100_000, 215_000], y3: [90_000, 200_000] },
+    challenging: { y1: [-50_000, 50_000], y2: [70_000, 175_000], y3: [70_000, 175_000] },
+  };
+  for (const difficulty of ['relaxed', 'normal', 'challenging'] as DifficultyId[]) {
+    it(`${difficulty}: profit-by-year band, every summer month on average above zero, cash never below zero, no bankruptcy (3 seeds)`, () => {
+      let bankrupt = 0;
+      for (const seed of [61, 7, 5]) {
+        const sim = createSim({ size: 64, seed, difficulty, now: () => 0 });
+        const bot = new Bot(sim, { respectUnlocks: true });
+        let min = sim.game.money;
+        runBot(sim, bot, 3 * DAYS_PER_YEAR, () => { min = Math.min(min, sim.game.money); });
+        const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);
+        const s = summer(bot.rows, 2);
+        console.log(`[balance] ${difficulty} ${seed}: y1 ${Math.round(net(1))} y2 ${Math.round(net(2))} y3 ${Math.round(net(3))}, summer/month ${Math.round(sum(s, (r) => r.net) / s.length)}, min cash ${Math.round(min)}`);
+        const b = BANDS[difficulty];
+        for (const [y, band] of [[1, b.y1], [2, b.y2], [3, b.y3]] as const) { expect(net(y), `${difficulty} ${seed} y${y}`).toBeGreaterThanOrEqual(band[0]); expect(net(y), `${difficulty} ${seed} y${y}`).toBeLessThanOrEqual(band[1]); }
+        expect(sum(s, (r) => r.net) / s.length, `${difficulty} ${seed} summer`).toBeGreaterThan(0);
+        expect(min, `${difficulty} ${seed} cash`).toBeGreaterThan(0);
+        if (sim.finance.ended) bankrupt++;
+      }
+      expect(bankrupt).toBe(0);
+    }, 900_000);
+  }
 });

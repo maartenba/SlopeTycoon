@@ -345,3 +345,20 @@ Reading: the arrival / guest stream is chaotic (0.9 gave -0.9 / +0.8 / +8.6 %, 0
 **Goldens re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` (15 parts; money 232186.6 -> 233115.57; `GOLDEN_STARTER` did not move: no senior walks a 3-day starter run) and the `tests/sim/meta/yearReport.test.ts` snapshot (64 / seed 21: year 1 guests 1537 -> 1553, income 1721 -> 1693, incidents 8 -> 6; year 2 guests 3078 -> 3089, income 3139 -> 3230, profit 1326 -> 1416, incidents 13 -> 18, points 15 -> 14: seniors arrive later at lifts and venues, which moves the guest stream; the headline stays bronze / silver). The `advisor` / `achievements` / `trophies` tests changed for the new rule and the 8 new rows only (48 trophies, 122 points).
 `npm run test:balance`: 36 / 36 pass. `npm run test:perf` (alone): 49 / 49 pass, guests at the cap 0.46 / 0.83 / 1.57 ms per tick (64 / 128 / 256). `npm run shot:suite`: 0 errors on all 15 shots (lifts and night shots checked by eye after the station-material change).
 
+
+## M7.1 re-record (0.3.1: economy + rules consistency pass; `docs/economy-audit.md`)
+What moved the economy: (1) **Shop** souvenir stop score `Decision.ts` 0.2 -> 0.45 (a shop earned ~$50 a year), (2) **Shuttle Bus Depot** passengers from the normal mix (`Spawner.ts`; the default bot builds no depot), (3) **Après-Ski Bar** price $10 -> $18 and upkeep $28 -> $24, (4) **Wind Turbine** rated output 2.4 -> 3.4 (the default bot builds neither bar nor turbine). Only the shop touches the default bot. New `Bot` option `content: 'all'` (default false: the default bot is unchanged apart from the shop).
+
+Bot economy replay (`npx vite-node scripts/analysis/botReplay.ts`; base = `8720715`, the 0.3.0 + polish numbers of "Phase 6 polish check", same machine):
+
+| Run | 8720715 | shop 0.50 | **0.45 (shipped)** | 0.40 |
+|---|---:|---:|---:|---:|
+| 64 / seed 61, 360 d | 342812.05 | 318167.19 (-7.2 %) | 340588.08 (**-0.6 %**) | 349897.40 (+2.1 %) |
+| 128 / seed 7, 180 d | 217607.52 | 220686.22 (+1.4 %) | 211868.46 (**-2.6 %**) | 225254.72 (+3.5 %) |
+| 64 / seed 5, 180 d | 189405.78 | 196977.20 (+4.0 %) | 195322.44 (**+3.1 %**) | 192550.71 (+1.7 %) |
+
+The shop income is steep in the score (0.30 = $350 a year, 0.40 = $2.5k, 0.45 = $5k, 0.50 = $9.5k, 0.60 = $23k, 1.0 = $70k), so 0.45 was chosen: a first shop pays back in about 117 days and the bot stays within ±5 % (0.50 was -7.2 % on 64 / 61).
+
+**Goldens re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` (money 233115.57 -> 234121.49, +0.4 %; parts `core`, `lifts`, `nature`, `leavers`, `sys.spawner`, `sys.guests`, `sys.attractions`, `sys.economy`, `sys.rating`, `sys.ops`, `families`, `sessionMeta`, `goals`, `yearReports`, `progression` moved; `GOLDEN_STARTER` did not move) and the `tests/sim/meta/yearReport.test.ts` snapshot (64 / seed 21: year 1 guests 1553 -> 1539, income 1693 -> 1752, profit -96 -> -38 (x$100); year 2 guests 3089 -> 3172, income 3230 -> 3324, profit 1416 -> 1529). Two margin tests were re-pinned: `rivals` (green bot energy margin 2.5 -> 4.5 points: 75.2 vs 79.3; tree / habitat facets stay exact) and `Exploration` (128 / 1 pistes per guest 1.6 -> 1.5).
+
+**New balance suite parts (BALANCE=1):** content bot (128 / seed 1: all 60 building types stand after 3 years, not bankrupt; 64 maps: >= 50 types on all three difficulties, never bankrupt) and difficulty targets (profit-by-year bands, summer survival, cash never below zero, 0 bankruptcies; table in `docs/economy-audit.md` section 4). `npm run test:balance`: 42 / 42 pass. Observation, no change: Normal vs Challenging differ by only 10-20 % for the bot (owner question 1 in the audit).

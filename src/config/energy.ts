@@ -16,7 +16,7 @@ export interface GeneratorDef {
 export const GENERATORS: Record<string, GeneratorDef> = {
   solarArray: { kind: 'solar', rated: 4.2 },
   solarPlant: { kind: 'solar', rated: 17 },
-  windTurbine: { kind: 'wind', rated: 2.4 },
+  windTurbine: { kind: 'wind', rated: 3.4 },
   smallHydro: { kind: 'hydro', rated: 1.5 },
   biomassHeating: { kind: 'biomass', rated: 0.4 },
 };

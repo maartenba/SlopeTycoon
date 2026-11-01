@@ -35,7 +35,7 @@ export function buildingsInTab(tab: BuildingTab): BuildingDef[] {
 }
 
 export const BUILDING_ICONS: Record<string, string> = {
-  baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', sleighStable: '🐴', snowshoeHut: '🥾', snowscooterBase: '🛷', crag: '🧗', raftingBase: '🛶', canyoningBase: '🪢', parking: '🅿️',
+  mountainHut: '🏔️', apresBar: '🍻', baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', sleighStable: '🐴', snowshoeHut: '🥾', snowscooterBase: '🛷', crag: '🧗', raftingBase: '🛶', canyoningBase: '🪢', parking: '🅿️',
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
@@ -87,6 +87,8 @@ const DESCRIPTIONS: Record<string, string> = {
   pettingZoo: 'Summer family attraction: goats, sheep, rabbits and a donkey in a fenced pen. Small entry ticket; closed in snow. Needs a footpath.',
   viewpoint: 'A timber platform with a railing and a telescope. Hikers walk to it for the view (best on a ridge or high ground), stop for a look and leave happier; it is a spot in Photo mode. Beside a hiking trail, a footpath or a piste.',
   treehouse: 'A wooden house up in the trees with a rope bridge. Needs forest around it (6 trees within 3 tiles) and keeps them. A hiker and family favourite with a view; reached by a hiking trail or footpath.',
+  mountainHut: 'Mid-mountain café: hot drinks and soup beside a piste (or on a path or trail). Reached from the piste edge, so guests stop mid-descent.',
+  apresBar: 'Cosy bar with a terrace: the winter evening crowd (16:00-22:00) gathers here. Needs a road or a footpath.',
   boatRental: 'Summer lake boats; must touch a lake.',
   beach: 'Summer lakeside beach; must touch a lake.',
   trainStation: 'Brings guests by rail.',
@@ -103,6 +105,7 @@ const DESCRIPTIONS: Record<string, string> = {
   recyclingCentre: 'Sorts waste and composts: a small bonus to the Sustainability score.',
   ecoCentre: 'Visitor and education centre. Opens the Eco programme: policies that raise the Sustainability score by a lot, with running costs.',
 };
+export const BUILDING_DESCRIPTIONS: Readonly<Record<string, string>> = DESCRIPTIONS;
 export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
   tbar: 'Cheap drag lift for short, gentle slopes.',
   chair2: 'Slow fixed-grip double chair: cheap, short lines.',

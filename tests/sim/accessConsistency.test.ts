@@ -24,7 +24,7 @@ describe('accessReason wording (generated from the rule)', () => {
   it('lists every real option, sentence case, no "Not connected" prefix', () => {
     expect(accessReason(BUILDINGS.mountainHut!)).toBe(NEEDS);
     expect(accessReason(BUILDINGS.magicCarpet!)).toBe(NEEDS_MC);
-    expect(accessReason(BUILDINGS.apresBar!)).toBe('Needs a road or footpath next to it');
+    expect(accessReason(BUILDINGS.apresBar!)).toBe('Needs a footpath or road next to it');
     expect(accessReason(BUILDINGS.alpineFarm!)).toBe('Needs a footpath, road or hiking trail next to it');
   });
   it('every building with access has an access-reason that isAccessReason recognises', () => {

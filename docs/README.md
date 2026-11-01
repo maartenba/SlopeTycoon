@@ -4,6 +4,8 @@ One doc per feature or system. Player-facing docs are the guide in `site/guide/*
 
 ## Start here
 - [release.md](release.md): release checklist and notes. [phase6-status.md](phase6-status.md): what the 0.3.0 content wave shipped, deferred and why. [depth.md](depth.md): M5.4 depth summary.
+- [economy-audit.md](economy-audit.md): M7.1 economy + rules audit: building contract suite, access / placement audit, per-building ROI table, difficulty targets, fix list. [placement-rules.md](placement-rules.md) carries the generated rules table; [playtest-m71.md](playtest-m71.md) the 0.3.1 checklist.
+- [seo-research.md](seo-research.md): Ahrefs keyword + competitor research, keyword map, new landing page proposals (M7.2).
 - [deploy.md](deploy.md): GitHub Pages deployment, domain, pre-publication checks, **licence (proprietary, all rights reserved)**.
 - [visual-qa.md](visual-qa.md): screenshot harness. [perf.md](perf.md): performance budgets. [balance.md](balance.md): bot economy checks and golden re-records.
 

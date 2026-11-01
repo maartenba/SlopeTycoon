@@ -13,7 +13,7 @@ Summer is the second half of the year, and it pays if you give people something 
 
 | Building | Cost | What it does |
 |---|---|---|
-| **Campground** | $3,500 | 16 pitches around a campfire, $24 a night, summer only. Needs a footpath or hiking trail. Budget and adventure guests pitch their tent first, and the evening fire cheers campers up (more with a toilet within 10 tiles). At night the fire glows and smokes. |
+| **Campground** | $3,500 | 16 pitches around a campfire, $24 a night, summer only. Needs a footpath, road or hiking trail. Budget and adventure guests pitch their tent first, and the evening fire cheers campers up (more with a toilet within 10 tiles). At night the fire glows and smokes. |
 | **Petting Zoo** | $3,000 | A fenced pen with goats, sheep, rabbits and a donkey. $8 entry, 20 places, a keeper, closed in snow. Families love it. No farm needed. |
 | **Viewpoint** | $1,500 | A timber platform with a telescope. Hikers walk to it for the view, stop longer and cheer up; it is also a spot in Photo mode. Build it on **high ground** beside a trail, a footpath or a piste edge: a low viewpoint hardly attracts anyone. |
 | **Treehouse** | $2,500 | A house in the trees with a rope bridge. It needs a forest (at least 6 trees within 3 tiles), keeps the trees and works like a viewpoint. |

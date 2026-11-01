@@ -142,7 +142,7 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   // Mid-mountain café (own mesh): reachable by a path or simply next to a piste.
   b('mountainHut', 'Mountain Hut', 'services', 2, 2, 3500, 14, { access: 'pisteEdge', altAccess: ['path', 'trail'], pisteRule: 'edge', site: HUT }, { staff: 1, capacity: 24, chimney: { x: 0.35, y: 1.25, z: -0.35 } }),
   // Après-Ski Bar: cosy timber bar with a terrace; the evening crowd magnet (winter 16:00-22:00). Road or path access.
-  b('apresBar', 'Après-Ski Bar', 'services', 4, 3, 7000, 28, { access: 'road', altAccess: ['path'] }, { staff: 4, capacity: 70, chimney: { x: 1.25, y: 1.8, z: -0.45 } }),
+  b('apresBar', 'Après-Ski Bar', 'services', 4, 3, 7000, 24, { access: 'road', altAccess: ['path'] }, { staff: 4, capacity: 70, chimney: { x: 1.25, y: 1.8, z: -0.45 } }),
   b('shop', 'Shop', 'services', 2, 2, 2000, 10, { access: 'path' }, { staff: 1, capacity: 20 }),
   b('rental', 'Rental', 'services', 3, 2, 3000, 15, { access: 'road' }, { staff: 2, capacity: 40 }),
   b('chalet', 'Chalet', 'lodging', 3, 3, 5000, 20, { access: 'path' }, { capacity: 12, chimney: { x: -0.7, y: 1.8, z: -0.5 } }),

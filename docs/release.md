@@ -1,6 +1,30 @@
 # Release notes and checklist
 
-Current release: **0.3.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.3.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.3.1 (2026-10-31, macOS, Node v22.23.4)
+
+M7.1 economy + rules consistency pass (`docs/economy-audit.md`): the building contract test, the generated rules table, the per-building ROI sandbox, `Bot` option `content: 'all'`, difficulty bands, and four economy fixes (Shop, Shuttle Bus Depot, Après-Ski Bar, Wind Turbine), version bump, CHANGELOG `[0.3.1]` with Highlights, `docs/playtest-m71.md`.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice, after all edits) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass both times: 415 files passed, 1 skipped; 4275 tests passed, 37 skipped |
+| Balance | `npm run test:balance` | 42 passed (incl. the content bot and the difficulty bands) |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on every shot |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Phase 6 story | `npm run phase6:sanity` | OK |
+| Summer story | `npm run summer:sanity` | OK |
+| Winter story | `npm run winter:sanity` | OK after the script learned to wait for a class, a senior and a cup (the shop stop moved the draw: the old 12-day window saw 0 seniors) |
+| Winter tours | `npm run winter:tours` | OK |
+| Backcountry story | `npm run backcountry:sanity` | OK |
+| Size | `npm run size` | 2858.5 kB raw / 1025.0 kB gzip (budget < 2048 kB gzip) |
+| Site | `npm run whats-new`, `npm run licenses`, `npm run docs:img`, `npm run site:og`, `npm run build:site && npm run site:check && npm run verify:site` | OK (28 pages, 91 screenshots, 7.8 MB of the 8 MB budget) |
+| Not run | `npm run flicker`, `npm run touch:e2e` | no render, camera or touch change in this milestone |
+
+Goldens re-recorded (shop stop 0.2 -> 0.45): `GOLDEN_BOT` money 233115.57 -> 234121.49 and the `yearReport` snapshot; bot economy within -2.6 % .. +3.1 % of `8720715` (`docs/balance.md` "M7.1 re-record"). Not verifiable by agents: `docs/playtest-m71.md`.
 
 ## 0.3.0 (2026-10-31, macOS, Node v22.23.4)
 

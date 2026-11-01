@@ -462,7 +462,8 @@ export class Decider {
       if (gb) bt = gb.tile;
       if (!this.useGoals || gb) out.push({ kind: 'bike', tile: bt, via: gb?.via, oneWay: gb?.oneWay, score: -1.1 * this.avoidTile(bt) + (pref === Pref.Bike ? 1.1 : 0.05) - 0.6 * fatigue + noise() });
     }
-    if (this.shop.length && s.budget[i]! > 40) out.push({ kind: 'shop', building: this.nearest(this.shop, x, y, rng)!, score: 0.2 + noise() });
+    // M7.1 (docs/economy-audit.md): the souvenir stop scored 0.2 and earned ~$50 a year (a dead building); 0.45 makes a first shop pay back in about a year (bot economy within +-5 %)
+    if (this.shop.length && s.budget[i]! > 40) out.push({ kind: 'shop', building: this.nearest(this.shop, x, y, rng)!, score: 0.45 + noise() });
     if (port) {
       const sens = PRICE_SENSITIVITY[s.type[i]!] ?? 1;
       for (const b of this.activity) {

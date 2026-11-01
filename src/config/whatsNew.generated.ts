@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.3.1",
+    "date": "2026-10-31",
+    "highlights": [
+      "Shops finally earn their keep: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).",
+      "Fairer prices and busier buses: the Après-Ski Bar now pays for itself, the Shuttle Bus Depot no longer swaps your families and couples for budget…",
+      "The same words everywhere: every building says what it needs in one order (\"a footpath, road, hiking trail or piste next to it\") on the card, the…",
+      "A new Building reference in the guide lists every building with price, upkeep, what connects it, where it may stand, its season and when it unlocks…",
+      "The Mountain Hut and the Après-Ski Bar finally have an icon and a description in the Buildings drawer."
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-10-31",
     "highlights": [
@@ -24,18 +35,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Two new winter guests: Snowboarders in purple who hate flat catwalks, and red-shelled Ski tourers who skin up your routes.",
       "Powder Hounds, a new campaign for tourers and riders that pauses while every route is closed, and a retargeted Snowboard Park Jam.",
       "Two new guide pages: Sleighs, snowshoes & snowscooters, and Backcountry & avalanche danger."
-    ]
-  },
-  {
-    "version": "0.2.8",
-    "date": "2026-10-30",
-    "highlights": [
-      "Two hotels: a Small Hotel with 40 rooms over a lobby restaurant, and a Luxury Hotel with 30 suites for VIPs and couples and a heated outdoor pool…",
-      "A Coffee Stand: a tiny kiosk beside a piste or footpath where skiers pull over for a quick cup and a bite.",
-      "Two calm new guests: Seniors who love terraces, views and pools, and orange-bibbed school classes that arrive by coach on weekdays.",
-      "Two new campaigns: Wellness & Views for seniors and couples, and School Trips for quiet weekdays.",
-      "The pool's heating shows up in your energy bill, so solar and wind now pay for a bit of luxury.",
-      "Two new guide pages: Hotels & the coffee stand, and Seniors & school trips."
     ]
   }
 ];
