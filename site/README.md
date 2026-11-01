@@ -6,15 +6,18 @@ One repo, one GitHub Pages deployment: **`/` = website, `/guide/` = player guide
 site/index.html          landing page template ({{placeholders}} are filled by scripts/site/build.ts)
 site/assets/             site.css, site.js, shots/ (optimised WebP + index.json, committed)
 site/pages/*.md          about + privacy pages (front matter: title = SEO title, heading, description)
+site/landing/*.md        keyword landing pages (`/ski-resort-tycoon/` ...; front matter below)
+site/devlog/intros.json  hand-written devlog intros (tagline, lead, screenshot id) per released version
 site/guide/*.md          player guide pages (front matter: title, order, summary, screenshots)
 site/shots.json          screenshot manifest: id -> harness arguments, alt text, caption, pages
 site/shots-raw/          raw PNGs from the harness (git-ignored)
-scripts/site/            md.ts (pipeline), generated.ts (tables from game config), templates.ts, build.ts, shots.ts, optimize.ts, crawl.ts, check.ts, verify-site.ts, dev.ts
+scripts/site/            pages.ts (landing pages + devlog), devlog.ts (CHANGELOG -> posts, index, Atom feed), faq.ts (landing FAQ), md.ts (pipeline), generated.ts (tables from game config), templates.ts, build.ts, shots.ts, optimize.ts, crawl.ts, check.ts, verify-site.ts, dev.ts
 dist-site/               build output (git-ignored): website + play/
 ```
 
 ## How to update the site and the guide
 
+0. **New landing page**: copy a file in `site/landing/`, add an OG card in `scripts/site/ogCards.ts` + `OgKey` / `OG_ALT` in `templates.ts`, link it from the footer (`templates.ts`), run `npm run site:og`.
 1. **Edit text**: change `site/guide/*.md` (or `site/index.html`, `site/assets/site.css`).
 2. **New or changed screenshot**: add / edit the entry in `site/shots.json`, then `npm run site:shots -- --only id1,id2` (see below) and use `{{fig:id}}` in a guide page.
 3. `npm run build:site` (builds the game into `dist-site/play` and the website around it), then `npm run site:check`.
@@ -46,6 +49,18 @@ Headings `##` / `###` get anchors and the right-hand table of contents. Every pa
 ### Generated blocks (cannot drift from the game)
 
 `{{gen:shortcuts}}` (from `KEY_BINDINGS` in `src/ui/shortcuts.ts`), `levels`, `unlocks` (`config/progression.ts`, `config/unlocks.ts`), `lifts`, `campaigns`, `scenarios` (`config/scenarios`), `achievements`, `cosmetics`, `festivals` (`config/festivals.ts`), `staffUpgrades` (`config/staffUpgrades.ts`). The shortcut table includes every key (e.g. `I` for Statistics) because it reads `KEY_BINDINGS`. `tests/site/generated.test.ts` fails when a key binding, level, unlock, scenario or trophy is not in the output. After changing game rules, re-read the prose pages that mention numbers (time model, difficulty, goals); the tables update themselves.
+
+## Landing pages (`site/landing/*.md`)
+
+Keyword pages generated like the guide: `/ski-resort-tycoon/`, `/games-like-ski-resort-tycoon/`, `/how-ski-lifts-work/`, `/browser-tycoon-games/`, `/summer-mountain-resort-game/`. Front matter: `title` (< 60 chars), `description` (120-155), `heading` (h1), `lead` (inline markdown), `order`, `og` (card key in `scripts/site/ogCards.ts`), `hero` (screenshot id), `kind` (`page` | `article` | `list`), `published` (articles), `items` (ItemList names), `faq` (`q` / `a`, inline markdown) and `related` (links). The FAQ is rendered from the same data as the FAQPage JSON-LD, so the two always match. Body markdown uses the guide's tags plus `[text](lp:slug)` for links to landing pages / `devlog` / `about` / `privacy`. Each page needs >= 300 words and 2 screenshots (`tests/site/landing.test.ts`). External links: only the Ski Resort Tycoon Wikipedia page and GitHub are allowed (other games are named, not linked).
+
+## Devlog (`/devlog/`)
+
+One post per released CHANGELOG version (`## [x.y.z] - date`), generated at build time by `scripts/site/devlog.ts`: Highlights lead, the other bullets are shortened into *What else changed*, `site/devlog/intros.json` supplies the tagline and a hand-written lead (and a screenshot id). `[Unreleased]` is skipped. `/devlog/feed.xml` is an Atom feed (self-hosted). **A new release in the CHANGELOG adds its post automatically**; `tests/site/devlog.test.ts` fails when a released version has no post or no intro, so add an entry to `intros.json` when you cut a release.
+
+## Voice
+
+`tests/site/voice.test.ts` has a banned-phrase list (seamless, immersive, dive into, unleash, elevate, "not just X but Y", ...) over every site markdown file, the landing page and the FAQ. Write plainly, in the owner's voice, and keep light humour sparing.
 
 ## Screenshots
 
