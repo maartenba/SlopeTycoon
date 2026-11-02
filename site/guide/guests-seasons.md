@@ -68,7 +68,7 @@ Hikers get hungry too. Before a trip they eat if they can, about four in ten bri
 
 ## Day and night
 
-Guests ski between morning and the late afternoon. At night windows glow, lamp posts light and **groomers** go to work. The moon button on the speed controls makes nights pass about three times faster; while it is on, a small badge sits on the moon button.
+Guests ski between morning and the late afternoon. At night windows glow, lamp posts light and **groomers** go to work. The moon button on the speed controls makes nights pass about three times faster; while it is on, a small badge sits on the moon button. On some mornings the valley fills with fog, a few sunrises turn the snow pink and clear nights have stars and a moon with phases: see [Atmosphere](page:atmosphere).
 
 ## Time controls
 

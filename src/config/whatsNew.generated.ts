@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.3.2",
+    "date": "2026-11-01",
+    "highlights": [
+      "Valley fog and inversion mornings: on roughly one cold morning in six a fog bank fills the valley while the summits stay clear, and it burns off by…",
+      "Special sunrises and sunsets, about one in four, not every day: a warm sky and pink alpenglow on the snowy summits for a while; plain days stay plain.",
+      "Stars and a moon with real phases over about 30 days at night, plus soft cloud shadows drifting over the slopes by day.",
+      "Dawn mist over lakes, sparkling frost on cold clear mornings and, rarely, a rainbow after rain; Photo mode suggests the right scene (Golden hour…",
+      "Settings > Graphics > Atmosphere: Off, Low or High. Off looks exactly like 0.3.1, and reduced motion keeps everything still.",
+      "A new website: five landing pages, a devlog with a post for every release, and a calmer landing page; Challenging is also about 30 % tighter and…"
+    ]
+  },
+  {
     "version": "0.3.1",
     "date": "2026-10-31",
     "highlights": [
@@ -23,18 +35,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "New guests for every season: mountain bikers, anglers, seniors, school classes, snowboarders and ski tourers, each with a campaign to match.",
       "Backcountry routes with an avalanche danger from 1 to 5, and bridges and level crossings that make the valley work.",
       "The player guide and the landing page were re-read end to end for the new content."
-    ]
-  },
-  {
-    "version": "0.2.9",
-    "date": "2026-10-31",
-    "highlights": [
-      "Three winter tours: a horse-drawn Sleigh Stable with quiet bells, a Snowshoe Hut with guided walks, and a Snowscooter Base with a roaring convoy.",
-      "Backcountry routes: paint a ski-touring route with flag poles, and watch its avalanche danger from 1 (Low) to 5 (Very high) in a new route inspector…",
-      "Routes close themselves when the danger reaches 4 and reopen when it settles; you can override with a confirmation, and a Ski Patrol Hub keeps the…",
-      "Two new winter guests: Snowboarders in purple who hate flat catwalks, and red-shelled Ski tourers who skin up your routes.",
-      "Powder Hounds, a new campaign for tourers and riders that pauses while every route is closed, and a retargeted Snowboard Park Jam.",
-      "Two new guide pages: Sleighs, snowshoes & snowscooters, and Backcountry & avalanche danger."
     ]
   }
 ];

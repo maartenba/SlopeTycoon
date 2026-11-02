@@ -75,7 +75,7 @@
    {
     "w": 1280,
     "file": "season-summer-1280.webp",
-    "bytes": 59042
+    "bytes": 54076
    }
   ]
  },
@@ -107,7 +107,7 @@
    {
     "w": 1280,
     "file": "night-village-1280.webp",
-    "bytes": 55176
+    "bytes": 49438
    }
   ]
  },
@@ -123,7 +123,7 @@
    {
     "w": 1280,
     "file": "slope-guests-1280.webp",
-    "bytes": 58492
+    "bytes": 49046
    }
   ]
  },
@@ -139,7 +139,7 @@
    {
     "w": 1280,
     "file": "ride-ski-1280.webp",
-    "bytes": 54070
+    "bytes": 43856
    }
   ]
  },
@@ -171,7 +171,7 @@
    {
     "w": 1280,
     "file": "walk-lodge-1280.webp",
-    "bytes": 57050
+    "bytes": 52310
    }
   ]
  },
@@ -187,7 +187,7 @@
    {
     "w": 1280,
     "file": "photo-mode-1280.webp",
-    "bytes": 59124
+    "bytes": 53586
    }
   ]
  },
@@ -363,7 +363,7 @@
    {
     "w": 1280,
     "file": "ui-year-report-1280.webp",
-    "bytes": 56056
+    "bytes": 52274
    }
   ]
  },
@@ -379,7 +379,7 @@
    {
     "w": 1280,
     "file": "ui-trophies-1280.webp",
-    "bytes": 56254
+    "bytes": 48058
    }
   ]
  },
@@ -443,7 +443,7 @@
    {
     "w": 1280,
     "file": "ui-pause-1280.webp",
-    "bytes": 53590
+    "bytes": 43784
    }
   ]
  },
@@ -475,7 +475,7 @@
    {
     "w": 1280,
     "file": "ops-bear-1280.webp",
-    "bytes": 54270
+    "bytes": 49068
    }
   ]
  },
@@ -699,7 +699,7 @@
    {
     "w": 1280,
     "file": "ui-stats-1280.webp",
-    "bytes": 58160
+    "bytes": 50544
    }
   ]
  },
@@ -747,7 +747,7 @@
    {
     "w": 1024,
     "file": "touch-tablet-1280.webp",
-    "bytes": 55776
+    "bytes": 51778
    }
   ]
  },
@@ -779,7 +779,7 @@
    {
     "w": 1280,
     "file": "ui-settings-desktop-1280.webp",
-    "bytes": 58648
+    "bytes": 49860
    }
   ]
  },
@@ -875,7 +875,7 @@
    {
     "w": 1280,
     "file": "energy-solar-wind-1280.webp",
-    "bytes": 57182
+    "bytes": 53080
    }
   ]
  },
@@ -1019,7 +1019,7 @@
    {
     "w": 1280,
     "file": "ui-eco-programme-1280.webp",
-    "bytes": 57002
+    "bytes": 52156
    }
   ]
  },
@@ -1083,7 +1083,7 @@
    {
     "w": 1280,
     "file": "lift-midstation-1280.webp",
-    "bytes": 55732
+    "bytes": 44998
    }
   ]
  },
@@ -1227,7 +1227,7 @@
    {
     "w": 1280,
     "file": "summer-ice-fishing-1280.webp",
-    "bytes": 55856
+    "bytes": 45240
    }
   ]
  },
@@ -1275,7 +1275,7 @@
    {
     "w": 1280,
     "file": "hotel-small-1280.webp",
-    "bytes": 55620
+    "bytes": 50322
    }
   ]
  },
@@ -1291,7 +1291,7 @@
    {
     "w": 1280,
     "file": "coffee-stand-1280.webp",
-    "bytes": 57678
+    "bytes": 52022
    }
   ]
  },
@@ -1307,7 +1307,7 @@
    {
     "w": 1280,
     "file": "guests-seniors-school-1280.webp",
-    "bytes": 58776
+    "bytes": 50142
    }
   ]
  },
@@ -1323,7 +1323,7 @@
    {
     "w": 1280,
     "file": "winter-sleigh-1280.webp",
-    "bytes": 59198
+    "bytes": 49728
    }
   ]
  },
@@ -1355,7 +1355,7 @@
    {
     "w": 1280,
     "file": "winter-scooter-1280.webp",
-    "bytes": 55280
+    "bytes": 51138
    }
   ]
  },
@@ -1371,7 +1371,7 @@
    {
     "w": 1280,
     "file": "backcountry-open-1280.webp",
-    "bytes": 57074
+    "bytes": 52352
    }
   ]
  },
@@ -1387,7 +1387,7 @@
    {
     "w": 1280,
     "file": "backcountry-closed-1280.webp",
-    "bytes": 57618
+    "bytes": 52758
    }
   ]
  },
@@ -1403,7 +1403,7 @@
    {
     "w": 1280,
     "file": "guests-boarders-tourers-1280.webp",
-    "bytes": 54058
+    "bytes": 49340
    }
   ]
  },
@@ -1452,6 +1452,70 @@
     "w": 1280,
     "file": "concert-winter-night-1280.webp",
     "bytes": 51834
+   }
+  ]
+ },
+ "atmos-alpenglow": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "atmos-alpenglow-640.webp",
+    "bytes": 16036
+   },
+   {
+    "w": 1280,
+    "file": "atmos-alpenglow-1280.webp",
+    "bytes": 45696
+   }
+  ]
+ },
+ "atmos-valley-fog": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "atmos-valley-fog-640.webp",
+    "bytes": 9846
+   },
+   {
+    "w": 1280,
+    "file": "atmos-valley-fog-1280.webp",
+    "bytes": 27716
+   }
+  ]
+ },
+ "atmos-moonlit-night": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "atmos-moonlit-night-640.webp",
+    "bytes": 13666
+   },
+   {
+    "w": 1280,
+    "file": "atmos-moonlit-night-1280.webp",
+    "bytes": 43614
+   }
+  ]
+ },
+ "atmos-lake-mist": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "atmos-lake-mist-640.webp",
+    "bytes": 16908
+   },
+   {
+    "w": 1280,
+    "file": "atmos-lake-mist-1280.webp",
+    "bytes": 39782
    }
   ]
  }

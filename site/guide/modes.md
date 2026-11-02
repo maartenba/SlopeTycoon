@@ -36,7 +36,7 @@ Press <kbd>V</kbd> and you are standing on the nearest footpath. Walk with <kbd>
 
 {{fig:photo-mode}}
 
-Press <kbd>P</kbd> (or the camera button) from the normal view, a ride-along or a walk. Orbit with the mouse, move the focus with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, raise and lower it with <kbd>Q</kbd>/<kbd>E</kbd>. The panel offers **filters**, **frames** (some are unlocked by [trophies](page:achievements)), aspect ratio, vignette, field of view and the **time of day**, so you can fake a golden hour.
+Press <kbd>P</kbd> (or the camera button) from the normal view, a ride-along or a walk. Orbit with the mouse, move the focus with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, raise and lower it with <kbd>Q</kbd>/<kbd>E</kbd>. The panel offers **filters**, **frames** (some are unlocked by [trophies](page:achievements)), aspect ratio, vignette, field of view and the **time of day**, so you can fake a golden hour. When the day really has one, the Scene section also offers **Golden hour**, **Foggy valley**, **Frosty morning** and **Starry night** buttons (see [Atmosphere](page:atmosphere)); the saved PNG includes the stars, moon and fog.
 
 Press <kbd>Enter</kbd> to **save the photo**: it downloads as a PNG to your device. Nothing is uploaded. <kbd>P</kbd> or <kbd>Esc</kbd> exits.
 

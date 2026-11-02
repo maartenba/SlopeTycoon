@@ -6,7 +6,7 @@ import type { ShotInfo } from './md';
 export const SHOTS_DIR = 'site/assets/shots';
 export const INDEX_FILE = join(SHOTS_DIR, 'index.json');
 export const WIDTHS = [640, 1280] as const;
-export const MAX_BYTES_1280 = 58 * 1024; // the site budget is 8 MiB of screenshots in total (scripts/site/crawl.ts): the 1280 px files over 58 kB (M6.5 STOP: was 70) are re-encoded at a lower quality
+export const MAX_BYTES_1280 = 52 * 1024; // the site budget is 8 MiB of screenshots in total (scripts/site/crawl.ts): the 1280 px files over 52 kB (0.3.2: was 58, M6.5 STOP: 70) are re-encoded at a lower quality
 export const MAX_BYTES_640 = 30 * 1024; // and the 640 px files over 30 kB
 
 export interface IndexEntry { w: number; h: number; files: { w: number; file: string; bytes: number }[] }

@@ -58,5 +58,10 @@
     "tagline": "a consistency pass",
     "lead": "No new big feature this time. I went through every building, lift and guest type with one test, fixed the ones that never earned money, and made the rules read the same everywhere. It is the kind of release that is boring to write about and nicer to play.",
     "shot": "ui-buildings-drawer"
+  },
+  "0.3.2": {
+    "tagline": "fog, stars and better sunsets",
+    "lead": "This one is about how the valley looks. Some mornings now start with fog in the valley, a few sunrises and sunsets turn the sky and the snow pink, and the night sky has stars and a moon that changes shape. Nothing in the economy moved. If it is too much, or too little, there is an Atmosphere setting under Graphics.",
+    "shot": "atmos-alpenglow"
   }
 }

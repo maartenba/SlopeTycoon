@@ -1894,6 +1894,109 @@
         "evalJs": "(()=>{const s=__slope.sim;s.progression.unlockAll=true;s.lifts.all()[0].kind='gondola6';__slope.events.start('mountainConcertWinter',2);setTimeout(()=>{const l=__slope.festivalDressing.layouts.find(x=>x.stage);const st=l&&l.stage;if(!st)return;__slope.renderer.controls.focusOn(st.x,st.z);try{__slope.renderer.controls.yaw=st.ry+0.55}catch(e){}const u=document.getElementById('ui');if(u)u.style.display='none';},1500);})()",
         "steps": "wait:6000"
       }
+    },
+    {
+      "id": "atmos-alpenglow",
+      "alt": "A winter sunrise seen from the village: a warm pink glow low on the horizon over the snowy hills and the first stars still in the sky.",
+      "pages": [
+        "settings",
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "A special sunrise: the sky warms up and the snow on the high ground turns pink.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 600,
+        "w": 1600,
+        "h": 1000,
+        "view": "walk",
+        "freeze": true,
+        "hour": 8.1,
+        "walkAt": "lodge",
+        "walkYaw": 270,
+        "walkPitch": 4,
+        "evalJs": "__slope.atmos.force({special:1,fog:0,hour:8.1});document.querySelectorAll('#ui,st-walk-hud').forEach(e=>e.style.display='none');"
+      }
+    },
+    {
+      "id": "atmos-valley-fog",
+      "alt": "Valley fog at dawn: a grey-pink bank of fog hides the foot of the valley while the buildings and trees stand in it.",
+      "pages": [
+        "settings",
+        "guests-seasons"
+      ],
+      "kind": "harness",
+      "caption": "A fog morning: the bank sits in the valley and burns off by late morning.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 600,
+        "w": 1600,
+        "h": 1000,
+        "view": "walk",
+        "freeze": true,
+        "hour": 7.8,
+        "walkAt": "lodge",
+        "walkYaw": 270,
+        "walkPitch": 4,
+        "evalJs": "__slope.atmos.force({fog:1,inversion:true,special:0,hour:7.8});document.querySelectorAll('#ui,st-walk-hud').forEach(e=>e.style.display='none');"
+      }
+    },
+    {
+      "id": "atmos-moonlit-night",
+      "alt": "A clear winter night in first person: a dark blue sky full of stars and a half moon above the village.",
+      "pages": [
+        "settings",
+        "modes"
+      ],
+      "kind": "harness",
+      "caption": "Clear nights have stars, and the moon changes phase over about a month.",
+      "shot": {
+        "size": 128,
+        "seed": 61,
+        "start": "winter",
+        "extra": "starter=1",
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
+        "ticks": 600,
+        "w": 1600,
+        "h": 1000,
+        "view": "walk",
+        "freeze": true,
+        "hour": 22,
+        "walkAt": "lodge",
+        "walkYaw": 90,
+        "walkPitch": 22,
+        "evalJs": "__slope.atmos.force({stars:1,moonPhase:0.4,hour:22});document.querySelectorAll('#ui,st-walk-hud').forEach(e=>e.style.display='none');"
+      }
+    },
+    {
+      "id": "atmos-lake-mist",
+      "alt": "A pond at dawn on a summer morning with thin mist hanging low over the water.",
+      "pages": [
+        "settings"
+      ],
+      "kind": "harness",
+      "caption": "On High, thin mist hangs over lakes and rivers at dawn.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 6,
+        "zoom": 4,
+        "target": "lodge",
+        "extra": "starter=1&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "evalJs": "(()=>{__slope.sim.progression.unlockAll=true;const L=__slope.landscapeDebug;const f=L.find(7);L.dig(f.x,f.y,7);const p=__slope.sim.landscape.ponds[0];__slope.renderer.controls.target.set(f.x+0.5,p.level*0.5,f.y+0.5);__slope.atmos.force({mist:1,fog:0,hour:6});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
+        "steps": "wait:3000"
+      }
     }
   ]
 }

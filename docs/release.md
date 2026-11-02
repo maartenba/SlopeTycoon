@@ -1,6 +1,28 @@
 # Release notes and checklist
 
-Current release: **0.3.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.3.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.3.2 (2026-11-01, macOS, Node v22.23.4)
+
+M7.0 Atmosphere (`docs/atmosphere.md`: valley fog + inversion mornings, special skies + alpenglow, stars + moon phases, cloud shadows, mist, frost, rainbow, photo-mode suggestions, Settings > Graphics > Atmosphere Off / Low / High) plus the M7.2 website work (five landing pages, devlog, redesign) and the owner's M7.1 decisions (Challenging ~30 % tighter, new Rudi tips). Release prep: version bump, CHANGELOG `[0.3.2]` with Highlights, devlog intro, `whats-new`, `licenses`, a new guide page *Atmosphere: fog, skies & the moon* (+ Settings, Photo mode, Day and night, glossary), four new screenshots (`atmos-alpenglow`, `atmos-valley-fog`, `atmos-moonlit-night`, `atmos-lake-mist`), `docs/playtest-m70.md`.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice, after all edits) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass: 421 files passed, 1 skipped; 4386 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on all 17 shots |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Phase 6 / summer / winter / tours / backcountry stories | `npm run phase6:sanity`, `summer:sanity`, `winter:sanity`, `winter:tours`, `backcountry:sanity` | all OK (save + reload identical, MaterialGuard 0, 0 console errors) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | 39/39 passed |
+| Flicker (atmosphere forced: fog, inversion, special, frost, mist, stars, cloud shadows) | `npm run flicker -- --only 64-summer-day --atmos off|high --atmos-force "..."` | Off: rot osc 751 px, zoom 253, 2 LOD flips; High: rot 628, zoom 157, 2 LOD flips; 0 pop events, still px 898 -> 489 (fog adds no shimmer on SwiftShader) |
+| Comparison shots | `atm2-lvl-off / low / high`, `atm2-rainbow` (`.weave/shots/`) | looked at; see `docs/playtest-m70.md` |
+| Size | `npm run size` | 2886.0 kB raw / 1035.0 kB gzip (budget < 2048 kB gzip; +9.7 kB gzip over 0.3.1: 1025.0) |
+| Site | `npm run whats-new`, `npm run licenses`, `npm run docs:img`, `npm run site:og`, `npm run build:site && npm run site:check && npm run verify:site` | OK (95 screenshots, 7.8 MB of the 8 MB budget after `MAX_BYTES_1280` 58 -> 52 kB; 249 URLs crawled) |
+
+No goldens moved (the atmosphere is render-only; a test compares `stateHash` on and off). Bugs found: none in the game. Harness notes: `--walk-at lake` returns no position when the map has no lake; `atmos.force` bypasses the level for stars / special skies (QA only, so an Off shot with `stars:1` still shows stars). Not verifiable by agents: `docs/playtest-m70.md`.
 
 ## 0.3.1 (2026-10-31, macOS, Node v22.23.4)
 

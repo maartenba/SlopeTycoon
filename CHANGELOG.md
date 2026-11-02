@@ -4,10 +4,24 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
-Owner decisions on the M7.1 playtest questions (small patch, still 0.3.1).
+## [0.3.2] - 2026-11-01 (pre-release)
+
+The Atmosphere release (milestone M7.0): the valley now has weather you can see. Fog sits in the valley on some mornings, a few sunrises and sunsets are properly pretty, the night sky has stars and a moon that waxes and wanes. It is all drawing only, so nothing about the economy changed. The same release carries the owner's decisions on the M7.1 playtest and the website work of M7.2.
+
+### Highlights
+
+- Valley fog and inversion mornings: on roughly one cold morning in six a fog bank fills the valley while the summits stay clear, and it burns off by late morning (the clock chip says "fog").
+- Special sunrises and sunsets, about one in four, not every day: a warm sky and pink alpenglow on the snowy summits for a while; plain days stay plain.
+- Stars and a moon with real phases over about 30 days at night, plus soft cloud shadows drifting over the slopes by day.
+- Dawn mist over lakes, sparkling frost on cold clear mornings and, rarely, a rainbow after rain; Photo mode suggests the right scene (Golden hour, Foggy valley, Frosty morning, Starry night) only when the day offers it.
+- Settings > Graphics > Atmosphere: Off, Low or High. Off looks exactly like 0.3.1, and reduced motion keeps everything still.
+- A new website: five landing pages, a devlog with a post for every release, and a calmer landing page; Challenging is also about 30 % tighter and Rudi has new tips.
 
 ### Changes
 
+- **Atmosphere** (render only, `docs/atmosphere.md`): ground-hugging **valley fog** with inversion mornings and a burn-off, **special-sky days** (about 27 % of sunrises / sunsets: warm grade, alpenglow on the summits for about 40 minutes), **stars and moon phases** (a 30-day cycle, visible in ride, walk and photo views), **cloud shadows**, **dawn mist** over lakes, **frost sparkle**, a rare **rainbow**, and a HUD "fog" suffix on the clock chip. **Settings > Graphics > Atmosphere** Off / Low / High (saved with the settings; Off is the 0.3.1 look). Everything is driven by the day number and the weather, never by the sim's Rng, so same seed + inputs still give the same `stateHash`. Buildings, guests and animals stay crisp inside a fog bank. Reduced motion freezes drift and twinkle.
+- **Photo mode**: the Scene section offers *Golden hour*, *Foggy valley*, *Frosty morning* and *Starry night* only when the current day supports them; the saved PNG includes the stars, moon and fog.
+- **QA tools**: `__slope.atmos.force({...})`, `.level()`, `.state()`, `.suggestions()`; `npm run flicker -- --atmos off|low|high`. Playtest checklist: `docs/playtest-m70.md`.
 - **Challenging is about 30 % tighter than Normal** (`DIFFICULTY.challenging`): loan interest x1.2 -> x1.4, upkeep x1.15 -> x1.2, wages x1.15 (unchanged), arrivals x0.93 -> x0.85, price sensitivity x1.15 -> x1.35, start cash x0.75 and incidents x1.4 unchanged. The default bot's year-2 net is now about 70 % of Normal on 64 / 128 (was 80-90 %) and Challenging stays profitable in years 2 and 3 on 64 / 128 / 256 with every summer above zero and no bankruptcy. Relaxed and Normal are untouched. The New Game card and the guide describe it; the balance suite asserts the bands and the ratio (`docs/balance.md` "M7.2").
 - **Rudi tips for the optional extras**: `heli.rescue` (Helipad, when serious cases are reached late), `trees.nursery` (Tree Nursery, more forest felled than planted), `eco.recycling` (Recycling & Compost Centre, sustainability is the weakest area), `energy.more` (Wind Turbine / Small Hydro / Solar Plant / Biomass Heating once a first generator stands and the grid offset is far from its cap). Restrained: each fires once for a real problem, is dismissible, never for a locked item and never builds (Show me opens the Buildings drawer on it). They left `OPTIONAL_EXTRAS`; each has an advisor test case and a scenario.
 - **Food buildings audited** (`npm run analysis:food`, `docs/economy-audit.md` "Food buildings"): extra cafes, huts and lodges add no income (guests share the same meals) and each one costs its upkeep, so spamming them always loses money; nothing was retuned. New Rudi tip `food.surplus`: "You have more food buildings than guests can use" when the least-used cafe / hut of three or more dining places serves under 10 % of its seats on winter days. A new moving average of guests served per day (`AttractionStats.recent`, optional, old saves load) feeds it; a balance test asserts that extra food buildings lower the net.

@@ -9,13 +9,17 @@ screenshots: []
 
 **Almabtrieb** The autumn descent of the decorated cows from the alpine pastures; a festival you can watch.
 
+**Alpenglow** The pink glow on high snow around a special sunrise or sunset. See [Atmosphere](page:atmosphere).
+
 **Angler** A niche guest type (teal jacket, cap) who comes for the fishing; needs an open Tackle & Bait Hut and fish in the water. See [Summer](page:summer).
 
 **Annual service** The yearly planned maintenance of a lift (Operations → Maintenance); a missed one makes the lift *overdue*.
 
-**Avalanche danger** The 1 to 5 level of a backcountry route (Low, Moderate, Considerable, High, Very high); routes close by themselves at 4. See [Backcountry & avalanche danger](page:backcountry).
+**Atmosphere** The setting (Off, Low or High) for fog, special skies, stars, moon, mist, frost and rainbows; it only changes how the valley looks. See [Atmosphere](page:atmosphere).
 
 **Auto-flatten** Automatic levelling of the ground under a building when you place it (<kbd>F</kbd> toggles).
+
+**Avalanche danger** The 1 to 5 level of a backcountry route (Low, Moderate, Considerable, High, Very high); routes close by themselves at 4. See [Backcountry & avalanche danger](page:backcountry).
 
 **Backcountry route** A painted ski-touring route with flag poles, from level 3; not a piste. See [Backcountry & avalanche danger](page:backcountry).
 
@@ -29,9 +33,9 @@ screenshots: []
 
 **Comfort** The need for a toilet: an urge that grows while guests are out; it feeds the Facilities bar of the rating.
 
-**Danger rose** The half-circle gauge in the route inspector with five coloured wedges, the current danger level bright.
-
 **Crew** One of the four staff groups: instructors, patrol, groomers and lift operators.
+
+**Danger rose** The half-circle gauge in the route inspector with five coloured wedges, the current danger level bright.
 
 **Date chip** The date, season and year shown in the top bar.
 
@@ -66,6 +70,8 @@ screenshots: []
 **Incident** A guest injury, burial, stranding or animal encounter.
 
 **Inspector** The panel that opens when you click a building, lift, piste or guest.
+
+**Inversion morning** A fog morning where the bank stays in the valley and the high ground is clear. See [Atmosphere](page:atmosphere).
 
 **Level** Career progress from 1 to 6.
 
@@ -132,6 +138,8 @@ screenshots: []
 **Toilets** A free-to-use hut that eases the comfort need; stands on a footpath, a trail or a piste edge.
 
 **Tour** A guided ride or paddle along a route: the Quad Base, the Rafting Base and the Canyoning Base ([Summer](page:summer)).
+
+**Valley fog** A morning fog bank in the valley, shown as *fog* on the clock chip. See [Atmosphere](page:atmosphere).
 
 **Viewpoint** A hiking destination with a view: the Viewpoint platform, the Treehouse and a suspension footbridge.
 
