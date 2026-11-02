@@ -69,6 +69,14 @@ export class StSpeedControl extends StElement {
 @media (prefers-reduced-motion:reduce){.pill .spin{animation:none}}
 .hold{flex:none;font-weight:800;font-size:calc(11px * var(--ui-scale, 1));color:#ffd070;background:#3a2c10;border:1px solid #f0b04088;border-radius:999px;padding:0 8px;line-height:18px;white-space:nowrap}.hold[hidden]{display:none}
 .btns .night{position:relative}
+@media (max-width:520px),(max-height:520px){
+.panel{flex-direction:row;align-items:center;padding:3px 6px;gap:6px}
+.btns{flex:1 1 auto;flex-wrap:nowrap;gap:4px;min-width:0}
+.btns button{height:auto;min-width:max(40px,var(--touch-min,0px));padding:0 4px}
+.btns .sp{display:none}
+.when{flex:0 1 auto}
+.when .d,.when .s{display:none}
+}
 .warp{position:absolute;right:2px;bottom:0;color:#0d1624;font-weight:900;font-size:calc(11px * var(--ui-scale, 1));line-height:1;white-space:nowrap;pointer-events:none}.warp:empty{display:none}`;
   }
 

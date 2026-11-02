@@ -50,3 +50,29 @@ html[data-touch] #ui { -webkit-user-select: none; user-select: none; -webkit-tou
   #ui > st-news { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); right: auto; left: calc(100px + env(safe-area-inset-left, 0px)); }
 }
 html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0px)); }
+
+/* ---- Phones (M7.5, docs/mobile-ui.md): portrait <= 520 px wide, landscape <= 520 px high. Desktop (>= 1100 px) and tablets are not touched by anything below.
+   One compact chrome: a one-row top bar (+ overflow), a one-line HUD strip, an icon speed row, one goal chip; drawers / inspectors are bottom sheets (st-sheet) so the map stays visible. ---- */
+@media (max-width: 520px) {
+  #right-col { left: calc(8px + env(safe-area-inset-left, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); width: auto; top: calc(56px + env(safe-area-inset-top, 0px)); max-height: none; overflow: visible; gap: 4px; }
+  #right-col > st-hud, #right-col > st-speed-control, #right-col > st-goals, #right-col > st-inspector { max-width: none; }
+  #right-col > #tool-status { display: none; }
+  #ui > st-topbar { overflow: visible; max-width: none; right: calc(8px + env(safe-area-inset-right, 0px)); }
+  #ui > st-news, #ui > st-assistant { bottom: calc(128px + env(safe-area-inset-bottom, 0px)); }
+  /* the sound hint button (a muted game) moves to the right edge: the left column is the touch tool column */
+  #ui > st-settings, html[data-touch] #ui > st-settings { left: auto; right: calc(8px + env(safe-area-inset-right, 0px)); top: calc(212px + env(safe-area-inset-top, 0px)); }
+}
+@media (max-width: 520px), (max-height: 520px) {
+  #ui > st-topbar { overflow: visible; }
+  #right-col > #tool-status { display: none; }
+  /* camera drags: the cards fade out so the finger sees the whole map; they come back on release (opacity only: no layout shift) */
+  #right-col, #ui > st-news, #ui > st-assistant { transition: opacity .18s ease; }
+  html[data-camdrag] #right-col, html[data-camdrag] #ui > st-news, html[data-camdrag] #ui > st-assistant { opacity: 0; pointer-events: none; }
+  /* tool-first: while a placement / lift / paint tool is active the cards step aside; only the strip, the speed row and the tool bar stay */
+  html[data-toolfirst] #right-col > st-goals, html[data-toolfirst] #ui > st-news, html[data-toolfirst] #ui > st-assistant { display: none; }
+}
+@media (max-height: 520px) {
+  #right-col { top: calc(56px + env(safe-area-inset-top, 0px)); width: min(300px, 44vw); }
+  #ui > st-news { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { #right-col, #ui > st-news, #ui > st-assistant { transition: none !important; } }

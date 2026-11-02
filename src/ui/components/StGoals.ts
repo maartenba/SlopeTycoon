@@ -58,7 +58,8 @@ button.chip.sb{border-color:#5a7090;color:#cfe0ff}
 .lv .bar{height:6px;background:#34485f;border-radius:3px;overflow:hidden}.lv .bar>i{display:block;height:100%;background:#d9a441;border-radius:3px}
 .lv .cr{display:flex;gap:6px;font-size:11px;color:#c9dcf3}.lv .cr>span:first-child{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}.lv .cr>span:last-child{color:#9fb4cc;white-space:nowrap}
 .lv .cr.met>span:first-child{color:#7fd68a}
-.lv .nx{font-size:11px;color:#9fb4cc;overflow-wrap:anywhere}`;
+.lv .nx{font-size:11px;color:#9fb4cc;overflow-wrap:anywhere}
+@media (max-width:520px),(max-height:520px){.panel{max-height:min(22vh,150px);overflow:auto;overscroll-behavior:contain}}`;
   }
 
   constructor() {

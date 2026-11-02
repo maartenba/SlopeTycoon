@@ -4,6 +4,7 @@ import { ADVISOR_UI, RANGER_NAME } from '../../sim/advisor/strings';
 import { icon } from '../icons';
 import { rudiElement, type RudiExpression } from './rudiAvatar';
 import { getReducedMotion, onReducedMotion } from '../accessibility';
+import { sheetFor } from './StSheet';
 import { StElement } from './StElement';
 
 /**
@@ -39,6 +40,7 @@ export const ASSISTANT_CSS =
   '.advbadge{pointer-events:auto;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:13px;background:rgba(20,28,40,.92);border:1px solid #5a7090;color:#ffd070;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}' +
   '.advbadge:hover{border-color:#ffd070}.advbadge.open{background:#2f4666}' +
   '@media (max-width:1099px){.arow{position:relative}.advbadge{position:absolute;left:34px;top:-10px;height:22px;padding:0 6px;gap:3px}.advbadge .lbl{display:none}}' +
+  'st-sheet{--sheet-bottom:calc(76px + env(safe-area-inset-bottom,0px));--sheet-top:calc(56px + env(safe-area-inset-top,0px))}st-sheet[data-sheet] .advice .ah span{display:none}st-sheet[data-sheet] .advice{background:none;border:0;box-shadow:none;max-height:none;padding:0 2px}' +
   '.advice{pointer-events:auto;background:rgba(20,28,40,.92);border:1px solid #5a7090;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,.4);width:100%;max-height:min(360px,calc(100vh - 230px));box-sizing:border-box}' +
   '.advice .ah{flex:none;display:flex;align-items:baseline;gap:6px;white-space:nowrap}.advice .ah b{color:#ffd070;font-size:13px}.advice .ah span{color:#9bb0c9;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis}' +
   '.advice .al{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin}' +
@@ -166,7 +168,7 @@ export class StAssistant extends StElement {
     this.advBadge.className = 'advbadge'; this.advBadge.hidden = true;
     this.advBadge.addEventListener('click', () => this.toggleAdvice());
     this.arow.className = 'arow'; this.arow.append(this.avatar, this.advBadge);
-    this.wrap.append(this.hintBox, this.bubble, this.advCard, this.goals, this.arow);
+    this.wrap.append(this.hintBox, this.bubble, sheetFor(this.advCard, `${RANGER_NAME}: ${ADVISOR_UI.title}`, 'advice', 140, 'hidden'), this.goals, this.arow);
     this.root.append(this.wrap);
     // Nothing rendered yet: no lesson => the bubble (and its buttons) stay hidden. A hint() before the first render() used to unhide the wrap and show
     // the empty bubble (no title / text / dots, every button) - the 'blank dialog' bug.

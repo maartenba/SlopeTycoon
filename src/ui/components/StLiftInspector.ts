@@ -1,6 +1,7 @@
 import { makeSelect } from './StSelect';
 import { LIFTS } from '@/config/lifts';
 import { formatMoney } from '../format';
+import { SHEET_PANEL_CSS, sheetFor } from './StSheet';
 import { StElement } from './StElement';
 import { benefitText, stateLabel, windowOptions, type ServiceStateLabel } from '../maintFormat';
 
@@ -69,12 +70,12 @@ export class StLiftInspector extends StElement {
   private panel = document.createElement('div');
   protected css(): string {
     return ':host{position:absolute;right:8px;top:56px}.panel{flex-direction:column;align-items:stretch;min-width:230px;max-width:280px;display:none;gap:4px;max-height:max(220px,calc(100vh - 370px));overflow:auto}'
-      + '.panel>*{flex-shrink:0}.bar{height:8px;background:#222;border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%}.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.warn{color:#ff9a8a}.small{font-size:11px;opacity:.85}';
+      + '.panel>*{flex-shrink:0}.bar{height:8px;background:#222;border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%}.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.warn{color:#ff9a8a}.small{font-size:11px;opacity:.85}' + SHEET_PANEL_CSS;
   }
   constructor() {
     super();
     this.panel.className = 'panel';
-    this.root.appendChild(this.panel);
+    this.root.appendChild(sheetFor(this.panel, 'Lift', 'inspector-lift', 120));
   }
   bind(api: LiftInspectorApi): void { this.api = api; }
   /** True while a control inside the panel has focus (callers skip live refreshes so sliders/selects are not torn down). */

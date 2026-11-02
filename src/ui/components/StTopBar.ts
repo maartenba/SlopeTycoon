@@ -52,7 +52,7 @@ export class StTopBar extends StElement {
   }
   showContinue(on: boolean): void { if (this.contBtn) this.contBtn.hidden = !on; }
 
-  protected css(): string { return ':host{position:absolute;top:8px;left:8px}input[type=text]{width:90px}.offline-pill{margin-left:6px;padding:1px 8px;border-radius:10px;background:#e0a030;color:#222;font-size:calc(12px * var(--ui-scale, 1));font-weight:600}.offline-pill[hidden],button[hidden]{display:none}'; }
+  protected css(): string { return ':host{position:absolute;top:8px;left:8px}input[type=text]{width:90px}.offline-pill{margin-left:6px;padding:1px 8px;border-radius:10px;background:#e0a030;color:#222;font-size:calc(12px * var(--ui-scale, 1));font-weight:600}.offline-pill[hidden],button[hidden]{display:none}.more{display:none}@media (max-width:520px),(max-height:520px){.panel{flex-wrap:wrap;gap:4px}.sec{display:none!important}.more{display:inline-flex;order:8;min-width:44px;justify-content:center;font-weight:800}.sec{order:9}.panel.open .sec:not([hidden]){display:inline-flex!important}.panel.open .sec.sep{display:none!important}}'; }
 
   bind(api: TopBarApi): void {
     const p = document.createElement('div');
@@ -108,6 +108,15 @@ export class StTopBar extends StElement {
       (this.installBtn = Object.assign(btn('⤓ Install', 'Install Slope Tycoon as an app (works offline)', () => this.pendingInstall?.()), { hidden: !this.pendingInstall })),
       (this.offlinePill = Object.assign(document.createElement('span'), { className: 'offline-pill', textContent: 'Offline', title: 'No network: the game keeps working from the local cache', hidden: !this.pendingOffline })),
     );
+    // Phones (docs/mobile-ui.md): one row of primary buttons; the rest hides behind the overflow button (nothing is removed, only styled away; desktop never shows it)
+    const secondary = (n: Element | null): void => { n?.classList.add('sec'); };
+    for (const b of Array.from(p.children)) {
+      const lbl = (b.getAttribute('aria-label') ?? '') + (b as HTMLElement).dataset.role;
+      if (b.classList.contains('sep') || /Rotate (left|right)/.test(lbl) || /walk/i.test(lbl) || /^Graphics/.test(b.getAttribute('title') ?? '') || b === this.installBtn || b === this.offlinePill || b === this.contBtn || b.tagName === 'INPUT' || b.tagName === 'ST-SELECT' || b.getAttribute('aria-label') === 'Keyboard shortcuts (? or H)') secondary(b);
+    }
+    const more = btn('\u22EF', 'More buttons', () => { p.classList.toggle('open'); more.setAttribute('aria-expanded', String(p.classList.contains('open'))); });
+    more.className = 'more'; more.setAttribute('aria-expanded', 'false'); more.setAttribute('aria-haspopup', 'true');
+    p.appendChild(more);
     this.root.appendChild(p);
     this.refreshSaveTip();
   }

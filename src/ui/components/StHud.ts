@@ -38,7 +38,14 @@ export class StHud extends StElement {
 .r1{justify-content:space-between;font-weight:600}
 .r2{justify-content:space-between;font-size:calc(12px * var(--ui-scale, 1))}
 .r3{font-size:calc(11px * var(--ui-scale, 1));color:#b9c6d8;justify-content:space-between}
-.fps{flex:0 0 auto;color:#8fa0b8}`;
+.fps{flex:0 0 auto;color:#8fa0b8}
+.tgl{display:none}
+@media (max-width:520px),(max-height:520px){
+.tgl{display:inline-flex;flex:none;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-8px -8px -8px 0;padding:0;background:transparent;border-color:transparent;font-size:16px;line-height:1}
+.panel{padding:2px 8px}
+.panel:not(.exp) .r0,.panel:not(.exp) .r2,.panel:not(.exp) .r3{display:none}
+.r1{gap:8px}
+}`;
   }
 
   constructor() {
@@ -60,6 +67,17 @@ export class StHud extends StElement {
       row('r3', this.seasonEl, this.fpsEl),
       row('r3', this.badgeEl),
     );
+    // Phones: the card is a one-line strip (money, stars, guests); this button (hidden elsewhere) expands the rest for a few seconds
+    const tgl = document.createElement('button');
+    tgl.className = 'tgl'; tgl.textContent = '\u25BE'; tgl.title = 'Show the date, weather and season'; tgl.setAttribute('aria-label', 'Show details'); tgl.setAttribute('aria-expanded', 'false');
+    let back = 0;
+    tgl.addEventListener('click', () => {
+      const on = !p.classList.contains('exp');
+      p.classList.toggle('exp', on); tgl.textContent = on ? '\u25B4' : '\u25BE'; tgl.setAttribute('aria-expanded', String(on));
+      window.clearTimeout(back);
+      if (on) back = window.setTimeout(() => { p.classList.remove('exp'); tgl.textContent = '\u25BE'; tgl.setAttribute('aria-expanded', 'false'); }, 8000);
+    });
+    p.querySelector('.r1')?.appendChild(tgl);
     this.panel = p;
     this.root.appendChild(p);
   }

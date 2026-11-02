@@ -78,3 +78,23 @@ describe('touch: the drawer steps aside for map tools', () => {
     expect(dock.classList.contains('peek')).toBe(false);
   });
 });
+
+describe('touch: phone chrome flags (M7.5)', () => {
+  it('data-toolfirst follows the active tool kind (select = off) and disappears with touch off', () => {
+    setup();
+    const root = document.documentElement;
+    tool = 'placement'; wire!.toolChanged(); expect(root.hasAttribute('data-toolfirst')).toBe(true);
+    tool = 'terraform'; wire!.toolChanged(); expect(root.hasAttribute('data-toolfirst')).toBe(true);
+    tool = 'select'; wire!.toolChanged(); expect(root.hasAttribute('data-toolfirst')).toBe(false);
+    tool = 'lift'; wire!.toolChanged(); expect(root.hasAttribute('data-toolfirst')).toBe(true);
+    accessibility().set({ touch: 'off' }); expect(root.hasAttribute('data-toolfirst')).toBe(false);
+  });
+
+  it('the sheet asking to be un-folded (st-drawer-unpeek) brings the drawer back', () => {
+    const { dock } = setup();
+    tool = 'placement'; wire!.toolChanged(); expect(dock.classList.contains('peek')).toBe(true);
+    window.dispatchEvent(new CustomEvent('st-drawer-unpeek'));
+    expect(dock.classList.contains('peek')).toBe(false);
+  });
+});
+

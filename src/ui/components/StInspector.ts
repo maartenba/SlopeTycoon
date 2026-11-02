@@ -7,6 +7,7 @@ import { formatAttractionStats, formatPriceLabel } from '../attractionFormat';
 import { icon } from '../icons';
 import type { CannonInfo } from '@/sim/ops/Snowmaking';
 import type { EnergyOps } from '../energyFormat';
+import { SHEET_PANEL_CSS, sheetFor } from './StSheet';
 import { StElement } from './StElement';
 import { makeSelect } from './StSelect';
 
@@ -31,7 +32,7 @@ export class StInspector extends StElement {
   private onInstructors: ((id: number, delta: number) => void) | null = null;
 
   protected css(): string {
-    return ':host{position:absolute;right:8px;top:56px}.panel{flex-direction:column;align-items:stretch;min-width:180px}.bad{color:#ff8a8a}.ok{color:#8aff8a}';
+    return ':host{position:absolute;right:8px;top:56px}.panel{flex-direction:column;align-items:stretch;min-width:180px}.bad{color:#ff8a8a}.ok{color:#8aff8a}' + SHEET_PANEL_CSS;
   }
 
   constructor() {
@@ -42,7 +43,7 @@ export class StInspector extends StElement {
     p.append(this.body, this.undoBox);
     p.style.display = 'none';
     this.body.style.cssText = 'display:flex;flex-direction:column;gap:4px';
-    this.root.appendChild(p);
+    this.root.appendChild(sheetFor(p, 'Building', 'inspector', 120));
   }
 
   bind(onDemolish: (id: number) => void, onInstructors?: (id: number, delta: number) => void): void { this.onDemolish = onDemolish; this.onInstructors = onInstructors ?? null; }

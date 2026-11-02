@@ -57,13 +57,14 @@ export function wireTouch(o: TouchWireOptions): TouchWire {
   const controller: TouchController = new TouchController({
     dom: o.dom, camera: o.camera, toolId: o.toolId, enabled,
     confirmPlacement: o.confirmPlacement, ghostText: o.ghostText,
+    onDrag: (v) => document.documentElement.toggleAttribute('data-camdrag', v && on),
     onState: (s) => bar?.setState({ mode: s.mode, confirming: s.confirming, hint: s.hint, tool: o.toolId(), kind: toolKindOf(o.toolId()) }),
   });
   const apply = (): void => {
     on = resolveTouchEnabled(override ?? a11y.get().touch, !!mq?.matches);
     const r = document.documentElement;
     if (on) { r.setAttribute('data-touch', ''); r.style.setProperty('--touch-min-root', `${TOUCH_MIN_TARGET_PX}px`); } else { r.removeAttribute('data-touch'); r.style.removeProperty('--touch-min-root'); }
-    if (!on) controller.reset();
+    if (!on) { controller.reset(); r.removeAttribute('data-toolfirst'); r.removeAttribute('data-camdrag'); }
     bar?.setState({ enabled: on, tool: o.toolId(), kind: toolKindOf(o.toolId()), mode: controller.mode, confirming: controller.confirming });
   };
   const tips = installTouchTips({ enabled });
@@ -72,6 +73,8 @@ export function wireTouch(o: TouchWireOptions): TouchWire {
   // Tapping a dock button (opening / switching a drawer) brings the drawer back: the user asked for it.
   const dockTap = (e: PointerEvent): void => { if (e.pointerType === 'touch' && drawerHidden && e.composedPath().some((n) => (n as HTMLElement).classList?.contains('dock'))) setDrawerHidden(false); };
   window.addEventListener('pointerdown', dockTap, true);
+  const unpeek = (): void => { if (drawerHidden) setDrawerHidden(false); }; // the sheet's own handle was grabbed while a tool had folded it (StDock)
+  window.addEventListener('st-drawer-unpeek', unpeek);
   // Short screen: choosing a card (another brush, another piste kind) tucks the drawer away again so the map is free to paint on.
   const cardTap = (e: Event): void => { if (on && shortScreen() && e.composedPath().some((n) => (n as HTMLElement).classList?.contains('card') && !(n as HTMLElement).classList.contains('locked'))) window.setTimeout(() => { if (o.toolId() !== 'select') setDrawerHidden(true); }, 150); };
   window.addEventListener('click', cardTap, true);
@@ -90,9 +93,10 @@ export function wireTouch(o: TouchWireOptions): TouchWire {
     },
     toolChanged() {
       controller.toolChanged();
+      document.documentElement.toggleAttribute('data-toolfirst', on && toolKindOf(o.toolId()) !== 'select'); // phones: the cards step aside while a tool is active (styles.css)
       setDrawerHidden(wantsHidden(o.toolId()));
       bar?.setState({ tool: o.toolId(), kind: toolKindOf(o.toolId()) });
     },
-    dispose() { un(); tips.dispose(); window.removeEventListener('pointerdown', dockTap, true); window.removeEventListener('click', cardTap, true); window.removeEventListener('pointerdown', mapTap, true); mq?.removeEventListener?.('change', apply); controller.dispose(); },
+    dispose() { un(); tips.dispose(); window.removeEventListener('pointerdown', dockTap, true); window.removeEventListener('st-drawer-unpeek', unpeek); window.removeEventListener('click', cardTap, true); window.removeEventListener('pointerdown', mapTap, true); mq?.removeEventListener?.('change', apply); controller.dispose(); },
   };
 }

@@ -92,6 +92,10 @@ type TerraEls = { target: { value: string }; slope: { value: string }; brush: { 
 /** DOM built once per drawer/tab and re-attached afterwards (no re-creation, images keep decoded state, scroll survives). */
 interface Built { drawer: DrawerId; sync?: () => void; nodes: HTMLElement[]; cards: Card[]; terraEls: TerraEls | null; rail: Rail | null; overlayBtns: Map<string, HTMLButtonElement>; thumbs: Array<{ img: HTMLElement; kind: 'building' | 'lift'; id: string; size: number; icon: string }> }
 
+/** Phone sheets (docs/mobile-ui.md): peek = handle + tab strip + one row of compact cards; mini (a tool is active) = just the handle. Every drawer opens at peek and remembers its own height. */
+const SHEET_PEEK = 196, SHEET_MINI = 44;
+const SHEET_DEFAULT: Partial<Record<DrawerId, 'peek' | 'half'>> = {};
+
 const css = `
 :host{position:absolute;left:0;right:0;bottom:8px;display:block;pointer-events:none;--dl:352px;--dr:252px}
 @media (max-width:1099px){:host{--dl:72px;--dr:80px}}
@@ -203,6 +207,33 @@ const css = `
 .body:has(.pc [data-suggest]) .pc{width:100%;grid-template-columns:repeat(3,1fr);max-height:none;overflow:visible}
 .body:has(.pc[data-path-controls]) .pc{width:100%;max-height:none;overflow:visible}
 }
+/* Tablets keep the drawers but never let one pass ~45 % of the screen height (the map has to stay usable) */
+@media (min-width:521px) and (max-width:1099px) and (min-height:521px){.drawer{max-height:min(40vh,300px)}.drawer.mid{max-height:min(44vh,360px)}.drawer.tall{max-height:min(44vh,360px)}.drawer.tall .pane{max-height:calc(min(44vh,360px) - 48px)}}
+/* Phones (portrait <= 520 px wide, landscape <= 520 px high): the open drawer is a bottom sheet / side sheet (st-sheet, docs/mobile-ui.md). st-sheet is a passthrough elsewhere, so none of this applies there. */
+st-sheet{--sheet-bottom:calc(76px + env(safe-area-inset-bottom,0px));--sheet-top:calc(56px + env(safe-area-inset-top,0px))}
+st-sheet[data-sheet] .drawer{display:flex;width:100%;max-width:none;min-width:0;margin:0;max-height:none;padding:0 0 4px;background:none;border:0;box-shadow:none;align-self:stretch;contain:none}
+st-sheet[data-sheet] .body{overflow:visible}
+st-sheet[data-sheet] .pane,st-sheet[data-sheet] .drawer.tall .pane{max-height:none;overflow:visible}
+st-sheet[data-sheet] .pc{max-height:none;overflow:visible}
+st-sheet[data-sheet] .head h3{display:none}
+st-sheet[data-sheet] .head{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;min-height:44px}
+st-sheet[data-sheet] .head::-webkit-scrollbar{display:none}
+st-sheet[data-sheet] .head>*{flex:none}
+st-sheet[data-sheet] .head .tabsw{flex:1 0 190px}
+st-sheet[data-sheet] .head .grow{flex:1 0 0}
+st-sheet[data-sheet] .head .closex{order:-1;min-width:44px}
+st-sheet[data-sheet] .flat{padding:0 8px}
+st-sheet[data-sheet] .card{width:84px;height:98px}
+st-sheet[data-sheet] .thumb{width:48px;height:48px;font-size:24px}
+st-sheet[data-sheet] .grid{height:106px}
+st-sheet[data-sheet] .info{position:static;width:auto;max-height:none;margin-top:6px;box-shadow:none}
+@media (max-height:520px){:host(.peek) st-sheet{--sheet-top:calc(204px + env(safe-area-inset-top,0px))}} /* landscape, a tool is active: the folded side sheet is a short grab strip below the HUD column, never over it */
+st-sheet[data-sheet][data-side] .grid{flex-wrap:wrap;height:auto;overflow:visible;-webkit-mask-image:none;mask-image:none}
+st-sheet[data-sheet][data-side] .body{flex-direction:column;overflow:visible}
+st-sheet[data-sheet][data-side] .rail{flex:none;width:100%}
+st-sheet[data-sheet][data-side] .card{width:76px}
+st-sheet[data-sheet][data-side] .grid{gap:5px;padding:2px 0 6px}
+st-sheet[data-sheet][data-side] .fade{display:none!important}
 `;
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''): HTMLElementTagNameMap[K] => {
@@ -232,7 +263,10 @@ export class StDock extends StElement {
   private seasonMode: SeasonMode = 'now';
   private chip: HTMLButtonElement | null = null;
   private wrap = el('div', 'wrap');
+  /** Phones: the open drawer is a bottom sheet (landscape: a side sheet); everywhere else `st-sheet` is a pure passthrough (docs/mobile-ui.md). */
+  private sheet = document.createElement('st-sheet') as HTMLElement & { setKey(k: string | null, f?: 'peek' | 'half' | 'full'): void; setSnap(s: 'peek' | 'half' | 'full', remember?: boolean): void; readonly snap: string };
   private drawer = el('div', 'drawer panel');
+  private peekObs: MutationObserver | null = null;
   private head = el('div', 'head');
   private body = el('div', 'body');
   private dock = el('div', 'dock panel');
@@ -265,6 +299,10 @@ export class StDock extends StElement {
   constructor() {
     super();
     this.drawer.hidden = true;
+    this.sheet.hidden = true;
+    this.sheet.setAttribute('peek-h', String(SHEET_PEEK));
+    this.sheet.setAttribute('label', 'Build menu');
+    this.sheet.append(this.drawer);
     this.flatBox.type = 'checkbox';
     this.flatBox.checked = true;
     this.flatLabel.append(this.flatBox, 'Auto-flatten (F)');
@@ -278,7 +316,7 @@ export class StDock extends StElement {
     this.infoEl.hidden = true;
     this.infoEl.append(this.infoThumb, this.infoTxt, this.infoRest);
     this.drawer.append(this.head, this.body, this.infoEl);
-    this.wrap.append(this.drawer, this.dock);
+    this.wrap.append(this.sheet, this.dock);
     this.root.appendChild(this.wrap);
   }
 
@@ -296,6 +334,30 @@ export class StDock extends StElement {
     window.addEventListener('keydown', this.keyHandler, true);
     this.track(() => window.removeEventListener('keydown', this.keyHandler, true));
     this.renderDrawer();
+  }
+
+  connectedCallback(): void {
+    // touchWire toggles `.peek` on the host while a tool is active: the sheet shrinks to its handle (the map stays free); tablets keep hiding the drawer (CSS).
+    if (typeof MutationObserver !== 'undefined') {
+      this.peekObs = new MutationObserver(() => this.syncPeek());
+      this.peekObs.observe(this, { attributes: true, attributeFilter: ['class'] });
+    }
+    this.sheet.addEventListener('st-sheet-snap', this.onSheetSnap);
+    this.syncPeek();
+  }
+  /** The player grabbed the handle of a sheet that a tool had shrunk to its grabber: bring the cards back (touchWire clears `.peek`). */
+  private onSheetSnap = (e: Event): void => {
+    if (!this.classList.contains('peek') || (e as CustomEvent).detail?.snap === 'peek') return;
+    window.dispatchEvent(new CustomEvent('st-drawer-unpeek'));
+    this.classList.remove('peek');
+    this.syncPeek();
+    this.sheet.setSnap('peek', false);
+  };
+  disconnectedCallback(): void { this.peekObs?.disconnect(); this.peekObs = null; this.sheet.removeEventListener('st-sheet-snap', this.onSheetSnap); super.disconnectedCallback(); }
+  private syncPeek(): void {
+    const mini = this.classList.contains('peek');
+    this.sheet.setAttribute('peek-h', String(mini ? SHEET_MINI : SHEET_PEEK));
+    if (mini && this.sheet.snap !== 'peek') this.sheet.setSnap('peek', false);
   }
 
   get openDrawer(): DrawerId | null { return this.state.open; }
@@ -529,8 +591,11 @@ export class StDock extends StElement {
     this.cur = null;
     this.rail = null;
     this.infoEl.hidden = true;
-    if (!open || !this.api) { this.drawer.hidden = true; return; }
+    if (!open || !this.api) { this.drawer.hidden = true; this.sheet.hidden = true; return; }
     this.drawer.hidden = false;
+    if (this.sheet.hidden) this.sheet.hidden = false;
+    this.sheet.setAttribute('label', this.drawerTitle(open));
+    this.sheet.setKey(`dock-${open}`, SHEET_DEFAULT[open] ?? 'peek');
     this.drawer.classList.toggle('mid', open === 'pistes');
     this.drawer.classList.toggle('tall', open === 'finance' || open === 'ops' || open === 'marketing' || open === 'pricing');
     this.head.replaceChildren(el('h3', '', this.drawerTitle(open)));
@@ -564,7 +629,7 @@ export class StDock extends StElement {
       this.head.appendChild(this.flatLabel);
       if (open === 'lifts' && this.api.clearLane) { this.laneBox.checked = this.api.clearLane.get(); this.head.appendChild(this.laneLabel); }
     }
-    const x = el('button', '', '✕');
+    const x = el('button', 'closex', '✕');
     x.title = 'Close (Esc)';
     x.addEventListener('click', () => this.dispatch({ type: 'close' }));
     this.head.appendChild(x);

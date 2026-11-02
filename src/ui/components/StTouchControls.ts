@@ -67,6 +67,7 @@ button.t.wide{padding:0 14px}
 [hidden]{display:none!important}
 @media (max-width:760px) and (min-height:521px){.views[data-view=photo]{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;flex-direction:row}.joy,.views:not([data-view=photo]){bottom:calc(164px + env(safe-area-inset-bottom,0px))}} /* portrait: the view HUD card (Exit) sits at the bottom centre: keep the stick and buttons above it */
 @media (max-height:520px){.col{top:calc(72px + env(safe-area-inset-top,0px));left:calc(52px + env(safe-area-inset-left,0px));right:auto;flex-direction:row}.bar{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:520px) and (min-height:521px){.col{top:calc(228px + env(safe-area-inset-top,0px))}.bar{bottom:calc(128px + env(safe-area-inset-bottom,0px))}} /* phone portrait: below the HUD strip / speed row / goal chip; above the dock + the sheet's handle */
 @media (max-height:520px) and (max-width:500px){.col{top:calc(112px + env(safe-area-inset-top,0px));left:calc(8px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px}}`;
   }
 
@@ -83,7 +84,7 @@ button.t.wide{padding:0 14px}
     this.modeBtn.dataset.role = 'mode';
     const undo = mk('↶', 'Undo last build action (two-finger tap)', () => this.api?.undo()); undo.dataset.role = 'undo';
     const rl = mk('⟲', 'Rotate the view left (twist two fingers for free rotation)', () => this.api?.rotateView(-1)); rl.dataset.role = 'rot-left';
-    const rr = mk('⟳', 'Rotate the view right', () => this.api?.rotateView(1)); rr.dataset.role = 'rot-right';
+    const rr = mk('⟳', 'Rotate the view right', () => this.api?.rotateView(1)); rr.dataset.role = 'rot-right'; rr.dataset.tutorialId = 'topbar:rotate'; // phones hide the top bar's rotate button (overflow menu): the tutorial points here then
     this.cancelBtn = mk('✕', 'Cancel the tool (long press)', () => this.api?.cancelTool(), 'danger'); this.cancelBtn.dataset.role = 'cancel';
     this.drawerBtn = mk('☰', 'Show the tool options', () => this.api?.toggleDrawer?.()); this.drawerBtn.dataset.role = 'drawer';
     this.col.append(this.modeBtn, this.drawerBtn, undo, rl, rr, this.cancelBtn);

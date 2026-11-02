@@ -19,6 +19,8 @@ export interface TouchControllerOptions {
   ghostText?(): string;
   /** Place the pending building (PlacementTool.confirm). */
   confirmPlacement?(): boolean;
+  /** A camera / paint finger is down (true) or all fingers are up (false): phones fade the cards while the map is dragged (docs/mobile-ui.md). */
+  onDrag?(active: boolean): void;
   now?(): number;
 }
 
@@ -67,7 +69,9 @@ export class TouchController {
   toolChanged(): void { this.confirmTap.clear(); this.gestures.toolKind = toolKindOf(this.o.toolId()); this.state(); }
   confirm(): boolean { const ok = this.o.confirmPlacement?.() ?? false; this.confirmTap.clear(); this.state(); return ok; }
   private state(): void { this.o.onState?.({ mode: this.gestures.mode, confirming: this.confirming, hint: this.confirming || this.o.toolId() === 'lift' ? (this.o.ghostText?.() ?? '') : '' }); }
-  reset(): void { this.gestures.reset(); this.tracked.clear(); this.endPhotoPan(); this.view2.clear(); this.stopTimer(); }
+  private dragOn = false;
+  private setDrag(v: boolean): void { if (v !== this.dragOn) { this.dragOn = v; this.o.onDrag?.(v); } }
+  reset(): void { this.setDrag(false); this.gestures.reset(); this.tracked.clear(); this.endPhotoPan(); this.view2.clear(); this.stopTimer(); }
   dispose(): void { this.reset(); for (const d of this.disposers) d(); this.disposers = []; }
 
   private now(): number { return this.o.now ? this.o.now() : performance.now(); }
@@ -98,7 +102,7 @@ export class TouchController {
       e.stopImmediatePropagation();
       this.tracked.delete(e.pointerId);
       this.gestures.pointerUp(e.pointerId, this.evTime(e), cancelled);
-      if (!this.gestures.touching) this.stopTimer();
+      if (!this.gestures.touching) { this.stopTimer(); this.setDrag(false); }
       return;
     }
     if (this.view2.has(e.pointerId)) { this.view2.delete(e.pointerId); this.viewDist = 0; if (this.view2.size < 2) this.endPhotoPan(); }
@@ -143,9 +147,9 @@ export class TouchController {
     const cam = this.o.camera;
     const tool = this.o.toolId();
     switch (i.type) {
-      case 'pan': cam.panPixels(i.dx, i.dy); break;
-      case 'zoom': cam.zoomBy(i.factor); break;
-      case 'rotate': cam.rotateBy(i.radians); break;
+      case 'pan': this.setDrag(true); cam.panPixels(i.dx, i.dy); break;
+      case 'zoom': this.setDrag(true); cam.zoomBy(i.factor); break;
+      case 'rotate': this.setDrag(true); cam.rotateBy(i.radians); break;
       case 'tap':
         if (tool === 'placement' || tool === 'lift') { // two-step: the first tap aims (preview), a second tap near it (or the Place button) commits at the PREVIEW (never at a tile a finger-width away)
           if (this.confirmTap.tap(i.x, i.y) === 'confirm') { if (!this.o.confirmPlacement?.()) this.press(i.x, i.y); this.confirmTap.clear(); this.state(); }
@@ -159,7 +163,7 @@ export class TouchController {
         else { this.fire(this.o.dom, new MouseEvent('contextmenu', { clientX: i.x, clientY: i.y, button: 2, bubbles: true, cancelable: true })); this.confirmTap.clear(); this.state(); }
         break;
       case 'twoTap': window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })); break;
-      case 'paintStart': this.press(i.x, i.y); break;
+      case 'paintStart': this.setDrag(true); this.press(i.x, i.y); break;
       case 'paintMove': this.fire(this.o.dom, this.ptr('pointermove', i.x, i.y, 1)); break;
       case 'paintEnd': this.release(i.x, i.y); break;
       case 'paintCancel': this.fire(this.o.dom, this.ptr('pointermove', 0, 0, 0)); this.release(0, 0); break;

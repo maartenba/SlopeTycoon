@@ -1,3 +1,4 @@
+import { SHEET_PANEL_CSS, sheetFor } from './StSheet';
 import { StElement } from './StElement';
 import { DANGER_COLORS, type RouteInfo } from '../backcountryFormat';
 
@@ -40,9 +41,9 @@ export class StRouteInspector extends StElement {
   private panel = document.createElement('div');
   protected css(): string {
     return ':host{position:absolute;right:8px;top:56px}.panel{flex-direction:column;align-items:stretch;min-width:230px;max-width:280px;display:none;gap:4px}'
-      + '.row{display:flex;gap:6px;align-items:center}.warn{color:#ff9a8a}.small{font-size:11px;opacity:.85}.rose{align-self:center}.closed{color:#ff9a8a;font-weight:700}.open{color:#8be08b;font-weight:700}';
+      + '.row{display:flex;gap:6px;align-items:center}.warn{color:#ff9a8a}.small{font-size:11px;opacity:.85}.rose{align-self:center}.closed{color:#ff9a8a;font-weight:700}.open{color:#8be08b;font-weight:700}' + SHEET_PANEL_CSS;
   }
-  constructor() { super(); this.panel.className = 'panel'; this.root.appendChild(this.panel); }
+  constructor() { super(); this.panel.className = 'panel'; this.root.appendChild(sheetFor(this.panel, 'Backcountry route', 'inspector-route', 120)); }
   bind(api: RouteInspectorApi): void { this.api = api; }
 
   show(i: RouteInfo | null): void {

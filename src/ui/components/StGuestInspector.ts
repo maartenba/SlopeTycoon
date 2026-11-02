@@ -1,5 +1,6 @@
 import { barColour, type GuestInspectorModel } from '../guestInfo';
 import { icon } from '../icons';
+import { SHEET_PANEL_CSS, sheetFor } from './StSheet';
 import { StElement } from './StElement';
 
 /** Guest inspector card (in the right column). Rebuilds only the changing text/bars; call `show(model|null)` ~2×/s. */
@@ -10,13 +11,13 @@ export class StGuestInspector extends StElement {
   protected css(): string {
     return `.panel{flex-direction:column;align-items:stretch;gap:4px}h4{margin:0;font-size:13px;color:#ffd070;display:flex;justify-content:space-between}
 .bar{display:grid;grid-template-columns:70px 1fr 44px;gap:6px;align-items:center}.track{height:8px;background:#233044;border-radius:4px;overflow:hidden}.fill{height:100%}
-ul{margin:0;padding-left:16px}.wish{color:#ffd070}.story-actions{display:flex;gap:6px}.muted{color:#9fb0c8}`;
+ul{margin:0;padding-left:16px}.wish{color:#ffd070}.story-actions{display:flex;gap:6px}.muted{color:#9fb0c8}${SHEET_PANEL_CSS}`;
   }
 
   constructor() {
     super();
     this.box.className = 'panel';
-    this.root.appendChild(this.box);
+    this.root.appendChild(sheetFor(this.box, 'Guest', 'inspector-guest', 130, false));
   }
 
   private shown = false;
