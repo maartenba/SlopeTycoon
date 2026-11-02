@@ -36,7 +36,7 @@ I am not a neutral reviewer. I built Slope Tycoon because I wanted a new version
 
 **Snowtopia.** A ski resort builder that you will find on Steam and other stores. If what you love is placing lifts and slopes and watching them fill up, it is worth a look for the same itch.
 
-**Winter Resort Simulator.** A Steam series that leans towards simulation and doing the work yourself, rather than the tycoon view from above. Different feel, same snow.
+**Winter Resort Simulator.** A Steam series that leans towards simulation and doing the work yourself, rather than the tycoon view from above. It feels different from a tycoon game.
 
 **Slope Tycoon.** My game. It runs in a browser tab, is free and has no accounts. It looks like an isometric diorama, uses the real calendar so summer matters, and has twelve lift types, runs and a lot of small systems like energy, rivers, hotels and avalanches. It is a pre-release made by one person, so it is smaller and rougher than a studio game.
 
@@ -45,7 +45,7 @@ I am not a neutral reviewer. I built Slope Tycoon because I wanted a new version
 ## How to choose
 
 - **You want to download a finished game and play for weeks:** look at the store games above and read recent reviews.
-- **You want to try something right now, on any computer:** [open Slope Tycoon](game:), it takes a few seconds and needs no account.
+- **You want to try something right now, on any computer:** [open Slope Tycoon](game:), it needs no account.
 - **You like summer as much as winter:** Slope Tycoon is the one built around both halves of the year. See [a mountain resort game for summer too](lp:summer-mountain-resort-game).
 - **You like the lift engineering:** try any of them, then read [how ski lifts work](lp:how-ski-lifts-work).
 

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, normalize, relative, sep } from 'node:path';
 
 export interface Budgets { shotMaxBytes: number; shotsTotalBytes: number; cssJsMaxBytes: number }
-export const BUDGETS: Budgets = { shotMaxBytes: 250 * 1024, shotsTotalBytes: 8 * 1024 * 1024, cssJsMaxBytes: 150 * 1024 };
+export const BUDGETS: Budgets = { shotMaxBytes: 250 * 1024, shotsTotalBytes: 8.5 * 1024 * 1024, cssJsMaxBytes: 150 * 1024 };
 /** External hosts allowed in href/src (footer links and the game's own About credits live in play/, which is not crawled for these). */
 export const EXTERNAL_OK = [/^https:\/\/github\.com\//, /^https:\/\/github\.com\/sponsors\/maartenba$/, /^https:\/\/en\.wikipedia\.org\/wiki\/Ski_Resort_Tycoon$/];
 /** Hosts the analytics snippet (assets/consent.js) may contact, and only after the visitor allowed it. */

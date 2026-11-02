@@ -43,7 +43,7 @@ Rudi is the friendly ranger in the bottom-left corner. Every in-game hour he che
 
 {{fig:ui-scenarios}}
 
-Scenarios are handcrafted challenges with a fixed map, season, starting situation and objectives. Reach the required objectives to win; bonus objectives raise your score and earn a **medal** (bronze, silver or gold). Pick them under **Scenarios** on the main menu or in the New Game dialog.
+Scenarios are hand-made challenges with a fixed map, season, starting situation and objectives. Reach the required objectives to win; bonus objectives raise your score and earn a **medal** (bronze, silver or gold). Pick them under **Scenarios** on the main menu or in the New Game dialog.
 
 {{gen:scenarios}}
 

@@ -4,7 +4,7 @@
   "shots": [
     {
       "id": "hero-winter",
-      "alt": "A busy ski village in winter sunshine, lifts climbing the slopes behind the lodge.",
+      "alt": "Dozens of guests queueing at a lift, skiing down the run and crowding the paths of a snowy village.",
       "pages": [
         "landing",
         "getting-started"
@@ -16,10 +16,10 @@
         "seed": 61,
         "hour": 12,
         "zoom": 6,
-        "target": "56,104",
+        "target": "lodge",
         "extra": "starter=1",
-        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(250,'mixed')",
-        "ticks": 2400,
+        "pre": "__slope.populateDemo('medium'); __slope.spawnGuests(300,'skiers'); __slope.spawnGuests(300,'mixed')",
+        "ticks": 60,
         "w": 1600,
         "h": 1000,
         "start": "winter",
@@ -600,7 +600,7 @@
         "landing"
       ],
       "kind": "copy",
-      "caption": "Ten demo towns, all generated from a seed.",
+      "caption": "Ten demo towns.",
       "source": "docs/img/towns-sheet.webp"
     },
     {

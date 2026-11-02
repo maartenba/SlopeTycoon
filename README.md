@@ -1,13 +1,13 @@
 # Slope Tycoon
 
-A browser ski-resort tycoon: carve a procedurally generated alpine valley, build lifts, pistes and a village, keep guests, families and the bank happy
+A browser ski-resort tycoon: shape an alpine valley, build lifts, pistes and a village, keep guests, families and the bank happy
 through winter *and* summer. Three.js + TypeScript, no backend, no external assets (every model, texture, sound and music piece is generated in code).
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/maartenba)
 
 **Version 0.3.3** (pre-release)
 
-Status: pre-release (0.3.3) — playtest feedback welcome.
+Status: pre-release (0.3.3). Playtest feedback is welcome.
 
 ## Features
 

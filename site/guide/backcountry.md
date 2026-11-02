@@ -5,7 +5,7 @@ summary: "Paint ski-touring routes, watch the avalanche danger scale from 1 to 5
 description: "Slope Tycoon backcountry routes: paint a route with flag poles, read the avalanche danger rose from 1 to 5, auto-close, override, patrol and ski tourers."
 screenshots: [backcountry-open, backcountry-closed, ui-marketing-powder]
 ---
-Off the groomed runs lies the **backcountry**: powder, silence and a few people who climb up on skis to enjoy it. From **resort level 3** you can mark **ski-touring routes** on the mountain, and the game tells you, route by route, how dangerous the snow is today.
+The **backcountry** is the snow off the groomed runs, where a few guests climb up on skis. From **resort level 3** you can mark **ski-touring routes** on the mountain, and the game tells you, route by route, how dangerous the snow is today.
 
 {{fig:backcountry-open}}
 

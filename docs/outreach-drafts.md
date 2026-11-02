@@ -16,7 +16,7 @@ Title: `I built a free ski resort tycoon that runs in the browser (Slope Tycoon,
 >
 > It runs in a browser tab, it's free, there are no accounts or ads, and it works offline once you've opened it. You shape the mountain, build lifts (twelve types), paint pistes, and keep a resort going through winter and summer. Summer has a campground, rafting on a river you dig, quads, fishing and concerts.
 >
-> It's a pre-release made by one person, so it has rough edges. Phones work but are cramped. I'd love to hear what is confusing in the first ten minutes.
+> It's a pre-release made by one person, so it has rough edges. Phones work but are cramped. I'd love to hear what is confusing when you start.
 >
 > https://slopetycoon.com/ski-resort-tycoon/
 >

@@ -10,7 +10,7 @@ order: 1
 
 I am Maarten. I like skiing, and every time I came back home from a family ski vacation I wanted the week in the mountains and on the slopes to last longer. Around the year 2000 I started playing [Ski Resort Tycoon](https://en.wikipedia.org/wiki/Ski_Resort_Tycoon) after the vacation to do just that.
 
-And then summer vacations in the mountains, same thing… There was no summer ski town game, I believe, but it's something I would have liked. Back then, I also swore that "one day, I'll build a game like this". Thanks to AI assistance, here we are!
+And then summer vacations in the mountains, same thing… There was no summer ski town game, I believe, but it's something I would have liked. This is the game I wanted to build, one day. Here we are!
 
 I wanted to experiment with building an application with enough complexity (a game), and see how to structure and build it in an agentic manner. While most of the development was not done by me, the game concept, testing, and thinking were done by myself.
 

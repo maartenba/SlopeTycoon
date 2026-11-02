@@ -8,7 +8,7 @@ screenshots: [ui-eco-programme, ui-staff, ui-maintenance, ui-energy-tab]
 ---
 Skiing is fun until somebody falls over. The **Operations** drawer and the coverage overlays show how well your resort can cope. Its tabs are **Lifts** (opening hours, the snowmaking row), **Runs** (see [Lifts & pistes](page:lifts-pistes)), **Maintenance** and **Staff**.
 
-> [!NOTE] Slope Tycoon is gentle about it: **nobody dies**. A badly handled incident ends with a guest going to hospital and leaving early (and a bad review).
+> [!NOTE] In Slope Tycoon **nobody dies**. A badly handled incident ends with a guest going to hospital and leaving early (and a bad review).
 
 ## Incidents
 

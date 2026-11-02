@@ -6,12 +6,12 @@ order: 4
 og: browser-tycoon
 hero: ui-finance
 kind: list
-lead: "A tycoon game in a browser tab is a good way to spend a spare hour: no install, no account, your own pace. This is a short, honest guide to where to find them, and one I made."
+lead: "A tycoon game in a browser tab is easy to try: no install, no account, your own pace. This is a short, honest guide to where to find them, and one I made."
 items: ["Game portals with tycoon categories", "itch.io web games", "Economy sims that run online", "Slope Tycoon"]
 related:
   - { href: "ski-resort-tycoon/", text: "Slope Tycoon in your browser", note: "the ski resort tycoon" }
   - { href: "games-like-ski-resort-tycoon/", text: "Games like Ski Resort Tycoon", note: "if you want a ski game" }
-  - { href: "guide/getting-started/", text: "Getting started", note: "your first ten minutes in Slope Tycoon" }
+  - { href: "guide/getting-started/", text: "Getting started", note: "your first lift and piste in Slope Tycoon" }
 faq:
   - q: "What is a tycoon game?"
     a: "A tycoon game is a business simulation where you build something and manage the money, from a theme park to a railway or a ski resort. You place things, watch customers use them and reinvest the profit."
@@ -46,7 +46,7 @@ You can [play it right now](game:), read the [getting started guide](page:gettin
 
 ## Picking a good one
 
-- **Look at the first five minutes.** A good tycoon teaches you its loop quickly: build, earn, grow.
+- **Look at how it starts.** A good tycoon teaches you its loop quickly: build, earn, grow.
 - **Check whether saves stay.** A browser game that loses your save when you close the tab is not much fun for a long session.
 - **Watch for pressure to pay.** Timers and premium currency are a sign the game is built around spending.
 - **Read what it says about data.** Fewer permissions is better.

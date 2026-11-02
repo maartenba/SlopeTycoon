@@ -2,8 +2,8 @@
 title: "Getting started"
 seo: "How to start your first ski resort – Slope Tycoon guide"
 order: 1
-summary: "Your first ten minutes: start a game, build a lift, paint a piste and open for business."
-description: "Your first ten minutes in Slope Tycoon: start a new ski resort game, build a lift, paint a piste and open for business. A friendly beginner's guide."
+summary: "Your first lift and piste: start a game, build a lift, paint a piste and open for business."
+description: "Your first lift and piste in Slope Tycoon: start a new ski resort game, build a lift, paint a piste and open for business. A friendly beginner's guide."
 screenshots: [ui-menu, ui-newgame, ui-hud]
 ---
 Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, buy tickets, ski your slopes, eat in your restaurants and tell the world what they think. Your job is to keep that loop running through every season.
@@ -12,7 +12,7 @@ Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, 
 
 {{fig:ui-menu}}
 
-The title screen shows a live demo village. Pick **New game** (or **Scenarios** for a handcrafted challenge).
+The title screen shows a live demo village. Pick **New game** (or **Scenarios** for a hand-made challenge).
 
 {{fig:ui-newgame}}
 
@@ -24,7 +24,7 @@ The title screen shows a live demo village. Pick **New game** (or **Scenarios** 
 
 > [!TIP] Not sure? Take Career, a small map, Normal difficulty and start in winter. The tutorial offers hints right away, and you can skip it at any time.
 
-## Your first ten minutes
+## Your first lift and piste
 
 The screen is a small valley with a **Base Lodge**, a road and a real **Parking** lot (there is no decorative car-park pad: every car park is a Parking building you can inspect, and its capacity counts). Everything you build comes from the **dock** along the bottom. Every part of the screen is explained in [The interface](page:interface).
 

@@ -1,7 +1,7 @@
 {
   "0.1.0": {
     "tagline": "the first playable build",
-    "lead": "This is where it starts. I called it 0.9.0 for a while, then admitted it was a first pre-release and renumbered it. You can already build lifts, pistes and paths on a procedural mountain, guests ski it and rate it, and the whole thing works offline. It is rough, and I am showing it anyway.",
+    "lead": "This is where it starts. I called it 0.9.0 for a while, then admitted it was a first pre-release and renumbered it. You can already build lifts, pistes and paths on a mountain, guests ski it and rate it, and the whole thing works offline. It is rough, and I am showing it anyway.",
     "shot": "hero-winter"
   },
   "0.2.0": {
@@ -11,7 +11,7 @@
   },
   "0.2.1": {
     "tagline": "new music, shorter towers",
-    "lead": "A small release about sound and about lift towers. The music was rewritten as nine procedural tracks that follow the season and the time of day, the ambience got quieter, and tall lift towers were capped so the lines look less like pylons.",
+    "lead": "A small release about sound and about lift towers. The music was rewritten as nine tracks that follow the season and the time of day, the ambience got quieter, and tall lift towers were capped so the lines look less like pylons.",
     "shot": "ui-settings-desktop"
   },
   "0.2.2": {

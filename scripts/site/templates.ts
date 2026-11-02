@@ -96,7 +96,7 @@ ${col('read more', 'Read more', li(`<a href="${rel}ski-resort-tycoon/">Ski resor
 ${col('guide', 'Player guide', li(`<a href="${rel}guide/">All guide pages</a>`) + top.map((p) => li(`<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`)).join(''))}
 ${col('project', 'Project', li(`<a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a>`) + li(`<a href="${rel}devlog/">Devlog</a> · <a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>`) + li(sponsorLink('sponsor-foot', 'Sponsor on GitHub')) + li(`<a href="${env.repoUrl}/tree/main/docs">Developer docs</a>`) + li(`<a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`))}
 ${col('privacy', 'Privacy', li(`<a href="${rel}privacy/">Privacy &amp; analytics</a>`) + li(`<a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a>`))}</div>
-<div class="fbottom">&copy; 2026 Maarten Balliauw. All rights reserved: source available to read on GitHub, not open source. Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT). Everything procedural.</div></div></footer>`;
+<div class="fbottom">&copy; 2026 Maarten Balliauw. All rights reserved: source available to read on GitHub, not open source. Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT).</div></div></footer>`;
 }
 
 export const crumbsHtml = (rel: string, items: Array<{ name: string; href?: string }>): string => `<nav class="crumbs" aria-label="Breadcrumb">${items.map((i) => (i.href !== undefined ? `<a href="${rel}${i.href}">${esc(i.name)}</a>` : `<span aria-current="page">${esc(i.name)}</span>`)).join(' › ')}</nav>`;
@@ -135,7 +135,7 @@ export function guideIndex(env: SiteEnv, o: { rel: string; markSvg: string; page
 <a class="skip" href="#main">Skip to content</a>
 ${header(rel, o.markSvg)}
 <main id="main"><div class="wrap" style="padding-top:40px;padding-bottom:60px">${crumbsHtml(rel, [{ name: 'Home', href: '' }, { name: 'Player guide' }])}<p class="eyebrow">Player guide</p><h1>Everything you need to run your resort</h1>
-<p class="lead-in">Friendly, current, and checked against the game. Tables of keys, levels, scenarios and trophies are generated from the game itself, so they never go stale.</p>
+<p class="lead-in">Friendly, current, and checked against the game. The tables of keys, levels, scenarios and trophies come straight from the game, so they match it.</p>
 <div class="search" data-search data-root="${rel}" style="max-width:520px;margin:22px 0"><input type="search" placeholder="Search the guide ( / )" aria-label="Search the guide" autocomplete="off"><div class="results" hidden></div></div>
 <noscript><p>Search needs JavaScript. Browse the pages below instead.</p></noscript>
 <div class="gcards">${sortPages(o.pages).map((p) => `<a href="${rel}guide/${p.slug}/"><b>${esc(p.title)}</b><span>${esc(p.summary ?? '')}</span></a>`).join('')}</div>

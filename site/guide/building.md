@@ -29,7 +29,7 @@ A building can always be *placed*, but it only *works* when it is reachable. Wha
 
 ## Building reference
 
-Every building, with its price, what connects it, where it may stand and when it unlocks (this table is generated from the game's data, so it is always current). Remote sites (first-aid hut, helipad, reservoir, cannons, signs) need no road at all.
+Every building, with its price, what connects it, where it may stand and when it unlocks (this table comes from the game's own data). Remote sites (first-aid hut, helipad, reservoir, cannons, signs) need no road at all.
 
 {{gen:buildings}}
 
