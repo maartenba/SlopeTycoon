@@ -49,6 +49,8 @@ import { AttractionSystem } from '../sim/attractions/AttractionSystem';
 import { TourSystem } from '../sim/attractions/Tour';
 import { makeWaterEnv, planWaterRoute } from '../sim/attractions/WaterTour';
 import { TOUR_DEFS } from '../config/tours';
+import { SLED } from '../config/sled';
+import { sledRuns } from '../world/SledRuns';
 import { FAUNA } from '../sim/nature/Fauna';
 import type { GuestWorld } from '../sim/guests/GuestWorld';
 import type { NavWorld } from '../sim/guests/NavGraph';
@@ -56,6 +58,11 @@ import { routeOnKind } from '../sim/guests/Arrivals';
 import { RailCrossings } from '../sim/RailCrossings';
 import { CROSSING } from '../config/crossings';
 import { FACILITY, measureFacilities } from '../sim/meta/Facilities';
+import { costumed } from '../sim/events/Costume';
+import { CARNIVAL } from '../config/festivals';
+import { hasStreet } from '../sim/events/Street';
+import { skyClosedReason } from '../sim/attractions/SkySites';
+import { TOURIST_OFFICE, BAKERY } from '../config/visitorServices';
 import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
 import { Rating, createRatingSystem } from '../sim/Rating';
 import { LeaverTracker, gatherRatingInput } from '../sim/RatingInputs';
@@ -104,7 +111,7 @@ import { TREE_KINDS } from '../world/Props';
 import { ScenarioRunner, type ScenarioWorld } from '../sim/scenario/ScenarioRunner';
 import { getScenario } from '../config/scenarios';
 import { GUEST_TYPE_NAMES } from '../sim/guests/Guest';
-import { COND_BACKCOUNTRY, COND_FISHING, COND_MTB_BIKE_LIFT } from '../config/guestTypes';
+import { COND_BACKCOUNTRY, COND_COASTER, COND_FISHING, COND_MTB_BIKE_LIFT, COND_SLED } from '../config/guestTypes';
 import { DAYS_PER_YEAR } from '../config/balance';
 import { Landscape, type LandscapeEnv } from '../sim/landscape/Landscape';
 import { Rivers } from '../world/Rivers';
@@ -188,7 +195,7 @@ export const groundHeight = (grid: Grid, x: number, y: number): number => height
  * System ordering and adapters are identical to the previous inline wiring.
  */
 /** Dining venues that partly cover the comfort need (facilities facet). */
-const FOOD_VENUES: ReadonlySet<string> = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace']);
+const FOOD_VENUES: ReadonlySet<string> = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace', 'pizzeria']);
 
 export function createSim(opts: SimOptions) {
   const { size, seed } = opts;
@@ -563,6 +570,17 @@ export function createSim(opts: SimOptions) {
     const w = p.info;
     return { ok: true, reason: '', hint: '', info: def.water.flow ? `Water in reach: ${w.good} brisk tiles${w.rapids ? `, ${w.rapids} rapids` : ''} over ${p.tiles.length} tiles` : `Stream in reach: ${w.steep} steep tiles, ${w.gorge} rock wall tiles over ${p.tiles.length} tiles` };
   };
+  const sledMemo: { key: string; sled: Map<number, string>; coaster: Map<number, string> } = { key: '', sled: new Map(), coaster: new Map() };
+  const sledCache = (kind: 'sled' | 'coaster'): { bad: Map<number, string> } => {
+    const key = `${networks.version}|${grid.terrainVersion}`;
+    if (sledMemo.key !== key) {
+      sledMemo.key = key; sledMemo.sled = new Map(); sledMemo.coaster = new Map();
+      for (const k of ['sled', 'coaster'] as const) for (const r of sledRuns(networks, grid, k)) if (r.problem) for (const i of r.tiles) sledMemo[k].set(i, r.problem);
+    }
+    return { bad: sledMemo[kind] };
+  };
+  /** Is a lift station anchor within `SLED.liftReach` tiles (Chebyshev) of a route end tile? */
+  const near = (st: { x: number; y: number }, t: number): boolean => Math.max(Math.abs(st.x - (t % size)), Math.abs(st.y - ((t / size) | 0))) <= SLED.liftReach;
   // Tour attractions (Phase 6 Task 5, docs/tours.md): schedule / route / closures for bases with `spec.tour`. Inert while TOUR_DEFS is empty.
   const tours = new TourSystem({
     size,
@@ -574,10 +592,15 @@ export function createSim(opts: SimOptions) {
         case 'path': return k === 1 || k === 2;
         case 'trail': return (l & (def.trailLayer ?? NetLayer.Hike)) !== 0;
         case 'piste': return (l & NetLayer.Ski) !== 0;
+        case 'sled': return (l & NetLayer.Sled) !== 0;
+        case 'coaster': return (l & NetLayer.Coaster) !== 0;
         default: return false; // 'water': validator filled in Task 24
       }
     },
     isPiste: (x, y) => ((networks.layers[y * size + x] ?? 0) & NetLayer.Ski) !== 0,
+    // Sled runs / coaster (M7.3, docs/sled-runs.md): the verdict of every painted run, cached per network version + terrain version.
+    sledProblem: (kind, t) => { const c = sledCache(kind); return c.bad.get(t) ?? null; },
+    sledLift: (first, last) => lifts.all().some((l) => l.open && LIFTS[l.kind].carriesSleds && ((near(l.bottom, first) && near(l.top, last)) || (near(l.bottom, last) && near(l.top, first)))),
     version: () => networks.version,
     instability: (i) => safety.avalanche.inst[i] ?? 0,
     weather: () => ({ wind: weather.current.wind }),
@@ -601,6 +624,8 @@ export function createSim(opts: SimOptions) {
     stamp: () => rivers.version * 4099 + landscape.version * 131 + networks.version * 7 + flow.version * 17 + buildings.all().length,
   });
   const attractions = new AttractionSystem({
+    // Sky activities (M7.4, docs/m74-buildings.md): weather closes jumps and flights; a centre needs an active Grass Strip, a ramp a Landing Field in reach.
+    skyClosed: (a) => skyClosedReason(a.spec.sky!, a.b, weather.current, buildings.all(), (x, y) => groundHeight(grid, x, y)),
     // Climbing crag (Phase 6 Task 23, docs/climbing.md): a rare MINOR twisted ankle at the base; the patrol answers (never worse than the unattended escalation of any minor injury).
     mishap: (a, id) => { const s = guestSim.store, i = s.slotOf(id); return i >= 0 && !!safety.incidents.report('injury', s.x[i]!, s.y[i]!, Sev.Minor, id); },
     angling: { stock: fishStock, planner: anglingPlanner },
@@ -610,7 +635,7 @@ export function createSim(opts: SimOptions) {
     store: guestSim.store,
     hash: guestSim.hash,
     status: (id) => openStatus.buildingStatus(id),
-    earn: (c0, a0) => { const c = c0, a = HOSPITALITY_CATS.has(c) ? a0 * staffUpgrades.mod('hospitalitySpend') : a0; economy.earn(c, a); if (c === 'restaurants' && eco.restaurantMod() !== 1) { economy.earn(c, Math.round(a * (eco.restaurantMod() - 1) * 100) / 100); } const fb = c === 'restaurants' ? natureRef?.farmBonus() ?? 0 : 0; if (fb > 0) economy.earn(c, Math.round(a * fb * 100) / 100); }, // Alpine Farm dairy bonus; hospitality training (Task 20)
+    earn: (c0, a0) => { const c = c0, a = HOSPITALITY_CATS.has(c) ? a0 * staffUpgrades.mod('hospitalitySpend') : a0; economy.earn(c, a); if (c === 'restaurants' && eco.restaurantMod() !== 1) { economy.earn(c, Math.round(a * (eco.restaurantMod() - 1) * 100) / 100); } const fb = c === 'restaurants' ? natureRef?.farmBonus() ?? 0 : 0; if (fb > 0) economy.earn(c, Math.round(a * fb * 100) / 100); if (c === 'restaurants' || c === 'shops') { const cm = eventsRef?.spendMult() ?? 1; if (cm !== 1) economy.earn(c, Math.round(a * (cm - 1) * 100) / 100); } }, // Carnival spend bonus (M7.4); Alpine Farm dairy bonus; hospitality training (Task 20)
     bus,
     groundAt: (x, y) => groundHeight(grid, x, y),
     lakeFrozen: (b) => weather.temperatureAt(cond.altitude(b.x + (b.w >> 1), b.y + (b.h >> 1))) <= 0,
@@ -748,7 +773,9 @@ export function createSim(opts: SimOptions) {
         const st = guestSim.store; let n = 0, bad = 0;
         for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; if (st.urge[i]! > FACILITY.desperate) bad++; }
         const f = measureFacilities({ toilets, venues, lodge: lodgeAt, pisteTiles: tiles, guests: { count: n, desperate: bad }, overrun });
-        return { score: f.score, hint: f.hint };
+        // Bakery breakfast (M7.4): an active bakery within reach of an active lodging adds a small capped bonus, once
+        const bakery = buildings.all().some((b) => b.active && b.type === 'bakery' && buildings.all().some((l) => l.active && BAKERY.lodgings.includes(l.type) && Math.hypot(l.x + l.w / 2 - (b.x + b.w / 2), l.y + l.h / 2 - (b.y + b.h / 2)) <= BAKERY.radius));
+        return { score: bakery ? Math.min(100, f.score + BAKERY.facilities) : f.score, hint: f.hint };
       },
     }), scenery: (() => { const sc = nature.scenery(), pen = energy.sceneryPenalty(); return pen > 0 ? Math.max(0, sc - pen) : sc; })(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
   });
@@ -762,7 +789,7 @@ export function createSim(opts: SimOptions) {
   });
   bus.on('day:changed', () => rivals.newDay());
   let eventsRef: EventCalendar | null = null; // Events calendar (festival / critic / powder arrival effects), built further down
-  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (eventsRef?.arrivalMult() ?? 1) * rivals.arrivalMult() * eco.arrivalMult());
+  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * rivals.arrivalMult() * eco.arrivalMult());
   pricing.bind({
     date: () => game.date,
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
@@ -783,6 +810,7 @@ export function createSim(opts: SimOptions) {
       powderDay: () => eventsRef?.active().some((e) => e.id === 'powder') ?? false,
       fishStock: () => { const v = hutWaters(); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; },
       festivalWindow: () => (eventsRef?.booked ?? []).some((b) => festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
+      carnivalWindow: () => (eventsRef?.booked ?? []).some((b) => b.id === 'carnival' && festDay() >= b.start - FESTIVAL_CAMPAIGN.leadDays && festDay() < b.end),
       festivalMult: () => eventsRef?.arrivalMult() ?? 1,
       rail: () => { const r = guestSim.spawner.status().arrivals?.rail; return { available: r?.available ?? false, load: guestSim.spawner.modeLoadOf(1), capacity: r?.capacity ?? 0 }; },
       met: (id) => {
@@ -811,6 +839,7 @@ export function createSim(opts: SimOptions) {
           case 'backcountry': return guestSim.decider.touring.hasSafeRoute(); // an open backcountry route with danger < 4 (Ski tourer cut-off)
           case 'patrol': return hasActive(['patrolHub']);
           case 'water': return hutWaters().some((v) => v >= ANGLER_CAMPAIGN.minStock);
+          case 'bookedCarnival': return (eventsRef?.booked ?? []).some((b) => b.id === 'carnival' && b.end > festDay() && b.start - festDay() <= FESTIVAL_CAMPAIGN.prereqDays);
           case 'bookedFestival': return (eventsRef?.booked ?? []).some((b) => b.end > festDay() && b.start - festDay() <= FESTIVAL_CAMPAIGN.prereqDays);
         }
       },
@@ -828,6 +857,8 @@ export function createSim(opts: SimOptions) {
     if (guestSim.decider.mtbTiles.length > 0 && lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes)) f.push(COND_MTB_BIKE_LIFT);
     // Angler (Task 42): an open tackle hut with a fishable water in reach that still has fish
     if (attractions.all().some((a) => a.spec.angling && a.open && anglingPlanner.plan(a.b).bodies.some((b) => fishStock.get(b.key) > 0.05))) f.push(COND_FISHING);
+    if (attractions.all().some((a) => a.open && a.b.type === 'sledRental')) f.push(COND_SLED); // Sledder (M7.3): an open Sled Rental (safe run, winter, snow)
+    if (attractions.all().some((a) => a.open && a.b.type === 'alpineCoaster')) f.push(COND_COASTER);
     if (guestSim.decider.touring.hasSafeRoute()) f.push(COND_BACKCOUNTRY); // Ski tourer (Task 34): an open backcountry route below danger 4
     return f;
   };
@@ -908,12 +939,24 @@ export function createSim(opts: SimOptions) {
   // ---- Events calendar (Task 21): booked festivals + automatic Almabtrieb / New Year / critic / powder day. Neutral (x1) when nothing is on ----
   const absDay = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
   let blackCache = { day: -1, v: false };
+  let streetCache = { day: -1, v: false };
   const events = new EventCalendar({
     today: absDay, funds: () => game.money, pay: (a) => { economy.spend('marketing', a); return true; }, refund: (a) => { economy.refund(a, 'marketing'); },
     stars: () => rating.stars,
     gate: (lvl) => (progression.open || progression.level >= lvl ? null : lockedReason(lvl)),
     hasLodge: () => buildings.all().some((b) => b.type === 'baseLodge'),
     hasGondola: () => lifts.all().some((l) => { const k = normalizeLiftKind(l.kind); return k === 'gondola6' || k === 'gondola10' || k === 'cablecar'; }),
+    hasStreet: () => {
+      if (streetCache.day === absDay()) return streetCache.v;
+      const anchors: Array<{ x: number; y: number }> = [{ x: terrainInfo.villageAnchor.x, y: terrainInfo.villageAnchor.y }];
+      const lodge = buildings.all().find((b) => b.type === 'baseLodge'); if (lodge) anchors.push({ x: lodge.x + lodge.w / 2, y: lodge.y + lodge.h / 2 });
+      let low: { x: number; y: number } | null = null, lowest = Infinity;
+      for (const l of lifts.all()) if (l.bottom.ground < lowest) { lowest = l.bottom.ground; low = { x: l.bottom.x + 0.5, y: l.bottom.y + 0.5 }; }
+      if (low) anchors.push(low);
+      const v = hasStreet({ size, kind: (i) => networks.kind[i] ?? 0, anchors });
+      streetCache = { day: absDay(), v };
+      return v;
+    },
     hasBlackPiste: () => {
       if (blackCache.day === absDay()) return blackCache.v;
       let v = false; const lay = networks.layers, kd = networks.kind, df = networks.difficulty;
@@ -1232,6 +1275,7 @@ export function createSim(opts: SimOptions) {
         get raftRides(): number { let n = 0; for (const a of attractions.all()) if (a.b.type === 'raftingBase') n += a.stats.served; return n; },
         get powderHounds(): number { return events.active().some((e) => e.id === 'powder') && marketing.running().some((m) => m.id === 'powder') ? 1 : 0; },
         get concert(): number { return events.active().some((e) => e.id === 'mountainConcertSummer' || e.id === 'mountainConcertWinter') ? 1 : 0; },
+        get masked(): number { if (!events.carnivalOn() || rating.stars < CARNIVAL.trophyStars) return 0; const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && costumed(st.id[i]!)) n++; return n; },
         get suites(): number { let m = 0; for (const a of attractions.all()) if (a.b.type === 'luxuryHotel') m = Math.max(m, attractions.rooms.occupied(a.id)); return m; },
         get summerShare(): number { if (!r || r.partial) return 0; let all = 0, s = 0; for (const x of r.months) { all += x.income; if (x.month >= 2 && x.month <= 5) s += x.income; } return all > 0 ? Math.round((100 * s) / all * 10) / 10 : 0; },
         stars: rating.stars, level: progression.level, guests: guestSim.store.count, money: game.money, festivals: nature.livestock.festivals,

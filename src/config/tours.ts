@@ -6,8 +6,8 @@ import type { Appeal } from '../sim/attractions/Attraction';
  * attached network tiles. A tour def is keyed by the id of its BASE BUILDING (config/buildings.ts); price, upkeep and staff live in the usual
  * building / price tables. Content tasks (sleigh, snowshoe, scooter, quad, canyoning, rafting) add rows; quads were the first.
  */
-export type TourRouteKind = 'road' | 'path' | 'trail' | 'piste' | 'water';
-export type TourVehicleKind = 'sleigh' | 'walkers' | 'scooter' | 'quad' | 'raft' | 'canyoner';
+export type TourRouteKind = 'road' | 'path' | 'trail' | 'piste' | 'water' | 'sled' | 'coaster';
+export type TourVehicleKind = 'sleigh' | 'walkers' | 'scooter' | 'quad' | 'raft' | 'canyoner' | 'sled' | 'coaster';
 
 /**
  * Requirements of a WATER route (Phase 6 Task 24, docs/water-tours.md): the route is a slice of a waterway, downstream from a put-in tile within
@@ -67,6 +67,10 @@ export interface TourDef {
   water?: WaterReq;
   /** One way ride (water: downstream then shuttle back): carriers do not turn around at the end. */
   oneWay?: boolean;
+  /** Sled runs / coaster (M7.3, docs/sled-runs.md): the ride gets shorter (`SLED.liftTimeMult`) while an open lift that `carriesSleds` joins the two ends of the route. */
+  liftAssist?: boolean;
+  /** Minor mishap chance per finished ride (a MINOR injury incident; nobody dies). Water tours keep theirs in `water.mishap`. */
+  mishap?: { guided: number; unguided: number };
   /** Cosmetic carriers shown on the route. */
   vehicle: TourVehicleKind;
   /** Carriers drawn per departure (view only). */
@@ -153,6 +157,29 @@ export const TOUR_DEFS: Record<string, TourDef> = {
     seasons: ['winter'], maxWind: 0.7, maxInstability: 0.8,
     appeal: [0.4, 0.5, 0.2, 0.4, 0.05, 1], happiness: 0.22,
     sustainPerDeparture: 0.35, noiseRadius: 9, vehicle: 'scooter', vehicles: 6,
+  },
+  /**
+   * Sled Rental (M7.3, docs/sled-runs.md): rodel runs on the painted SLED layer touching the hut (8-60 tiles, safe gradient). A departure every hour, 8 sleds, winter only (needs snow).
+   * Families, couples, budget guests, seniors and school groups love it, skiers and boarders sometimes, and the new Sledder type is built around it. A lift that carries sleds halves the ride.
+   * No lights, so it only runs by day (10-16 h).
+   */
+  sledRental: {
+    id: 'sledRental', routes: ['sled'], motorised: false, minLen: 8, maxLen: 60,
+    durationTicks: 12, intervalTicks: 10, firstHour: 10, lastHour: 16, seats: 8, minRiders: 1,
+    seasons: ['winter'], maxWind: 0.7, maxInstability: 0.8,
+    appeal: [0.45, 0.8, 1.0, 0.25, 0.9, 0.5], happiness: 0.2,
+    sustainPerDeparture: 0, noiseRadius: 0, vehicle: 'sled', vehicles: 4, liftAssist: true, mishap: { guided: 0.004, unguided: 0.004 },
+  },
+  /**
+   * Alpine Coaster Station (M7.3): the summer variant. A steel-rail coaster on the painted COASTER layer touching the station (10-70 tiles), 6 cars of 2, a dearer ticket and a dearer build.
+   * Summer only, closes in wind; quiet (no wildlife scare, no sustainability penalty).
+   */
+  alpineCoaster: {
+    id: 'alpineCoaster', routes: ['coaster'], motorised: false, minLen: 10, maxLen: 70,
+    durationTicks: 10, intervalTicks: 10, firstHour: 10, lastHour: 17, seats: 12, minRiders: 1,
+    seasons: ['summer'], maxWind: 0.6, maxInstability: 1.5,
+    appeal: [0.7, 0.7, 0.8, 0.45, 0.5, 1.0], happiness: 0.22,
+    sustainPerDeparture: 0, noiseRadius: 0, vehicle: 'coaster', vehicles: 4, liftAssist: false, mishap: { guided: 0.003, unguided: 0.003 },
   },
 };
 

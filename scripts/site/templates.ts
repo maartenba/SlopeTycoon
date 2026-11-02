@@ -26,7 +26,8 @@ export const RELATED: Record<string, string[]> = {
   'lifts-pistes': ['guests-seasons', 'operations', 'building'], 'guests-seasons': ['summer', 'seniors-schools', 'backcountry'], summer: ['summer-adventures', 'guests-seasons', 'money'], 'summer-adventures': ['summer', 'building', 'operations'], operations: ['events', 'guests-seasons', 'troubleshooting'],
   money: ['career', 'guests-seasons', 'building'], career: ['achievements', 'modes', 'money'], achievements: ['career', 'modes', 'settings'], modes: ['career', 'atmosphere', 'achievements'], atmosphere: ['modes', 'settings', 'guests-seasons'],
   touch: ['interface', 'settings', 'troubleshooting'], settings: ['touch', 'saves', 'interface'], saves: ['settings', 'troubleshooting', 'getting-started'], troubleshooting: ['saves', 'settings', 'touch'],
-  hotels: ['seniors-schools', 'building', 'operations'], 'seniors-schools': ['hotels', 'guests-seasons', 'money'], 'winter-adventures': ['backcountry', 'summer-adventures', 'guests-seasons'], backcountry: ['winter-adventures', 'operations', 'money'],
+  hotels: ['seniors-schools', 'building', 'operations'], 'seniors-schools': ['hotels', 'guests-seasons', 'money'], 'winter-adventures': ['backcountry', 'sled-runs', 'summer-adventures', 'guests-seasons'], 'sled-runs': ['winter-adventures', 'guests-seasons', 'summer-adventures'], backcountry: ['winter-adventures', 'operations', 'money'],
+  'village-and-sky': ['building', 'events', 'summer-adventures'],
   glossary: ['getting-started', 'interface', 'shortcuts'], shortcuts: ['interface', 'touch', 'glossary'], events: ['operations', 'guests-seasons', 'money'],
 };
 

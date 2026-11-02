@@ -35,11 +35,11 @@ export function buildingsInTab(tab: BuildingTab): BuildingDef[] {
 }
 
 export const BUILDING_ICONS: Record<string, string> = {
-  mountainHut: '🏔️', apresBar: '🍻', baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', sleighStable: '🐴', snowshoeHut: '🥾', snowscooterBase: '🛷', crag: '🧗', raftingBase: '🛶', canyoningBase: '🪢', parking: '🅿️',
+  mountainHut: '🏔️', apresBar: '🍻', baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', sleighStable: '🐴', snowshoeHut: '🥾', snowscooterBase: '🛷', sledRental: '⛄', alpineCoaster: '🎢', crag: '🧗', raftingBase: '🛶', canyoningBase: '🪢', parking: '🅿️',
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', pizzeria: '🍕', bakery: '🥐', touristOffice: 'ℹ️', grassStrip: '🛩️', skydiveCentre: '🪂', launchRamp: '🪁', landingField: '🛬', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
 
@@ -75,6 +75,8 @@ const DESCRIPTIONS: Record<string, string> = {
   canyoningBase: 'Summer guided descents of a steep stream through rock: abseils and water slides. Needs a steep drop and rock walls within 3 tiles of the base.',
   sleighStable: 'Winter only: a horse-drawn sleigh with six seats rides out and back along the road or footpath next to it. Quiet; couples, families and seniors love it. Closes in storms.',
   snowshoeHut: 'Winter only: guided snowshoe walks (8 guests) along the hiking trail touching the hut. Quiet and cheap. Cancelled in storms and when the snow is unstable on the route.',
+  sledRental: 'Winter only: a toboggan run for everybody. Paint a gentle downhill Sled run from the hut (Recreation > Sled run); eight sleds leave every hour. A lift that carries sleds halves the ride. Families, couples and school groups love it; not on steep ground.',
+  alpineCoaster: 'Summer only: a steel-rail alpine coaster. Lay the Coaster rail down a slope from the station; two-seat cars on a brake. A dearer ticket and a dearer build; closes in the wind.',
   snowscooterBase: 'Winter only: guided snowscooter tours (6 scooters) on a road, footpath or hiking trail next to it, never on a piste. Loud: scares wildlife and costs a little sustainability.',
   quadBase: 'Summer guided quad rides along the roads and footpaths next to it. Loud: scares wildlife and costs a little sustainability.',
   alpineFarm: 'Cows, sheep and goats graze the alpine pastures in summer; the farm shop attracts families; restaurants near farms earn more.',
@@ -82,6 +84,13 @@ const DESCRIPTIONS: Record<string, string> = {
   fishingPier: 'A jetty with four fishing places for the tackle huts in reach. Needs a Tackle & Bait Hut first; sits on a lake or pond shore.',
   smallHotel: '40 rooms over a lobby restaurant, open all year: standard prices and a steady stream of guests. Needs a road. Unlocks at level 3.',
   luxuryHotel: '30 suites and a heated outdoor pool that steams in the cold. VIPs and couples book it first; the pool heating costs energy that solar, wind and hydro can offset. Needs a road. Unlocks at level 4.',
+  pizzeria: 'Wood-oven pizza for families and budget guests: a real meal at $9, 20 places, open into the evening. Cheaper and smaller than the Lodge, so it adds to it instead of replacing it. Needs a road or a footpath.',
+  bakery: 'Rolls and coffee from 06:00 to 12:00. Guests grab breakfast on the way; lodgings within 9 tiles get a small Facilities bonus. Needs a footpath or a road.',
+  touristOffice: 'One per resort: maps, tips and a friendly desk. Always +6% arrivals while it is open. Needs a road or a footpath.',
+  grassStrip: 'A cheap mown airfield with a windsock (not the Altiport). The jump plane of the Skydive Centre takes off from it; one per resort, flat ground, a road or a footpath.',
+  skydiveCentre: 'Tandem jumps for $95: adventure seekers and VIPs love them. Needs the Grass Strip. Daylight and clear weather only; fog, wind, rain and snow close it.',
+  launchRamp: 'Hang gliding and paragliding from high ground: a trail, footpath or piste edge leads up. Needs a Landing Field lower down within 45 tiles. Daylight and clear weather only.',
+  landingField: 'A flat meadow in the valley where the gliders touch down. Pairs with every Launch Ramp within 45 tiles that stands at least 3 units higher.',
   coffeeStand: 'A tiny kiosk for a quick coffee and a bite, beside a piste, a footpath or a trail. Cheap, open all year; food only (toilets are the comfort fix).',
   campground: 'Summer only: 16 tent and caravan pitches around a campfire. Cheap nights for budget and adventure guests; toilets nearby make a better evening. Reached by a footpath or hiking trail.',
   pettingZoo: 'Summer family attraction: goats, sheep, rabbits and a donkey in a fenced pen. Small entry ticket; closed in snow. Needs a footpath.',
@@ -122,7 +131,7 @@ export const LIFT_DESCRIPTIONS: Record<LiftKind, string> = {
 };
 
 const BRIDGE_OF_KEY: Partial<Record<string, BridgeKind>> = { path: 'footbridge', road: 'roadBridge', hike: 'hikeBridge', mtb: 'mtbBridge' };
-export interface NetworkItem { key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike' | 'backcountry'; name: string; icon: string; costPerTile: number; desc: string; group: 'paths' | 'pistes' }
+export interface NetworkItem { key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike' | 'backcountry' | 'sled' | 'coaster'; name: string; icon: string; costPerTile: number; desc: string; group: 'paths' | 'pistes' }
 export const NETWORK_ITEMS: NetworkItem[] = [
   { key: 'path', name: 'Footpath', icon: '🚶', costPerTile: 20, desc: 'Walkway connecting buildings to the village.', group: 'paths' },
   { key: 'road', name: 'Road', icon: '🛣️', costPerTile: 60, desc: 'Road for buses and cars. Connects to the road entry.', group: 'paths' },
@@ -131,6 +140,8 @@ export const NETWORK_ITEMS: NetworkItem[] = [
   { key: 'mtb', name: 'MTB trail', icon: '🚵', costPerTile: 0, desc: 'Summer mountain-bike trail.', group: 'pistes' },
   { key: 'hike', name: 'Hiking trail', icon: '🥾', costPerTile: 0, desc: 'Summer hiking trail.', group: 'pistes' },
   { key: 'backcountry', name: 'Backcountry route', icon: '🚩', costPerTile: 15, desc: 'Winter ski-touring and off-piste route, marked with flag poles. Closes by itself at avalanche danger 4.', group: 'pistes' },
+  { key: 'sled', name: 'Sled run', icon: '🛷', costPerTile: 22, desc: 'Winter toboggan run (Rodelbahn): a narrow, gentle downhill track from a Sled Rental hut. Not too steep, not flat.', group: 'pistes' },
+  { key: 'coaster', name: 'Alpine coaster', icon: '🎢', costPerTile: 85, desc: 'Summer steel-rail coaster track from an Alpine Coaster station. Steeper ground is fine, the cars brake.', group: 'pistes' },
 ];
 
 /** Placement-rule lines: PlacementRules.describeRules (rules audit); catalog-derived fallback if it yields nothing. */
@@ -175,7 +186,7 @@ const money = (n: number): string => '$' + Math.round(n).toLocaleString('en-US')
 
 /** Season relevance of lifts (winter-only drag lifts vs bike-capable chairs/gondolas) and network tools (pistes winter, MTB/hiking summer). */
 export const liftSeason = (k: LiftKind): SeasonTag => (LIFTS[k].carriesBikes ? 'all' : 'winter');
-export const networkSeason = (key: NetworkItem['key']): SeasonTag => (key === 'ski' || key === 'backcountry' ? 'winter' : key === 'mtb' || key === 'hike' ? 'summer' : 'all');
+export const networkSeason = (key: NetworkItem['key']): SeasonTag => (key === 'ski' || key === 'backcountry' || key === 'sled' ? 'winter' : key === 'mtb' || key === 'hike' || key === 'coaster' ? 'summer' : 'all');
 /** 'Mostly used from summer on' hint line for an off-season item; null when usable now. */
 export function seasonHint(tag: SeasonTag, season: SeasonId | undefined): string | null {
   const u = season ? usableFrom(tag, season) : null;
@@ -217,7 +228,7 @@ export function liftInfo(kind: LiftKind, costPer100m: number, season?: SeasonId,
     id: kind, title: d.name, desc: LIFT_DESCRIPTIONS[kind], icon: LIFT_ICONS[kind],
     stats: [['Cost', `${money(costPer100m)} / 100 m`], ['Max length', `${d.maxLength} tiles`], ['Max gradient', `${Math.round(d.maxGradient * 100)}%`], ['Speed', `${d.speed} tiles/s`], ['Capacity', `${d.capacityPerCarrier}/carrier`],
       ...(d.reversible ? [] : [['Throughput', `≈${Math.round(nominalThroughput(d, 40))}/h (40-tile line)`] as [string, string]]), ['Stations', `${money(d.stationCost)} each`], ['Energy', `${money(d.energyPerHour)}/h running`],
-      ['Comfort', `${Math.round(d.comfort * 100)}%`], ['Wind limit', `${Math.round(d.windTolerance * 100)}%`], ['Grips', d.detachable ? 'detachable' : 'fixed'], ['Bubble', d.bubble ? 'yes' : 'no'], ['Bikes', d.carriesBikes ? 'yes' : 'no']],
+      ['Comfort', `${Math.round(d.comfort * 100)}%`], ['Wind limit', `${Math.round(d.windTolerance * 100)}%`], ['Grips', d.detachable ? 'detachable' : 'fixed'], ['Bubble', d.bubble ? 'yes' : 'no'], ['Bikes', d.carriesBikes ? 'yes' : 'no'], ['Sleds', d.carriesSleds ? 'yes' : 'no']],
     note: lock.find((l) => LEVEL_NOTE.test(l)), reqs: lock.filter((l) => !LEVEL_NOTE.test(l)).map((text) => ({ text, ok: false })), rules: [...(seasonHint(liftSeason(kind), season) ? [seasonHint(liftSeason(kind), season)!] : []), 'Click bottom station, then top station', 'Stations need flat ground (or auto-flatten)'],
   };
 }
@@ -228,6 +239,9 @@ export function networkInfo(it: NetworkItem, pisteCost: number, season?: SeasonI
   if (sp) stats.push(['Over water', `${sp.label} ${money(sp.costPerTile)}/tile, max ${sp.maxSpan}`]);
   const rules = [...(h ? [h] : []), ...(it.key === 'path' || it.key === 'road' || it.key === 'rail' ? ['Drag to draw; R flips the L-corner'] : ['Drag to paint with the brush'])];
   if (sp) rules.push(`Drag across water${it.key === 'path' || it.key === 'road' ? ' or a gap' : ''}: a ${sp.label.toLowerCase()} is built for you`);
+  if (it.key === 'sled' || it.key === 'coaster') {
+    return { id: it.key, title: it.name, desc: it.desc, icon: it.icon, stats: [...stats, ['Rides from', it.key === 'sled' ? 'Sled Rental' : 'Alpine Coaster station']], reqs: [], rules: [...(h ? [h] : []), 'Start next to the hut / station, a footpath, a lift station or an existing run', it.key === 'sled' ? `Gentle downhill only: up to a red gradient, never flat (Too steep for sleds)` : 'Steeper ground is fine, but not a cliff', 'Not on water or buildings; a lift that carries sleds beside both ends halves the ride'] };
+  }
   if (it.key === 'backcountry') {
     return { id: it.key, title: it.name, desc: it.desc, icon: it.icon, stats, reqs: [], note: lock && LEVEL_NOTE.test(lock) ? lock : undefined, rules: [...(h ? [h] : []), 'Start next to a lift top, a hut, a piste end or a hiking trail', 'Not on water or buildings', 'Avalanche danger 1-5 from the snowpack: closed at 4 and 5 (you can override, at your own risk)', 'Patrol cover lowers the danger and the risk'] };
   }

@@ -18,7 +18,9 @@ import * as F from './buildings/farm';
 import * as W from './buildings/ranger';
 import * as G from './buildings/energy';
 import * as Q from './buildings/tours';
+import { sledRental, alpineCoaster } from './buildings/sled';
 import { crag } from './buildings/climbing';
+import * as V from './buildings/visitor';
 import { raftingBase, canyoningBase } from './buildings/waterTours';
 import { TURBINE_HUB } from './buildings/energy';
 import { campground, campfireGlowGeometry } from './campground';
@@ -48,6 +50,8 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false, true),
   tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
   smallHotel: e(hotelSmall), luxuryHotel: e(hotelLuxury, false), coffeeStand: e(coffeeStand, false),
+  pizzeria: e(V.pizzeria, false), bakery: e(V.bakery, false), touristOffice: e(V.touristOffice, false), grassStrip: e(V.grassStrip, false), skydiveCentre: e(V.skydiveCentre, false), launchRamp: e(V.launchRamp, false), landingField: e(V.landingField, false),
+  sledRental: e(sledRental, false), alpineCoaster: e(alpineCoaster, false),
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
 };
 

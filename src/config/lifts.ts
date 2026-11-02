@@ -25,6 +25,8 @@ export interface LiftDef {
   maxLocalGradient: number;
   towerSpacing: number; // tiles
   carriesBikes: boolean;
+  /** Carries sleds up to a sled run (M7.3, docs/sled-runs.md): gondolas, cable cars and detachable chairs (derived in `mk`). */
+  carriesSleds: boolean;
   costPerMetre: number;
   /** Cost of ONE station (two are built). */
   stationCost: number;
@@ -58,9 +60,9 @@ export interface LiftDef {
   stationAutoFlatten: 'default';
 }
 
-type Row = Omit<LiftDef, 'id' | 'name' | 'bottomAccess' | 'topAccess' | 'stationPiste' | 'towerPiste' | 'stationAutoFlatten' | 'reversible' | 'family' | 'midStations'>;
+type Row = Omit<LiftDef, 'id' | 'name' | 'bottomAccess' | 'topAccess' | 'stationPiste' | 'towerPiste' | 'stationAutoFlatten' | 'reversible' | 'family' | 'midStations' | 'carriesSleds'>;
 const mk = (id: LiftKind, name: string, family: LiftFamily, r: Row, reversible = false): LiftDef => ({
-  id, name, family, ...r, reversible, midStations: family === 'gondola' || family === 'cablecar' || (family === 'chair' && r.detachable), bottomAccess: 'path', topAccess: 'none', stationPiste: 'allow', towerPiste: 'allow', stationAutoFlatten: 'default',
+  id, name, family, ...r, reversible, midStations: family === 'gondola' || family === 'cablecar' || (family === 'chair' && r.detachable), carriesSleds: family === 'gondola' || family === 'cablecar' || (family === 'chair' && r.detachable), bottomAccess: 'path', topAccess: 'none', stationPiste: 'allow', towerPiste: 'allow', stationAutoFlatten: 'default',
 });
 
 export const LIFTS: Record<LiftKind, LiftDef> = {

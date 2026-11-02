@@ -74,7 +74,14 @@ export const OPTIONAL_EXTRAS: Readonly<Record<string, string>> = {
   treehouse: 'optional hiker / family extra (docs/viewpoints.md)',
   crag: 'optional summer adventure extra (docs/climbing.md)',
   canyoningBase: 'optional summer adventure extra (docs/water-tours.md)',
+  alpineCoaster: 'optional summer extra (docs/sled-runs.md); the Sledder type is gated on it, no goal needs it',
   coffeeStand: 'optional food extra, never required by a goal or campaign (docs/coffee-stand.md)',
+  pizzeria: 'optional dining extra: the generic food / "guests are hungry" advice covers restaurants, never required by a goal or campaign (docs/m74-buildings.md)',
+  bakery: 'optional morning shop, never required by a goal or campaign (docs/m74-buildings.md)',
+  grassStrip: 'optional adventure extra (owner decision: a cheap airfield, not the Altiport); nothing requires it (docs/m74-buildings.md)',
+  skydiveCentre: 'optional adventure extra on the Grass Strip, no goal or Advisor rule needs it (docs/m74-buildings.md)',
+  launchRamp: 'optional adventure extra, paired with a Landing Field; no goal or Advisor rule needs it (docs/m74-buildings.md)',
+  landingField: 'the pair of the Launch Ramp, optional like it (docs/m74-buildings.md)',
 };
 
 export interface Sandbox { sim: Sim; place(id: string): { ok: boolean; reason: string; refundOk: boolean; freed: boolean } }

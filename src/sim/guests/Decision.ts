@@ -23,9 +23,9 @@ export const Pref = { Ski: 0, Hike: 1, Bike: 2 } as const;
 
 export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike' | 'relief';
 
-export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace', 'smallHotel']);
+export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace', 'smallHotel', 'pizzeria']);
 /** Quick-service kiosks (Phase 6 Task 28, docs/coffee-stand.md): a cup and a bite on the way, never the real meal. Not in FOOD: they only compete as a nearby snack (see `SNACK`). */
-export const SNACKS = new Set(['coffeeStand']);
+export const SNACKS = new Set(['coffeeStand', 'bakery']);
 /** Snack stop tuning: guests with hunger in [minHunger, maxHunger] weigh the nearest open kiosk with score `base + perHunger x hunger - distPenalty x tiles + nearBonus x (1 - tiles / radius)`: the pull FALLS with hunger (a snack-sized appetite stops for a coffee; a really hungry guest wants the real meal, which scores 2 x hunger) and with the detour. */
 export const SNACK = { minHunger: 0.3, maxHunger: 0.7, base: 1.75, perHunger: -1, radius: 7, nearBonus: 0.3, distPenalty: 0.15, /** Hunger a cup and a bite take off (the Coffee Stand spec's `hungerBy`). */ by: 0.3, /** Mid-run break: a skier within `passRadius` tiles of an open stand, hunger in [passMin, passMax] (or tired: fatigue >= tired), takes it on about 1 in `oneIn` passes (stateless hash of guest id and runs: no RNG, no stored cap; a cup takes 0.3 off the hunger, so a guest is back in the window only hours later = 1-2 stops a day). */ passRadius: 2, passMin: 0.3, passMax: 0.7, tired: 0.6, oneIn: 3, /** Dollars a cup and a bite cost when a hiker stops at a kiosk with no other food in reach. */ spend: 4 } as const;
 /** Evening venues beyond the daytime FOOD list: the Après-Ski Bar (a drinks stop, not a meal). */
@@ -35,7 +35,7 @@ export const EVENING_VENUES: readonly string[] = [...FOOD, ...BAR];
 export const REST = new Set(['baseLodge', 'lodge', 'chalet', 'apartment', 'smallHotel', 'luxuryHotel']);
 export const SHOP = new Set(['shop', 'rental']);
 /** Real attractions (activity goals); everything else visitable counts as generic wandering. */
-export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet', 'quadBase', 'crag', 'tackleHut', 'raftingBase', 'canyoningBase', 'sleighStable', 'snowshoeHut', 'snowscooterBase']);
+export const ACTIVITY = new Set(['iceRink', 'stuntPark', 'adventurePark', 'beach', 'boatRental', 'playground', 'kidsGround', 'magicCarpet', 'quadBase', 'crag', 'tackleHut', 'raftingBase', 'canyoningBase', 'sleighStable', 'snowshoeHut', 'sledRental', 'alpineCoaster', 'snowscooterBase', 'skydiveCentre', 'launchRamp']);
 export const LESSON = new Set(['skiSchoolHQ']);
 /** Comfort need (docs/comfort.md): buildings a guest walks to on purpose when the urge is high. */
 export const RELIEF = new Set(['toilets']);
@@ -209,7 +209,7 @@ export class Decider {
       const vp = BUILDINGS[b.type]?.viewpoint; if (vp) this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); // viewpoint buildings (config-driven)
       const serving = this.port?.serving?.(b.id) ?? true; // venues are only candidates while serving (08:00 - 23:00)
       if (FOOD.has(b.type) && serving) this.food.push(b);
-      if (SNACKS.has(b.type)) this.snacks.push(b);
+      if (SNACKS.has(b.type) && serving) this.snacks.push(b);
       if (BAR.has(b.type) && serving) this.bars.push(b);
       if (REST.has(b.type)) this.rest.push(b);
       if (SHOP.has(b.type)) this.shop.push(b);

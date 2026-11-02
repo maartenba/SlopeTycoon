@@ -26,7 +26,7 @@ export interface GameEvents {
   /** A backcountry route opened / closed (avalanche danger, snow, override; docs/backcountry.md). */
   'backcountry:opened': { id: number; danger: number };
   'backcountry:closed': { id: number; danger: number; reason?: string };
-  'piste:painted': { layer: 'ski' | 'mtb' | 'hike' | 'backcountry'; tiles: number; erase: boolean };
+  'piste:painted': { layer: 'ski' | 'mtb' | 'hike' | 'backcountry' | 'sled' | 'coaster'; tiles: number; erase: boolean };
   /** A lift was built. */
   'lift:built': { id: number; kind: string };
   /** A lift was opened or closed. */

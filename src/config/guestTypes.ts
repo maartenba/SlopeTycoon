@@ -120,6 +120,9 @@ export const COND_FISHING = '@fishing';
 export const COND_BACKCOUNTRY = '@backcountryRoute';
 /** A ski tourer never goes out at this danger level or higher, even when the route is open (the override that opens a route does not apply to them). */
 export const TOURER_MAX_DANGER = 4;
+/** `@sledRun` = an open Sled Rental with a safe run (winter); `@coaster` = an open Alpine Coaster (summer): the Sledder (M7.3, docs/sled-runs.md). */
+export const COND_SLED = '@sledRun';
+export const COND_COASTER = '@coaster';
 
 /** Type index of the Senior (CORE_TYPE_COUNT + 2) and their pace on foot (0.82 of a normal guest; skiing is not slowed; docs/guest-types.md). */
 export const SENIOR_TYPE = 8;
@@ -127,7 +130,7 @@ export const SENIOR_WALK = 0.82;
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -188,6 +191,16 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     appeal: { mountainHut: 1.5, hut: 1.5, restaurant: 0.5, terrace: 0.5, cafe: 0.6, rental: 0.1, shop: 0.2, stunt: 0.05, rink: 0.05, kidsGround: 0.05, playground: 0.05, carpet: 0.05, bar: 0.4 },
     group: [1, 3], budget: [100, 190], overnight: 0.3, skill: [0, 0.1, 0.4, 0.5], pref: [8, 0],
     look: { top: 0, topShare: 0.85, colour: 0xe53935, gear: 'ski', pack: true }, // red shells, a backpack, touring skis
+  },
+  {
+    // Phase 7 M7.3 (docs/sled-runs.md, docs/guest-types.md "Sledder"): comes for the toboggan run in winter and for the alpine coaster in summer; needs an OPEN Sled Rental with a safe run (or an open Alpine Coaster).
+    // Beginner skiers at best (they ride the sled, the lift and the hut); low-key spend, loves a hot drink afterwards, hates nothing in particular. Other types also ride the sled run through the tour appeal column.
+    id: 'sledder', label: 'Sledder', seasons: { winter: 0.06, summer: 0.04 }, minLevel: 2, fallback: 'couple', segment: 'budget',
+    requiresIn: { winter: [COND_SLED], summer: [COND_COASTER] },
+    weather: { rain: 0.5, storm: 0.05, heavySnow: 0.7, cloudy: 0.95 },
+    appeal: { sledRental: 1.5, alpineCoaster: 1.5, tour: 0.6, terrace: 0.8, cafe: 0.8, restaurant: 0.7, bar: 0.4, kidsGround: 0.4, playground: 0.5, rink: 0.6, shop: 0.5, rental: 0.05, stunt: 0.05, adventure: 0.5, carpet: 0.3 },
+    group: [2, 5], budget: [90, 190], overnight: 0.25, skill: [0.85, 0.15, 0, 0], maxSkill: 1, pref: [10, 0],
+    look: { top: 8, topShare: 0.7, colour: 0xff7043, beanie: 0.85 }, // bright orange jackets, bobble hats
   },
 ];
 

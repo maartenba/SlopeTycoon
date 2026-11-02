@@ -51,8 +51,16 @@ export const PRICE_TABLE: Record<string, PriceEntry> = {
   sleighStable: { price: 25, max: 40, billing: 'perUse', category: 'recreation' },
   snowshoeHut: { price: 15, max: 30, billing: 'perUse', category: 'recreation' },
   snowscooterBase: { price: 45, max: 70, billing: 'perUse', category: 'recreation' },
+  /** Sled runs (M7.3, docs/sled-runs.md): a run on the rodel hill; the alpine coaster is the dearer summer ride. */
+  sledRental: { price: 12, max: 25, billing: 'perUse', category: 'recreation' },
+  alpineCoaster: { price: 18, max: 35, billing: 'perUse', category: 'recreation' },
   crag: { price: 30, max: 60, billing: 'perUse', category: 'recreation' },
   raftingBase: { price: 30, max: 60, billing: 'perUse', category: 'recreation' },
+  /** M7.4: Pizzeria (a real meal, cheaper than the Lodge), Bakery (a roll and a coffee, mornings), Skydive jump, Glider flight. */
+  pizzeria: { price: 9, max: 30, billing: 'perUse', category: 'restaurants' },
+  bakery: { price: 4, max: 12, billing: 'perUse', category: 'restaurants' },
+  skydiveCentre: { price: 95, max: 220, billing: 'perUse', category: 'recreation' },
+  launchRamp: { price: 45, max: 120, billing: 'perUse', category: 'recreation' },
   canyoningBase: { price: 35, max: 60, billing: 'perUse', category: 'recreation' },
   toilets: { price: 0, max: 0, billing: 'perUse', category: 'other' },
   hiking: { price: 0, max: 10, billing: 'perUse', category: 'recreation' },

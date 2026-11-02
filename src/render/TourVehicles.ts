@@ -11,6 +11,8 @@ const LOOK: Record<TourVehicleKind, { body: number; trim: number; len: number; w
   quad: { body: 0x4a6b3a, trim: 0x222222, len: 0.42, wid: 0.3, high: 0.22 },
   raft: { body: 0xe0a030, trim: 0x2a5d86, len: 0.6, wid: 0.34, high: 0.1 },
   canyoner: { body: 0xe8782a, trim: 0x222222, len: 0.12, wid: 0.12, high: 0.3 },
+  sled: { body: 0xb5542f, trim: 0x3d2a1c, len: 0.34, wid: 0.2, high: 0.18 },
+  coaster: { body: 0xd33a2c, trim: 0x2a2a30, len: 0.4, wid: 0.22, high: 0.2 },
 };
 
 const box = (w: number, h: number, d: number, y: number, color: number): THREE.BufferGeometry => {
@@ -146,6 +148,37 @@ export function scooterGeometry(body = 0xc8452b): THREE.BufferGeometry {
   ])!;
 }
 
+/** A wooden toboggan with two riders (forward = +x): two curled steel runners, slats, a rope, two bundled-up riders in bright jackets and bobble hats. ~210 triangles (docs/sled-runs.md). */
+export function sledGeometry(body = 0xb5542f): THREE.BufferGeometry {
+  const runner = (z: number): THREE.BufferGeometry => mergeGeometries([colored(new THREE.BoxGeometry(0.34, 0.012, 0.014), 0x8a9099, 0, 0.012, z), colored(new THREE.BoxGeometry(0.05, 0.012, 0.014), 0x8a9099, 0.19, 0.03, z).rotateZ(0)])!;
+  const jackets = [0x4a90d9, 0xf2c14e];
+  const parts: THREE.BufferGeometry[] = [runner(0.07), runner(-0.07), box(0.3, 0.02, 0.18, 0.03, body), colored(new THREE.BoxGeometry(0.02, 0.05, 0.16), 0x3d2a1c, 0.12, 0.06, 0), colored(new THREE.BoxGeometry(0.1, 0.01, 0.012), 0xe8e4da, 0.21, 0.07, 0)];
+  [0.04, -0.08].forEach((x, i) => {
+    parts.push(colored(new THREE.BoxGeometry(0.07, 0.1, 0.1), jackets[i]!, x, 0.1, 0));
+    parts.push(colored(new THREE.SphereGeometry(0.036, 6, 5), 0xe9b894, x + 0.005, 0.19, 0));
+    parts.push(colored(new THREE.SphereGeometry(0.04, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2), i ? 0xd9453a : 0x2e6a4a, x + 0.005, 0.2, 0));
+  });
+  return mergeGeometries(parts)!;
+}
+
+/** An alpine-coaster car (forward = +x): a bright bucket car on a bogie with a brake lever, two riders in helmets, a steel rail beneath it. ~170 triangles. */
+export function coasterGeometry(body = 0xd33a2c): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [
+    colored(new THREE.BoxGeometry(0.5, 0.025, 0.05), 0x8a9099, 0, 0.0, 0), // rail seen under the car
+    colored(new THREE.BoxGeometry(0.12, 0.05, 0.1), 0x2a2a30, 0.12, 0.05, 0), colored(new THREE.BoxGeometry(0.12, 0.05, 0.1), 0x2a2a30, -0.12, 0.05, 0), // bogies
+    box(0.4, 0.07, 0.2, 0.07, body), box(0.06, 0.07, 0.17, 0.14, body).translate(0.17, 0, 0), // tub + nose
+    colored(new THREE.BoxGeometry(0.02, 0.1, 0.02), 0x222222, 0.02, 0.2, 0.0).rotateZ(-0.4), // brake lever
+  ];
+  [0.04, -0.1].forEach((x, i) => {
+    parts.push(colored(new THREE.BoxGeometry(0.07, 0.09, 0.1), i ? 0x4a90d9 : 0x5cb85c, x, 0.17, 0));
+    parts.push(colored(new THREE.SphereGeometry(0.038, 6, 5), i ? 0xfafafa : 0xf2c14e, x + 0.005, 0.27, 0));
+  });
+  return mergeGeometries(parts)!;
+}
+
+/** Height (tiles) of the coaster rail above the ground: the cars ride on it (SledRunView draws the rail at the same height). */
+export const COASTER_RAIL = 0.34;
+
 /** Snow spray puffs behind a moving scooter. */
 export const SPRAY = { perCarrier: 3, step: 0.18, color: 0xf6f9ff, opacity: 0.5 } as const;
 
@@ -181,7 +214,7 @@ export class TourVehicles {
     for (const kind of Object.keys(LOOK) as TourVehicleKind[]) {
       const l = LOOK[kind];
       const geo = mergeGeometries([box(l.len, l.high * 0.55, l.wid, 0.04, l.body), box(l.len * 0.5, l.high * 0.45, l.wid * 0.8, 0.04 + l.high * 0.55, l.trim)])!;
-      const mesh = new THREE.InstancedMesh(kind === 'quad' ? quadGeometry(l.body) : kind === 'sleigh' ? sleighGeometry(l.body) : kind === 'walkers' ? walkerGeometry(l.body) : kind === 'scooter' ? scooterGeometry(l.body) : kind === 'raft' ? raftGeometry(l.body) : kind === 'canyoner' ? canyonerGeometry(l.body) : geo, new THREE.MeshLambertMaterial({ vertexColors: true }), TOURS.maxCarriers);
+      const mesh = new THREE.InstancedMesh(kind === 'quad' ? quadGeometry(l.body) : kind === 'sleigh' ? sleighGeometry(l.body) : kind === 'walkers' ? walkerGeometry(l.body) : kind === 'scooter' ? scooterGeometry(l.body) : kind === 'raft' ? raftGeometry(l.body) : kind === 'canyoner' ? canyonerGeometry(l.body) : kind === 'sled' ? sledGeometry(l.body) : kind === 'coaster' ? coasterGeometry(l.body) : geo, new THREE.MeshLambertMaterial({ vertexColors: true }), TOURS.maxCarriers);
       mesh.count = 0; mesh.frustumCulled = false; mesh.name = `tour:${kind}`;
       this.meshes.set(kind, mesh); this.group.add(mesh);
     }
@@ -199,7 +232,7 @@ export class TourVehicles {
       const m = this.meshes.get(c.kind)!, i = used.get(c.kind) ?? 0;
       if (i >= TOURS.maxCarriers) continue;
       used.set(c.kind, i + 1);
-      const gy = this.ground(c.x, c.y), lift = c.kind === 'raft' ? 0.05 : 0;
+      const gy = this.ground(c.x, c.y), lift = c.kind === 'raft' ? 0.05 : c.kind === 'coaster' ? COASTER_RAIL : 0;
       this.tmp.position.set(c.x, gy + lift, c.y);
       let pitch = 0;
       if (c.kind === 'canyoner') { const dx = Math.cos(c.heading) * 0.25, dz = Math.sin(c.heading) * 0.25; pitch = Math.atan2(this.ground(c.x + dx, c.y + dz) - this.ground(c.x - dx, c.y - dz), 0.5); }

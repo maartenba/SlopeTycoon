@@ -2,6 +2,8 @@ import { TRAIL_ORPHAN_MSG, BACKCOUNTRY_ORPHAN_MSG, BACKCOUNTRY_COST_PER_TILE, Ne
 import type { Pt } from '../sim/Dependencies';
 import { slopeProfile } from '../sim/PisteStats';
 import { buildTrailStroke, describeExtras, planTrailStroke, type CrossMode } from '../world/StrokePlan';
+import { SLED, SLED_MSG, type SledKind } from '../config/sled';
+import { judgeTiles } from '../world/SledRuns';
 import { DragTool, ghostOf, type DragToolOptions, type Evaluation } from './PathTool';
 
 export const DIFFICULTY_NAMES = ['green', 'blue', 'red', 'black'] as const;
@@ -92,6 +94,15 @@ export class PisteTool extends DragTool {
       this.emitProfile();
       return { ok: true, cost: plan.cost, text: `${DIFFICULTY_NAMES[dd]}${this.override === null ? ' (auto)' : ''} — ${plan.newTiles.length} tiles${extras ? ` + ${extras}` : ''}, $${Math.round(plan.cost)}`, ghost: ghostOf(plan) };
     }
+    if (this.layer === Layer.Sled || this.layer === Layer.Coaster) { // Sled run / alpine coaster (M7.3, docs/sled-runs.md): anchored, not too steep; the verdict on flatness is the run's (shown on the hut)
+      const kind: SledKind = this.layer === Layer.Sled ? 'sled' : 'coaster';
+      if (!net.strokeAnchored(tiles, this.layer)) return { ok: false, cost: 0, text: SLED_MSG.orphan };
+      const j = judgeTiles(this.o.grid, kind, tiles);
+      if (j.maxSteep > SLED.maxSteep[kind]) return { ok: false, cost: 0, text: kind === 'sled' ? SLED_MSG.steep : SLED_MSG.steepCoaster };
+      const cost = tiles.length * SLED.costPerTile[kind] * this.o.multiplier();
+      this.emitProfile();
+      return { ok: true, cost, text: `${kind === 'sled' ? 'Sled run' : 'Alpine coaster'} — ${tiles.length} tiles, $${Math.round(cost)}` };
+    }
     if (this.layer !== Layer.Ski && !net.strokeAnchored(tiles, this.layer)) return { ok: false, cost: 0, text: TRAIL_ORPHAN_MSG };
     const auto = net.autoDifficulty(tiles);
     const d = this.override ?? [...auto.values()][0] ?? 0;
@@ -107,7 +118,7 @@ export class PisteTool extends DragTool {
     const line = this.strokeLine();
     if (line.length < 2) { this.o.onProfile(null); return; }
     const auto = this.override !== null ? this.override : [...this.o.networks.autoDifficulty(line).values()];
-    const label = this.layer === Layer.Ski ? 'Ski piste' : this.layer === Layer.Mtb ? 'MTB trail' : this.layer === Layer.Backcountry ? 'Backcountry route' : 'Hiking trail';
+    const label = this.layer === Layer.Ski ? 'Ski piste' : this.layer === Layer.Mtb ? 'MTB trail' : this.layer === Layer.Backcountry ? 'Backcountry route' : this.layer === Layer.Sled ? 'Sled run' : this.layer === Layer.Coaster ? 'Alpine coaster' : 'Hiking trail';
     const profile = slopeProfile(this.o.grid, line, auto), snowline = this.snowlineM?.();
     // Building is never season-bound; only opening is. Say so when this line currently lies below the snowline (bare ground).
     const bare = this.layer === Layer.Ski && snowline !== undefined && Math.max(profile.startAltM, profile.endAltM) < snowline;

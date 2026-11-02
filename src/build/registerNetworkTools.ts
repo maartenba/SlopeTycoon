@@ -66,7 +66,7 @@ export interface NetworkTools {
   isConnected(buildingId: number): boolean;
   cancel(): void;
   /** Start a tool by palette key; starting the active one stops it. */
-  startTool(key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike' | 'backcountry'): void;
+  startTool(key: 'path' | 'road' | 'rail' | 'ski' | 'mtb' | 'hike' | 'backcountry' | 'sled' | 'coaster'): void;
   setOverride(d: number | null): void;
   setBrush(n: number): void;
   /** Toggle erase mode for piste/trail tools (Shift-drag also erases). */
@@ -122,7 +122,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     suspensionLocked: ctx.suspensionLocked, backcountryLocked: ctx.backcountryLocked,
     onChanged: afterChange,
     onStroke: (group, tiles, erase, layer) => {
-      if (group === 'piste') ctx.bus?.emit('piste:painted', { layer: layer === Layer.Mtb ? 'mtb' : layer === Layer.Hike ? 'hike' : layer === Layer.Backcountry ? 'backcountry' : 'ski', tiles, erase });
+      if (group === 'piste') ctx.bus?.emit('piste:painted', { layer: layer === Layer.Mtb ? 'mtb' : layer === Layer.Hike ? 'hike' : layer === Layer.Backcountry ? 'backcountry' : layer === Layer.Sled ? 'sled' : layer === Layer.Coaster ? 'coaster' : 'ski', tiles, erase });
       else if (group === 'path' || group === 'road' || group === 'rail') ctx.bus?.emit('path:drawn', { kind: group, tiles, erase });
     },
     onError: (m) => ctx.toast(m, 'error'),
@@ -153,7 +153,7 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
   let eraseOn = false;
   const undo = (): boolean => {
     if (ctx.undo && ctx.performUndo) return ctx.performUndo();
-    const group = activeKey === null ? undefined : activeKey === 'ski' || activeKey === 'mtb' || activeKey === 'hike' || activeKey === 'backcountry' ? 'piste' : activeKey;
+    const group = activeKey === null ? undefined : activeKey === 'ski' || activeKey === 'mtb' || activeKey === 'hike' || activeKey === 'backcountry' || activeKey === 'sled' || activeKey === 'coaster' ? 'piste' : activeKey;
     const e = history.pop(group);
     if (!e) { ctx.toast('Nothing to undo', 'info'); return false; }
     networks.restore(e.diff);
@@ -168,6 +168,8 @@ export function registerNetworkTools(ctx: NetworkToolsCtx): NetworkTools {
     mtb: () => piste.startTool(Layer.Mtb, overrideValue()),
     hike: () => piste.startTool(Layer.Hike, overrideValue()),
     backcountry: () => piste.startTool(Layer.Backcountry, null),
+    sled: () => piste.startTool(Layer.Sled, null),
+    coaster: () => piste.startTool(Layer.Coaster, null),
   } as const;
   const overrideValue = (): number | null => (diffSel.value === 'auto' ? null : Number(diffSel.value));
 

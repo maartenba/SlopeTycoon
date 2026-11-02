@@ -19,8 +19,9 @@ export type NetKindId = 1 | 2 | 3;
 export const Conn = { N: 1, E: 2, S: 4, W: 8 } as const;
 /** Piste layer bits (multiple per tile). */
 /** `Backcountry` (Phase 6 Task 32, docs/backcountry.md): winter ski-touring / off-piste routes; a separate layer (never a piste: no grooming, no difficulty edge). */
-export const Layer = { Ski: 1, Mtb: 2, Hike: 4, Backcountry: 8 } as const;
-export type LayerBit = 1 | 2 | 4 | 8;
+/** `Sled` / `Coaster` (Phase 7 M7.3, docs/sled-runs.md): a 1-tile downhill toboggan run (winter) and an alpine coaster rail (summer); separate layers, never pistes or trails, no difficulty edge. */
+export const Layer = { Ski: 1, Mtb: 2, Hike: 4, Backcountry: 8, Sled: 16, Coaster: 32 } as const;
+export type LayerBit = 1 | 2 | 4 | 8 | 16 | 32;
 export const Difficulty = { Green: 0, Blue: 1, Red: 2, Black: 3 } as const;
 
 export const NET_COST: Record<NetKindId, number> = { 1: 20, 2: 60, 3: 100 };
@@ -766,8 +767,12 @@ export class Networks {
     const i = this.idx(x, y);
     const tt = this.grid.tileType[i];
     // Lakes block every layer; streams block ski pistes (no snow on water: documented rule, no snow bridges) but trails bridge them.
-    if (tt === TileType.Water || (tt === TileType.Stream && (layer === Layer.Ski || layer === Layer.Backcountry))) return { ok: false, reason: PISTE_WATER_MSG };
+    if (tt === TileType.Water || (tt === TileType.Stream && (layer === Layer.Ski || layer === Layer.Backcountry || layer === Layer.Sled || layer === Layer.Coaster))) return { ok: false, reason: PISTE_WATER_MSG };
     if (this.grid.occupancy.flags[i]! & OccFlag.Decor) return { ok: false, reason: 'Garden decor in the way' };
+    // Sled runs / coaster rails never share a tile with a piste or a trail (and vice versa); footpaths and roads may cross them (docs/sled-runs.md).
+    const SL = Layer.Sled | Layer.Coaster, here = this.layers[i]!;
+    if ((layer & SL) !== 0 && (here & (Layer.Ski | Layer.Mtb | Layer.Hike | Layer.Backcountry)) !== 0) return { ok: false, reason: 'A sled run cannot cross a piste or a trail' };
+    if ((layer & SL) === 0 && (here & SL) !== 0) return { ok: false, reason: 'A sled run is in the way' };
     if (this.grid.occupancy.flags[i]! & OccFlag.Building) {
       // Only buildings that may stand on a piste (pisteRule 'allow': carpet, cannon, sign, stunt park) can be painted over.
       const t = this.host.at(x, y)?.type;
@@ -790,7 +795,7 @@ export class Networks {
       this.note(i);
       if (!(this.layers[i]! & layer)) n++;
       this.layers[i]! |= layer;
-      if (layer !== Layer.Ski && layer !== Layer.Backcountry && this.kind[i] === 0 && this.grid.tileType[i] === TileType.Stream) this.bridge[i] = 1;
+      if (layer !== Layer.Ski && layer !== Layer.Backcountry && layer !== Layer.Sled && layer !== Layer.Coaster && this.kind[i] === 0 && this.grid.tileType[i] === TileType.Stream) this.bridge[i] = 1;
       this.difficulty[i] = override ?? diffs.get(i) ?? diff;
       if (!this.quality[i]) this.quality[i] = 128;
       this.markDirty(t.x, t.y);
@@ -813,7 +818,7 @@ export class Networks {
   /** Remove every layer on a tile. */
   clearLayers(x: number, y: number): boolean {
     let any = false;
-    for (const l of [1, 2, 4] as const) any = this.unpaint(l, x, y) || any;
+    for (const l of [1, 2, 4, 16, 32] as const) any = this.unpaint(l, x, y) || any;
     return any;
   }
 
@@ -1152,6 +1157,8 @@ export class Networks {
 
   /** Any piste/trail layer on tile. */
   pisteAt(x: number, y: number): boolean { return this.inb(x, y) && this.layers[this.idx(x, y)]! !== 0; }
+  /** A sled run or coaster rail tile (docs/sled-runs.md). */
+  sledAt(x: number, y: number): boolean { return this.inb(x, y) && (this.layers[this.idx(x, y)]! & (Layer.Sled | Layer.Coaster)) !== 0; }
 
   /** Footprint (or its 4-neighbour ring) touches a piste. */
   private touchesPiste(r: Rect): boolean {

@@ -65,6 +65,7 @@ export function formatTourLines(t: NonNullable<AttractionInfo['tour']>): string[
     t.next ? `Next departure: ${hh(t.next.hour)}${t.next.tomorrow ? ' tomorrow' : ''}` : 'No departures scheduled',
     t.routeLen > 0 ? (t.water ? `Route: ${t.routeLen} tiles downstream` : `Route: ${t.routeLen} tiles out and back`) : 'No route',
     ...(t.water ? [`${t.water.steep > 0 ? `Steep stream: ${t.water.steep} drop tiles, ${t.water.gorge} rock wall tiles` : `Flow: ${t.water.flow}${t.water.rapids ? `, ${t.water.rapids} rapids tiles` : ''}`} · thrill ${Math.round(t.water.thrill * 100)}%${t.water.mishaps ? ` · ${t.water.mishaps} minor mishap${t.water.mishaps === 1 ? '' : 's'} so far (the patrol helps)` : ''}`] : []),
+    ...(t.liftServed !== undefined ? [t.liftServed ? 'A lift that carries sleds serves the run: rides are half as long' : 'No sled lift: the ride includes the walk back up (a gondola or detachable chair next to both ends halves it)'] : []),
     `All time: ${t.totalDepartures} departures · ${t.totalRiders} riders · ${formatMoney(t.totalRevenue)}`,
   ];
 }

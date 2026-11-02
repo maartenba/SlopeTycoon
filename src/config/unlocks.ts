@@ -24,6 +24,9 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'sleighStable', level: 2 },
   { kind: 'building', id: 'snowshoeHut', level: 2 },
   { kind: 'building', id: 'snowscooterBase', level: 3 },
+  // Sled runs (Phase 7 M7.3): the rental hut at level 2, the dearer alpine coaster at level 3; optional extras, nothing in a goal / advisor build action needs them.
+  { kind: 'building', id: 'sledRental', level: 2 },
+  { kind: 'building', id: 'alpineCoaster', level: 3 },
   // Level 2: the Tackle & bait hut (Phase 6 Task 49; angling is optional: no goal or Advisor rule needs it; the fishing pier needs the hut first).
   { kind: 'building', id: 'tackleHut', level: 2 },
   // Level 2: the climbing crag (Phase 6 Task 23; needs a rock face, an optional adventure extra: no goal or Advisor rule needs it).
@@ -37,6 +40,12 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'landscape', id: 'river', level: 2 },
   // Level 2: the treehouse (Phase 6 Task 21; a hiker / family extra that needs a forest: no goal or Advisor rule needs it; the viewpoint platform is never gated).
   { kind: 'building', id: 'treehouse', level: 2 },
+  // M7.4 (docs/m74-buildings.md): optional visitor services and sky activities; no goal or Advisor build action requires them (Pizzeria and Bakery are cheap and always open).
+  { kind: 'building', id: 'touristOffice', level: 2 },
+  { kind: 'building', id: 'launchRamp', level: 2 },
+  { kind: 'building', id: 'landingField', level: 2 },
+  { kind: 'building', id: 'grassStrip', level: 3 },
+  { kind: 'building', id: 'skydiveCentre', level: 3 },
   // Level 3: the Small Hotel (Phase 6 Task 27; an optional lodging tier: chalets and apartments still house everybody, no goal or Advisor rule needs it).
   { kind: 'building', id: 'smallHotel', level: 3 },
   // Level 3: backcountry routes (Phase 6 Task 32; winter ski-touring / off-piste extra, no goal or Advisor rule needs it: the Advisor only WARNS about routes you built).
@@ -71,10 +80,11 @@ const OPEN = (kind: UnlockKind, reason: string, ids: readonly string[]): Array<[
 export const ALWAYS_AVAILABLE: Readonly<Record<string, string>> = Object.fromEntries([
   ...OPEN('building', 'starter chain (the tutorial and the first goals build it)', ['baseLodge', 'lodge', 'cafe', 'shop', 'rental', 'ticketOffice', 'parking', 'skiSchoolHQ', 'patrolHub', 'firstAid', 'chalet', 'toilets', 'warningSign']),
   ...OPEN('building', 'needed by a goal, an Advisor rule or a campaign prerequisite (gating it could deadlock the chapter chain)', ['rangerStation', 'apartment', 'magicCarpet', 'kidsGround', 'playground', 'groomerGarage', 'liftWorkshop', 'snowcatOutpost', 'reservoir', 'snowCannon', 'trainStation', 'shuttleDepot', 'stuntPark', 'adventurePark', 'campground', 'pettingZoo', 'viewpoint', 'coffeeStand']),
+  ...OPEN('building', 'cheap restaurant extra (M7.4): smaller and cheaper than the Lodge, self-limiting; never needs a gate', ['pizzeria', 'bakery']),
   ...OPEN('building', 'cheap, self-limiting or terrain-limited extra (a water, ice or farm site; small upkeep): never needs a gate', ['mountainHut', 'apresBar', 'boatRental', 'beach', 'iceRink', 'heatedTerrace', 'alpineFarm', 'fishingPier']),
   ...OPEN('building', 'green-energy starter: the Advisor suggests the solar array; hydro needs a stream; the rest are small, capped extras (docs/energy.md)', ['solarArray', 'smallHydro', 'biomassHeating', 'treeNursery', 'recyclingCentre']),
   ...OPEN('lift', 'starter lifts (T-bar, chairs and the bubble six-pack are open from level 1)', ['tbar', 'chair2', 'chair4', 'chair4d', 'chair6b']),
-  ...OPEN('campaign', 'basic marketing: each campaign has its own prerequisites (buildings, season) that act as the gate', ['families', 'budget', 'summer', 'brand', 'train', 'parkJam', 'hikeBike', 'festival', 'summerCamp', 'angler', 'wellness', 'school', 'powder']),
+  ...OPEN('campaign', 'basic marketing: each campaign has its own prerequisites (buildings, season) that act as the gate', ['families', 'budget', 'summer', 'brand', 'train', 'parkJam', 'hikeBike', 'festival', 'carnival', 'summerCamp', 'angler', 'wellness', 'school', 'powder']),
 ]);
 
 export const key = (kind: UnlockKind, id: string): string => `${kind}:${id}`;

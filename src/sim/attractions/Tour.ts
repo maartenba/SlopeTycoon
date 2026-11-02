@@ -1,3 +1,4 @@
+import { SLED } from '../../config/sled';
 import { TOUR_DEFS, TOURS, tourDefOf, type TourDef, type TourRouteKind } from '../../config/tours';
 import { seasonOf } from '../Clock';
 import { planWaterRoute, thrillOf, type WaterEnv, type WaterInfo } from './WaterTour';
@@ -31,6 +32,12 @@ export interface TourDeps {
   frozen?(b: WorldBuilding): boolean;
   /** Water routes (Task 24): waterways + flow + gorge test; `version()` moves when the rivers, the month or the ice change (the plan is re-made then). */
   water?: WaterEnv & { version(): number };
+  /** Sled runs / coaster (M7.3): is this route a SAFE painted run? (`sledRuns` verdict, cached by the host per network version). A route tile of an unsafe run closes the tour. */
+  sledSafe?(kind: 'sled' | 'coaster', tile: number): boolean;
+  /** Why the run behind this route is unsafe (null = safe), for the closed message. */
+  sledProblem?(kind: 'sled' | 'coaster', tile: number): string | null;
+  /** Does an open lift that carries sleds join the two ends of the route (first / last tile)? */
+  sledLift?(first: number, last: number): boolean;
   /** Wildlife hook: scare animals within `r` tiles of (x, y). */
   disturb?(x: number, y: number, r: number): void;
 }
@@ -102,6 +109,8 @@ export interface TourInfo {
   /** Next scheduled departure: hour (0..24) and whether it is tomorrow; null = none (closed for the season). */
   next: { hour: number; tomorrow: boolean } | null;
   totalDepartures: number; totalRiders: number; totalRevenue: number;
+  /** Sled runs: does a lift that carries sleds serve the run (rides are shorter)? Absent on other tours. */
+  liftServed?: boolean;
   /** Water tours: what the route offers (flow class, rapids / steep / gorge tiles, thrill 0..1). Absent on other tours. */
   water?: { flow: 'calm' | 'brisk' | 'rapids'; rapids: number; steep: number; gorge: number; thrill: number; mishaps: number };
 }
@@ -187,6 +196,8 @@ export class TourSystem {
     }
     this.ensureRoute(s, a.b);
     if (!s.plan.ok) return `Closed: ${s.plan.reason}`;
+    const sk = s.def.routes.includes('sled') ? 'sled' : s.def.routes.includes('coaster') ? 'coaster' : null;
+    if (sk && this.d.sledProblem) { const pr = s.plan.tiles.map((t) => this.d.sledProblem!(sk, t)).find((x) => x); if (pr) return `Closed: ${pr}`; }
     if (this.ctx.tick - s.dynTick >= TOURS.checkEvery || this.ctx.tick < s.dynTick) { s.dynTick = this.ctx.tick; s.dyn = this.dynamic(s, a.b); }
     return s.dyn;
   }
@@ -207,6 +218,21 @@ export class TourSystem {
 
   private prune(s: TourState): void {
     if (s.rides.length && s.rides.some((r) => r.end <= this.ctx.tick)) s.rides = s.rides.filter((r) => r.end > this.ctx.tick);
+  }
+
+  /** Ride length (ticks) of a departure from this base: the def's, shorter while a sled-carrying lift joins the ends of the route (M7.3), else exactly `base`. */
+  duration(a: Attraction, base: number): number {
+    const s = this.state(a);
+    if (!s || !s.def.liftAssist || !s.plan.ok || !this.d.sledLift) return base;
+    const t = s.plan.tiles;
+    return this.d.sledLift(t[0]!, t[t.length - 1]!) ? Math.max(4, Math.round(base * SLED.liftTimeMult)) : base;
+  }
+  /** Does a sled-carrying lift serve this base's run right now (inspector, advisor)? */
+  liftServed(a: Attraction): boolean {
+    const s = this.st.get(a.id);
+    if (!s || !s.def.liftAssist || !s.plan.ok || !this.d.sledLift) return false;
+    const t = s.plan.tiles;
+    return this.d.sledLift(t[0]!, t[t.length - 1]!);
   }
 
   /** Latest scheduled departure slot (absolute) at or before now, or -1 before the first one today. */
@@ -261,6 +287,7 @@ export class TourSystem {
       closed: this.closed(a), routeLen: s.plan.ok ? s.plan.tiles.length : 0,
       departuresToday: s.dep, ridersToday: s.riders, revenueToday: s.revenue, riding: s.rides.reduce((n, r) => n + r.riders, 0), next,
       totalDepartures: s.totalDep, totalRiders: s.totalRiders, totalRevenue: s.totalRevenue,
+      ...(def.liftAssist ? { liftServed: this.liftServed(a) } : {}),
       ...(s.plan.ok && s.plan.water ? { water: { flow: (['calm', 'brisk', 'rapids'] as const)[s.plan.water.maxClass]!, rapids: s.plan.water.rapids, steep: s.plan.water.steep, gorge: s.plan.water.gorge, thrill: Math.round(thrillOf(def, s.plan.water) * 100) / 100, mishaps: a.stats.mishaps ?? 0 } } : {}),
     };
   }
@@ -355,7 +382,7 @@ export class TourSystem {
 
 /** Behaviour spec of a tour base for the attraction registry (price / staff / upkeep come from the building and price tables). */
 export function tourSpec(def: TourDef): AttractionSpec {
-  return { kind: 'tour', tour: def.id, serviceTicks: def.durationTicks, slots: def.seats, effects: { happiness: def.happiness }, appeal: def.appeal, ...(def.water?.mishap ? { mishap: def.water.mishap } : {}) };
+  return { kind: 'tour', tour: def.id, serviceTicks: def.durationTicks, slots: def.seats, effects: { happiness: def.happiness }, appeal: def.appeal, ...(def.water?.mishap || def.mishap ? { mishap: (def.water?.mishap ?? def.mishap)! } : {}) };
 }
 
 /** Specs of every catalogue tour (empty until the content tasks add rows). */

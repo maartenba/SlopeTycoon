@@ -340,6 +340,21 @@ export const RULES: readonly Rule[] = [
     }
     return null;
   }, false, true),
+  // Tourist Office (M7.4, docs/m74-buildings.md): a settled resort (a base lodge, 15 guests, 2 stars) without one: +6 % arrivals for a few thousand dollars
+  rule('tourist.office', 1, (c) => {
+    const sim = c.sim;
+    if (sim.guestSim.store.count < (c.shown ? 10 : 15) || sim.rating.stars < 2 || !has(sim, 'baseLodge')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'touristOffice') || sim.progression.locked('building', 'touristOffice') || sim.game.money < BUILDINGS.touristOffice!.cost + (c.shown ? 1_000 : 2_000)) return null;
+    return { id: 'tourist.office', severity: 'info', ...TEXT.touristOffice(), panel: { drawer: 'buildings', item: 'touristOffice' } };
+  }),
+  // Carnival (M7.4, docs/festivals.md): late February; the Events calendar books it. Same pattern as the concerts.
+  rule('carnival.available', 1, (c) => {
+    const sim = c.sim, ev = sim.events, def = FESTIVAL_BY_ID.carnival;
+    if (sim.guestSim.store.count < (c.shown ? 10 : 15) || ev.booked.some((b) => b.id === 'carnival') || ev.requirement('carnival') !== null || sim.game.money < def.cost + (c.shown ? 1_500 : 2_500)) return null;
+    const s = ev.nextStart('carnival'), today = sim.game.date.year * 180 + sim.game.date.day;
+    if (s === null || s - today > (c.shown ? 50 : 40)) return null;
+    return { id: 'carnival.available', severity: 'info', ...TEXT.carnivalAvailable(s - today), panel: { drawer: 'marketing' } };
+  }, false, true),
   // Rental stock (docs/rental.md): guests were turned away for lack of skis / boards today -> build another Rental
   rule('rental.boards', 2, (c) => {
     const st = c.sim.attractions.rentalStock();
@@ -446,6 +461,13 @@ export const RULES: readonly Rule[] = [
     for (let i = 0; i < n * n && roads < 8; i++) if (k[i] === 2) roads++;
     if (roads < 8) return null; // the ride needs a road or footpath to run on
     return { id: 'tour.quad', severity: 'info', ...TEXT.quadTours(), panel: { drawer: 'buildings', item: 'quadBase' } }; // a drawer hint only (like eco.centre): the item is career-gated, the player picks the spot
+  }),
+  // Sled runs (docs/sled-runs.md): a winter extra for non-skiers. Optional, never urgent; a drawer hint only (the item is career-gated).
+  rule('tour.sled', 1, (c) => {
+    const sim = c.sim;
+    if (seasonProgress(sim.game.date).season !== 'winter' || sim.guestSim.store.count < 40 || !has(sim, 'baseLodge') || sim.progression.locked('building', 'sledRental')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'sledRental')) return null;
+    return { id: 'tour.sled', severity: 'info', ...TEXT.sledRuns(), panel: { drawer: 'buildings', item: 'sledRental' } };
   }),
   // Winter tours (docs/winter-tours.md): a quiet winter extra beyond the pistes (sleigh rides on a road). Optional, never urgent; a drawer hint only (the item is career-gated).
   rule('tour.winter', 1, (c) => {
