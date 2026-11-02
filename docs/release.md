@@ -18,6 +18,24 @@ M7.3 + M7.4: sled runs, Alpine Coaster, Sledder guests, Pizzeria, Bakery, Touris
 | Size | `npm run size` | 2942.1 kB raw / 1052.7 kB gzip (budget < 2048 kB gzip; +11.6 kB gzip over 0.3.3) |
 | Site | `npm run whats-new`, `licenses`, `docs:img`, `site:og`, `build:site && site:check && verify:site` | OK (101 screenshots, 8.3 MB of the 8.5 MB budget; 264 URLs crawled) |
 
+## 0.4.0 (2026-11-02, macOS, Node v22.23.4)
+
+M7.3 sled runs + Alpine Coaster + Sledder (`docs/sled-runs.md`) and M7.4 Pizzeria, Bakery, Tourist Office, grass strip with skydive / hang gliding / paragliding, and the Carnival (`docs/m74-buildings.md`, `docs/festivals.md`). Release prep: shared-file wiring committed, version bump (package.json, lock, README, AGENTS.md, deploy.md, the `whatsNew` test), CHANGELOG `[0.4.0]` with five Highlights, `whats-new`, `licenses`, a devlog entry, three new screenshots (`sled-run`, `village-sky`, `carnival-street`), `docs/playtest-m74.md`.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | second run pass: 432 files passed, 1 skipped; 4575 tests passed, 43 skipped. The first run (same code, a long gated batch running right after) failed 3 timing tests, one of them `safetyPerf` (8.35 ms vs 7.5 ms); it passes alone and in the second run |
+| Balance | `npm run test:balance` | 48 passed |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74` | all OK (m74 needed a script fix, see below) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, drawers 15/15, placement 13/13 on two of four runs; the "long press cancels the placement tool" check failed intermittently (timing, passes on re-run) |
+| Size | `npm run size` | 2942.1 kB raw / 1052.7 kB gzip (budget < 2048 kB gzip; +11.6 kB gzip over 0.3.3: 1041.1) |
+| Site | `whats-new`, `licenses`, `docs:img`, `site:og`, `build:site && site:check && verify:site` | OK (52 pages, screenshots 8.3 MB of the 8.5 MB budget, 264 URLs crawled) |
+
+Bug found: `m74:sanity` reported `lifts` differing after reload; the only field was a lift's `activeMode` ("foot" vs "ski"), because the script jumps the date to February by hand. It is treated as runtime in the script. Not verifiable by agents: `docs/playtest-m73.md`, `docs/playtest-m74.md`.
+
 ## 0.3.3 (2026-11-02, macOS, Node v22.23.4)
 
 M7.5 Mobile UI (`docs/mobile-ui.md`): phones show the map. A new `st-sheet` bottom / side sheet (peek / half / full, 44 px grab bar, fling, keyboard + ARIA, remembered height, passthrough where it does not apply) holds the dock drawers, the five inspectors, Rudi's advice and the news panel; one-row top bar with an overflow, a one-line HUD strip, an icon speed row, one-at-a-time toasts, tool-first (cards step aside) and fade-while-dragging; tablets keep drawers capped at about 40 %; desktop is pixel-identical. Release prep: version bump (package.json, lock, README, AGENTS.md, deploy.md, the `whatsNew` test), CHANGELOG `[0.3.3]` with five Highlights, `whats-new`, `licenses`, a devlog entry, the guide page *Touch & tablets* (sheets, phone layout, four phone screenshots: `touch-phone-hud`, `touch-phone-place`, `touch-phone-ghost`, `touch-phone-land`; `touch-phone-inspector` and a re-shot `touch-tablet` are gallery shots), `docs/playtest-m75.md`.
