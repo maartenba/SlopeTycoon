@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { makeResort } from '../game/harness';
 import { stateHash } from '../../src/game/saveState';
-import { suggestPiste } from '../../src/tutorial/suggest';
+import { suggestPiste, suggestPisteResult } from '../../src/tutorial/suggest';
+import { t } from '../../src/tutorial/strings';
 import { liftProfile, slopeProfile, difficultyFromPct } from '../../src/sim/PisteStats';
 import { SKIABLE_MAX, SKIABLE_MIN } from '../../src/world/Skiable';
 import { TileType } from '../../src/world/Grid';
@@ -71,6 +72,27 @@ describe('snowline-aware piste suggestion', () => {
     const before = stateHash(sim);
     const a = suggestPiste(sim.grid, sim.networks, 0), b = suggestPiste(sim.grid, sim.networks, 0);
     expect(a).toEqual(b);
+    expect(stateHash(sim)).toEqual(before);
+  });
+});
+
+describe('lift-anchored suggestion', () => {
+  it('starts within ~3 tiles of a lift top station and mentions the lift', () => {
+    const { sim } = makeResort(64, 61);
+    const lifts = sim.lifts.all();
+    expect(lifts.length).toBeGreaterThan(0);
+    const r = suggestPisteResult(sim.grid, sim.networks, 0, { lifts });
+    expect(r.suggestion).not.toBeNull();
+    const s = r.suggestion!, a = s.line[0]!;
+    expect(lifts.some((l) => a.x >= l.top.x - 3 && a.x <= l.top.x + 4 && a.y >= l.top.y - 3 && a.y <= l.top.y + 4)).toBe(true);
+    expect(s.message).toMatch(/top of lift #\d+/);
+  });
+  it('no lifts: a clear message and no run; read-only', () => {
+    const { sim } = makeResort(64, 61);
+    const before = stateHash(sim);
+    const r = suggestPisteResult(sim.grid, sim.networks, 0, { lifts: [] });
+    expect(r.suggestion).toBeNull();
+    expect(r.message).toBe(t('msg.suggestNoLift'));
     expect(stateHash(sim)).toEqual(before);
   });
 });

@@ -6,6 +6,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ### Changes
 
+- **Suggest a run** now connects to a lift: it starts at a lift's top station (lifts without a piste first) and runs down toward the base, the advice names the lift, and with no lift it asks you to build one first.
 - Website and docs copy: plainer wording on the landing page and landing pages (what you do in the game instead of slogans), no time claims, no "generated from a seed", the About sentence reworded, and a new hero screenshot with a busy village. A larger voice test (`tests/repo/voice.test.ts`) now covers the site, CHANGELOG, README and the main in-game strings.
 
 ## [0.3.3] - 2026-11-02 (pre-release)

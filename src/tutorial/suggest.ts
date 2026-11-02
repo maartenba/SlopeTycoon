@@ -404,7 +404,17 @@ export interface SuggestOpts {
   want?: number;
   /** Longest run, tiles (default 70). */
   maxTiles?: number;
+  /**
+   * The resort's lifts. When given (even empty) the run must start at a lift's top station: lifts with no piste near their top first, then the
+   * fewest pistes; a lift whose top has no skiable ground or no line is skipped. No lifts: null with a 'Build a lift first' message. When
+   * omitted (legacy callers / tests) the run may start anywhere on the high ground.
+   */
+  lifts?: readonly LiftData[];
 }
+
+/** Outcome of a lift-anchored suggestion: the run, or a reason why none exists. */
+export interface PisteSuggestionResult { suggestion: PisteSuggestion | null; message: string }
+
 
 const TARGET_STEEP = [0.55, 1.0, 1.5, 1.9] as const;
 
@@ -414,6 +424,11 @@ const TARGET_STEEP = [0.55, 1.0, 1.5, 1.9] as const;
  * world units) so the piste keeps snow. Pure: reads the grid + networks, never edits them. Null when no run of 6+ tiles exists.
  */
 export function suggestPiste(grid: Grid, networks: Networks, snowlineY: number, opts: SuggestOpts = {}): PisteSuggestion | null {
+  return suggestPisteResult(grid, networks, snowlineY, opts).suggestion;
+}
+
+/** Like `suggestPiste` but always explains itself (used by the 'Suggest a run' button). */
+export function suggestPisteResult(grid: Grid, networks: Networks, snowlineY: number, opts: SuggestOpts = {}): PisteSuggestionResult {
   const N = grid.size, want = Math.max(0, Math.min(3, opts.want ?? 1)), target = TARGET_STEEP[want]!, maxTiles = opts.maxTiles ?? 70;
   const H = (x: number, y: number): number => { const c = grid.getCorners(x, y); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; };
   const hs = new Float32Array(N * N);
@@ -434,12 +449,31 @@ export function suggestPiste(grid: Grid, networks: Networks, snowlineY: number, 
     return false;
   };
   // start candidates: highest skiable tiles, above the snowline when any exist
+  const none = (message = t('msg.suggestNone')): PisteSuggestionResult => ({ suggestion: null, message });
+  const lifts = opts.lifts;
+  if (lifts && !lifts.length) return none(t('msg.suggestNoLift'));
+  /** Candidate lifts, best first: no piste near the top, then the fewest piste tiles around it. */
+  const skiNear = (l: LiftData): number => {
+    let n = 0;
+    for (let dy = -3; dy <= 4; dy++) for (let dx = -3; dx <= 4; dx++) { const xx = l.top.x + dx, yy = l.top.y + dy; if (xx >= 0 && yy >= 0 && xx < N && yy < N && (networks.layers[yy * N + xx]! & Layer.Ski)) n++; }
+    return n;
+  };
+  const order: (LiftData | null)[] = lifts ? lifts.map((l) => ({ l, n: skiNear(l) })).sort((a, b) => a.n - b.n || a.l.id - b.l.id).map((e) => e.l) : [null];
+  for (const lift of order) {
+    const r = suggestFrom(lift);
+    if (r) return { suggestion: r, message: r.message };
+  }
+  return none(lifts ? t('msg.suggestNoFit') : undefined);
+
+  function suggestFrom(lift: LiftData | null): PisteSuggestion | null {
   const all: number[] = [];
-  for (let i = 0; i < N * N; i++) if (ok[i] && hs[i]! > valley) all.push(i);
+  if (lift) {
+    for (let dy = -3; dy <= 4; dy++) for (let dx = -3; dx <= 4; dx++) { const xx = lift.top.x + dx, yy = lift.top.y + dy; if (xx >= 0 && yy >= 0 && xx < N && yy < N && ok[yy * N + xx]) all.push(yy * N + xx); }
+  } else for (let i = 0; i < N * N; i++) if (ok[i] && hs[i]! > valley) all.push(i);
   if (!all.length) return null;
   const above = all.filter((i) => hs[i]! >= snowlineY);
-  const pool = (above.length ? above : all).sort((a, b) => hs[b]! - hs[a]!);
-  const stride = Math.max(1, Math.floor(pool.length / 60));
+  const pool = (above.length && !lift ? above : all).sort((a, b) => hs[b]! - hs[a]!);
+  const stride = lift ? 1 : Math.max(1, Math.floor(pool.length / 60));
   let best: { line: Pt[]; score: number } | null = null;
   for (let k = 0; k < pool.length; k += stride) {
     const s0 = pool[k]!;
@@ -466,7 +500,9 @@ export function suggestPiste(grid: Grid, networks: Networks, snowlineY: number, 
     const top = hs[line[0]!.y * N + line[0]!.x]!, end = hs[line[line.length - 1]!.y * N + line[line.length - 1]!.x]!;
     const snowDrop = Math.max(0, top - Math.max(end, snowlineY));
     const dev = line.reduce((a, t) => a + Math.abs(grid.steepness(t.x, t.y) - target), 0) / line.length;
-    const score = snowDrop * 3 + (top - end) * 1 + line.length * 0.05 - dev * 4 + (nearNet(line[line.length - 1]!.x, line[line.length - 1]!.y) ? 2 : 0);
+    const e = line[line.length - 1]!;
+    const toBase = lift ? -Math.hypot(e.x - lift.bottom.x, e.y - lift.bottom.y) * 0.15 : 0;
+    const score = toBase + snowDrop * 3 + (top - end) * 1 + line.length * 0.05 - dev * 4 + (nearNet(line[line.length - 1]!.x, line[line.length - 1]!.y) ? 2 : 0);
     if (!best || score > best.score) best = { line, score };
   }
   if (!best) return null;
@@ -484,5 +520,7 @@ export function suggestPiste(grid: Grid, networks: Networks, snowlineY: number, 
     : snowFraction < 0.6
       ? `${Math.round(snowFraction * 100)}% of this ${name} run is above today's snowline: the lower part may be bare in warm weather.`
       : `A ${name} run of ${Math.round(prof.lengthM)} m, dropping ${Math.round(prof.dropM)} m, mostly above the snowline.`;
-  return { line, lengthM: prof.lengthM, startAltM: prof.startAltM, endAltM: prof.endAltM, difficulty, snowFraction, snowReliable, message };
+  const note = lift ? `${message} It starts at the top of lift #${lift.id} (${LIFTS[lift.kind].name}).` : message;
+  return { line, lengthM: prof.lengthM, startAltM: prof.startAltM, endAltM: prof.endAltM, difficulty, snowFraction, snowReliable, message: note };
+  }
 }

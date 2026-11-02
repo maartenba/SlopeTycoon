@@ -95,7 +95,7 @@ Old saves load with every run open and every grooming order on Auto.
 
 While you drag a piste or place a lift a small **profile card** shows the ground as a side view: altitude over distance, coloured by difficulty tile by tile, with today's **snowline** as a dashed line, plus length, drop and the average and steepest gradient. It tells you before you pay whether a "green" run is really green and whether the bottom will be bare in warm weather.
 
-**Suggest a run** (in the Pistes pane) highlights a line down the fall line that matches the difficulty chosen in the dock and keeps most of its length above the current snowline, with advice if the lower part may be bare. It only highlights: nothing is built or charged.
+**Suggest a run** (in the Pistes pane) highlights a line that starts at the top station of one of your lifts (preferring lifts without a piste yet, then those with the fewest) and runs down the fall line toward the base. It matches the difficulty chosen in the dock and keeps most of its length above the current snowline, with advice if the lower part may be bare. The advice names the lift it serves. With no lift yet it asks you to build one first. It only highlights: nothing is built or charged.
 
 ### Grooming and snow quality
 

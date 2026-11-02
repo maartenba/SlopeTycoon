@@ -104,7 +104,7 @@ import { TerraformTool } from '@/build/TerraformTool';
 import { PlacementTool, type PlaceOutcome } from '@/build/PlacementTool';
 import { rotateBuilding } from '@/sim/PlaceBuilding';
 import { refundValue } from '@/build/Bulldoze';
-import { suggestPiste } from '@/tutorial/suggest';
+import { suggestPisteResult } from '@/tutorial/suggest';
 import { slopeProfile } from '@/sim/PisteStats';
 import type { ProfileView } from '@/ui/components/StProfile';
 import { Undo, undoMessage, redoMessage, verbIng } from '@/build/UndoActions';
@@ -916,8 +916,9 @@ const applyUndoReport = (r: ReturnType<Undo['undo']>, msg: (r: ReturnType<Undo['
 /** 'Suggest a run': highlight + profile + advice for a snow-safe line on the fall line (nothing is built). Fades after 12 s. */
 let suggestTimer = 0;
 const suggestRun = (want: number | null): void => {
-  const s = suggestPiste(grid, netTools?.networks ?? networks, weather.current.snowline, want === null ? {} : { want });
-  if (!s) { toast('No suitable run found on this map', 'warn'); return; }
+  const r = suggestPisteResult(grid, netTools?.networks ?? networks, weather.current.snowline, { ...(want === null ? {} : { want }), lifts: lifts.all() });
+  const s = r.suggestion;
+  if (!s) { toast(r.message, 'warn'); return; }
   const idx = s.line.map((t) => t.y * grid.size + t.x);
   pisteHl.set(grid, idx);
   profileRef?.show({ kind: 'piste', title: 'Suggested run', profile: slopeProfile(grid, s.line, [...(netTools?.networks ?? networks).autoDifficulty(s.line).values()]), snowlineM: snowlineNow(), note: s.message });

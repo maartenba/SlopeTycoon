@@ -39,7 +39,7 @@ A small card (320 px, `position:fixed`, `pointer-events:none`, zone `top-card`) 
 
 ## Snowline-aware run suggestion
 
-`suggestPiste(grid, networks, snowlineY, { want?, maxTiles? })` (pure, read-only, deterministic). **Suggest a run** (Pistes pane) highlights the line (piste highlight overlay), centres the camera on its top, shows the profile card + advice for 12 s. Nothing is built or charged.
+`suggestPiste(grid, networks, snowlineY, { want?, maxTiles?, lifts? })` (with `lifts` the run starts within ~3 tiles of a lift top station, lifts with no piste near the top first then the fewest, skipping lifts with no skiable ground; no lifts gives `suggestPisteResult(...).message` = "Build a lift first..."; without `lifts` the legacy anywhere-on-the-map behaviour is kept for tests; pure, read-only, deterministic). **Suggest a run** (Pistes pane) highlights the line (piste highlight overlay), centres the camera on its top, shows the profile card + advice for 12 s. Nothing is built or charged.
 
 1. Candidates: skiable tiles (`SKIABLE_MIN..SKIABLE_MAX` from `world/Skiable.ts`; never rock / water / stream / building / lift) above the village.
 2. Start pool: the highest candidates **above the current snowline** (all candidates when none is above: summer).

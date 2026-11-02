@@ -52,6 +52,9 @@ export const STRINGS = {
   // ---- failure reasons shown by msg.failed ----
   'reason.funds': 'Not enough funds',
   'reason.blocked': 'Something is in the way',
+  'msg.suggestNoLift': 'Build a lift first, then I can suggest a run from its top station.',
+  'msg.suggestNoFit': 'No run fits below any lift top station right now (the ground there is too steep, flat or built over). Try terraforming below the top station.',
+  'msg.suggestNone': 'No suitable run found on this map',
   'reason.nothingPainted': 'Nothing could be painted there',
   'reason.noGuests': 'No guests yet: are a lift, snow and a ticket office in place?',
   'reason.noCannon': 'No valid cannon spot beside the piste',
