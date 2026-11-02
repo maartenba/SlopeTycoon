@@ -73,7 +73,7 @@ export const FESTIVALS: readonly FestivalDef[] = [
   },
   {
     id: 'christmasMarket', name: 'Christmas Market', icon: '🎄', kind: 'booked', seasons: ['winter'], startWindow: [120, 128], days: 8, leadDays: 3, cost: 3_000, arrivalMult: 1.18, cheer: 0.01, minStars: 2, minLevel: 2, needs: ['lodge'],
-    blurb: 'Wooden stalls, mulled wine and fairy lights around the village. A cosy winter draw.',
+    blurb: 'Wooden stalls, mulled wine and fairy lights around the village. A winter draw.',
     dressing: { bunting: [12, 18], flags: [4, 6], banners: [1, 1], stalls: [4, 6], palette: [0xc0392b, 0x2f7d46, 0xf2c14e, 0xf4efe2] },
     fireworks: 'finale',
   },

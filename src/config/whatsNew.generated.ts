@@ -29,9 +29,9 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
     "version": "0.3.1",
     "date": "2026-10-31",
     "highlights": [
-      "Shops finally earn their keep: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).",
+      "Shops now earn money: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).",
       "Fairer prices and busier buses: the Après-Ski Bar now pays for itself, the Shuttle Bus Depot no longer swaps your families and couples for budget…",
-      "The same words everywhere: every building says what it needs in one order (\"a footpath, road, hiking trail or piste next to it\") on the card, the…",
+      "Every building says what it needs in one order (\"a footpath, road, hiking trail or piste next to it\") on the card, the ghost, the inspector and in…",
       "A new Building reference in the guide lists every building with price, upkeep, what connects it, where it may stand, its season and when it unlocks…",
       "The Mountain Hut and the Après-Ski Bar finally have an icon and a description in the Buildings drawer."
     ]

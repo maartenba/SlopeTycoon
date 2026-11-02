@@ -73,8 +73,8 @@ describe('site SEO', () => {
   });
   it('about page has the owner text; landing has the story section linking /about/', () => {
     const about = pages.find((p) => p.file === 'about/index.html')!.html;
-    expect(about).toContain('I am Maarten.'); expect(about).toContain('Ski Resort Tycoon'); expect(about).toContain('one day, I'); expect(about).toContain('Thanks to AI assistance, here we are!'); expect(about).toContain('github.com/maartenba/SlopeTycoon');
-    expect(pages[0]!.html).toContain('<blockquote>'); expect(pages[0]!.html).toContain('one day, I’ll build a game like this'); expect(pages[0]!.html).toContain('href="./about/"');
+    expect(about).toContain('I am Maarten.'); expect(about).toContain('Ski Resort Tycoon'); expect(about).toContain('This is the game I wanted to build, one day. Here we are!'); expect(about).toContain('github.com/maartenba/SlopeTycoon');
+    expect(pages[0]!.html).toContain('<blockquote>'); expect(pages[0]!.html).toContain('This is the game I wanted to build, one day. Here we are!'); expect(pages[0]!.html).toContain('href="./about/"');
   });
   it('privacy page explains the analytics honestly and exposes the settings anchor', () => {
     const h = pages.find((p) => p.file === 'privacy/index.html')!.html;

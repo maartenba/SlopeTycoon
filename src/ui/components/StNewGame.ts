@@ -13,7 +13,7 @@ import { makeSelect } from './StSelect';
 /** Per-size hint + rough generation/load estimate (measured: docs/perf.md, terrain ~0.1 s / 0.3 s / 0.8 s, full boot a few times that). */
 export const SIZE_HINTS: Record<number, string> = {
   64: '64: small & quick, great for learning. Loads in about a second.',
-  128: '128: balanced (recommended). Loads in a few seconds.',
+  128: '128: balanced (recommended). Loads quickly.',
   256: '256: large, recommended for powerful devices. Generation and loading can take 10 s or more.',
 };
 

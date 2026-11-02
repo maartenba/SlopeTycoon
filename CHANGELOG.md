@@ -4,6 +4,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- Website and docs copy: plainer wording on the landing page and landing pages (what you do in the game instead of slogans), no time claims, no "generated from a seed", the About sentence reworded, and a new hero screenshot with a busy village. A larger voice test (`tests/repo/voice.test.ts`) now covers the site, CHANGELOG, README and the main in-game strings.
+
 ## [0.3.3] - 2026-11-02 (pre-release)
 
 The phone release (milestone M7.5): on a phone the panels used to cover the map. Drawers, inspectors and Rudi's advice are now bottom sheets that open small and stay out of the way, the top bar and the HUD are one row each, and the cards step aside while you build. Desktop looks exactly like 0.3.2 (checked pixel by pixel), tablets keep their drawers.
@@ -59,9 +63,9 @@ The consistency pass (milestone M7.1): every building, lift, campaign and guest 
 
 ### Highlights
 
-- Shops finally earn their keep: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).
+- Shops now earn money: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).
 - Fairer prices and busier buses: the Après-Ski Bar now pays for itself, the Shuttle Bus Depot no longer swaps your families and couples for budget crowds, and the Wind Turbine makes more power.
-- The same words everywhere: every building says what it needs in one order ("a footpath, road, hiking trail or piste next to it") on the card, the ghost, the inspector and in Rudi's tips.
+- Every building says what it needs in one order ("a footpath, road, hiking trail or piste next to it") on the card, the ghost, the inspector and in Rudi's tips.
 - A new Building reference in the guide lists every building with price, upkeep, what connects it, where it may stand, its season and when it unlocks; the Buildings page now describes the seven real drawer tabs.
 - The Mountain Hut and the Après-Ski Bar finally have an icon and a description in the Buildings drawer.
 
@@ -91,7 +95,7 @@ Mountain concerts and the end of Phase 6 (milestone M6.7). Phase 6 added rivers,
 
 - Mountain concerts: a summer Mountain Concert (1-10 September) and a winter Snow Concert (1-15 March), booked next to the Summer Music Festival once you own a gondola or cable car.
 - A real stage with truss, speakers and a crowd near your best viewpoint, lit by soft light cones that sway at night, with a very quiet band and crowd murmur close by.
-- Phase 6 in one line: dig rivers, build a campground, a petting zoo, quads, rafting and fishing, two hotels with a steaming pool, sleighs, snowshoes and scooters, mid-station gondolas and a new six-seat chair.
+- Everything since rivers: dig rivers, build a campground, a petting zoo, quads, rafting and fishing, two hotels with a steaming pool, sleighs, snowshoes and scooters, mid-station gondolas and a new six-seat chair.
 - New guests for every season: mountain bikers, anglers, seniors, school classes, snowboarders and ski tourers, each with a campaign to match.
 - Backcountry routes with an avalanche danger from 1 to 5, and bridges and level crossings that make the valley work.
 - The player guide and the landing page were re-read end to end for the new content.
@@ -270,7 +274,7 @@ Changes since 0.2.2: toilets and a comfort need, level crossings, footbridges an
 
 ### Highlights
 
-- Toilets are here: guests get an urge, and an unmet one costs a little mood. Build a few.
+- Toilets: guests get an urge, and an unmet one costs a little mood. Build a few.
 - Trains and cars can cross safely: level crossings, footbridges over the rail and real bridges over water.
 - Four new marketing campaigns, including Come by Train and the Snowboard Park Jam.
 - Hiking and MTB trails can now serve buildings such as the Mountain Hut and Ranger Station.
