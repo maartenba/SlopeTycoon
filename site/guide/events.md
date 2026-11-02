@@ -3,7 +3,7 @@ title: "Events, guests' stories & the region"
 order: 7
 summary: "Festivals and automatic events with their set dressing, guests with a wish, neighbouring resorts and the Green Resort award."
 description: "Festivals and events in Slope Tycoon: book a Christmas Market or World Cup, meet guests with a wish, outpace rival resorts and win the Green Resort award."
-screenshots: [events-calendar, festival-market, concert-summer-night, concert-winter-night]
+screenshots: [events-calendar, festival-market, carnival-street, concert-summer-night]
 ---
 ## The Events calendar
 
@@ -31,9 +31,11 @@ Fireworks are rare and brief: New Year's Eve, the last night of a festival and t
 
 ## Carnival (Fasching, Karneval, Carnaval)
 
-An old village tradition in late February. Book the **Carnival** from the Events calendar: it may **start between 6 and 11 February** and runs five days, so its last day (**Shrove Tuesday**) falls between 10 and 15 February. $4,000, about a fifth more arrivals; you need level 3, 2.5 stars, a **Base Lodge** and a **village street** (six or more connected road or footpath tiles near the village or the base; the card says *Needs a village street* until you build one). Restaurants and shops sell about 5 % more while it runs.
+An old village tradition in February. Book the **Carnival** from the Events calendar: it may **start between 6 and 11 February** and runs five days, so its last day (**Shrove Tuesday**) falls between 10 and 15 February. $4,000, about a fifth more arrivals; you need level 3, 2.5 stars, a **Base Lodge** and a **village street** (six or more connected road or footpath tiles near the village or the base; the card says *Needs a village street* until you build one). Restaurants and shops sell about 5 % more while it runs.
 
 While it runs the street is dressed with muted streamers, masked revellers with a small brass horn parade through it from **10:00 to 16:00**, about one guest in five wears a **costume**, and a very quiet brass band can be heard when you are close. There are no fireworks and no confetti. The news announces it three days ahead and marks Shrove Tuesday. **Rudi** suggests it in January. The **Carnival Week** campaign (Marketing) brings families and couples; it only works fully while the Carnival runs. Host it with a dozen costumed guests at 3 stars for the **Masked Mountain** achievement.
+
+{{fig:carnival-street}}
 
 ## Mountain concerts
 
@@ -46,8 +48,6 @@ Two extra events sit **next to** the Summer Music Festival (which stays): the **
 {{fig:concert-summer-night}}
 
 A **stage** with truss, speakers, a backdrop, a banner with the festival name, a barrier and a small crowd goes up on free, flat ground near the best spot: a mid-station plaza first, then a viewpoint, then the top of the gondola or cable car, then the base station. After dark soft **light cones** sway gently over the crowd (they stand still with reduced motion). Summer has bunting and flags and ends with one modest firework; winter has a snowy roof, warm lamps and heaters, and no fireworks. Close to the stage you hear a **very quiet** distant band and the murmur of a crowd; it follows the ambience volume and mute. Everything is taken down afterwards, and it never blocks building or walking.
-
-{{fig:concert-winter-night}}
 
 ## Guests with a story
 

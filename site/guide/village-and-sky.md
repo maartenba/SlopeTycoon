@@ -3,8 +3,11 @@ title: "Pizza, bakery, tourist office & the sky"
 order: 5.85
 summary: "A Pizzeria for families, a morning Bakery, one Tourist Office for +6 % arrivals, and the grass strip, skydiving, hang gliding and paragliding for adventure seekers."
 description: "Slope Tycoon village services and sky activities: Pizzeria, Bakery, Tourist Office, Grass Strip, Skydive Centre, Launch Ramp and Landing Field."
+screenshots: [village-sky]
 ---
 Small buildings that make the village feel lived in, and a few that look up.
+
+{{fig:village-sky}}
 
 ## Pizzeria and Bakery (Services, always open)
 

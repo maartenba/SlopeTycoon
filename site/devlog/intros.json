@@ -68,5 +68,10 @@
     "tagline": "phones show the map",
     "lead": "On a phone the game used to be mostly menus with a bit of map behind them. This release makes the map the main thing: drawers and inspectors are small sheets you pull up when you need them, the top bar and the HUD are one row each, and the cards step aside while you place something. I could only try it on an emulated phone, so I do not know yet how it feels under a real thumb. Desktop is unchanged.",
     "shot": "touch-phone-hud"
+  },
+  "0.4.0": {
+    "tagline": "sleds, pizza and the sky",
+    "lead": "This release adds things to do besides skiing. You can paint a sled run and rent out sleds in winter, or build an alpine coaster in summer. The village gets a pizzeria, a bakery and a tourist office, and a grass strip lets people skydive, hang glide or paraglide on clear days. The winter carnival now has a parade. I have only played these in short test runs, so the balance may be off.",
+    "shot": "sled-run"
   }
 }

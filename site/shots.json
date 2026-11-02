@@ -2056,6 +2056,36 @@
         "evalJs": "(()=>{__slope.sim.progression.unlockAll=true;const L=__slope.landscapeDebug;const f=L.find(7);L.dig(f.x,f.y,7);const p=__slope.sim.landscape.ponds[0];__slope.renderer.controls.target.set(f.x+0.5,p.level*0.5,f.y+0.5);__slope.atmos.force({mist:1,fog:0,hour:6});const u=document.getElementById('ui');if(u)u.style.display='none';})()",
         "steps": "wait:3000"
       }
+    },
+    {
+      "id": "sled-run",
+      "alt": "Families on sleds coming down a narrow sled run beside a Sled Rental hut.",
+      "pages": [
+        "sled-runs"
+      ],
+      "kind": "copy",
+      "caption": "A sled run beside the rental hut.",
+      "source": "docs/img/sled-run.webp"
+    },
+    {
+      "id": "village-sky",
+      "alt": "Skydivers under canopies above the valley near a grass strip.",
+      "pages": [
+        "village-and-sky"
+      ],
+      "kind": "copy",
+      "caption": "Canopies over the grass strip.",
+      "source": "docs/img/village-sky.webp"
+    },
+    {
+      "id": "carnival-street",
+      "alt": "A costumed carnival parade moving along a village street.",
+      "pages": [
+        "events"
+      ],
+      "kind": "copy",
+      "caption": "The Carnival parade on the village street.",
+      "source": "docs/img/carnival-street.webp"
     }
   ]
 }

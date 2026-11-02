@@ -3,8 +3,11 @@ title: "Sled runs & the alpine coaster"
 order: 5.76
 summary: "Paint a toboggan run (Rodelbahn) beside a Sled Rental hut in winter, or lay an alpine coaster rail in summer: costs, how steep is too steep, lifts that carry sleds and who rides."
 description: "Slope Tycoon sled runs and alpine coaster: paint a gentle downhill track, rent out sleds, add a sled lift and attract Sledders, families and school groups."
+screenshots: [sled-run]
 ---
 Skiing is not for everybody. A **sled run** (a *Rodelbahn*) is a narrow toboggan track that families, couples, seniors and school classes enjoy, and the **alpine coaster** is its summer cousin on a steel rail. Both work like the other [winter tours](page:winter-adventures): a base building, a ticket you can price, and departures that leave on their own. The difference is that **you paint the track yourself**.
+
+{{fig:sled-run}}
 
 ## Sled Rental and the Sled run (level 2)
 1. Build a **Sled Rental** (Recreation tab, $4,200, $14 a day, one staff member) at the foot of a gentle slope, beside a footpath or road.

@@ -71,6 +71,14 @@
   "h": 1000,
   "alpha": false
  },
+ "carnival-street.webp": {
+  "file": "carnival-street.webp",
+  "from": 932468,
+  "to": 114776,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
  "daylight-summer-2020b.webp": {
   "file": "daylight-summer-2020b.webp",
   "from": 1156924,
@@ -575,6 +583,14 @@
   "h": 800,
   "alpha": false
  },
+ "sled-run.webp": {
+  "file": "sled-run.webp",
+  "from": 1030400,
+  "to": 135672,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
  "soft-before-after.webp": {
   "file": "soft-before-after.webp",
   "from": 3082549,
@@ -795,6 +811,14 @@
   "file": "ui2-topbar-dropdown.webp",
   "from": 885935,
   "to": 117230,
+  "w": 1280,
+  "h": 800,
+  "alpha": false
+ },
+ "village-sky.webp": {
+  "file": "village-sky.webp",
+  "from": 930903,
+  "to": 102352,
   "w": 1280,
   "h": 800,
   "alpha": false

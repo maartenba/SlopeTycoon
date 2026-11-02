@@ -1566,5 +1566,53 @@
     "bytes": 43858
    }
   ]
+ },
+ "sled-run": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "sled-run-640.webp",
+    "bytes": 31182
+   },
+   {
+    "w": 1280,
+    "file": "sled-run-1280.webp",
+    "bytes": 77922
+   }
+  ]
+ },
+ "village-sky": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "village-sky-640.webp",
+    "bytes": 27528
+   },
+   {
+    "w": 1280,
+    "file": "village-sky-1280.webp",
+    "bytes": 55346
+   }
+  ]
+ },
+ "carnival-street": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "carnival-street-640.webp",
+    "bytes": 28984
+   },
+   {
+    "w": 1280,
+    "file": "carnival-street-1280.webp",
+    "bytes": 67388
+   }
+  ]
  }
 }
