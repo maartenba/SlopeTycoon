@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.4.0",
+    "date": "2026-11-02",
+    "highlights": [
+      "Sled runs: paint a gentle toboggan track from a Sled Rental hut in winter, and families, couples and school classes will ride it. A gondola or a…",
+      "An Alpine Coaster for summer: lay the rail on steeper ground, run it from its own station, and sell a ride.",
+      "A Pizzeria for families, a morning Bakery that makes nearby lodgings a bit nicer, and one Tourist Office per resort that brings in a few more guests.",
+      "A grass strip with a Skydive Centre, plus a launch ramp and landing field for hang gliders and paragliders. They only fly by day in clear weather.",
+      "The Carnival (6 to 11 February) has a parade of masked guests along a village street, brass music and a bit more spending in shops and restaurants."
+    ]
+  },
+  {
     "version": "0.3.3",
     "date": "2026-11-02",
     "highlights": [
@@ -23,17 +34,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Dawn mist over lakes, sparkling frost on cold clear mornings and, rarely, a rainbow after rain; Photo mode suggests the right scene (Golden hour…",
       "Settings > Graphics > Atmosphere: Off, Low or High. Off looks exactly like 0.3.1, and reduced motion keeps everything still.",
       "A new website: five landing pages, a devlog with a post for every release, and a calmer landing page; Challenging is also about 30 % tighter and…"
-    ]
-  },
-  {
-    "version": "0.3.1",
-    "date": "2026-10-31",
-    "highlights": [
-      "Shops now earn money: guests stop for a souvenir, so a first Shop pays itself back in a few months (it used to earn almost nothing).",
-      "Fairer prices and busier buses: the Après-Ski Bar now pays for itself, the Shuttle Bus Depot no longer swaps your families and couples for budget…",
-      "Every building says what it needs in one order (\"a footpath, road, hiking trail or piste next to it\") on the card, the ghost, the inspector and in…",
-      "A new Building reference in the guide lists every building with price, upkeep, what connects it, where it may stand, its season and when it unlocks…",
-      "The Mountain Hut and the Après-Ski Bar finally have an icon and a description in the Buildings drawer."
     ]
   }
 ];

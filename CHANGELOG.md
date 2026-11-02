@@ -4,6 +4,18 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-02 (pre-release)
+
+The "more to do" release (milestones M7.3 and M7.4): sleds and an alpine coaster, pizza and bread in the village, a Tourist Office, jumping and gliding from a grass strip, and a proper Carnival.
+
+### Highlights
+
+- Sled runs: paint a gentle toboggan track from a Sled Rental hut in winter, and families, couples and school classes will ride it. A gondola or a detachable chair can carry the sleds back up.
+- An Alpine Coaster for summer: lay the rail on steeper ground, run it from its own station, and sell a ride.
+- A Pizzeria for families, a morning Bakery that makes nearby lodgings a bit nicer, and one Tourist Office per resort that brings in a few more guests.
+- A grass strip with a Skydive Centre, plus a launch ramp and landing field for hang gliders and paragliders. They only fly by day in clear weather.
+- The Carnival (6 to 11 February) has a parade of masked guests along a village street, brass music and a bit more spending in shops and restaurants.
+
 ### Changes
 
 - **More buildings (M7.4, `docs/m74-buildings.md`)**: a **Pizzeria** (a $9 meal for families and budget guests, wood-oven smoke), a morning **Bakery** (06:00 - 12:00, a small Facilities bonus for lodgings within 9 tiles), one **Tourist Office** per resort (always +6 % arrivals, level 2) and the sky: a cheap **Grass Strip** with a **Skydive Centre** (tandem jumps, a small plane and canopies; level 3, no Altiport needed) and a **Launch Ramp** with a **Landing Field** for hang gliding and paragliding (level 2). Everything flies by day in clear weather only. Rudi suggests the Tourist Office.
