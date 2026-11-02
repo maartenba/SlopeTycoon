@@ -83,7 +83,7 @@ describe('goals save module v1', () => {
     sim.bus.on('milestone', (e) => fired.push(e.id));
     expect(sim.goals.isDone('firstLift')).toBe(true);
     expect(sim.goals.granted).toBe(0);
-    expect(GOALS.length).toBe(20);
+    expect(GOALS.length).toBe(19);
     sim.tick(240);
     expect(fired.filter((id) => id.startsWith('chapter:'))).toEqual([]); // no burst on the first day of a gift resort
   }, 60_000);

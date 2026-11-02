@@ -385,3 +385,7 @@ Bands asserted now: Normal y2 115k..175k, Challenging y1 -50k..+40k, y2 75k..125
 **Food saturation** (`foodYear`, `npm run analysis:food`; table in `docs/economy-audit.md` section 7): net of the starter resort (mean of seeds 61 / 5) with 0 / 3 / 8 extra places: Cafe +158.0k / +143.4k / +124.7k, Mountain Hut +158.0k / +145.4k / +125.0k, Lodge/Restaurant +158.0k / +96.9k / +79.4k; income +250.0k -> +243.2k / +248.0k / +243.3k with 8 extras. A balance test asserts the ordering and that income stays within 6 %. No economy tuning was needed.
 
 **Gate:** `npm run test:balance` 48 / 48 (was 42; +6: the ratio test, Challenging 128 and 256, three food tests); the other suites are listed in the commit message.
+
+## 0.3.2: black run moved out of the goal chain (owner request)
+
+`blackRun` ("Open a black run", $3,000) left `GOALS` for `BONUS_GOALS`; the regional chapter now has 4 goals, the chain 19, `TOTAL_REWARDS` 69.5k -> 66.5k. **No golden moved**: the plain bot paints no black run, so its `done` list, chapters, grants and `stateHash` goals part are identical before / after (`tests/sim/staff.test.ts` bot money unchanged at 232186.6 / 234121.49-style values, year report unchanged; scenario bots and `npm run test:balance` unchanged). Test-only edits: chain counts 20 -> 19, bonus list gains `blackRun`, new compat tests in `tests/sim/goals.test.ts` (old save with blackRun in `done` stays done as a bonus; a chapter missing only the black run counts complete on load).

@@ -66,7 +66,7 @@ Paint pistes by **difficulty**: green (easy), blue, red and black. The game colo
 
 - **Connection**: a piste only counts if it reaches a lift station, and runs that don't connect to anything are flagged. Guests need a way up *and* a way down.
 - **Steepness**: a piste's real slope decides how hard it feels. A “green” painted on a cliff is still a cliff.
-- **Variety**: a good resort offers all difficulties; a goal asks for runs of green, blue and red, and another for a black run.
+- **Variety**: a good resort offers all difficulties; a goal asks for runs of green, blue and red, and an optional bonus goal pays out for a black run (never required).
 
 Trails cross water and rails too: drag a hiking or MTB trail over a pond, stream or gap and a wooden hiking bridge or MTB bridge is built as part of the stroke; over rail the **Crossings** section lets you choose a level crossing or a footbridge / MTB ramp bridge ($900 / $1,100). Ski pistes stop at water and rail. See [Rails, crossings & bridges](page:rails-bridges).
 

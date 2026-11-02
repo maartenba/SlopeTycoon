@@ -1,6 +1,6 @@
 import { DAYS_PER_YEAR } from '@/config/balance';
 import { describe, expect, it } from 'vitest';
-import { CHAPTERS, GOALS, TOTAL_REWARDS, type GoalDef } from '../../src/config/goals';
+import { BONUS_GOALS, CHAPTERS, GOALS, TOTAL_REWARDS, type GoalDef } from '../../src/config/goals';
 import { ACTIVE_GOALS, Goals, emptyFacts, type GoalFacts, type GoalWorld } from '../../src/sim/goals/Goals';
 import { EventBus } from '../../src/core/EventBus';
 import type { GameEvents } from '../../src/core/events';
@@ -39,7 +39,6 @@ const SATISFY: Record<string, (w: Fixture, f: GoalFacts) => void> = {
   skiSchool: (w) => { w.b.push(bld('skiSchoolHQ')); },
   groomed: (_w, f) => { f.groomedNights = 1; },
   stars4: (w) => { w.star = 4; },
-  blackRun: (w) => { w.p.push(piste(4)); },
   rescue: (_w, f) => { f.rescues = 1; },
   debtFree: (w) => { w.debtV = 0; w.cash = 50_000; },
   guests200: (_w, f) => { f.bestDay = 200; },
@@ -58,9 +57,11 @@ const engine = (w: Fixture): { goals: Goals; bus: EventBus<GameEvents>; events: 
 };
 
 describe('goal config', () => {
-  it('is a chaptered chain of ~20 goals in four chapters with unique ids and career flavour', () => {
+  it('is a chaptered chain of 19 goals in four chapters with unique ids and career flavour', () => {
     expect(CHAPTERS.map((c) => c.title)).toEqual(['Season 1: Open for business', 'Local favourite', 'Regional name', 'Alpine destination']);
-    expect(GOALS.length).toBe(20);
+    expect(GOALS.length).toBe(19);
+    expect(GOALS.some((g) => g.id === 'blackRun'), 'the black run is optional (0.3.2), never a chain step').toBe(false);
+    expect(BONUS_GOALS.some((g) => g.id === 'blackRun')).toBe(true);
     expect(new Set(GOALS.map((g) => g.id)).size).toBe(GOALS.length);
     for (const c of CHAPTERS) { const n = GOALS.filter((g) => g.chapter === c.id).length; expect(n, c.id).toBeGreaterThanOrEqual(4); expect(n, c.id).toBeLessThanOrEqual(6); expect(c.outro.length).toBeGreaterThan(10); }
     for (const g of GOALS) {
@@ -76,6 +77,36 @@ describe('goal config', () => {
     expect(TOTAL_REWARDS).toBeLessThan(80_000);
   });
   it('every goal has a satisfying fixture', () => { expect(Object.keys(SATISFY).sort()).toEqual(GOALS.map((g) => g.id).sort()); });
+});
+
+describe('optional black run (0.3.2)', () => {
+  it('is not needed to finish the regional chapter; building one later pays it as a bonus goal', () => {
+    const w = new Fixture(), { goals, events } = engine(w);
+    for (const g of GOALS) SATISFY[g.id]!(w, goals.facts);
+    goals.evaluate();
+    expect(goals.chapterDone('regional')).toBe(true);
+    expect(goals.finished).toBe(true);
+    expect(goals.isDone('blackRun')).toBe(false);
+    w.p.push(piste(4)); goals.evaluate();
+    expect(goals.isDone('blackRun')).toBe(true);
+    expect(goals.granted).toBe(TOTAL_REWARDS + 3000);
+    expect(events.some((e) => e.id === 'goal:blackRun')).toBe(true);
+    expect(goals.active().some((g) => g.id === 'blackRun')).toBe(false);
+  });
+  it('an old save (blackRun in the chain) loads: done stays done as a bonus; a chapter missing only the black run counts as complete', () => {
+    const w = new Fixture(), { goals } = engine(w);
+    const regionalOthers = GOALS.filter((g) => g.chapter === 'regional').map((g) => g.id);
+    goals.load({ done: ['firstLift', 'greenRun', 'patrol', 'guests30', 'stars3', 'mixedRuns', 'guests80', 'profitMonth', 'skiSchool', ...regionalOthers, 'blackRun'], chapters: ['s1', 'local'], facts: emptyFacts(), granted: 10 });
+    expect(goals.isDone('blackRun')).toBe(true);
+    expect(goals.chapterDone('regional')).toBe(true);
+    expect(goals.active()[0]?.chapter).toBe('alpine');
+    expect(goals.serialize().done).not.toContain('blackRun');
+    expect(goals.serialize().bonus).toEqual(['blackRun']);
+    const g2 = engine(new Fixture()).goals;
+    g2.load({ done: ['firstLift', 'greenRun', 'patrol', 'guests30', 'stars3', 'mixedRuns', 'guests80', 'profitMonth', 'skiSchool', 'groomed', 'stars4', 'rescue'], chapters: ['s1', 'local'], facts: emptyFacts(), granted: 0 });
+    expect(g2.isDone('blackRun')).toBe(false);
+    expect(g2.active().map((g) => g.id)).toEqual(['debtFree']);
+  });
 });
 
 describe('each goal check (fixtures)', () => {

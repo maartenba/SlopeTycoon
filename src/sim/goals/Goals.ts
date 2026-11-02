@@ -180,9 +180,13 @@ export class Goals {
     const ids = new Set(this.goals.map((g) => g.id));
     this.done = new Set((o.done ?? []).filter((id) => ids.has(id)));
     this.chaptersDone = new Set((o.chapters ?? []).filter((id) => this.chapters.some((c) => c.id === id)));
+    // Compat: a goal that moved from the chain to the bonus list (blackRun, 0.3.2) stays done as a bonus goal.
+    const movedBonus = (o.done ?? []).filter((id) => !ids.has(id) && this.bonus.some((b) => b.id === id));
+    // Compat: a chapter whose remaining goals are all done is complete (a save made while a since-removed goal was the only one missing).
+    for (const c of this.chapters) if (this.goals.filter((g) => g.chapter === c.id).every((g) => this.done.has(g.id))) this.chaptersDone.add(c.id);
     this.facts = { ...emptyFacts(), ...(o.facts ?? {}) };
     this.granted = o.granted ?? 0;
-    this.bonusDone = new Set((o.bonus ?? []).filter((id) => this.bonus.some((b) => b.id === id)));
+    this.bonusDone = new Set([...(o.bonus ?? []), ...movedBonus].filter((id) => this.bonus.some((b) => b.id === id)));
     this.progress.clear();
     for (const g of this.active()) this.progress.set(g.id, this.check(g));
   }

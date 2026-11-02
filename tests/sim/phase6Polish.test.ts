@@ -180,8 +180,8 @@ describe('rental stock (skis vs boards)', () => {
 
 describe('optional bonus goals', () => {
   it('all follow viewpointHigh, are never in a chapter, never name a gated building (treehouse, hotels: the progression test greps goals.ts), each pays once', () => {
-    expect(BONUS_GOALS.map((g) => g.id)).toEqual(['viewpointHigh', 'littleFarmers', 'summerFamilies', 'threeViews', 'midStop', 'boardCrowd']);
-    expect(GOALS).toHaveLength(20);
+    expect(BONUS_GOALS.map((g) => g.id)).toEqual(['viewpointHigh', 'blackRun', 'littleFarmers', 'summerFamilies', 'threeViews', 'midStop', 'boardCrowd']);
+    expect(GOALS).toHaveLength(19);
     for (const g of BONUS_GOALS) { expect(g.chapter).toBe('bonus'); expect(GOALS.some((x) => x.id === g.id)).toBe(false); expect(g.reward).toBeGreaterThan(0); expect(g.panel.drawer).toBeTruthy(); }
   });
   it('engine: each goal completes from what the player builds; the chain and its grants are untouched; save / load keeps them', () => {
@@ -203,7 +203,7 @@ describe('optional bonus goals', () => {
     lifts[0]!.stations = 3; g.evaluate(); expect(g.isDone('midStop')).toBe(true);
     put('stuntPark'); g.evaluate(); expect(g.isDone('boardCrowd')).toBe(false);
     put('rental'); g.evaluate(); expect(g.isDone('boardCrowd')).toBe(true);
-    const sum = BONUS_GOALS.filter((x) => x.id !== 'viewpointHigh').reduce((a, x) => a + x.reward, 0);
+    const sum = BONUS_GOALS.filter((x) => x.id !== 'viewpointHigh' && x.id !== 'blackRun').reduce((a, x) => a + x.reward, 0);
     expect(paid).toBe(sum);
     expect(ev.filter((e) => e.id.startsWith('goal:') && e.major)).toHaveLength(0); // quiet milestones
     expect(g.completedCount).toBe(0);

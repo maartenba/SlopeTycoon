@@ -4,6 +4,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- **The black run is now an optional bonus goal** (owner request): *Open a black run* no longer blocks the *Regional name* chapter, so Level 6 and the goal chain no longer depend on painting a black piste. The chain is now 19 goals; the black run keeps its $3,000 grant as a bonus goal. Old saves load fine: a finished black run stays finished. See `docs/goals.md`.
+
 ## [0.3.2] - 2026-11-01 (pre-release)
 
 The Atmosphere release (milestone M7.0): the valley now has weather you can see. Fog sits in the valley on some mornings, a few sunrises and sunsets are properly pretty, the night sky has stars and a moon that waxes and wanes. It is all drawing only, so nothing about the economy changed. The same release carries the owner's decisions on the M7.1 playtest and the website work of M7.2.

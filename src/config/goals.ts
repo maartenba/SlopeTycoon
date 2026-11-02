@@ -1,5 +1,5 @@
 /**
- * Resort goal chain (M5.1 Task 3): the career of a resort director in four chapters, 20 goals. Engine: `src/sim/goals/Goals.ts`.
+ * Resort goal chain (M5.1 Task 3): the career of a resort director in four chapters, 19 goals (plus optional bonus goals). Engine: `src/sim/goals/Goals.ts`.
  * Tone (decision D4): plain career voice, a light joke now and then, never more than one short line. Rewards are small grants
  * (`grant` ledger category); the whole chain pays about 69,500 dollars (`TOTAL_REWARDS`) over several years; the balance bot earns about 4.5 % of its year-1 revenue from grants (limit 10 %, tests/sim/goals.test.ts).
  * Every goal must be reachable by normal play (no luck-based goals such as "survive an avalanche"), because a chapter ends when all its goals are done.
@@ -83,8 +83,6 @@ export const GOALS: readonly GoalDef[] = [
     check: (c) => (c.f.groomedNights > 0 ? 1 : has(c.w, 'groomerGarage') ? 0.5 : 0), focus: (w) => firstOf(w, 'groomerGarage') ?? lodge(w) },
   { id: 'stars4', panel: { drawer: 'rating' }, chapter: 'regional', title: 'Reach a 4-star rating', flavour: 'Guide books begin to mention the resort.', todo: 'Fix the weakest bar in the rating panel first.', reward: 3500,
     check: ({ w }) => stars(w, 4), focus: lodge },
-  { id: 'blackRun', panel: { drawer: 'pistes', item: 'ski' }, chapter: 'regional', title: 'Open a black run', flavour: 'For the guests who read warning signs as invitations.', todo: 'Paint a steep, connected piste for experts.', reward: 3000,
-    check: ({ w }) => ratio(pisteTiles(w, 4), 8), focus: (w) => pistePt(w, 4) ?? liftPt(w) },
   { id: 'rescue', panel: { drawer: 'buildings', item: 'patrolHub' }, chapter: 'regional', title: 'Complete a rescue', flavour: 'Training pays off when it is needed.', todo: 'Keep the patrol hub staffed; a rescue happens when a guest gets hurt.', reward: 3000,
     check: (c) => (c.f.rescues > 0 ? 1 : 0), focus: (w) => firstOf(w, 'patrolHub') ?? lodge(w) },
   { id: 'debtFree', panel: { drawer: 'finance' }, chapter: 'regional', title: 'Debt-free with $50,000 in the bank', flavour: 'The bank manager now sends birthday cards.', todo: 'Repay your loans and keep a cash cushion.', reward: 4000,
@@ -119,6 +117,8 @@ export const BONUS_GOALS: readonly GoalDef[] = [
   { id: 'viewpointHigh', panel: { drawer: 'buildings', item: 'viewpoint' }, chapter: 'bonus', title: 'A viewpoint on the heights', flavour: 'The postcards almost sell themselves from up here.', todo: 'Build a Viewpoint on high ground (the upper part of the mountain) beside a footpath or hiking trail.', reward: 2500,
     check: ({ w }) => { const vp = w.buildings().filter((b) => b.active && b.type === 'viewpoint'); if (!vp.length) return 0; return vp.some((b) => (w.altFrac?.(b.x + (b.w >> 1), b.y + (b.h >> 1)) ?? 0) >= VIEWPOINT_GOAL_ALT) ? 1 : 0.5; },
     focus: (w) => firstOf(w, 'viewpoint') ?? lodge(w) },
+  { id: 'blackRun', panel: { drawer: 'pistes', item: 'ski' }, chapter: 'bonus', title: 'Open a black run', flavour: 'For the guests who read warning signs as invitations.', todo: 'Paint a steep, connected piste for experts.', reward: 3000,
+    check: ({ w }) => ratio(pisteTiles(w, 4), 8), focus: (w) => pistePt(w, 4) ?? liftPt(w) },
   // Phase 6 optional goals (never gate anything; they only look at what the player builds, so the plain bot never earns them)
   { id: 'littleFarmers', panel: { drawer: 'buildings', item: 'pettingZoo' }, chapter: 'bonus', title: 'Open a petting zoo', flavour: 'Goats do not read the rating, but they do like a scoop of feed.', todo: 'Build a Petting Zoo for the summer families. Kids buy feed for the animals at the gate.', reward: 1500,
     check: ({ w }) => (has(w, 'pettingZoo') ? 1 : 0), focus: (w) => firstOf(w, 'pettingZoo') ?? lodge(w) },

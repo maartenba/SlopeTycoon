@@ -33,7 +33,7 @@ The summer buildings are spread out on purpose: *Campground*, *Petting Zoo* and 
 
 ## Goals
 
-The goals card walks you through **four chapters and twenty goals** (for example *Paint an easy run*, *Green, blue and red runs*, *Open a black run*): *Season 1: Open for business*, *Local favourite*, *Regional name* and *Alpine destination*. Three goals are active at a time; finishing a chapter opens the next. Each goal pays a small grant. Click **Show me** to jump the camera to the relevant spot, and the card can be collapsed.
+The goals card walks you through **four chapters and nineteen goals** (for example *Paint an easy run*, *Green, blue and red runs*, *Groom a night*): *Season 1: Open for business*, *Local favourite*, *Regional name* and *Alpine destination*. Three goals are active at a time; finishing a chapter opens the next. Each goal pays a small grant. A few **optional bonus goals** sit outside the chapters and never block your progress; they pay a grant the first time you meet them, for example *Open a black run*, *Open a petting zoo* or *Three viewpoints*. Click **Show me** to jump the camera to the relevant spot, and the card can be collapsed.
 
 ## Ranger Rudi's advice
 
