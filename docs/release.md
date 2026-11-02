@@ -4,22 +4,6 @@ Current release: **0.4.0 (pre-release, never call it 1.0 until the owner says so
 
 ## 0.4.0 (2026-11-02, macOS, Node v22.23.4)
 
-M7.3 + M7.4: sled runs, Alpine Coaster, Sledder guests, Pizzeria, Bakery, Tourist Office, grass-strip sky buildings (Skydive Centre, Launch Ramp, Landing Field), the Carnival, and suggest-a-run from a lift. Release prep: version bump, CHANGELOG `[0.4.0]` (five Highlights), `whats-new`, `licenses`, devlog entry, three new screenshots (`sled-run`, `village-sky`, `carnival-street`), `docs/playtest-m74.md`.
-
-| Check | Command | Result |
-|---|---|---|
-| Gate (twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass: 4562 tests passed, 43 skipped. One run had a timing failure in `benchRegression` (size 256) while the machine was loaded; it passed on the second run and alone |
-| Balance | `npm run test:balance` | 48 passed |
-| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
-| Shots | `npm run shot:suite` | 0 errors on all 17 shots |
-| Sanity | `play:sanity`, `phase6:sanity`, `summer:sanity`, `winter:sanity`, `winter:tours`, `backcountry:sanity`, `sled:sanity`, `m74:sanity` | all OK (`m74:sanity` skips the `lifts` part in the reload comparison: the script jumps the date by hand so a lift's `activeMode` is re-derived on load) |
-| Analytics / offline | `npm run analytics:e2e`, `npm run offline:splash` | OK (`analytics:e2e` hit a detached-frame error on two runs, passed on the third) |
-| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | 39 / 39 |
-| Size | `npm run size` | 2942.1 kB raw / 1052.7 kB gzip (budget < 2048 kB gzip; +11.6 kB gzip over 0.3.3) |
-| Site | `npm run whats-new`, `licenses`, `docs:img`, `site:og`, `build:site && site:check && verify:site` | OK (101 screenshots, 8.3 MB of the 8.5 MB budget; 264 URLs crawled) |
-
-## 0.4.0 (2026-11-02, macOS, Node v22.23.4)
-
 M7.3 sled runs + Alpine Coaster + Sledder (`docs/sled-runs.md`) and M7.4 Pizzeria, Bakery, Tourist Office, grass strip with skydive / hang gliding / paragliding, and the Carnival (`docs/m74-buildings.md`, `docs/festivals.md`). Release prep: shared-file wiring committed, version bump (package.json, lock, README, AGENTS.md, deploy.md, the `whatsNew` test), CHANGELOG `[0.4.0]` with five Highlights, `whats-new`, `licenses`, a devlog entry, three new screenshots (`sled-run`, `village-sky`, `carnival-street`), `docs/playtest-m74.md`.
 
 | Check | Command | Result |
