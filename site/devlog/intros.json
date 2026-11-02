@@ -63,5 +63,10 @@
     "tagline": "fog, stars and better sunsets",
     "lead": "This one is about how the valley looks. Some mornings now start with fog in the valley, a few sunrises and sunsets turn the sky and the snow pink, and the night sky has stars and a moon that changes shape. Nothing in the economy moved. If it is too much, or too little, there is an Atmosphere setting under Graphics.",
     "shot": "atmos-alpenglow"
+  },
+  "0.3.3": {
+    "tagline": "phones show the map",
+    "lead": "On a phone the game used to be mostly menus with a bit of map behind them. This release makes the map the main thing: drawers and inspectors are small sheets you pull up when you need them, the top bar and the HUD are one row each, and the cards step aside while you place something. I could only try it on an emulated phone, so I do not know yet how it feels under a real thumb. Desktop is unchanged.",
+    "shot": "touch-phone-hud"
   }
 }

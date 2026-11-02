@@ -5,9 +5,9 @@ through winter *and* summer. Three.js + TypeScript, no backend, no external asse
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/maartenba)
 
-**Version 0.3.2** (pre-release)
+**Version 0.3.3** (pre-release)
 
-Status: pre-release (0.3.2) — playtest feedback welcome.
+Status: pre-release (0.3.3) — playtest feedback welcome.
 
 ## Features
 
@@ -34,7 +34,7 @@ Status: pre-release (0.3.2) — playtest feedback welcome.
 - **Scenarios**: six hand-made challenges (First Tracks, Family Valley, Powder Dreams, Summer Escape, Alpine Giant, Safe Slopes) with deadlines, objectives and bronze / silver / gold medals; your best results are kept on this device. Main menu > Scenarios (`docs/scenarios.md`). No sharing.
 - **Achievements & trophies**: 40 profile-wide achievements in three tiers with a trophy shelf (main menu / pause menu), quiet unlock toasts and 13 purely visual cosmetic rewards (building palettes, village bunting, photo frames, lift chair colours) chosen in Settings > Cosmetics. Kept on this device; no sharing (`docs/achievements.md`).
 - **Resort of the Year**: at the end of every in-game year a report shows your stats, awards (bronze / silver / gold against regional baselines), charts and a cover photo; past reports live in Finance > Reports and the image can be saved locally. No sharing (`docs/year-report.md`).
-- **Touch & tablets**: one-finger pan, pinch zoom, two-finger twist, a pan / paint toggle, two-step placement (tap, then tap again or Place), long-press cancel, two-finger-tap undo, on-screen controls for walk / ride / photo, 44 px targets and a compact layout; Settings > Accessibility > Touch controls Auto / On / Off (`docs/touch.md`).
+- **Touch & tablets**: one-finger pan, pinch zoom, two-finger twist, a pan / paint toggle, two-step placement (tap, then tap again or Place), long-press cancel, two-finger-tap undo, on-screen controls for walk / ride / photo, 44 px targets, and on phones **bottom sheets** (`st-sheet`) so the map stays visible: a one-row top bar, a one-line HUD, inspectors and drawers that open at a low peek (`docs/mobile-ui.md`); Settings > Accessibility > Touch controls Auto / On / Off (`docs/touch.md`).
 - **Statistics, regions and accessibility**: press **I** for charts of guests, cash, rating and revenue (`docs/stats.md`); every seed has a region name and peaks; a colour-blind-safe (Okabe-Ito) palette; reduced motion and text size.
 - **Landscape & drawers**: the Landscape drawer (ponds, trees, boulders, decor; `docs/landscaping.md`) and redesigned Terrain / View drawers with cards and hover info; everything can be built in any season.
 - **Comfort, rails and bridges**: guests get an urge and walk to **Toilets** (Facilities rating bar, `docs/comfort.md`); footpaths and roads cross rail at **level crossings** (barriers, bell, guests wait) or over a **footbridge** (`docs/crossings.md`); **bridges** span streams, ponds and gaps for footpaths, hiking, MTB and roads (`docs/bridges.md`); trails can serve buildings (`docs/trails-access.md`); four new campaigns incl. **Come by Train** (`docs/marketing-pricing.md`).

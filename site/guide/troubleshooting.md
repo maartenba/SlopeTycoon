@@ -45,7 +45,7 @@ Saves live in browser storage. Clearing site data, using private windows or swit
 
 ## Can I use it on a phone?
 
-Yes. The game has touch support (gestures, a pan / paint toggle, two-step placement and on-screen controls for walk, ride and photo mode) that switches on by itself on a touch screen. Tablets work well; phones are playable but cramped. If it does not switch on (or switches on by mistake), see Settings → Accessibility → Touch controls. Details in [Touch & tablets](page:touch). Desktop with a mouse is still the most comfortable.
+Yes. The game has touch support (gestures, a pan / paint toggle, two-step placement and on-screen controls for walk, ride and photo mode) that switches on by itself on a touch screen. Tablets work well; on a phone the drawers are small bottom sheets so the map stays visible. If it does not switch on (or switches on by mistake), see Settings → Accessibility → Touch controls. Details in [Touch & tablets](page:touch). Desktop with a mouse is still the most comfortable.
 
 ## Is anything tracked or uploaded?
 

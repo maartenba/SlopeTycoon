@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.3.3",
+    "date": "2026-11-02",
+    "highlights": [
+      "Phones show the map: drawers are small bottom sheets with a grab bar. They open at a low peek, drag up for more, and fold to the bar once you pick a…",
+      "A one-row top bar with a ... button for the rest, a one-line HUD strip (money, stars, guests) with an arrow for the date and weather, and one row of…",
+      "While you build or paint, the goals, news and Rudi chips step aside; while you drag the map the cards fade out and return when you let go.",
+      "Inspectors, Rudi's advice and the news list are sheets too: first lines at a glance, pull up for the rest. Toasts are small, one at a time, above…",
+      "Landscape phones get a side sheet; tablets keep their drawers, capped at about 40 % of the height. The map is at least half the screen in every…"
+    ]
+  },
+  {
     "version": "0.3.2",
     "date": "2026-11-01",
     "highlights": [
@@ -23,18 +34,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "The same words everywhere: every building says what it needs in one order (\"a footpath, road, hiking trail or piste next to it\") on the card, the…",
       "A new Building reference in the guide lists every building with price, upkeep, what connects it, where it may stand, its season and when it unlocks…",
       "The Mountain Hut and the Après-Ski Bar finally have an icon and a description in the Buildings drawer."
-    ]
-  },
-  {
-    "version": "0.3.0",
-    "date": "2026-10-31",
-    "highlights": [
-      "Mountain concerts: a summer Mountain Concert (1-10 September) and a winter Snow Concert (1-15 March), booked next to the Summer Music Festival once…",
-      "A real stage with truss, speakers and a crowd near your best viewpoint, lit by soft light cones that sway at night, with a very quiet band and crowd…",
-      "Phase 6 in one line: dig rivers, build a campground, a petting zoo, quads, rafting and fishing, two hotels with a steaming pool, sleighs, snowshoes…",
-      "New guests for every season: mountain bikers, anglers, seniors, school classes, snowboarders and ski tourers, each with a campaign to match.",
-      "Backcountry routes with an avalanche danger from 1 to 5, and bridges and level crossings that make the valley work.",
-      "The player guide and the landing page were re-read end to end for the new content."
     ]
   }
 ];

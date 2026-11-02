@@ -4,9 +4,27 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-02 (pre-release)
+
+The phone release (milestone M7.5): on a phone the panels used to cover the map. Drawers, inspectors and Rudi's advice are now bottom sheets that open small and stay out of the way, the top bar and the HUD are one row each, and the cards step aside while you build. Desktop looks exactly like 0.3.2 (checked pixel by pixel), tablets keep their drawers.
+
+### Highlights
+
+- Phones show the map: drawers are small bottom sheets with a grab bar. They open at a low peek, drag up for more, and fold to the bar once you pick a card, so the ghost stays visible.
+- A one-row top bar with a ... button for the rest, a one-line HUD strip (money, stars, guests) with an arrow for the date and weather, and one row of speed buttons.
+- While you build or paint, the goals, news and Rudi chips step aside; while you drag the map the cards fade out and return when you let go.
+- Inspectors, Rudi's advice and the news list are sheets too: first lines at a glance, pull up for the rest. Toasts are small, one at a time, above the dock.
+- Landscape phones get a side sheet; tablets keep their drawers, capped at about 40 % of the height. The map is at least half the screen in every default state.
+
 ### Changes
 
+- **`st-sheet`** (`src/ui/components/StSheet.ts`, `docs/mobile-ui.md`): a bottom / side sheet with peek, half and full snaps, a 44 px grab bar, fling and snap, scroll chaining with its content, keyboard (arrows, Home / End, Escape) and ARIA, a height remembered per sheet, safe-area insets and no animation under reduced motion. It is a plain passthrough wherever the phone media query does not match, so desktop and tablets are not touched. Used by the dock drawers, the five inspectors, Rudi's advice and the news panel.
+- **Phone layout** (`<= 520 px` wide or `<= 520 px` high): the top bar keeps Menu, Photo, Statistics, Save, Settings and a `...` overflow (Rotate, Walk, Graphics, `?`, Install, Offline); the HUD card is a one-line strip with a 44 px expander (folds back after 8 s); the speed control is one row of icons; the goals card is capped at about 22 % of the height when open; the tool status line is hidden; toasts show only the newest one, above the dock row.
+- **Tool-first and drag fade** (`html[data-toolfirst]`, `html[data-camdrag]`, `TouchController.onDrag`): cards hide while a placement, lift or paint tool is active and fade (opacity only, no layout shift) while a finger drags the map.
+- **Tablets** (521 to 1099 px wide): the drawers are capped at 40 to 44 % of the screen height.
+- **QA**: `npm run mobile:audit` (the map-visible share per panel and viewport at 390x844, 844x390 and 768x1024; asserts >= 50 % in every default state and >= 40 % with a drawer at peek and a tool active; the numbers are in `docs/mobile-ui.md`), `npm run desktop:diff` (the desktop UI at 1280x800 pixel by pixel before / after: 0 differing pixels), the touch end-to-end scenarios were updated for sheets (drawer "tucked away" = folded to its grab bar, a swipe up grows the sheet) and now pick the real map canvas (the sky canvas from 0.3.2 had made the `page` group read the wrong element). Real-device checklist: `docs/playtest-m75.md`.
 - **The black run is now an optional bonus goal** (owner request): *Open a black run* no longer blocks the *Regional name* chapter, so Level 6 and the goal chain no longer depend on painting a black piste. The chain is now 19 goals; the black run keeps its $3,000 grant as a bonus goal. Old saves load fine: a finished black run stays finished. See `docs/goals.md`.
+- **Docs and guide**: `docs/mobile-ui.md` (new), `docs/touch.md`, `docs/ui-kit.md`, AGENTS.md (the sheet rule), the guide page *Touch & tablets* (phone layout, sheets, new screenshots).
 
 ## [0.3.2] - 2026-11-01 (pre-release)
 

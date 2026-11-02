@@ -899,12 +899,12 @@
     },
     {
       "id": "touch-phone-hud",
-      "alt": "The game on a phone held upright: compact top bar, goals, large on-screen speed buttons and a scrolling dock.",
+      "alt": "The game on a phone held upright: a one-row top bar, a one-line HUD strip, one row of speed buttons, a single goal row, and most of the screen is map.",
       "pages": [
         "touch"
       ],
       "kind": "harness",
-      "caption": "On a phone: a compact HUD with 44 px targets.",
+      "caption": "On a phone the map comes first: one-row bar, one-line HUD.",
       "shot": {
         "start": "summer",
         "hour": 12,
@@ -919,12 +919,12 @@
     },
     {
       "id": "touch-phone-place",
-      "alt": "A phone showing the Buildings drawer open over the map.",
+      "alt": "A phone with the Buildings drawer open as a low bottom sheet with a grab bar and one row of cards; the village is still visible above it.",
       "pages": [
         "touch"
       ],
       "kind": "harness",
-      "caption": "Drawers on a phone slide up and tuck away.",
+      "caption": "Drawers are sheets: a row of cards at peek, drag the bar for more.",
       "shot": {
         "start": "summer",
         "hour": 12,
@@ -935,6 +935,65 @@
         "touch": true,
         "steps": "wait:1000;click:button[data-drawer=buildings];wait:800",
         "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)"
+      }
+    },
+    {
+      "id": "touch-phone-ghost",
+      "alt": "A phone while placing a cafe: the drawer has folded to its grab bar, the ghost sits beside the lodge with its price, and the Place bar is above the dock.",
+      "pages": [
+        "touch"
+      ],
+      "kind": "harness",
+      "caption": "Pick a card and the sheet folds away; the ghost and the map stay free.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "viewport": "390x844",
+        "touch": true,
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "steps": "wait:1000;click:button[data-drawer=buildings];wait:800;click:Caf;wait:900;eval:Object.assign(__slope.touch.controller.gestures.cfg,{tapMs:1500,longPressMs:4000});tap:300,430;wait:1200"
+      }
+    },
+    {
+      "id": "touch-phone-inspector",
+      "alt": "A phone with the base lodge selected: its inspector is a low sheet at the bottom showing the first lines; the rest is a drag away.",
+      "pages": [
+        "touch"
+      ],
+      "kind": "harness",
+      "caption": "Inspectors are sheets too: the first lines at a glance.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "390x844",
+        "touch": true,
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "steps": "wait:1000;eval:__slope.select(__slope.buildings.all().find(x=>x.type==='baseLodge').id);wait:900"
+      }
+    },
+    {
+      "id": "touch-phone-land",
+      "alt": "A phone in landscape with the Buildings drawer as a side sheet on the right and the map filling the rest of the screen.",
+      "pages": [
+        "touch"
+      ],
+      "kind": "harness",
+      "caption": "Landscape: a side sheet on the right, the map keeps the width.",
+      "shot": {
+        "start": "summer",
+        "hour": 12,
+        "zoom": 2,
+        "target": "lodge",
+        "extra": "starter=1&mode=sandbox",
+        "viewport": "844x390",
+        "touch": true,
+        "evalJs": "setInterval(()=>document.querySelectorAll('st-toast').forEach(e=>{e.style.display='none'}),200)",
+        "steps": "wait:1000;click:button[data-drawer=buildings];wait:900"
       }
     },
     {
@@ -1123,7 +1182,7 @@
     },
     {
       "id": "ui-loading",
-      "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts\u2026'.",
+      "alt": "The loading splash: the Slope Tycoon icon and name above a slim progress bar with the text 'Waxing the fonts…'.",
       "pages": [
         "troubleshooting",
         "getting-started"

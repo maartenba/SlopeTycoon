@@ -710,12 +710,12 @@
    {
     "w": 390,
     "file": "touch-phone-hud-640.webp",
-    "bytes": 29144
+    "bytes": 30156
    },
    {
     "w": 390,
     "file": "touch-phone-hud-1280.webp",
-    "bytes": 45240
+    "bytes": 40774
    }
   ]
  },
@@ -726,12 +726,12 @@
    {
     "w": 390,
     "file": "touch-phone-place-640.webp",
-    "bytes": 29290
+    "bytes": 29520
    },
    {
     "w": 390,
     "file": "touch-phone-place-1280.webp",
-    "bytes": 44682
+    "bytes": 42754
    }
   ]
  },
@@ -742,12 +742,12 @@
    {
     "w": 640,
     "file": "touch-tablet-640.webp",
-    "bytes": 29226
+    "bytes": 28736
    },
    {
     "w": 1024,
     "file": "touch-tablet-1280.webp",
-    "bytes": 51778
+    "bytes": 50654
    }
   ]
  },
@@ -1516,6 +1516,54 @@
     "w": 1280,
     "file": "atmos-lake-mist-1280.webp",
     "bytes": 39782
+   }
+  ]
+ },
+ "touch-phone-ghost": {
+  "w": 390,
+  "h": 844,
+  "files": [
+   {
+    "w": 390,
+    "file": "touch-phone-ghost-640.webp",
+    "bytes": 26648
+   },
+   {
+    "w": 390,
+    "file": "touch-phone-ghost-1280.webp",
+    "bytes": 26648
+   }
+  ]
+ },
+ "touch-phone-inspector": {
+  "w": 390,
+  "h": 844,
+  "files": [
+   {
+    "w": 390,
+    "file": "touch-phone-inspector-640.webp",
+    "bytes": 29736
+   },
+   {
+    "w": 390,
+    "file": "touch-phone-inspector-1280.webp",
+    "bytes": 40156
+   }
+  ]
+ },
+ "touch-phone-land": {
+  "w": 844,
+  "h": 390,
+  "files": [
+   {
+    "w": 640,
+    "file": "touch-phone-land-640.webp",
+    "bytes": 29238
+   },
+   {
+    "w": 844,
+    "file": "touch-phone-land-1280.webp",
+    "bytes": 43858
    }
   ]
  }

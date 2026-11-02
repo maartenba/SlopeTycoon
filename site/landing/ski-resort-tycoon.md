@@ -20,7 +20,7 @@ faq:
   - q: "How long is a game?"
     a: "A day lasts 150 seconds at normal speed and a year has twelve months, so a full year is about half an hour at 1x. Speeds go up to 10x, and you can pause while you build."
   - q: "Does it work on a tablet or phone?"
-    a: "Yes, with touch controls, but it is best on a desktop with a mouse. Tablets are comfortable and phones are playable. See [Touch & tablets](page:touch)."
+    a: "Yes, with touch controls, but it is best on a desktop with a mouse. Tablets are comfortable and phones are playable (drawers are small bottom sheets so the map stays visible). See [Touch & tablets](page:touch)."
   - q: "Where are my saves kept?"
     a: "In your browser's storage on your device. You can export a .slope file as a backup. Nothing is uploaded. See [Saves & offline](page:saves)."
 ---

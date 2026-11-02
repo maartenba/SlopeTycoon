@@ -1,6 +1,28 @@
 # Release notes and checklist
 
-Current release: **0.3.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.3.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.3.3 (2026-11-02, macOS, Node v22.23.4)
+
+M7.5 Mobile UI (`docs/mobile-ui.md`): phones show the map. A new `st-sheet` bottom / side sheet (peek / half / full, 44 px grab bar, fling, keyboard + ARIA, remembered height, passthrough where it does not apply) holds the dock drawers, the five inspectors, Rudi's advice and the news panel; one-row top bar with an overflow, a one-line HUD strip, an icon speed row, one-at-a-time toasts, tool-first (cards step aside) and fade-while-dragging; tablets keep drawers capped at about 40 %; desktop is pixel-identical. Release prep: version bump (package.json, lock, README, AGENTS.md, deploy.md, the `whatsNew` test), CHANGELOG `[0.3.3]` with five Highlights, `whats-new`, `licenses`, a devlog entry, the guide page *Touch & tablets* (sheets, phone layout, four phone screenshots: `touch-phone-hud`, `touch-phone-place`, `touch-phone-ghost`, `touch-phone-land`; `touch-phone-inspector` and a re-shot `touch-tablet` are gallery shots), `docs/playtest-m75.md`.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice, after all edits) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | pass: 424 files passed, 1 skipped; 4421 tests passed, 43 skipped (new: `tests/ui-dom/sheet.test.ts` 20, `phoneLayout.test.ts` 8, 2 in `touchWireDrawer.test.ts`, `tests/render/touchDrag.test.ts` 2) |
+| Balance | `npm run test:balance` | 48 passed (no sim change) |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors on all 17 shots |
+| Analytics | `npm run analytics:e2e` | OK |
+| Offline | `npm run offline:splash` | OK |
+| Sanity play | `npm run play:sanity` | 0 console errors, MaterialGuard 0 |
+| Stories | `phase6:sanity`, `summer:sanity`, `winter:sanity`, `winter:tours`, `backcountry:sanity` | all OK (save + reload identical, MaterialGuard 0, 0 console errors) |
+| Map visible (new) | `npm run mobile:audit` | all thresholds met at 390x844, 844x390 and 768x1024: default states 51-78 %, drawer at peek + tool active 57-78 %; before / after table in `docs/mobile-ui.md` |
+| Desktop unchanged (new) | `npm run desktop:diff` | 0 differing pixels in the six 1280x800 screens (HUD, Buildings / Landscape / Pricing drawers, Statistics, Settings) + the click check (a drawer's first card is the topmost element) |
+| Touch | `npm run touch:e2e -- --viewport phone` (full) | **211 / 211** (camera 11, placement 13, walk 22, ride-photo 17, lift 10, strokes 44, trails 21, drawers 15, ui 31, title 9, page 18). Landscape and tablet: camera, placement, strokes, drawers, ui, page all pass (land drawers 14, tablet drawers 15, ui 31 each, page 18). Not re-run on land / tablet: walk, ride-photo, lift, trails, title (untouched) |
+| Size | `npm run size` | 2907.0 kB raw / 1041.1 kB gzip (budget < 2048 kB gzip; +6.1 kB gzip over 0.3.2: 1035.0) |
+| Site | `npm run whats-new`, `npm run licenses`, `npm run docs:img`, `npm run site:og`, `npm run build:site && npm run site:check && npm run verify:site` | OK (98 screenshots, 8.0 MB of the 8 MB budget; 255 URLs crawled) |
+
+No goldens moved (UI only; no sim change). Bugs found by the new checks: the end-to-end run caught `pointer-events: none` on the sheet's passthrough layer, which the slotted content inherits (every desktop / tablet drawer was unclickable in the first draft; the pixel diff could not see it, so `desktop:diff` now also asserts a drawer's first card is the topmost element at its centre, and a unit test pins the CSS); the `page` touch group had been reading the sky canvas instead of the WebGL canvas since 0.3.2 (the scenario now uses `__slope.renderer.webgl.domElement`); `touch:e2e` kept its process alive for five minutes after printing the matrix (a pending timeout).
 
 ## 0.3.2 (2026-11-01, macOS, Node v22.23.4)
 
