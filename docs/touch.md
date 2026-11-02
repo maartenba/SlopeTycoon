@@ -28,6 +28,14 @@ Ride-along, walk and photo mode: **one finger passes straight through** to the e
 - `src/ui/components/StTouchControls.ts`: the on-screen bar (a 0x0 fixed host; z below the dock and every modal; exempt from the `body.view-*` hiding rules).
 - `PlacementTool.confirm()`: place at the current ghost.
 
+## Phones: sheets, one-row chrome, tool-first (M7.5, 0.3.3)
+Phones (portrait <= 520 px wide, landscape <= 520 px high) get their own layout so the map stays visible; the full story, the audit numbers and how to add a panel are in **`docs/mobile-ui.md`**. In short:
+- Dock drawers, inspectors, Rudi's advice and the news panel are **bottom sheets** (`st-sheet`, landscape: side sheets): peek / half / full, a 44 px grabber, fling, keyboard and ARIA, remembered per sheet. While a tool is active the dock's sheet folds to its grabber (this replaces "the drawer tucks away"); tapping the grabber, dragging it or a dock button brings the cards back (`st-drawer-unpeek` tells `touchWire`).
+- One-row top bar with an overflow (`...`), a one-line HUD strip that expands for a few seconds, an icon speed row, small non-stacking toasts.
+- `html[data-camdrag]` (set by `TouchController.onDrag` while a finger pans, zooms, rotates or paints) fades the right column, news chip and Rudi badge (opacity only: no layout shift). `html[data-toolfirst]` (set by `touchWire.toolChanged`) hides the goals chip, news chip and Rudi badge while a placement / lift / paint tool is active.
+- Tablets keep drawers (capped at 40-44 % of the height); desktop is untouched (`npm run desktop:diff`).
+- `npm run mobile:audit` measures the map-visible share per panel and viewport and fails below 50 % (default states) / 40 % (drawer at peek with a tool).
+
 ## Layout
 
 `styles.css` compact rules apply under 760 px wide or 520 px high: the top bar scrolls sideways, the right column is narrower (and scrolls when taller than the screen), the goals card starts collapsed, the touch tool column sits at the left edge, the dock row scrolls sideways, the drawer spans the screen, the debug panel and the `?` button (the top bar has one) are hidden, safe-area insets are respected. `html, body { overscroll-behavior: none }`, `touch-action: none` on the canvas and `manipulation` elsewhere stop page zoom, scrolling and pull-to-refresh.
@@ -55,6 +63,9 @@ Caveats of the emulation (why the script relaxes timings): SwiftShader renders a
 | ui | speed / pause / skip menu, hold-for-tooltip, every button / input / option >= 44 px in HUD, Settings, New game, Save, Help, Trophies, About; dialog scroll by swipe; st-select by touch; toggle and slider by touch; text input with the on-screen keyboard keys | 31/31 | 31/31 | 31/31 |
 | title | title screen, no page scroll, New Game by tap, Start boots a game, targets >= 44 px | 9/9 | 9/9 | 9/9 |
 | page | viewport meta, touch-action / overscroll, no pull-to-refresh, no double-tap or pinch page zoom, no page scroll, no text selection / context menu, rotate to the other orientation and back, 320 x 480 relayout (nothing hangs outside the window) | 18/18 | 18/18 | 18/18 |
+
+### 0.3.3 re-run (M7.5, phones + sheets)
+After the sheet work the **full phone portrait matrix passes: 211 / 211** (camera 11, placement 13, walk 22, ride-photo 17, lift 10, strokes 44, trails 21, drawers 15, ui 31, title 9, page 18). Landscape and tablet were run for camera, placement, strokes, drawers, ui and page (plus a re-run of drawers / ui / page / placement at the end); walk, ride-photo, lift, trails and title were not re-run on landscape and tablet (nothing in them changed). Scenario changes that came with the sheets: a drawer is "tucked away" when its sheet is folded to the grab bar (the **target** size is read, not the animated rect: SwiftShader draws a frame every ~150 ms); on a phone a swipe up on a drawer first **grows** the sheet (scroll chaining) instead of scrolling `.body`; on a landscape phone the cards wrap in a side sheet (no sideways rail); the `page` group reads the real WebGL canvas (`__slope.renderer.webgl.domElement`, the first `#app canvas` has been the sky canvas since 0.3.2); the `st-select` check probes the select that was actually tapped. The end-to-end run also caught a real bug in the first sheet draft: `pointer-events: none` on the passthrough layer is inherited by the slotted content and made every desktop / tablet drawer unclickable (fixed, with a regression test, and `npm run desktop:diff` now also checks that a drawer's first card is the topmost thing at its centre).
 
 ### Bugs the end-to-end run found (all fixed, with tests)
 
