@@ -42,10 +42,12 @@ import { StStats } from './components/StStats';
 import { StScenarioCard } from './components/StScenarioCard';
 import { StScenarioResult } from './components/StScenarioResult';
 import { StTouchControls } from './components/StTouchControls';
+import { StSheet } from './components/StSheet';
 
 /** Every custom element: tag -> constructor. The single source of truth (registerComponents, typed helpers, DOM tests). */
 export const COMPONENTS = {
   'st-topbar': StTopBar,
+  'st-sheet': StSheet,
   'st-dock': StDock,
   'st-hud': StHud,
   'st-debug': StDebug,
@@ -105,4 +107,4 @@ export function el<K extends keyof StTagMap>(tag: K): StTagMap[K] { return docum
 export function registerComponents(): void {
   for (const tag of ALL_COMPONENT_TAGS) if (!customElements.get(tag)) customElements.define(tag, COMPONENTS[tag]);
 }
-export { StPerf, StTopBar, StDock, StHud, StDebug, StInspector, StToast, StHelp, StSpeedControl, StEventLog, StFinance, StLoans, StProfile, StNews, StGuestInspector, StRating, StLiftInspector, StOperations, StPisteInspector, StRouteInspector, StSettings, StSaveLoad, StAssistant, StSpotlight, StMainMenu, StNewGame, StPauseMenu, StSelect, StModal, StGoals, StRecap, StWhatsNew, StViewHud, StPhoto };
+export { StPerf, StTopBar, StDock, StHud, StDebug, StInspector, StToast, StHelp, StSpeedControl, StEventLog, StFinance, StLoans, StProfile, StNews, StGuestInspector, StRating, StLiftInspector, StOperations, StPisteInspector, StRouteInspector, StSettings, StSaveLoad, StAssistant, StSpotlight, StMainMenu, StNewGame, StPauseMenu, StSelect, StModal, StGoals, StRecap, StWhatsNew, StViewHud, StPhoto, StSheet };
