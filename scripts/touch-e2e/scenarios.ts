@@ -378,7 +378,7 @@ export function registerAll(reg: Reg): void {
       const ok = await pick(c.drawer, c.card);
       await r.check(`${c.id}: drawer card tap selects the tool`, ok && (await r.tool()) === c.tool, `tool ${await r.tool()}, tapped ${ok}, cards ${await r.page.evaluate(() => [...(document.querySelector('st-dock') as any).shadowRoot.querySelectorAll('.drawer .card')].map((b: any) => b.innerText.replace(/\\s+/g, ' ').slice(0, 14) + (b.classList.contains('active') ? '*' : '')).join('|'))}`);
       if (!ok) continue;
-      const drawerShown = (): Promise<boolean> => r.page.evaluate(() => { const d = (document.querySelector('st-dock') as any).shadowRoot.querySelector('.drawer') as HTMLElement | null; return !!d && getComputedStyle(d).display !== 'none' && d.getBoundingClientRect().height > 10; });
+      const drawerShown = (): Promise<boolean> => r.page.evaluate(() => { const sr = (document.querySelector('st-dock') as any).shadowRoot; const sh = sr.querySelector('st-sheet') as any; if (sh && sh.hasAttribute('data-sheet')) { return !sh.hidden && sh.size() > 80; /* the TARGET size (not the animated rect: SwiftShader draws a frame every ~150 ms, mid-transition) */ } /* phones (M7.5): the drawer is a sheet; 'tucked away' = shrunk to its handle */ const d = sr.querySelector('.drawer') as HTMLElement | null; return !!d && getComputedStyle(d).display !== 'none' && d.getBoundingClientRect().height > 10; });
       { // every touch screen: choosing a card tucks the drawer away (it would cover the map); the options button brings it back
         await sleep(400);
         await r.check(`${c.id}: the drawer tucks away after choosing a card on a short screen`, !(await drawerShown()) && (await r.tool()) === c.tool, `shown ${await drawerShown()} tool ${await r.tool()}`);
@@ -466,8 +466,9 @@ export function registerAll(reg: Reg): void {
     // buildings drawer: open, card rail scrolls by swipe (no placement), card tap selects, close button
     await r.tapEl({ text: 'Buildings', tag: 'st-dock' }); await sleep(600);
     const g0 = await dock("const g = sr.querySelector('.drawer .grid'); if (!g) return null; const q = g.getBoundingClientRect(); return { l: g.scrollLeft, max: g.scrollWidth - g.clientWidth, x: q.left, y: q.top + q.height / 2, w: q.width };");
-    await r.check('buildings drawer open with a card rail', !!g0 && g0.max > 50, JSON.stringify(g0));
-    if (g0) {
+    const isSide = await r.page.evaluate(() => { const sh = (document.querySelector('st-dock') as any).shadowRoot.querySelector('st-sheet'); return !!sh && sh.hasAttribute('data-side'); }); // landscape phone: a side sheet, the cards WRAP (no sideways rail)
+    await r.check('buildings drawer open with a card rail', !!g0 && (isSide ? g0.w > 100 && g0.w < r.size.w : g0.max > 50), JSON.stringify(g0));
+    if (g0 && !isSide) {
       const s0 = await state();
       await r.shot(`drawer-buildings-${r.vp}`);
       await r.swipe(g0.x + g0.w * 0.85, g0.y, g0.x + g0.w * 0.15, g0.y, 12);
@@ -476,10 +477,11 @@ export function registerAll(reg: Reg): void {
       await r.check('card rail scrolls by swipe without selecting a card or touching the map', g1 > g0.l + 30 && s1.tool === s0.tool && s1.b === s0.b && Math.hypot(s1.cam.tx - s0.cam.tx, s1.cam.tz - s0.cam.tz) < 0.01, `scrollLeft ${g0.l} -> ${g1}, tool ${s1.tool}`);
       await r.swipe(g0.x + g0.w * 0.15, g0.y, g0.x + g0.w * 0.9, g0.y, 12);
     }
-    const nb = await r.tapEl({ text: 'Caf', tag: 'st-dock', card: true }); await sleep(500);
+    const nb = await r.tapEl({ text: 'Caf', tag: 'st-dock', card: true, scroll: true }); await sleep(500);
     await r.check('card tap selects the building tool', nb && (await r.tool()) === 'placement', await r.tool());
     await r.s((s) => s.tools.reset()); await sleep(300);
     // close button of the drawer >= 44 px and works
+    await r.page.evaluate(() => { const sh = (document.querySelector('st-dock') as any).shadowRoot.querySelector('st-sheet'); const c = sh?.shadowRoot?.querySelector('.content'); if (c) c.scrollTop = 0; }); await sleep(200); // a side sheet scrolled to reach a card: back to the header (the close button lives there)
     const x = await r.rect({ text: '\u2715', tag: 'st-dock' }) ?? await r.rect({ css: 'button[aria-label*=lose], button[title*=lose]', tag: 'st-dock' });
     await r.check('drawer close button >= 44 x 44', !!x && x.w >= 44 && x.h >= 44, JSON.stringify(x));
     if (x) { await r.tap(x.x, x.y); await sleep(400); }
@@ -492,7 +494,18 @@ export function registerAll(reg: Reg): void {
     const body = await dock("const b = sr.querySelector('.drawer .body'); if (!b) return null; const q = b.getBoundingClientRect(); return { top: b.scrollTop, max: b.scrollHeight - b.clientHeight, x: q.left + q.width / 2, y: q.top + q.height / 2, h: q.height };");
     const pre = await state();
     const piste0 = await r.s((s) => { let n = 0; const L = s.sim.networks.layers; for (let i = 0; i < L.length; i++) if (L[i] & 1) n++; return n; });
-    if (body && body.max > 10) {
+    const sheetSize = (): Promise<{ snap: string; size: number; top: number; target: number } | null> => r.page.evaluate(() => { const sh = (document.querySelector('st-dock') as any).shadowRoot.querySelector('st-sheet') as any; if (!sh || !sh.hasAttribute('data-sheet')) return null; const q = sh.shadowRoot.querySelector('.sheet').getBoundingClientRect(); return { snap: sh.snap, size: sh.hasAttribute('data-side') ? q.width : q.height, top: sh.shadowRoot.querySelector('.content').scrollTop, target: sh.size() }; });
+    const sh0 = await sheetSize();
+    if (sh0 && !(await r.page.evaluate(() => (document.querySelector('st-dock') as any).shadowRoot.querySelector('st-sheet').hasAttribute('data-side')))) {
+      // phone portrait: the drawer is a sheet. A swipe up on its content first GROWS the sheet (scroll chaining), and never paints or pans the map
+      const hnd = await r.rect({ css: '.handle', tag: 'st-sheet' }); // a tool is active, so the sheet is down to its handle: tapping the grabber brings the cards back (peek)
+      if (hnd) { await r.tap(hnd.x, hnd.y); await sleep(500); }
+      const rc = await r.rect({ css: '.drawer .head', tag: 'st-dock' });
+      const rr = await r.rect({ css: '.drawer .head', tag: 'st-dock' }) ?? rc;
+      if (rr) { await r.swipe(rr.x, rr.y + 60, rr.x, rr.y - 120, 10); await sleep(500); }
+      const sh1 = await sheetSize();
+      await r.check('drawer sheet grows by a swipe up on its content (scroll chaining)', !!sh1 && sh1.target > sh0.target + 40, `${JSON.stringify(sh0)} -> ${JSON.stringify(sh1)}`);
+    } else if (body && body.max > 10) {
       await r.swipe(body.x, body.y + body.h * 0.35, body.x, body.y - body.h * 0.35, 10);
       const b2 = await dock("return sr.querySelector('.drawer .body').scrollTop;");
       await r.check('drawer body scrolls vertically by swipe', b2 > body.top + 15, `scrollTop ${body.top} -> ${b2}`);
@@ -568,13 +581,15 @@ export function registerAll(reg: Reg): void {
     const sel = await r.rect({ css: 'st-select', tag: 'st-settings' });
     await r.check('settings has a visible st-select', !!sel);
     if (sel) {
-      const v0 = await r.s(() => ((document.querySelector('st-settings') as any).shadowRoot.querySelector('st-select') as any).value);
+      // the select that was actually tapped (Settings has several st-select; the first in the DOM is not always the first on screen)
+      const probe = (): Promise<{ value: string; selectedIndex: number }> => r.s((_s, a) => { const sels = [...(document.querySelector('st-settings') as any).shadowRoot.querySelectorAll('st-select')] as any[]; let best = sels[0], d = 1e9; for (const e of sels) { const q = e.getBoundingClientRect(); const dd = Math.hypot(q.left + q.width / 2 - a.x, q.top + q.height / 2 - a.y); if (dd < d) { d = dd; best = e; } } return { value: best.value, selectedIndex: best.selectedIndex }; }, { x: sel.x, y: sel.y });
+      const v0 = (await probe()).value;
       await r.tap(sel.x, sel.y); await sleep(400);
-      const cur = await r.s(() => ((document.querySelector('st-settings') as any).shadowRoot.querySelector('st-select') as any).selectedIndex);
+      const cur = (await probe()).selectedIndex;
       const opt = await r.rect({ css: 'li[role=option]', tag: 'st-select', nth: cur === 0 ? 1 : 0 });
       await r.check('st-select opens its list with >= 44 px options', !!opt && opt.h >= 44, JSON.stringify(opt));
       if (opt) { await r.shot(`select-open-${r.vp}`); await r.tap(opt.x, opt.y); await sleep(400); }
-      const v1 = await r.s(() => ((document.querySelector('st-settings') as any).shadowRoot.querySelector('st-select') as any).value);
+      const v1 = (await probe()).value;
       await r.check('tapping an option changes the st-select value', v1 !== v0, `${v0} -> ${v1}`);
     }
     // toggle + slider by touch (snapshots of every toggle / slider: the visible one flips / moves)
@@ -653,7 +668,7 @@ export function registerAll(reg: Reg): void {
     const vv = (): Promise<{ scale: number; sx: number; sy: number; w: number; h: number }> => r.ev('({ scale: visualViewport.scale, sx: scrollX, sy: scrollY, w: innerWidth, h: innerHeight })');
     const meta = await r.ev<string>("document.querySelector('meta[name=viewport]').content");
     await r.check('viewport meta forbids user scaling', /user-scalable=no/.test(meta) && /initial-scale=1/.test(meta), meta);
-    const css = await r.ev<{ canvas: string; body: string; html: string; os: string }>("({ canvas: getComputedStyle(document.querySelector('#app canvas')).touchAction, body: getComputedStyle(document.body).touchAction, html: getComputedStyle(document.documentElement).touchAction, os: getComputedStyle(document.documentElement).overscrollBehaviorY })");
+    const css = await r.ev<{ canvas: string; body: string; html: string; os: string }>("({ canvas: getComputedStyle(window.__slope.renderer.webgl.domElement).touchAction, body: getComputedStyle(document.body).touchAction, html: getComputedStyle(document.documentElement).touchAction, os: getComputedStyle(document.documentElement).overscrollBehaviorY })");
     await r.check('canvas touch-action none, page manipulation, overscroll none', css.canvas === 'none' && /manipulation|none/.test(css.body + css.html) && css.os === 'none', JSON.stringify(css));
     // pull-to-refresh: a long swipe down from the very top on the map and on the HUD
     await r.swipe(w * 0.5, 4, w * 0.5, h * 0.6, 14);
@@ -677,11 +692,11 @@ export function registerAll(reg: Reg): void {
     // long press on text must not select it or open a context menu
     if (hud) await r.hold(hud.x, hud.y, 900);
     await r.check('long press on UI text selects nothing', (await r.ev<string>('String(getSelection())')) === '');
-    const ctx = await r.ev<boolean>("new Promise((res) => { const c = document.querySelector('#app canvas'); const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); c.dispatchEvent(ev); res(ev.defaultPrevented); })");
+    const ctx = await r.ev<boolean>("new Promise((res) => { const c = window.__slope.renderer.webgl.domElement; const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); c.dispatchEvent(ev); res(ev.defaultPrevented); })");
     await r.check('canvas contextmenu is suppressed', ctx === true);
     // orientation change / resize relayout
     const lay = async (label: string): Promise<void> => {
-      const info = await r.ev<{ cw: number; ch: number; iw: number; ih: number; over: number; out: string[] }>(`(() => { const c = document.querySelector('#app canvas'); const out = []; const ui = document.getElementById('ui'); for (const k of ui.children) { const sr = k.shadowRoot; const els = sr ? [...sr.children].filter((e) => e.tagName !== 'STYLE' && !e.classList.contains('layer')) : [k]; for (const e of els) { const q = e.getBoundingClientRect(); if (q.width > 2 && q.height > 2 && (q.right > innerWidth + 2 || q.left < -2 || q.bottom > innerHeight + 2 || q.top < -2)) out.push(k.tagName.toLowerCase() + ' ' + [q.left, q.top, q.right, q.bottom].map(Math.round).join(',')); } } return { cw: c.clientWidth, ch: c.clientHeight, iw: innerWidth, ih: innerHeight, over: document.documentElement.scrollWidth - innerWidth, out }; })()`);
+      const info = await r.ev<{ cw: number; ch: number; iw: number; ih: number; over: number; out: string[] }>(`(() => { const c = window.__slope.renderer.webgl.domElement; const out = []; const ui = document.getElementById('ui'); for (const k of ui.children) { const sr = k.shadowRoot; const els = sr ? [...sr.children].filter((e) => e.tagName !== 'STYLE' && !e.classList.contains('layer')) : [k]; for (const e of els) { const q = e.getBoundingClientRect(); if (q.width > 2 && q.height > 2 && (q.right > innerWidth + 2 || q.left < -2 || q.bottom > innerHeight + 2 || q.top < -2)) out.push(k.tagName.toLowerCase() + ' ' + [q.left, q.top, q.right, q.bottom].map(Math.round).join(',')); } } return { cw: c.clientWidth, ch: c.clientHeight, iw: innerWidth, ih: innerHeight, over: document.documentElement.scrollWidth - innerWidth, out }; })()`);
       await r.check(`${label}: canvas fills the window, no horizontal overflow`, info.cw === info.iw && info.ch === info.ih && info.over <= 0, JSON.stringify({ cw: info.cw, ch: info.ch, iw: info.iw, ih: info.ih, over: info.over }));
       await r.check(`${label}: no HUD panel hangs outside the window`, info.out.length === 0, info.out.slice(0, 4).join(' | '));
     };

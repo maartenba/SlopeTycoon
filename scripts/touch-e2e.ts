@@ -45,7 +45,8 @@ try {
       console.log(`== ${vp} / ${sc.id}`);
       const rig = await bootPage(br, srv.url, vp, sc.extra ? `&${sc.extra}` : '', sc.id === 'title');
       rig.group = sc.id;
-      try { await Promise.race([sc.fn(rig), new Promise((_, rej) => setTimeout(() => rej(new Error('scenario timed out (5 min)')), 300000))]); } catch (e) { await rig.check('scenario crashed', false, String((e as Error).stack ?? e).slice(0, 400)); }
+      let guard: ReturnType<typeof setTimeout> | undefined; // cleared afterwards: a pending 5-min timer used to keep the process alive for 5 minutes after the matrix was printed
+      try { await Promise.race([sc.fn(rig), new Promise((_, rej) => { guard = setTimeout(() => rej(new Error('scenario timed out (5 min)')), 300000); })]); } catch (e) { await rig.check('scenario crashed', false, String((e as Error).stack ?? e).slice(0, 400)); } finally { clearTimeout(guard); }
       const bad = rig.errors.filter((e) => !/favicon|GPU stall/i.test(e));
       await rig.check('no console errors / page errors', bad.length === 0, bad.slice(0, 2).join(' | ').slice(0, 300));
       await rig.page.close().catch(() => undefined);
