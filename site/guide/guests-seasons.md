@@ -17,6 +17,8 @@ Two **calm types** fill the quiet times. **Seniors** (lilac cardigans, grey hair
 
 Two **winter types** round out the slope. **Snowboarders** (purple jackets, beanies, a board under the arm) are no longer just a look: about a third of the winter crowd (and a bit less in spring and autumn) are snowboarders, carved out of the solo, couple, budget and adventure arrivals, so the total number of guests stays the same. They love the **Stunt Park**, wide pistes and renting a board, and they dislike **long flat stretches and catwalks** where a board stops: a run full of flats loses them to a wide one. **Ski tourers** (red shells, a backpack, touring skis; from level 2) only come while the resort has an **open backcountry route below avalanche danger 4**; they skin up the route, spend little and love a mountain hut (see [Backcountry & avalanche danger](page:backcountry)).
 
+A third winter type, the **Sledder** (bright orange jackets, bobble hats, from level 2), comes for the toboggan run: it arrives in winter while a **Sled Rental** with a safe run is open, and in summer for an open **Alpine Coaster**. Sledders are beginners at best, spend little and love a hot drink afterwards; families, couples, seniors and school groups ride too (see [Sled runs & the alpine coaster](page:sled-runs)).
+
 {{fig:guests-boarders-tourers}}
 
 Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt, and sooner or later they need a toilet. When they leave they judge the resort, and the average becomes your **star rating**.
@@ -50,7 +52,7 @@ A game year has **180 days** in 12 months of 15 days, and the months are the **r
 
 Daylight follows the sun too: the **longest day is 21 June** and the **shortest 21 December**, so December days are short (lifts open about 08:30) and summer days long. Weekdays are real as well: Saturday and Sunday are the peak days (see [Money](page:money)), and quiet weekdays are when **Seniors** and **school classes** visit: the first week of December and January are school-class weeks in winter (see [Seniors & school trips](page:seniors-schools)).
 
-Festivals sit in their real months: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Mountain Concert in early September, the Snow Concert in March, the Almabtrieb in early October and New Year on 31 December. The **Events strip** in the Marketing drawer shows all twelve months at a glance (see [Events, stories & the region](page:events)).
+Festivals sit in their real months: Christmas Market in December, Carnival in February, World Cup in January and February, Music Festival from June to August, the Mountain Concert in early September, the Snow Concert in March, the Almabtrieb in early October and New Year on 31 December. The **Events strip** in the Marketing drawer shows all twelve months at a glance (see [Events, stories & the region](page:events)).
 
 ### The real snowline
 

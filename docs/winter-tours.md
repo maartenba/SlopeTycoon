@@ -45,6 +45,9 @@ Only the scooter is `motorised`. Each departure scares animals within 9 tiles of
 
 `tests/sim/attractions/winterTours.test.ts` (data, route planner per base, winter-only seasons, storm closure, summer closed, capacity / revenue, determinism, save module round-trip, inspector text, snowshoe Hike persistence + instability cancel, scooter wildlife + motor cap, advisor), `tests/render/tourVehicles.test.ts` (spray, triangle budgets), `tests/audio/ambience.test.ts` (sleigh mix + ceiling). `npm run winter:tours [-- --shots 1]` plays a real-page winter week with the three bases (`.weave/shots/p6q-*.png`: each base + a departure running).
 
+## Sled Rental
+The Sled Rental (M7.3) is a fourth winter tour base on the same system, but its route is a painted track (`Layer.Sled`), not a road or trail; see `docs/sled-runs.md`.
+
 ## Goldens
 
 The unlock rows move ONLY the `progression` part of the staff golden (`tests/sim/staff.test.ts`). Not re-recorded here: the M6.5 STOP does it. The tour module stays `null` (out of `stateHash`) until a tour base exists.

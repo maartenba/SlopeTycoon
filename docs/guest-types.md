@@ -70,6 +70,11 @@ The year-2 incidents of the 64 / seed 21 `yearReport` resort went 8 -> 18 after 
 
 Finding: **school classes cause no injuries at all**. Children (and the teacher glued to them) are driven by the Families system (`families.controls`), never run `finishRun`, so there is no injury roll; they stay at the kids venue (Ski School, Kids Ground, Playground, Petting Zoo) with beginner skill, taught in batches of 6 and supervised by the teacher. The target "school incident rate <= families' rate" is met with 0 vs 2.8 / 0.3 per 1000, so **no risk code was changed**. The 8 -> 18 on one resort was the shifted arrival draw (more couples / solos / budget guests in the injury-prone ski population), not the classes; the safety-award drop on that single resort is noise of the same kind. Before / after numbers are equal by construction (nothing changed). Seniors (4.6-5.7 per 1000) sit between families and couples; no change.
 
+## Sledder (M7.3)
+| Index | Id | Seasons | Gate | Notes |
+|---|---|---|---|---|
+| 12 | `sledder` Sledder | winter 0.06, summer 0.04 | level 2; `requiresIn`: winter `@sledRun` (an OPEN Sled Rental), summer `@coaster` (an OPEN Alpine Coaster); both pseudo ids come from `Spawner.flagsFn` | segment budget, fallback couple; group 2-5, budget $90-190, beginners (`maxSkill` 1), overnight 25 %; appeal sled hut / coaster 1.5, terrace / cafe .8, restaurant .7, no ski rental; orange jackets + bobble hats. An ADDITION to the arrival mix (not a conversion): the plain bot builds no hut, so the golden hashes do not move. Skiers, boarders, families, seniors and school groups ride the sled run through the tour appeal columns (`docs/sled-runs.md`). |
+
 ## Snowboarder and Ski tourer (Phase 6 Tasks 33 + 34)
 | Index | Id | Seasons | Gate | Notes |
 |---|---|---|---|---|
