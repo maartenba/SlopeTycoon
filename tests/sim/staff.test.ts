@@ -68,7 +68,7 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '7199ac40',
   'yearReports': '06deae66',
   'advisor': 'ca063e92',
-  'progression': '70e9f683',
+  'progression': '424b7091',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (M7.1 economy pass, docs/balance.md "M7.1 re-record": the souvenir-stop score 0.2 -> 0.45 so a Shop earns (it earned ~$50 a year); money 233115.57 -> 234121.49 (+0.4 %); the Shuttle Bus Depot / Apres-Ski Bar / Wind Turbine changes never touch this bot).

@@ -111,7 +111,7 @@ describe('level thresholds (config/progression.ts)', () => {
 
 describe('unlock table (config/unlocks.ts)', () => {
   it('is short (8 to 24 items), every id exists in its catalogue, levels are 2..6', () => {
-    expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(32); // Phase 6 content adds a few selective rows (quad base, tackle hut, ...)
+    expect(UNLOCKS.length).toBeGreaterThanOrEqual(8); expect(UNLOCKS.length).toBeLessThanOrEqual(40); // M7.3 +2 (sled rental, alpine coaster); // Phase 6 content adds a few selective rows (quad base, tackle hut, ...)
     for (const u of UNLOCKS) {
       const exists = u.kind === 'landscape' ? u.id === 'pond' || u.id === 'river' || u.id === 'suspension' || u.id === 'backcountry' : u.kind === 'building' ? !!BUILDINGS[u.id] : u.kind === 'lift' ? !!LIFTS[u.id as keyof typeof LIFTS] : CAMPAIGNS.some((c) => c.id === u.id);
       expect(exists, `${u.kind}:${u.id}`).toBe(true);
@@ -127,7 +127,7 @@ describe('unlock table (config/unlocks.ts)', () => {
     for (const l of ['tbar', 'chair2', 'chair4', 'chair4d']) expect(isGated('lift', l), l).toBe(false);
     for (const c of ['families', 'budget', 'summer', 'brand']) expect(isGated('campaign', c), c).toBe(false);
     expect(unlockLevel('building', 'nope')).toBe(1);
-    expect(Object.keys(BUILDINGS).filter((b) => isGated('building', b)).length).toBeLessThanOrEqual(17); // 5 + the Phase 6 optional extras (+ the two water tour bases, Task 24, + the two hotels, Task 27, + the three winter tour bases, Task 31)
+    expect(Object.keys(BUILDINGS).filter((b) => isGated('building', b)).length).toBeLessThanOrEqual(26); // M7.3 + M7.4 extras; // 5 + the Phase 6 optional extras (+ the two water tour bases, Task 24, + the two hotels, Task 27, + the three winter tour bases, Task 31)
   });
 
   it('no goal, advisor rule or tutorial lift default depends on a gated item (they could deadlock / propose locked things)', () => {

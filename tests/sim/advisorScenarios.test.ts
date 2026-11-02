@@ -341,6 +341,22 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'tourist.office', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; },
+    fixes: [
+      { name: 'a Tourist Office stands', apply: (s) => { buildAt(s, 'touristOffice', lodge(s), { rmax: 14 }); } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 1_000; } },
+    ],
+  },
+  {
+    id: 'carnival.available', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; },
+    fixes: [
+      { name: 'the Carnival is booked', apply: (s) => { expect(s.events.book('carnival', s.events.nextStart('carnival')!)).toBe(true); } },
+      { name: 'the season moves on (the window is far away)', apply: (s) => { s.game.date.day = 20; } },
+    ],
+  },
+  {
     id: 'rental.boards',
     setup: (s) => { const n0 = s.buildings.all().filter((b) => b.type === 'rental').length; const short = (): number => (s.buildings.all().filter((b) => b.type === 'rental').length > n0 ? 0 : 6); s.attractions.rentalStock = () => ({ skis: { out: 5, cap: 30 }, boards: { out: 16, cap: 16 }, shortToday: short(), shortBoardsToday: short(), short: 6 }); },
     fixes: [
@@ -422,6 +438,15 @@ const SCENARIOS: Scenario[] = [
       { name: 'a quad base stands', apply: (s) => { buildAt(s, 'quadBase', lodge(s), { rmax: 14 }); } },
       { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
       { name: 'winter comes', apply: (s) => { s.game.date.day = seasonStartDay('winter') + 5; } },
+    ],
+  },
+  {
+    id: 'tour.sled', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 45); s.game.date.day = seasonStartDay('winter') + 5; },
+    fixes: [
+      { name: 'a sled rental stands', apply: (s) => { buildAt(s, 'sledRental', lodge(s), { rmax: 14 }); } },
+      { name: 'the resort is quiet', apply: (s) => { guests(s, 5); } },
+      { name: 'summer comes', apply: (s) => { s.game.date.day = seasonStartDay('summer') + 5; } },
     ],
   },
   {

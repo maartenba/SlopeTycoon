@@ -18,7 +18,7 @@ describe('catalog season field', () => {
     expect(liftSeason('tbar')).toBe('winter');
     for (const k of Object.keys(LIFTS) as Array<keyof typeof LIFTS>) expect(liftSeason(k)).toBe(LIFTS[k].carriesBikes ? 'all' : 'winter');
     expect(networkSeason('ski')).toBe('winter'); expect(networkSeason('mtb')).toBe('summer'); expect(networkSeason('hike')).toBe('summer'); expect(networkSeason('road')).toBe('all'); expect(networkSeason('backcountry')).toBe('winter');
-    expect(NETWORK_ITEMS.map((n) => networkSeason(n.key)).length).toBe(7);
+    expect(NETWORK_ITEMS.map((n) => networkSeason(n.key)).length).toBe(9);
   });
 });
 
@@ -49,7 +49,7 @@ describe('relevance / seasonSort (pure)', () => {
     expect(ids.indexOf('beach')).toBeGreaterThan(ids.indexOf('stuntPark'));
     expect(ids.slice(0, 3)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark']);
     const summer = seasonSort(buildingsInTab('recreation'), (d) => d.season, 'summer', 'now').map((d) => d.id);
-    expect(summer.slice(-6)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark', 'sleighStable', 'snowshoeHut', 'snowscooterBase']); // + the winter tour bases (Task 31)
+    expect(summer.slice(-7)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark', 'sleighStable', 'snowshoeHut', 'snowscooterBase', 'sledRental']); // + the winter tour bases (Task 31)
     expect(summer[0]).not.toBe('iceRink');
   });
   it('badges and hints for off-season items only', () => {

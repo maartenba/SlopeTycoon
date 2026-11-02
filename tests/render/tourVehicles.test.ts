@@ -6,12 +6,12 @@ import type { Carrier } from '../../src/sim/attractions/Tour';
 
 describe('TourVehicles (cosmetic carriers)', () => {
   const mk = (list: Carrier[]) => new TourVehicles(() => 2, (_t, out, max) => { out.length = 0; for (const c of list) if (out.length < max) out.push(c); return out; });
-  it('draws nothing without rides and one instanced mesh per vehicle kind + a dust and a spray mesh (8 draw calls at most)', () => {
+  it('draws nothing without rides and one instanced mesh per vehicle kind + a dust and a spray mesh (10 draw calls at most)', () => {
     const v = mk([]);
     v.update(0);
     expect(v.count).toBe(0);
-    expect(v.meshes.size).toBe(6);
-    expect(v.group.children.length).toBe(8);
+    expect(v.meshes.size).toBe(8);
+    expect(v.group.children.length).toBe(10);
     expect(v.dust.count).toBe(0);
     expect(v.spray.count).toBe(0);
   });
