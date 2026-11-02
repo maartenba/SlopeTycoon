@@ -31,7 +31,7 @@ export type Op = '>=' | '<=' | '==' | '!=';
 export interface Cond { f: string; op: Op; v: string | number | boolean }
 export type MedalRank = 1 | 2 | 3;
 
-export type FactKey = 'stars' | 'level' | 'guests' | 'openLifts' | 'money' | 'festivals' | 'railShare' | 'viewsSeen' | 'riverToSea' | 'raftRides' | 'powderHounds' | 'concert' | 'suites' | 'summerShare';
+export type FactKey = 'stars' | 'level' | 'guests' | 'openLifts' | 'money' | 'festivals' | 'railShare' | 'viewsSeen' | 'riverToSea' | 'raftRides' | 'powderHounds' | 'concert' | 'suites' | 'summerShare' | 'masked';
 export type Tracker =
   | { kind: 'event'; event: GameEventName; where?: readonly Cond[]; n?: number; per?: 'profile' | 'game'; /** payload field to add instead of 1 */ by?: string; counter?: string }
   | { kind: 'render'; counter: string; n: number }
@@ -106,6 +106,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'first-raft', title: 'First raft', description: 'Send your first guests down the river on a raft.', tier: 1, icon: 'smile', scope: 'any', tracker: { kind: 'fact', fact: 'raftRides', op: '>=', v: 1 } },
   { id: 'source-to-sea', title: 'Source to sea', description: 'Dig a river from a spring all the way to a lake or the edge of the map.', tier: 1, icon: 'rain', scope: 'any', tracker: { kind: 'fact', fact: 'riverToSea', op: '>=', v: 1 } },
   { id: 'concert-night', title: 'Concert night', description: 'Host a Mountain Concert.', tier: 1, icon: 'moon', scope: 'any', tracker: { kind: 'fact', fact: 'concert', op: '>=', v: 1 } },
+  // M7.4: Carnival (docs/festivals.md): `masked` = guests in costume right now while a Carnival runs at 3+ stars (0 otherwise)
+  { id: 'masked-mountain', title: 'Masked Mountain', description: 'Host a Carnival with a dozen costumed guests in a resort of three stars or more.', tier: 2, icon: 'smile', scope: 'any', tracker: { kind: 'fact', fact: 'masked', op: '>=', v: 12 } },
   { id: 'scenic-route', title: 'Scenic route', description: 'Have hikers reach three different viewpoints, treehouses or suspension bridges.', tier: 2, icon: 'eye', scope: 'any', tracker: { kind: 'fact', fact: 'viewsSeen', op: '>=', v: 3 } },
   { id: 'green-travel', title: 'Green travel', description: 'A quarter of the guests in your resort (30 or more) came by train.', tier: 2, icon: 'guests', scope: 'any', tracker: { kind: 'fact', fact: 'railShare', op: '>=', v: 25 } },
   { id: 'powder-day', title: 'Powder day', description: 'Run Powder Hounds on a powder day.', tier: 2, icon: 'flake', scope: 'any', tracker: { kind: 'fact', fact: 'powderHounds', op: '>=', v: 1 } },

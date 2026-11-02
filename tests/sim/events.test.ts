@@ -52,9 +52,9 @@ describe('EventCalendar: prerequisites', () => {
   it('rejects overlapping bookings', () => {
     const f = mk({ today: 120 });
     expect(f.cal.book('christmasMarket', 125)).toBe(true);
-    expect(f.cal.blocker('carnival', 150)).toBeNull(); // not overlapping 125..132
-    expect(f.cal.book('carnival', 150)).toBe(true);
-    expect(f.cal.blocker('worldCup', 152)).toMatch(/already booked/);
+    expect(f.cal.blocker('carnival', 156)).toBeNull(); // not overlapping 125..132
+    expect(f.cal.book('carnival', 156)).toBe(true);
+    expect(f.cal.blocker('worldCup', 158)).toMatch(/already booked/);
   });
   it('pays on booking, refunds 80% on cancel before it starts, not after', () => {
     const f = mk({ today: 120 });

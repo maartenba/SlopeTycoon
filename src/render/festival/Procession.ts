@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createCostumeFigureGeometry, createDecoratedCowGeometry, createRacerGeometry } from '../meshes/Animals';
+import { CARNIVAL } from '../../config/festivals';
 import { renderRng } from '../fx/Particles';
 import type { Pt } from './placeDressing';
 
@@ -13,7 +14,8 @@ export const PROCESSION_SCALE: Record<ProcessionKind, number> = { cow: 1.6, cost
 export const PROCESSION_HOURS = { from: 9, to: 17 } as const;
 export const PROCESSION_CAP = 16;
 
-export const processionActive = (hour: number): boolean => hour >= PROCESSION_HOURS.from && hour < PROCESSION_HOURS.to;
+/** The Carnival parade walks 10:00 - 16:00 (CARNIVAL.paradeFrom / paradeTo); the others 09:00 - 17:00. */
+export const processionActive = (hour: number, kind?: ProcessionKind): boolean => kind === 'costume' ? hour >= CARNIVAL.paradeFrom && hour < CARNIVAL.paradeTo : hour >= PROCESSION_HOURS.from && hour < PROCESSION_HOURS.to;
 
 /** Pure: pose (x, y, heading) at arc length `s` along a polyline `loop`. `closed` wraps the loop (last point -> first). */
 export function loopPose(loop: readonly Pt[], s: number, closed: boolean, out: { x: number; y: number; heading: number } = { x: 0, y: 0, heading: 0 }): { x: number; y: number; heading: number } {
@@ -82,7 +84,7 @@ export class Procession {
   update(dt: number, hour: number): void {
     this.time += dt;
     const kind = this.kind;
-    if (!kind || !this.figures || !processionActive(hour)) { this.hide(); return; }
+    if (!kind || !this.figures || !processionActive(hour, kind)) { this.hide(); return; }
     const closed = kind !== 'racer', total = loopLength(this.loop, closed);
     if (total <= 0) { this.hide(); return; }
     const mesh = this.meshes[kind], k = PROCESSION_SCALE[kind], v = PROCESSION_SPEED[kind];

@@ -14,6 +14,7 @@ import { PLAYGROUND_SPECS } from './Playground';
 import { PETTING_ZOO_SPECS } from './PettingZoo';
 import { RENTAL_SPECS } from './Rental';
 import { RESTAURANT_SPECS } from './Restaurant';
+import { SKY_SPECS } from './Sky';
 import { SHOP_SPECS } from './Shop';
 import { STUNT_PARK_SPECS } from './StuntPark';
 import { tourSpecs } from './Tour';
@@ -22,5 +23,5 @@ import { TOILET_SPECS } from './Toilets';
 /** Catalog-derived registry: building type -> runtime behaviour spec. */
 export const ATTRACTION_SPECS: Readonly<Record<string, AttractionSpec>> = {
   ...RESTAURANT_SPECS, ...HEATED_TERRACE_SPECS, ...SHOP_SPECS, ...RENTAL_SPECS, ...LODGING_SPECS, ...ICE_RINK_SPECS, ...STUNT_PARK_SPECS,
-  ...ADVENTURE_PARK_SPECS, ...PLAYGROUND_SPECS, ...KIDS_GROUND_SPECS, ...MAGIC_CARPET_SPECS, ...BEACH_SPECS, ...BOAT_RENTAL_SPECS, ...FARM_SPECS, ...tourSpecs(), ...CLIMBING_SPECS, ...TOILET_SPECS, ...ANGLING_SPECS, ...PETTING_ZOO_SPECS,
+  ...ADVENTURE_PARK_SPECS, ...PLAYGROUND_SPECS, ...KIDS_GROUND_SPECS, ...MAGIC_CARPET_SPECS, ...BEACH_SPECS, ...BOAT_RENTAL_SPECS, ...FARM_SPECS, ...tourSpecs(), ...CLIMBING_SPECS, ...TOILET_SPECS, ...ANGLING_SPECS, ...PETTING_ZOO_SPECS, ...SKY_SPECS,
 };

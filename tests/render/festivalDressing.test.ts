@@ -107,7 +107,7 @@ describe('FestivalDressing (instanced, view only)', () => {
     d.update(0.1, 12);
     expect(callers(d)).toBeGreaterThan(1);
     expect(callers(d)).toBeLessThanOrEqual(FESTIVAL_DRAW_CALLS);
-    expect(d.labels).toContain('Winter Carnival');
+    expect(d.labels).toContain('Carnival');
     d.setEvents([]);
     d.update(0.1, 12);
     expect(d.propCount()).toBe(0);

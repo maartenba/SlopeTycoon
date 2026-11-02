@@ -37,7 +37,7 @@ const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 export type SmokeKind = 'lodging' | 'dining' | 'farm' | 'terrace' | 'camp' | 'pool' | 'coffee';
 const KIND: Record<string, SmokeKind> = {
   chalet: 'lodging', apartment: 'lodging', baseLodge: 'dining', lodge: 'dining', cafe: 'dining', mountainHut: 'dining', heatedTerrace: 'terrace', apresBar: 'dining', alpineFarm: 'farm', rangerStation: 'farm', campground: 'camp',
-  smallHotel: 'dining', luxuryHotel: 'pool', coffeeStand: 'coffee',
+  smallHotel: 'dining', luxuryHotel: 'pool', coffeeStand: 'coffee', pizzeria: 'dining', bakery: 'coffee',
 };
 export const smokeKindOf = (type: string): SmokeKind | null => KIND[type] ?? null;
 /** Where a building's smoke / steam rises (building-local): its chimney, or the pool steam vent of the Luxury Hotel. */

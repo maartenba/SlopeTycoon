@@ -31,7 +31,22 @@ export interface DressingSpec {
   palette: readonly number[];
 }
 
-export type FestivalNeed = 'lodge' | 'blackPiste' | 'gondola';
+export type FestivalNeed = 'lodge' | 'blackPiste' | 'gondola' | 'street';
+
+/**
+ * Carnival (M7.4; upgrade of the old 'Winter Carnival', docs/festivals.md "Carnival"): an EU mountain-village carnival around Shrove Tuesday. The calendar is label-only, so
+ * the window is fixed: it may start 6-11 Feb (sim day 155-160) and its last day (Shrove Tuesday) falls on 10-15 Feb. Needs a Base Lodge and a village street.
+ */
+export const CARNIVAL = {
+  /** Road / footpath tiles in one connected run near the village / base that make a "street" for the parade, and how far from the anchors it is searched. */
+  streetTiles: 6, streetRadius: 16,
+  /** Restaurants and shops sell this much more while it runs (a small, capped bonus; 1 = none). */
+  spendMult: 1.05,
+  /** Share of the guests drawn in a costume while it runs (a deterministic hash of the guest id) and the hours (inclusive start, exclusive end) the parade walks. */
+  costumeShare: 0.18, paradeFrom: 10, paradeTo: 16,
+  /** 'Masked Mountain' achievement: this many guests in costume at once and this rating. */
+  trophyGuests: 12, trophyStars: 3,
+} as const;
 
 export interface FestivalDef {
   id: FestivalId;
@@ -78,10 +93,10 @@ export const FESTIVALS: readonly FestivalDef[] = [
     fireworks: 'finale',
   },
   {
-    id: 'carnival', name: 'Winter Carnival', icon: '🎭', kind: 'booked', seasons: ['winter'], startWindow: [150, 160], days: 5, leadDays: 3, cost: 4_000, arrivalMult: 1.2, cheer: 0.015, minStars: 2.5, minLevel: 3, needs: ['lodge'],
-    blurb: 'Banners, stalls and a costumed procession through the village.',
-    dressing: { bunting: [14, 20], flags: [6, 8], banners: [2, 2], stalls: [3, 4], procession: { kind: 'costume', count: [8, 12] }, palette: [0xe8453c, 0xf2c14e, 0x8e5bd0, 0x2ba6a0, 0xf08a24] },
-    fireworks: 'finale',
+    id: 'carnival', name: 'Carnival', icon: '🎭', kind: 'booked', seasons: ['winter'], startWindow: [155, 160], days: 5, leadDays: 3, cost: 4_000, arrivalMult: 1.2, cheer: 0.015, minStars: 2.5, minLevel: 3, needs: ['lodge', 'street'],
+    blurb: 'Fasching, Karneval, Carnaval: wooden masks, harlequins and a brass band parade down the village street. It ends on Shrove Tuesday.',
+    dressing: { bunting: [14, 20], flags: [6, 8], banners: [2, 2], stalls: [3, 4], procession: { kind: 'costume', count: [10, 14] }, palette: [0xc9564b, 0xd9b44a, 0x7a5aa6, 0x3a9a96, 0xd98a3a] },
+    fireworks: 'none',
   },
   {
     id: 'musicFestival', name: 'Summer Music Festival', icon: '🎵', kind: 'booked', seasons: ['summer'], startWindow: [30, 70], days: 4, leadDays: 4, cost: 6_000, arrivalMult: 1.35, cheer: 0.015, minStars: 3, minLevel: 3, needs: ['lodge'],

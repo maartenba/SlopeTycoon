@@ -221,6 +221,8 @@ export function createCostumeFigureGeometry(): THREE.BufferGeometry {
     box(0.06, 0.18, 0.06, 0xf2c14e, -0.13, 0.24, 0), box(0.06, 0.18, 0.06, 0xd9453a, 0.13, 0.24, 0), // arms
     box(0.22, 0.04, 0.14, 0xf4efe2, 0, 0.44, 0), // ruff
     box(0.12, 0.12, 0.12, 0xf0c8a0, 0, 0.47, 0), // head
+    box(0.13, 0.09, 0.03, 0x8a5a2e, 0, 0.485, 0.075), box(0.035, 0.07, 0.04, 0x6a3f1e, 0, 0.465, 0.11), // Carnival (M7.4): wooden mask with a long nose
+    box(0.04, 0.04, 0.13, 0xd9b44a, 0.1, 0.38, 0.09), box(0.08, 0.08, 0.02, 0xd9b44a, 0.1, 0.36, 0.17), // a small brass horn (the band)
     box(0.15, 0.04, 0.15, 0xd9453a, 0, 0.58, 0), box(0.09, 0.09, 0.09, 0xf2c14e, 0, 0.62, 0), box(0.04, 0.05, 0.04, 0x8e5bd0, 0, 0.7, 0), // pointed hat
   ]);
 }

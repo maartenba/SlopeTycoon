@@ -12,7 +12,7 @@ Dates use the real calendar of `docs/time-flow.md` "Calendar" (15-day months, si
 |---|---|---|---|---|---|---|
 | Almabtrieb | automatic (retrofit) | the descent of the herds, 1-11 October (`phaseFor` = `descend`; the window is `almabtriebWindow()`, derived from it, so they cannot disagree), needs an Alpine Farm | 11 | - | x1.06 (plus the old guest cheer in `Livestock`) | a farm with cows |
 | Christmas Market | booked | start 1-9 Dec (sim day 120-128) | 8 | $3,000 | x1.18 | Base Lodge, 2 stars, level 2 |
-| Winter Carnival | booked | start 1-11 Feb (sim day 150-160) | 5 | $4,000 | x1.20 | Base Lodge, 2.5 stars, level 3 |
+| Carnival | booked | start 6-11 Feb (sim day 155-160), last day (Shrove Tuesday) 10-15 Feb | 5 | $4,000 | x1.20 | Base Lodge, a village street, 2.5 stars, level 3 |
 | Summer Music Festival | booked | start 1 Jun - 11 Aug (sim day 30-70) | 4 | $6,000 | x1.35 | Base Lodge, 3 stars, level 3 |
 | Mountain Concert | booked | summer: start 1-10 Sep (sim day 75-84) | 2 | $9,000 | x1.25 | gondola or cable car, 3 stars, level 3 |
 | Snow Concert | booked | winter: start 1-15 Mar (sim day 165-178), a late-season spring-skiing concert | 2 | $9,000 | x1.25 | gondola or cable car, 3 stars, level 3 |
@@ -73,6 +73,21 @@ Two editions, **alongside** the Summer Music Festival (config `mountainConcertSu
 **UI + advisor:** the Events panel lists both editions in 'Book a festival' (window, 'Next: Sun 1 Mar - Winter - Year 1' from `formatGameDate`, the unmet reason, a start-date picker) and a Show me for a running concert (camera to the stage). Rudi's `concert.available` rule fires when a gondola or cable car exists, a concert can start within 40 days, the prerequisites are met, nothing is booked and the cash covers it; 'Show me' opens the Marketing drawer (the calendar).
 
 Tests: `tests/sim/mountainConcert.test.ts`, `tests/render/mountainConcert.test.ts`, `tests/audio/concert.test.ts`, `tests/ui-dom/events.test.ts`, `tests/sim/advisor*.test.ts`. Festivals only run with `autoEvents` and the plain bot books none, so goldens did not move. Shots: `.weave/shots/p6t-*` (recipe `.weave/tmp/p6t-scene.js`: starter resort, first lift turned into a gondola, `__slope.events.start(id, 2)`, `--hour 21`).
+
+## Carnival (M7.4, Task 7.4.4b)
+
+The old 'Winter Carnival' (`id: 'carnival'`, kept so saves with a booking still load) is now the **Carnival** (Fasching / Karneval / Carnaval), an EU mountain-village carnival around Shrove Tuesday. The calendar is label-only, so the date is a fixed window: it may **start 6-11 Feb (sim day 155-160)**, runs five days and its **last day, Shrove Tuesday, is 10-15 Feb** (always inside February and winter, ends by sim day 164; it can be booked in the same year as the World Cup, whose window is 140-164 but whose bookings may not overlap). An old booking at day 150 still runs (test `old save`).
+
+* **Needs** (`FestivalNeed 'street'`): Base Lodge + a **village street** = a connected run of at least `CARNIVAL.streetTiles` (6) road / footpath tiles within `CARNIVAL.streetRadius` (16) tiles of the village, the Base Lodge or the lowest lift station (`sim/events/Street.ts`, cached per day; the same chain `placeDressing` strings the bunting along). Reason on the card: 'Needs a village street (6+ road or path tiles in a row)'. 2.5 stars, level 3, $4,000, x1.20 arrivals, daily cheer 0.015 (unchanged).
+* **Spend bonus**: restaurants and shops earn `CARNIVAL.spendMult` (x1.05) more while it runs (`EventCalendar.spendMult`, applied in `createSim`'s `earn`; flat on the two ledger lines, not "near the street").
+* **Parade** (`Procession` kind `costume`): 10-14 masked revellers (wooden mask with a long nose, harlequin torso, pointed hat, a small brass horn; Krampus-free, no horns) walk the dressed street **10:00 - 16:00** (`CARNIVAL.paradeFrom / paradeTo`), banners 'Carnival', muted streamers (palette 0xc9564b / 0xd9b44a / 0x7a5aa6 / 0x3a9a96 / 0xd98a3a). Still **<= 3 draw calls** (`FESTIVAL_DRAW_CALLS`); view only. **No fireworks, no confetti** (`fireworks: 'none'`).
+* **Costumed guests**: about `CARNIVAL.costumeShare` (18 %) of the guests wear a festive jacket and a wide-brim hat while it runs (`sim/events/Costume.ts` = a pure hash of the guest id; `costumeLook` in `guestAppearance.ts`; `GuestRenderer.carnival` re-derives the appearance, no new draw calls).
+* **Audio**: a quiet `carnival` ambience layer (ceiling 0.036, pink noise through a tuba and a horn band-pass pulsed at the oompah beat, 10:00 - 16:00, near the street, damped by rain, follows the ambience volume and mute; `WorldProbe.carnivals`).
+* **News**: 'Carnival in 3 days' (3 days ahead), 'Carnival begins!' (existing), 'Shrove Tuesday: the last day of the Carnival' (once each; they fire on exactly one day, so no flag is saved; booked festivals need no `autoEvents`).
+* **Rudi**: `carnival.available` (15 guests, requirements met, cash, the window within 40 days, nothing booked): 'Carnival in late February: book it in the Events panel?', Show me opens the Marketing drawer.
+* **Campaign**: **Carnival Week** (`carnival`, $3,500, 10 days, family 0.9 / couple 0.7, `window: 'carnival'`, prerequisite `bookedCarnival` (start only)): full effect only while the Carnival runs or starts within `FESTIVAL_CAMPAIGN.leadDays`, x0.2 outside it.
+* **Achievement** 'Masked Mountain' (fact `masked` >= 12 costumed guests at once while it runs at 3+ stars, tier 2, observer-only).
+* Tests: `tests/sim/carnival.test.ts` (window in February, determinism, save / load, old booking, street need, news, spend, campaign), `tests/render/carnivalRender.test.ts`, the contract test (campaign row) and the two advisor tables. Goldens: the plain bot books no festival, so none moved because of the Carnival.
 
 ## Fireworks
 

@@ -16,7 +16,7 @@ One doc per feature or system. Player-facing docs are the guide in `site/guide/*
 - [staff.md](staff.md), [stories.md](stories.md), [rivals.md](rivals.md), [festivals.md](festivals.md), [achievements.md](achievements.md), [goals.md](goals.md), [scenarios.md](scenarios.md), [progression.md](progression.md), [year-report.md](year-report.md), [stats.md](stats.md), [advisor.md](advisor.md), [fun-feedback.md](fun-feedback.md).
 
 ## Guests and buildings (Phase 6)
-- [guest-types.md](guest-types.md), [comfort.md](comfort.md), [lodging.md](lodging.md), [hotels.md](hotels.md), [campground.md](campground.md), [coffee-stand.md](coffee-stand.md), [petting-zoo.md](petting-zoo.md), [anglers.md](anglers.md), [viewpoints.md](viewpoints.md), [climbing.md](climbing.md).
+- [guest-types.md](guest-types.md), [comfort.md](comfort.md), [lodging.md](lodging.md), [hotels.md](hotels.md), [campground.md](campground.md), [coffee-stand.md](coffee-stand.md), [m74-buildings.md](m74-buildings.md), [petting-zoo.md](petting-zoo.md), [anglers.md](anglers.md), [viewpoints.md](viewpoints.md), [climbing.md](climbing.md).
 - Tours: [tours.md](tours.md) (framework), [quads.md](quads.md), [winter-tours.md](winter-tours.md), [water-tours.md](water-tours.md), [backcountry.md](backcountry.md).
 - Placement and infrastructure: [placement-rules.md](placement-rules.md), [trails-access.md](trails-access.md), [bridges.md](bridges.md), [crossings.md](crossings.md), [rivers.md](rivers.md), [landscaping.md](landscaping.md), [lifts-clearance.md](lifts-clearance.md), [mid-stations.md](mid-stations.md), [build-depth.md](build-depth.md), [demo-towns.md](demo-towns.md).
 

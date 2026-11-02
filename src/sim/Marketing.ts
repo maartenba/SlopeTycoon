@@ -21,6 +21,8 @@ export interface MarketingContext {
   dayClass?(): DayClass;
   /** Campaigns v2: a booked festival runs today or starts within FESTIVAL_CAMPAIGN.leadDays (the Festival Season window). Absent = false. */
   festivalWindow?(): boolean;
+  /** M7.4: the booked Carnival runs today or starts within FESTIVAL_CAMPAIGN.leadDays (the Carnival Week window). Absent = false. */
+  carnivalWindow?(): boolean;
   /** Campaigns v2: product of the running events' arrival multipliers (1 = none); caps festival x campaign at ELASTICITY.maxVolume. */
   festivalMult?(): number;
   /** Campaigns v2: rail arrival point (available = station served, load = guests currently on rail trips or at the station side, capacity = station capacity). */
@@ -91,6 +93,7 @@ export function campaignEffectiveness(def: CampaignDef, ctx: MarketingContext): 
   }
   if (def.dayClassMult) warnings.push(`Day of the week matters: ${(['peak', 'regular', 'off'] as const).map((k) => `${{ peak: 'weekends and holidays', regular: 'Fridays', off: 'Mon-Thu' }[k]} x${def.dayClassMult![k] ?? 1}`).join(', ')}`);
   if (def.window === 'festival') warnings.push(`Full effect only around a booked festival (x${FESTIVAL_CAMPAIGN.outside} otherwise)`);
+  if (def.window === 'carnival') warnings.push(`Full effect only around the Carnival (x${FESTIVAL_CAMPAIGN.outside} otherwise)`);
   return { value: Math.round(clamp(v, 0, 1.5) * 1000) / 1000, factors, warnings };
 }
 
@@ -118,6 +121,7 @@ export class Marketing {
     let f = 1;
     if (def.dayClassMult) f *= def.dayClassMult[this.d.ctx.dayClass?.() ?? 'regular'] ?? 1;
     if (def.window === 'festival' && !(this.d.ctx.festivalWindow?.() ?? false)) f *= FESTIVAL_CAMPAIGN.outside;
+    if (def.window === 'carnival' && !(this.d.ctx.carnivalWindow?.() ?? false)) f *= FESTIVAL_CAMPAIGN.outside;
     if (def.powderMult && (this.d.ctx.powderDay?.() ?? false)) f *= def.powderMult;
     return f;
   }
@@ -125,7 +129,7 @@ export class Marketing {
   private previewFactor(def: CampaignDef): number {
     let f = 1;
     if (def.dayClassMult) f *= (['peak', 'regular', 'off'] as const).reduce((a, k) => a + DAY_MIX[k] * (def.dayClassMult![k] ?? 1), 0);
-    if (def.window === 'festival') f *= (1 + FESTIVAL_CAMPAIGN.outside) / 2;
+    if (def.window === 'festival' || def.window === 'carnival') f *= (1 + FESTIVAL_CAMPAIGN.outside) / 2;
     return f;
   }
 
@@ -298,7 +302,7 @@ export class Marketing {
     });
     // Festival Season x the festival's own arrival multiplier never exceeds the crowding cap (ELASTICITY.maxVolume)
     const fm = this.d.ctx.festivalMult?.() ?? 1;
-    if (fm > 1 && items.some((it) => it.def.window === 'festival')) out.boost = Math.min(out.boost, Math.max(1, ELASTICITY.maxVolume / fm));
+    if (fm > 1 && items.some((it) => it.def.window === 'festival' || it.def.window === 'carnival')) out.boost = Math.min(out.boost, Math.max(1, ELASTICITY.maxVolume / fm));
     return (this.cache = out);
   }
 

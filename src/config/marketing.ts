@@ -17,7 +17,7 @@ export type FacilityId = 'kids' | 'altiport' | 'luxury' | 'summer' | 'shuttle' |
  * rating: resort rating >= minStars · summerSeason: it is summer · summerAttraction: Adventure Park or an MTB trail · summerAccess: bike-capable lift or hiking trail · rental: active Rental.
  */
 export type PrereqId = 'skiSchool' | 'kidsArea' | 'openLift' | 'piste' | 'parking' | 'dining' | 'vipAccess' | 'rating' | 'summerSeason' | 'summerAttraction' | 'summerAccess' | 'rental'
-  | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival'
+  | 'railStation' | 'stationPath' | 'stuntPark' | 'bookedFestival' | 'bookedCarnival'
   | 'campground' | 'kidsOrZoo' | 'tackleHut' | 'water'
   | 'poolOrViews' | 'toilets' | 'cheapLodging'
   | 'backcountry' | 'patrol';
@@ -78,7 +78,7 @@ export interface CampaignDef {
   /** Campaigns v2: effect multiplier by day class (peak = weekends / holidays / powder, regular = Friday, off = Mon-Thu). Absent = 1 every day. Applied live, per day. */
   dayClassMult?: Partial<Record<DayClass, number>>;
   /** Campaigns v2: 'festival' = full effect only while a booked festival runs (or starts within `FESTIVAL_CAMPAIGN.leadDays`), `FESTIVAL_CAMPAIGN.outside` otherwise; combined arrivals stay <= ELASTICITY.maxVolume. */
-  window?: 'festival';
+  window?: 'festival' | 'carnival';
   /** Campaigns v2: share (0..1, x effectiveness) of the arrivals that would drive that are put on the train instead (while the station has headroom). */
   railBias?: number;
   /** Summer campaigns: boost per EXTRA guest type id (config/guestTypes.ts), on top of `targets` (which are core segments): Angler's Paradise lifts anglers only. */
@@ -183,6 +183,12 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
     cost: 5500, durationDays: 10, targets: { adventure: 0.4 }, extraTargets: { tourer: 1.6, snowboarder: 0.5 }, volumeBoost: 0.06, seasons: ['winter'], offSeason: 0.1,
     prereqs: [{ id: 'backcountry', label: 'An open backcountry route (avalanche danger below 4)' }, { id: 'patrol', label: 'An active Ski Patrol Hub', build: 'patrolHub', show: 'build' }, { id: 'dining', label: 'A restaurant, café or mountain hut', build: 'mountainHut', show: 'build' }],
     powderMult: 1.3, cooldownDays: 21,
+  },
+  // Carnival Week (M7.4, docs/festivals.md "Carnival"): rides on the booked Carnival (late February); full effect only while it runs or starts within FESTIVAL_CAMPAIGN.leadDays.
+  {
+    id: 'carnival', name: 'Carnival Week', icon: '🎭', blurb: 'Masks, a brass band and a parade: families and couples come for the Carnival. Works around the Carnival dates only.', segment: 'Families and couples',
+    cost: 3500, durationDays: 10, targets: { family: 0.9, couple: 0.7 }, volumeBoost: 0.12, seasons: ['winter'], offSeason: 0.5,
+    prereqs: [{ id: 'bookedCarnival', label: `A booked Carnival running or starting within ${FESTIVAL_CAMPAIGN.prereqDays} days`, show: 'events', startOnly: true }], window: 'carnival', cooldownDays: 30,
   },
 ];
 

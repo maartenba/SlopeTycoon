@@ -1,7 +1,7 @@
 import { Rng } from '../../core/Rng';
 import { DAYS_PER_MONTH, DAYS_PER_YEAR } from '../../config/balance';
 import { simDayOf } from '../calendar';
-import { EVENTS, FESTIVALS, FESTIVAL_BY_ID, type FestivalDef, type FestivalId } from '../../config/festivals';
+import { CARNIVAL, EVENTS, FESTIVALS, FESTIVAL_BY_ID, type FestivalDef, type FestivalId } from '../../config/festivals';
 import type { SeasonId } from '../../core/events';
 import { phaseFor } from '../nature/Livestock';
 
@@ -42,6 +42,8 @@ export interface CalendarDeps {
   hasBlackPiste: () => boolean;
   /** A gondola or cable car stands in the resort (Mountain Concert). Absent = no restriction (older fixtures). */
   hasGondola?: () => boolean;
+  /** A village street (CARNIVAL.streetTiles connected road / path tiles) stands near the base (Carnival). Absent = no restriction (older fixtures). */
+  hasStreet?: () => boolean;
   /** A snowfall that makes a powder day (read-only weather). */
   powder: () => boolean;
   /** Cows exist (Alpine Farm built): Almabtrieb can run. */
@@ -100,6 +102,11 @@ export class EventCalendar {
   // ---- queries ----------------------------------------------------------------------------------------------------------------------------
 
   /** Events running on `day` (default today), booked first. Includes the derived automatic ones when `auto` is on. */
+  /** Carnival spend bonus (CARNIVAL.spendMult on restaurant and shop income while it runs); exactly 1 otherwise. */
+  spendMult(): number { const t = this.d.today(); return this.booked.some((b) => b.id === 'carnival' && t >= b.start && t < b.end) || this.forced.some((f) => f.id === 'carnival' && t >= f.start && t < f.end) ? CARNIVAL.spendMult : 1; }
+  /** Is the Carnival running today (booked or forced)? */
+  carnivalOn(): boolean { return this.spendMult() !== 1; }
+
   active(day = this.d.today()): ActiveEvent[] {
     const out: ActiveEvent[] = [];
     for (const b of this.booked) if (day >= b.start && day < b.end) out.push(this.mk(b.id, b.start, b.end, day, false));
@@ -196,6 +203,7 @@ export class EventCalendar {
     if (def.needs.includes('lodge') && !this.d.hasLodge()) return 'Needs a Base Lodge';
     if (def.needs.includes('blackPiste') && !this.d.hasBlackPiste()) return 'Needs a black piste';
     if (def.needs.includes('gondola') && this.d.hasGondola && !this.d.hasGondola()) return 'Needs a gondola or cable car';
+    if (def.needs.includes('street') && this.d.hasStreet && !this.d.hasStreet()) return `Needs a village street (${CARNIVAL.streetTiles}+ road or path tiles in a row)`;
     return null;
   }
   book(id: FestivalId, start: number): boolean {
@@ -253,6 +261,12 @@ export class EventCalendar {
         b.started = true;
         this.d.news(`${FESTIVAL_BY_ID[b.id].name} begins! ${FESTIVAL_BY_ID[b.id].blurb}`);
       }
+    }
+    // Carnival news (M7.4): 3 days ahead, and 'Shrove Tuesday' on the last day (each fires on exactly one day, so no flag is stored; booked festivals need no autoEvents)
+    for (const b of this.booked) {
+      if (b.id !== 'carnival') continue;
+      if (b.start - t === 3) this.d.news('Carnival in 3 days: the village is getting masks, a brass band and a parade. Streamers go up along the main street.');
+      if (t === b.end - 1 && t >= b.start) this.d.news('Shrove Tuesday: the last day of the Carnival. The parade walks once more, then the masks come off.');
     }
     for (const b of this.booked.filter((x) => t >= x.end)) this.history[b.id] = (this.history[b.id] ?? 0) + 1;
     this.booked = this.booked.filter((b) => t < b.end);

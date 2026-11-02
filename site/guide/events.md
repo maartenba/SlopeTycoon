@@ -13,7 +13,7 @@ Open **Marketing**: below the campaigns sits the **Events calendar**. It lists w
 
 While a festival runs every guest is a little happier and more people turn up. Prices go into the same **marketing** line of the books as campaigns.
 
-Festivals sit in their **real months**: Christmas Market in December, Winter Carnival in February, World Cup in January and February, Music Festival from June to August, the Mountain Concert in early September, the Snow Concert in March, Almabtrieb in early October, New Year on 31 December.
+Festivals sit in their **real months**: Christmas Market in December, Carnival in February, World Cup in January and February, Music Festival from June to August, the Mountain Concert in early September, the Snow Concert in March, Almabtrieb in early October, New Year on 31 December.
 
 {{gen:festivals}}
 
@@ -28,6 +28,12 @@ Every running festival dresses the village. Bunting and flags go up along the ro
 {{fig:festival-market}}
 
 Fireworks are rare and brief: New Year's Eve, the last night of a festival and the finale of the Mountain Concert, only after dark. They are skipped when [Settings](page:settings) → Feedback intensity is *Off*.
+
+## Carnival (Fasching, Karneval, Carnaval)
+
+An old village tradition in late February. Book the **Carnival** from the Events calendar: it may **start between 6 and 11 February** and runs five days, so its last day (**Shrove Tuesday**) falls between 10 and 15 February. $4,000, about a fifth more arrivals; you need level 3, 2.5 stars, a **Base Lodge** and a **village street** (six or more connected road or footpath tiles near the village or the base; the card says *Needs a village street* until you build one). Restaurants and shops sell about 5 % more while it runs.
+
+While it runs the street is dressed with muted streamers, masked revellers with a small brass horn parade through it from **10:00 to 16:00**, about one guest in five wears a **costume**, and a very quiet brass band can be heard when you are close. There are no fireworks and no confetti. The news announces it three days ahead and marks Shrove Tuesday. **Rudi** suggests it in January. The **Carnival Week** campaign (Marketing) brings families and couples; it only works fully while the Carnival runs. Host it with a dozen costumed guests at 3 stars for the **Masked Mountain** achievement.
 
 ## Mountain concerts
 

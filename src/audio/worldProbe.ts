@@ -21,6 +21,8 @@ export interface ProbeDeps {
   campfires?: () => Array<{ x: number; y: number }>;
   /** Mountain concert stages while an event runs (centre tile). Optional: absent = none. */
   concerts?: () => Array<{ x: number; y: number }>;
+  /** Carnival parade streets while it runs (chain centre tile; M7.4). Optional: absent = none. */
+  carnivals?: () => Array<{ x: number; y: number }>;
   /** Tree trunks within r tiles of (x, z) (walk-mode wind shelter; optional). */
   trunks?: (x: number, z: number, r: number) => number;
   /** World height (render units) at a tile. */
@@ -66,6 +68,7 @@ export class WorldProbe {
     const heli = nearestSource(l, d.helis()); o.heli = heli ? 0.4 + 0.6 * proximity(heli.dist, 80) : 0;
     const fire = d.campfires ? nearestSource(l, d.campfires()) : null; o.campfire = fire ? proximity(fire.dist, 14) : 0;
     const concert = d.concerts ? nearestSource(l, d.concerts()) : null; o.concert = concert ? proximity(concert.dist, 30) : 0;
+    const carn = d.carnivals ? nearestSource(l, d.carnivals()) : null; o.carnival = carn ? proximity(carn.dist, 24) : 0;
     const quad = d.quads ? nearestSource(l, d.quads()) : null; o.quad = quad ? 0.3 + 0.7 * proximity(quad.dist, 40) : 0;
     const sleigh = d.sleighs ? nearestSource(l, d.sleighs()) : null; o.sleigh = sleigh ? 0.3 + 0.7 * proximity(sleigh.dist, 30) : 0;
     return o;

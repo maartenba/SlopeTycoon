@@ -191,3 +191,17 @@ Worry: is "keep building cafes" a balanced exploit? Method (`npm run analysis:fo
 **Verdict:** diminishing returns are not just flat, they are negative from the first extra place in the starter resort (a Base Lodge plus a Lodge / Restaurant and a Cafe already cover a 64 map's demand), and a player who spams food buildings loses money. Nothing encourages the spam, so no tuning was made (capacity share, queue effects, upkeep and demand cap are unchanged; goldens unmoved). Open design note, not a bug: because a Base Lodge covers the demand of a small resort, the first Cafe does not pay for itself either ("never profitable" in section 3), and a larger resort (256) was not swept; the owner's answer for 0.3.1 is that saturation is by design.
 
 **Rudi says so**: `food.surplus` ("You have more food buildings than guests can use"; `docs/advisor.md`): winter, three or more dining places, and the least-used cafe / hut serves under 10 % of its seats a day (moving average of about 10 days, 20 days of age). In the sandbox the untouched starter stays quiet and a resort with two extra cafes hears it after 20 days. The balance suite asserts that 3 extra places earn less than none and 8 less than 3 (cafe, hut, lodge; mean of two seeds) while income moves by less than 6 %.
+
+## M7.4 rows (docs/m74-buildings.md; `npm run analysis:roi -- --only pizzeria,bakery,touristOffice,grassStrip,landingField,launchRamp,lodge,cafe`, 5 seeds, 180 days)
+
+| Building | Capex | Net / yr | Payback | Flag / reading |
+|---|---|---|---|---|
+| Tourist Office | $3,500 | **+$7,700** ±$3,154 | 82 days | the +6 % arrivals pay for it; not "absurd" (< 40 days) because the bot's resort is small; one per resort by `maxCount` |
+| Pizzeria | $4,800 | -$1,139 ±$2,388 | never | within noise; clearly better than a Café (-$6,470) or a Lodge (-$8,837) in the same resorts, so it does not dominate the restaurants (food stays saturated: a 20-place family / budget venue) |
+| Bakery | $2,200 | -$4,495 ±$2,188 | never | a food snack like the Café (never profitable in the marginal sandbox: it is a Facilities / happiness building, +0.03 happiness) |
+| Grass Strip | $6,000 | +$675 | 1,601 days | infrastructure for the Skydive Centre, no income of its own |
+| Landing Field | $1,500 | -$133 | never | infrastructure, within noise |
+| Launch Ramp | $3,500 | -$1,957 ±$1,910 | never | within noise: on the sandbox maps guests rarely walk to a ramp in winter (the ramp is a piste-edge / hiking destination, summer adventure seekers) |
+| Skydive Centre | - | - | - | no valid site on the ROI-sandbox maps (it needs the strip first: measured in the real page instead: 71 jumps and $8,455 in 8 busy summer days with 120 guests x 4 days at 6x arrivals, about $1,000 a day at full demand; capacity 4 at a time keeps it below $3,000 a day even then) |
+
+The balance suite's content bot (every building id built over three years, 64 maps) still passes: none of these rows breaks the books.

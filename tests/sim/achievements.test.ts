@@ -33,8 +33,8 @@ const days = (bus: GameBus, n: number): void => { for (let i = 0; i < n; i++) bu
 
 describe('achievement catalogue (table-driven)', () => {
   it('has 48 unique ids across three tiers, with titles, descriptions, scopes and icons', () => {
-    expect(ACHIEVEMENTS.length).toBe(48);
-    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(48);
+    expect(ACHIEVEMENTS.length).toBe(49);
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(49);
     for (const a of ACHIEVEMENTS) {
       expect(a.id, a.id).toMatch(/^[a-z][a-z0-9-]{1,39}$/);
       expect(a.title.length, a.id).toBeGreaterThan(2); expect(a.description.length, a.id).toBeGreaterThan(10);

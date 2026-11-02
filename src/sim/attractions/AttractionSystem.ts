@@ -26,6 +26,7 @@ import { CAMP, campFireHappiness } from './Campground';
 import { mishapRoll } from './Climbing';
 import { fishVisit, ownsRod, visitMood, type AnglingPlan, type AnglingPlanner } from './Angling';
 import { FISH } from '../../config/balance';
+import { SKY } from '../../config/sky';
 import type { FishStock } from '../nature/FishStock';
 
 export interface AttractionDeps {
@@ -54,6 +55,8 @@ export interface AttractionDeps {
   tours?: TourSystem;
   /** Climbing crag (Phase 6 Task 23): report a MINOR injury incident for this just-released climber (the safety system dispatches the patrol). True when one was opened. */
   mishap?: (a: Attraction, guestId: number) => boolean;
+  /** Sky activities (M7.4): why a jump / flight cannot run right now (weather, no strip / landing field); undefined = fine. Absent = never closed by the sky. */
+  skyClosed?: (a: Attraction) => string | undefined;
   /** Tackle & bait huts (Phase 6 Task 49, docs/anglers.md): fish stock + the per-hut plan (water in reach, places, ice, noise). Absent = a hut is closed ("no water"). */
   angling?: { stock: FishStock; planner: AnglingPlanner };
 }
@@ -111,7 +114,7 @@ export class AttractionSystem implements GuestAttractionPort {
   accepts(id: number): boolean { const a = this.items.get(id); return a ? a.open : true; }
   serving(id: number): boolean { const a = this.items.get(id); return a ? this.servingNow(a) : true; }
   /** Venues with an evening shift only serve between opening and closing hour (open flag = conditions only, so no closed-for-the-night news). */
-  servingNow(a: Attraction): boolean { return a.spec.tour ? this.d.tours?.serving(a) ?? true : !a.spec.eveningShift || venueServing(this.day, this.hour); }
+  servingNow(a: Attraction): boolean { if (a.spec.hours) return this.hour >= a.spec.hours[0] && this.hour < a.spec.hours[1]; return a.spec.tour ? this.d.tours?.serving(a) ?? true : !a.spec.eveningShift || venueServing(this.day, this.hour); }
   canUse(id: number, slot: number): boolean {
     const a = this.items.get(id);
     return !a || !a.spec.overnightOnly || this.d.store.overnight[slot] === 1;
@@ -282,7 +285,7 @@ export class AttractionSystem implements GuestAttractionPort {
   private boardTour(a: Attraction, tick: number): void {
     const s = this.d.store, free = a.capacity() - a.users.length;
     if (free < 1) return;
-    const end = tick + a.serviceTime();
+    const end = tick + (this.d.tours?.duration(a, a.serviceTime()) ?? a.serviceTime());
     let riders = 0, revenue = 0;
     while (riders < free && a.queue.length) {
       const q = a.queue.shift()!, slot = s.slotOf(q.id);
@@ -302,9 +305,16 @@ export class AttractionSystem implements GuestAttractionPort {
     if (a.spec.seasonOpen && !a.spec.seasonOpen.includes(seasonOf({ day: this.day }))) return { open: false, reason: 'Closed for the season' };
     if (a.spec.extra === 'lake' && this.d.lakeFrozen?.(a.b)) return { open: false, reason: 'Closed: the lake is frozen' };
     if (a.def.staff > 0 && a.staff <= 0 && !a.spec.optionalStaff) return { open: false, reason: 'Closed: no staff' };
+    if (a.spec.sky) { const r = this.skyClosedReason(a); if (r) return { open: false, reason: r }; }
     if (a.spec.angling) { const r = this.anglingClosed(a); if (r) return { open: false, reason: r }; }
     if (a.spec.tour) { const r = this.d.tours?.closed(a); if (r) return { open: false, reason: r }; }
     return { open: true };
+  }
+
+  /** M7.4: daylight window, then the weather / site verdict of the page (createSim `skyClosed`). */
+  private skyClosedReason(a: Attraction): string | undefined {
+    if (this.hour < SKY.fromHour || this.hour >= SKY.toHour) return 'Closed: daylight flights only (09:00 - 17:00)';
+    return this.d.skyClosed?.(a);
   }
 
   private anglingClosed(a: Attraction): string | undefined {

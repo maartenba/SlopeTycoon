@@ -5,8 +5,9 @@ import type { GuestStore } from '@/sim/guests/Guest';
 import { GState, WP_MAX } from '@/sim/guests/Guest';
 import { pathPoint, type Pt2 } from './guestPath';
 import {
-  appearanceOf, BOTTOM_COLORS, CLOTH_COLORS, Gear, GEAR_COUNT, gearFor, typeGearOf, typeOutfitOf, HAIR_COLORS, outfitFor, POSE, rand01, SKIN_TONES, UsingKind, type Appearance,
+  appearanceOf, costumeLook, BOTTOM_COLORS, CLOTH_COLORS, Gear, GEAR_COUNT, gearFor, typeGearOf, typeOutfitOf, HAIR_COLORS, outfitFor, POSE, rand01, SKIN_TONES, UsingKind, type Appearance,
 } from './guestAppearance';
+import { costumed } from '../sim/events/Costume';
 import { coreOf, extraDef } from '../config/guestTypes';
 import { LOD_HYSTERESIS, schmitt } from './lodSelect';
 import { ARM_PIVOT_Y, BIKE_WHEEL_R, BIKE_WHEEL_Z, buildGearGeometry, HIP_PIVOT } from './meshes/Figures';
@@ -174,6 +175,10 @@ export class GuestRenderer {
   culled = 0;
   /** Winter clothing + head-wear (set from the season). */
   private _winter = false;
+  /** Carnival (M7.4): a deterministic share of the guests wear a costume (`costumed(id)`); toggling re-derives every appearance (no new draw calls). */
+  private _carnival = false;
+  get carnival(): boolean { return this._carnival; }
+  set carnival(v: boolean) { if (v !== this._carnival) { this._carnival = v; this.appVer++; this.lastCount = -1; } }
   get winter(): boolean { return this._winter; }
   set winter(v: boolean) { if (v !== this._winter) { this._winter = v; this.appVer++; this.lastCount = -1; } }
   /** Optional host hooks: kid status from the family system, and what a 'Using' guest is doing (UsingKind). */
@@ -256,6 +261,7 @@ export class GuestRenderer {
     const s = this.store, id = s.id[slot]!;
     const kid = this.isKid ? this.isKid(slot) : undefined;
     const a = appearanceOf(id, s.type[slot]!, this._winter, kid, this.tmpApp);
+    if (this._carnival && costumed(id)) costumeLook(a, id);
     const o = slot * 12, A = this.app;
     A[o] = a.skin; A[o + 1] = a.hair; A[o + 2] = a.top; A[o + 3] = a.bottom; A[o + 4] = a.hairStyle; A[o + 5] = a.hat; A[o + 6] = a.gearColor;
     A[o + 7] = (a.pack ? 1 : 0) + (a.female ? 2 : 0);

@@ -100,7 +100,7 @@ export class StEvents extends StElement {
         el('div', 'muted', c.def.blurb),
         el('div', '', `${formatMoney(c.def.cost)} · ${c.def.days} days · +${Math.round((c.def.arrivalMult - 1) * 100)}% arrivals`),
       );
-      const reqs = [c.def.minStars > 0 ? `${c.def.minStars}★` : '', `level ${c.def.minLevel}`, ...c.def.needs.map((n) => (n === 'lodge' ? 'Base Lodge' : n === 'gondola' ? 'gondola or cable car' : 'black piste'))].filter(Boolean).join(', ');
+      const reqs = [c.def.minStars > 0 ? `${c.def.minStars}★` : '', `level ${c.def.minLevel}`, ...c.def.needs.map((n) => (n === 'lodge' ? 'Base Lodge' : n === 'gondola' ? 'gondola or cable car' : n === 'street' ? 'village street' : 'black piste'))].filter(Boolean).join(', ');
       card.append(el('div', 'muted', `Needs: ${reqs}`));
       if (c.window) card.append(el('div', 'muted', `Starts ${c.window}`));
       if (c.next && !c.general) card.append(el('div', 'muted', `Next: ${c.next}`));

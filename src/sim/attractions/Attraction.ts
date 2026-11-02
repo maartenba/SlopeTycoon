@@ -50,6 +50,10 @@ export interface AttractionSpec {
   mishap?: { guided: number; unguided: number };
   /** Tour base (Phase 6 Task 5, docs/tours.md): TourDef id. Guests board in scheduled departures instead of one by one; see TourSystem. */
   tour?: string;
+  /** Opening hours [from, to) for venues that are not an evening shift (Bakery 06:00 - 12:00, M7.4). Absent = whenever open. */
+  hours?: readonly [number, number];
+  /** Sky activity (M7.4, config/sky.ts): daylight + clear weather only; 'skydive' needs an active Grass Strip, 'glide' a Landing Field in reach. */
+  sky?: 'skydive' | 'glide';
   /** Tackle & bait hut (Phase 6 Task 49): a visit is a fishing trip (rod + bait extras, catches at the end; docs/anglers.md). */
   angling?: boolean;
 }

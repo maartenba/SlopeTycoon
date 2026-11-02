@@ -21,7 +21,7 @@ export interface ReportLite { year: number; partial: boolean; profit: number; he
 /** Read-only daily facts (built from the real sim in createSim, from fixtures in tests). */
 export interface AchFacts { stars: number; level: number; guests: number; openLifts: number; money: number; festivals: number; report: ReportLite | null;
   /** Phase 6 facts (config/achievements.ts): optional, and in the real game lazy getters, because `facts()` runs on every observed event (0 when absent). */
-  railShare?: number; viewsSeen?: number; riverToSea?: number; raftRides?: number; powderHounds?: number; concert?: number; suites?: number; summerShare?: number }
+  railShare?: number; viewsSeen?: number; riverToSea?: number; raftRides?: number; powderHounds?: number; concert?: number; suites?: number; summerShare?: number; masked?: number }
 export interface AchHost {
   runKind(): RunKind;
   facts(): AchFacts;

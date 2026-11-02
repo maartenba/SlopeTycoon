@@ -113,6 +113,14 @@ export function appearanceOf(id: number, type: number, winter: boolean, kid?: bo
   return out;
 }
 
+/** Carnival costume (M7.4, docs/festivals.md): festive jacket + wide-brim hat in muted carnival colours (purple, magenta, orange, yellow, teal). Pure; the same id always gets the same costume. */
+const COSTUME_TOPS = [9, 10, 1, 2, 5] as const, COSTUME_HATS = [2, 9, 12, 1, 6] as const;
+export function costumeLook(a: Appearance, id: number): Appearance {
+  const k = Math.floor(rand01(id, 41) * COSTUME_TOPS.length);
+  a.top = COSTUME_TOPS[k]!; a.hat = COSTUME_HATS[(k + 2) % COSTUME_HATS.length]!; a.hairStyle = HairStyle.SunHat;
+  return a;
+}
+
 /** Human-readable summary for inspectors, e.g. "adult woman, medium-brown skin, black hair, a beanie, red jacket, navy trousers". */
 export function describeAppearance(id: number, type: number, winter = false, kid?: boolean): string {
   const a = appearanceOf(id, type, winter, kid);

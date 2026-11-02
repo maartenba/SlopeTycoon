@@ -37,7 +37,7 @@ describe('st-events', () => {
     p.bind({ view: () => buildEventsView(c, 120, 50_000), book, cancel });
     const r = root(p);
     expect(r.textContent).toMatch(/No festival this week/);
-    expect(r.textContent).toMatch(/Winter Carnival/); expect(r.textContent).toMatch(/Needs: .*black piste/);
+    expect(r.textContent).toMatch(/Carnival/); expect(r.textContent).toMatch(/Needs: .*black piste/);
     const cards = [...r.querySelectorAll('.card')];
     expect(cards.length).toBe(6); // + Mountain Concert summer / winter (Task 41)
     expect(r.textContent).toMatch(/Mountain Concert/); expect(r.textContent).toMatch(/Snow Concert/); expect(r.textContent).toMatch(/gondola or cable car/);
