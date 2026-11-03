@@ -1,4 +1,4 @@
-import { C, PartBuilder } from './common';
+import { C, PartBuilder, eaveBrackets, tube } from './common';
 
 /**
  * Coffee Stand (1x1, Phase 6 Task 28, docs/coffee-stand.md): a tiny timber kiosk with a striped awning over a serving hatch, a red gable roof, a COFFEE board,
@@ -12,6 +12,10 @@ export function coffeeStand(b: PartBuilder): void {
   b.box(0, 0.26, 0.18, 0.4, 0.22, 0.03, C.glass);
   b.box(0, 0.22, 0.24, 0.5, 0.035, 0.12, C.wood); // counter
   for (let i = 0; i < 5; i++) b.box(-0.2 + i * 0.1, 0.47, 0.27, 0.1, 0.04, 0.2, i % 2 ? C.white : C.red, 'roof', { rx: 0.3 });
+  eaveBrackets(b, 0, 0.56, 0.17, 's', 0.5, 0.2, 0.06);
+  for (let i = 0; i < 5; i++) b.cyl(-0.2 + i * 0.1, 0.43 - 0.05, 0.37, 0.022, 0.1, i % 2 ? C.white : C.red, 'roof', 6, { rz: Math.PI / 2 }); // rolled awning edge (M8)
+  tube(b, 0, 0.7, 0.2, 0, 0.62, 0.3, 0.008, C.dark, 'wood', 5); b.ball(0, 0.54, 0.3, 0.03, C.glass, 'wood', 6); // hanging lantern (glows at night)
+  b.box(0.3, 0.12, 0.17, 0.14, 0.2, 0.03, C.dark); // chalkboard
   // steaming cup + a second cup on the counter
   b.cyl(-0.12, 0.255, 0.26, 0.035, 0.06, C.white, 'wood', 8);
   b.cyl(0.1, 0.255, 0.26, 0.03, 0.05, C.orange, 'wood', 8);

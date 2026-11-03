@@ -188,9 +188,10 @@ export function house(b: PartBuilder, cx: number, cz: number, w: number, d: numb
 
 export function balcony(b: PartBuilder, cx: number, y: number, cz: number, w: number, depth: number, color = C.wood): void {
   b.box(cx, y, cz, w, 0.06, depth, color);
-  b.box(cx, y + 0.06, cz + depth / 2 - 0.02, w, 0.04, 0.04, color);
-  b.box(cx, y + 0.18, cz + depth / 2 - 0.02, w, 0.04, 0.04, color);
-  for (let i = 0; i <= 4; i++) b.box(cx - w / 2 + (w * i) / 4, y + 0.06, cz + depth / 2 - 0.02, 0.04, 0.2, 0.04, color);
+  b.cyl(cx, y + 0.22 - w / 2, cz + depth / 2 - 0.02, 0.022, w, color, 'wood', 6, { rz: Math.PI / 2 }); // round top rail (M8)
+  b.box(cx, y + 0.07, cz + depth / 2 - 0.02, w, 0.035, 0.035, color);
+  for (let i = 0; i <= 4; i++) b.box(cx - w / 2 + (w * i) / 4, y + 0.06, cz + depth / 2 - 0.02, 0.04, 0.17, 0.04, color);
+  for (const sx of [-1, 1]) b.beam(cx + sx * (w / 2 - 0.1), y - 0.0, cz + depth / 2 - 0.02, cx + sx * (w / 2 - 0.1), y - 0.1, cz - depth / 2 + 0.0, 0.03, color, 'wood'); // slanted support strut under the slab
 }
 
 export function awning(b: PartBuilder, cx: number, y: number, cz: number, w: number, depth: number, c1 = C.red, c2 = C.white): void {
@@ -236,6 +237,7 @@ export function frameWin(b: PartBuilder, x: number, y: number, z: number, face: 
   wallSlab(b, x, y - 0.04, z, face, size + 0.09, hgt + 0.08, 0.04, 0.0, trim);
   wallSlab(b, x, y, z, face, size, hgt, 0.05, 0.015, C.glass);
   wallSlab(b, x, y - 0.07, z, face, size + 0.12, 0.035, 0.1, 0.03, trim);
+  if (size >= 0.19 && (face === 's' || shutter > 0)) wallSlab(b, x, y, z, face, 0.022, hgt, 0.06, 0.03, trim); // central glazing bar (M8): splits the pane (and its night glow) in two
   if (shutter > 0) {
     const [fx, fz] = FACE_VEC[face];
     shutterColor ??= SHUTTERS[Math.floor(hv * SHUTTERS.length)]!;
@@ -465,4 +467,73 @@ export function eaveBrackets(b: PartBuilder, x: number, y: number, z: number, fa
     b.beam(px + fx * 0.01, y - 0.14, pz + fz * 0.01, px + fx * out, y - 0.02, pz + fz * out, 0.035, color, 'wood');
   }
   return b;
+}
+
+// ---------------------------------------------------------------------------------------------
+// M8 (lane A2) helpers: round tubes, wheels, drums, domes, barrel-vault roofs, arc tubes.
+// ---------------------------------------------------------------------------------------------
+
+/** Round tube (cylinder) between two points: struts, handlebars, exhaust pipes, rails. 6 sides = 24 triangles (open ends are capped). */
+export function tube(b: PartBuilder, ax: number, ay: number, az: number, bx: number, by: number, bz: number, r: number, color: number, layer: Layer = 'wood', seg = 6): PartBuilder {
+  const d = new THREE.Vector3(bx - ax, by - ay, bz - az), len = d.length();
+  if (len < 1e-6) return b;
+  const g = new THREE.CylinderGeometry(Math.max(r, MIN_THIN / 2), Math.max(r, MIN_THIN / 2), len, seg);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()));
+  return b.add(g, layer, color, (ax + bx) / 2, (ay + by) / 2, (az + bz) / 2);
+}
+
+/** Wheel standing on y0 with its axle along x (before `ry`): a tyre, a lighter hub and a hub cap. `seg` sides on the tyre (default 10, 6 for tiny wheels). ~ 2*seg + 28 triangles. */
+export function tyre(b: PartBuilder, x: number, y0: number, z: number, r: number, w: number, ry = 0, color = C.black, hub = C.grey, seg = 10): PartBuilder {
+  b.add(new THREE.CylinderGeometry(r, r, w, seg), 'wood', color, x, y0 + r, z, { rz: Math.PI / 2, ry });
+  return b.add(new THREE.CylinderGeometry(r * 0.5, r * 0.5, w + 0.012, 6), 'wood', hub, x, y0 + r, z, { rz: Math.PI / 2, ry });
+}
+
+/** Oil / fuel drum with two rolled rims. 10 sides. */
+export function drum(b: PartBuilder, x: number, y0: number, z: number, r: number, hgt: number, color: number): PartBuilder {
+  b.cyl(x, y0, z, r, hgt, color, 'wood', 10);
+  for (const f of [0.28, 0.68]) b.cyl(x, y0 + hgt * f, z, r * 1.06, hgt * 0.07, C.dark, 'wood', 10);
+  return b.cyl(x, y0 + hgt, z, r * 0.6, 0.02, C.black, 'wood', 6);
+}
+
+/** Dome / rounded cap: a half sphere with base radius r and height hgt (squashed ellipsoid), `seg` around. */
+export function domeCap(b: PartBuilder, cx: number, y0: number, cz: number, r: number, hgt: number, color: number, layer: Layer = 'roof', seg = 10, rings = 4): PartBuilder {
+  const g = new THREE.SphereGeometry(r, seg, rings, 0, Math.PI * 2, 0, Math.PI / 2);
+  return b.add(g, layer, color, cx, y0, cz, { sy: hgt / r });
+}
+
+/** Barrel-vault roof (circular segment, thin shell with a flat soffit): `span` across, `len` long, `rise` above the soffit at y0. ridge along x when alongX, else along z. */
+export function barrelRoof(b: PartBuilder, cx: number, y0: number, cz: number, span: number, len: number, rise: number, color: number, alongX = true, layer: Layer = 'roof', steps = 6): PartBuilder {
+  const hs = span / 2, R = (hs * hs + rise * rise) / (2 * rise), a = Math.asin(Math.min(1, hs / R)), s = new THREE.Shape();
+  s.moveTo(-hs, 0);
+  s.lineTo(hs, 0);
+  for (let i = 0; i <= steps; i++) { const th = a - (2 * a * i) / steps; s.lineTo(R * Math.sin(th), R * Math.cos(th) - (R - rise)); }
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: false });
+  g.translate(0, 0, -len / 2);
+  return b.add(g, layer, color, cx, y0, cz, { ry: alongX ? Math.PI / 2 : 0 });
+}
+
+/** Arc of a torus (rail / ladder hoop / handle): centre (cx,cy,cz), radius R, tube t, sweep `arc` radians starting at +x going up, in the xy plane before `o` rotation. */
+export function arcTube(b: PartBuilder, cx: number, cy: number, cz: number, R: number, t: number, arc: number, color: number, layer: Layer = 'stone', seg = 8, o: PartOpts = {}): PartBuilder {
+  return b.add(new THREE.TorusGeometry(R, Math.max(t, MIN_THIN / 2), 4, seg, arc), layer, color, cx, cy, cz, o);
+}
+
+/** Windsock: a pole with a tapered, striped cone (orange / white) streaming along +x. ~70 triangles. */
+export function windsock(b: PartBuilder, x: number, y0: number, z: number, hgt = 0.8, color = C.orange): PartBuilder {
+  b.cyl(x, y0, z, 0.02, hgt, C.grey, 'stone', 6);
+  b.ball(x, y0 + hgt, z, 0.03, C.dark, 'stone', 6);
+  const top = y0 + hgt - 0.07;
+  for (let i = 0; i < 3; i++) b.cone(x + 0.1 + i * 0.1, top - i * 0.012, z, 0.075 - i * 0.017, 0.11, i % 2 ? C.white : color, 'roof', 8, { rz: -Math.PI / 2 - 0.12 * i });
+  return b;
+}
+
+/** Gambrel (barn) roof: two-slope profile, steep lower slope + shallow upper slope. Same orientation convention as `PartBuilder.gable` (ridge along x when ridgeX). ~44 triangles. */
+export function gambrel(b: PartBuilder, cx: number, y0: number, cz: number, span: number, len: number, rise: number, color: number, ridgeX = true, layer: Layer = 'roof'): PartBuilder {
+  const hs = span / 2 + 0.06, s = new THREE.Shape();
+  s.moveTo(-hs, -0.02); s.lineTo(hs, -0.02); s.lineTo(hs - 0.03, rise * 0.06);
+  s.lineTo(hs * 0.7, rise * 0.62); s.lineTo(0.03, rise); s.lineTo(-0.03, rise);
+  s.lineTo(-hs * 0.7, rise * 0.62); s.lineTo(-hs + 0.03, rise * 0.06); s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: false });
+  g.translate(0, 0, -len / 2);
+  return b.add(g, layer, color, cx, y0, cz, { ry: ridgeX ? Math.PI / 2 : 0 });
 }

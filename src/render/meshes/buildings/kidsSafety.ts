@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, chimney, curvedRamp, doorway, flagPole, frameWin, railing, redCross } from '../common';
+import { C, PartBuilder, awning, chimney, curvedRamp, doorway, flagPole, frameWin, railing, redCross, eaveBrackets, tube } from '../common';
 
 /** Magic Carpet (1x6): conveyor belt with chevrons, side walls, a glazed canopy tunnel over the loading end and drive housings. */
 export function magicCarpet(b: PartBuilder, _w: number, h: number): void {
@@ -123,7 +123,8 @@ export function warningSign(b: PartBuilder): void {
   for (const [x, y] of [[0.12, 0.73], [0.17, 0.69], [0.08, 0.7]] as const) b.box(x, y, 0.08, 0.05, 0.05, 0.02, C.black); // tumbling snow blocks
   b.sign('!', 0, 0.35, 0.05, 0.28, 0.2, 0, '#f2c14e', '#2a2a2e');
   for (const x of [-0.38, 0.38]) { b.cyl(x, 0, 0.1, 0.025, 0.7, C.red, 'wood', 6); b.cyl(x, 0.3, 0.1, 0.027, 0.12, C.black, 'wood', 6); b.cyl(x, 0.55, 0.1, 0.027, 0.12, C.black, 'wood', 6); }
-  b.box(0, 0, 0, 0.2, 0.06, 0.2, C.stone, 'stone');
+  b.cyl(0, 0, 0, 0.13, 0.07, C.stone, 'stone', 10); b.cyl(0, 1.0, 0, 0.05, 0.03, C.dark, 'wood', 6); b.ball(0, 1.03, 0, 0.035, C.red, 'wood', 6);
+  for (const x of [-0.19, 0.19]) tube(b, x, 0.12, 0.06, x * 1.9, 0.5, 0.1, 0.012, C.dark, 'wood', 5); // pole stays
 }
 
 /** Ticket Office (2x2): booth with ticket windows, awning, turnstiles and queue barriers. */
@@ -148,10 +149,16 @@ export function ticketOffice(b: PartBuilder, w: number, h: number): void {
 export function toilets(b: PartBuilder, w: number, h: number): void {
   const bw = Math.min(0.62, w - 0.3), bd = Math.min(0.58, h - 0.34);
   b.box(0, 0, -0.06, bw, 0.62, bd, C.wood);
+  for (let i = 0; i < 4; i++) b.box(0, 0.14 + i * 0.14, -0.06, bw + 0.02, 0.02, bd + 0.02, C.dark, 'wood'); // plank lines
   b.gable(0, 0.62, -0.06, bd + 0.1, bw + 0.12, 0.22, C.roofRed, false);
+  eaveBrackets(b, 0, 0.62, -0.06 + bd / 2, 's', bw - 0.1, 0.3, 0.06);
   const fz = -0.06 + bd / 2;
   doorway(b, 0, fz, 's', 0.2, 0.4, C.dark, C.white);
-  b.box(0, 0.4, fz + 0.015, 0.07, 0.07, 0.015, C.yellow); // crescent plate stand-in
+  b.cyl(0, 0.4, fz + 0.015, 0.045, 0.02, C.yellow, 'wood', 8, { rx: Math.PI / 2 }); // round plate (crescent stand-in)
   b.box(0, 0.5, -0.06 + bd / 2 + 0.01, 0.3, 0.04, 0.02, C.dark); // vent slit
-  b.box(0.3, 0.0, 0.34, 0.26, 0.1, 0.1, C.stone, 'stone'); // wash trough
+  tube(b, bw / 2 - 0.08, 0.7, -0.2, bw / 2 - 0.08, 0.84, -0.2, 0.02, C.grey, 'stone', 6); b.cone(bw / 2 - 0.08, 0.83, -0.2, 0.05, 0.06, C.dark, 'roof', 6); // vent pipe with a cap
+  b.cyl(0.3, 0.0, 0.34, 0.07, 0.12, C.stone, 'stone', 8, { rz: Math.PI / 2 }); // round wash trough
+  tube(b, 0.3, 0.2, 0.3, 0.3, 0.3, 0.3, 0.012, C.grey, 'stone', 5); b.ball(0.3, 0.28, 0.33, 0.02, C.grey, 'stone', 5); // tap
+  b.box(-0.28, 0.0, 0.3, 0.2, 0.06, 0.1, C.stone, 'stone'); // doorstep stone
+  b.ball(-0.32, 0.05, -0.2, 0.06, C.roofGreen, 'roof', 6); // shrub
 }

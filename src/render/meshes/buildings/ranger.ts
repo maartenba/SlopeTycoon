@@ -1,4 +1,4 @@
-import { C, PartBuilder, chimney, doorway, flagPole, frameWin, stackedLogs } from '../common';
+import { C, PartBuilder, chimney, doorway, eaveBrackets, flagPole, frameWin, railing, stackedLogs, tube, tyre } from '../common';
 
 const BEAR = 0x5a3a24;
 
@@ -9,16 +9,19 @@ export function rangerStation(b: PartBuilder, w: number, h: number): void {
   b.box(lx, 0, lz, lw, 0.12, ld, C.stone, 'stone');
   b.box(lx, 0.12, lz, lw - 0.04, 0.68, ld - 0.04, C.wood);
   for (let i = 0; i < 5; i++) b.box(lx, 0.2 + i * 0.13, lz, lw + 0.03, 0.025, ld + 0.03, C.dark, 'wood');
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let i = 0; i < 3; i++) b.cyl(lx + sx * (lw / 2 + 0.01), 0.18 + i * 0.22, lz + sz * (ld / 2 + 0.01), 0.055, 0.12, C.wood, 'wood', 6, { rx: Math.PI / 2, ry: 0 }); // log-cabin corner ends (M8)
   b.gable(lx, 0.8, lz, ld + 0.35, lw + 0.4, 0.55, C.roofGreen, true);
   b.box(lx, 1.35, lz, lw + 0.45, 0.03, 0.06, C.dark, 'roof'); // ridge cap
   const fz = lz + ld / 2;
+  eaveBrackets(b, lx, 0.8, fz, 's', lw - 0.2, 0.45, 0.1);
   doorway(b, lx - 0.45, fz, 's', 0.3, 0.52, C.dark, C.cream);
   frameWin(b, lx + 0.2, 0.34, fz, 's', 0.22, 0.05, C.cream, C.roofGreen);
   frameWin(b, lx + 0.65, 0.34, fz, 's', 0.2, 0.05, C.cream, C.roofGreen);
   frameWin(b, lx - lw / 2, 0.36, lz, 'w', 0.22, 0.05, C.cream, C.roofGreen);
   // porch with posts and a bench
   b.box(lx - 0.1, 0.0, fz + 0.2, 1.3, 0.06, 0.4, C.wood, 'wood');
-  for (const x of [-0.7, 0.5]) b.box(lx + x, 0.06, fz + 0.36, 0.05, 0.7, 0.05, C.dark);
+  for (const x of [-0.7, 0.5]) b.cyl(lx + x, 0.06, fz + 0.36, 0.035, 0.7, C.dark, 'wood', 8); // round porch posts
+  railing(b, lx - 0.7, fz + 0.38, lx + 0.1, fz + 0.38, 0.06, 0.2, C.dark, 3);
   b.box(lx - 0.1, 0.74, fz + 0.28, 1.35, 0.05, 0.5, C.roofGreen, 'roof');
   b.box(lx + 0.35, 0.1, fz + 0.28, 0.5, 0.03, 0.12, C.dark);
   // paw + antler sign board above the door, on stakes
@@ -47,18 +50,22 @@ export function rangerStation(b: PartBuilder, w: number, h: number): void {
   b.box(tx, 0.36, tz - 0.12, 0.46, 0.03, 0.42, C.white, 'roof');
   b.box(tx, 0.3, tz + 0.18, 0.46, 0.08, 0.03, C.black); // light bar
   b.box(tx, 0.4, tz - 0.12, 0.3, 0.03, 0.04, C.orange);
-  for (const sx of [-0.27, 0.27]) for (const sz of [-0.3, 0.3]) b.cyl(tx + sx, 0, tz + sz, 0.08, 0.07, C.black, 'wood', 6, { rz: Math.PI / 2 });
+  for (const sx of [-0.27, 0.27]) for (const sz of [-0.3, 0.3]) tyre(b, tx + sx, 0, tz + sz, 0.085, 0.07, 0, C.black, C.grey, 8);
+  for (const sx of [-1, 1]) b.ball(tx + sx * 0.2, 0.12, tz + 0.46, 0.035, C.glass, 'wood', 6); // headlamps
+  tube(b, tx - 0.2, 0.37, tz - 0.3, tx + 0.2, 0.37, tz - 0.3, 0.012, C.black, 'roof'); tube(b, tx - 0.2, 0.37, tz - 0.05, tx + 0.2, 0.37, tz - 0.05, 0.012, C.black, 'roof'); // roof rack
   const ax = w / 2 - 1.3, az = -h / 2 + 0.55;
   b.box(ax, 0.1, az, 0.32, 0.1, 0.6, C.green, 'wood');
   b.box(ax, 0.2, az - 0.12, 0.28, 0.05, 0.28, C.black);
   b.box(ax, 0.28, az + 0.12, 0.3, 0.03, 0.04, C.black);
-  for (const sx of [-0.2, 0.2]) for (const sz of [-0.22, 0.22]) b.cyl(ax + sx, 0, az + sz, 0.1, 0.1, C.black, 'wood', 6, { rz: Math.PI / 2 });
+  for (const sx of [-0.2, 0.2]) for (const sz of [-0.22, 0.22]) tyre(b, ax + sx, 0, az + sz, 0.1, 0.1, 0, C.black, C.grey, 8);
+  tube(b, ax - 0.14, 0.31, az + 0.2, ax + 0.14, 0.31, az + 0.2, 0.013, C.black, 'wood'); // handlebars
+  b.ball(ax, 0.17, az + 0.3, 0.04, C.glass, 'wood', 6); // headlamp
 
   // bear-proof bins (dark green, latch, brown stripe) in a fenced corner + small timber trap/enclosure
   for (let i = 0; i < 3; i++) {
     const bx = -w / 2 + 0.45 + i * 0.4, bz = h / 2 - 0.45;
     b.box(bx, 0, bz, 0.3, 0.38, 0.3, C.roofGreen, 'wood');
-    b.box(bx, 0.38, bz, 0.34, 0.05, 0.34, C.dark, 'roof');
+    b.cyl(bx, 0.36 - 0.17, bz, 0.07, 0.34, C.dark, 'roof', 8, { rz: Math.PI / 2 }); // rounded lid
     b.box(bx, 0.2, bz + 0.16, 0.08, 0.06, 0.02, C.yellow);
     b.box(bx, 0.12, bz + 0.16, 0.3, 0.04, 0.02, BEAR);
   }

@@ -1,4 +1,4 @@
-import { C, PartBuilder, doorway, frameWin, lampPost } from '../common';
+import { C, PartBuilder, doorway, drum, eaveBrackets, frameWin, lampPost, tube, tyre } from '../common';
 
 /** A parked quad bike facing +z (body, seat, handlebars, four knobbly wheels, headlight). ~120 triangles. */
 export function parkedQuad(b: PartBuilder, x: number, z: number, color: number): void {
@@ -8,7 +8,7 @@ export function parkedQuad(b: PartBuilder, x: number, z: number, color: number):
   b.box(x, 0.28, z + 0.1, 0.34, 0.025, 0.03, C.black); // handlebars
   b.box(x, 0.23, z + 0.1, 0.03, 0.06, 0.03, C.grey);
   b.box(x, 0.2, z + 0.24, 0.06, 0.03, 0.02, C.yellow); // headlight
-  for (const sx of [-0.17, 0.17]) for (const sz of [-0.17, 0.17]) b.cyl(x + sx, 0.075 - 0.05, z + sz, 0.075, 0.1, C.black, 'wood', 8, { rz: Math.PI / 2 });
+  for (const sx of [-0.17, 0.17]) for (const sz of [-0.17, 0.17]) tyre(b, x + sx, 0, z + sz, 0.075, 0.1, 0, C.black, C.grey, 8);
 }
 
 /**
@@ -107,12 +107,14 @@ export function snowshoeHut(b: PartBuilder, w: number, h: number): void {
 
 /** A parked snowscooter facing +z: body, long seat, windscreen, ski + track. ~70 triangles. */
 export function parkedScooter(b: PartBuilder, x: number, z: number, color: number): void {
-  b.box(x, 0.08, z, 0.22, 0.1, 0.46, color);
-  b.box(x, 0.18, z - 0.06, 0.18, 0.04, 0.22, C.black); // seat
-  b.box(x, 0.18, z + 0.16, 0.18, 0.08, 0.14, color); // cowl
-  b.box(x, 0.24, z + 0.1, 0.1, 0.1, 0.015, C.glass); // windscreen
-  b.box(x, 0.02, z - 0.08, 0.14, 0.06, 0.28, C.black); // track
-  for (const sx of [-0.1, 0.1]) b.box(x + sx, 0.03, z + 0.22, 0.03, 0.03, 0.26, C.grey); // skis
+  b.box(x, 0.08, z, 0.22, 0.09, 0.4, color);
+  b.cyl(x, 0.17 - 0.09, z + 0.15, 0.085, 0.18, color, 'wood', 8, { rx: Math.PI / 2 }); // rounded nose cowl (M8)
+  b.box(x, 0.17, z - 0.07, 0.16, 0.04, 0.22, C.black); // seat
+  b.box(x, 0.22, z - 0.19, 0.16, 0.05, 0.03, C.black); // seat back
+  b.box(x, 0.24, z + 0.1, 0.12, 0.1, 0.015, C.glass, 'wood', { rx: -0.5 }); // raked windscreen
+  tube(b, x - 0.1, 0.3, z + 0.02, x + 0.1, 0.3, z + 0.02, 0.012, C.black); // handlebars
+  for (const sx of [-1, 1]) { b.box(x + sx * 0.06, 0.02, z - 0.08, 0.07, 0.06, 0.24, C.black); b.cyl(x + sx * 0.06, 0.03 - 0.035, z - 0.2, 0.05, 0.07, C.black, 'wood', 8, { rz: Math.PI / 2 }); b.cyl(x + sx * 0.06, 0.03 - 0.035, z + 0.04, 0.05, 0.07, C.black, 'wood', 8, { rz: Math.PI / 2 }); } // tracks with rounded ends
+  for (const sx of [-0.1, 0.1]) { b.box(x + sx, 0.03, z + 0.2, 0.03, 0.025, 0.2, C.grey); b.box(x + sx, 0.04, z + 0.325, 0.03, 0.025, 0.06, C.grey, 'wood', { rx: -0.5 }); } // skis with an upturned tip
 }
 
 /**
@@ -129,7 +131,8 @@ export function snowscooterBase(b: PartBuilder, w: number, h: number): void {
   doorway(b, gx + 0.55, gz + gd / 2, 's', 0.2, 0.4, C.dark, C.cream);
   b.sign('SNOWSCOOTERS', gx, 0.57, gz + gd / 2 + 0.06, 1.0, 0.2, 0, '#c8452b');
   parkedScooter(b, 0.3, 0.2, C.red); parkedScooter(b, 0.7, 0.3, C.orange); parkedScooter(b, 1.1, 0.15, C.yellow);
-  for (const [dx, dz] of [[1.2, -0.45], [1.0, -0.5]] as const) b.cyl(dx, 0.03, dz, 0.07, 0.2, C.red, 'wood', 8); // fuel drums
+  for (const [dx, dz] of [[1.2, -0.45], [1.0, -0.5]] as const) drum(b, dx, 0.03, dz, 0.07, 0.2, C.red); // fuel drums with rims
+  eaveBrackets(b, gx, 0.64, gz + gd / 2, 's', gw - 0.2, 0.4, 0.08);
   b.box(-0.2, 0.03, -0.62, 0.5, 0.3, 0.04, C.dark);
   [-0.17, 0, 0.17].forEach((dx, i) => b.ball(dx - 0.2, 0.34, -0.58, 0.06, [C.red, C.yellow, C.blue][i]!, 'roof', 6));
   lampPost(b, w / 2 - 0.15, h / 2 - 0.15, 0.5);

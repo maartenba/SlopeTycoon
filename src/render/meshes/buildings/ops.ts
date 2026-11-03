@@ -1,4 +1,4 @@
-import { C, PartBuilder, chimney, doorway, frameWin, snowcat } from '../common';
+import { C, PartBuilder, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
 
 /** Helipad (3x3): round pad with big H, ring of edge lights, windsock, fuel drums and a small ops hut. */
 export function helipad(b: PartBuilder, w: number, h: number): void {
@@ -15,14 +15,12 @@ export function helipad(b: PartBuilder, w: number, h: number): void {
     b.box(Math.cos(a) * (r - 0.02), 0.1, Math.sin(a) * (r - 0.02), 0.07, 0.07, 0.07, C.glass);
   }
   // windsock
-  b.cyl(w / 2 - 0.25, 0, -h / 2 + 0.25, 0.03, 0.9, C.dark, 'wood', 6);
-  b.cone(w / 2 - 0.25, 0.7, -h / 2 + 0.25, 0.1, 0.35, C.orange, 'roof', 8, { rz: Math.PI / 2 });
-  b.cyl(w / 2 - 0.45, 0.78, -h / 2 + 0.25, 0.1, 0.04, C.white, 'roof', 8, { rz: Math.PI / 2 });
+  windsock(b, w / 2 - 0.45, 0, -h / 2 + 0.25, 0.9); // striped tapered windsock (M8)
   // ops hut + fuel drums in the opposite corner
   b.box(-w / 2 + 0.45, 0, h / 2 - 0.45, 0.6, 0.45, 0.5, C.white);
   b.gable(-w / 2 + 0.45, 0.45, h / 2 - 0.45, 0.6, 0.7, 0.2, C.roofRed, true);
   frameWin(b, -w / 2 + 0.45, 0.2, h / 2 - 0.2, 's', 0.14);
-  for (const dz of [0, 0.2]) b.cyl(-w / 2 + 1.0 + dz, 0, h / 2 - 0.2, 0.08, 0.22, C.red, 'wood', 8);
+  for (const dz of [0, 0.2]) drum(b, -w / 2 + 1.0 + dz, 0, h / 2 - 0.2, 0.08, 0.22, C.red);
 }
 
 /** Groomer Garage (3x3): big orange garage with a segmented roll-up door and a snowcat parked outside. */
@@ -102,15 +100,23 @@ export function reservoir(b: PartBuilder, w: number, h: number): void {
 
 /** Snowmaking cannon (1x1): tower on a base with a fan-gun nozzle, hose reel and water pipe, small snow mound. */
 export function snowCannon(b: PartBuilder): void {
-  b.box(0, 0, 0, 0.5, 0.1, 0.5, C.grey, 'stone');
-  b.cyl(0, 0.1, 0, 0.06, 0.8, C.grey, 'wood', 8);
-  b.box(0, 0.5, 0, 0.3, 0.03, 0.03, C.dark, 'wood', { ry: Math.PI / 4 });
-  b.cyl(0, 0.9, 0.1, 0.1, 0.35, C.red, 'wood', 10, { rx: Math.PI / 2 - 0.5 });
-  b.cyl(0, 0.95, 0.26, 0.14, 0.04, C.yellow, 'wood', 10, { rx: Math.PI / 2 - 0.5 });
-  b.cyl(0, 0.9, -0.05, 0.05, 0.12, C.dark, 'wood', 8, { rx: Math.PI / 2 - 0.5 });
-  b.box(0.1, 0.1, 0.1, 0.1, 0.25, 0.1, C.blue);
-  b.ring(-0.12, 0.1, 0.12, 0.09, 0.02, C.black, 'wood', 10);
-  b.cone(0.0, 0.0, 0.42, 0.22, 0.16, C.white, 'stone', 8);
+  b.cyl(0, 0, 0, 0.26, 0.05, C.stone, 'stone', 10); // base plate
+  b.box(0, 0.05, 0, 0.5, 0.06, 0.5, C.grey, 'stone');
+  for (let k = 0; k < 3; k++) { const a = (k / 3) * Math.PI * 2 + 0.5; tube(b, Math.cos(a) * 0.2, 0.08, Math.sin(a) * 0.2, 0, 0.62, 0, 0.022, C.grey, 'wood'); } // tripod legs
+  b.cyl(0, 0.1, 0, 0.055, 0.6, C.grey, 'wood', 8); // mast
+  b.cyl(0, 0.66, 0, 0.08, 0.06, C.dark, 'wood', 10); // swivel head
+  const tilt = Math.PI / 2 - 0.45; // barrel: housing + fan shroud + nozzle ring, all along one tilted axis
+  b.cyl(0, 0.9, 0.1, 0.1, 0.36, C.red, 'wood', 12, { rx: tilt });
+  b.cyl(0, 0.96, 0.23, 0.12, 0.08, C.red, 'wood', 12, { rx: tilt }); // flared shroud
+  b.ring(0, 0.96, 0.3, 0.105, 0.018, C.yellow, 'wood', 12, { rx: -0.45 }); // nozzle rim
+  b.ball(0, 0.94, 0.26, 0.055, C.white, 'stone', 6); // nozzle core
+  b.cyl(0, 0.84, -0.06, 0.06, 0.14, C.dark, 'wood', 8, { rx: tilt }); // motor
+  b.box(0.12, 0.1, 0.12, 0.12, 0.28, 0.1, C.blue); // control box
+  b.box(0.12, 0.36, 0.12, 0.14, 0.03, 0.12, C.dark, 'roof');
+  b.ring(-0.14, 0.08, 0.12, 0.09, 0.02, C.black, 'wood', 10); // hose coil
+  tube(b, -0.14, 0.12, 0.2, 0.0, 0.7, 0.1, 0.014, C.black, 'wood', 5); // hose to the head
+  b.cone(0.0, 0.0, 0.42, 0.22, 0.16, C.white, 'stone', 10); // snow pile
+  b.ball(0.12, 0.0, 0.48, 0.08, C.white, 'stone', 6);
 }
 
 /** Shuttle Bus Depot (3x3): canopy over a bus bay with a yellow bus, a garage with roll-up door, bus-stop sign and bench. */

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { C, PartBuilder, balcony, flagPole, frameWin, lampPost, pyramidRoof, wallSlab } from './common';
+import { C, PartBuilder, arcTube, balcony, barrelRoof, domeCap, eaveBrackets, flagPole, frameWin, lampPost, pyramidRoof, railing, tube, wallSlab } from './common';
 
 /** The heated pool, building-local: basin x 0.1 .. 2.5, z 0.9 .. 2.2 (2.4 x 1.3 tiles) inside the pool deck. Steam (BuildingDef.steam) rises from its centre. */
 export const POOL_BASIN = { x0: 0.1, x1: 2.5, z0: 0.9, z1: 2.2, floor: 0.03, water: 0.065, deck: 0.1 } as const;
@@ -49,15 +49,19 @@ export function hotelLuxury(b: PartBuilder, w: number, h: number): void {
   b.gable(px, ph, pcz, pw + 0.2, pd + 0.2, 0.5, C.roofBlue, false);
   const pz = pcz + pd / 2; // pavilion front wall z = 0.6
   grandDoor(b, px, pz);
-  b.box(px, 0.7, pz + 0.38, 1.5, 0.07, 0.8, C.white, 'roof'); // canopy slab
-  for (const sx of [-1, 1]) b.cyl(px + sx * 0.66, 0, pz + 0.7, 0.045, 0.7, C.white, 'wood', 10);
+  barrelRoof(b, px, 0.7, pz + 0.38, 0.8, 1.5, 0.12, C.white, false, 'roof'); // vaulted canopy over the door (M8)
+  b.box(px, 0.66, pz + 0.38, 1.5, 0.05, 0.8, C.stone, 'roof');
+  for (const sx of [-1, 1]) { b.cyl(px + sx * 0.66, 0, pz + 0.7, 0.045, 0.66, C.white, 'wood', 10); b.cyl(px + sx * 0.66, 0, pz + 0.7, 0.07, 0.05, C.stone, 'wood', 10); b.cyl(px + sx * 0.66, 0.63, pz + 0.7, 0.07, 0.04, C.stone, 'wood', 10); } // column base + capital
   for (const f of [1, 2]) for (const sx of [-0.55, 0.55]) frameWin(b, px + sx, 0.9 + (f - 1) * 0.6, pz, 's', 0.2, 0, C.white);
   b.sign('GRAND', px, 1.52, pz + 0.02, 1.0, 0.28, 0, '#1f3a5f', '#f6e7b4');
   for (const sx of [-1, 1]) for (const f of [0, 1, 2]) wallSlab(b, px + sx * pw / 2, 0.45 + f * 0.6, pcz, sx < 0 ? 'w' : 'e', 0.18, 0.22, 0.05, 0.015, C.glass);
   // corner tower with a pyramid roof (east end of the wing)
   const tx = 2.35, tw = 1.0;
   b.box(tx, 0, cz, tw, 2.6, tw + 0.2, C.cream);
-  pyramidRoof(b, tx, 2.6, cz, tw + 0.2, tw + 0.4, 0.5, C.roofBlue);
+  pyramidRoof(b, tx, 2.6, cz, tw + 0.2, tw + 0.4, 0.4, C.roofBlue);
+  b.ball(tx, 2.98, cz, 0.04, C.yellow, 'roof', 6); // finial (M8; the roof tip stays under the 3.1 BUILDING_HEIGHT)
+  b.box(tx, 2.56, cz, tw + 0.14, 0.05, tw + 0.34, C.white, 'roof'); // cornice
+  eaveBrackets(b, 0, wallH, fz, 's', 2.3, 0.5, 0.12, C.white);
   for (const f of [0, 1, 2]) { frameWin(b, tx, 0.35 + f * 0.7, cz + (tw + 0.2) / 2, 's', 0.18, 0, C.white); wallSlab(b, tx + tw / 2, 0.35 + f * 0.7, cz, 'e', 0.18, 0.22, 0.05, 0.015, C.glass); }
   // ---- pool deck: surround slabs round the basin, coping, basin floor ----
   const P = POOL_BASIN, cx = (P.x0 + P.x1) / 2, pzc = (P.z0 + P.z1) / 2, dx0 = -0.3, dx1 = 2.9, dz0 = 0.2, dz1 = 2.9;
@@ -74,6 +78,12 @@ export function hotelLuxury(b: PartBuilder, w: number, h: number): void {
   for (const [x, c] of [[0.55, C.blue], [1.25, C.red], [1.95, C.blue]] as const) lounger(b, x, 0.55, c);
   for (const [x, c] of [[0.6, C.red], [1.3, C.blue], [2.0, C.red]] as const) lounger(b, x, 2.55, c, Math.PI);
   parasol(b, 2.55, 0.6, C.orange); parasol(b, -0.05, 2.55, C.orange);
+  // pool ladder (two round hoops on the west rim) and a diving board on the east end (M8)
+  for (const dz of [-0.07, 0.07]) arcTube(b, P.x0 - 0.02, P.deck, 1.55 + dz, 0.13, 0.014, Math.PI, C.grey, 'wood', 8);
+  b.box(P.x1 + 0.22, P.deck, 1.55, 0.3, 0.04, 0.12, C.white, 'wood', { rz: 0.0 });
+  tube(b, P.x1 + 0.35, P.deck + 0.04, 1.55, P.x1 - 0.14, P.deck + 0.07, 1.55, 0.03, C.blue, 'wood');
+  railing(b, dx0 + 0.05, dz1 - 0.05, dx1 - 0.05, dz1 - 0.05, dh, 0.2, C.white, 8); // deck balustrade
+  for (const [x, z] of [[-0.15, 0.3], [2.8, 0.3]] as const) domeCap(b, x, dh, z, 0.1, 0.12, C.roofGreen, 'roof', 6, 3); // planter shrubs
   for (const [x, z] of [[P.x0 - 0.04, P.z0 - 0.04], [P.x1 + 0.04, P.z1 + 0.04]] as const) { b.cyl(x, dh, z, 0.02, 0.2, C.dark, 'wood', 6); b.box(x, dh + 0.2, z, 0.07, 0.06, 0.07, C.glass); }
   // drive side: flag, lamps
   flagPole(b, -2.7, 1.25, 1.9, C.red, C.white);

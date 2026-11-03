@@ -1,4 +1,4 @@
-import { C, PartBuilder, doorway, frameWin } from '../common';
+import { C, PartBuilder, curvedRamp, doorway, frameWin, railing, tube, windsock } from '../common';
 
 /** M7.4 buildings (docs/m74-buildings.md): Pizzeria, Bakery, Tourist Office, Grass Strip, Skydive Centre, Launch Ramp, Landing Field. All small, all under the 3,000-triangle budget. */
 
@@ -57,10 +57,7 @@ export function grassStrip(b: PartBuilder, w: number, h: number): void {
   b.gable(hx, 0.53, -h / 2 + 0.45, 0.76, 1.2, 0.26, C.roofBlue, false);
   b.box(hx, 0.05, -h / 2 + 0.76, 0.5, 0.36, 0.02, C.dark);
   // windsock: pole + orange cone
-  const sx = w / 2 - 0.6;
-  b.cyl(sx, 0.03, -h / 2 + 0.3, 0.02, 0.8, C.grey, 'stone', 6);
-  b.box(sx + 0.17, 0.74, -h / 2 + 0.3, 0.3, 0.1, 0.1, C.orange, 'roof', { rz: -0.15 });
-  b.box(sx + 0.1, 0.74, -h / 2 + 0.3, 0.06, 0.11, 0.11, C.white, 'roof');
+  windsock(b, w / 2 - 0.6, 0.03, -h / 2 + 0.3, 0.8);
 }
 
 /** Skydive Centre (3x2): office + packing hangar with a red-and-white roof, a parachute packing table, a stack of rigs and a sign. */
@@ -81,12 +78,18 @@ export function skydiveCentre(b: PartBuilder, w: number, h: number): void {
 /** Launch Ramp (2x2): a timber ramp running out to a drop-off edge, a rail, a windsock and a folded wing leaning on a rack. */
 export function launchRamp(b: PartBuilder, w: number, h: number): void {
   b.box(0, 0, -0.1, w - 0.2, 0.2, h - 0.5, C.wood); // deck
-  b.box(0, 0.2, 0.55, 0.9, 0.06, 0.7, C.wood, 'wood', { rx: -0.2 }); // the downhill ramp
-  for (const dx of [-0.5, 0.5]) b.box(dx, 0.2, 0.3, 0.04, 0.3, 1.0, C.dark); // side rails
+  for (let i = 0; i < 4; i++) b.box(0, 0.2, -0.6 + i * 0.3, w - 0.3, 0.012, 0.015, C.dark); // plank seams
+  curvedRamp(b, 0, 0.06, 0.62, 0.8, 0.14, 0.9, C.wood, Math.PI / 2, false, 4); // the downhill run-out: a smooth convex roll-over (M8)
+  for (const dx of [-0.5, 0.5]) { railing(b, dx, -0.3, dx, 0.95, 0.2, 0.3, C.dark, 4); } // round side rails
+  for (const sx of [-1, 1]) b.box(sx * 0.62, 0.0, 0.2, 0.06, 0.2, 0.1, C.dark); // deck legs
+  b.box(0, 0.2, 0.98, 0.95, 0.04, 0.05, C.orange, 'roof'); // edge trim
   const sx = -w / 2 + 0.25;
   b.cyl(sx, 0.2, -0.65, 0.02, 0.8, C.grey, 'stone', 6);
   b.box(sx + 0.15, 0.93, -0.65, 0.28, 0.09, 0.09, C.orange, 'roof', { rz: 0.1 });
-  b.box(0.55, 0.2, -0.55, 0.5, 0.04, 0.3, C.blue, 'roof', { rz: 0.25 }); b.box(0.55, 0.34, -0.55, 0.24, 0.02, 0.3, C.yellow, 'roof', { rz: 0.25 }); // folded wing
+  windsock(b, w / 2 - 0.25, 0.2, -0.65, 0.7);
+  // folded wing leaning on a rack: two curved panels (tapered ellipse-ish) on a tube frame
+  b.box(0.55, 0.2, -0.55, 0.5, 0.04, 0.3, C.blue, 'roof', { rz: 0.25 }); b.box(0.55, 0.34, -0.55, 0.24, 0.02, 0.3, C.yellow, 'roof', { rz: 0.25 });
+  tube(b, 0.3, 0.2, -0.7, 0.45, 0.5, -0.7, 0.014, C.dark, 'wood', 5); tube(b, 0.8, 0.2, -0.7, 0.65, 0.5, -0.7, 0.014, C.dark, 'wood', 5);
   b.sign('FLY', 0, 0.45, -0.7, 0.3, 0.12, 0, '#2f6fb0', '#ffffff');
 }
 
@@ -96,8 +99,7 @@ export function landingField(b: PartBuilder, w: number, h: number): void {
   b.ring(0, 0.03, 0, 0.9, 0.05, C.white, 'stone', 20, { rx: 0 });
   b.ring(0, 0.03, 0, 0.45, 0.05, C.red, 'stone', 16, { rx: 0 });
   const sx = w / 2 - 0.5, sz = -h / 2 + 0.5;
-  b.cyl(sx, 0.03, sz, 0.02, 0.8, C.grey, 'stone', 6);
-  b.box(sx - 0.15, 0.74, sz, 0.3, 0.1, 0.1, C.orange, 'roof', { rz: 0.15 });
+  windsock(b, sx, 0.03, sz, 0.8); // striped tapered windsock (M8)
   b.box(-w / 2 + 0.6, 0.03, h / 2 - 0.4, 0.6, 0.14, 0.2, C.wood);
   b.box(-w / 2 + 0.6, 0.17, h / 2 - 0.48, 0.6, 0.12, 0.04, C.wood);
 }

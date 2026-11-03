@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, balcony, chimney, doorway, flagPole, frameWin, lampPost, parasolTable, wallSlab } from './common';
+import { C, PartBuilder, awning, balcony, barrelRoof, chimney, doorway, eaveBrackets, flagPole, frameWin, lampPost, parasolTable, railing, tube, wallSlab } from './common';
 
 /**
  * Small Hotel (5x4, Phase 6 Task 27, docs/hotels.md): a two-floor cream hotel under a red gable roof (framed windows on both floors, balconies, a
@@ -25,14 +25,18 @@ export function hotelSmall(b: PartBuilder, w: number, h: number): void {
   // lobby / restaurant wing in front: low glazed block with a flat roof, canopy and sign
   const lz = fz + 0.55, lw = 2.2, ld = 1.1, lh = 0.92; // z 0.5 .. 1.6
   b.box(0, 0, lz, lw, lh, ld, C.cream);
-  b.box(0, lh, lz, lw + 0.16, 0.07, ld + 0.16, C.roofBrown, 'roof');
+  barrelRoof(b, 0, lh, lz, ld + 0.16, lw + 0.16, 0.14, C.roofBrown, false); // gently vaulted lobby roof (M8)
+  b.box(0, lh - 0.04, lz, lw + 0.16, 0.05, ld + 0.16, C.dark, 'roof'); // roof fascia
   const wz = lz + ld / 2;
   for (const x of [-0.8, 0.8]) wallSlab(b, x, 0.2, wz, 's', 0.5, 0.55, 0.05, 0.015, C.glass); // big restaurant panes
   for (const x of [-1.1, 1.1]) b.box(x, 0.0, wz + 0.01, 0.07, lh, 0.06, C.white); // mullions at the corners
   doorway(b, 0, wz, 's', 0.36, 0.55, C.dark, C.white);
   awning(b, 0, 0.66, wz + 0.2, 0.9, 0.34, C.red, C.white); // entrance awning
   b.sign('HOTEL', 0, lh + 0.14, wz - 0.02, 0.9, 0.24, 0, '#2d5fa8', '#ffffff');
-  b.box(-0.42, 0.0, wz + 0.34, 0.04, 0.66, 0.04, C.white); b.box(0.42, 0.0, wz + 0.34, 0.04, 0.66, 0.04, C.white);
+  for (const sx of [-1, 1]) b.cyl(sx * 0.42, 0, wz + 0.34, 0.03, 0.66, C.white, 'wood', 8); // round awning posts (M8)
+  eaveBrackets(b, 0, wallH, fz, 's', bw - 0.4, 0.5, 0.12); // corbels under the main eave
+  for (const sx of [-1, 1]) tube(b, sx * (bw / 2 + 0.02), wallH + 0.1, cz + bd / 2 - 0.05, sx * (bw / 2 + 0.02), 0.1, cz + bd / 2 - 0.05, 0.022, C.stone, 'stone'); // downpipes
+  railing(b, 1.25, 1.75, 2.55, 1.75, 0.05, 0.22, C.dark, 5); // terrace rail
   // terrace with parasol tables on the right of the wing
   b.box(1.9, 0, 1.1, 1.3, 0.05, 1.4, C.wood);
   parasolTable(b, 1.7, 0.85, C.orange, 0); parasolTable(b, 2.15, 1.45, C.red, 1);
