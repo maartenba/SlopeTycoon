@@ -54,11 +54,15 @@ export interface AttractionSpec {
   hours?: readonly [number, number];
   /** Sky activity (M7.4, config/sky.ts): daylight + clear weather only; 'skydive' needs an active Grass Strip, 'glide' a Landing Field in reach. */
   sky?: 'skydive' | 'glide';
+  /** Schirmbar (M7.8): winter-only slope bar with weather closures and the player's Closed switch (`schirmbarStatus`). Not a venue guests walk to: skiers stop mid-descent (`SCHIRMBAR_STOPS`). */
+  schirmbar?: boolean;
+  /** Hard cap on guests served per day (Schirmbar); absent = none. Saved in the stats (`today`, `todayDay`). */
+  dailyCap?: number;
   /** Tackle & bait hut (Phase 6 Task 49): a visit is a fishing trip (rod + bait extras, catches at the end; docs/anglers.md). */
   angling?: boolean;
 }
 
-export interface AttractionStats { /** Petting zoo: scoops of feed sold so far (docs/petting-zoo.md). Absent elsewhere / in old saves. */ fed?: number; /** Climbing crag: minor mishaps so far (patrol call-outs). Absent elsewhere. */ mishaps?: number; /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[]; /** Restaurants (M7.2 food.surplus advice): days counted, the `served` mark of the day before and the moving average (about 10 days) of guests served per day. Absent elsewhere / in old saves. */ age?: number; servedMark?: number; recent?: number }
+export interface AttractionStats { /** Petting zoo: scoops of feed sold so far (docs/petting-zoo.md). Absent elsewhere / in old saves. */ fed?: number; /** Climbing crag: minor mishaps so far (patrol call-outs). Absent elsewhere. */ mishaps?: number; /** Tackle hut: fish caught so far. Absent elsewhere. */ catches?: number; /** Campground: evenings a campfire burned (inspector). */ fires?: number; /** Toilets: uses so far today and the absolute day they belong to (cleanliness). Absent elsewhere / in old saves. */ today?: number; todayDay?: number; /** Schirmbar: income of the day `todayDay` (inspector). Absent elsewhere. */ todayRev?: number; served: number; revenue: number; balked: number; reneged: number; turnedAway: number; nights: number; /** Revenue by in-game hour (24 buckets; restaurants / bars / terraces). Absent in old saves. */ hourly?: number[]; /** Restaurants (M7.2 food.surplus advice): days counted, the `served` mark of the day before and the moving average (about 10 days) of guests served per day. Absent elsewhere / in old saves. */ age?: number; servedMark?: number; recent?: number }
 
 /** Plain data for the inspector / reports. */
 export interface AttractionInfo {
@@ -87,9 +91,11 @@ export interface AttractionInfo {
   rental?: RentalStockInfo;
   /** Petting zoo (docs/petting-zoo.md): scoops of feed sold so far and the price of one. */
   zoo?: { fed: number; feedPrice: number };
+  /** Schirmbar (docs/schirmbar.md): the player's switch, guests and income of today, the daily cap. */
+  schirmbar?: { playerClosed: boolean; guestsToday: number; incomeToday: number; dailyCap: number };
 }
 
-export interface InstanceSave { id: number; price: number; staff: number; stats: AttractionStats; open?: boolean; reason?: string; reported?: boolean; keep?: boolean }
+export interface InstanceSave { id: number; price: number; staff: number; stats: AttractionStats; open?: boolean; reason?: string; reported?: boolean; keep?: boolean; /** Schirmbar: closed by the player (additive; old saves have none). */ closed?: boolean }
 
 /** Runtime state of one placed attraction: queue (FIFO with balking), service slots, price, staff, counters. */
 export class Attraction {
@@ -98,10 +104,14 @@ export class Attraction {
   staff: number;
   /** Tackle hut setting: keep the catch (earns a little more, depletes the stock) instead of Catch & release (default). Saved only when true. */
   keep = false;
+  /** Schirmbar: the player's Closed switch (saved only when true). */
+  playerClosed = false;
   /** Tackle hut: fishing places right now (set by the system each tick); undefined = the catalog capacity. */
   slotsNow: number | undefined;
   /** Tackle hut inspector data (set by the attraction system). */
   anglingInfo: (() => AttractionInfo['angling'] | undefined) | undefined;
+  /** Schirmbar inspector data (set by the attraction system). */
+  schirmbarInfo: (() => AttractionInfo['schirmbar']) | undefined;
   /** Rental: stock of skis / boards (set by the attraction system). */
   rentalInfo: (() => RentalStockInfo) | undefined;
   /** Tour bases: inspector data (set by the attraction system). */
@@ -178,16 +188,18 @@ export class Attraction {
       ...(this.spec.optionalStaff ? { crag: { guided: this.guided(), mishaps: this.stats.mishaps ?? 0 } } : {}),
       ...(this.spec.kind === 'zoo' ? { zoo: { fed: this.stats.fed ?? 0, feedPrice: ZOO_FEED.price } } : {}),
       ...(this.rentalInfo ? { rental: this.rentalInfo() } : {}),
+      ...(this.schirmbarInfo ? { schirmbar: this.schirmbarInfo() } : {}),
       ...(this.anglingInfo ? { angling: this.anglingInfo() } : {}),
     };
   }
 
-  save(): InstanceSave { return { id: this.b.id, price: this.price, staff: this.staff, stats: { ...this.stats, ...(this.stats.hourly ? { hourly: [...this.stats.hourly] } : {}) }, open: this.open, reason: this.reason, reported: this.reported, ...(this.keep ? { keep: true } : {}) }; }
+  save(): InstanceSave { return { id: this.b.id, price: this.price, staff: this.staff, stats: { ...this.stats, ...(this.stats.hourly ? { hourly: [...this.stats.hourly] } : {}) }, open: this.open, reason: this.reason, reported: this.reported, ...(this.keep ? { keep: true } : {}), ...(this.playerClosed ? { closed: true } : {}) }; }
   /** Queues / users are NOT restored (guests inside are released by the next membership check). */
   load(d: InstanceSave): void {
     this.price = d.price; this.staff = d.staff; this.stats = { ...d.stats, ...(d.stats.hourly ? { hourly: [...d.stats.hourly] } : {}) };
     if (d.open !== undefined) { this.open = d.open; this.reason = d.reason; this.reported = d.reported; }
     this.keep = d.keep === true;
+    this.playerClosed = d.closed === true;
     this.queue = []; this.users = [];
   }
 }

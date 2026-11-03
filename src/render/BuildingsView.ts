@@ -9,7 +9,7 @@ export interface BuildingsSource {
   all(): Array<{ id: number; type: string; x: number; y: number; w: number; h: number; rot: number }>;
 }
 
-interface Entry { group: THREE.Group; type: string; sig: string; depth: number }
+interface Entry { group: THREE.Group; type: string; sig: string; depth: number; variant: string }
 
 /**
  * Single source of truth for building meshes: mirrors the Buildings store into the scene.
@@ -23,6 +23,8 @@ export class BuildingsView {
 
   /** Rotor spin speed (rad/s) of a wind turbine building (wired by main: from the energy grid; absent = still). */
   spin?: (id: number) => number;
+  /** Mesh variant of a building ('' = the default; the Schirmbar answers 'closed' while shut and carries the resort name, M7.8). A change recreates that group (cached geometry, no chunk rebuild). */
+  variantOf?: (id: number, type: string) => string;
 
   constructor(private scene: Pick<THREE.Scene, 'add' | 'remove'>, private meshes: BuildingMeshes, private grid: Grid, private source: BuildingsSource) {}
 
@@ -44,10 +46,11 @@ export class BuildingsView {
       const y = seat.y;
       const sig = `${b.x},${b.y},${b.w},${b.h},${b.rot},${y}`;
       let e = this.entries.get(b.id);
-      if (e && (e.type !== b.type || e.depth !== seat.depth)) { this.scene.remove(e.group); this.entries.delete(b.id); e = undefined; }
+      const variant = this.variantOf?.(b.id, b.type) ?? '';
+      if (e && (e.type !== b.type || e.depth !== seat.depth || e.variant !== variant)) { this.scene.remove(e.group); this.entries.delete(b.id); e = undefined; }
       if (!e) {
-        const group = this.meshes.create(b.type, seat.depth, b.id);
-        e = { group, type: b.type, sig: '', depth: seat.depth };
+        const group = this.meshes.create(b.type, seat.depth, b.id, variant.startsWith('closed') ? 'closed' : '');
+        e = { group, type: b.type, sig: '', depth: seat.depth, variant };
         this.entries.set(b.id, e);
         this.scene.add(group);
       }

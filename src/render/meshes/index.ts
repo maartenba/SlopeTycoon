@@ -7,7 +7,7 @@ import { C, flagstoneFoundation, hash01 } from './common';
 import { createWoodTexture } from '../textures/wood';
 import { createRoofTexture } from '../textures/roof';
 import { createStoneTexture } from '../textures/stone';
-import { createSignTexture } from '../textures/sign';
+import { createBannerTexture, createSignTexture } from '../textures/sign';
 import * as S from './buildings/services';
 import * as K from './buildings/kidsSafety';
 import * as O from './buildings/ops';
@@ -32,6 +32,7 @@ import { fishingPier } from './fishingPier';
 import { hotelSmall } from './hotelSmall';
 import { hotelLuxury, poolWaterGeometry } from './hotelLuxury';
 import { coffeeStand } from './coffeeStand';
+import { schirmbar, schirmbarClosed } from './schirmbar';
 
 const e = (build: BuildFn, foundation = true, rooted = false): BuilderEntry => ({ build, foundation, ...(rooted ? { rooted } : {}) });
 
@@ -49,7 +50,7 @@ export const BUILDING_BUILDERS: Record<string, BuilderEntry> = {
   solarArray: e(G.solarArray, false), solarPlant: e(G.solarPlant, false), windTurbine: e(G.windTurbine), windTurbineRotor: e(G.windRotor, false),
   campground: e(campground, false), pettingZoo: e(pettingZoo, false), viewpoint: e(viewpoint, false), treehouse: e(treehouse, false, true),
   tackleHut: e(tackleHut, false), fishingPier: e(fishingPier, false),
-  smallHotel: e(hotelSmall), luxuryHotel: e(hotelLuxury, false), coffeeStand: e(coffeeStand, false),
+  smallHotel: e(hotelSmall), luxuryHotel: e(hotelLuxury, false), coffeeStand: e(coffeeStand, false), schirmbar: e(schirmbar, false), 'schirmbar:closed': e(schirmbarClosed, false),
   pizzeria: e(V.pizzeria, false), bakery: e(V.bakery, false), touristOffice: e(V.touristOffice, false), grassStrip: e(V.grassStrip, false), skydiveCentre: e(V.skydiveCentre, false), launchRamp: e(V.launchRamp, false), landingField: e(V.landingField, false),
   sledRental: e(sledRental, false), alpineCoaster: e(alpineCoaster, false),
   smallHydro: e(G.smallHydro), biomassHeating: e(G.biomassHeating), treeNursery: e(G.treeNursery, false), recyclingCentre: e(G.recyclingCentre), ecoCentre: e(G.ecoCentre),
@@ -224,6 +225,22 @@ export class BuildingMeshes {
     return m;
   }
 
+  /** Schirmbar banner (M7.8): the resort name on the red band. Changing it re-skins newly created groups (BuildingsView recreates the Schirmbars). */
+  private resortName = 'Apres-Ski';
+  setResortName(name: string): void { this.resortName = name || 'Apres-Ski'; }
+  get bannerName(): string { return this.resortName; }
+  private bannerMat(name: string): THREE.Material {
+    const key = `banner|${name}`;
+    let m = this.mats.get(key);
+    if (!m) {
+      for (const k of [...this.mats.keys()]) if (k.startsWith('banner|')) { (this.mats.get(k) as THREE.MeshLambertMaterial).map?.dispose(); this.mats.get(k)!.dispose(); this.mats.delete(k); } // only the current name is kept
+      const tex = createBannerTexture(name);
+      m = new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide });
+      this.mats.set(key, m);
+    }
+    return m;
+  }
+
   parts(id: string, w: number, h: number, depth = DEFAULT_FOUNDATION): BuiltParts {
     const key = `${id}|${w}|${h}|${depth}`;
     let p = this.geoCache.get(key);
@@ -232,24 +249,24 @@ export class BuildingMeshes {
   }
 
   /** Group with ≤4 meshes, origin at footprint centre at ground level. Rotate the group in 90° steps for placement. */
-  create(id: string, foundationDepth = DEFAULT_FOUNDATION, tintSeed: number | string = 0): THREE.Group {
+  create(id: string, foundationDepth = DEFAULT_FOUNDATION, tintSeed: number | string = 0, variant = ''): THREE.Group {
     const def = BUILDINGS[id];
     if (!def) throw new Error(`Unknown building '${id}'`);
-    const p = this.parts(def.meshBuilder, def.w, def.h, foundationDepth);
-    const variant = tintVariant(tintSeed), rv = roofVariant(tintSeed, this.district);
+    const p = this.parts(variant ? `${def.meshBuilder}:${variant}` : def.meshBuilder, def.w, def.h, foundationDepth);
+    const tintV = tintVariant(tintSeed), rv = roofVariant(tintSeed, this.district), bar = id === 'schirmbar'; // the Schirmbar keeps its yellow / white canvas: no district hue
     const g = new THREE.Group();
     g.name = `building:${id}`;
     for (const l of ['wood', 'stone', 'roof'] as const) {
       const geo = p[l];
-      if (geo) g.add(new THREE.Mesh(geo, this.mat(l, l === 'roof' ? rv : variant)));
+      if (geo) g.add(new THREE.Mesh(geo, this.mat(l, bar ? 'n0' : l === 'roof' ? rv : tintV)));
     }
-    if (p.sign) g.add(new THREE.Mesh(p.sign.geometry, this.signMat(p.sign.text, p.sign.bg, p.sign.fg)));
+    if (p.sign) g.add(new THREE.Mesh(p.sign.geometry, bar ? this.bannerMat(this.resortName) : this.signMat(p.sign.text, p.sign.bg, p.sign.fg)));
     if (id === 'windTurbine') {
       // the blades are their own group so the view can spin them about the rotor axis (BuildingsView: `rotor`)
       const rp = this.parts('windTurbineRotor', 1, 1, 0), rotor = new THREE.Group();
       rotor.name = 'rotor';
       rotor.position.set(0, TURBINE_HUB.y, TURBINE_HUB.z);
-      if (rp.stone) rotor.add(new THREE.Mesh(rp.stone, this.mat('stone', variant)));
+      if (rp.stone) rotor.add(new THREE.Mesh(rp.stone, this.mat('stone', tintV)));
       g.add(rotor);
     }
     if (id === 'campground') {

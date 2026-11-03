@@ -349,6 +349,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'schirmbar.suggest', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 30); s.game.date.day = seasonStartDay('winter') + 5; s.game.money = 50_000; },
+    fixes: [
+      { name: 'a Schirmbar stands', apply: (s) => { buildAt(s, 'schirmbar', lodge(s), { rmax: 14 }); } },
+      { name: 'the season moves on', apply: (s) => { s.game.date.day = seasonStartDay('summer') + 5; } },
+    ],
+  },
+  {
     id: 'carnival.available', daily: true,
     setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; s.game.date.day = 150; },
     fixes: [

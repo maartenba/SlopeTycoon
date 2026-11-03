@@ -347,6 +347,13 @@ export const RULES: readonly Rule[] = [
     if (sim.buildings.all().some((b) => b.type === 'touristOffice') || sim.progression.locked('building', 'touristOffice') || sim.game.money < BUILDINGS.touristOffice!.cost + (c.shown ? 1_000 : 2_000)) return null;
     return { id: 'tourist.office', severity: 'info', ...TEXT.touristOffice(), panel: { drawer: 'buildings', item: 'touristOffice' } };
   }),
+  // Schirmbar (M7.8, docs/schirmbar.md): a winter resort with a lift and a settled crowd, none built yet: a cheap slope bar. Quiet outside winter and until it is unlocked.
+  rule('schirmbar.suggest', 1, (c) => {
+    const sim = c.sim;
+    if (c.season !== 'winter' || sim.guestSim.store.count < (c.shown ? 15 : 25) || sim.lifts.all().length < 1 || !has(sim, 'baseLodge')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'schirmbar') || sim.progression.locked('building', 'schirmbar') || sim.game.money < BUILDINGS.schirmbar!.cost + (c.shown ? 1_500 : 3_000)) return null;
+    return { id: 'schirmbar.suggest', severity: 'info', ...TEXT.schirmbarTip(), panel: { drawer: 'buildings', item: 'schirmbar' } };
+  }),
   // Carnival (M7.4, docs/festivals.md): late February; the Events calendar books it. Same pattern as the concerts.
   rule('carnival.available', 1, (c) => {
     const sim = c.sim, ev = sim.events, def = FESTIVAL_BY_ID.carnival;

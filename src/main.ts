@@ -409,6 +409,7 @@ const sim = createSim({
     onDay: () => { refreshUi(); if (overlayMode === 'snow') covOverlay.invalidate(); },
   },
   fromSave: bootSave?.env.modules,
+  resortName: params.get('name') ?? undefined, // M7.8: `?name=` from the New Game dialog; the seed's own default name otherwise; a save's 'resort' module wins
   ...(DEMO ? { hints: false, preset: townOf(DEMO_TOWN.id)!.preset, startSeason: DEMO_TOWN.season } : {}),
   ...(DEMO ? { remoteSupply: false } : {}), // Phase 6 Task 2: +25% upkeep for sites supplied only on foot (trail / piste edge)
   ...(DEMO ? { campaignsV2: false } : {}), // Phase 6 Task 50: rail share tracking + the capped train sustainability bonus (Come by Train)
@@ -571,7 +572,9 @@ const refreshProps = (dirty: number[]): void => {
   rocks.refreshChunks(dirty);
 };
 
-const buildingsView = new BuildingsView(renderer.scene, buildingMeshes, grid, buildings); buildingsView.spin = (id) => sim.energy.rotorSpeed(id); // single sync point: store -> meshes (boot, place, remove, rotate, terraform)
+const buildingsView = new BuildingsView(renderer.scene, buildingMeshes, grid, buildings); buildingsView.spin = (id) => sim.energy.rotorSpeed(id);
+buildingsView.variantOf = (id, type) => { if (type !== 'schirmbar') return ''; buildingMeshes.setResortName(sim.resort.name); const at = sim.attractions.get(id); return `${at && !at.open ? 'closed' : 'open'}|${sim.resort.name}`; }; // M7.8: shuttered while closed, the banner carries the resort name
+buildingMeshes.setResortName(sim.resort.name); // single sync point: store -> meshes (boot, place, remove, rotate, terraform)
 
 // Service coverage + overlays (sim-side coverage/networks come from createSim).
 const covOverlay = new CoverageOverlay(grid, coverage, () => buildings.all(), () => sim.networkProvider, () => ({ depth: grid.snowDepth, skiOpen: cond.skiOpen }), () => ops.quality.state, () => safetyRef?.wildlife.threat ?? null, () => { const q = opsRef?.quality; if (!q) return null; if (!trafficMix) trafficMix = new Uint16Array(q.traffic.length); for (let i = 0; i < trafficMix.length; i++) trafficMix[i] = Math.min(65535, q.traffic[i]! + q.trafficDay[i]!); return trafficMix; }, () => { const sm = opsRef?.snowmaking; if (!sm) return null; if (!gainMix) gainMix = new Float32Array(sm.gainToday.length); for (let i = 0; i < gainMix.length; i++) gainMix[i] = Math.max(sm.gainToday[i]!, sm.gainLast[i]!); return gainMix; }, () => sim.runIndex.labelMap());
@@ -1333,7 +1336,7 @@ try {
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad' || c.kind === 'scooter')),
       sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
-      apresBars: () => buildings.all().filter((b) => b.type === 'apresBar' && b.active).filter((b) => { const a = attractions.get(b.id); return !!a && attractions.servingNow(a) && a.open; }).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
+      apresBars: () => buildings.all().filter((b) => (b.type === 'apresBar' || b.type === 'schirmbar') && b.active).filter((b) => { const a = attractions.get(b.id); return !!a && attractions.servingNow(a) && a.open; }).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
       streamClassAt: (x, y) => { // tile -> flow class, rebuilt only when the flow table changes
         const tbl = sim.flow.all();
         if (streamClsSeen !== sim.flow.version) { streamClsSeen = sim.flow.version; streamCls.clear(); for (const w of waterways(terrainInfo.streams, sim.rivers.rivers)) { const f = tbl.get(w.id); w.path.forEach((p, i) => streamCls.set(p.y * 65536 + p.x, f?.cls[i] ?? 1)); } }
@@ -1613,7 +1616,7 @@ const viewpointSpots = (): Array<{ x: number; z: number; look: number; reach: nu
 const photoSample: RideSample = { x: 0, y: 0, z: 0, hx: 0, hz: 0, speed: 0, slope: 0, kind: 'foot' };
 const photo = new PhotoMode({
   renderer, lighting, ground: photoGround, mapSize: MAP_SIZE, skyDecor: () => atmos.lastDecor,
-  resortName: () => `Resort Year ${game.date.year}`,
+  resortName: () => sim.resort.name,
   heroFocus: () => { const lodge = buildings.all().find((b) => b.type === 'baseLodge'), a = terrainInfo.villageAnchor; return lodge ? { x: lodge.x + lodge.w / 2, z: lodge.y + lodge.h / 2 } : { x: a.x, z: a.y }; },
   followTarget: () => (rideAlong.active && rideAlong.sample(1, photoSample) ? photoSample : null),
   spots: () => viewpointSpots(),
@@ -2371,7 +2374,7 @@ if (ui && !DEMO) {
   });
   hud.bind(bus, () => game.money);
   hud.bindRating(() => ({ breakdown: rating.breakdown(), happiness: (() => { const st = guestSim.store; let n = 0, h = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i]) { n++; h += st.happiness[i]!; } return n ? h / n : 0.5; })(), market: { share: sim.rivals.share, rank: sim.rivals.rank, of: sim.rivals.rivals.length + 1 } }));
-  hud.bindLevel(bus, () => { const v = sim.progression.view(); return v.mode === 'sandbox' ? `${MODE_INFO.sandbox.label}: everything is unlocked \u00B7 ${regionNameOf(SEED)}` : `${MODE_INFO.career.label} \u00B7 Level ${v.level} \u00B7 ${v.name} \u00B7 ${regionNameOf(SEED)}`; });
+  hud.bindLevel(bus, () => { const v = sim.progression.view(); return v.mode === 'sandbox' ? `${sim.resort.name} \u00B7 ${MODE_INFO.sandbox.label}: everything is unlocked \u00B7 ${regionNameOf(SEED)}` : `${sim.resort.name} \u00B7 ${MODE_INFO.career.label} \u00B7 Level ${v.level} \u00B7 ${v.name} \u00B7 ${regionNameOf(SEED)}`; });
   hud.bindDate(bus, () => game.date);
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
@@ -2455,7 +2458,7 @@ if (ui && !DEMO) {
   if (liftToolsRef) liftToolsRef.tool.setAutoFlatten(true); // lifts default ON; buildings take their per-type default on pick
   const seenYears = new Set<number>(sim.yearReports.all().map((r) => r.year)); // reports from a loaded save were seen before
   const yearEl = el('st-year-report');
-  (yearEl as unknown as { region: string }).region = regionNameOf(SEED);
+  (yearEl as unknown as { region: string }).region = `${sim.resort.name} · ${regionNameOf(SEED)}`;
   const finPanel = el('st-finance');
   const loanPanel = el('st-loans');
   finPanel.bind({
@@ -2656,6 +2659,7 @@ if (ui && !DEMO) {
     setPrice: (id, p) => { sim.priceApi.setForBuilding(id, p); refreshUi(); },
     adjustStaff: (id, d) => { const a = attractions.get(id); if (a) { a.setStaff(a.staff + d); refreshUi(); } },
     setKeep: (id, keep) => { if (attractions.setKeep(id, keep)) refreshUi(); },
+    setClosed: (id, closed) => { if (attractions.setSchirmbarClosed(id, closed)) refreshUi(); },
   });
   // Pre-render thumbnails during idle time (after the first frame); the dock fills placeholders as they arrive.
   {
@@ -2844,6 +2848,7 @@ if (ui && !DEMO) {
       hints: { title: tr('ui.hintsToggle'), get: () => !!tutorialRef?.hints?.enabled, set: (on) => { const h = tutorialRef?.hints; if (!h) return; h.setEnabled(on); toast(tr(on ? 'ui.hintsOn' : 'ui.hintsOff')); } },
       replayTutorial: () => { window.location.search = TUTORIAL_QUERY; },
       monthSummary: { get: () => monthCardOn, set: (on) => { monthCardOn = on; if (!on && recapEl.currentMode === 'month') recapEl.dismiss(); try { window.localStorage.setItem(MONTH_CARD_KEY, on ? '1' : '0'); } catch { /* private mode */ } } },
+      resortName: { get: () => sim.resort.name, set: (v) => sim.setResortName(v) },
       yearReport: { get: () => yearReportOn, set: (on) => { yearReportOn = on; try { window.localStorage.setItem(YEAR_REPORT_KEY, on ? '1' : '0'); } catch { /* private mode */ } } },
       privacy: settingsPrivacy(),
       unmuteNews: () => { for (const c of [...toastEl.mutedCategories()]) toastEl.setMuted(c, false); },

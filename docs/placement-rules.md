@@ -86,6 +86,7 @@ Generated from `src/config/buildings.ts` by `npm run docs:rules` (`scripts/analy
 | Small Hotel | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
 | Luxury Hotel | road | Needs a road next to it | forbid | flat | default | never | no | – | all | – |
 | Coffee Stand | footpath, road, hiking trail or piste | Needs a footpath, road, hiking trail or piste next to it | edge | ≤2 | optional | never | yes | – | all | – |
+| Schirmbar | - | – | edge | ≤3 | optional | never | no | – | winter | – |
 | Sleigh Stable | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | default | never | no | – | winter | – |
 | Snowshoe Hut | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | default | never | no | – | winter | – |
 | Snowscooter Base | footpath, road or hiking trail | Needs a footpath, road or hiking trail next to it | forbid | ≤2 | default | never | no | – | winter | – |

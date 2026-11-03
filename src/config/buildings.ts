@@ -110,7 +110,7 @@ const FLAT: SiteRule = { maxSlope: 1, slopeKind: 'flat', autoFlatten: 'default',
 
 /** Season relevance per id where the needs don't say it (winter operations, summer attractions); else derived from `needs`. */
 const SEASON_OVERRIDE: Record<string, SeasonUse> = {
-  apresBar: 'winter', skiSchoolHQ: 'winter', groomerGarage: 'winter', snowcatOutpost: 'winter',
+  apresBar: 'winter', schirmbar: 'winter', skiSchoolHQ: 'winter', groomerGarage: 'winter', snowcatOutpost: 'winter',
   playground: 'shoulder', campground: 'summer', pettingZoo: 'summer',
 };
 function seasonFor(id: string, needs: NeedCondition[] | undefined): SeasonUse {
@@ -216,6 +216,8 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('luxuryHotel', 'Luxury Hotel', 'lodging', 6, 6, 48000, 90, { access: 'road', placeTip: 'Place the hotel beside a road on flat ground; the pool deck faces south' }, { staff: 4, capacity: 30, steam: { x: 1.3, y: 0.15, z: 1.55 } }),
   // Coffee Stand (Phase 6 Task 28, docs/coffee-stand.md): a 1x1 kiosk beside a piste, a footpath or a trail; a quick cup and a bite (food only: the toilets are the comfort source). All year.
   b('coffeeStand', 'Coffee Stand', 'services', 1, 1, 1200, 4, { access: 'pisteEdge', altAccess: ['path', 'trail'], pisteRule: 'edge', site: HUT, placeTip: 'Place the coffee stand beside a piste, a footpath or a trail' }, { staff: 1, capacity: 4, chimney: { x: 0.18, y: 0.94, z: -0.1 } }),
+  // Schirmbar (M7.8, docs/schirmbar.md): a 2 x 2 domed umbrella bar anywhere on the slopes (beside a piste or a lift station, never ON a piste tile or in water): no road, path or power, winter only, opens in good weather.
+  b('schirmbar', 'Schirmbar', 'services', 2, 2, 1500, 5, { access: 'none', pisteRule: 'edge', site: { maxSlope: 3, slopeKind: 'any', autoFlatten: 'optional' } }, { staff: 1, capacity: 8 }),
   // Winter tours (Phase 6 Task 31, docs/winter-tours.md). The ride runs on the attached tiles (config/tours.ts); all three are winter only.
   b('sleighStable', 'Sleigh Stable', 'recreation', 4, 3, 5500, 12, { access: 'road', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default' }, placeTip: 'Place the stable beside a road or footpath: the horse sleigh drives out along it' }, { needs: ['snow'], staff: 1, capacity: 6 }),
   b('snowshoeHut', 'Snowshoe Hut', 'recreation', 2, 2, 2800, 10, { access: 'trail', altAccess: ['path'], site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default' }, placeTip: 'Place the hut at the start of a hiking trail: the guided walks follow it' }, { needs: ['snow'], staff: 1, capacity: 8 }),

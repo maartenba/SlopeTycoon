@@ -28,6 +28,8 @@ export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heate
 export const SNACKS = new Set(['coffeeStand', 'bakery']);
 /** Snack stop tuning: guests with hunger in [minHunger, maxHunger] weigh the nearest open kiosk with score `base + perHunger x hunger - distPenalty x tiles + nearBonus x (1 - tiles / radius)`: the pull FALLS with hunger (a snack-sized appetite stops for a coffee; a really hungry guest wants the real meal, which scores 2 x hunger) and with the detour. */
 export const SNACK = { minHunger: 0.3, maxHunger: 0.7, base: 1.75, perHunger: -1, radius: 7, nearBonus: 0.3, distPenalty: 0.15, /** Hunger a cup and a bite take off (the Coffee Stand spec's `hungerBy`). */ by: 0.3, /** Mid-run break: a skier within `passRadius` tiles of an open stand, hunger in [passMin, passMax] (or tired: fatigue >= tired), takes it on about 1 in `oneIn` passes (stateless hash of guest id and runs: no RNG, no stored cap; a cup takes 0.3 off the hunger, so a guest is back in the window only hours later = 1-2 stops a day). */ passRadius: 2, passMin: 0.3, passMax: 0.7, tired: 0.6, oneIn: 3, /** Dollars a cup and a bite cost when a hiker stops at a kiosk with no other food in reach. */ spend: 4 } as const;
+/** Slope stops (M7.8, docs/schirmbar.md): the Schirmbar. Skiers only stop mid-descent (`GuestSim.slopeStop`); never a destination, an evening venue or a wandering target. */
+export const SLOPE_STOPS = new Set(['schirmbar']);
 /** Evening venues beyond the daytime FOOD list: the Après-Ski Bar (a drinks stop, not a meal). */
 export const BAR = new Set(['apresBar']);
 /** Every venue the evening model schedules (dinner, drinks, terrace). */
@@ -123,6 +125,8 @@ export class Decider {
   food: WorldBuilding[] = [];
   /** Open coffee stands / kiosks (SNACKS). */
   snacks: WorldBuilding[] = [];
+  /** Open, serving Schirmbars (mid-descent stops only). */
+  stops: WorldBuilding[] = [];
   bars: WorldBuilding[] = [];
   huts: WorldBuilding[] = [];
   /** Buildings with `def.viewpoint` (Phase 6 Task 6): hiker goals with a view score. */
@@ -199,7 +203,7 @@ export class Decider {
   reset(): void { this.goals.reset(); this.descent.clear(); this.descentEpoch = -1; this.scanEpoch = -1; this.lifts = []; this.hikeTiles = []; this.mtbTiles = []; this.skiOpenTiles = 0; }
 
   refresh(buildings: Iterable<WorldBuilding>): void {
-    this.food = []; this.snacks = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
+    this.food = []; this.snacks = []; this.stops = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
     for (const b of buildings) {
       if (!b.active) continue;
       if (this.port && !this.port.accepts(b.id)) continue;
@@ -209,6 +213,7 @@ export class Decider {
       const vp = BUILDINGS[b.type]?.viewpoint; if (vp) this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); // viewpoint buildings (config-driven)
       const serving = this.port?.serving?.(b.id) ?? true; // venues are only candidates while serving (08:00 - 23:00)
       if (FOOD.has(b.type) && serving) this.food.push(b);
+      if (SLOPE_STOPS.has(b.type)) { if (serving) this.stops.push(b); continue; } // never a wandering target
       if (SNACKS.has(b.type) && serving) this.snacks.push(b);
       if (BAR.has(b.type) && serving) this.bars.push(b);
       if (REST.has(b.type)) this.rest.push(b);
@@ -363,6 +368,13 @@ export class Decider {
   snackWithin(x: number, y: number, r: number): WorldBuilding | undefined {
     let best: WorldBuilding | undefined, bd = r * r;
     for (const b of this.snacks) { const d = dist2(b, x, y); if (d <= bd && (!best || d < bd || b.id < best.id)) { bd = d; best = b; } }
+    return best;
+  }
+
+  /** Open Schirmbar within `r` tiles of a point; nearest, ties by id. No RNG. */
+  stopWithin(x: number, y: number, r: number): WorldBuilding | undefined {
+    let best: WorldBuilding | undefined, bd = r * r;
+    for (const b of this.stops) { const d = dist2(b, x, y); if (d <= bd && (!best || d < bd || b.id < best.id)) { bd = d; best = b; } }
     return best;
   }
 

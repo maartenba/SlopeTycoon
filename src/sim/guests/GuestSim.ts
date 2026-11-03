@@ -11,6 +11,8 @@ import type { LiftData } from '../Lift';
 import type { SimSystem } from '../Systems';
 import type { GuestAttractionPort } from './AttractionPort';
 import { Act, Decider, FOOD, type Intent, REST, SNACK, SNACKS } from './Decision';
+import { SCHIRMBAR } from '../../config/schirmbar';
+import { schirmbarStop } from '../attractions/Schirmbar';
 import { coreOf, eventReason, GState, GuestStore, GuestType, Leave } from './Guest';
 import { Mode } from './Guest';
 import type { GuestWorld, WorldBuilding } from './GuestWorld';
@@ -56,6 +58,8 @@ export class GuestSim {
   private chk: Array<Int32Array | null>;
   /** Trekkers by guest id (saved with the guests) and ids that already trekked. */
   readonly trek = new Map<number, Trek>();
+  /** Schirmbar stops (docs/schirmbar.md): guest id -> completed runs at the last stop, so a guest takes at most one drink per run. Saved only while not empty (worlds without a Schirmbar keep their save and hash). */
+  private readonly barStopped = new Map<number, number>();
   private trekDone = new Set<number>();
   trekStats = { started: 0, nights: 0, completed: 0 };
   private absDay = 0;
@@ -175,12 +179,13 @@ export class GuestSim {
     return {
       id: 'guests',
       update: (state, tick) => this.update(state, tick),
-      serialize: () => ({ ...this.store.serialize(), ring: this.queues.serializeRings(), exc: this.exc.serialize(), trek: [...this.trek].sort((a, b) => a[0] - b[0]).map(([id, t]) => [id, t.hut, t.day, t.arriveDay, t.route]), trekDone: [...this.trekDone].sort((a, b) => a - b) }),
+      serialize: () => ({ ...this.store.serialize(), ring: this.queues.serializeRings(), exc: this.exc.serialize(), trek: [...this.trek].sort((a, b) => a[0] - b[0]).map(([id, t]) => [id, t.hut, t.day, t.arriveDay, t.route]), trekDone: [...this.trekDone].sort((a, b) => a - b), ...(this.barStopped.size ? { bar: [...this.barStopped].sort((a, b) => a[0] - b[0]) } : {}) }),
       load: (d) => {
         this.store.load(d as ReturnType<GuestStore['serialize']>); this.hash.clear(); this.rebuildHash(); this.queues.clear();
         this.queues.loadRings((d as { ring?: Array<[number, number[]]> }).ring);
         const s = this.store;
         this.exc.load((d as { exc?: ReturnType<Excursions['serialize']> }).exc); this.chk.fill(null);
+        this.barStopped.clear(); for (const r of (d as { bar?: Array<[number, number]> }).bar ?? []) this.barStopped.set(r[0], r[1]);
         this.trek.clear(); this.trekDone = new Set((d as { trekDone?: number[] }).trekDone ?? []);
         for (const r of (d as { trek?: Array<[number, number, 0 | 1 | 2 | 3, number, number[]]> }).trek ?? []) this.trek.set(r[0], { hut: r[1], day: r[2], arriveDay: r[3], route: r[4] });
         for (let i = 0; i < s.limit; i++) {
@@ -543,7 +548,7 @@ export class GuestSim {
     if (!goal) { this.abort(i); return; }
     const res = this.movement.moveTo(s, i, goal);
     switch (res) {
-      case 'moving': this.after(i); if (s.act[i] === Act.ToTrail) this.tryExcursion(i); else if (s.act[i] === Act.SkiDown && this.decider.snacks.length) this.coffeeBreak(i); return;
+      case 'moving': this.after(i); if (s.act[i] === Act.ToTrail) this.tryExcursion(i); else if (s.act[i] === Act.SkiDown) { if (this.decider.snacks.length) this.coffeeBreak(i); if (this.decider.stops.length && s.act[i] === Act.SkiDown) this.slopeStop(i); } return;
       case 'pending': return;
       case 'lift': this.requestRide(i, true); return;
       case 'arrived': this.arrived(i, rng); return;
@@ -575,6 +580,20 @@ export class GuestSim {
     this.nm?.reset(i);
   }
   coffeeStops = 0;
+
+  /** Mid-run Schirmbar stop (docs/schirmbar.md): a skier within SCHIRMBAR.passRadius of an open bar takes a drink on 1 pass in SCHIRMBAR.oneIn, then carries on (the next decision). Stateless, no RNG. */
+  private slopeStop(i: number): void {
+    const s = this.store;
+    if (s.budget[i]! < SCHIRMBAR.minBudget) return;
+    const b = this.decider.stopWithin(s.x[i]!, s.y[i]!, SCHIRMBAR.passRadius);
+    if (!b || this.barStopped.get(s.id[i]!) === s.runs[i]! || !schirmbarStop(s.id[i]!, s.runs[i]!)) return;
+    if (this.barStopped.size > 3000) for (const id of [...this.barStopped.keys()]) if (this.store.slotOf(id) < 0) this.barStopped.delete(id);
+    this.barStopped.set(s.id[i]!, s.runs[i]!);
+    this.barStops++;
+    s.target[i] = b.id; s.act[i] = Act.ToBuilding; s.state[i] = GState.Walking; s.actTick[i] = this.tick; s.via[i] = 0; s.moveMode[i] = this.contextMode(i);
+    this.nm?.reset(i);
+  }
+  barStops = 0;
 
   /** Convert a hike/bike path with no lift hop left and >= EXC.minTiles remaining into a compressed-time excursion. */
   private tryExcursion(i: number): void {

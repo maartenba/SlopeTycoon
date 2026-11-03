@@ -14,7 +14,7 @@ import { makeSelect } from './StSelect';
 const lowerFirst = (s: string): string => (s.startsWith('Needs ') ? s[0]!.toLowerCase() + s.slice(1) : s);
 export interface InspectorTarget { id: number; type: string; /** Display name ('Mountain Hut 2'); editable when bindRename is set. */ name?: string; /** Quarter turns (0..3) for the Rotate button. */ rot?: number; active: boolean; reason?: string; refund: number; /** Supplied only on foot (trail / piste edge, no footpath or road): +25% upkeep. */ onFoot?: boolean; /** Condition-based open/closed (sim/OpenStatus); reason like 'Closed: no snow at 1,450 m'. */ conditions?: { open: boolean; reason?: string }; /** Ski School HQ runtime (instructors +/-, lessons today, queue). */ school?: { instructors: number; capacity: number; lessonsToday: number; activeKids: number; queuedKids: number; quality: number }; /** Attraction runtime stats (sim/attractions). */ attraction?: AttractionInfo; /** Ops (Task 25): snowcat fleet of a garage/outpost, or a reservoir's water. */ ops?: { kind: 'groomer'; vehicles: number; groomedLast: number; max: number } | { kind: 'reservoir'; level: number; capacity: number; cannons?: number } | { kind: 'cannon'; info: CannonInfo } | { kind: 'patrol'; staff: number; sleds: number; max: number; open: number } | { kind: 'helipad'; helicopters: number; missions: number; state: string } | { kind: 'ranger'; staff: number; max: number; bins: boolean; binsCost: number; preventedMonth: number; savedMonth: number; bearsInRange: number; hazes: number; relocations: number; ready: number } | EnergyOps }
 
-export interface AttractionHandlers { setPrice(id: number, price: number): void; adjustStaff(id: number, delta: number): void; /** Tackle hut: Catch & release (false) / Keep (true). */ setKeep?(id: number, keep: boolean): void }
+export interface AttractionHandlers { setPrice(id: number, price: number): void; adjustStaff(id: number, delta: number): void; /** Tackle hut: Catch & release (false) / Keep (true). */ setKeep?(id: number, keep: boolean): void; /** Schirmbar: the player's Closed switch (docs/schirmbar.md). */ setClosed?(id: number, closed: boolean): void }
 
 export class StInspector extends StElement {
   private body = document.createElement('div');
@@ -215,6 +215,14 @@ export class StInspector extends StElement {
       };
       row.append('Staff ', mk('−', -1), ' ', mk('+', 1));
       out.push(row);
+    }
+    if (a.schirmbar) {
+      const sb = a.schirmbar;
+      const row = document.createElement('label'); row.dataset.row = 'schirmbar-switch'; row.style.cssText = 'display:flex;align-items:center;gap:8px;min-height:var(--touch-min,0px)';
+      const box = document.createElement('input'); box.type = 'checkbox'; box.className = 'toggle'; box.checked = sb.playerClosed; box.dataset.opt = 'schirmbarClosed'; box.setAttribute('aria-label', 'Closed');
+      box.addEventListener('change', () => this.attr?.setClosed?.(a.id, box.checked));
+      row.append(box, 'Closed (keep the bar shut even in good weather)');
+      out.push(row, line(`Today: ${sb.guestsToday} / ${sb.dailyCap} guests, ${formatMoney(sb.incomeToday)}`), line('Serves 10:00 - 17:30, winter only. Closes in storms, heavy snow, rain, fog and high wind.', 'small'));
     }
     if (a.angling) {
       const row = document.createElement('label');

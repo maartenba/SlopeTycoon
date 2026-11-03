@@ -3,6 +3,7 @@ import { regionNameOf, peakNamesOf } from '../../sim/Names';
 import { Grid } from '../../world/Grid';
 import { generateTerrain } from '../../world/TerrainGen';
 import { DEFAULT_CONFIG, MAP_SIZES, START_SEASONS, normalizeConfig, randomSeed, seedFromText, seedName, startingMoney, type GameConfig } from '../../game/difficulty';
+import { defaultResortName, sanitizeResortName, RESORT_NAME_MAX } from '../../sim/ResortName';
 import { GAME_MODES, MODE_INFO } from '../../config/progression';
 import { PRESET_IDS, TERRAIN_PRESETS } from '../../world/TerrainPresets';
 import { formatMoney } from '../format';
@@ -19,7 +20,7 @@ export const SIZE_HINTS: Record<number, string> = {
 
 export interface NewGameApi {
   /** Start with a validated config (the host reloads with the matching URL params). */
-  start(cfg: GameConfig): void;
+  start(cfg: GameConfig, resortName?: string): void;
   cancel?(): void;
   /** The 'Scenarios' tab: close this dialog and open the scenario picker. */
   openScenarios?(): void;
@@ -41,6 +42,9 @@ export class StNewGame extends StElement {
   private startBtn = document.createElement('button');
   private seedInput = document.createElement('input');
   private seedLabel = document.createElement('span');
+  /** Resort name (M7.8): empty / unchanged = the seed's default name. */
+  private nameInput = document.createElement('input');
+  private nameEdited = false;
   private sizeHint = document.createElement('div');
   private moneyOut = document.createElement('span');
   private modeHint = document.createElement('div');
@@ -74,7 +78,7 @@ export class StNewGame extends StElement {
   get config(): GameConfig { return { ...this.cfg }; }
   /** Opens with a fresh random seed (never the previous one). */
   open(): void {
-    this.busy = false;
+    this.busy = false; this.nameEdited = false;
     this.cfg = { ...this.cfg, seed: randomSeed(this.api?.random) };
     this.render();
     this.dlg.open();
@@ -85,6 +89,8 @@ export class StNewGame extends StElement {
   set(part: Partial<GameConfig>): void {
     const typed = seedFromText(this.seedInput.value); if (typed !== null && !('seed' in part)) this.cfg.seed = typed;
     this.cfg = normalizeConfig({ ...this.cfg, ...part }); this.render(); }
+  /** The chosen resort name: sanitised, the seed's default when empty. */
+  resortName(): string { return sanitizeResortName(this.nameInput.value) || defaultResortName(this.cfg.seed); }
   randomSeed(): void { this.set({ seed: randomSeed(this.api?.random) }); }
   /** Validate + start. Returns false (and shows the reason) on invalid input. */
   submit(): boolean {
@@ -93,7 +99,7 @@ export class StNewGame extends StElement {
     this.cfg = normalizeConfig({ ...this.cfg, seed });
     this.err.textContent = '';
     this.busy = true; this.progress.hidden = false; this.startBtn.disabled = true;
-    this.api?.start(this.config);
+    this.api?.start(this.config, this.resortName());
     return true;
   }
 
@@ -147,6 +153,10 @@ export class StNewGame extends StElement {
     this.seedInput.type = 'text'; this.seedInput.className = 'seed'; this.seedInput.value = seedName(c.seed); this.seedInput.setAttribute('aria-label', 'Seed'); this.seedInput.spellcheck = false;
     this.seedInput.oninput = () => { const s = seedFromText(this.seedInput.value); this.seedLabel.textContent = s === null ? '' : `Seed number ${s}`; };
     this.seedLabel.className = 'hint'; this.seedLabel.textContent = `Seed number ${c.seed}: the same seed always gives the same map.`;
+    this.nameInput.type = 'text'; this.nameInput.className = 'seed'; this.nameInput.maxLength = RESORT_NAME_MAX; this.nameInput.setAttribute('aria-label', 'Resort name'); this.nameInput.spellcheck = false; this.nameInput.dataset.resortName = '';
+    if (!this.nameEdited) this.nameInput.value = defaultResortName(c.seed);
+    this.nameInput.oninput = () => { this.nameEdited = true; };
+    const nameDice = document.createElement('button'); nameDice.textContent = '🎲'; nameDice.title = 'Another resort name'; nameDice.setAttribute('aria-label', 'Random resort name'); nameDice.classList.add('icon'); nameDice.addEventListener('click', () => { this.nameInput.value = defaultResortName(randomSeed(this.api?.random)); this.nameEdited = true; });
     const dice = document.createElement('button'); dice.textContent = '🎲'; dice.title = 'New random seed'; dice.setAttribute('aria-label', 'Random seed'); dice.classList.add('icon'); dice.addEventListener('click', () => this.randomSeed());
     const preset = makeSelect(PRESET_IDS.map((id) => ({ value: id, label: TERRAIN_PRESETS[id].label, title: TERRAIN_PRESETS[id].blurb })), c.preset, 'Terrain preset', (v) => this.set({ preset: v as GameConfig['preset'] }));
     const presetHint = document.createElement('span'); presetHint.className = 'hint'; presetHint.textContent = TERRAIN_PRESETS[c.preset].blurb;
@@ -189,6 +199,7 @@ export class StNewGame extends StElement {
       this.row('Game mode', modes), this.modeHint,
       this.row('Map size', this.seg(MAP_SIZES.map((s) => ({ v: s as number, text: String(s) })), c.size, (v) => this.set({ size: v as GameConfig['size'] }), 'size')), this.sizeHint,
       this.row('Seed', this.seedInput, dice), this.seedLabel, this.preview(c),
+      this.row('Resort name', this.nameInput, nameDice),
       this.row('Terrain', preset, presetHint),
       this.row('Start season', season),
       this.row('Difficulty', diff, diffHint),

@@ -1,6 +1,7 @@
 import { appealFor, gearOfType } from '../../config/guestTypes';
 import type { GameState } from '../../core/GameState';
-import type { GameBus } from '../../core/events';
+import type { GameBus, WeatherKind } from '../../core/events';
+import { schirmbarStatus } from './Schirmbar';
 import { DAYS_PER_YEAR } from '../../config/balance';
 import { NIGHTLY_RATE, type LedgerCategory } from '../../config/prices';
 import { hourOfDay, seasonOf, weekdayOf } from '../Clock';
@@ -57,6 +58,8 @@ export interface AttractionDeps {
   mishap?: (a: Attraction, guestId: number) => boolean;
   /** Sky activities (M7.4): why a jump / flight cannot run right now (weather, no strip / landing field); undefined = fine. Absent = never closed by the sky. */
   skyClosed?: (a: Attraction) => string | undefined;
+  /** Schirmbar (M7.8): today's weather for its open rule (kind, wind, fog). Absent = fair weather. */
+  weatherNow?: () => { kind: WeatherKind; wind: number; fog: number };
   /** Tackle & bait huts (Phase 6 Task 49, docs/anglers.md): fish stock + the per-hut plan (water in reach, places, ice, noise). Absent = a hut is closed ("no water"). */
   angling?: { stock: FishStock; planner: AnglingPlanner };
 }
@@ -172,6 +175,7 @@ export class AttractionSystem implements GuestAttractionPort {
     if (!a) return 'unhandled';
     const s = this.d.store, id = s.id[slot]!;
     if (!a.open || !this.servingNow(a) || (a.spec.overnightOnly && !s.overnight[slot])) { a.stats.turnedAway++; s.happiness[slot] = Math.max(0, s.happiness[slot]! - 0.02); return 'handled'; }
+    if (a.spec.dailyCap !== undefined && this.usesToday(a) >= a.spec.dailyCap) { a.stats.turnedAway++; return 'handled'; } // the glasses ran out (Schirmbar)
     if (a.queue.length >= a.queueMax()) { a.stats.balked++; s.happiness[slot] = Math.max(0, s.happiness[slot]! - 0.03); return 'handled'; }
     if (s.budget[slot]! < a.unitPrice()) { a.stats.turnedAway++; return 'handled'; }
     if (a.spec.grantsGear && !this.rented.has(id) && !this.gearAvailable(id, 'ski')) { a.stats.turnedAway++; this.gearShort(id); return 'handled'; }
@@ -250,7 +254,7 @@ export class AttractionSystem implements GuestAttractionPort {
       if (slot < 0) continue;
       const price = a.unitPrice();
       if (s.budget[slot]! < price) { a.stats.turnedAway++; this.release(q.id, tick, null); continue; }
-      if (price > 0) { s.budget[slot] = s.budget[slot]! - price; this.d.earn(a.category, price); a.stats.revenue += price; a.recordRevenue(this.hour, price); }
+      if (price > 0) { s.budget[slot] = s.budget[slot]! - price; this.d.earn(a.category, price); a.stats.revenue += price; a.recordRevenue(this.hour, price); if (a.spec.dailyCap !== undefined) { a.stats.todayRev = (a.stats.todayDay === this.absDay ? a.stats.todayRev ?? 0 : 0) + price; if (a.stats.todayDay !== this.absDay) { a.stats.today = 0; a.stats.todayDay = this.absDay; } } }
       if (a.spec.angling) this.angleExtras(a, slot, q.id);
       if (a.spec.kind === 'zoo') this.feedAnimals(a, slot, q.id);
       a.users.push({ id: q.id, end: tick + a.serviceTime() });
@@ -305,6 +309,7 @@ export class AttractionSystem implements GuestAttractionPort {
     if (a.spec.seasonOpen && !a.spec.seasonOpen.includes(seasonOf({ day: this.day }))) return { open: false, reason: 'Closed for the season' };
     if (a.spec.extra === 'lake' && this.d.lakeFrozen?.(a.b)) return { open: false, reason: 'Closed: the lake is frozen' };
     if (a.def.staff > 0 && a.staff <= 0 && !a.spec.optionalStaff) return { open: false, reason: 'Closed: no staff' };
+    if (a.spec.schirmbar) { const v = schirmbarStatus({ season: seasonOf({ day: this.day }), weather: this.d.weatherNow?.() ?? { kind: 'clear', wind: 0, fog: 0 }, playerClosed: a.playerClosed }); if (!v.open) return v; }
     if (a.spec.sky) { const r = this.skyClosedReason(a); if (r) return { open: false, reason: r }; }
     if (a.spec.angling) { const r = this.anglingClosed(a); if (r) return { open: false, reason: r }; }
     if (a.spec.tour) { const r = this.d.tours?.closed(a); if (r) return { open: false, reason: r }; }
@@ -324,6 +329,14 @@ export class AttractionSystem implements GuestAttractionPort {
     if (!p.near) return 'Closed: no lake, pond or river within 3 tiles';
     if (p.bodies.length === 0) return p.ice ? 'Closed: the water is frozen' : 'Closed: no fishable water in reach';
     return undefined;
+  }
+
+  /** Schirmbar: the player's Closed switch. Returns the fresh verdict (null when the building is no Schirmbar). */
+  setSchirmbarClosed(id: number, closed: boolean): { open: boolean; reason?: string } | null {
+    const a = this.refreshOpen(id);
+    if (!a || !a.spec.schirmbar) return null;
+    a.playerClosed = closed;
+    return { open: this.refreshOpen(id)!.open, reason: a.reason };
   }
 
   /** Hut inspector data: fishing places, waters in reach with their stock, ice / noise state, catches so far, Keep setting. */
@@ -358,9 +371,10 @@ export class AttractionSystem implements GuestAttractionPort {
         n.priceScale = () => this.d.priceScale?.(b.type) ?? 1;
         if (spec.eveningShift) n.hourScale = () => eveningPremium(this.hour);
         if (spec.tour) n.tourInfo = () => this.d.tours?.info(n) ?? null;
+        if (spec.schirmbar) n.schirmbarInfo = () => ({ playerClosed: n.playerClosed, guestsToday: this.usesToday(n), incomeToday: n.stats.todayDay === this.absDay ? Math.round((n.stats.todayRev ?? 0) * 100) / 100 : 0, dailyCap: spec.dailyCap ?? 0 });
         if (spec.grantsGear) n.rentalInfo = () => this.rentalStock();
         if (spec.angling) n.anglingInfo = () => this.anglingInfo(b.id);
-        if (cur) { n.keep = cur.keep; n.price = cur.price; n.staff = cur.staff; n.stats = cur.stats; n.users = cur.users; n.queue = cur.queue; n.open = cur.open; n.reported = cur.reported; }
+        if (cur) { n.keep = cur.keep; n.playerClosed = cur.playerClosed; n.price = cur.price; n.staff = cur.staff; n.stats = cur.stats; n.users = cur.users; n.queue = cur.queue; n.open = cur.open; n.reported = cur.reported; }
         this.items.set(b.id, n);
       }
     }
@@ -407,7 +421,7 @@ export class AttractionSystem implements GuestAttractionPort {
       for (const u of a.users) {
         if (u.end > tick) { still.push(u); continue; }
         a.stats.served++;
-        if (a.spec.kind === 'toilet') { a.stats.today = (a.stats.todayDay === this.absDay ? a.stats.today ?? 0 : 0) + 1; a.stats.todayDay = this.absDay; }
+        if (a.spec.kind === 'toilet' || a.spec.dailyCap !== undefined) { a.stats.today = (a.stats.todayDay === this.absDay ? a.stats.today ?? 0 : 0) + 1; a.stats.todayDay = this.absDay; }
         this.release(u.id, tick, a);
         if (a.spec.mishap) this.mishap(a, u.id, tick);
       }

@@ -61,6 +61,7 @@ import { FACILITY, measureFacilities } from '../sim/meta/Facilities';
 import { costumed } from '../sim/events/Costume';
 import { CARNIVAL } from '../config/festivals';
 import { hasStreet } from '../sim/events/Street';
+import { resortNameOr } from '../sim/ResortName';
 import { skyClosedReason } from '../sim/attractions/SkySites';
 import { TOURIST_OFFICE, BAKERY } from '../config/visitorServices';
 import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
@@ -179,6 +180,8 @@ export interface SimOptions {
    * from the save instead. `size` and `seed` must match the save (terrain is re-derived from the seed for lakes / streams / forest density).
    */
   fromSave?: SaveModules;
+  /** The resort name (M7.8): sanitised, defaults from the seed. A save's own 'resort' module wins. */
+  resortName?: string;
 }
 
 /** Expected registry order after createSim (guarded by tests/game/createSim.test.ts). */
@@ -629,6 +632,7 @@ export function createSim(opts: SimOptions) {
     // Climbing crag (Phase 6 Task 23, docs/climbing.md): a rare MINOR twisted ankle at the base; the patrol answers (never worse than the unattended escalation of any minor injury).
     mishap: (a, id) => { const s = guestSim.store, i = s.slotOf(id); return i >= 0 && !!safety.incidents.report('injury', s.x[i]!, s.y[i]!, Sev.Minor, id); },
     angling: { stock: fishStock, planner: anglingPlanner },
+    weatherNow: () => ({ kind: weather.current.kind, wind: weather.current.wind, fog: weather.current.fog }), // Schirmbar open rule (docs/schirmbar.md)
     tours,
     exitFor,
     buildings: () => buildings.all(),
@@ -1284,6 +1288,7 @@ export function createSim(opts: SimOptions) {
       };
     },
   });
+  const resort = { name: resortNameOr(opts.resortName, seed) };
   const sim = {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
@@ -1293,6 +1298,9 @@ export function createSim(opts: SimOptions) {
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,
     staff, staffUpgrades, events, stories, names, nature, leavers, rating, goals, progression, gate, advisor, session, stats, yearReports, loans, ticketing: ticketingRef, finance, liftOps, creditCtx, lodgeTouched, relief, closedDays,
+    /** The resort name (M7.8, docs/schirmbar.md): observer state, saved in the 'resort' module (not part of the state hash). */
+    resort,
+    setResortName(raw: unknown): string { const n = resortNameOr(raw, seed); resort.name = n; return n; },
     /** The validated new-game options this game was created with (stored in the save, 'config' module). */
     config: cfg, difficulty: diff,
     /** Run `n` fixed ticks synchronously (tests/bench). */

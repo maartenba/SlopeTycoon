@@ -12,6 +12,7 @@ import type { Sim } from './createSim';
 import { CHUNK_SIZE } from '../world/Grid';
 import type { PropChunk } from '../world/Props';
 import { pack } from '../persist/codec';
+import { defaultResortName, resortNameOr } from '../sim/ResortName';
 
 export interface ModuleData { v: number; data: unknown }
 export type SaveModules = Record<string, ModuleData>;
@@ -53,6 +54,8 @@ export const SAVE_MODULES: SaveModule[] = [
   },
   // New-game options (size / seed / preset / difficulty / start season / money / loan / radius / sandbox / hints). Read by createSim BEFORE terrain generation.
   { key: 'config', version: 1, serialize: (sim) => ({ ...sim.config }), load: () => { /* consumed by createSim (terrain, difficulty, radius are derived from it) */ } },
+  // The resort name (M7.8): shown on the Schirmbar banner and in the menus. Observer: it never changes a simulation outcome (stateHash unchanged). Additive: old saves have none -> the seed's default name.
+  { key: 'resort', version: 1, observer: true, serialize: (sim) => ({ name: sim.resort.name }), load: (sim, d) => { sim.resort.name = resortNameOr((d as { name?: unknown } | null)?.name, sim.seed); }, reset: (sim) => { sim.resort.name = defaultResortName(sim.seed); } },
   {
     key: 'grid', version: 1,
     serialize: (sim) => { const g = sim.grid; return { heights: g.heights.slice(), tileType: g.tileType.slice(), snow: g.snowDepth.slice(), flags: g.flags.slice(), occId: g.occupancy.entityId.slice(), occFlags: g.occupancy.flags.slice() }; },

@@ -40,7 +40,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', pizzeria: '🍕', bakery: '🥐', touristOffice: 'ℹ️', grassStrip: '🛩️', skydiveCentre: '🪂', launchRamp: '🪁', landingField: '🛬', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', schirmbar: '🍹', pizzeria: '🍕', bakery: '🥐', touristOffice: 'ℹ️', grassStrip: '🛩️', skydiveCentre: '🪂', launchRamp: '🪁', landingField: '🛬', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = LIFT_FALLBACK_ICONS;
 
@@ -93,6 +93,7 @@ const DESCRIPTIONS: Record<string, string> = {
   launchRamp: 'Hang gliding and paragliding from high ground: a trail, footpath or piste edge leads up. Needs a Landing Field lower down within 45 tiles. Daylight and clear weather only.',
   landingField: 'A flat meadow in the valley where the gliders touch down. Pairs with every Launch Ramp within 45 tiles that stands at least 3 units higher.',
   coffeeStand: 'A tiny kiosk for a quick coffee and a bite, beside a piste, a footpath or a trail. Cheap, open all year; food only (toilets are the comfort fix).',
+  schirmbar: 'A domed umbrella bar on the slope, winter only. No road, path or power: put it beside a piste or a lift station and skiers stop for a drink on the way down, with apres-ski music nearby. It opens in good weather only (storms, heavy snow, rain, fog and high wind close it) and you can close it yourself. The banner carries your resort name.',
   campground: 'Summer only: 16 tent and caravan pitches around a campfire. Cheap nights for budget and adventure guests; toilets nearby make a better evening. Reached by a footpath or hiking trail.',
   pettingZoo: 'Summer family attraction: goats, sheep, rabbits and a donkey in a fenced pen. Small entry ticket; closed in snow. Needs a footpath.',
   viewpoint: 'A timber platform with a railing and a telescope. Hikers walk to it for the view (best on a ridge or high ground), stop for a look and leave happier; it is a spot in Photo mode. Beside a hiking trail, a footpath or a piste.',

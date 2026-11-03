@@ -1,3 +1,4 @@
+import { RESORT_NAME_MAX } from '../../sim/ResortName';
 import { AudioSettings, VOLUME_KEYS, type VolumeKey } from '../../audio/AudioSettings';
 import type { EngineState } from '../../audio/AudioEngine';
 import { THEMES, TRACK_IDS, type MusicStyle } from '../../audio/musicThemes';
@@ -23,6 +24,8 @@ export interface GameSettingsApi {
   rideSlowMo?: { get(): boolean; set(on: boolean): void };
   /** Walk mode (Task 12): sensitivity 0.5-2, FOV 60-100, invert Y, head bob, run toggle (persisted by the host in `slope.walk.v1`). */
   walk?: { get(): { sensitivity: number; invertY: boolean; fov: number; headBob: boolean; runToggle: boolean; mouseLook: 'drag' | 'lock' }; set(p: Partial<{ sensitivity: number; invertY: boolean; fov: number; headBob: boolean; runToggle: boolean; mouseLook: 'drag' | 'lock' }>): void };
+  /** Resort name (M7.8): `set` sanitises (<= 24 characters, plain text) and returns the name now in use. */
+  resortName?: { get(): string; set(v: string): string };
   hints?: { get(): boolean; set(on: boolean): void; title?: string };
   /** Month-end summary card (default on). */
   monthSummary?: { get(): boolean; set(on: boolean): void };
@@ -315,6 +318,14 @@ export class StSettings extends StElement {
       tog('invertY', 'Walk: invert mouse Y', 'Moving the mouse up looks down');
       tog('headBob', 'Walk: head bob', 'A gentle step bob and a small field-of-view kick while running (always off with reduced motion)');
       tog('runToggle', 'Walk: run toggle', 'Shift toggles running instead of holding it');
+    }
+    if (g?.resortName) {
+      const rn = g.resortName, r = document.createElement('div'); r.className = 'row'; r.dataset.row = 'resort-name';
+      const l = document.createElement('label'); l.textContent = 'Resort name';
+      const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = RESORT_NAME_MAX; inp.value = rn.get(); inp.dataset.opt = 'resortName'; inp.setAttribute('aria-label', 'Resort name'); inp.spellcheck = false; inp.title = 'Shown on the Schirmbar banner and in the menus (24 characters at most). Empty = the default name.';
+      const commit = (): void => { inp.value = rn.set(inp.value); };
+      inp.addEventListener('change', commit); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+      r.append(l, inp); this.gameSec.append(r);
     }
     if (g?.hints) { const b = this.hintsBox = document.createElement('input'); this.gameSec.append(this.chk(b, 'Show hints', g.hints.title ?? 'Contextual tips and the assistant', (on) => g.hints!.set(on))); }
     if (g?.monthSummary) { const b = document.createElement('input'); b.dataset.opt = 'monthSummary'; b.checked = g.monthSummary.get(); this.gameSec.append(this.chk(b, 'Month-end summary', 'Show a small card with income, expenses and net when a month closes', (on) => g.monthSummary!.set(on))); }

@@ -55,7 +55,7 @@ export function mountMainMenu(d: MenuHostDeps): MenuHandle {
   if (!d.parts?.settings) added.push(settings);
   if (!d.parts?.help) { added.push(help); help.setButtonVisible(false); }
   const tut = TUTORIAL_QUERY.replace(/^\?/, '');
-  newGame.bind({ start: (cfg) => d.go(configQuery(cfg)), initial: d.initial, random: d.random, openScenarios: () => scenarios.open() });
+  newGame.bind({ start: (cfg, name) => d.go(configQuery(cfg, name)), initial: d.initial, random: d.random, openScenarios: () => scenarios.open() });
   if (!d.parts?.settings) {
     const st = d.storage ?? null;
     const quality = { get: () => { try { const v = st?.getItem('slope.quality'); return (GRAPHICS_QUALITIES as readonly string[]).includes(v ?? '') ? v! : 'medium'; } catch { return 'medium'; } }, set: (q: string) => { try { st?.setItem('slope.quality', q); } catch { /* storage unavailable */ } }, options: GRAPHICS_QUALITIES };

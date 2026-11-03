@@ -5,6 +5,7 @@
 import { DIFFICULTY, DIFFICULTY_IDS, START_MONEY_RANGE, WALKING_RADIUS_RANGE, WALKING_RADIUS_TILES, type DifficultyDef, type DifficultyId } from '../config/balance';
 import { STARTING_MONEY, type MapSize } from '../core/GameState';
 import { DEFAULT_MODE, GAME_MODES, type GameMode } from '../config/progression';
+import { defaultResortName, sanitizeResortName } from '../sim/ResortName';
 import { PRESET_IDS, type TerrainPresetId } from '../world/TerrainPresets';
 
 export type StartSeason = 'winter' | 'spring' | 'summer' | 'autumn';
@@ -92,8 +93,10 @@ export function parseConfig(params: URLSearchParams, rnd: () => number = Math.ra
 }
 
 /** Config -> URL query (only non-default values; stable key order so links are shareable). */
-export function configQuery(c: GameConfig): string {
+export function configQuery(c: GameConfig, resortName?: string): string {
   const q = new URLSearchParams({ size: String(c.size), seed: String(c.seed) });
+  const nm = sanitizeResortName(resortName);
+  if (nm && nm !== defaultResortName(c.seed)) q.set('name', nm); // the seed's own default name is implied (M7.8)
   if (c.preset !== 'balanced') q.set('preset', c.preset);
   if (c.difficulty !== 'normal') q.set('difficulty', c.difficulty);
   if (c.startSeason !== 'winter') q.set('start', c.startSeason);
