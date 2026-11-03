@@ -53,10 +53,10 @@ export class ShadowRig {
     /** x strength 0..1, y depth bias, z 1 / map size, w normal offset (world units). */
     uShadowP: { value: new THREE.Vector4(0, 0, 1 / SHADOW_MAP_SIZE, 0) },
   };
-  /** Triangle budget of the last main pass (a proxy for the shadow pass): above 75 % of it roots marked `userData.shadowHeavy` (the tree layers) cast with a falling density (a stable per-tree hash, slewed and quantised: no pop), reaching 0 at 2 x the budget. */
+  /** Triangle budget of the last main pass (a proxy for the shadow pass): between 50 % and 100 % of it roots marked `userData.shadowHeavy` (the tree layers) cast with a falling density (a stable per-tree hash, slewed and quantised: no pop), 0 at the budget (the old hard cut-off). */
   heavyTriBudget = 1_200_000;
   private smoothDt = 1 / 60;
-  /** Benchmark switch (scripts/shadow-cost.ts): `finish()` after every pass so `stats.*Ms` are real GPU / rasteriser times instead of submit times. Never on in the game. */
+  /** Benchmark switch (scripts/shadow-cost.ts): a 1-pixel `readPixels` ends every pass so `stats.*Ms` are real GPU / rasteriser times instead of submit times. Never on in the game. */
   measureSync = false;
   /** Last measured shadow pass: draw calls, triangles, ms, passes so far (docs/perf.md "Shadow pass"). */
   readonly stats = { calls: 0, triangles: 0, ms: 0, passes: 0, strength: 0, half: 0, totalMs: 0, staticPasses: 0, dynPasses: 0, dynCalls: 0, dynTriangles: 0, dynMs: 0, copyMs: 0, staticMsTotal: 0, dynMsTotal: 0, copyMsTotal: 0, density: 1, dynRoots: 0, memMB: 0 };
@@ -195,7 +195,7 @@ export class ShadowRig {
     this.smoothDt += (Math.min(dt, 0.25) - this.smoothDt) * 0.1;
     const load = staticLoadScale(this.smoothDt);
     this.heights = heights;
-    // the previous main pass's triangle count (info is read before any shadow render resets it): the tree cast density falls gradually past 75 % of the budget
+    // the previous main pass's triangle count (info is read before any shadow render resets it): the tree cast density falls gradually between 50 % and 100 % of the budget
     this.density = slewDensity(this.density, castDensityTarget(this.webgl.info.render.triangles, this.heavyTriBudget), dt);
     const dq = quantiseDensity(this.density);
     const persp = !(camera as THREE.OrthographicCamera).isOrthographicCamera;
@@ -303,7 +303,7 @@ export class ShadowRig {
     const prev = this.webgl.getRenderTarget(), ac = this.webgl.autoClear;
     this.webgl.setRenderTarget(target);
     this.webgl.autoClear = clear;
-    try { this.render0(this.scene, this.cam); }
+    try { this.render0(this.scene, this.cam); if (this.measureSync) { const gl = this.webgl.getContext(), px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } }
     finally {
       this.webgl.setRenderTarget(prev); this.webgl.autoClear = ac;
       this.scene.background = bg;
@@ -312,23 +312,27 @@ export class ShadowRig {
     }
   }
 
+  /** Benchmark only: waits for every queued GL command (the previous main pass would otherwise be billed to this pass). */
+  private sync(): void { if (!this.measureSync) return; const gl = this.webgl.getContext(), px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); }
+
   private renderStatic(): void {
     this.ensureTarget();
     const rt = this.rtStatic!;
+    this.sync();
     const t0 = performance.now();
     this.hide(this.scene);
     try { this.pass(rt, true); }
     finally { for (const o of this.hidden) o.visible = true; this.hidden.length = 0; }
-    if (this.measureSync) this.webgl.getContext().finish();
     const info = this.webgl.info.render, ms = performance.now() - t0;
     this.stats.calls = info.calls; this.stats.triangles = info.triangles; this.stats.ms = ms; this.stats.totalMs += ms; this.stats.staticMsTotal += ms; this.stats.passes++; this.stats.staticPasses++;
   }
 
   /** Final map = GPU copy of the static depth, then the dynamic casters drawn on top (the scene's children are swapped for the lights + dynamic roots for the call: same scene, fog, lights and programs, nothing else is traversed or drawn). */
   private renderFinal(): void {
+    this.sync();
     const t0 = performance.now();
     this.webgl.copyTextureToTexture(this.rtStatic!.depthTexture!, this.rt!.depthTexture!);
-    if (this.measureSync) { this.webgl.getContext().finish(); this.stats.copyMs = performance.now() - t0; }
+    if (this.measureSync) { this.sync(); this.stats.copyMs = performance.now() - t0; }
     this.finalDirty = false;
     let calls = 0, tris = 0;
     if (this.dyn.length > 0) {
@@ -339,7 +343,6 @@ export class ShadowRig {
       finally { this.scene.children = saved; for (const o of this.hidden) o.visible = true; this.hidden.length = 0; }
       this.finalDirty = true; // the dynamic casters are in the final map now: the next frame starts again from the static copy
     }
-    if (this.measureSync) this.webgl.getContext().finish();
     const ms = performance.now() - t0;
     this.stats.dynCalls = calls; this.stats.dynTriangles = tris; this.stats.dynMs = ms; this.stats.dynMsTotal += ms; this.stats.copyMsTotal += this.stats.copyMs; this.stats.totalMs += ms; this.stats.passes++; this.stats.dynPasses++;
   }

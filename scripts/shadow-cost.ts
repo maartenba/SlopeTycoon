@@ -34,7 +34,7 @@ try {
   console.log(JSON.stringify(r));
   if (r.staticPasses !== undefined && r.staticPasses + r.dynPasses === r.passes && r.dynPasses > 0) {
     const sMs = r.staticMs / Math.max(1, r.staticPasses), dMs = r.dynMs / Math.max(1, r.dynPasses), cMs = r.copyMs / Math.max(1, r.dynPasses);
-    console.log(`NEW: static ${sMs.toFixed(1)} ms/pass (${r.lastStaticCalls} calls ${(r.lastStaticTris / 1e3).toFixed(0)}k tris), dynamic ${dMs.toFixed(1)} ms/frame (copy ${cMs.toFixed(1)} ms; ${r.dynCalls} calls ${r.dynTris} tris), sun-step static rate at 1x ~ 9.6 Hz: modelled per second at 60 fps = ${(9.6 * sMs + 60 * dMs).toFixed(0)} ms`);
+    console.log(`NEW: static ${sMs.toFixed(1)} ms/pass (${r.lastStaticCalls} calls ${(r.lastStaticTris / 1e3).toFixed(0)}k tris), dynamic ${dMs.toFixed(1)} ms/frame (incl. GPU copy ${cMs.toFixed(1)} ms; ${r.dynCalls} calls ${r.dynTris} tris), sun-step static rate at 1x ~ 9.6 Hz: modelled per second at 60 fps = ${(9.6 * sMs + 60 * dMs).toFixed(0)} ms`);
   } else console.log(`OLD: ${(r.totalMs / Math.max(1, r.passes)).toFixed(1)} ms/pass (${r.lastStaticCalls} calls ${(r.lastStaticTris / 1e3).toFixed(0)}k tris); modelled per second at 60 fps (10 Hz) = ${(10 * r.totalMs / Math.max(1, r.passes)).toFixed(0)} ms`);
   console.log('errors:', errs.slice(0, 3));
 } finally { await br.close(); srv.stop(); }

@@ -38,9 +38,9 @@ export function needsStaticRender(s: StaticState, load = 1): boolean {
   return false;
 }
 
-/** Tree cast density 0..1 from the previous main pass's triangle count: 1 up to 75 % of the budget, falling linearly to 0 at 2 x the budget (was a hard cut at 1.0 x). */
+/** Tree cast density 0..1 from the previous main pass's triangle count: 1 up to 50 % of the budget, falling linearly to 0 at the budget (the old hard cut-off point, so the pass never costs more than before; it used to switch from 1 to 0 in one step). */
 export function castDensityTarget(mainTris: number, budget: number): number {
-  const lo = budget * 0.75, hi = budget * 2;
+  const lo = budget * 0.5, hi = budget;
   if (!(mainTris > lo)) return 1;
   return Math.min(1, Math.max(0, 1 - (mainTris - lo) / (hi - lo)));
 }
