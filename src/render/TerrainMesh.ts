@@ -239,8 +239,8 @@ void main() {
   base = mix(base, sand, shoreAmt * 0.9);
   // stream bed + banks: dark wet soil and pebbles
   vec3 wetSoil = mix(dirt, rock, 0.35 + 0.3 * vnoise(vWorld.xz * 3.1)) * vec3(0.42, 0.38, 0.34);
-  if (isStream) base = wetSoil;
-  else base = mix(base, wetSoil, smoothstep(0.05, 0.5, vWet.y) * 0.75);
+  if (isStream) base = mix(base, wetSoil, smoothstep(0.18, 0.46, vWet.y + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.08)); // river bed: masked like the lake bed (bend corners round off into the wet bank)
+  else base = mix(base, wetSoil, smoothstep(0.05, 0.5, vWet.y) * 0.55);
 
   // rock: smoothed per-vertex steepness + per-vertex rock weight (interpolated, so no per-tile sawtooth),
   // thresholded with multi-scale noise and a fine dither grain so the boundary is organic
