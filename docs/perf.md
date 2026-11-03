@@ -57,7 +57,7 @@ Reviewed by reading; fixes below are covered by unit tests in `tests/render/rend
 | IncidentView | avalanche debris (up to 2,048 matrix composes) rewritten every frame | rewritten only when the set of slides changes |
 | GroomingView / Snowcat fleet, HeliView, animals | tiny counts, instanced | none needed |
 | Thumbnails prewarm | already deferred (500 ms after start, idle batches, dock refresh coalesced to one rAF) | none needed |
-| Shadows | `Renderer.setShadows` existed but nothing used it; terrain/props use custom shaders that do not sample a shadow map | now driven by the graphics preset (`high` only, default never on). Effectively a no-op until casters opt in (**unverified**) |
+| Shadows | `Renderer.setShadows` existed but nothing used it; terrain/props use custom shaders that do not sample a shadow map | **M8 (8.6)**: `high` only runs a real sun shadow map (`ShadowRig`, own depth pass, terrain receives; see `docs/shadows.md`); its draw calls / triangles are counted separately from the main pass. Contact shadows (ground mask A channel) are on every tier at no draw-call cost |
 
 ### Graphics quality (top bar "Graphics: low / med / high", stored in `localStorage["slope.quality"]`)
 
@@ -65,7 +65,7 @@ Reviewed by reading; fixes below are covered by unit tests in `tests/render/rend
 |--------|----------------:|:-------:|----------:|-------------:|----------:|-------------------:|
 | low    | 1.0 | off | 0.7  | 55 % | 35 % | x0.7 |
 | med    | 1.5 | off | 1.0  | 85 % | 70 % | x1.0 |
-| high   | 2.0 | on (no-op for now) | 1.25 | 100 % | 100 % | x1.25 |
+| high   | 2.0 | **on** (real sun shadow map, `docs/shadows.md`) | 1.25 | 100 % | 100 % | x1.25 |
 
 Default (`defaultQuality`): 256 -> low, 64 / 128 -> med, one step lower on devices with devicePixelRatio > 2.5. Never `high` by default.
 

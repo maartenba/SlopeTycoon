@@ -51,6 +51,27 @@ uniform vec3 uSunDir, uSunColor, uSkyColor, uGroundColor, uHazeColor;
 uniform vec4 uAtmA; // M7.0: x alpenglow amount, y alpenglow height (world y), z frost, w cloud-shadow strength (all 0 = the old look)
 uniform vec4 uAtmB; // x time (frozen with reduced motion), yz cloud drift offset, w frost twinkle on/off
 uniform vec3 uAlpColor;
+#ifdef USE_SHADOWS
+uniform sampler2DShadow tShadow;
+uniform mat4 uShadowM;
+uniform vec4 uShadowP; // x strength, y depth bias, z 1 / map size, w normal offset (world units)
+// High tier sun shadow (docs/shadows.md): 5 fixed taps of hardware PCF (a wide soft penumbra, no screen-space noise), fades out at the window border
+float sunShadow(vec3 wp, vec3 n) {
+  if (uShadowP.x < 0.001) return 1.0;
+  vec4 sc = uShadowM * vec4(wp + n * uShadowP.w, 1.0);
+  vec3 p = sc.xyz;
+  vec2 edge = min(p.xy, 1.0 - p.xy);
+  float inside = smoothstep(0.0, 0.05, min(edge.x, edge.y));
+  if (inside <= 0.0) return 1.0;
+  float t = uShadowP.z * 1.2, z = p.z - uShadowP.y;
+  float s = texture(tShadow, vec3(p.xy, z)) * 0.28;
+  s += texture(tShadow, vec3(p.xy + vec2(t, t), z)) * 0.18;
+  s += texture(tShadow, vec3(p.xy + vec2(-t, t), z)) * 0.18;
+  s += texture(tShadow, vec3(p.xy + vec2(t, -t), z)) * 0.18;
+  s += texture(tShadow, vec3(p.xy + vec2(-t, -t), z)) * 0.18;
+  return mix(1.0, 1.0 - uShadowP.x * (1.0 - s), inside);
+}
+#endif
 ${FOG_PARS_FRAG}
 varying vec3 vWorld;
 varying vec3 vNormal;
@@ -88,19 +109,38 @@ vec3 palette(float h, float bloom) {
 }
 void main() {
   float fwW = max(fwidth(vWorld.x), fwidth(vWorld.z)); // world units per pixel: every sub-pixel-frequency term below fades with it (no shimmer when the camera moves)
-  if (vKind > 6.5) { // map-edge cliff skirt: strata gradient (xz-sampled textures streak on a vertical wall), darker at the base, fading into the haze colour
+  if (vKind > 6.5) { // map-edge cliff skirt (M8): topsoil + turf lip, then horizontal rock strata (ledges, soft fractures), melting into the haze at the foot. World-space only (flicker-safe); each fine term fades with the pixel footprint.
     vec3 wn = normalize(vNormal);
-    float g = clamp((vWorld.y + 3.0) / 14.0, 0.0, 1.0);
+    float d = max(vWet.x, 0.0);                       // depth below the rim (world units, per vertex)
     float along = vWorld.x + vWorld.z;
-    float strata = 0.5 + 0.5 * sin(vWorld.y * 2.6 + vnoise(vec2(along * 0.12, vWorld.y * 0.4)) * 5.0);
-    vec3 earth = mix(vec3(0.17, 0.12, 0.09), vec3(0.40, 0.33, 0.23), g);
-    earth = mix(earth, earth * vec3(1.18, 1.05, 0.88), strata * 0.5 * g);
-    earth *= 0.88 + 0.24 * vnoise(vec2(along * 0.35, vWorld.y * 0.9));
-    earth = mix(vec3(0.13, 0.11, 0.10), earth, smoothstep(-0.5, 0.35, g));  // dark foot
+    float fwY = fwidth(vWorld.y);                     // world y per pixel
+    float lc = vWorld.y * 0.42 + (vnoise(vec2(along * 0.09, 3.0)) - 0.5) * 1.6 + (vnoise(vec2(along * 0.31, vWorld.y * 0.2)) - 0.5) * 0.35; // wavy bedding planes
+    float lid = floor(lc), lf = fract(lc);
+    float h0 = hash(vec2(lid, 7.0)), h1 = hash(vec2(lid, 19.0));
+    vec3 tone = h0 < 0.3 ? vec3(0.44, 0.35, 0.25) : h0 < 0.55 ? vec3(0.50, 0.46, 0.41) : h0 < 0.8 ? vec3(0.36, 0.30, 0.24) : vec3(0.55, 0.43, 0.30); // sandstone / grey / umber / ochre
+    tone *= 0.9 + 0.2 * h1;
+    float aaL = 1.0 - smoothstep(0.12, 0.5, fwY * 0.42 * 2.0); // bedding lines thinner than ~2 px fade out
+    float lip = smoothstep(0.0, 0.14, lf) * (1.0 - smoothstep(0.7, 1.0, lf)); // each bed: bright top ledge, shaded under-lip
+    tone *= mix(1.0, 0.78 + 0.34 * lip, aaL);
+    tone *= 0.9 + 0.2 * vnoise(vec2(along * 0.4, vWorld.y * 0.8));  // grain
+    float crack = smoothstep(0.62, 0.78, vnoise(vec2(along * 0.55, vWorld.y * 0.06 + h0 * 9.0))); // vertical fractures
+    tone *= 1.0 - 0.22 * crack * (1.0 - smoothstep(0.1, 0.45, fwY * 0.06 * 8.0));
+    float rimY = vWorld.y + d;
+    float soil = 1.0 - smoothstep(0.35, 0.9 + 0.5 * vnoise(vec2(along * 0.5, 1.0)), d); // topsoil band under the rim, ragged lower edge
+    vec3 earth = mix(vec3(0.26, 0.19, 0.13), vec3(0.34, 0.30, 0.17), vnoise(vec2(along * 0.7, 2.0)));
+    float turf = 1.0 - smoothstep(0.05, 0.3 + 0.15 * vnoise(vec2(along * 1.3, 5.0)), d);
+    bool snowy = rimY > uSnowline - 1.2;
+    vec3 lipCol = snowy ? vec3(0.88, 0.92, 0.97) : vec3(0.30, 0.42, 0.17);
+    vec3 col = mix(tone, earth, soil);
+    col = mix(col, lipCol, turf);
+    col *= mix(0.72, 1.0, smoothstep(0.0, 5.0, d));  // shade just under the lip
+    float g = clamp((vWorld.y + 3.0) / 14.0, 0.0, 1.0);
+    col *= mix(0.45, 1.0, smoothstep(0.0, 0.7, g));   // ambient occlusion toward the foot
+    col = mix(vec3(0.12, 0.10, 0.09), col, smoothstep(-0.5, 0.3, g));
     float dw = max(dot(wn, uSunDir), 0.0);
     vec3 ambW = mix(uGroundColor, uSkyColor, 0.5);
-    vec3 sk = earth * (ambW + uSunColor * dw);
-    sk = mix(uHazeColor, sk, 0.35 + 0.65 * smoothstep(-0.15, 0.55, g)); // melt into the background below the rim
+    vec3 sk = col * (ambW + uSunColor * dw);
+    sk = mix(uHazeColor, sk, 0.30 + 0.70 * smoothstep(-0.15, 0.6, g)); // melt into the background below the rim
     gl_FragColor = vec4(sk * uLodTint, 1.0);
     ${FOG_FRAG}
   #include <colorspace_fragment>
@@ -205,11 +245,21 @@ void main() {
   rockAmt = max(rockAmt, smoothstep(0.4, 0.75, vRock + rockEdge * 0.35));
   if (isStream) rockAmt *= 0.3;
   rockAmt *= 1.0 - shoreAmt * 0.8;
+  { // slope-aware richness (M8): steep ground dries out (olive / ochre), rock gets faint horizontal bedding with wavy planes (fades before it can go sub-pixel)
+    base = mix(base, base * vec3(1.14, 0.98, 0.76) + vec3(0.012, 0.0, -0.01), smoothstep(0.7, 1.7, vSteep) * 0.4 * (1.0 - uAutumn));
+    float bed = sin(vWorld.y * 5.5 + vnoise(vWorld.xz * 0.3) * 4.0) * 0.5 + 0.5;
+    float aaB = 1.0 - smoothstep(0.15, 0.55, fwidth(vWorld.y) * 11.0);
+    rock *= 1.0 + (bed - 0.5) * 0.26 * aaB * smoothstep(1.0, 2.6, vSteep);
+    rock = mix(rock, rock * vec3(0.78, 0.72, 0.66), smoothstep(0.62, 0.8, vnoise(vWorld.xz * vec2(0.9, 0.9) + vWorld.y * 0.35)) * 0.5 * aaB); // faint dark streaks / fractures
+  }
   vec3 col = mix(base, rock, rockAmt);
 
   float band = (vWorld.y - uSnowline) + (vnoise(vWorld.xz * 0.35) - 0.5) * 3.0;
   float alt = smoothstep(-0.8, 0.8, band);
-  float snowAmt = max(0.4 * alt * (1.0 - 0.7 * rockAmt), smoothstep(0.02, 0.25, vSnow) * (1.0 - 0.5 * rockAmt));
+  float shed = smoothstep(1.3, 2.5, vSteep + rn * 1.1);       // wind and gravity strip snow from steep faces: patchy, never a hard line
+  float thin = (vnoise(vWorld.xz * 1.3 + 17.0) - 0.5) * 0.12; // thin cover breaks up into drifts and bare patches
+  float snowAmt = max(0.4 * alt * (1.0 - 0.7 * rockAmt), smoothstep(0.02, 0.25, vSnow + thin * smoothstep(0.0, 0.08, vSnow)) * (1.0 - 0.5 * rockAmt));
+  snowAmt *= 1.0 - 0.45 * shed;
   if (vKind > 4.5 && vKind < 5.5) snowAmt = 1.0;
   if (isStream) snowAmt *= 0.3;
   col = mix(col, snow, clamp(snowAmt, 0.0, 1.0));
@@ -269,13 +319,19 @@ void main() {
   float tilt = 1.0 - clamp(n.y, 0.0, 1.0);
   float away = smoothstep(0.1, -0.5, ndl);
   float ao = 1.0 - 0.22 * smoothstep(0.1, 0.55, tilt) - 0.12 * away;
-  ao *= 1.0 - 0.22 * smoothstep(0.05, 0.95, builtM); // contact shadow ring around building footprints (from the ground mask: soft, no decals)
+  ao *= 1.0 - 0.32 * smoothstep(0.02, 0.9, builtM); // contact shadow (all tiers, 0 draw calls) under buildings, lift towers and tree clusters, from the ground mask A channel: soft, bilinear, no decals (M8: 0.22 -> 0.32 so objects sit on the ground)
   vec3 amb = mix(uGroundColor, uSkyColor, n.y * 0.5 + 0.5) * ao;
   vec3 shadeTint = mix(vec3(0.80, 0.88, 1.08), vec3(1.0), smoothstep(0.05, 0.55, diff)); // cool blue in shade, strongest on snow
   col *= mix(vec3(1.0), shadeTint, 0.45 + 0.55 * snowAmt);
   col *= 1.0 - 0.26 * snowAmt;                   // snow albedo: leave headroom so lighting can show relief instead of clipping to white
   col *= 1.0 + 0.015 * dayK * (sin(vWorld.y * 2.2) - 1.0);   // faint contour tone variation
-  vec3 lit = col * (amb + uSunColor * diff * 1.12);
+  float sunSh = 1.0;
+#ifdef USE_SHADOWS
+  sunSh = sunShadow(vWorld, nf);
+  amb *= mix(1.0, 0.9, 1.0 - sunSh); // shade is slightly deeper than the plain ambient (a little bounce is lost under a canopy)
+  col *= mix(vec3(1.0), vec3(0.95, 0.98, 1.05), 1.0 - sunSh);
+#endif
+  vec3 lit = col * (amb + uSunColor * diff * 1.12 * sunSh);
   // snow sparkle: sparse glints on sunlit snow
   vec2 sc = floor(vWorld.xz * 17.0);
   float spark = step(0.985, hash(sc)) * step(0.5, hash(sc + 3.1)) * (1.0 - smoothstep(0.30, 0.60, fwW * 17.0));
@@ -386,6 +442,7 @@ export class TerrainMesh {
         ...fogUniforms,
         ...atmosTerrainUniforms,
         uHazeColor: { value: new THREE.Color().setRGB(0.663, 0.831, 0.961, THREE.SRGBColorSpace) },
+        tShadow: { value: null }, uShadowM: { value: new THREE.Matrix4() }, uShadowP: { value: new THREE.Vector4() }, // replaced by ShadowRig.addReceiver (High tier)
       },
     });
     this.applyPalette();

@@ -3,6 +3,7 @@ import { CameraController, type IsoPose } from './CameraController';
 import { ViewCameraRig } from './view/ViewCameraRig';
 import { ViewModeMachine } from './view/ViewMode';
 import { ViewFog, fogDensityFor, fogRangeFor } from './Fog';
+import { ShadowRig } from './ShadowRig';
 import { QUALITY_PRESETS, pixelRatioFor, type GraphicsQuality } from '../config/balance';
 
 export class Renderer {
@@ -16,6 +17,11 @@ export class Renderer {
   private isoSaved: IsoPose | null = null;
   readonly sun: THREE.DirectionalLight;
   readonly hemi: THREE.HemisphereLight;
+  /** High-tier sun shadows (docs/shadows.md): own depth pass, terrain receives. Off (no cost, no shader define) on low / med. */
+  readonly shadows: ShadowRig;
+  /** Per-frame inputs of the shadow pass (set by main.ts from Lighting / the terrain): sun direction, night 0..1, overcast 0..1, ground height under the focus, terrain y range. */
+  shadowFeed: (() => { sunDir: [number, number, number]; night: number; overcast: number; groundY: number; heights: [number, number] }) | null = null;
+  private shadowFocus = new THREE.Vector3();
   quality: GraphicsQuality = 'med';
   private raf = 0;
   private last = 0;
@@ -32,7 +38,8 @@ export class Renderer {
     this.mapSize = mapSize;
     this.webgl = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.webgl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.webgl.shadowMap.enabled = false;
+    this.webgl.shadowMap.enabled = false; // three's own shadow maps stay off: the custom shaders cannot sample them; see ShadowRig
+    this.shadows = new ShadowRig(this.webgl, this.scene);
     container.appendChild(this.webgl.domElement);
     this.scene.background = new THREE.Color(0xa9d4f5);
     this.hemi = new THREE.HemisphereLight(0xcfe4ff, 0x6a5a66, 1.0);
@@ -77,8 +84,7 @@ export class Renderer {
 
   /**
    * Graphics quality: pixel ratio (capped by the preset) and shadows. LOD / density / particle scales are applied by the owner
-   * of those layers (main.ts) from the same preset. NOTE: terrain/props use custom shaders that do not sample the shadow map, so
-   * `shadows` currently only affects materials of casters that opt in (none yet).
+   * of those layers (main.ts) from the same preset. `shadows` (High only) turns on the ShadowRig depth pass + the terrain's shadow sampling.
    */
   setQuality(q: GraphicsQuality): void {
     this.quality = q;
@@ -87,14 +93,7 @@ export class Renderer {
     this.resize();
   }
 
-  setShadows(on: boolean): void {
-    this.webgl.shadowMap.enabled = on;
-    this.sun.castShadow = on;
-    this.scene.traverse((o) => {
-      const m = (o as THREE.Mesh).material as THREE.Material | undefined;
-      if (m) m.needsUpdate = true;
-    });
-  }
+  setShadows(on: boolean): void { this.shadows.setEnabled(on); }
 
   resize(): void {
     const w = this.container.clientWidth || window.innerWidth;
@@ -112,6 +111,12 @@ export class Renderer {
         this.controls.update(dt);
         this.preFrame?.(dt);
         this.onFrame?.(dt);
+        if (this.shadows.enabled && this.shadowFeed) {
+          const f = this.shadowFeed();
+          this.shadowFocus.set(this.controls.target.x, f.groundY, this.controls.target.z);
+          try { this.shadows.update(dt, this.viewMode.isIso, this.controls.camera, this.shadowFocus, f.sunDir, f.night, f.overcast, f.heights); }
+          catch (e) { console.error('[shadows] disabled after an error', e); this.shadows.setEnabled(false); } // never let the optional pass take the frame loop down
+        }
         this.webgl.render(this.scene, this.camera);
       }
       this.raf = requestAnimationFrame(loop);

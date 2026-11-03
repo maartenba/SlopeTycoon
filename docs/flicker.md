@@ -84,3 +84,7 @@ Note: `flicker-test.ts` and `flicker-building.ts` used `populateDemo('Medium')`,
 
 ## M6.3 summer content scene (0.2.7)
 `npm run flicker -- --only 64-summer-content --kinds rotfine,zoompop,jitter,still`: the 64 / seed 61 summer village at 21:00 with the M6.3 buildings placed through the Bot's own placement (campground with its night glow, toilets, petting zoo, viewpoint, treehouse, quad base, tackle hut; the crag and the pier need rock / water and are not placed here). Result: rotfine 0.082 % oscillation, **0 pop events**, zoompop **2 LOD flips, identical to the plain `64-summer-day` baseline** (2), jitter 0, still 0.0027 %. The campfire glow is one static additive disc (world-space, no noise), so it adds no shimmer.
+
+
+## Quality tier (M8)
+`npm run flicker -- --quality low|med|high` writes `slope.quality` before the page boots (default: the game's own default for the map size, `med` on 64 / 128). Use `--quality high` to measure the shadow map (`docs/shadows.md`): the texel-snapped window must keep `rotfine` / `zoomfine` within noise of `--quality med`. M8 lane C numbers are in `docs/shadows.md`.

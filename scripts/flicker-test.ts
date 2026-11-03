@@ -3,7 +3,7 @@
  * and captures one frame per step IN the page (hooked into WebGLRenderer.render, so one game frame = one step like a smooth 60 fps motion).
  * Metrics: oscillating pixels (luma temporal derivative flips sign on 3 consecutive steps, each > T = temporal noise a smooth camera move can not produce),
  * popping events (frames whose number of strongly changed 16 px blocks jumps over the rolling median), still noise (identical camera, N frames).
- * Usage: npm run flicker -- [--only 64-winter-day] [--step 3 (pop sweep deg)] [--anchor 20 (fine windows every N deg)] [--zstep 0.015] [--kinds rotfine,rotpop,zoomfine,zoompop,still] [--T 10] [--w 960 --h 600] [--tag before] [--off trees,water,...] [--list]
+ * Usage: npm run flicker -- [--only 64-winter-day] [--step 3 (pop sweep deg)] [--anchor 20 (fine windows every N deg)] [--zstep 0.015] [--kinds rotfine,rotpop,zoomfine,zoompop,still] [--T 10] [--w 960 --h 600] [--tag before] [--atmos off|low|high] [--quality low|med|high] [--off trees,water,...] [--list]
  * Output: .weave/shots/flicker-<tag>-<scenario>-{rot,zoom}.png (heatmaps) + .weave/shots/flicker-<tag>.json + flicker-<tag>.md (not part of the default tests). */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { launch, startServer } from './lib/harness';
@@ -175,6 +175,7 @@ try {
     page.on('pageerror', (e) => errs.push(String(e)));
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); else if (m.text().startsWith('SCENE')) console.log(m.text()); });
     if (a.atmos) await page.evaluateOnNewDocument((v: string) => { try { localStorage.setItem('slope.atmosphere', v); } catch { /* none */ } }, a.atmos); // M7.0: --atmos off|low|high (default = the game's own default)
+    if (a.quality) await page.evaluateOnNewDocument((v: string) => { try { localStorage.setItem('slope.quality', v); } catch { /* none */ } }, a.quality); // M8: --quality low|med|high (default = the game's own default for the map size)
     await page.goto(`${srv.url}?${new URLSearchParams({ size: String(sc.size), seed: String(sc.seed), start: sc.start, hints: '0' })}`, { waitUntil: 'load', timeout: 90000 });
     await page.waitForFunction(() => !!(window as any).__slope, { timeout: 90000 });
     if (a["atmos-force"]) await page.evaluate(a["atmos-force"]); // M7.0 worst case: e.g. "__slope.atmos.force({fog:1,frost:1,special:1,cloudShadow:0.3})"

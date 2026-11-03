@@ -2272,6 +2272,14 @@ let debugSpawnCount = 0, bearCursor = -1, animalCursor = -1;
 const focusMarker = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 28), new THREE.MeshBasicMaterial({ color: 0xff5030, side: THREE.DoubleSide, transparent: true, opacity: 0.9, depthTest: false }));
 focusMarker.rotation.x = -Math.PI / 2; focusMarker.renderOrder = 12; focusMarker.visible = false;
 renderer.scene.add(focusMarker);
+// High-tier sun shadows (M8, docs/shadows.md): terrain receives, everything opaque casts except these flat / transient / overlay roots; the feed is read only while High is on.
+for (const o of [terrain.group, water.group, overlays.group, covOverlay.group, pisteHl.mesh, precip.group, smoke.group, snowSpray.group, rapidsSplash.group, springMarkers.group, atmos.mist.group, skyActivity.group, fx.particles.mesh, emotes.mesh, selRing, focusMarker, dropRing.group, sledRunView.group] as THREE.Object3D[]) o.userData.noShadow = true;
+trees.group.userData.shadowHeavy = true; // the tree layers are the bulk of the triangles: they stop casting when a pass gets too heavy (ShadowRig.heavyTriBudget)
+renderer.shadows.addReceiver(terrain.material);
+renderer.shadowFeed = () => {
+  const L = lighting.last, k = weather.current.kind, t = renderer.controls.target;
+  return { sunDir: L?.sunDir ?? [0.4, 0.8, 0.3], night: L?.night ?? 0, overcast: k === 'clear' ? 0 : k === 'cloudy' ? 0.5 : k === 'storm' ? 1 : 0.8, groundY: heightAt(grid, t.x, t.z), heights: [-3, maxWorld + 6] };
+};
 let markerT = 0;
 { const prev = renderer.onFrame; renderer.onFrame = (dt): void => { prev?.(dt); if (markerT > 0) { markerT -= dt; const k = 1 + 0.35 * Math.sin(markerT * 9); focusMarker.scale.set(k, k, k); if (markerT <= 0) focusMarker.visible = false; } }; }
 const focusOn = (x: number, y: number, label: string): void => {
