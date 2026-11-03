@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PropKind } from '@/world/Props';
-import { mergeParts, type Part } from './Trees';
+import { mergeParts, tier, type Part } from './Trees';
 
 /**
  * NEAR tree/rock meshes (ground cameras only, < ~60 m): higher-poly crowns (>= 12 radial segments), irregular noise displacement, ridged bark trunks and
@@ -26,14 +26,12 @@ export function displace(g: THREE.BufferGeometry, amp: number, k = 0, cx = 0, cz
   return g;
 }
 
-const cone = (r: number, h: number, y: number, seg: number, hs: number, amp: number, k: number): THREE.BufferGeometry => {
-  const g = new THREE.ConeGeometry(r, h, seg, hs).translate(0, y + h / 2, 0);
-  return displace(g, amp, k);
-};
+/** Near conifer whorl: the iso mesh's drooping, scalloped tier at 16 segments (long branch tips / short lifted ones), smooth-shaded, with an underside (ground cameras look up into it). */
+const whorl = (r: number, h: number, y: number, k: number, color: THREE.Color): Part[] => tier(r, h, y, 16, k, true, true).map((p) => ({ ...p, color }));
 /** Ridged, slightly leaning bark trunk: 8 radial segments, 4 rings, ring radius wobble. */
 const trunk = (r0: number, r1: number, h: number, k: number): THREE.BufferGeometry => displace(new THREE.CylinderGeometry(r0, r1, h, 8, 4).translate(0, h / 2, 0), 0.12, k);
 const blob = (r: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, amp: number, k: number, detail = 2): THREE.BufferGeometry =>
-  displace(new THREE.IcosahedronGeometry(r, detail).scale(sx, sy, sz), amp, k).translate(x, y, z);
+  displace(new THREE.IcosahedronGeometry(r, detail).scale(sx, sy, sz), amp * 0.55, k).translate(x, y, z);
 const limb = (y: number, len: number, tilt: number, az: number, r = 0.03): THREE.BufferGeometry => {
   const g = new THREE.CylinderGeometry(r * 0.4, r, len, 5, 1).translate(0, len / 2, 0);
   g.rotateZ(-tilt); g.rotateY(az); return g.translate(0, y, 0);
@@ -53,31 +51,31 @@ const root = (r: number, k: number): Part => ({ geo: displace(new THREE.ConeGeom
 function conifer(): THREE.BufferGeometry {
   return mergeParts([
     { geo: trunk(0.07, 0.1, 0.5, 1), color: TRUNK, foliage: 0 }, root(0.09, 2),
-    { geo: cone(0.58, 0.8, 0.32, 12, 1, 0.2, 3), color: PINE_DARK, foliage: 1 },
-    { geo: cone(0.5, 0.75, 0.74, 12, 1, 0.2, 4), color: PINE, foliage: 1 },
-    { geo: cone(0.4, 0.7, 1.12, 12, 1, 0.2, 5), color: PINE, foliage: 1 },
-    { geo: cone(0.28, 0.6, 1.5, 12, 1, 0.2, 6), color: PINE_TALL, foliage: 1 },
-    { geo: cone(0.14, 0.4, 1.8, 12, 1, 0.15, 7), color: PINE_TALL, foliage: 1 },
+    ...whorl(0.58, 0.8, 0.32, 3, PINE_DARK),
+    ...whorl(0.5, 0.75, 0.74, 4, PINE),
+    ...whorl(0.4, 0.7, 1.12, 5, PINE),
+    ...whorl(0.28, 0.6, 1.5, 6, PINE_TALL),
+    ...whorl(0.14, 0.4, 1.8, 7, PINE_TALL),
     ...bundle(0.55, 0.3, 1.1, 4, TRUNK, 0.2, 0.025),
   ]);
 }
 function pine(): THREE.BufferGeometry {
   return mergeParts([
     { geo: trunk(0.05, 0.09, 1.7, 8), color: TRUNK, foliage: 0 }, root(0.09, 9),
-    { geo: cone(0.46, 0.5, 0.9, 12, 1, 0.22, 10), color: PINE_TALL, foliage: 1 },
-    { geo: cone(0.38, 0.45, 1.3, 12, 1, 0.22, 11), color: PINE_TALL, foliage: 1 },
-    { geo: cone(0.3, 0.45, 1.7, 12, 1, 0.22, 12), color: PINE_TALL, foliage: 1 },
-    { geo: cone(0.2, 0.5, 2.05, 12, 1, 0.2, 13), color: PINE_TALL, foliage: 1 },
+    ...whorl(0.46, 0.5, 0.9, 10, PINE_TALL),
+    ...whorl(0.38, 0.45, 1.3, 11, PINE_TALL),
+    ...whorl(0.3, 0.45, 1.7, 12, PINE_TALL),
+    ...whorl(0.2, 0.5, 2.05, 13, PINE_TALL),
     ...bundle(0.7, 0.3, 0.9, 3, TRUNK, 0.5, 0.02), ...bundle(1.1, 0.25, 0.9, 3, TRUNK, 1.1, 0.018),
   ]);
 }
 function larch(): THREE.BufferGeometry {
   return mergeParts([
     { geo: trunk(0.05, 0.08, 1.9, 14), color: TRUNK, foliage: 0 }, root(0.08, 15),
-    { geo: cone(0.38, 0.9, 0.4, 12, 1, 0.24, 16), color: LARCH, foliage: 1 },
-    { geo: cone(0.3, 0.8, 0.95, 12, 1, 0.24, 17), color: LARCH, foliage: 1 },
-    { geo: cone(0.2, 0.7, 1.45, 12, 1, 0.24, 18), color: LARCH, foliage: 1 },
-    { geo: cone(0.1, 0.5, 1.9, 12, 1, 0.2, 19), color: LARCH, foliage: 1 },
+    ...whorl(0.38, 0.9, 0.4, 16, LARCH),
+    ...whorl(0.3, 0.8, 0.95, 17, LARCH),
+    ...whorl(0.2, 0.7, 1.45, 18, LARCH),
+    ...whorl(0.1, 0.5, 1.9, 19, LARCH),
     ...bundle(0.5, 0.35, 1.0, 5, TRUNK, 0, 0.02), ...bundle(1.0, 0.28, 1.0, 4, TRUNK, 0.6, 0.018),
   ]);
 }
@@ -138,15 +136,19 @@ export function nearTreeGeometry(kind: number): THREE.BufferGeometry | undefined
   }
 }
 
-/** Near rock: icosahedron detail 4 (500 facets) with two-octave displacement, flat-ish base, a few chipped facets. */
+/**
+ * Near rock: icosahedron detail 4 (~500 facets). Rounded boulder: coarse shared lumps carry the shape (a few big bulges, not per-vertex noise), a small fine
+ * jitter only breaks the facets, flattened and slightly stretched, flat bedded base so nothing goes below the ground line.
+ */
 export function nearRockGeometry(): THREE.BufferGeometry {
   const g = new THREE.IcosahedronGeometry(0.38, 4);
   const p = g.getAttribute('position');
   for (let i = 0; i < p.count; i++) {
     const x = Math.round(p.getX(i) * 400) / 400, y = Math.round(p.getY(i) * 400) / 400, z = Math.round(p.getZ(i) * 400) / 400;
-    const j = 0.78 + 0.3 * hash3(x, y, z, 1) + 0.16 * hash3(x * 3, y * 3, z * 3, 2);
-    const ny = Math.max(y * j * 0.7 + 0.1, 0.0);
-    p.setXYZ(i, p.getX(i) * j, ny, p.getZ(i) * j);
+    const coarse = hash3(Math.round(x * 5), Math.round(y * 5), Math.round(z * 5), 1), mid = hash3(Math.round(x * 12), Math.round(y * 12), Math.round(z * 12), 2);
+    const j = 0.86 + 0.2 * coarse + 0.07 * mid + 0.025 * hash3(x, y, z, 3);
+    const ny = Math.max(y * j * 0.66 + 0.1, 0.0);
+    p.setXYZ(i, p.getX(i) * j * 1.12, ny, p.getZ(i) * j * 0.94);
   }
   return mergeParts([{ geo: g, color: new THREE.Color(0x56534f), foliage: 0 }]);
 }
