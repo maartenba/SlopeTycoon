@@ -23,4 +23,4 @@ You can also give from this page. The widget is **not loaded until you ask for i
 <noscript><p>The widget needs JavaScript. The link above works without it.</p></noscript>
 </div>
 
-Thank you for playing, with or without a coffee. See the [privacy page](../privacy/) for what the site collects, and the [about page](../about/) for why I built this.
+Thank you for playing, with or without a coffee. See the [privacy page](../privacy/) for what the site collects, and the [about page](../about/) for the story behind the game.
