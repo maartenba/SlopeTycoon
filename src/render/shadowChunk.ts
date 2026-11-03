@@ -8,12 +8,15 @@ import * as THREE from 'three';
 
 /** Shadow-pass-only uniform: xyz = the real (main) camera, w = 1 while the depth pass runs. Tree / rock distance bands read it instead of `cameraPosition`
  * (which is the sun camera during the pass), so the perspective views' trees cast the same LOD they draw. */
-export const shadowPassUniforms = { uShCam: { value: new THREE.Vector4(0, 0, 0, 0) } };
+export const shadowPassUniforms = { uShCam: { value: new THREE.Vector4(0, 0, 0, 0) }, /** Tree cast density 0..1 (1 = every tree casts); only read while the depth pass runs. */ uShDens: { value: 1 } };
 
 /** Vertex GLSL: `shCam()` = the camera the scene is drawn from, also inside the shadow pass. Needs `cameraPosition` (ShaderMaterial vertex prefix). */
 export const SH_CAM_GLSL = /* glsl */ `
 uniform vec4 uShCam;
-vec3 shCam() { return uShCam.w > 0.5 ? uShCam.xyz : cameraPosition; }`;
+uniform float uShDens;
+vec3 shCam() { return uShCam.w > 0.5 ? uShCam.xyz : cameraPosition; }
+// Gradual cast density (heavy scenes): in the depth pass a stable per-instance hash of the seed decides whether the tree casts (nested: raising the density only adds trees). Never in the main pass.
+bool shDropTree(float seed) { return uShCam.w > 0.5 && uShDens < 0.999 && fract(sin(seed * 53.3 + 1.7) * 43758.5453) >= uShDens; }`;
 
 /** Fragment GLSL: uniforms + `recvShadow(world position, world normal)` -> multiplier 0..1 for the SUN term (1 = lit). 4 hardware-PCF taps, fixed offsets (no screen-space noise). */
 export const SHADOW_RECV_FRAG = /* glsl */ `

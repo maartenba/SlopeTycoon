@@ -204,6 +204,7 @@ export class LiftView {
     const inst = new THREE.InstancedMesh(cg, glassGroups(cg) ? [mat, glass] : mat, count);
     inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     inst.frustumCulled = false;
+    inst.userData.shadowDynamic = true; // the shadow rig draws the moving carriers every frame (docs/shadows.md), the towers / stations stay in the cached static depth
     g.add(inst);
     const e: Entry = { group: g, lift, path, carriers: inst, phase: 0, geos, poly: new Float32Array(polyPts), towers, cable, cableNear: null, band: 'base' };
     this.pose(e);

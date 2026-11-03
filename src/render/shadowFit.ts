@@ -10,13 +10,13 @@ type V3 = [number, number, number];
 export const SHADOW_MAP_SIZE = 2048;
 /** Shadow window half sizes (world units) are `HALF_BASE * HALF_STEP^k`. */
 export const HALF_BASE = 10;
-export const HALF_STEP = 1.25;
+export const HALF_STEP = 1.12;
 /** Beyond this window half size the shadows switch off (a 2048 map spreads thinner than a screen pixel over ~400 world units: far zoom-out on 256 maps). */
 export const MAX_HALF = 200;
 /** The re-centre grid, in texels: the window only moves in multiples of this (and only when the view leaves it). */
 export const SNAP_TEXELS = 8;
 /** Sun direction quantisation (degrees of angle); keeps the light basis stable while the sun creeps. */
-export const SUN_STEP_DEG = 0.35;
+export const SUN_STEP_DEG = 0.25;
 
 const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];

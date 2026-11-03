@@ -2283,6 +2283,7 @@ focusMarker.rotation.x = -Math.PI / 2; focusMarker.renderOrder = 12; focusMarker
 renderer.scene.add(focusMarker);
 // High-tier sun shadows (M8, docs/shadows.md): terrain receives, everything opaque casts except these flat / transient / overlay roots; the feed is read only while High is on.
 for (const o of [terrain.group, water.group, overlays.group, covOverlay.group, pisteHl.mesh, precip.group, smoke.group, snowSpray.group, rapidsSplash.group, springMarkers.group, atmos.mist.group, skyActivity.group, fx.particles.mesh, emotes.mesh, selRing, focusMarker, dropRing.group, sledRunView.group] as THREE.Object3D[]) o.userData.noShadow = true;
+for (const o of [guestRenderer.group, vehicleRenderer.group, natureView.group, zooView.group, tourVehicles.group, cragClimbers.group, activity.group, groomingView?.group, incidentView?.group] as Array<THREE.Object3D | undefined>) if (o) o.userData.shadowDynamic = true; // moving casters: the shadow rig draws them every frame on top of the cached static depth (lift carriers flag themselves)
 trees.group.userData.shadowHeavy = true; // the tree layers are the bulk of the triangles: they stop casting when a pass gets too heavy (ShadowRig.heavyTriBudget)
 renderer.shadows.addReceiver(terrain.material);
 renderer.shadowFeed = (fx, fz) => {
