@@ -1,6 +1,27 @@
 # Release notes and checklist
 
-Current release: **0.4.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.5.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.5.0 (2026-11-03, macOS, Node v22.23.4)
+
+M8 graphics pass (render-only; `docs/graphics-audit.md`, `docs/graphics-m8.md`, `docs/shadows.md`): rounder buildings / lifts / vehicles / animals, per-family lift icons, conifer whorls, layered rock skirt, soft shorelines, High-tier sun shadows with contact shadows everywhere. No sim, save or golden change.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 437 files passed, 1 skipped; 4618 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed (goldens untouched) |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74` | all OK (0 console errors, MaterialGuard 0 in play) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, drawers 15/15, placement 12/13 on the first run ("long press cancels the placement tool", the known flake from 0.4.0) and 13/13 on the re-run |
+| Desktop / phone | `npm run desktop:diff` (vs a clean `f23481f` worktree), `npm run mobile:audit` | SAME on all six screens (Buildings drawer 0.018 % of pixels: the new thumbnails); all thresholds met |
+| Draw calls / triangles | `scripts/shots/m8-perf.ts`, `m8-share.ts`, `m8-calls.ts` vs `f23481f` | main-pass calls equal to baseline after one fix (a stray cannon material layer); Low triangles -1.2 .. -1.5 % (128 / 1.5), Medium +3 .. +5 %, High within +1 % on the same camera path; trees +0 %. Details: `docs/graphics-m8.md` |
+| Flicker | `npm run flicker` (64 maps, low / med / high, atmosphere variants) | winter rotfine 0.56 -> 0.65 (+0.09 absolute, all tiers), everything else within +-0.01, no pops |
+| Size | `npm run size` | 2974.4 kB raw / 1063.7 kB gzip (budget < 2048 kB gzip; +11.0 kB gzip over 0.4.0: 1052.7; cap was +60 kB) |
+| Site | `whats-new`, `licenses`, `docs:img`, `site:og`, `build:site && site:check && verify:site` | OK (265 URLs crawled on both bases; screenshots 8.3 MB of the 8.5 MB budget; docs/img 16.4 MB) |
+
+Not verified by agents: real GPU fps (High shadows), shadow shimmer while panning, phone heat, the final look (`docs/playtest-m8.md`).
 
 ## 0.4.0 (2026-11-02, macOS, Node v22.23.4)
 
