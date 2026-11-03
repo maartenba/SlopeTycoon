@@ -35,5 +35,3 @@ export function apresProximity(dists: Iterable<number>): number { let s = 0; for
 export function apresLevel(proximity: number, zoom: number): number { return clamp01(proximity) * zoomWindow(zoom, PROX.apres.zoomFar, PROX.apres.zoomNear); }
 /** Bar gating: it plays only while the bar is built and active, open (not closed by the player / staff) and serving (its opening hours). */
 export function apresBarOpen(b: { active: boolean; open: boolean; serving: boolean }): boolean { return b.active && b.open && b.serving; }
-/** Music-bus duck factor (1 = untouched) for an apres level. */
-export function apresDuck(level: number): number { return 1 - PROX.apres.duck * clamp01(level); }

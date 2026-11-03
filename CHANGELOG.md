@@ -4,6 +4,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- Music rework (procedural, tuned by numbers, not by ear): the game music is now twelve full songs (intro, verse, chorus, bridge, outro; 4-8 bar phrases; counter-melodies, rhythmic basslines, swung soft drum kits with ghost notes and fills, piano / mallet / warm-lead timbres, a ping-pong delay and a gentle kick sidechain) with new Snow Piano, Night Chill and Menu Theme tracks, and tempo that follows season and weather; the Apres-Ski Bar now plays a 124-128 bpm party-schlager / EDM-polka groove (four-on-the-floor kick, claps, off-beat hats, driving bass, accordion and brass hooks, build-ups and drops, four variants by seed) and the game music now fades out and holds while you are at the bar (with hysteresis so zooming does not flip-flop) and returns afterwards at the start of its chord. New `npm run audio:export` renders previews to `.weave/audio-previews/` (mp3, not committed). Tunables: `src/config/audioMusic.ts`; docs: `docs/audio.md`, `docs/playtest-audio.md`. No sim, save or balance change.
+
 ## [0.5.1] - 2026-11-03 (pre-release)
 
 Smoother lifts, sound that follows the camera, and a Support page. Nothing in the economy or the saves changed.

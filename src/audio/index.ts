@@ -6,6 +6,7 @@ import { createRealBackend, type AudioBackend } from './backend';
 import { cueForNews, soundsForEvent } from './eventSounds';
 import { GAME_EVENT_NAMES } from '../core/events';
 import { Music } from './Music';
+import { MusicHandoff } from './musicHold';
 import { MUSIC } from './musicThemes';
 import { Sfx } from './Sfx';
 import { PROX } from '../config/audioProximity';
@@ -45,10 +46,11 @@ export function createAudio(d: AudioDeps): AudioApi {
   const settings = new AudioSettings(d.storage ?? null);
   const engine = new AudioEngine({ factory: d.factory ?? createRealBackend, settings });
   const sfx = new Sfx(engine);
-  const ambience = new Ambience(engine, sfx, d.rng);
   const probe = new WorldProbe(d.probe);
   const today = Math.floor(Date.now() / 86400000);
-  const music = new Music(engine, { seed: d.musicSeed ?? 7, dayKey: d.musicSeed === undefined ? today : 0 });
+  const handoff = new MusicHandoff(); // shared: near an open Apres-Ski Bar the game music stops, the bar music plays (and back)
+  const ambience = new Ambience(engine, sfx, d.rng, d.musicSeed ?? (today ^ 0x5eed), handoff);
+  const music = new Music(engine, { seed: d.musicSeed ?? 7, dayKey: d.musicSeed === undefined ? today : 0, handoff });
   const offs: Array<() => void> = [];
   const win = d.win ?? (typeof window !== 'undefined' ? window : undefined);
   const doc = d.doc ?? (typeof document !== 'undefined' ? document : undefined);

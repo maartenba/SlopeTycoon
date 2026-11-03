@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TRACK_IDS, type TrackId } from '../../src/audio/musicThemes';
-import type { MusicInput } from '../../src/audio/musicState';
+import { MUSIC, TRACK_IDS } from '../../src/audio/musicThemes';
+import { TRACK_CONTEXT } from '../../src/audio/musicContexts';
 import { RECIPES } from '../../src/audio/Sfx';
 import { playNote } from '../../src/audio/instruments';
 import { NoiseBank } from '../../src/audio/synth';
@@ -15,10 +15,7 @@ const SR = 24000, T0 = 8;
 const MAX_JUMP = 0.25; // absolute sample-to-sample step sanity bound (smooth 1 kHz tones at peak 0.5 step ~0.13)
 const MUSIC_CLICK = 25, BED_CLICK = 12; // clickScore: music / beds score 5-14 here, a 0.05 step in a 0.2 tone scores 55
 
-const CTX: Record<TrackId, Partial<MusicInput>> = {
-  morningSnow: { season: 'winter', hour: 8 }, alpineNoon: { season: 'winter', hour: 13 }, apres: { season: 'winter', hour: 19 }, starlight: { season: 'winter', hour: 23 },
-  summerMeadow: { season: 'summer', hour: 12 }, autumnGold: { season: 'autumn', hour: 15 }, blizzard: { weather: 'storm', hour: 12 }, title: { menu: true }, festival: { season: 'summer', hour: 14, festival: true, busy: 1 },
-};
+const CTX = TRACK_CONTEXT;
 
 describe('music tracks, rendered (music 100 %, master 100 % = worst case)', () => {
   for (const id of TRACK_IDS) {
@@ -38,7 +35,7 @@ describe('music tracks, rendered (music 100 %, master 100 % = worst case)', () =
       let side = 0, mid = 0; for (let i = 0; i < l.length; i++) { side += (l[i]! - rr[i]!) ** 2; mid += (l[i]! + rr[i]!) ** 2; }
       expect(Math.sqrt(side / mid), 'stereo width').toBeGreaterThan(0.05);
       expect(r.backend.peakNodes).toBeLessThan(500); // CPU budget: nodes in the graph
-      expect(r.music.activeVoices).toBeLessThanOrEqual(14);
+      expect(r.music.activeVoices).toBeLessThanOrEqual(MUSIC.maxVoices);
     }, 60000);
   }
   it('is deterministic per seed (bit-identical render) and differs across seeds', async () => {

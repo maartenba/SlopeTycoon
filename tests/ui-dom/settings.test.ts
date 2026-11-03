@@ -115,7 +115,7 @@ describe('st-settings', () => {
     const root = (e as unknown as { root: ShadowRoot }).root;
     const sel = root.querySelector('[data-row="music-style"] st-select') as unknown as { value: string; setOptions: unknown; options: Array<{ value: string }> } & HTMLElement;
     expect(sel).toBeTruthy(); expect(sel.value).toBe('auto');
-    expect(sel.options.length).toBe(11); // Auto + 9 tracks + Off
+    expect(sel.options.length).toBe(14); // Auto + 12 tracks + Off
     s.set({ musicStyle: 'apres' }); expect(sel.value).toBe('apres');
     sel.value = 'off'; sel.dispatchEvent(new Event('change')); expect(s.get().musicOn).toBe(false);
     sel.value = 'starlight'; sel.dispatchEvent(new Event('change'));

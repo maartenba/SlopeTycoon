@@ -41,6 +41,7 @@
     "shot": "vite-node scripts/shot.ts",
     "flicker": "vite-node scripts/flicker-test.ts",
     "audio:render": "vite-node scripts/audio-render.ts",
+    "audio:export": "vite-node scripts/audio-export.ts",
     "audio:crosscheck": "vite-node scripts/audio-crosscheck.ts",
     "flicker:building": "vite-node scripts/flicker-building.ts",
     "shot:suite": "vite-node scripts/shot-suite.ts",

@@ -2,13 +2,14 @@ import { AudioEngine } from '../../src/audio/AudioEngine';
 import { AudioSettings, type AudioSettingsData } from '../../src/audio/AudioSettings';
 import { Ambience, type AmbienceState } from '../../src/audio/Ambience';
 import { Music } from '../../src/audio/Music';
+import { MusicHandoff } from '../../src/audio/musicHold';
 import { Sfx } from '../../src/audio/Sfx';
 import type { MusicInput } from '../../src/audio/musicState';
 import { OfflineBackend } from './offlineBackend';
 import { MemStorage } from './fakeBackend';
 
 export interface Rendered { l: Float32Array; r: Float32Array; sampleRate: number; backend: OfflineBackend; music: Music; ambience: Ambience; engine: AudioEngine }
-export interface RenderOpts { seconds: number; sampleRate?: number; seed?: number; settings?: Partial<AudioSettingsData>; music?: Partial<MusicInput>; ambience?: Partial<AmbienceState> | null; musicOn?: boolean; ambienceOn?: boolean; skipAt?: number[]; /** Called every scheduler step with the audio time, e.g. to change speed / settings mid-render. */ onStep?: (t: number, h: { music: Music; settings: AudioSettings }) => void }
+export interface RenderOpts { seconds: number; sampleRate?: number; seed?: number; settings?: Partial<AudioSettingsData>; music?: Partial<MusicInput>; ambience?: Partial<AmbienceState> | null; musicOn?: boolean; ambienceOn?: boolean; skipAt?: number[]; /** Time-varying ambience patch (e.g. the apres level while the camera walks to a bar and back), applied on top of `ambience`. */ ambienceAt?: (t: number) => Partial<AmbienceState>; /** Seed of the bar music (default: the config seed). */ apresSeed?: number; /** Called every scheduler step with the audio time, e.g. to change speed / settings mid-render. */ onStep?: (t: number, h: { music: Music; settings: AudioSettings }) => void }
 
 const AMB_DEFAULT: AmbienceState = { season: 'winter', weather: 'clear', hour: 12, zoom: 20, altitude: 0.5, wind: 0.3, water: 0.5, crowd: 40, lifts: 0.5, buildings: 0.4, cows: 0, snowcat: 0, heli: 0 };
 
@@ -21,15 +22,16 @@ export async function renderAudio(o: RenderOpts): Promise<Rendered> {
   if (o.settings) settings.set(o.settings);
   const engine = new AudioEngine({ factory: () => ob as never, settings });
   await engine.onGesture();
-  const music = new Music(engine, { seed: o.seed ?? 5 }), sfx = new Sfx(engine), amb = new Ambience(engine, sfx, mulb(o.seed ?? 5));
+  const handoff = new MusicHandoff();
+  const music = new Music(engine, { seed: o.seed ?? 5, handoff }), sfx = new Sfx(engine), amb = new Ambience(engine, sfx, mulb(o.seed ?? 5), o.apresSeed, handoff);
   if (o.music) music.setInputs(o.music);
-  const state = { ...AMB_DEFAULT, ...(o.ambience ?? {}) };
+  const state0 = { ...AMB_DEFAULT, ...(o.ambience ?? {}) };
   const step = 0.025, n = Math.round(o.seconds / step), skips = new Set((o.skipAt ?? []).map((s) => Math.round(s / step)));
   for (let i = 0; i < n; i++) {
     if (skips.has(i)) music.next();
     o.onStep?.(i * step, { music, settings });
     if (o.musicOn !== false) music.tick();
-    if (o.ambience !== null && o.ambienceOn !== false && i % 4 === 0) amb.update(state, 0.1);
+    if (o.ambience !== null && o.ambienceOn !== false && i % 4 === 0) amb.update(o.ambienceAt ? { ...state0, ...o.ambienceAt(i * step) } : state0, 0.1);
     ob.process(step);
   }
   const c = ob.capture();

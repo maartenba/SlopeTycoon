@@ -21,7 +21,7 @@ export const PROX = {
   },
   /** Lakes / ponds (the old `water` layer, tile fraction near the camera): very soft lapping only when zoomed in; winter ice = silent. */
   pond: { zoomFar: 30, zoomNear: 10, max: 0.45, frozen: 0 },
-  /** Apres-Ski Bar music: only an OPEN, serving bar contributes. */
+  /** Apres-Ski Bar music: only an OPEN, serving bar contributes. The groove, tempo and hand-off with the game music live in `audioMusic.ts` (APRES_SONG, HANDOFF). */
   apres: {
     /** Camera -> bar distance (tiles) at which a bar is silent; per-bar level (1 - d / reach)^falloff. */
     reach: 22, falloff: 1.5,
@@ -29,20 +29,12 @@ export const PROX = {
     cap: 1,
     /** Zoom window: inaudible at the default view, fully there when zoomed in close. */
     zoomFar: 34, zoomNear: 12,
-    /** Below this overall level nothing is scheduled (saves CPU, no tail of tiny notes). */
-    minLevel: 0.03,
-    /** Peak gain of one music voice at level 1 (ambience bus), lowpass cutoff Hz far .. near. */
-    musicMax: 0.2, cutoffFar: 450, cutoffNear: 3600,
+    /** Bar-music low-pass cutoff Hz far .. near (the hats need the top end, so near is wide open). */
+    cutoffFar: 1200, cutoffNear: 9500,
     /** Murmur + glasses bed layer ceiling (AMB.layerMax.apres). */
     murmurMax: 0.05,
-    /** Glass clink chance per beat and peak gain at level 1. */
-    clinkChance: 0.28, clinkGain: 0.05,
-    /** Game music bus is ducked by up to this fraction at level 1 (0.3 = 30 % quieter), eased over duckTc seconds. */
-    duck: 0.3, duckTc: 0.8,
-    /** 2/4 polka tempo (beats per minute) and the fixed composition seed (same pattern on every machine). */
-    bpm: 118, seed: 0x4a9e5,
-    /** Seconds of notes scheduled ahead of the audio clock. */
-    lookahead: 0.4,
+    /** Fixed composition seed used when no game seed is given (same song on every machine). */
+    seed: 0x4a9e5,
   },
   /** Update rate of the proximity sampling: AudioApi.frame() tick period (s). 0.1 = 10 Hz. */
   tickEvery: 0.1,

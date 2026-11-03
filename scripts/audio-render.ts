@@ -7,8 +7,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { AMB_BASE, AMB_CASES, renderAudio } from '../tests/audio/renderHarness';
 import { maxStepDb, spectrum, statsOf, tonalProminence, toWav16 } from '../tests/audio/offlineBackend';
-import { THEMES, TRACK_IDS, type TrackId } from '../src/audio/musicThemes';
-import type { MusicInput } from '../src/audio/musicState';
+import { THEMES, TRACK_IDS } from '../src/audio/musicThemes';
+import { TRACK_CONTEXT } from '../src/audio/musicContexts';
 
 const arg = (k: string, d: string): string => { const i = process.argv.indexOf(`--${k}`); return i >= 0 ? process.argv[i + 1] ?? d : d; };
 const seconds = Number(arg('seconds', '90')), rate = Number(arg('rate', '32000')), only = arg('only', '').split(',').filter(Boolean);
@@ -16,10 +16,7 @@ const dir = '.weave/audio-preview', shots = '.weave/shots', tag = arg('tag', 'v2
 mkdirSync(dir, { recursive: true }); mkdirSync(shots, { recursive: true });
 const hasFfmpeg = spawnSync('ffmpeg', ['-version']).status === 0;
 
-const CTX: Record<TrackId, Partial<MusicInput>> = {
-  morningSnow: { season: 'winter', hour: 8, weather: 'clear' }, alpineNoon: { season: 'winter', hour: 13 }, apres: { season: 'winter', hour: 19 }, starlight: { season: 'winter', hour: 23 },
-  summerMeadow: { season: 'summer', hour: 12 }, autumnGold: { season: 'autumn', hour: 15 }, blizzard: { season: 'winter', hour: 12, weather: 'storm' }, title: { menu: true }, festival: { season: 'summer', hour: 14, festival: true, busy: 1 },
-};
+const CTX = TRACK_CONTEXT;
 function emit(name: string, l: Float32Array, r: Float32Array, sr: number): void {
   const wav = `${dir}/${tag}-${name}.wav`;
   writeFileSync(wav, toWav16(l, r, sr));

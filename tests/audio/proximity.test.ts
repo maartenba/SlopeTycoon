@@ -3,10 +3,11 @@ import { AMB, Ambience, LAYER_IDS, ambienceMix, type AmbienceState } from '../..
 import { AudioEngine } from '../../src/audio/AudioEngine';
 import { AudioSettings } from '../../src/audio/AudioSettings';
 import { Sfx } from '../../src/audio/Sfx';
-import { APRES_PROGRESSIONS, apresBeat, apresCutoff } from '../../src/audio/Apres';
-import { apresBarLevel, apresBarOpen, apresDuck, apresLevel, apresProximity, natureGain, pondLevel, streamLevels, zoomWindow } from '../../src/audio/proximity';
+import { apresCutoff } from '../../src/audio/Apres';
+import { apresBarLevel, apresBarOpen, apresLevel, apresProximity, natureGain, pondLevel, streamLevels, zoomWindow } from '../../src/audio/proximity';
 import { WorldProbe, type ProbeDeps } from '../../src/audio/worldProbe';
 import { PROX } from '../../src/config/audioProximity';
+import { APRES_SONG } from '../../src/config/audioMusic';
 import { Grid, TileType } from '../../src/world/Grid';
 import { FakeBackend } from './fakeBackend';
 import { clickScore, statsOf } from './offlineBackend';
@@ -100,25 +101,8 @@ describe('apres bar', () => {
     expect(mix({ apres: 1, weather: 'rain' }).apres).toBeLessThan(mix({ apres: 1 }).apres);
     for (const v of Object.values(mix({ apres: 5 }))) expect(v).toBeLessThanOrEqual(1);
   });
-  it('duck: game music steps back by at most PROX.apres.duck', () => {
-    expect(apresDuck(0)).toBe(1); expect(apresDuck(1)).toBeCloseTo(1 - PROX.apres.duck, 6); expect(apresDuck(0.5)).toBeGreaterThan(apresDuck(1));
-    expect(PROX.apres.duck).toBeLessThanOrEqual(0.4); // "slightly"
-  });
   it('filtering scales with proximity: far = muffled, near = bright', () => {
     expect(apresCutoff(0)).toBe(PROX.apres.cutoffFar); expect(apresCutoff(1)).toBe(PROX.apres.cutoffNear); expect(apresCutoff(0.5)).toBeGreaterThan(apresCutoff(0.1));
-  });
-  it('the song is seeded: identical on repeat, a polka (oompah bass on beats 0 / 2, chords + clap on 1 / 3), all variants reachable, melody in range', () => {
-    const song = (seed?: number) => Array.from({ length: 256 }, (_, i) => apresBeat(i, seed));
-    expect(song()).toEqual(song());
-    expect(song(1)).not.toEqual(song(2));
-    const v = new Set<number>();
-    for (const [i, b] of song().entries()) {
-      v.add(b.variant);
-      if (i % 2 === 0) { expect(b.bass).toBeDefined(); expect(b.stomp).toBe(true); expect(b.chord).toBeUndefined(); }
-      else { expect(b.chord!.length).toBeGreaterThanOrEqual(3); expect(b.clap).toBe(true); expect(b.bass).toBeUndefined(); }
-      if (b.melody !== undefined) { expect(b.melody).toBeGreaterThan(60); expect(b.melody).toBeLessThan(100); }
-    }
-    expect(v.size).toBeGreaterThanOrEqual(3); expect(APRES_PROGRESSIONS.length).toBe(4);
   });
   it('the probe: open bars only, 1 at the bar, 0 beyond reach or with no provider', () => {
     const grid = new Grid(64);
@@ -148,33 +132,41 @@ describe('proximity layers on the fake backend', () => {
     await engine.onGesture();
     return { fb, engine, amb, settings };
   }
-  it('layers build without errors; apres music schedules beats only near an open bar, stays within a node budget, and ducks the music bus', async () => {
+  it('layers build without errors; the bar music starts after the hand-off (not instantly), schedules steps only near an open bar, stays within a voice budget, and stops when you leave', async () => {
     const { fb, engine, amb } = await rig();
     amb.update({ ...base, apres: 1, streamDist: 1, streamCls: 2 }, 0.1);
     expect(amb.layerCount).toBe(LAYER_IDS.length);
+    expect(amb.apres.isActive).toBe(false); // the game music must fade out first (enter dwell + main fade-out)
+    let maxLive = 0;
+    for (let i = 0; i < 100; i++) { fb.t += 0.1; amb.update({ ...base, apres: 1 }, 0.1); engine.reap(fb.t); maxLive = Math.max(maxLive, amb.apres.liveVoices); }
     expect(amb.apres.isActive).toBe(true);
-    for (let i = 0; i < 100; i++) { fb.t += 0.1; amb.update({ ...base, apres: 1 }, 0.1); engine.reap(fb.t); expect(engine.voiceCount).toBeLessThan(10); }
-    const beats = amb.apres.scheduled; expect(beats).toBeGreaterThan(15); // ~ 118 bpm for 10 s = ~19 beats
-    expect(beats).toBeLessThan(30);
-    // walked away: no new beats, music no longer ducked
-    for (let i = 0; i < 20; i++) { fb.t += 0.1; amb.update({ ...base, apres: 0 }, 0.1); engine.reap(fb.t); }
-    expect(amb.apres.scheduled).toBe(beats); expect(amb.apres.isActive).toBe(false);
+    const steps = amb.apres.scheduled; expect(steps).toBeGreaterThan(50); // ~ 126 bpm sixteenths for ~8.5 s of 10 s = ~70
+    expect(steps).toBeLessThan(90);
+    expect(maxLive).toBeLessThanOrEqual(APRES_SONG.maxVoices);
+    expect(engine.voiceCount).toBe(0); // the bar music owns its voices (not the shared SFX pool)
+    // walked away: nothing new is scheduled once the level stays under the exit threshold
+    for (let i = 0; i < 60; i++) { fb.t += 0.1; amb.update({ ...base, apres: 0 }, 0.1); engine.reap(fb.t); }
+    const after = amb.apres.scheduled; expect(amb.apres.isActive).toBe(false);
+    for (let i = 0; i < 20; i++) { fb.t += 0.1; amb.update({ ...base, apres: 0 }, 0.1); }
+    expect(amb.apres.scheduled).toBe(after); expect(amb.apres.handoff.phase).toBe('main');
   });
-  it('closed bar / zoomed out / muted: nothing is scheduled', async () => {
+  it('closed bar / zoomed out / muted / ambience slider at 0: nothing is scheduled and the game music is never stopped', async () => {
     const { fb, amb, settings } = await rig();
-    for (const st of [{ apres: 0 }, { apres: 1, zoom: 70 }]) { for (let i = 0; i < 20; i++) { fb.t += 0.1; amb.update({ ...base, ...st }, 0.1); } }
-    expect(amb.apres.scheduled).toBe(0);
+    for (const st of [{ apres: 0 }, { apres: 1, zoom: 70 }]) { for (let i = 0; i < 30; i++) { fb.t += 0.1; amb.update({ ...base, ...st }, 0.1); } }
+    expect(amb.apres.scheduled).toBe(0); expect(amb.apres.handoff.phase).toBe('main');
     settings.set({ muted: true } as never);
-    for (let i = 0; i < 20; i++) { fb.t += 0.1; amb.update({ ...base, apres: 1 }, 0.1); }
-    expect(amb.apres.scheduled).toBe(0);
+    for (let i = 0; i < 30; i++) { fb.t += 0.1; amb.update({ ...base, apres: 1 }, 0.1); }
+    expect(amb.apres.scheduled).toBe(0); expect(amb.apres.handoff.phase).toBe('main');
+    settings.set({ muted: false, ambience: 0 } as never);
+    for (let i = 0; i < 30; i++) { fb.t += 0.1; amb.update({ ...base, apres: 1 }, 0.1); }
+    expect(amb.apres.scheduled).toBe(0); expect(amb.apres.handoff.phase).toBe('main'); // silent bar: do not pause the game music for it
   });
-  it('music duck is eased (setTargetAtTime) and never jumps', async () => {
-    const { fb, engine, amb } = await rig();
+  it('the old music-bus duck is gone: the game music is stopped by the hand-off instead', async () => {
+    const { engine, amb } = await rig();
     const bus = engine.busNode('music')! as unknown as { gain: { calls: string[] } };
+    const before = bus.gain.calls.length;
     amb.update({ ...base, apres: 1 }, 0.1);
-    expect(bus.gain.calls.filter((c) => c === 'target').length).toBeGreaterThan(1);
-    expect(bus.gain.calls.includes('set')).toBe(false);
-    void fb;
+    expect(bus.gain.calls.length).toBe(before);
   });
 });
 

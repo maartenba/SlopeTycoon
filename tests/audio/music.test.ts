@@ -46,7 +46,7 @@ describe('composer', () => {
     for (const id of TRACK_IDS) for (let seed = 1; seed <= 8; seed++) {
       const p = composePiece(seed, id, 52), sig = new Map<string, number>(), seq: string[] = [];
       for (let b = 0; b < p.bars; b++) {
-        const k = p.events.filter((e) => e.layer !== 'pad' && (e.layer !== 'bass' || THEMES[id].bassStyle !== 'whole') && e.beat >= b * 4 && e.beat < b * 4 + 4).map((e) => `${e.layer}${e.beat - b * 4}:${e.midi - p.root}`).join(',');
+        const k = p.events.filter((e) => e.layer !== 'pad' && e.layer !== 'perc' && (e.layer !== 'bass' || THEMES[id].bassStyle !== 'whole') && e.beat >= b * 4 && e.beat < b * 4 + 4).map((e) => `${e.layer}${e.beat - b * 4}:${e.midi - p.root}`).join(',');
         if (k.split(',').length >= 3) sig.set(k, (sig.get(k) ?? 0) + 1); // pad-only bars and held whole-note basses (a chord held in the sparse tracks) and bars with < 3 notes (the sparse night / storm tracks) are not repeats
         seq.push(k);
       }
@@ -54,14 +54,14 @@ describe('composer', () => {
       for (let i = 3; i < seq.length; i++) expect(seq[i]!.split(',').length >= 3 && seq[i] === seq[i - 1] && seq[i] === seq[i - 2] && seq[i] === seq[i - 3]).toBe(false);
     }
   });
-  it('has nine distinct tracks with distinct character, all slow and consonant (no bells, no phrygian)', () => {
-    expect(TRACK_IDS.length).toBeGreaterThanOrEqual(6); expect(TRACK_IDS.length).toBe(9);
+  it('has twelve distinct tracks with distinct character, all moderate-tempo and consonant (no bells, no phrygian)', () => {
+    expect(TRACK_IDS.length).toBe(12);
     expect(new Set(TRACK_IDS.map((t) => THEMES[t].name)).size).toBe(TRACK_IDS.length);
-    expect(new Set(TRACK_IDS.map((t) => JSON.stringify(THEMES[t].inst))).size).toBeGreaterThanOrEqual(7);
-    expect(new Set(TRACK_IDS.map((t) => THEMES[t].bpm)).size).toBeGreaterThanOrEqual(8);
+    expect(new Set(TRACK_IDS.map((t) => JSON.stringify(THEMES[t].inst))).size).toBeGreaterThanOrEqual(9);
+    expect(new Set(TRACK_IDS.map((t) => THEMES[t].bpm)).size).toBeGreaterThanOrEqual(9);
     for (const id of TRACK_IDS) {
       const th = THEMES[id];
-      expect(th.bpm).toBeGreaterThanOrEqual(50); expect(th.bpm).toBeLessThanOrEqual(100);
+      expect(th.bpm).toBeGreaterThanOrEqual(50); expect(th.bpm).toBeLessThanOrEqual(108); // the Festival groove is the liveliest (104)
       for (const m of th.modes) expect(['ionian', 'lydian', 'mixolydian', 'dorian', 'aeolian']).toContain(m);
       expect(th.barsPerChord).toBeGreaterThanOrEqual(1);
       for (const inst of Object.values(th.inst)) expect(['bell', 'glock', 'marimba', 'handpan']).not.toContain(inst);
@@ -71,8 +71,8 @@ describe('composer', () => {
     const used = (t: TrackId): string[] => [...new Set(composePiece(1, t, 50).events.map((e) => e.inst))].sort();
     expect(used('apres')).not.toEqual(used('summerMeadow'));
   });
-  it('pieces last 80-140 s; chords move slowly and are voice-led (pad tops move by small steps)', () => {
-    for (const id of TRACK_IDS) { const p = composePiece(1, id, 50), sec = (p.totalBeats * 60) / THEMES[id].bpm; expect(sec, id).toBeGreaterThan(80); expect(sec, id).toBeLessThan(150); }
+  it('pieces last 90-150 s (a full song form: intro, verse, chorus, bridge, outro); chords move slowly and are voice-led (pad tops move by small steps)', () => {
+    for (const id of TRACK_IDS) { const p = composePiece(1, id, 50), sec = (p.totalBeats * 60) / THEMES[id].bpm; expect(sec, id).toBeGreaterThan(90); expect(sec, id).toBeLessThan(150); }
     for (const id of TRACK_IDS) {
       const p = composePiece(2, id, 50), th = THEMES[id], pads = p.events.filter((e) => e.layer === 'pad');
       const byBeat = new Map<number, number[]>(); for (const e of pads) byBeat.set(e.beat, [...(byBeat.get(e.beat) ?? []), e.midi]);
@@ -142,10 +142,10 @@ describe('Music playback (fake backend)', () => {
     run(60, () => { for (const n of fb.nodes) if (n.started && n.createdAt === fb.t && n.startAt - fb.t > MUSIC.lookahead + 0.3) throw new Error('scheduled too far ahead'); });
     expect(music.stats.notes).toBeGreaterThan(10);
   });
-  it('starts the piece that fits the state (night = Starlight, storm = Blizzard, menu = Title)', async () => {
-    for (const [inp, want] of [[{ hour: 23, season: 'winter' }, 'starlight'], [{ weather: 'storm', hour: 12 }, 'blizzard'], [{ menu: true }, 'title']] as const) {
+  it('starts the piece that fits the state (night = Starlight / Night Chill, storm = Blizzard, snow = Snow Piano, menu = Title or Menu Theme)', async () => {
+    for (const [inp, want] of [[{ hour: 23, season: 'winter' }, ['starlight', 'nightChill']], [{ weather: 'storm', hour: 12 }, ['blizzard']], [{ menu: true }, ['title']], [{ menu: true, screen: 'menu' }, ['menu']], [{ weather: 'snow', hour: 13, season: 'winter' }, ['snowPiano', 'alpineNoon', 'morningSnow']]] as const) {
       const { music, run } = await setup(); music.setInputs(inp); run(5);
-      expect(music.currentTrack).toBe(want);
+      expect(want as readonly string[]).toContain(music.currentTrack);
     }
   });
   it('a context change swaps an unsuitable track via a crossfade (after the minimum play time), not abruptly', async () => {

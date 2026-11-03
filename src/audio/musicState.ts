@@ -1,7 +1,8 @@
 import type { SeasonId, WeatherKind } from '../core/events';
+import { MUSIC_MIX } from '../config/audioMusic';
 import { DAY, DUSK, HOURS, LAYERS, MUSIC, NIGHT, THEMES, WEATHER_LAYERS, type Layer, type Theme, type TrackId } from './musicThemes';
 
-export interface MusicInput { season: SeasonId; weather: WeatherKind; /** Fractional hour 0..24. */ hour: number; /** Today's sunrise/sunset (default 6.5/18.5): the day-part hours shift with them. */ sunrise?: number; sunset?: number; speed: number; /** Crisis tension 0..1. */ tension: number; /** Resort busy-ness 0..1 (guest count); lets light percussion in. */ busy?: number; /** A festival is on. */ festival?: boolean; /** The main menu / title context. */ menu?: boolean }
+export interface MusicInput { season: SeasonId; weather: WeatherKind; /** Fractional hour 0..24. */ hour: number; /** Today's sunrise/sunset (default 6.5/18.5): the day-part hours shift with them. */ sunrise?: number; sunset?: number; speed: number; /** Crisis tension 0..1. */ tension: number; /** Resort busy-ness 0..1 (guest count); lets light percussion in. */ busy?: number; /** A festival is on. */ festival?: boolean; /** The main menu / title context. */ menu?: boolean; /** Which menu theme: the title screen (default) or the in-game menu. */ screen?: 'title' | 'menu' }
 export interface MusicParams { /** Combined time-of-day * game-speed tempo factor. */ tempoMul: number; /** Per-layer weight 0..1; an event plays when its rank < weight. */ layers: Record<Layer, number>; tension: number }
 export type DayPart = 'night' | 'dawn' | 'day' | 'dusk';
 
@@ -31,9 +32,11 @@ export function targetParams(i: MusicInput, th: Theme = THEMES.alpineNoon): Musi
   const layers = {} as Record<Layer, number>;
   for (const l of LAYERS) layers[l] = tf.layers[l] * w[l] * th.bias[l];
   // Percussion is a detail: only when the resort is busy (or the track is a jazzy / lively one with a baseline).
+  layers.perc = Math.max(layers.perc, tf.layers.perc === 0 ? th.nightPerc * w.perc * th.bias.perc : 0); // the lo-fi night track keeps a soft beat after dark
   layers.perc *= Math.max(th.percBase, Math.min(1, Math.max(0, i.busy ?? 0) * 1.2));
   layers.melody *= 1 - 0.5 * t; layers.perc *= 1 - t; layers.arp *= 1 - 0.3 * t;
-  return { tempoMul: tf.tempo * (MUSIC.speedMul[Math.max(0, Math.min(3, Math.round(i.speed)))] ?? 1), layers, tension: t };
+  const tempoCtx = (MUSIC_MIX.seasonTempo[i.season] ?? 1) * (MUSIC_MIX.weatherTempo[i.weather] ?? 1);
+  return { tempoMul: tf.tempo * tempoCtx * (MUSIC.speedMul[Math.max(0, Math.min(3, Math.round(i.speed)))] ?? 1), layers, tension: t };
 }
 
 /** Exponential smoothing of `prev` toward `target` over `dt` seconds (time constant `tc`). Season switches immediately (crossfade handled by the scheduler). */

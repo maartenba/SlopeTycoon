@@ -5,8 +5,8 @@ import { dayPart, type MusicInput } from './musicState';
 
 /** How well a track suits the context, 0 (never) .. 1 (ideal). Pure. */
 export function trackFit(id: TrackId, c: MusicInput): number {
-  if (c.menu) return id === 'title' ? 1 : 0;
-  if (id === 'title') return 0;
+  if (c.menu) return id === (c.screen === 'menu' ? 'menu' : 'title') ? 1 : 0;
+  if (id === 'title' || id === 'menu') return 0;
   const shift = c.sunrise === undefined ? 0 : c.hour < 13 ? c.sunrise - 6.5 : (c.sunset ?? 18.5) - 18.5;
   const h = (((c.hour - shift) % 24) + 24) % 24, dp = dayPart(h);
   const dawn = dp === 'dawn', night = dp === 'night', dusk = dp === 'dusk';
@@ -16,11 +16,13 @@ export function trackFit(id: TrackId, c: MusicInput): number {
   const s = c.season, busy = c.busy ?? 0;
   if (id === 'blizzard') return bad ? 1 : snowy ? 0.1 : wet ? 0.06 : 0;
   if (bad) return 0;
-  const calm = wet ? 0.8 : 1;
+  const calm = (wet ? 0.8 : 1) * (snowy && id !== 'snowPiano' ? 0.7 : 1);
   let f = 0;
   switch (id) {
     case 'festival': f = c.festival ? 1 : busy > 0.7 && (dp === 'day' || dusk) ? 0.45 : 0; break;
     case 'starlight': f = night ? 1 : dusk ? 0.25 : dawn ? 0.1 : 0; break;
+    case 'nightChill': f = night ? 0.8 : dusk ? 0.3 : 0; break;
+    case 'snowPiano': f = snowy ? (night ? 0.4 : 1) : s === 'winter' && c.weather === 'cloudy' ? (night ? 0 : 0.3) : 0; break;
     case 'apres': f = dusk ? 0.95 : night ? 0.45 : late ? 0.35 : noon ? 0.08 : morning ? 0.04 : 0; break;
     case 'morningSnow': f = night ? 0 : morning ? (s === 'winter' ? 1 : 0.7) : noon ? (s === 'winter' ? 0.25 : 0.1) : late ? 0.1 : 0; break;
     case 'alpineNoon': f = night ? 0 : noon ? (s === 'winter' ? 0.8 : s === 'spring' ? 0.7 : s === 'autumn' ? 0.6 : 0.5) : late ? 0.5 : morning ? 0.25 : dusk ? 0.1 : 0; break;

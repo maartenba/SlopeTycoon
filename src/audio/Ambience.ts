@@ -5,8 +5,9 @@ import type { NodeLike, ParamLike } from './backend';
 import type { NodeScope } from './synth';
 import type { SeasonId, WeatherKind } from '../core/events';
 import { PROX } from '../config/audioProximity';
-import { ApresMusic, } from './Apres';
-import { apresDuck, apresLevel, natureGain, pondLevel, streamLevels } from './proximity';
+import { ApresMusic } from './Apres';
+import type { MusicHandoff } from './musicHold';
+import { apresLevel, natureGain, pondLevel, streamLevels } from './proximity';
 
 export interface AmbienceState {
   season: SeasonId;
@@ -253,7 +254,7 @@ export class Ambience {
   /** Apres bar music scheduler (src/audio/Apres.ts). */
   readonly apres: ApresMusic;
 
-  constructor(private engine: AudioEngine, private sfx: Sfx, private rng: () => number = defaultRng()) { this.apres = new ApresMusic(engine); }
+  constructor(private engine: AudioEngine, private sfx: Sfx, private rng: () => number = defaultRng(), apresSeed?: number, handoff?: MusicHandoff) { this.apres = new ApresMusic(engine, apresSeed, handoff); }
 
   get layerCount(): number { return Object.keys(this.layers).length; }
 
@@ -271,8 +272,7 @@ export class Ambience {
     this.ensureBuilt();
     const t = this.engine.now();
     for (const id of LAYER_IDS) this.layers[id]?.out.gain.setTargetAtTime(mix[id] * AMB.layerMax[id], t, AMB.fadeTc);
-    this.apres.update(mix.apres); // schedules bar-music beats ahead while an open bar is near and the camera is close
-    this.engine.setMusicDuck(apresDuck(mix.apres)); // game music steps back a little near a bar
+    this.apres.update(mix.apres); // bar-music groove while an open bar is near and the camera is close; the game music is STOPPED meanwhile (MusicHandoff, hysteresis)
     const roll = (id: keyof typeof AMB.rates, sfx: SfxName, base: number): void => {
       const rate = mix[id] * AMB.rates[id];
       if (rate > 0.001 && this.rng() < rate * dt) this.sfx.play(sfx, { pitch: base * (0.85 + this.rng() * 0.4), pan: (this.rng() * 2 - 1) * 0.7, gain: (0.5 + 0.5 * mix[id]) * (id === 'birds' ? PROX.nature.chirpGain : 1) });
@@ -290,5 +290,5 @@ export class Ambience {
     for (let i = 0; i < n; i++) this.sfx.play('churchBell', { delay: i * 1.8, gain: 0.4 + 0.6 * this.mix.bells });
   }
 
-  dispose(): void { for (const id of LAYER_IDS) this.layers[id]?.dispose(); this.layers = {}; this.built = false; }
+  dispose(): void { this.apres.dispose(); for (const id of LAYER_IDS) this.layers[id]?.dispose(); this.layers = {}; this.built = false; }
 }
