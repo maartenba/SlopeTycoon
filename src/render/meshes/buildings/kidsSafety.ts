@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, chimney, doorway, flagPole, frameWin, redCross } from '../common';
+import { C, PartBuilder, awning, chimney, curvedRamp, doorway, flagPole, frameWin, railing, redCross } from '../common';
 
 /** Magic Carpet (1x6): conveyor belt with chevrons, side walls, a glazed canopy tunnel over the loading end and drive housings. */
 export function magicCarpet(b: PartBuilder, _w: number, h: number): void {
@@ -53,12 +53,13 @@ export function kidsGround(b: PartBuilder, w: number, h: number): void {
 /** Playground (3x3): swing set, slide, sandpit, merry-go-round, seesaw, spring rider and a bench. */
 export function playground(b: PartBuilder, w: number, h: number): void {
   b.box(0, 0, 0, w - 0.3, 0.05, h - 0.3, C.sand);
-  for (const x of [-1.0, -0.2]) { b.box(x, 0, -0.8, 0.05, 0.8, 0.05, C.red, 'wood', { rz: 0.2 }); b.box(x, 0, -0.8, 0.05, 0.8, 0.05, C.red, 'wood', { rz: -0.2 }); }
-  b.box(-0.6, 0.8, -0.8, 1.0, 0.05, 0.05, C.red);
-  for (const x of [-0.8, -0.4]) { b.box(x, 0.25, -0.8, 0.02, 0.55, 0.02, C.dark); b.box(x, 0.2, -0.8, 0.2, 0.04, 0.1, C.yellow); }
+  for (const x of [-1.0, -0.2]) { b.cyl(x, 0, -0.8, 0.03, 0.8, C.red, 'wood', 6, { rz: 0.2 }); b.cyl(x, 0, -0.8, 0.03, 0.8, C.red, 'wood', 6, { rz: -0.2 }); }
+  b.cyl(-0.6, 0.79 - 0.5, -0.8, 0.03, 1.0, C.red, 'wood', 6, { rz: Math.PI / 2 }); // top bar (round tube)
+  for (const x of [-0.8, -0.4]) { b.box(x - 0.04, 0.25, -0.8, 0.015, 0.55, 0.015, C.dark); b.box(x + 0.04, 0.25, -0.8, 0.015, 0.55, 0.015, C.dark); b.box(x, 0.2, -0.8, 0.2, 0.035, 0.1, C.yellow); b.cyl(x, 0.215 - 0.1, -0.8, 0.02, 0.2, C.orange, 'wood', 5, { rz: Math.PI / 2 }); } // chains + rubber seat
   b.box(0.8, 0, 0.2, 0.4, 0.55, 0.4, C.blue);
   b.box(0.8, 0.55, 0.2, 0.46, 0.04, 0.46, C.red, 'roof');
-  b.wedge(0.8, 0.05, 0.7, 0.6, 0.5, 0.25, C.yellow, Math.PI / 2 * 3, 'wood');
+  curvedRamp(b, 0.8, 0.05, 0.7, 0.6, 0.5, 0.25, C.yellow, Math.PI / 2 * 3, true, 5); // chute with a flared run-out
+  b.cyl(0.67, 0.05, 0.58, 0.014, 0.5, C.grey, 'stone', 5); b.cyl(0.93, 0.05, 0.58, 0.014, 0.5, C.grey, 'stone', 5); // slide ladder rails
   b.cyl(-0.6, 0.05, 0.6, 0.35, 0.06, C.green); b.cyl(-0.6, 0.05, 0.6, 0.03, 0.3, C.dark, 'wood', 6);
   b.box(0.4, 0.2, -0.7, 0.9, 0.05, 0.12, C.orange, 'wood', { rz: 0.2 }); b.box(0.4, 0, -0.7, 0.1, 0.18, 0.12, C.dark);
   // sandpit with border, spring rider, bench
@@ -67,7 +68,7 @@ export function playground(b: PartBuilder, w: number, h: number): void {
   b.cyl(-1.2, 0.05, 0.1, 0.02, 0.25, C.grey, 'stone', 6); b.ball(-1.2, 0.3, 0.1, 0.12, C.pink);
   b.box(0, 0.12, 1.15, 0.8, 0.04, 0.2, C.wood); b.box(0, 0.2, 1.25, 0.8, 0.15, 0.03, C.wood);
   for (const x of [-0.35, 0.35]) b.box(x, 0.05, 1.15, 0.05, 0.08, 0.15, C.dark);
-  b.fence(-w / 2 + 0.2, h / 2 - 0.1, w / 2 - 0.2, h / 2 - 0.1, C.green, 0.25, 8);
+  railing(b, -w / 2 + 0.2, h / 2 - 0.1, w / 2 - 0.2, h / 2 - 0.1, 0, 0.25, C.green, 8);
 }
 
 /** Ski Patrol Hub (3x2): red station with a white roof, red cross, flag, sled rack and an ambulance garage with a parked ambulance. */

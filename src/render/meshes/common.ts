@@ -351,12 +351,19 @@ export function snowcat(b: PartBuilder, x: number, z: number, ry = 0, color = C.
   const [cx, cz] = p(0, 0.12);
   b.box(cx, 0.34 * scale, cz, 0.4 * scale, 0.22 * scale, 0.34 * scale, C.glass, 'wood', o);
   b.box(cx, 0.56 * scale, cz, 0.44 * scale, 0.03 * scale, 0.38 * scale, C.dark, 'roof', o);
-  for (const s of [-1, 1]) { const [tx, tz] = p(s * 0.27, 0); b.box(tx, 0, tz, 0.12 * scale, 0.2 * scale, 0.8 * scale, C.black, 'wood', o); }
+  for (const s of [-1, 1]) { // tracks: belt run + round sprocket / idler at each end (M8)
+    const [tx, tz] = p(s * 0.27, 0);
+    b.box(tx, 0.02 * scale, tz, 0.12 * scale, 0.16 * scale, 0.66 * scale, C.black, 'wood', o);
+    for (const dz of [0.33, -0.33]) { const [wx, wz] = p(s * 0.27, dz); b.cyl(wx, 0.1 * scale - 0.065 * scale, wz, 0.1 * scale, 0.13 * scale, C.black, 'wood', 8, { rz: Math.PI / 2, ry }); }
+  }
   const [fx, fz] = p(0, 0.5);
   b.box(fx, 0.04 * scale, fz, 0.64 * scale, 0.2 * scale, 0.05 * scale, C.orange, 'wood', o);
   const [rx, rz] = p(0, -0.42);
   b.box(rx, 0.08 * scale, rz, 0.3 * scale, 0.04 * scale, 0.12 * scale, C.grey, 'wood', o);
   b.box(bx, 0.34 * scale + 0.22 * scale, bz - 0.05 * scale, 0.06 * scale, 0.05 * scale, 0.06 * scale, C.orange, 'roof', o);
+  const [lx, lz] = p(0, 0.3);
+  b.box(lx, 0.56 * scale, lz, 0.3 * scale, 0.03 * scale, 0.04 * scale, C.yellow, 'roof', o); // light bar
+  b.box(fx, 0.16 * scale, fz, 0.64 * scale, 0.03 * scale, 0.05 * scale, C.white, 'wood', { ry, rx: -0.5 }); // curled blade lip
 }
 
 /** Wooden ski rack with colourful skis leaning on it. */
@@ -401,4 +408,61 @@ export function flagstoneFoundation(b: PartBuilder, w: number, h: number, depth:
   for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
     b.box(-pw / 2 + (pw / nx) * (i + 0.5), -0.03, -ph / 2 + (ph / nz) * (j + 0.5), pw / nx - 0.015, 0.04, ph / nz - 0.015, shades[Math.floor(hash01(i * 31 + j, w * 7 + h) * shades.length)]!, 'stone');
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// M8 (lane A) smoothing helpers: curved ramps, boat hulls, eave brackets, round-rail balustrades.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Curved ramp / quarter pipe rising along +x (before `ry`) from 0 to `rise` over `len`. concave = a transition (flat at the bottom, near vertical at the top,
+ * like a quarter pipe / kicker); convex = a hump. The profile is an arc sampled in `steps` segments, extruded across `width` (z). ~4 + 4 * steps triangles.
+ */
+export function curvedRamp(b: PartBuilder, cx: number, y0: number, cz: number, len: number, rise: number, width: number, color: number, ry = 0, concave = true, steps = 5, layer: Layer = 'wood'): PartBuilder {
+  const s = new THREE.Shape();
+  s.moveTo(-len / 2, 0);
+  s.lineTo(len / 2, 0);
+  s.lineTo(len / 2, rise);
+  for (let i = steps - 1; i >= 0; i--) {
+    const t = i / steps; // 1 -> 0 along the surface, from the top back to the bottom
+    s.lineTo(-len / 2 + len * t, rise * (concave ? 1 - Math.cos(t * Math.PI / 2) : Math.sin(t * Math.PI / 2)));
+  }
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: width, bevelEnabled: false });
+  g.translate(0, 0, -width / 2);
+  return b.add(g, layer, color, cx, y0, cz, { ry });
+}
+
+/** Little boat: a half-ellipsoid hull (pointed bow along +z before `ry`) with a thwart and a rim; len x width x depth. ~100 triangles. */
+export function boatHull(b: PartBuilder, cx: number, y0: number, cz: number, len: number, width: number, depth: number, color: number, rim = C.white, ry = 0): PartBuilder {
+  const g = new THREE.SphereGeometry(0.5, 10, 4, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+  // taper the ends: narrow the width towards the bow / stern so the plan is a pointed ellipse
+  const p = g.getAttribute('position');
+  for (let i = 0; i < p.count; i++) { const z = p.getZ(i), k = 1 - Math.pow(Math.abs(z) * 2, 2.2) * 0.6; p.setX(i, p.getX(i) * k); p.setY(i, p.getY(i) * (1 - Math.pow(Math.abs(z) * 2, 2) * 0.25)); }
+  g.computeVertexNormals();
+  b.add(g, 'wood', color, cx, y0 + depth, cz, { ry, sx: width, sy: depth * 1.0, sz: len });
+  b.box(cx, y0 + depth - 0.02, cz, width * 0.8, 0.025, 0.08, rim, 'wood', { ry }); // thwart
+  return b;
+}
+
+/** Rounded rail: cylindrical top rail + round balusters between (x0,z0) and (x1,z1) at height y. */
+export function railing(b: PartBuilder, x0: number, z0: number, x1: number, z1: number, y = 0, hgt = 0.22, color = C.wood, posts = 4): PartBuilder {
+  const len = Math.hypot(x1 - x0, z1 - z0), ang = Math.atan2(-(z1 - z0), x1 - x0);
+  b.cyl((x0 + x1) / 2, y + hgt - (len + 0.02) / 2, (z0 + z1) / 2, 0.022, len + 0.02, color, 'wood', 6, { rz: Math.PI / 2, ry: ang });
+  for (let i = 0; i <= posts; i++) {
+    const t = i / posts;
+    b.cyl(x0 + (x1 - x0) * t, y, z0 + (z1 - z0) * t, 0.026, hgt, color, 'wood', 6);
+  }
+  return b;
+}
+
+/** Row of small corbel brackets under a gable eave running along x (face 's' / 'n') or z ('e' / 'w'); (x,z) = wall centre point, `y` = eave height (brackets hang below it). */
+export function eaveBrackets(b: PartBuilder, x: number, y: number, z: number, face: Face, len: number, spacing = 0.45, out = 0.11, color = C.dark): PartBuilder {
+  const n = Math.max(2, Math.round(len / spacing)), [fx, fz] = FACE_VEC[face], ns = isNS(face);
+  for (let i = 0; i <= n; i++) {
+    const t = -len / 2 + (len * i) / n;
+    const px = ns ? x + t : x, pz = ns ? z : z + t;
+    b.beam(px + fx * 0.01, y - 0.14, pz + fz * 0.01, px + fx * out, y - 0.02, pz + fz * out, 0.035, color, 'wood');
+  }
+  return b;
 }

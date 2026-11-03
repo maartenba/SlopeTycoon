@@ -47,7 +47,7 @@ export class SB {
 /** Bull wheel at (x=0, u): axis along x, groove top at cable height. Two tyres at the strand positions, hub and spokes. */
 export function bullwheel(s: SB, u: number, r: number, color = STEEL, tyre = C.black): void {
   const cy = HEAD - r;
-  for (const x of [-0.3, 0.3]) s.cyl(x, cy - r, u, r, 0.1, tyre, 14, { rz: Math.PI / 2 });
+  for (const x of [-0.3, 0.3]) { s.cyl(x, cy - r, u, r, 0.1, tyre, 18, { rz: Math.PI / 2 }); s.cyl(x, cy - r, u, r * 0.78, 0.115, color, 12, { rz: Math.PI / 2 }); } // tyre + rim disc
   s.cyl(0, cy - 0.06, u, 0.07, 0.9, color, 8, { rz: Math.PI / 2 });
   for (const x of [-0.3, 0.3]) {
     s.box(x, cy - 0.015, u, 0.04, 0.03, r * 1.8, color);

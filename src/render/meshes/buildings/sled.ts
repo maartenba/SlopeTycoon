@@ -1,10 +1,11 @@
-import { C, PartBuilder, doorway, frameWin, lampPost } from '../common';
+import { C, PartBuilder, doorway, eaveBrackets, frameWin, lampPost, railing } from '../common';
 
 /** A parked toboggan (runners, slatted deck, curled nose) facing +z. ~50 triangles. */
 function parkedSled(b: PartBuilder, x: number, z: number, color: number, rot = 0): void {
-  for (const sx of [-0.07, 0.07]) b.box(x + sx, 0.02, z, 0.02, 0.02, 0.4, C.grey, 'wood', { ry: rot });
-  b.box(x, 0.045, z, 0.2, 0.03, 0.36, color, 'wood', { ry: rot });
-  b.box(x, 0.08, z + 0.18, 0.18, 0.05, 0.02, color, 'wood', { ry: rot }); // curled nose
+  for (const sx of [-0.07, 0.07]) b.cyl(x + sx * Math.cos(rot), 0.02 - 0.2, z - sx * Math.sin(rot), 0.012, 0.4, C.grey, 'wood', 5, { rx: Math.PI / 2, ry: rot }); // round runners
+  b.box(x, 0.045, z, 0.2, 0.03, 0.34, color, 'wood', { ry: rot });
+  b.box(x, 0.065, z + 0.19 * Math.cos(rot), 0.18, 0.025, 0.07, color, 'wood', { ry: rot, rx: -0.5 }); // curled nose (two steps)
+  b.box(x, 0.095, z + 0.215 * Math.cos(rot), 0.18, 0.025, 0.04, color, 'wood', { ry: rot, rx: -1.0 });
 }
 
 /**
@@ -20,12 +21,14 @@ export function sledRental(b: PartBuilder, w: number, h: number): void {
   doorway(b, hx - 0.35, hz + hd / 2, 's', 0.2, 0.42, C.dark, C.cream);
   frameWin(b, hx + 0.2, 0.34, hz + hd / 2 + 0.01, 's', 0.2);
   b.box(hx + 0.2, 0.28, hz + hd / 2 + 0.05, 0.34, 0.03, 0.1, C.dark); // counter shelf
+  eaveBrackets(b, hx + hw / 2, 0.61, hz, 'e', hd, 0.3, 0.1); eaveBrackets(b, hx - hw / 2, 0.61, hz, 'w', hd, 0.3, 0.1);
+  railing(b, hx - hw / 2 + 0.05, hz + hd / 2 + 0.2, hx + hw / 2, hz + hd / 2 + 0.2, 0, 0.2, C.dark, 4); // porch rail
   b.sign('SLED RENTAL', hx, 0.56, hz + hd / 2 + 0.07, 0.95, 0.2, 0, '#b5542f');
   // toboggan rack on the right, three leaning on a rail
   b.box(0.95, 0.03, 0.2, 0.04, 0.36, 0.04, C.dark); b.box(0.45, 0.03, 0.2, 0.04, 0.36, 0.04, C.dark); b.box(0.7, 0.32, 0.2, 0.56, 0.04, 0.04, C.dark);
   [0.55, 0.7, 0.85].forEach((x, i) => parkedSled(b, x, 0.32, [C.red, C.blue, C.yellow][i]!, 0));
   // helmet stack and a bench
-  [-0.1, 0.02, 0.14].forEach((dx, i) => b.ball(dx, 0.1, 0.45, 0.06, [C.red, C.green, C.orange][i]!, 'roof', 6));
+  [-0.1, 0.02, 0.14].forEach((dx, i) => b.ball(dx, 0.1, 0.45, 0.065, [C.red, C.green, C.orange][i]!, 'roof', 8));
   b.box(-0.05, 0.03, 0.45, 0.5, 0.05, 0.12, C.dark);
   lampPost(b, w / 2 - 0.15, h / 2 - 0.15, 0.5);
 }

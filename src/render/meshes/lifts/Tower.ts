@@ -7,7 +7,7 @@ import { STEEL, STEEL_DARK } from './stationKit';
 
 /** Sheave train: `n` small wheels in a row along the line (axis along x) under the cable at lateral x, top at height. */
 function sheaves(b: PartBuilder, x: number, height: number, n: number, r: number, spacing: number, color = C.black): void {
-  for (let i = 0; i < n; i++) b.cyl(x, height - 2 * r, (i - (n - 1) / 2) * spacing, r, 0.08, color, 'wood', 8, { rz: Math.PI / 2 });
+  for (let i = 0; i < n; i++) b.cyl(x, height - 2 * r, (i - (n - 1) / 2) * spacing, r, 0.08, color, 'wood', 10, { rz: Math.PI / 2 });
   b.box(x, height - 2 * r - 0.03, 0, 0.04, 0.03, (n - 1) * spacing + 0.1, STEEL_DARK);
 }
 
@@ -49,8 +49,8 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
     }
     case 'chair': {
       if (kind === 'chair2' || kind === 'chair4') { // tubular steel pole + T arm, two-wheel sheave trains
-        b.cyl(0, 0, 0, 0.07 * k, topY - 0.1, STEEL, 'stone', 10);
-        b.cyl(0, 0, 0, 0.1 * k, 0.12, STEEL_DARK, 'stone', 8);
+        b.cyl(0, 0, 0, 0.07 * k, topY - 0.1, STEEL, 'stone', 12);
+        b.cyl(0, 0, 0, 0.1 * k, 0.12, STEEL_DARK, 'stone', 12);
         b.box(0, topY - 0.1, 0, 0.74, 0.06, 0.1, d.capacityPerCarrier > 2 ? C.red : C.dark);
         for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 2, 0.06, 0.13);
       } else if (kind === 'chair4d') { // tube + ladder + 3-wheel trains

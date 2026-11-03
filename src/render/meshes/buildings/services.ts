@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, balcony, bike, chimney, dormer, doorway, flagPole, frameWin, house, parasolTable, skiRack, stackedLogs, timberFrame, lampPost } from '../common';
+import { C, PartBuilder, awning, balcony, eaveBrackets, railing, bike, chimney, dormer, doorway, flagPole, frameWin, house, parasolTable, skiRack, stackedLogs, timberFrame, lampPost } from '../common';
 
 /** Base Lodge (4x3): big two-wing timber-frame alpine lodge, tall central entrance tower, terrace with tables, flag. */
 export function baseLodge(b: PartBuilder, w: number, h: number): void {
@@ -19,7 +19,8 @@ export function baseLodge(b: PartBuilder, w: number, h: number): void {
   for (const sx of [-1, 1]) dormer(b, sx * 1.45, 0.9, -0.2, h - 0.7, 0.55, C.cream, C.roofBrown);
   // terrace with railing and parasol tables
   b.box(0, 0, h / 2 + 0.2, 3.4, 0.05, 0.4, C.dark);
-  b.fence(-1.7, h / 2 + 0.38, 1.7, h / 2 + 0.38, C.dark, 0.25, 8);
+  railing(b, -1.7, h / 2 + 0.38, 1.7, h / 2 + 0.38, 0, 0.25, C.dark, 8);
+  eaveBrackets(b, 0, 0.9, -0.2 + (h - 0.9) / 2, 's', w - 0.7, 0.5, 0.11);
   parasolTable(b, -1.2, h / 2 + 0.2, C.red); parasolTable(b, 1.2, h / 2 + 0.2, C.blue, 1);
   chimney(b, -1.4, 0.9, -0.5, 0.9); chimney(b, 1.4, 0.9, -0.5, 0.9);
   flagPole(b, 0, 0.2, 0.5, C.red, C.white, 2.2);
@@ -94,6 +95,7 @@ export function shop(b: PartBuilder, w: number, h: number): void {
 export function rental(b: PartBuilder, w: number, h: number): void {
   b.box(0, 0, -0.35, w - 0.3, 0.7, h - 1.0, C.blue);
   b.gable(0, 0.7, -0.35, h - 0.8, w - 0.2, 0.35, C.roofBlue, true);
+  eaveBrackets(b, 0, 0.7, -0.35 + (h - 1.0) / 2, 's', w - 0.6, 0.45, 0.1);
   b.sign('RENTAL', -0.6, 0.95, 0.19, 1.0, 0.4);
   doorway(b, 0.8, 0.15, 's', 0.3, 0.45);
   frameWin(b, -0.1, 0.3, 0.15, 's', 0.3, 0.06, C.cream, C.orange);
@@ -117,6 +119,7 @@ export function chalet(b: PartBuilder, w: number, h: number): void {
   frameWin(b, -0.8, 0.6, fz, 's', 0.2, 0.07, C.cream, C.red); frameWin(b, 0.8, 0.6, fz, 's', 0.2, 0.07, C.cream, C.red);
   frameWin(b, -0.8, 0.12, fz, 's', 0.16, 0.0); frameWin(b, 0.8, 0.12, fz, 's', 0.16, 0.0);
   for (const sx of [-1, 1]) frameWin(b, sx * (w - 0.4) / 2, 0.62, 0, sx < 0 ? 'w' : 'e', 0.2, 0.07, C.cream, C.red);
+  for (const sx of [-1, 1]) eaveBrackets(b, sx * (w - 0.4) / 2, 1.15, 0, sx < 0 ? 'w' : 'e', h - 0.7, 0.45, 0.13);
   chimney(b, -0.7, 1.0, -0.5, 0.8);
   stackedLogs(b, 1.2, 0.1, 0.7);
   b.box(0, 0.6, h / 2 - 0.12, 0.06, 0.5, 0.06, C.dark); // balcony centre post
@@ -149,6 +152,7 @@ export function skiSchoolHQ(b: PartBuilder, w: number, h: number): void {
   house(b, 0, 0.2, w - 0.6, h - 1.0, 0.8, C.red, C.roofBrown, 0.55, true);
   const fz = 0.2 + (h - 1.0) / 2;
   b.box(0, 0.0, fz + 0.02, w - 0.55, 0.05, 0.03, C.yellow); b.box(0, 0.4, fz + 0.02, w - 0.55, 0.03, 0.03, C.yellow); // colourful bands
+  eaveBrackets(b, 0, 0.8, fz, 's', w - 0.9, 0.45, 0.1);
   b.sign('SKI SCHOOL', 0, 0.62, fz + 0.05, 0.9, 0.3, 0, '#2d5fa8');
   // banner pole with bunting
   const px = -w / 2 + 0.2, pz = -h / 2 + 0.3;
@@ -179,7 +183,8 @@ export function apresBar(b: PartBuilder, w: number, h: number): void {
   for (const sx of [-1, 1]) frameWin(b, sx * (w - 0.5) / 2, 0.3, wallZ, sx < 0 ? 'w' : 'e', 0.22);
   // terrace deck with railing, parasol tables, heater
   b.box(0, 0, 1.08, w - 0.3, 0.06, 0.8, C.wood);
-  b.fence(-w / 2 + 0.25, h / 2 - 0.05, w / 2 - 0.25, h / 2 - 0.05, C.dark, 0.28, 9);
+  railing(b, -w / 2 + 0.25, h / 2 - 0.05, w / 2 - 0.25, h / 2 - 0.05, 0.06, 0.28, C.dark, 9);
+  eaveBrackets(b, 0, 0.95, front, 's', w - 0.9, 0.5, 0.13, C.black);
   parasolTable(b, -1.05, 1.0, C.red, 0); parasolTable(b, 0.35, 1.0, C.blue, 1);
   b.cyl(1.55, 0.06, 1.0, 0.03, 0.9, C.grey, 'wood', 6); b.cone(1.55, 0.92, 1.0, 0.22, 0.16, C.orange, 'roof', 10); // patio heater
   // string lights: four posts, a sagging wire and warm bulbs; lanterns at the door

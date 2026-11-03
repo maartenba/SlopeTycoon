@@ -15,7 +15,7 @@ export function buildChairGeometry(seats = 4, bubble = false, detachable = false
   const b = new PartBuilder(1, 1);
   const w = chairWidth(seats);
   const body = bodyColor ?? (bubble ? 0x6c7a89 : C.red);
-  b.box(0, -0.38, 0, 0.04, 0.36, 0.04, C.grey, 'stone'); // hanger
+  b.cyl(0, -0.56, 0, 0.022, 0.36, C.grey, 'stone', 6); // hanger (round rod)
   if (detachable) { b.box(0, -0.04, 0, 0.12, 0.08, 0.12, C.dark); for (const z of [-0.07, 0.07]) b.cyl(0, 0.0, z, 0.035, 0.03, C.black, 'wood', 6, { rz: Math.PI / 2 }); }
   else b.box(0, -0.02, 0, 0.08, 0.05, 0.08, C.dark);
   if (seats > 2) b.box(0, -0.36, 0, w * 0.9, 0.03, 0.04, C.grey, 'stone'); // spreader bar for wide benches
@@ -26,8 +26,8 @@ export function buildChairGeometry(seats = 4, bubble = false, detachable = false
     b.box(x, -0.4, 0.0, SEAT_PITCH - 0.03, 0.025, 0.17, C.white, 'roof');
     b.box(x, -0.34, -0.065, SEAT_PITCH - 0.03, 0.17, 0.02, C.cream, 'roof');
   }
-  for (const x of [-w / 2 + 0.01, w / 2 - 0.01]) b.box(x, -0.4, 0.04, 0.03, 0.1, 0.16, body, 'roof'); // armrests
-  b.box(0, -0.3, 0.1, w, 0.03, 0.03, C.dark); // safety bar
+  for (const x of [-w / 2 + 0.01, w / 2 - 0.01]) { b.box(x, -0.4, 0.0, 0.03, 0.1, 0.08, body, 'roof'); b.cyl(x, -0.38, 0.04, 0.02, 0.16, body, 'roof', 6, { rx: Math.PI / 2 }); } // armrests (rounded tops)
+  b.cyl(0, -0.3 - w / 2, 0.1, 0.017, w, C.dark, 'stone', 6, { rz: Math.PI / 2 }); // safety bar (round tube)
   b.box(0, -0.58, 0.11, w * 0.85, 0.025, 0.1, C.dark); // footrest
   for (const x of [-w / 2 + 0.03, w / 2 - 0.03]) b.box(x, -0.58, 0.07, 0.02, 0.15, 0.02, C.dark); // footrest hangers
   if (bubble) {

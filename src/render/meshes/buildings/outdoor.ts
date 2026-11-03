@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, chimney, doorway, frameWin, lampPost, parasolTable, picnicTable } from '../common';
+import { C, PartBuilder, awning, boatHull, curvedRamp, eaveBrackets, railing, chimney, doorway, frameWin, lampPost, parasolTable, picnicTable } from '../common';
 
 /** Boat Rental (2x2): boathouse with a long jetty, moored rowing boats and a canoe rack. */
 export function boatRental(b: PartBuilder, w: number, h: number): void {
@@ -13,12 +13,10 @@ export function boatRental(b: PartBuilder, w: number, h: number): void {
   for (let i = 0; i < 4; i++) for (const s of [-1, 1]) b.cyl(0.5 + s * 0.27, -0.1, -h / 2 + 0.2 + i * 0.5, 0.025, 0.3, C.dark, 'wood', 5); // piles
   b.box(0.5, 0.14, 0.75, 0.06, 0.2, 0.06, C.white); b.ball(0.5, 0.34, 0.75, 0.04, C.red); // jetty mooring light
   // boats
-  b.box(0.1, 0.05, 0.5, 0.35, 0.18, 0.7, C.red);
-  b.cone(0.1, 0.05, 0.95, 0.19, 0.25, C.red, 'wood', 4, { rx: Math.PI / 2 * 3 });
-  b.box(0.1, 0.23, 0.5, 0.3, 0.02, 0.1, C.white);
-  b.box(0.1, 0.23, 0.35, 0.3, 0.02, 0.1, C.wood);
-  b.box(0.92, 0.05, -0.1, 0.3, 0.15, 0.55, C.yellow);
-  b.cone(0.92, 0.05, 0.3, 0.16, 0.2, C.yellow, 'wood', 4, { rx: Math.PI / 2 * 3 });
+  boatHull(b, 0.1, 0.02, 0.62, 0.95, 0.38, 0.2, C.red, C.white); // rowing boats: pointed half-ellipsoid hulls
+  b.box(0.1, 0.2, 0.5, 0.3, 0.02, 0.1, C.white);
+  b.box(0.1, 0.2, 0.35, 0.3, 0.02, 0.1, C.wood);
+  boatHull(b, 0.92, 0.02, 0.05, 0.8, 0.32, 0.17, C.yellow, C.wood);
   b.box(-0.8, 0.15, 0.55, 0.06, 0.05, 0.5, C.orange, 'wood', { rx: 0.0 }); b.box(-0.8, 0.0, 0.55, 0.03, 0.15, 0.03, C.dark); // paddle
   void w;
 }
@@ -110,21 +108,25 @@ export function heatedTerrace(b: PartBuilder, w: number, h: number): void {
 
 /** Stunt Park (6x4): kickers, quarter pipe, funbox, down-rail and flat bar, flags and a coach hut. */
 export function stuntPark(b: PartBuilder, w: number, h: number): void {
-  b.wedge(-w / 2 + 1, 0, -h / 2 + 0.8, 1.6, 0.6, 1.0, C.blue);
-  b.wedge(-w / 2 + 1, 0, h / 2 - 0.8, 1.6, 0.6, 1.0, C.red);
-  b.wedge(1.6, 0, -0.9, 1.6, 0.9, 1.2, C.orange, Math.PI);
+  curvedRamp(b, -w / 2 + 1, 0, -h / 2 + 0.8, 1.6, 0.6, 1.0, C.blue, 0, true, 5); // kickers: curved take-off transitions
+  curvedRamp(b, -w / 2 + 1, 0, h / 2 - 0.8, 1.6, 0.6, 1.0, C.red, 0, true, 5);
+  curvedRamp(b, 1.6, 0, -0.9, 1.6, 0.9, 1.2, C.orange, Math.PI, true, 5);
   b.box(0.2, 0, 0.4, 1.0, 0.35, 0.8, C.purple);
   b.box(0.2, 0.35, 0.4, 1.1, 0.04, 0.9, C.yellow);
-  for (const x of [-0.4, 0.4, 1.2]) b.box(x + 1.0, 0, 0.8, 0.05, 0.3, 0.05, C.dark);
-  b.box(1.6, 0.3, 0.8, 1.8, 0.05, 0.06, C.grey);
-  b.box(1.6, 0, 1.4, 0.05, 0.3, 0.05, C.dark); b.box(0.9, 0, -0.1, 0.05, 0.3, 0.05, C.dark);
-  b.box(1.6, 0.3, 1.4, 0.9, 0.05, 0.06, C.pink, 'wood', { ry: 0.0 });
+  for (const x of [-0.4, 0.4, 1.2]) b.cyl(x + 1.0, 0, 0.8, 0.03, 0.3, C.dark, 'wood', 6);
+  b.cyl(1.6, 0.31 - 0.9, 0.8, 0.03, 1.8, C.grey, 'stone', 8, { rz: Math.PI / 2 }); // flat bar (round tube)
+  b.cyl(1.6, 0, 1.4, 0.03, 0.3, C.dark, 'wood', 6); b.cyl(0.9, 0, -0.1, 0.03, 0.3, C.dark, 'wood', 6);
+  b.cyl(1.6, 0.31 - 0.45, 1.4, 0.03, 0.9, C.pink, 'wood', 8, { rz: Math.PI / 2 });
   // quarter pipe (two wedges back to back with a deck)
-  b.wedge(-0.4, 0, -h / 2 + 0.5, 1.0, 0.8, 1.2, C.green, Math.PI);
-  b.box(-0.85, 0.8, -h / 2 + 0.5, 0.2, 0.04, 1.2, C.white);
+  curvedRamp(b, -0.4, 0, -h / 2 + 0.5, 1.0, 0.8, 1.2, C.green, Math.PI, true, 7);
+  b.box(-0.85, 0.76, -h / 2 + 0.5, 0.2, 0.04, 1.2, C.white); // deck
+  b.cyl(-0.76, 0.8 - 0.61, -h / 2 + 0.5, 0.03, 1.22, C.grey, 'stone', 8, { rx: Math.PI / 2 }); // coping tube
   b.sign('STUNT PARK', 0, 0.9, -h / 2 + 0.1, 1.4, 0.45, 0, '#7a2fc0');
   for (const z of [-0.7, 0.9]) { b.cyl(-w / 2 + 0.2, 0, z, 0.03, 0.8, C.dark, 'wood', 6); b.box(-w / 2 + 0.2, 0.55, z + 0.2, 0.02, 0.2, 0.4, z < 0 ? C.yellow : C.pink, 'roof'); }
   b.box(w / 2 - 0.5, 0, h / 2 - 0.5, 0.6, 0.4, 0.5, C.cream); b.gable(w / 2 - 0.5, 0.4, h / 2 - 0.5, 0.6, 0.7, 0.2, C.roofBlue, true); // coach hut
+  eaveBrackets(b, w / 2 - 0.5, 0.42, h / 2 - 0.25, 's', 0.5, 0.25, 0.08);
+  frameWin(b, w / 2 - 0.5, 0.15, h / 2 - 0.25, 's', 0.14);
+  railing(b, -0.2, h / 2 - 0.1, 0.9, h / 2 - 0.1, 0, 0.2, C.dark, 4); // crowd rail
   [0.2, 0.5, 0.8].forEach((dx, i) => b.cone(w / 2 - 1.4 + dx, 0, h / 2 - 0.3, 0.07, 0.2, i % 2 ? C.orange : C.red, 'roof', 6));
 }
 
@@ -134,11 +136,11 @@ export function adventurePark(b: PartBuilder, w: number, h: number): void {
   const px = w / 2 - 0.9, pz = h / 2 - 0.9;
   const tw: Array<[number, number, number]> = [[-px, -pz, 1.4], [px, -pz, 1.0], [px, pz, 1.7], [-px, pz, 1.2]];
   tw.forEach(([x, z, hh], i) => {
-    for (const dx of [-0.3, 0.3]) for (const dz of [-0.3, 0.3]) b.box(x + dx, 0, z + dz, 0.08, hh, 0.08, C.wood);
+    for (const dx of [-0.3, 0.3]) for (const dz of [-0.3, 0.3]) b.cyl(x + dx, 0, z + dz, 0.045, hh, C.wood, 'wood', 6);
     b.box(x, 0, z, 0.6, 0.05, 0.03, C.dark, 'wood', { ry: Math.PI / 4 }); b.box(x, hh * 0.5, z, 0.6, 0.04, 0.03, C.dark, 'wood', { ry: -Math.PI / 4 }); // cross braces
     b.box(x, hh, z, 0.8, 0.06, 0.8, C.dark);
     b.cone(x, hh + 0.05, z, 0.65, 0.4, i % 2 ? C.roofRed : C.roofBlue, 'roof', 4, { ry: Math.PI / 4 });
-    b.fence(x - 0.35, z + 0.35, x + 0.35, z + 0.35, C.wood, 0.2, 2);
+    railing(b, x - 0.35, z + 0.35, x + 0.35, z + 0.35, hh + 0.06, 0.2, C.wood, 3);
     b.box(x + 0.4, 0, z + 0.4, 0.05, hh, 0.02, C.orange, 'wood', { ry: Math.PI / 4 }); // rope ladder side
   });
   for (let i = 0; i < 4; i++) {
@@ -146,7 +148,10 @@ export function adventurePark(b: PartBuilder, w: number, h: number): void {
     const len = Math.hypot(x1 - x0, z1 - z0) - 0.8;
     const ang = Math.atan2(-(z1 - z0), x1 - x0);
     const hm = (h0 + h1) / 2 + 0.03;
-    b.box((x0 + x1) / 2, hm - 0.1, (z0 + z1) / 2, len, 0.03, 0.1, C.orange, 'wood', { ry: ang });
+    for (let k = 0; k < 3; k++) { // plank walkway sagging in the middle (3 segments)
+      const t = (k + 0.5) / 3, sag = Math.sin(t * Math.PI) * 0.09;
+      b.box(x0 + (x1 - x0) * t, hm - 0.1 - sag, z0 + (z1 - z0) * t, len / 3 + 0.01, 0.03, 0.1, C.orange, 'wood', { ry: ang, rz: (k - 1) * 0.06 * Math.cos(ang) });
+    }
     b.box((x0 + x1) / 2, hm + 0.15, (z0 + z1) / 2, len, 0.02, 0.02, C.dark, 'wood', { ry: ang });
     for (let k = 1; k < 6; k++) { // rope-net strands hanging below
       const t = k / 6, sag = Math.sin(t * Math.PI) * 0.12;
