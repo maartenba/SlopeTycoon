@@ -1,7 +1,9 @@
 import { AMB, SHELTER, shelterFromTrunks, type AmbienceState } from './Ambience';
 import { PropKind, type PropStore } from '../world/Props';
 import { nearestSource, proximity, spatialParams, type Listener } from './spatial';
-import { CHUNK_SIZE, isWaterType, type Grid } from '../world/Grid';
+import { CHUNK_SIZE, isWaterType, TileType, type Grid } from '../world/Grid';
+import { PROX } from '../config/audioProximity';
+import { apresProximity } from './proximity';
 import type { SeasonId, WeatherKind } from '../core/events';
 
 export interface ProbeDeps {
@@ -23,12 +25,16 @@ export interface ProbeDeps {
   concerts?: () => Array<{ x: number; y: number }>;
   /** Carnival parade streets while it runs (chain centre tile; M7.4). Optional: absent = none. */
   carnivals?: () => Array<{ x: number; y: number }>;
+  /** OPEN, serving Apres-Ski Bars (centre tile): closed / outside-hours bars are left out, so they never sound. Optional: absent = none. */
+  apresBars?: () => Array<{ x: number; y: number }>;
+  /** Flow class (0 calm, 1 brisk, 2 rapids) of the stream tile at (x, y). Optional: absent = brisk. */
+  streamClassAt?: (x: number, y: number) => number;
   /** Tree trunks within r tiles of (x, z) (walk-mode wind shelter; optional). */
   trunks?: (x: number, z: number, r: number) => number;
   /** World height (render units) at a tile. */
   heightAt: (x: number, y: number) => number;
   maxHeight: number;
-  env: () => { season: SeasonId; weather: WeatherKind; hour: number; wind: number; sunrise?: number; sunset?: number; /** Total guests in the resort (music busy-ness) and whether a festival is on. */ guests?: number; festival?: boolean };
+  env: () => { season: SeasonId; weather: WeatherKind; hour: number; wind: number; sunrise?: number; sunset?: number; /** Global river / pond ice. */ iceFrozen?: boolean; /** Total guests in the resort (music busy-ness) and whether a festival is on. */ guests?: number; festival?: boolean };
 }
 
 const LISTEN_TILES = 28;
@@ -56,6 +62,19 @@ export class WorldProbe {
       if (isWaterType(g.tileType[g.tileIndex(x, y)]!)) wet++;
     }
     o.water = tot ? Math.min(1, (wet / tot) * 4) : 0;
+    // streams / rivers: nearest Stream tile within PROX.stream.reach, scanned only while zoomed in enough to hear it (cheap: <= 25 x 25 reads at ~10 Hz)
+    o.streamDist = Infinity; o.streamCls = 1; o.iceFrozen = !!e.iceFrozen;
+    if (zoom < PROX.stream.zoomFar && !o.iceFrozen) {
+      const reach = Math.ceil(PROX.stream.reach), cx = Math.floor(l.x), cy = Math.floor(l.z);
+      let best = Infinity, bx = 0, by = 0;
+      for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
+        const x = cx + dx, y = cy + dy;
+        if (!g.inBounds(x, y) || g.tileType[g.tileIndex(x, y)] !== TileType.Stream) continue;
+        const dd = Math.hypot(x + 0.5 - l.x, y + 0.5 - l.z);
+        if (dd < best) { best = dd; bx = x; by = y; }
+      }
+      if (best < Infinity) { o.streamDist = best; o.streamCls = d.streamClassAt ? d.streamClassAt(bx, by) : 1; }
+    }
     o.shelter = d.trunks && o.zoom <= AMB.walkZoom + 1 ? shelterFromTrunks(d.trunks(l.x, l.z, SHELTER.radius)) : 0; // only the walker's near-field view hears the forest shelter
     const lift = nearestSource(l, d.lifts());
     o.lifts = lift ? proximity(lift.dist, 40) : 0;
@@ -69,6 +88,7 @@ export class WorldProbe {
     const fire = d.campfires ? nearestSource(l, d.campfires()) : null; o.campfire = fire ? proximity(fire.dist, 14) : 0;
     const concert = d.concerts ? nearestSource(l, d.concerts()) : null; o.concert = concert ? proximity(concert.dist, 30) : 0;
     const carn = d.carnivals ? nearestSource(l, d.carnivals()) : null; o.carnival = carn ? proximity(carn.dist, 24) : 0;
+    o.apres = d.apresBars ? apresProximity(d.apresBars().map((b) => Math.hypot(b.x - l.x, b.y - l.z))) : 0;
     const quad = d.quads ? nearestSource(l, d.quads()) : null; o.quad = quad ? 0.3 + 0.7 * proximity(quad.dist, 40) : 0;
     const sleigh = d.sleighs ? nearestSource(l, d.sleighs()) : null; o.sleigh = sleigh ? 0.3 + 0.7 * proximity(sleigh.dist, 30) : 0;
     return o;

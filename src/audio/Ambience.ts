@@ -4,6 +4,9 @@ import type { SfxName, Sfx } from './Sfx';
 import type { NodeLike, ParamLike } from './backend';
 import type { NodeScope } from './synth';
 import type { SeasonId, WeatherKind } from '../core/events';
+import { PROX } from '../config/audioProximity';
+import { ApresMusic, } from './Apres';
+import { apresDuck, apresLevel, natureGain, pondLevel, streamLevels } from './proximity';
 
 export interface AmbienceState {
   season: SeasonId;
@@ -45,6 +48,14 @@ export interface AmbienceState {
   carnival?: number;
   /** Walk mode: forest wind shelter 0..1 (0 = open ground, 1 = >= SHELTER.fullTrunks tree trunks within SHELTER.radius tiles). Only the walker's near-field view sets it. */
   shelter?: number;
+  /** Tiles to the nearest stream / river tile within PROX.stream.reach (absent / Infinity = none). Sampled only while zoomed in. */
+  streamDist?: number;
+  /** Flow class (0 calm, 1 brisk, 2 rapids) of that nearest stream tile. Absent = brisk. */
+  streamCls?: number;
+  /** River / stream / pond ice (global freeze): water goes silent. */
+  iceFrozen?: boolean;
+  /** Sum of the OPEN Apres-Ski bars' proximity levels 0..1, already capped (0 = no open bar in reach; the zoom window is applied in the mix). */
+  apres?: number;
 }
 
 /** Forest wind shelter: standing among trunks takes the edge off the wind bed. */
@@ -57,7 +68,7 @@ export const SHELTER = {
 /** Pure: shelter 0..1 from a trunk count (linear up to SHELTER.fullTrunks). */
 export const shelterFromTrunks = (n: number): number => Math.min(1, Math.max(0, n / SHELTER.fullTrunks));
 
-export const LAYER_IDS = ['wind', 'rain', 'leaves', 'crickets', 'insects', 'crowd', 'lift', 'water', 'snowcat', 'heli', 'quad', 'sleigh', 'campfire', 'concert', 'carnival', 'muffled'] as const;
+export const LAYER_IDS = ['wind', 'rain', 'leaves', 'crickets', 'insects', 'crowd', 'lift', 'water', 'stream', 'rapids', 'apres', 'snowcat', 'heli', 'quad', 'sleigh', 'campfire', 'concert', 'carnival', 'muffled'] as const;
 export type LayerId = (typeof LAYER_IDS)[number];
 export const ONESHOT_IDS = ['birds', 'cowbells', 'bells', 'clanks', 'drips', 'creaks'] as const;
 export type OneShotId = (typeof ONESHOT_IDS)[number];
@@ -72,7 +83,7 @@ export const AMB = {
   /** Max one-shot rates per second at intensity 1. */
   rates: { birds: 0.8, cowbells: 0.15, clanks: 0.35, drips: 0.8, creaks: 0.1 } as const,
   /** Per-layer ceiling (linear gain on the ambience bus). */
-  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.2, snowcat: 0.16, heli: 0.2, quad: 0.045, sleigh: 0.03, campfire: 0.035, concert: 0.04, carnival: 0.036, muffled: 0.175 } as Record<LayerId, number>,
+  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.08, stream: 0.17, rapids: 0.14, apres: PROX.apres.murmurMax, snowcat: 0.16, heli: 0.2, quad: 0.045, sleigh: 0.03, campfire: 0.035, concert: 0.04, carnival: 0.036, muffled: 0.175 } as Record<LayerId, number>,
   /** Layer crossfade time constant (s). */
   fadeTc: 0.9,
 };
@@ -96,17 +107,20 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const wind = clamp01(0.16 + 0.38 * alt + 0.45 * wind01 + (storm ? 0.3 : 0) + far * 0.1 + (winter || autumn ? 0.08 : 0)) * (snowy && !storm ? 0.75 : 1) * (night > 0.5 ? 0.85 : 1) * (1 - SHELTER.windCut * clamp01(s.shelter ?? 0));
   const muffled = clamp01((winter ? 0.4 : 0) + (snowy ? 0.45 : 0)) * (0.6 + 0.4 * close);
   const birdSeason = summer ? 0.8 : spring ? 0.65 : autumn ? 0.15 : 0.02;
-  const birds = clamp01(birdSeason * (0.45 * day + 0.55 * dawn)) * (1 - wet) * (0.4 + 0.6 * close) * quiet;
+  const nat = natureGain(close); // M-audio: nature is quiet in general and only comes forward when zoomed in (PROX.nature)
+  const birds = clamp01(birdSeason * (0.45 * day + 0.55 * dawn)) * (1 - wet) * nat * quiet;
   const warm = summer ? 1 : spring || autumn ? 0.25 : 0;
-  const crickets = clamp01(warm * clamp01(dusk * 0.9 + night * 0.7)) * (1 - wet) * (0.3 + 0.7 * close);
-  const insects = summer ? day * close * (1 - wet) * 0.8 : 0;
+  const crickets = clamp01(warm * clamp01(dusk * 0.9 + night * 0.7)) * (1 - wet) * nat;
+  const insects = summer ? day * close * nat * (1 - wet) * 0.8 : 0;
   const rainL = wet * (0.7 + 0.3 * close);
-  const leaves = autumn ? clamp01(0.25 + wind01) * (0.5 + 0.5 * close) * (1 - wet * 0.5) : 0;
+  const leaves = autumn ? clamp01(0.25 + wind01) * nat * (1 - wet * 0.5) : 0;
   const crowdLevel = 1 - Math.exp(-Math.max(0, s.crowd) / 30);
   const crowd = crowdLevel * (0.5 + 0.5 * close) * (1 - 0.8 * night) * quiet;
   const lift = clamp01(s.lifts) * (0.2 + 0.8 * close) * (1 - 0.5 * night);
-  const waterSeason = winter ? 0.3 : spring ? 1 : 0.8;
-  const water = clamp01(s.water) * (0.3 + 0.7 * close) * waterSeason;
+  const iced = s.iceFrozen ?? winter; // pond lapping: silent under winter ice (the probe passes the real global freeze)
+  const water = pondLevel(s.water, s.zoom, iced) * (spring ? 1 : 0.8);
+  const { brook: stream, rush: rapids } = streamLevels({ dist: s.streamDist, cls: s.streamCls, zoom: s.zoom, frozen: s.iceFrozen ?? false }) ;
+  const apres = apresLevel(s.apres ?? 0, s.zoom) * (1 - wet * 0.3);
   const snowcat = clamp01(s.snowcat) * night * (0.4 + 0.6 * close);
   const heli = clamp01(s.heli) * (0.5 + 0.5 * close);
   const quad = clamp01(s.quad ?? 0) * (0.25 + 0.75 * close) * (1 - wet * 0.5); // a distant, very quiet motor drone while a quad tour is out
@@ -118,12 +132,12 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const carnival = clamp01(s.carnival ?? 0) * Math.pow(close, 1.2) * window(h, 10, 16, 0.5) * (1 - wet * 0.5) * quiet;
   const sleigh = clamp01(s.sleigh ?? 0) * (0.25 + 0.75 * close) * (1 - wet * 0.6); // faint bells, only while a sleigh is out and the camera is near
   const cowSeason = summer ? 1 : spring || autumn ? 0.4 : 0;
-  const cowbells = cowSeason * (1 - Math.exp(-Math.max(0, s.cows) / 3)) * close * day * (1 - wet);
+  const cowbells = cowSeason * (1 - Math.exp(-Math.max(0, s.cows) / 3)) * close * nat * day * (1 - wet);
   const bells = clamp01(s.buildings) * day * close;
   const clanks = lift * 0.9;
-  const drips = spring ? close * clamp01(0.3 + day) * (1 - wet * 0.5) * 0.6 : 0;
+  const drips = spring ? close * nat * clamp01(0.3 + day) * (1 - wet * 0.5) * 0.6 : 0;
   const creaks = winter ? close * (0.3 + 0.5 * night) * quiet : 0;
-  return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, snowcat, heli, quad, sleigh, campfire, concert, carnival, muffled, birds, cowbells, bells, clanks, drips, creaks };
+  return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, stream, rapids, apres, snowcat, heli, quad, sleigh, campfire, concert, carnival, muffled, birds, cowbells, bells, clanks, drips, creaks };
 }
 
 type Builder = (s: NodeScope) => void;
@@ -175,6 +189,23 @@ const LAYER_BUILDERS: Record<LayerId, Builder> = {
     for (const [f, q, g, hz] of [[450, 0.7, 0.8, 0.55], [1300, 0.9, 0.6, 0.93], [3000, 1, 0.25, 1.7]] as const) { const bp = s.filter('bandpass', f, q), gg = s.gain(g); wander(s, gg.gain, [[hz, 0.22], [hz * 0.37, 0.12]]); n.connect(bp); link(bp, gg, sum); }
     link(sum, lp, s.out);
   },
+  // Stream (PROX.stream): a brook = pink noise in three broad bands whose levels bubble on fast, unrelated sines (never a gate: no clicks); no pitch, no resonance.
+  stream: (s) => {
+    const n0 = s.noiseSrc('pink', 0.9), n2 = s.noiseSrc('pink', 1.33), n = s.gain(1), sum = s.gain(0.7), lp = s.filter('lowpass', 3600, 0);
+    n0.connect(n); n2.connect(n);
+    for (const [f, q, g, hz, depth] of [[380, 0.7, 0.8, 0.9, 0.2], [1100, 0.9, 0.55, 3.3, 0.3], [2600, 1, 0.3, 6.1, 0.35]] as const) { const bp = s.filter('bandpass', f, q), gg = s.gain(g); wander(s, gg.gain, [[hz, depth * g], [hz * 0.43, depth * g * 0.5]]); n.connect(bp); link(bp, gg, sum); }
+    link(sum, lp, s.out);
+  },
+  // Rapids: a broader, brighter hiss with a slow surge (rushing water over stones).
+  rapids: (s) => { const a = s.noiseSrc('pink', 1.1), b = s.noiseSrc('white', 0.6), bg = s.gain(0.12), hp = s.filter('highpass', 500, 0), lp = s.filter('lowpass', 5000, 0), g = s.gain(0.7); wander(s, g.gain, [[0.23, 0.16], [0.61, 0.1], [1.7, 0.05]]); a.connect(hp); b.connect(bg); bg.connect(hp); link(hp, lp, g, s.out); },
+  // Apres bar murmur (PROX.apres): crowd babble + a rare-glass shimmer band; the music itself is Apres.ts. Quiet (ceiling 0.05).
+  apres: (s) => {
+    const n0 = s.noiseSrc('pink', 0.8), n2 = s.noiseSrc('pink', 1.17), n = s.gain(1), sum = s.gain(0.6), lp = s.filter('lowpass', 2600, 0);
+    n0.connect(n); n2.connect(n);
+    wander(s, sum.gain, [[0.5, 0.15], [2.3, 0.12], [5.1, 0.08]]);
+    for (const [f, q, g] of [[320, 1.4, 1], [850, 1.6, 0.9], [1900, 1.8, 0.4]] as const) { const bp = s.filter('bandpass', f, q), gg = s.gain(g); n.connect(bp); link(bp, gg, sum); }
+    link(sum, lp, s.out);
+  },
   // Snowcat: engine rumble + a throb, noise only.
   snowcat: (s) => { const n = s.noiseSrc('brown'), f = s.filter('lowpass', 150, 0), hp = s.filter('highpass', 35, 0), m = s.noiseSrc('pink', 0.8), mf = s.filter('bandpass', 300, 0.7), mg = s.gain(0.3), g = s.gain(0.8); wander(s, g.gain, [[6.5, 0.1], [0.4, 0.05]]); link(n, f, hp, g); link(m, mf, mg, g); g.connect(s.out); },
   // Quad tour: low-passed brown noise with a slow irregular throb (a distant 4-stroke), kept far below the other beds.
@@ -219,8 +250,10 @@ export class Ambience {
   lastState: AmbienceState | null = null;
   /** liftPan for clanks (-1..1). */
   liftPan = 0;
+  /** Apres bar music scheduler (src/audio/Apres.ts). */
+  readonly apres: ApresMusic;
 
-  constructor(private engine: AudioEngine, private sfx: Sfx, private rng: () => number = defaultRng()) {}
+  constructor(private engine: AudioEngine, private sfx: Sfx, private rng: () => number = defaultRng()) { this.apres = new ApresMusic(engine); }
 
   get layerCount(): number { return Object.keys(this.layers).length; }
 
@@ -238,9 +271,11 @@ export class Ambience {
     this.ensureBuilt();
     const t = this.engine.now();
     for (const id of LAYER_IDS) this.layers[id]?.out.gain.setTargetAtTime(mix[id] * AMB.layerMax[id], t, AMB.fadeTc);
+    this.apres.update(mix.apres); // schedules bar-music beats ahead while an open bar is near and the camera is close
+    this.engine.setMusicDuck(apresDuck(mix.apres)); // game music steps back a little near a bar
     const roll = (id: keyof typeof AMB.rates, sfx: SfxName, base: number): void => {
       const rate = mix[id] * AMB.rates[id];
-      if (rate > 0.001 && this.rng() < rate * dt) this.sfx.play(sfx, { pitch: base * (0.85 + this.rng() * 0.4), pan: (this.rng() * 2 - 1) * 0.7, gain: 0.5 + 0.5 * mix[id] });
+      if (rate > 0.001 && this.rng() < rate * dt) this.sfx.play(sfx, { pitch: base * (0.85 + this.rng() * 0.4), pan: (this.rng() * 2 - 1) * 0.7, gain: (0.5 + 0.5 * mix[id]) * (id === 'birds' ? PROX.nature.chirpGain : 1) });
     };
     roll('birds', 'birdChirp', 1); roll('cowbells', 'cowbell', 1); roll('drips', 'drip', 1); roll('creaks', 'creak', 1);
     const cr = mix.clanks * AMB.rates.clanks;

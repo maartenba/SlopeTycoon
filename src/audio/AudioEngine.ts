@@ -1,5 +1,6 @@
 import type { AudioBackend, CompressorLike, GainLike } from './backend';
 import { AudioSettings, busGains } from './AudioSettings';
+import { PROX } from '../config/audioProximity';
 import { NodeScope, NoiseBank } from './synth';
 
 export type BusId = 'music' | 'sfx' | 'ambience';
@@ -102,11 +103,21 @@ export class AudioEngine {
     this.applyGains(true);
   }
 
+  /** Ambience-driven duck of the game music (1 = untouched; near an Apres bar ~0.7). Eased with PROX.apres.duckTc; settings changes keep it. */
+  private musicDuck = 1;
+  setMusicDuck(f: number): void {
+    const v = Math.min(1, Math.max(0.3, f));
+    if (Math.abs(v - this.musicDuck) < 0.01) return;
+    this.musicDuck = v;
+    if (!this.b || !this.buses.music) return;
+    this.buses.music.gain.setTargetAtTime(busGains(this.o.settings.get()).music * v, this.b.now(), PROX.apres.duckTc);
+  }
+
   private applyGains(immediate: boolean): void {
     if (!this.b || !this.master) return;
     const g = busGains(this.o.settings.get()), t = this.b.now(), tc = immediate ? 0.001 : 0.06;
     this.master.gain.setTargetAtTime(g.master, t, tc);
-    for (const id of ['music', 'sfx', 'ambience'] as const) this.buses[id]!.gain.setTargetAtTime(g[id], t, tc);
+    for (const id of ['music', 'sfx', 'ambience'] as const) this.buses[id]!.gain.setTargetAtTime(id === 'music' ? g[id] * this.musicDuck : g[id], t, tc);
     if (this.comp) this.comp.threshold.setTargetAtTime(this.o.settings.get().reduceLoud ? -24 : -16, t, tc);
   }
 

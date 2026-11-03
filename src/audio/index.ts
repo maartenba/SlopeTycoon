@@ -8,6 +8,7 @@ import { GAME_EVENT_NAMES } from '../core/events';
 import { Music } from './Music';
 import { MUSIC } from './musicThemes';
 import { Sfx } from './Sfx';
+import { PROX } from '../config/audioProximity';
 import { WorldProbe, type ProbeDeps } from './worldProbe';
 
 export interface AudioDeps {
@@ -79,7 +80,7 @@ export function createAudio(d: AudioDeps): AudioApi {
     offs.push(() => { win.removeEventListener('pointerdown', onDown, true); win.removeEventListener('pointerover', onOver, true); win.removeEventListener('keydown', onKey); });
   }
 
-  const every = d.tickEvery ?? 0.1;
+  const every = d.tickEvery ?? PROX.tickEvery;
   let acc = 0;
   return {
     engine, sfx, ambience, music, settings,

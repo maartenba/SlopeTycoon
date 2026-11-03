@@ -42,6 +42,7 @@ import { dressingWorldOf } from '@/render/festival/dressingWorld';
 import { almabtriebWindow } from '@/sim/events/EventCalendar';
 import { Fireworks, fireworksAllowed } from '@/render/fx/Fireworks';
 import { isWaterType } from '@/world/Grid';
+import { waterways } from '@/world/Streams';
 import { RapidsSplash, SmokeView, type SmokeSource } from '@/render/Smoke';
 import { SnowSprayView } from '@/render/SnowSpray';
 import { modalPause } from '@/ui/modalPauseGate';
@@ -1309,6 +1310,8 @@ let saveLoadRef: StSaveLoad | null = null;
 try {
   if (DEMO) throw new Error('no audio in the title-screen demo');
   const quadBuf: Carrier[] = [];
+  const streamCls = new Map<number, number>();
+  let streamClsSeen = -1;
   let maxH = 1;
   for (let i = 0; i < grid.heights.length; i++) if (grid.heights[i]! * 0.5 > maxH) maxH = grid.heights[i]! * 0.5;
   const cc = renderer.controls;
@@ -1330,7 +1333,13 @@ try {
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad' || c.kind === 'scooter')),
       sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
-      env: () => ({ season: seasonOf(game.date), weather: weather.current.kind, hour: currentHour(), wind: weather.current.wind, ...sunTimes(game.date.day), guests: guestSim.store.count, festival: sim.events.active().length > 0 }),
+      apresBars: () => buildings.all().filter((b) => b.type === 'apresBar' && b.active).filter((b) => { const a = attractions.get(b.id); return !!a && attractions.servingNow(a) && a.open; }).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
+      streamClassAt: (x, y) => { // tile -> flow class, rebuilt only when the flow table changes
+        const tbl = sim.flow.all();
+        if (streamClsSeen !== sim.flow.version) { streamClsSeen = sim.flow.version; streamCls.clear(); for (const w of waterways(terrainInfo.streams, sim.rivers.rivers)) { const f = tbl.get(w.id); w.path.forEach((p, i) => streamCls.set(p.y * 65536 + p.x, f?.cls[i] ?? 1)); } }
+        return streamCls.get(y * 65536 + x) ?? 1;
+      },
+      env: () => ({ iceFrozen: sim.flow.frozen, season: seasonOf(game.date), weather: weather.current.kind, hour: currentHour(), wind: weather.current.wind, ...sunTimes(game.date.day), guests: guestSim.store.count, festival: sim.events.active().length > 0 }),
     },
   });
 } catch (err) { if (!DEMO) console.warn('[audio] disabled:', err); }
