@@ -77,6 +77,8 @@ interface Cfg {
   dy?: number; dz?: number; yaw?: number; liftX?: number; pack?: boolean;
   /** Close-up variant (ground cameras, nearest guests only): mittens, soles, collar + zip, goggles + strap, helmet vent, hair volume, pack straps. */
   near?: boolean;
+  /** No scarf wrap (the bike sits exactly at its triangle guard). */
+  noScarf?: boolean;
   /** Near variant without soles / zip (keeps the bike within the 400-triangle near budget). */
   lite?: boolean;
 }
@@ -111,6 +113,8 @@ function figure(b: Builder, c: Cfg): { hand: (side: 1 | -1) => THREE.Vector3; po
     b.box(0.1, 0.03, 0.072, 0, 0.402, 0, [Part.Hat, Joint.Body], up, false); // collar
   }
   b.limb(0.076, 0.066, 0.205, 0, 0.3, 0, [Part.Torso, Joint.Body], up, 8, 1.05, 0.62, false);
+  // M8 (8.4): a scarf wrap (accent colour) for the winter hat styles: a short flared ring at the neck, 14 triangles, only for the styles that show it
+  if (!c.noScarf) for (const st of [HairStyle.Beanie, HairStyle.Helmet]) b.limb(0.056, 0.064, 0.036, 0, 0.412, 0, [Part.Hat, Joint.Body, 1, st], up, 7, 1.1, 0.8);
   const headM = mul(up, rot('x', -(c.lean ?? 0) * 0.8, 0.43, 0)); // the head stays level while the body leans
     b.ball(0.058, 1, 1, 0, 0.46, 0, [Part.Skin, Joint.Head], headM);
   const hb = (w: number, h: number, d: number, x: number, y: number, z: number, tag: Tag): void => b.box(w, h, d, x, y, z, tag, headM, false);
@@ -191,7 +195,7 @@ export function buildGearGeometry(gear: number, near = false): THREE.BufferGeome
       break;
     }
     case Gear.Bike: {
-      figure(b, { near, lite: true, lean: 1.0, legRot: -0.55, armRot: -2.1, dy: 0.025, dz: -0.1, pack: false });
+      figure(b, { near, lite: true, noScarf: true, lean: 1.0, legRot: -0.55, armRot: -2.1, dy: 0.025, dz: -0.1, pack: false });
       const R = BIKE_WHEEL_R, Z = BIKE_WHEEL_Z;
       for (const [z, j] of [[Z, Joint.WheelF], [-Z, Joint.WheelR]] as const) {
         const tire = new THREE.CylinderGeometry(R, R, 0.022, 8); tire.rotateZ(Math.PI / 2); tire.translate(0, R, z);

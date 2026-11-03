@@ -157,6 +157,7 @@ varying vec3 vColor;
 void main() {
   mat4 im = modelMatrix * instanceMatrix;
   vec3 pos = position;
+  if (uMoss > 0.0) pos *= vec3(1.0 + 0.4 * (fract(aSeed * 7.3) - 0.5), 0.8 + 0.45 * fract(aSeed * 3.7), 1.0 + 0.4 * (fract(aSeed * 13.1) - 0.5)); // rocks: per-rock proportions (deterministic per instance, not screen space)
   vec3 base = aBase.rgb * aTint.rgb;
   if (aBase.a > 0.5) {
     float ls = leafScale(aSeed);
@@ -346,14 +347,17 @@ export function tier(r: number, h: number, y: number, seg: number, k: number, sk
   const idx: number[] = [];
   const nRings = skirt ? 2 : 1;
   const ringStart = (ri: number): number => 1 + ri * seg;
+  const phase = hash3(k, 3, 5, 11) * Math.PI * 2 / seg; // each tier is turned a little: branch whorls do not line up into a stack of identical cones
   for (let ri = 0; ri < nRings; ri++) {
     const last = ri === nRings - 1;
     for (let i = 0; i < seg; i++) {
-      const a = (i / seg) * Math.PI * 2;
-      const noise = 1 + (hash3(i, k, ri, 7) - 0.5) * 0.2;
-      const sc = last ? (i % 2 ? 1.08 : 0.97) : 0.74;
-      const rr = r * noise * sc * (last ? 1 : 1);
-      const yy = last ? y - (i % 2 ? 0.07 : 0.0) * h : y + h * 0.3;
+      const a = (i / seg) * Math.PI * 2 + phase;
+      const noise = 1 + (hash3(i, k, ri, 7) - 0.5) * 0.26;
+      // hem: every other vertex is a long drooping branch tip, the ones between are short and lifted (3-D silhouette with branch hints, same triangle count)
+      const tip = i % 2 === 1;
+      const sc = last ? (tip ? 1.12 : 0.9) : 0.74;
+      const rr = r * noise * sc;
+      const yy = last ? y + (tip ? -0.16 : 0.035) * h * (0.8 + 0.4 * hash3(i, k, 9, 2)) : y + h * 0.3;
       pos.push(Math.cos(a) * rr, yy, Math.sin(a) * rr);
     }
   }
@@ -371,7 +375,7 @@ export function tier(r: number, h: number, y: number, seg: number, k: number, sk
   if (cap) {
     const hem = ringStart(nRings - 1);
     const cp: number[] = [], ci: number[] = [];
-    cp.push(0, y, 0);
+    cp.push(0, y + 0.02, 0);
     for (let i = 0; i < seg; i++) cp.push(pos[(hem + i) * 3]!, pos[(hem + i) * 3 + 1]!, pos[(hem + i) * 3 + 2]!);
     for (let i = 0; i < seg; i++) ci.push(0, 1 + i, 1 + ((i + 1) % seg));
     const c = new THREE.BufferGeometry();
@@ -409,7 +413,7 @@ function branches(y: number, len: number, tilt: number, n: number, color: THREE.
   return out;
 }
 /** Lumpy ellipsoid lobe: icosphere with per-vertex radial noise (position hashed, so welded vertices stay together), smooth-shaded. */
-function lobe(r: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, detail: number, k: number, amp = 0.14): THREE.BufferGeometry {
+function lobe(r: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, detail: number, k: number, amp = 0.1): THREE.BufferGeometry {
   const g = new THREE.IcosahedronGeometry(r, detail);
   const p = g.getAttribute('position');
   for (let i = 0; i < p.count; i++) {
@@ -425,9 +429,9 @@ function crown(lobes: Lobe[], color: THREE.Color, detail: number, k: number): Pa
   return lobes.map(([r, x, y, z, sx, sy, sz], i) => ({ geo: lobe(r, x, y, z, sx, sy, sz, detail, k + i), color, foliage: 1, smooth: true }));
 }
 
-const DECID_LOBES: Lobe[] = [[0.44, 0, 1.02, 0, 1, 0.95, 1], [0.32, 0.3, 0.86, 0.14, 1, 0.9, 1], [0.3, -0.28, 0.94, -0.12, 1, 0.9, 1], [0.27, 0.02, 1.3, -0.12, 1, 0.9, 1]];
-const BIRCH_LOBES: Lobe[] = [[0.27, 0, 1.45, 0, 1, 1.35, 1], [0.2, 0.12, 1.05, 0.06, 1, 1.1, 1], [0.18, -0.12, 1.2, -0.05, 1, 1.1, 1]];
-const OAK_LOBES: Lobe[] = [[0.42, 0, 0.98, 0, 1.45, 0.82, 1.45], [0.3, 0.42, 0.82, 0.22, 1.2, 0.85, 1.2], [0.28, -0.4, 0.86, -0.2, 1.2, 0.85, 1.2], [0.24, 0.05, 1.2, 0.05, 1.2, 0.8, 1.2]];
+const DECID_LOBES: Lobe[] = [[0.4, 0, 1.0, 0, 1, 0.92, 1], [0.3, 0.3, 0.86, 0.16, 1, 0.88, 1], [0.29, -0.3, 0.92, -0.14, 1, 0.88, 1], [0.27, 0.04, 1.3, -0.1, 1, 0.9, 1]];
+const BIRCH_LOBES: Lobe[] = [[0.25, 0, 1.5, 0, 1, 1.4, 1], [0.2, 0.12, 1.1, 0.06, 1, 1.15, 1], [0.18, -0.12, 1.25, -0.05, 1, 1.15, 1]];
+const OAK_LOBES: Lobe[] = [[0.4, 0, 0.98, 0, 1.45, 0.82, 1.45], [0.3, 0.42, 0.82, 0.22, 1.2, 0.85, 1.2], [0.28, -0.4, 0.86, -0.2, 1.2, 0.85, 1.2], [0.24, 0.05, 1.2, 0.05, 1.2, 0.8, 1.2]];
 
 export function conifer(full: boolean): THREE.BufferGeometry {
   if (!full) {
@@ -441,7 +445,7 @@ export function conifer(full: boolean): THREE.BufferGeometry {
 
 export function deciduous(full: boolean): THREE.BufferGeometry {
   if (!full) return fit(mergeParts([trunk(0.07, 0.1, 0.7), ...crown([DECID_LOBES[0]!, DECID_LOBES[2]!], LEAF, 0, 30)]), PropKind.Deciduous);
-  return fit(mergeParts([trunk(0.07, 0.1, 0.8), ...crown(DECID_LOBES, LEAF, 0, 30), ...branches(0.6, 0.5, 0.7, 5, TRUNK)]), PropKind.Deciduous);
+  return fit(mergeParts([trunk(0.07, 0.1, 0.8), ...crown(DECID_LOBES, LEAF, 0, 30), ...branches(0.55, 0.55, 0.75, 4, TRUNK, 0.4)]), PropKind.Deciduous);
 }
 
 /** Tall pine: long bare trunk, layered tufts. */
@@ -469,7 +473,7 @@ export function birch(full: boolean): THREE.BufferGeometry {
   const t = trunk(0.045, 0.07, full ? 1.3 : 1.1);
   const bt = withColor(t, BIRCH_TRUNK);
   if (!full) return fit(mergeParts([bt, ...crown(BIRCH_LOBES.slice(0, 2), BIRCH_LEAF, 0, 80)]), PropKind.Birch);
-  return fit(mergeParts([bt, ...crown(BIRCH_LOBES, BIRCH_LEAF, 0, 80), ...branches(0.8, 0.4, 0.55, 4, BIRCH_TRUNK)]), PropKind.Birch);
+  return fit(mergeParts([bt, ...crown(BIRCH_LOBES, BIRCH_LEAF, 0, 80), ...branches(0.8, 0.4, 0.55, 4, BIRCH_TRUNK, 0.5)]), PropKind.Birch);
 }
 
 /** Oak: short thick trunk, wide lumpy crown. */
@@ -477,7 +481,7 @@ export function oak(full: boolean): THREE.BufferGeometry {
   if (!full) {
     return fit(mergeParts([trunk(0.1, 0.14, 0.6), ...crown([OAK_LOBES[0]!, OAK_LOBES[1]!], OAK_LEAF, 0, 90)]), PropKind.Oak);
   }
-  return fit(mergeParts([trunk(0.1, 0.16, 0.65), ...crown(OAK_LOBES, OAK_LEAF, 0, 90), ...branches(0.55, 0.7, 1.0, 6, TRUNK)]), PropKind.Oak);
+  return fit(mergeParts([trunk(0.1, 0.16, 0.65), ...crown(OAK_LOBES, OAK_LEAF, 0, 90), ...branches(0.5, 0.7, 1.0, 5, TRUNK, 0.3)]), PropKind.Oak);
 }
 
 export function shrub(full: boolean): THREE.BufferGeometry {
@@ -530,13 +534,13 @@ export const TREE_SPECIES: TreeSpecies[] = [
   { kind: PropKind.Conifer, slot: 0, species: SPECIES_EVERGREEN, crownY: 1, blossom: 0, autumnMax: 1, leaf: PINE, full: () => conifer(true), low: () => conifer(false), size: [1.15, 2.3],
     recipe: { trunk: [0.1, 0.45, '#5a4030'], tiers: [[0.56, 0.3, 0.8], [0.5, 0.66, 0.74], [0.42, 1.0, 0.66], [0.33, 1.36, 0.58], [0.22, 1.72, 0.56]], twigs: [], leaf: '#2f6b3a' } },
   { kind: PropKind.Deciduous, slot: 1, species: SPECIES_DECIDUOUS, crownY: 1.0, blossom: 0.6, autumnMax: 1, leaf: LEAF, full: () => deciduous(true), low: () => deciduous(false), size: [1.1, 1.6],
-    recipe: { trunk: [0.12, 0.8, '#5a4030'], blobs: [[0, 1.02, 0.44, 0.42], [0.3, 0.86, 0.32, 0.29], [-0.28, 0.94, 0.3, 0.27], [0.02, 1.3, 0.27, 0.25]], twigs: [[0, 0.6, -0.4, 1.0], [0, 0.6, 0.4, 1.05], [0, 0.7, 0, 1.3], [0, 0.65, -0.2, 1.2]], leaf: '#5b8c3a' } },
+    recipe: { trunk: [0.12, 0.8, '#5a4030'], blobs: [[0, 1.02, 0.44, 0.42], [0.3, 0.86, 0.32, 0.29], [-0.28, 0.94, 0.3, 0.27], [0.04, 1.3, 0.27, 0.25]], twigs: [[0, 0.6, -0.4, 1.0], [0, 0.6, 0.4, 1.05], [0, 0.7, 0, 1.3], [0, 0.65, -0.2, 1.2]], leaf: '#5b8c3a' } },
   { kind: PropKind.Pine, slot: 2, species: SPECIES_EVERGREEN, crownY: 1.5, blossom: 0, autumnMax: 1, leaf: PINE_TALL, full: () => pine(true), low: () => pine(false), size: [0.95, 2.6],
     recipe: { trunk: [0.09, 1.7, '#5a4030'], tiers: [[0.46, 0.9, 0.5], [0.4, 1.25, 0.46], [0.33, 1.6, 0.44], [0.25, 1.9, 0.42], [0.16, 2.15, 0.44]], twigs: [], leaf: '#3f7440' } },
   { kind: PropKind.Larch, slot: 3, species: SPECIES_LARCH, crownY: 1.2, blossom: 0, autumnMax: 0.3, leaf: LARCH, full: () => larch(true), low: () => larch(false), size: [0.8, 2.4],
     recipe: { trunk: [0.08, 1.9, '#5a4030'], tiers: [[0.38, 0.4, 0.7], [0.33, 0.8, 0.62], [0.27, 1.15, 0.58], [0.2, 1.5, 0.55], [0.11, 1.9, 0.5]], twigs: [[0, 0.5, -0.3, 0.8], [0, 0.5, 0.3, 0.8], [0, 1.0, -0.25, 1.3], [0, 1.0, 0.25, 1.3]], leaf: '#6f9a3c' } },
   { kind: PropKind.Birch, slot: 4, species: SPECIES_DECIDUOUS, crownY: 1.3, blossom: 0.35, autumnMax: 0.45, leaf: BIRCH_LEAF, full: () => birch(true), low: () => birch(false), size: [0.8, 1.9],
-    recipe: { trunk: [0.08, 1.3, '#e6e2d6'], blobs: [[0, 1.45, 0.27, 0.365], [0.12, 1.05, 0.2, 0.22], [-0.12, 1.2, 0.18, 0.2]], twigs: [[0, 0.8, -0.3, 1.2], [0, 0.8, 0.3, 1.2], [0, 1.1, 0, 1.7]], leaf: '#93b955' } },
+    recipe: { trunk: [0.08, 1.3, '#e6e2d6'], blobs: [[0, 1.45, 0.27, 0.365], [0.12, 1.05, 0.2, 0.22], [-0.12, 1.25, 0.18, 0.2]], twigs: [[0, 0.8, -0.3, 1.2], [0, 0.8, 0.3, 1.2], [0, 1.1, 0, 1.7]], leaf: '#93b955' } },
   { kind: PropKind.Oak, slot: 5, species: SPECIES_DECIDUOUS, crownY: 0.95, blossom: 0.3, autumnMax: 0.8, leaf: OAK_LEAF, full: () => oak(true), low: () => oak(false), size: [1.7, 1.5],
     recipe: { trunk: [0.18, 0.65, '#5a4030'], blobs: [[0, 0.98, 0.61, 0.34], [0.42, 0.82, 0.36, 0.26], [-0.4, 0.86, 0.34, 0.24], [0.05, 1.2, 0.29, 0.19]], twigs: [[0, 0.55, -0.6, 1.0], [0, 0.55, 0.6, 1.0], [0, 0.6, 0, 1.3], [0, 0.55, 0.4, 1.2]], leaf: '#4a7a2c' } },
   { kind: PropKind.Shrub, slot: 6, species: SPECIES_DECIDUOUS, crownY: 0.22, blossom: 0.5, autumnMax: 1, leaf: SHRUB_LEAF, full: () => shrub(true), low: () => shrub(false), size: [0.8, 0.6],

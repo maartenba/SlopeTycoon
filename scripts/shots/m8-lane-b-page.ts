@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import * as A from '../../src/render/meshes/Animals';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function animalGallery(s: any): void {
   const a = s.terrainInfo.villageAnchor, gr = s.grid, hh = (x: number, y: number): number => gr.getCorner(Math.round(x), Math.round(y)) * 0.5;
   s.trees.group.visible = false; s.rocks.group.visible = false;
