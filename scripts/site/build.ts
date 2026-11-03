@@ -60,7 +60,7 @@ export async function buildSite(env: SiteEnv = siteEnv()): Promise<{ pages: numb
   mkdirSync(join(OUT, 'assets', 'fonts'), { recursive: true }); mkdirSync(join(OUT, 'assets', 'icons'), { recursive: true });
   cpSync('public/fonts', join(OUT, 'assets', 'fonts'), { recursive: true });
   await writeIcons(OUT);
-  cpSync('site/assets/site.css', join(OUT, 'assets', 'site.css')); cpSync('site/assets/site.js', join(OUT, 'assets', 'site.js')); cpSync('site/assets/consent.js', join(OUT, 'assets', 'consent.js'));
+  cpSync('site/assets/site.css', join(OUT, 'assets', 'site.css')); cpSync('site/assets/site.js', join(OUT, 'assets', 'site.js')); cpSync('site/assets/consent.js', join(OUT, 'assets', 'consent.js')); cpSync('site/assets/support.js', join(OUT, 'assets', 'support.js'));
   cpSync('site/assets/og', join(OUT, 'assets', 'og'), { recursive: true });
   if (existsSync(SHOTS_DIR)) cpSync(SHOTS_DIR, join(OUT, 'assets', 'shots'), { recursive: true, filter: (s) => !s.endsWith('index.json') });
   writeFileSync(join(OUT, 'assets', 'logo.svg'), logoSvg({ variant: 'full' })); writeFileSync(join(OUT, 'assets', 'logo-mark.svg'), logoSvg({ variant: 'mark' }));
@@ -110,13 +110,14 @@ export function sitemapEntries(metas: readonly PageMeta[], gens: readonly GenPag
     ...metas.map((m) => ({ path: `guide/${m.slug}/`, lastmod: lastmodOf(`site/guide/${m.slug}.md`, today), changefreq: 'monthly', priority: '0.7' })),
     ...gens.map((g) => ({ path: `${g.path}/`, lastmod: g.lastmod, changefreq: g.changefreq, priority: g.priority })),
     { path: 'about/', lastmod: lastmodOf('site/pages/about.md', today), changefreq: 'yearly', priority: '0.6' },
+    { path: 'support/', lastmod: lastmodOf('site/pages/support.md', today), changefreq: 'yearly', priority: '0.4' },
     { path: 'privacy/', lastmod: lastmodOf('site/pages/privacy.md', today), changefreq: 'yearly', priority: '0.3' },
   ];
 }
 
 /** About + privacy pages: site/pages/<slug>.md (front matter: title = SEO title, heading = h1, description). */
-export function infoPages(env: SiteEnv, markSvg: string, pages: readonly PageMeta[], shots: Record<string, ShotInfo>, slugs: ReadonlySet<string>, gen: Record<string, string>): Array<{ slug: 'about' | 'privacy'; html: string }> {
-  return (['about', 'privacy'] as const).map((slug) => {
+export function infoPages(env: SiteEnv, markSvg: string, pages: readonly PageMeta[], shots: Record<string, ShotInfo>, slugs: ReadonlySet<string>, gen: Record<string, string>): Array<{ slug: 'about' | 'support' | 'privacy'; html: string }> {
+  return (['about', 'support', 'privacy'] as const).map((slug) => {
     const { data, body } = parseFrontMatter(readFileSync(`site/pages/${slug}.md`, 'utf8'));
     const r = renderMarkdown(body, { rel: '../', shots, slugs, gen });
     return { slug, html: infoPage(env, { slug, title: data.title, description: data.description ?? '', heading: data.heading ?? data.title, html: r.html, og: slug, markSvg, pages }) };

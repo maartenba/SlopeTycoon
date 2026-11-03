@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { marked } from 'marked';
 import { esc, figureHtml, plainText, type PageMeta, type ShotInfo } from './md';
-import { AUTHOR, SITE_NAME, breadcrumbLd, crumbsHtml, personLd, shell, sponsorLink, type SiteEnv } from './templates';
+import { AUTHOR, SITE_NAME, breadcrumbLd, crumbsHtml, personLd, shell, supportLink, type SiteEnv } from './templates';
 
 export interface Release { version: string; date: string; intro: string; highlights: string[]; changes: string[] }
 export interface Intro { tagline: string; lead?: string; shot?: string }
@@ -94,7 +94,7 @@ export function postPage(env: SiteEnv, p: Post, posts: readonly Post[], markSvg:
 <p class="lp-lead">${p.leadHtml}</p>${fig}
 <h2 id="highlights">Highlights</h2><ul class="hl">${p.highlightsHtml}</ul>
 ${p.changesHtml ? `<h2 id="what-else-changed">What else changed</h2><ul class="hl small">${p.changesHtml}</ul><p class="note">This list is shortened. The full technical list is in the <a href="${env.repoUrl}/blob/main/CHANGELOG.md">changelog</a>.</p>` : ''}
-<aside class="lp-cta"><p>Want to see it for yourself? The game is free and runs in a browser tab.</p><p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> ${sponsorLink()}</p></aside>
+<aside class="lp-cta"><p>Want to see it for yourself? The game is free and runs in a browser tab.</p><p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> ${supportLink()}</p></aside>
 <div class="pn">${older ? `<a href="${rel}${older.slug}/" rel="prev"><small>← Older</small>Version ${esc(older.release.version)}</a>` : '<span></span>'}${newer ? `<a class="nx" href="${rel}${newer.slug}/" rel="next"><small>Newer →</small>Version ${esc(newer.release.version)}</a>` : ''}</div>
 <p><a href="${rel}devlog/">All devlog posts</a> · <a href="${rel}devlog/feed.xml">Atom feed</a></p></article>`;
   return shell(env, { rel, markSvg, pages, head: { rel, title: p.title, description: p.description, path: `${p.slug}/`, og: 'devlog', type: 'article', ld, feed: true }, main });
@@ -110,7 +110,7 @@ export function indexPage(env: SiteEnv, posts: readonly Post[], markSvg: string,
   const main = `<article>${crumbsHtml(rel, [{ name: 'Home', href: '' }, { name: 'Devlog' }])}<h1>Devlog</h1><p class="lp-lead">${intro}</p>
 <p class="meta">${posts.length} posts · <a href="${rel}devlog/feed.xml">Atom feed</a> (self-hosted, nothing is requested from anywhere else)</p>
 <ol class="posts">${items}</ol>
-<aside class="lp-cta"><p>Every release of the game gets one post, built from the changelog.</p><p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> ${sponsorLink()}</p></aside></article>`;
+<aside class="lp-cta"><p>Every release of the game gets one post, built from the changelog.</p><p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> ${supportLink()}</p></aside></article>`;
   return shell(env, { rel, markSvg, pages, head: { rel, title: DEVLOG_TITLE, description: DEVLOG_DESC, path: 'devlog/', og: 'devlog', ld, feed: true }, main });
 }
 

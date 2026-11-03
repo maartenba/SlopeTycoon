@@ -4,6 +4,11 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- Sound follows the camera: the Apres-Ski Bar now plays a quiet procedural polka (oompah bass, accordion, handclaps, glass clinks, crowd murmur) when you zoom in close to an open bar, and the game music dips a little while you listen; birds and other nature sounds are quieter in general and come forward only when zoomed in; streams and rivers now babble (or rush, over rapids) when you zoom in beside them and go quiet under winter ice. Everything follows the ambience volume and mute. Tuned by numbers, not by ear: levels are in `src/config/audioProximity.ts`.
+- Support now points to Ko-fi (`https://ko-fi.com/slopetycoon`) instead of GitHub Sponsors: website header, footer, About, landing, the game's About dialog and menu footer. New `/support/` page with a click-to-load Ko-fi widget (nothing is requested from ko-fi.com until you click); the privacy page explains it.
+
 ## [0.5.0] - 2026-11-03 (pre-release)
 
 The "smoother look" release (milestone M8): rounder buildings, lifts and vehicles, softer animals, a layered rock edge around the map, soft shorelines, and real sun shadows on the High graphics setting. Nothing in the economy or the saves changed.

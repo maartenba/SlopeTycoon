@@ -49,7 +49,7 @@ describe('keyword landing pages', () => {
     const known = new Set([...landingSlugs(), ...slugs].map((s) => s)), dirs = new Set(['guide', 'play', 'assets', 'devlog']);
     for (const p of pages) {
       for (const r of extractRefs(p.html)) {
-        if (/^(https?:|data:|mailto:|#)/.test(r.url) || r.url.includes('assets/')) { if (/^https?:/.test(r.url) && r.attr === 'href' && !r.url.startsWith(env.siteUrl)) expect(r.url, p.path).toMatch(/^https:\/\/(en\.wikipedia\.org\/wiki\/Ski_Resort_Tycoon|github\.com\/)/); continue; }
+        if (/^(https?:|data:|mailto:|#)/.test(r.url) || r.url.includes('assets/')) { if (/^https?:/.test(r.url) && r.attr === 'href' && !r.url.startsWith(env.siteUrl)) expect(r.url, p.path).toMatch(/^https:\/\/(en\.wikipedia\.org\/wiki\/Ski_Resort_Tycoon|github\.com\/|ko-fi\.com\/slopetycoon$)/); continue; }
         if (/^\.\.\/(favicon\.ico|site\.webmanifest|)$/.test(r.url)) continue; const m = /^\.\.\/([\w-]+)\//.exec(r.url); expect(m, `${p.path}: ${r.url}`).toBeTruthy();
         const seg = m![1]!; expect(known.has(seg) || dirs.has(seg), `${p.path}: ${r.url}`).toBe(true);
         if (seg === 'guide') { const g = /^\.\.\/guide\/([\w-]+)\//.exec(r.url); if (g) expect(slugs.has(g[1]!), `${p.path}: ${r.url}`).toBe(true); }

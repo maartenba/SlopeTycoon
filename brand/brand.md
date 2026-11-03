@@ -64,7 +64,7 @@ Bio: I'm Maarten, a developer from Antwerp, Belgium. I build web and cloud apps 
 Thank-you: Thank you! Your tip goes straight into more time on Slope Tycoon, hosting and the next update. I'm glad you're playing. – Maarten
 
 ## Privacy and support links
-No ads, no accounts, saves stay on the device, anonymous opt-in statistics only after consent. The only support link allowed in the game or on the site today is `https://github.com/sponsors/maartenba` ("Support the game" / "Sponsor on GitHub", `target=_blank rel=noopener`, never a popup or gate). A Ko-fi URL can be added once the owner decides; it would need the same treatment and a privacy-page note.
+No ads, no accounts, saves stay on the device, anonymous opt-in statistics only after consent. The only support link allowed in the game or on the site is `https://ko-fi.com/slopetycoon` ("Support the game" / "Support on Ko-fi", `target=_blank rel=noopener`, never a popup or gate); the Ko-fi widget loads only on `/support/` after a click.
 
 ## Do / Don't
 Do: use the palette above; show real game imagery; keep it quiet; credit nothing you did not make.

@@ -4,20 +4,20 @@ import { esc, plainText, renderInline, type FaqItem, type PageMeta, type TocItem
 export interface SiteEnv { siteUrl: string; repo: string; repoUrl: string; version: string }
 export const SITE_NAME = 'Slope Tycoon';
 export const AUTHOR = { name: 'Maarten Balliauw', url: 'https://github.com/maartenba' } as const;
-export const SPONSOR_URL = 'https://github.com/sponsors/maartenba';
+export const SUPPORT_URL = 'https://ko-fi.com/slopetycoon';
 const HEART = '<svg class="heart" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 2.9 5 6.3 5c2.1 0 3.9 1.2 5.7 3.3C13.8 6.2 15.6 5 17.7 5c3.4 0 5.3 3.6 3.9 6.8C19.5 16.4 12 21 12 21z"/></svg>';
 /** Sponsor button / link: plain anchor, opens on click only (no embed, no script, no request before the click). */
-export const sponsorLink = (cls = 'btn ghost sponsor', label = 'Sponsor on GitHub'): string => `<a class="${cls}" href="${SPONSOR_URL}" target="_blank" rel="noopener" data-sponsor>${HEART}<span>${label}</span></a>`;
+export const supportLink = (cls = 'btn ghost sponsor', label = 'Support on Ko-fi'): string => `<a class="${cls}" href="${SUPPORT_URL}" target="_blank" rel="noopener" data-support>${HEART}<span>${label}</span></a>`;
 export const GA_HOSTS = ['www.googletagmanager.com', 'www.google-analytics.com'] as const;
 export const DESC = 'Build your own ski and mountain resort in the browser: shape terrain, build lifts, groom pistes and run it through all four seasons. Free, plays offline.';
 export const LANDING_TITLE = 'Slope Tycoon – Free Ski Resort Tycoon Game in Your Browser';
 export const LANDING_DESC = 'A free ski resort tycoon in your browser: shape the terrain, place lifts, groom pistes and run the resort through winter and summer. No download.';
 export const PRIVACY_CLAIM = 'No ads, no accounts, saves stay on your device, anonymous opt-in statistics.';
 export const SEO = { titleMax: 59, descMin: 120, descMax: 155 } as const;
-export type OgKey = 'landing' | 'guide' | 'privacy' | 'about' | 'ski-resort-tycoon' | 'games-like' | 'ski-lifts' | 'browser-tycoon' | 'summer' | 'devlog';
+export type OgKey = 'landing' | 'guide' | 'privacy' | 'about' | 'support' | 'support' | 'ski-resort-tycoon' | 'games-like' | 'ski-lifts' | 'browser-tycoon' | 'summer' | 'devlog';
 export const OG_ALT: Record<OgKey, string> = {
   'ski-resort-tycoon': 'Slope Tycoon: play a ski resort tycoon in your browser', 'games-like': 'Slope Tycoon: games like Ski Resort Tycoon', 'ski-lifts': 'Slope Tycoon: how ski lifts work, chairlifts and gondolas', 'browser-tycoon': 'Slope Tycoon: free browser tycoon games', summer: 'Slope Tycoon: a mountain resort game for summer too', devlog: 'The Slope Tycoon devlog: release notes in plain words',
-  landing: 'Slope Tycoon: a ski village with lifts and pistes in the mountains', guide: 'Slope Tycoon player guide over a snowy resort', privacy: 'Slope Tycoon privacy and analytics over an alpine village at night', about: 'Slope Tycoon: why I built a ski resort tycoon game',
+  landing: 'Slope Tycoon: a ski village with lifts and pistes in the mountains', guide: 'Slope Tycoon player guide over a snowy resort', privacy: 'Slope Tycoon privacy and analytics over an alpine village at night', about: 'Slope Tycoon: why I built a ski resort tycoon game', support: 'Slope Tycoon support page: the game stays free, with an optional Ko-fi coffee',
 };
 
 /** Which other guide pages are worth reading next (internal links; a test checks the slugs exist). */
@@ -84,7 +84,7 @@ export const scripts = (rel: string): string => `<script src="${rel}assets/conse
 export function header(rel: string, markSvg: string): string {
   const here = rel === '' ? '<a href="#what">What you do</a><a href="#gallery">Screenshots</a><a href="#faq">FAQ</a>' : '';
   return `<header class="top"><div class="wrap"><a class="brand" href="${rel || './'}" aria-label="Slope Tycoon home">${markSvg}<span>Slope Tycoon</span></a>
-<nav class="nav" aria-label="Main">${here}<a class="keep" href="${rel}guide/">Guide</a><a href="${rel}devlog/">Devlog</a><a class="keep" href="${rel}about/">About</a><a class="btn primary" href="${rel}play/">Play</a>${sponsorLink('sponsor-mini', 'Sponsor')}</nav></div></header>`;
+<nav class="nav" aria-label="Main">${here}<a class="keep" href="${rel}guide/">Guide</a><a href="${rel}devlog/">Devlog</a><a class="keep" href="${rel}about/">About</a><a class="btn primary" href="${rel}play/">Play</a>${supportLink('sponsor-mini', 'Support')}</nav></div></header>`;
 }
 
 export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = []): string {
@@ -92,10 +92,10 @@ export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = [
   const col = (label: string, title: string, links: string): string => `<nav class="fcol" aria-label="Footer: ${label}"><p class="fh">${title}</p><ul>${links}</ul></nav>`;
   const li = (h: string): string => `<li>${h}</li>`;
   return `<footer><div class="wrap"><div class="fbrand"><b>Slope Tycoon</b> <span class="fver">v${env.version} (pre-release)</span><span class="fnote">${esc(PRIVACY_CLAIM)}</span></div>
-<div class="fcols">${col('the game', 'The game', li(`<a href="${rel}play/">Play</a>`) + li(`<a href="${rel || './'}">Home</a>`) + li(`<a href="${rel}about/">About / why I built this</a>`))}
+<div class="fcols">${col('the game', 'The game', li(`<a href="${rel}play/">Play</a>`) + li(`<a href="${rel || './'}">Home</a>`) + li(`<a href="${rel}about/">About / why I built this</a>`) + li(`<a href="${rel}support/">Support the game</a>`))}
 ${col('read more', 'Read more', li(`<a href="${rel}ski-resort-tycoon/">Ski resort tycoon in your browser</a>`) + li(`<a href="${rel}how-ski-lifts-work/">How ski lifts work</a>`) + li(`<a href="${rel}games-like-ski-resort-tycoon/">Games like Ski Resort Tycoon</a>`) + li(`<a href="${rel}browser-tycoon-games/">Browser tycoon games</a>`) + li(`<a href="${rel}summer-mountain-resort-game/">A mountain resort game for summer</a>`) + li(`<a href="${rel}devlog/">Devlog</a>`))}
 ${col('guide', 'Player guide', li(`<a href="${rel}guide/">All guide pages</a>`) + top.map((p) => li(`<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`)).join(''))}
-${col('project', 'Project', li(`<a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a>`) + li(`<a href="${rel}devlog/">Devlog</a> · <a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>`) + li(sponsorLink('sponsor-foot', 'Sponsor on GitHub')) + li(`<a href="${env.repoUrl}/tree/main/docs">Developer docs</a>`) + li(`<a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`))}
+${col('project', 'Project', li(`<a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a>`) + li(`<a href="${rel}devlog/">Devlog</a> · <a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>`) + li(supportLink('sponsor-foot', 'Support on Ko-fi')) + li(`<a href="${env.repoUrl}/tree/main/docs">Developer docs</a>`) + li(`<a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`))}
 ${col('privacy', 'Privacy', li(`<a href="${rel}privacy/">Privacy &amp; analytics</a>`) + li(`<a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a>`))}</div>
 <div class="fbottom">&copy; 2026 Maarten Balliauw. All rights reserved: source available to read on GitHub, not open source. Fonts: Nunito and Lilita One (SIL OFL 1.1). Built with three.js (MIT).</div></div></footer>`;
 }
@@ -145,21 +145,21 @@ ${footer(env, rel, o.pages)}
 ${scripts(rel)}</body></html>\n`;
 }
 
-export interface InfoPage { slug: 'privacy' | 'about'; title: string; description: string; heading: string; html: string; og: OgKey; type?: 'website' | 'profile' }
+export interface InfoPage { slug: 'privacy' | 'about' | 'support'; title: string; description: string; heading: string; html: string; og: OgKey; type?: 'website' | 'profile' }
 /** Plain content page (privacy, about) generated from site/pages/<slug>.md with the guide's look. */
 export function infoPage(env: SiteEnv, o: InfoPage & { markSvg: string; pages: readonly PageMeta[] }): string {
   const rel = '../', ld: unknown[] = [breadcrumbLd(env, [{ name: 'Slope Tycoon', path: '' }, { name: o.heading, path: `${o.slug}/` }])];
   if (o.slug === 'about') ld.push({ '@context': 'https://schema.org', '@type': 'AboutPage', name: o.title, url: `${env.siteUrl || './'}about/`, mainEntity: { ...personLd(), '@type': 'Person', description: 'Developer of Slope Tycoon' } });
-  else ld.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: o.title, url: `${env.siteUrl || './'}privacy/`, author: personLd() });
+  else ld.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: o.title, url: `${env.siteUrl || './'}${o.slug}/`, author: personLd() });
   return `<!doctype html>\n<html lang="en"><head>\n${head(env, { rel, title: o.title, description: o.description, path: `${o.slug}/`, og: o.og, type: o.type, ld })}\n</head><body>
 <a class="skip" href="#main">Skip to content</a>
 ${header(rel, o.markSvg)}
 <main id="main" class="info"><article>${crumbsHtml(rel, [{ name: 'Home', href: '' }, { name: o.heading }])}<h1>${esc(o.heading)}</h1>
 ${o.html}
-${o.slug === 'about' ? `<h2 id="support">Support the game</h2><p>If you enjoy the game, you can support its development on GitHub Sponsors. The game stays free, no ads.</p><p>${sponsorLink()}</p>` : ''}
+${o.slug === 'about' ? `<h2 id="support">Support the game</h2><p>If you enjoy the game, you can support its development with a coffee on Ko-fi. The game stays free, no ads.</p><p>${supportLink()}</p>` : ''}
 <p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> <a class="btn ghost" href="${rel}guide/">Read the player guide</a></p></article></main>
 ${footer(env, rel, o.pages)}
-${scripts(rel)}</body></html>\n`;
+${scripts(rel)}${o.slug === 'support' ? `\n<script src="${rel}assets/support.js" defer></script>` : ''}</body></html>\n`;
 }
 
 /** FAQ list: visible `<details>` and the FAQPage JSON-LD are built from the same data, so they always match. Answers are inline markdown. */
@@ -195,7 +195,7 @@ export function landingPage(env: SiteEnv, o: LandingOpts & { markSvg: string; pa
 <p class="cta"><a class="btn primary big" href="${rel}play/">▶ Play in your browser</a><a class="btn ghost" href="${rel}guide/getting-started/">Getting started guide</a></p>${o.heroHtml}
 ${o.html}
 <h2 id="faq">Questions</h2>${o.faqHtml}
-<aside class="lp-cta"><p>${o.slug === 'devlog' ? '' : 'The game is free, runs in a browser tab and keeps your saves on your device.'}</p><p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> ${sponsorLink()}</p></aside>
+<aside class="lp-cta"><p>${o.slug === 'devlog' ? '' : 'The game is free, runs in a browser tab and keeps your saves on your device.'}</p><p><a class="btn primary" href="${rel}play/">▶ Play Slope Tycoon</a> ${supportLink()}</p></aside>
 ${related}</article>`;
   return shell(env, { rel, markSvg: o.markSvg, pages: o.pages, head: { rel, title: o.title, description: o.description, path: `${o.slug}/`, og: o.og, type: o.kind === 'article' ? 'article' : 'website', ld }, main: main$ });
 }

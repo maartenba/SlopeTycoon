@@ -56,7 +56,7 @@ The **View** drawer groups **Camera** (rotate, zoom), **Modes** (ride-along, wal
 
 When a new version is waiting, a small card at the top left (nothing is paused) lists a few highlights, with **Reload now** (autosaves first) and **Later** (a picture is in [Saves, offline & install](page:saves)).
 
-The first time you launch a new version you get a one-time **What's new** card, and the **About** dialog (Menu) has a *What's new* button and a discreet **Support the game** link to GitHub Sponsors. It is a plain link that opens only when you click it; the game stays free, with no ads and no nagging.
+The first time you launch a new version you get a one-time **What's new** card, and the **About** dialog (Menu) has a *What's new* button and a discreet **Support the game** link to Ko-fi. It is a plain link that opens only when you click it; the game stays free, with no ads and no nagging.
 
 ## Help, pause and the camera
 

@@ -1,5 +1,5 @@
 {
- "inputs": "8fab7a806946de513cda3ea1c7efb60dc5501a11b81ed37cbf07a25eb662cdfd",
+ "inputs": "b6c18d2f41911a4f9461f3334aa1c7ae53ae674fc93d1c8a75f2493965371915",
  "cards": [
   "landing",
   "ski-resort-tycoon",
@@ -10,6 +10,7 @@
   "devlog",
   "guide",
   "privacy",
+  "support",
   "about"
  ]
 }

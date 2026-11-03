@@ -34,6 +34,8 @@ const jobs: Array<{ name: string; path: string; w: number; h: number; full: bool
   { name: 'landing-about', path: '', w: 1440, h: 900, full: false, sel: '#about' },
   { name: 'about-1440', path: 'about/', w: 1440, h: 900, full: false },
   { name: 'about-mobile', path: 'about/', w: 390, h: 844, full: false },
+  { name: 'support-1440', path: 'support/', w: 1440, h: 900, full: false },
+  { name: 'support-mobile', path: 'support/', w: 390, h: 844, full: false },
   { name: 'privacy-1440', path: 'privacy/', w: 1440, h: 900, full: false },
   { name: 'privacy-mobile', path: 'privacy/', w: 390, h: 844, full: false },
   { name: 'guide-mobile', path: 'guide/guests-seasons/', w: 390, h: 844, full: false },

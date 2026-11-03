@@ -15,7 +15,7 @@ export interface GenPage { /** directory under the site root, no trailing slash 
 export const LANDING_DIR = 'site/landing';
 export const landingFiles = (): string[] => readdirSync(LANDING_DIR).filter((f) => f.endsWith('.md')).sort();
 /** Every slug `lp:<slug>` may point at: the landing pages, the devlog, about and privacy. */
-export const landingSlugs = (): Set<string> => new Set([...landingFiles().map((f) => f.replace(/\.md$/, '')), 'devlog', 'about', 'privacy']);
+export const landingSlugs = (): Set<string> => new Set([...landingFiles().map((f) => f.replace(/\.md$/, '')), 'devlog', 'about', 'support', 'privacy']);
 
 export function landingPages(env: SiteEnv, markSvg: string, pages: readonly PageMeta[], shots: Record<string, ShotInfo>, slugs: ReadonlySet<string>, gen: Record<string, string>, today = new Date().toISOString().slice(0, 10)): GenPage[] {
   const landing = landingSlugs();

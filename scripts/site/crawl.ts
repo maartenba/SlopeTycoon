@@ -5,7 +5,7 @@ import { dirname, join, normalize, relative, sep } from 'node:path';
 export interface Budgets { shotMaxBytes: number; shotsTotalBytes: number; cssJsMaxBytes: number }
 export const BUDGETS: Budgets = { shotMaxBytes: 250 * 1024, shotsTotalBytes: 8.5 * 1024 * 1024, cssJsMaxBytes: 150 * 1024 };
 /** External hosts allowed in href/src (footer links and the game's own About credits live in play/, which is not crawled for these). */
-export const EXTERNAL_OK = [/^https:\/\/github\.com\//, /^https:\/\/github\.com\/sponsors\/maartenba$/, /^https:\/\/en\.wikipedia\.org\/wiki\/Ski_Resort_Tycoon$/];
+export const EXTERNAL_OK = [/^https:\/\/github\.com\//, /^https:\/\/ko-fi\.com\/slopetycoon$/, /^https:\/\/en\.wikipedia\.org\/wiki\/Ski_Resort_Tycoon$/];
 /** Hosts the analytics snippet (assets/consent.js) may contact, and only after the visitor allowed it. */
 export const ANALYTICS_HOSTS = ['www.googletagmanager.com', 'www.google-analytics.com'];
 export const GA_ID = 'G-NX37ERE0S9';
@@ -43,6 +43,8 @@ export function lintPage(file: string, h: string, o: { siteUrl?: string; fileExi
   if (!lds.length) bad('no JSON-LD structured data');
   for (const m of lds) { try { const j = JSON.parse(m[1]!) as { '@context'?: string; '@type'?: unknown }; if (j['@context'] !== 'https://schema.org' || !j['@type']) bad('JSON-LD without @context/@type'); } catch (e) { bad(`invalid JSON-LD: ${String(e).slice(0, 80)}`); } }
   if (/<script[^>]+src="https?:/.test(h) || /gtag\(|googletagmanager|google-analytics/.test(h)) bad('analytics / external scripts must only be injected by consent.js after consent');
+  // Ko-fi: ko-fi.com links are plain anchors (EXTERNAL_OK); the widget iframe is created only by assets/support.js after a click, so no page may contain a static iframe or embed
+  if (/<(iframe|embed|object)\b/i.test(h)) bad('static iframe / embed: the Ko-fi widget must be injected by assets/support.js on click only');
   if (!/<script src="[^"]*assets\/consent\.js"/.test(h)) bad('missing consent.js');
   if (!/<footer>[\s\S]*data-consent-open[\s\S]*<\/footer>/.test(h)) bad('footer lacks the "Privacy & analytics settings" link');
   return out;
@@ -137,14 +139,14 @@ export function checkSite(dir: string, opts: { siteUrl?: string; budgets?: Budge
   if (cssjs > b.cssJsMaxBytes) bad(`site css+js ${(cssjs / 1024).toFixed(0)} kB exceeds the budget`);
   for (const f of ['404.html', '.nojekyll', 'sitemap.xml', 'robots.txt', 'play/index.html', 'play/sw.js', 'play/manifest.webmanifest', 'assets/og/landing.png', 'assets/search-index.json']) if (!all.has(f)) bad(`missing ${f}`);
   // external hosts inside the site's own scripts / styles: only the analytics endpoints (loaded after consent)
-  for (const f of ['assets/site.js', 'assets/consent.js', 'assets/site.css']) if (all.has(f)) for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) if (!ANALYTICS_HOSTS.includes(m[1]!.toLowerCase()) && !/schema\.org|w3\.org/.test(m[1]!)) bad(`${f}: external host not allowed: ${m[1]}`);
+  for (const f of ['assets/site.js', 'assets/consent.js', 'assets/support.js', 'assets/site.css']) if (all.has(f)) for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) if (!ANALYTICS_HOSTS.includes(m[1]!.toLowerCase()) && !/schema\.org|w3\.org/.test(m[1]!)) bad(`${f}: external host not allowed: ${m[1]}`);
   if (opts.seo) {
     const pages = htmlFiles.map((f) => ({ file: f, html: html(f) }));
     for (const p of pages) problems.push(...lintPage(p.file, p.html, { siteUrl: opts.siteUrl, readFile: (r) => (all.has(r) ? readFileSync(join(dir, r)) : null) }));
     problems.push(...uniqueLint(pages));
     if (all.has('sitemap.xml') && all.has('robots.txt')) problems.push(...sitemapLint(readFileSync(join(dir, 'sitemap.xml'), 'utf8'), readFileSync(join(dir, 'robots.txt'), 'utf8'), htmlFiles.map((f) => f.replace(/index\.html$/, '')), opts.siteUrl || 'https://slopetycoon.com/'));
     for (const f of ['favicon.ico', 'site.webmanifest', 'assets/icons/icon.svg', 'assets/icons/apple-touch-icon.png', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'about/index.html', 'privacy/index.html', 'devlog/index.html', 'devlog/feed.xml', 'ski-resort-tycoon/index.html', 'games-like-ski-resort-tycoon/index.html', 'how-ski-lifts-work/index.html', 'browser-tycoon-games/index.html', 'summer-mountain-resort-game/index.html']) if (!all.has(f)) bad(`missing ${f}`);
-    for (const k of ['landing', 'guide', 'privacy', 'about', 'ski-resort-tycoon', 'games-like', 'ski-lifts', 'browser-tycoon', 'summer', 'devlog']) { const sz = all.has(`assets/og/${k}.png`) ? pngSize(readFileSync(join(dir, `assets/og/${k}.png`))) : null; if (!sz || sz.w !== 1200 || sz.h !== 630) bad(`assets/og/${k}.png must be a 1200x630 PNG`); }
+    for (const k of ['landing', 'guide', 'privacy', 'about', 'support', 'ski-resort-tycoon', 'games-like', 'ski-lifts', 'browser-tycoon', 'summer', 'devlog']) { const sz = all.has(`assets/og/${k}.png`) ? pngSize(readFileSync(join(dir, `assets/og/${k}.png`))) : null; if (!sz || sz.w !== 1200 || sz.h !== 630) bad(`assets/og/${k}.png must be a 1200x630 PNG`); }
     if (all.has('404.html') && !/<a href="[^"]+">Play the game<\/a>/.test(readFileSync(join(dir, '404.html'), 'utf8'))) bad('404.html needs links back into the site');
   }
   return { problems, pages: htmlFiles.length, links, images, shotBytes };

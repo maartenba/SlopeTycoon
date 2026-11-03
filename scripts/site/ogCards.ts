@@ -17,6 +17,7 @@ export const CARDS: Record<string, { shot: string; kicker: string; title: string
   devlog: { shot: 'concert-winter-night', kicker: 'Release notes', title: 'The devlog', sub: 'What changed in each version of Slope Tycoon, in plain words.', chips: ['One post per release', 'Atom feed'] },
   guide: { shot: 'season-summer', kicker: 'Player guide', title: 'How to run your resort', sub: 'Lifts, pistes, seasons, money, shortcuts and more.', chips: ['Getting started', 'Lifts & pistes', 'Shortcuts'] },
   privacy: { shot: 'night-village', kicker: 'Privacy & analytics', title: 'Your saves stay yours', sub: 'No ads, no accounts. Anonymous statistics only if you allow them.', chips: ['Opt-in', 'Local saves', 'No ads'] },
+  support: { shot: 'hero-winter', kicker: 'Support the game', title: 'Always free', sub: 'No ads, no accounts. A coffee on Ko-fi is optional.', chips: ['Optional', 'Ko-fi', 'No ads'] },
   about: { shot: 'season-autumn', kicker: 'About the game', title: 'Why I built this', sub: 'Why I built a ski resort game for summer and winter, by Maarten.', chips: ['Made with AI', 'Open on GitHub'] },
 };
 const b64 = (f: string): string => readFileSync(f).toString('base64');

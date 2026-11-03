@@ -170,3 +170,4 @@ section{padding:64px 0}
  .collage{grid-template-columns:1fr;gap:16px}.c-a,.c-b,.c-c,.c-d{grid-column:auto;margin-top:0}
 }
 @media (prefers-reduced-motion:reduce){.pic img{transition:none}}
+.kofi-widget{margin:14px 0 22px;max-width:640px}.kofi-widget iframe{display:block;width:100%;border-radius:12px;min-height:712px}.kofi-note{color:var(--muted);font-size:.92em;margin-left:8px}

@@ -30,7 +30,7 @@ const pages: Array<{ file: string; html: string }> = [
 const siteUrl = env.siteUrl;
 
 describe('site SEO', () => {
-  it('has the expected set of pages', () => { expect(pages.map((p) => p.file)).toEqual(expect.arrayContaining(['index.html', 'guide/index.html', 'about/index.html', 'privacy/index.html', 'guide/getting-started/index.html'])); expect(pages.length).toBe(parsed.length + 4 + landingPages(env, '<svg/>', metas, fake, slugs, gen).length + devlogPages(env, '<svg/>', metas, fake).pages.length); });
+  it('has the expected set of pages', () => { expect(pages.map((p) => p.file)).toEqual(expect.arrayContaining(['index.html', 'guide/index.html', 'about/index.html', 'privacy/index.html', 'guide/getting-started/index.html'])); expect(pages.length).toBe(parsed.length + 5 + landingPages(env, '<svg/>', metas, fake, slugs, gen).length + devlogPages(env, '<svg/>', metas, fake).pages.length); });
   it('every page passes the lint: title < 60, description 120-155, canonical, social cards, JSON-LD, icons, consent', () => {
     for (const p of pages) expect(lintPage(p.file, p.html, { siteUrl }), p.file).toEqual([]);
     expect(SEO_LIMITS).toEqual({ titleMax: 59, descMin: 120, descMax: 155 });
@@ -61,7 +61,7 @@ describe('site SEO', () => {
     expect(sitemapLint(xml, robotsTxt(base), pages.map((p) => p.file.replace(/index\.html$/, '')), base)).toEqual([]);
     expect(sitemapLint(xml.replace(`${base}play/`, `${base}x/`), 'User-agent: *\nAllow: /\n', [''], base).join()).toMatch(/play\/.*|robots/);
   });
-  it('no external URLs besides GitHub and the Wikipedia link; Wikipedia link has rel=noopener', () => {
+  it('no external URLs besides GitHub, the exact Ko-fi link and the Wikipedia link; Wikipedia link has rel=noopener', () => {
     for (const p of pages) {
       for (const r of extractRefs(p.html)) if (/^https?:\/\//.test(r.url) && r.attr !== 'meta-image' && !r.url.startsWith(siteUrl)) expect(EXTERNAL_OK.some((re) => re.test(r.url)), `${p.file}: ${r.url}`).toBe(true);
       for (const m of p.html.matchAll(/<a [^>]*href="https:\/\/en\.wikipedia\.org[^>]*>/g)) expect(m[0], p.file).toContain('rel="noopener"');

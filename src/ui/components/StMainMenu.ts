@@ -1,4 +1,4 @@
-import { SPONSOR_URL, siteUrl } from '../siteLink';
+import { SUPPORT_URL, siteUrl } from '../siteLink';
 import { logoSvg } from '../logo';
 import { whatsNewSection } from '../whatsNewView';
 import { Modal } from '../modal';
@@ -113,7 +113,7 @@ export class StMainMenu extends StElement {
     this.buildConsent(api.consent, !!api.running);
     this.logo.innerHTML = logoSvg({ variant: 'full', theme: 'dark' });
     this.foot.textContent = `v${api.version} · procedural everything · `;
-    this.foot.append(sponsorLink());
+    this.foot.append(supportLink());
     this.contBtn = mk('▶', 'Continue', 'Load your newest save', () => api.continueGame(), 'primary'); this.setContinue(false);
     this.contHint.className = 'hint';
     this.installBtn = mk('⤓', 'Install app', 'Install Slope Tycoon (works offline)', () => this.pendingInstall?.()); this.installBtn.hidden = !this.pendingInstall;
@@ -134,7 +134,7 @@ export class StMainMenu extends StElement {
     );
     this.offline.hidden = !this.pendingOffline;
     const about = document.createElement('div'); about.className = 'about';
-    about.innerHTML = `${logoSvg({ variant: 'mark' })}<p>Version ${api.version}. A browser ski-resort tycoon.</p><p><b>Anonymous, opt-in statistics:</b> if you allow it (Settings &gt; Privacy), a few anonymous gameplay counts (such as levels reached) go to Google Analytics. Never your saves, names or anything you type; nothing is sent while you are offline.</p><p><b>Procedural everything:</b> terrain, models, textures, weather, music and sound are generated in code. The only bundled assets are two fonts: <b>Nunito</b> and <b>Lilita One</b> (SIL Open Font License 1.1, self-hosted).</p><p><a data-sponsor-link href="${SPONSOR_URL}" target="_blank" rel="noopener">Support the game ♥ (GitHub Sponsors)</a><br>The game stays free, no ads.</p><p>The game code is private to this project; it bundles <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT).</p>${siteUrl() ? `<p><a data-site-link href="${siteUrl()}">Website &amp; guide</a></p>` : ''}`;
+    about.innerHTML = `${logoSvg({ variant: 'mark' })}<p>Version ${api.version}. A browser ski-resort tycoon.</p><p><b>Anonymous, opt-in statistics:</b> if you allow it (Settings &gt; Privacy), a few anonymous gameplay counts (such as levels reached) go to Google Analytics. Never your saves, names or anything you type; nothing is sent while you are offline.</p><p><b>Procedural everything:</b> terrain, models, textures, weather, music and sound are generated in code. The only bundled assets are two fonts: <b>Nunito</b> and <b>Lilita One</b> (SIL Open Font License 1.1, self-hosted).</p><p><a data-support-link href="${SUPPORT_URL}" target="_blank" rel="noopener">Support the game ♥ (Ko-fi)</a><br>The game stays free, no ads.</p><p>The game code is private to this project; it bundles <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT).</p>${siteUrl() ? `<p><a data-site-link href="${siteUrl()}">Website &amp; guide</a></p>` : ''}`;
     about.append(whatsNewSection());
     this.aboutDlg.body.replaceChildren(about);
     void api.hasContinue().then((v) => { if (!api.running) this.setContinue(v); }).catch(() => this.setContinue(false));
@@ -142,7 +142,7 @@ export class StMainMenu extends StElement {
 }
 
 /** Discreet support link: plain anchor, opens in a new tab only on click. Never a popup, toast or gate. */
-function sponsorLink(): HTMLAnchorElement {
-  const a = document.createElement('a'); a.href = SPONSOR_URL; a.target = '_blank'; a.rel = 'noopener'; a.dataset.sponsorLink = ''; a.textContent = 'Support the game ♥';
-  a.title = 'Support the game on GitHub Sponsors (opens in your browser)'; return a;
+function supportLink(): HTMLAnchorElement {
+  const a = document.createElement('a'); a.href = SUPPORT_URL; a.target = '_blank'; a.rel = 'noopener'; a.dataset.supportLink = ''; a.textContent = 'Support the game ♥';
+  a.title = 'Support the game on Ko-fi (opens in your browser)'; return a;
 }

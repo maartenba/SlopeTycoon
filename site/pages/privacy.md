@@ -22,6 +22,12 @@ Statistics are kept for the retention period configured in the Google Analytics 
 
 <div class="callout note"><strong class="callout-title">Note</strong><p>The analytics code is not even downloaded unless you allow it. On a local test server, in automated or headless browsers, nothing is ever sent.</p></div>
 
+## Ko-fi (support links)
+
+The site and the game link to my page on **Ko-fi** (`https://ko-fi.com/slopetycoon`) if you want to support the game. These are plain links: nothing is requested from Ko-fi until you click one. On the [support page](../support/) there is also a Ko-fi widget. It is **not loaded until you click "Show the Ko-fi widget"**, and only then does your browser contact `ko-fi.com`.
+
+Once you are on Ko-fi, or the widget is loaded, Ko-fi sees your visit and may set its own cookies and process payments under its own privacy policy. This site sends nothing about you to Ko-fi, and the widget is never loaded in the game.
+
 ## Where your saves live
 
 Saved games, settings and photos are stored **locally in your browser** (IndexedDB and localStorage). They are never uploaded. To move a save to another device, export a `.slope` file from Save / Load and import it there. Clearing your browser data deletes your saves, so export a backup of the ones you care about.

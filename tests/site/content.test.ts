@@ -41,12 +41,12 @@ describe('site content', () => {
       infoPage(env, { slug: 'privacy', title: 'P', description: 'd', heading: 'Privacy', html: '<p>x</p>', og: 'privacy', markSvg: '<svg/>', pages: pg }),
     ];
     for (const html of all) {
-      const tags = html.match(/<a [^>]*data-sponsor[^>]*>/g) ?? [];
+      const tags = html.match(/<a [^>]*data-support[^>]*>/g) ?? [];
       expect(tags.length).toBeGreaterThanOrEqual(2);
-      for (const t of tags) { expect(t).toContain('href="https://github.com/sponsors/maartenba"'); expect(t).toContain('rel="noopener"'); expect(t).toContain('target="_blank"'); }
+      for (const t of tags) { expect(t).toContain('href="https://ko-fi.com/slopetycoon"'); expect(t).toContain('rel="noopener"'); expect(t).toContain('target="_blank"'); }
       expect(html).not.toMatch(/<(iframe|embed)\b/i); expect(tags.join(' ').toLowerCase()).not.toContain('share');
     }
-    expect(all[2]).toContain('The game stays free, no ads.'); expect(all[0]).toContain('Sponsor on GitHub');
+    expect(all[2]).toContain('The game stays free, no ads.'); expect(all[0]).toContain('Support on Ko-fi');
   });
   it('guide text avoids dev jargon', () => {
     for (const p of pages) expect(p.body, p.slug).not.toMatch(/\b(sim tick|ECS|shader|vitest|Three\.js|npm run)\b/i);
