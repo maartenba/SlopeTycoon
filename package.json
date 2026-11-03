@@ -41,6 +41,7 @@
     "shot": "vite-node scripts/shot.ts",
     "flicker": "vite-node scripts/flicker-test.ts",
     "shadow:stability": "vite-node scripts/shadow-stability.ts",
+    "shadow:cost": "vite-node scripts/shadow-cost.ts",
     "audio:render": "vite-node scripts/audio-render.ts",
     "audio:export": "vite-node scripts/audio-export.ts",
     "audio:crosscheck": "vite-node scripts/audio-crosscheck.ts",
