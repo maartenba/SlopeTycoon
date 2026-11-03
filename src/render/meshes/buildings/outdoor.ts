@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, barrelRoof, boatHull, curvedRamp, domeCap, eaveBrackets, railing, chimney, doorway, frameWin, lampPost, parasolTable, picnicTable } from '../common';
+import { C, FLAT_SNOW_UV, PartBuilder, awning, barrelRoof, boatHull, curvedRamp, domeCap, eaveBrackets, railing, chimney, doorway, frameWin, lampPost, parasolTable, picnicTable } from '../common';
 import { curveTube } from '../lifts/loft';
 
 /** Boat Rental (2x2): boathouse with a long jetty, moored rowing boats and a canoe rack. */
@@ -63,8 +63,8 @@ export function beach(b: PartBuilder, w: number, h: number): void {
 /** Ice Rink (5x4): oval ice sheet with striped boards, warm-up hut, floodlight masts, centre circle and benches. */
 export function iceRink(b: PartBuilder, w: number, h: number): void {
   const rx = w / 2 - 0.15, rz = h / 2 - 0.15;
-  b.cyl(0, 0, 0, 1, 0.06, C.white, 'stone', 28, { sx: rx, sz: rz });
-  b.cyl(0, 0.06, 0, 1, 0.01, 0xcfeeff, 'stone', 28, { sx: rx - 0.1, sz: rz - 0.1 });
+  b.cyl(0, 0, 0, 1, 0.06, C.white, 'stone', 28, { sx: rx, sz: rz, flatUv: FLAT_SNOW_UV });
+  b.cyl(0, 0.06, 0, 1, 0.01, 0xe6f7ff, 'stone', 28, { sx: rx - 0.1, sz: rz - 0.1, flatUv: FLAT_SNOW_UV }); // smooth ice: one plain texel, no paving-tile pattern (M8 lane G)
   const n = 32;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
@@ -72,9 +72,9 @@ export function iceRink(b: PartBuilder, w: number, h: number): void {
     b.box(Math.cos(a) * rx, 0, Math.sin(a) * rz, 0.1, 0.22, seg, i % 2 ? C.red : C.blue, 'wood', { ry: tang });
     b.box(Math.cos(a) * rx, 0.22, Math.sin(a) * rz, 0.12, 0.02, seg, C.white, 'wood', { ry: tang });
   }
-  b.cyl(0, 0.07, 0, 0.3, 0.01, C.blue, 'stone', 16);
-  b.box(0, 0.07, 0, 2 * rx - 0.8, 0.012, 0.04, C.red, 'stone');
-  for (const x of [-1.2, 1.2]) b.box(x, 0.07, 0, 0.03, 0.012, 2 * rz - 0.8, C.blue, 'stone');
+  b.cyl(0, 0.07, 0, 0.3, 0.01, C.blue, 'stone', 16, { flatUv: FLAT_SNOW_UV });
+  b.box(0, 0.07, 0, 2 * rx - 0.8, 0.012, 0.04, C.red, 'stone', { flatUv: FLAT_SNOW_UV });
+  for (const x of [-1.2, 1.2]) b.box(x, 0.07, 0, 0.03, 0.012, 2 * rz - 0.8, C.blue, 'stone', { flatUv: FLAT_SNOW_UV });
   // warm-up hut
   b.box(-2.1, 0, -1.5, 0.6, 0.45, 0.6, C.cream);
   b.gable(-2.1, 0.45, -1.5, 0.7, 0.7, 0.25, C.roofRed, true);
