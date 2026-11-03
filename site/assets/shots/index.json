@@ -6,12 +6,12 @@
    {
     "w": 640,
     "file": "hero-winter-640.webp",
-    "bytes": 28676
+    "bytes": 28456
    },
    {
     "w": 1280,
     "file": "hero-winter-1280.webp",
-    "bytes": 77088
+    "bytes": 76690
    }
   ]
  },
@@ -70,12 +70,12 @@
    {
     "w": 640,
     "file": "season-summer-640.webp",
-    "bytes": 26994
+    "bytes": 26448
    },
    {
     "w": 1280,
     "file": "season-summer-1280.webp",
-    "bytes": 54076
+    "bytes": 53294
    }
   ]
  },
@@ -102,12 +102,12 @@
    {
     "w": 640,
     "file": "night-village-640.webp",
-    "bytes": 26490
+    "bytes": 25392
    },
    {
     "w": 1280,
     "file": "night-village-1280.webp",
-    "bytes": 49438
+    "bytes": 48030
    }
   ]
  },
@@ -118,12 +118,12 @@
    {
     "w": 640,
     "file": "slope-guests-640.webp",
-    "bytes": 29016
+    "bytes": 28966
    },
    {
     "w": 1280,
     "file": "slope-guests-1280.webp",
-    "bytes": 49046
+    "bytes": 49204
    }
   ]
  },
@@ -198,12 +198,12 @@
    {
     "w": 640,
     "file": "ui-buildings-drawer-640.webp",
-    "bytes": 28668
+    "bytes": 29994
    },
    {
     "w": 1280,
     "file": "ui-buildings-drawer-1280.webp",
-    "bytes": 71182
+    "bytes": 73580
    }
   ]
  },
@@ -214,12 +214,12 @@
    {
     "w": 640,
     "file": "ui-lifts-drawer-640.webp",
-    "bytes": 29378
+    "bytes": 30254
    },
    {
     "w": 1280,
     "file": "ui-lifts-drawer-1280.webp",
-    "bytes": 74258
+    "bytes": 76160
    }
   ]
  },
@@ -1078,12 +1078,12 @@
    {
     "w": 640,
     "file": "lift-midstation-640.webp",
-    "bytes": 23076
+    "bytes": 22738
    },
    {
     "w": 1280,
     "file": "lift-midstation-1280.webp",
-    "bytes": 44998
+    "bytes": 43784
    }
   ]
  },
@@ -1238,12 +1238,12 @@
    {
     "w": 640,
     "file": "hotel-luxury-steam-640.webp",
-    "bytes": 26934
+    "bytes": 27206
    },
    {
     "w": 1280,
     "file": "hotel-luxury-steam-1280.webp",
-    "bytes": 52326
+    "bytes": 53216
    }
   ]
  },
@@ -1286,12 +1286,12 @@
    {
     "w": 640,
     "file": "coffee-stand-640.webp",
-    "bytes": 29474
+    "bytes": 29742
    },
    {
     "w": 1280,
     "file": "coffee-stand-1280.webp",
-    "bytes": 52022
+    "bytes": 53156
    }
   ]
  },

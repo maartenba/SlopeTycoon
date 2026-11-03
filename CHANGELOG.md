@@ -4,6 +4,30 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-03 (pre-release)
+
+The "smoother look" release (milestone M8): rounder buildings, lifts and vehicles, softer animals, a layered rock edge around the map, soft shorelines, and real sun shadows on the High graphics setting. Nothing in the economy or the saves changed.
+
+### Highlights
+
+- Smoother animals: deer, ibex, foxes and the rest have rounded bodies, tapered legs, horns and ears instead of boxes and sticks.
+- Rounder buildings, lifts and vehicles: vaulted hotel canopies, a barn with a gambrel roof, round rails and tower tubes, curved lift station roofs, rounder cars, buses, trains and the snowcat.
+- A new set of lift icons in the Lifts drawer: each family (T-bar, fixed and detachable chairs, bubble chairs, gondola, cabin, funicular) has its own picture.
+- The edge of the map is a layered rock cliff with ledges and a grassy lip, and drawn rivers and ponds have soft, rounded shorelines instead of tile steps.
+- Real sun shadows on the High graphics setting, and a soft contact shadow under buildings, towers and forests on every setting.
+
+### Changes
+
+- **Render only (M8, `docs/graphics-audit.md`, `docs/graphics-m8.md`)**: no sim, save or balance change, goldens unchanged. Draw calls in the main pass are the same as 0.4.0, the iso triangle count is within +5 % on Medium / High and not higher on Low, and the JavaScript grew by 11 kB gzip.
+- **Sun shadows (`docs/shadows.md`)**: High renders trees, buildings, lift towers and stations, guests, vehicles, animals and props into a sun depth map that the terrain receives. The map follows the camera in whole texels so shadows do not swim, refreshes at most 10 times a second, fades at dusk, is gone at night and is softer in bad weather. Large 256 maps drop the tree shadows at wide zoom to stay light.
+- **Contact shadows** are about 45 % stronger on every setting (a change to the ground mask the terrain already had: 0 extra draw calls).
+- **Conifers and crowns**: drooping tiers with a turned whorl per tier, rounder deciduous crowns, boulders with strata and per-rock proportions, at the same triangle count as before. Guests got a scarf.
+- **Buildings and lifts (lanes A and A2)**: round tube, tyre, drum, dome, barrel and windsock helpers, window glazing bars, eave brackets, round crossarms with struts and caps, bullwheel hoods, smooth boarding ramps, round footings, a mid-station canopy; hotels with a vaulted canopy and a pool ladder and board, the farm barn with a domed silo, the Ranger Station, Snowscooter Base, Toilets, Snow cannon, Launch ramp and Coffee Stand reworked.
+- **Vehicles**: smoother car lofts with wheel arches and mirrors, coach doors and hatches, train doors and roof pods, an ellipsoid helicopter, a rounded snowcat.
+- **Lift drawer icons** are drawn per family, with an inline vector fallback and thumbnails that render on demand.
+- **Low graphics**: tree density 0.55 -> 0.52 so that Low is not heavier than 0.4.0 even with the new detail.
+- Tooling: `scripts/shots/m8-perf.ts`, `m8-share.ts`, `m8-calls.ts`, `m8-audit.ts`, `m8-montage.ts`, `m8-baseline.ts`; `npm run flicker` takes `--quality low|med|high`.
+
 ## [0.4.0] - 2026-11-02 (pre-release)
 
 The "more to do" release (milestones M7.3 and M7.4): sleds and an alpine coaster, pizza and bread in the village, a Tourist Office, jumping and gliding from a grass strip, and a proper Carnival.

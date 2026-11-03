@@ -5,6 +5,7 @@ One doc per feature or system. Player-facing docs are the guide in `site/guide/*
 ## Start here
 - [release.md](release.md): release checklist and notes. [phase6-status.md](phase6-status.md): what the 0.3.0 content wave shipped, deferred and why. [depth.md](depth.md): M5.4 depth summary.
 - [economy-audit.md](economy-audit.md): M7.1 economy + rules audit: building contract suite, access / placement audit, per-building ROI table, difficulty targets, fix list. [placement-rules.md](placement-rules.md) carries the generated rules table; [playtest-m71.md](playtest-m71.md) the 0.3.1 checklist.
+- [graphics-audit.md](graphics-audit.md), [graphics-m8.md](graphics-m8.md), [shadows.md](shadows.md): M8 graphics pass: baseline audit and ranking, before / after perf + flicker verification, and the sun-shadow / contact-shadow design; [playtest-m8.md](playtest-m8.md) is the owner's real-GPU checklist.
 - [seo-research.md](seo-research.md): Ahrefs keyword + competitor research, keyword map, landing pages, design brief and the implementation status per recommendation (M7.2). [outreach-drafts.md](outreach-drafts.md) holds draft posts for the owner to publish himself; [playtest-m72.md](playtest-m72.md) is the M7.2 review checklist.
 - [deploy.md](deploy.md): GitHub Pages deployment, domain, pre-publication checks, **licence (proprietary, all rights reserved)**.
 - [visual-qa.md](visual-qa.md): screenshot harness. [perf.md](perf.md): performance budgets. [balance.md](balance.md): bot economy checks and golden re-records.
@@ -26,4 +27,4 @@ One doc per feature or system. Player-facing docs are the guide in `site/guide/*
 - [saves.md](saves.md), [pwa.md](pwa.md), [analytics.md](analytics.md) (opt-in, anonymous).
 
 ## Human playtest checklists (keep)
-[M5.1](playtest-m51.md), [M5.2](playtest-m52.md), [M5.3](playtest-m53.md) (Phase 5, historical); [M6.1](playtest-m61.md), [M6.2 + M6.6](playtest-m62.md), [M6.3](playtest-m63.md), [M6.4](playtest-m64.md), [M6.5](playtest-m65.md), [M6.7 final](playtest-m66.md) (Phase 6; the owner's final playtest is still open).
+[M5.1](playtest-m51.md), [M5.2](playtest-m52.md), [M5.3](playtest-m53.md) (Phase 5, historical); [M6.1](playtest-m61.md), [M6.2 + M6.6](playtest-m62.md), [M6.3](playtest-m63.md), [M6.4](playtest-m64.md), [M6.5](playtest-m65.md), [M6.7 final](playtest-m66.md) (Phase 6; the owner's final playtest is still open); [M7.1](playtest-m71.md), [M7.3](playtest-m73.md), [M7.4](playtest-m74.md), [M7.5](playtest-m75.md), [M8 audit](playtest-m8-audit.md), [M8](playtest-m8.md).

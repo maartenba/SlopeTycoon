@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.5.0",
+    "date": "2026-11-03",
+    "highlights": [
+      "Smoother animals: deer, ibex, foxes and the rest have rounded bodies, tapered legs, horns and ears instead of boxes and sticks.",
+      "Rounder buildings, lifts and vehicles: vaulted hotel canopies, a barn with a gambrel roof, round rails and tower tubes, curved lift station roofs…",
+      "A new set of lift icons in the Lifts drawer: each family (T-bar, fixed and detachable chairs, bubble chairs, gondola, cabin, funicular) has its own…",
+      "The edge of the map is a layered rock cliff with ledges and a grassy lip, and drawn rivers and ponds have soft, rounded shorelines instead of tile…",
+      "Real sun shadows on the High graphics setting, and a soft contact shadow under buildings, towers and forests on every setting."
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-11-02",
     "highlights": [
@@ -22,18 +33,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "While you build or paint, the goals, news and Rudi chips step aside; while you drag the map the cards fade out and return when you let go.",
       "Inspectors, Rudi's advice and the news list are sheets too: first lines at a glance, pull up for the rest. Toasts are small, one at a time, above…",
       "Landscape phones get a side sheet; tablets keep their drawers, capped at about 40 % of the height. The map is at least half the screen in every…"
-    ]
-  },
-  {
-    "version": "0.3.2",
-    "date": "2026-11-01",
-    "highlights": [
-      "Valley fog and inversion mornings: on roughly one cold morning in six a fog bank fills the valley while the summits stay clear, and it burns off by…",
-      "Special sunrises and sunsets, about one in four, not every day: a warm sky and pink alpenglow on the snowy summits for a while; plain days stay plain.",
-      "Stars and a moon with real phases over about 30 days at night, plus soft cloud shadows drifting over the slopes by day.",
-      "Dawn mist over lakes, sparkling frost on cold clear mornings and, rarely, a rainbow after rain; Photo mode suggests the right scene (Golden hour…",
-      "Settings > Graphics > Atmosphere: Off, Low or High. Off looks exactly like 0.3.1, and reduced motion keeps everything still.",
-      "A new website: five landing pages, a devlog with a post for every release, and a calmer landing page; Challenging is also about 30 % tighter and…"
     ]
   }
 ];

@@ -73,5 +73,10 @@
     "tagline": "sleds, pizza and the sky",
     "lead": "This release adds things to do besides skiing. You can paint a sled run and rent out sleds in winter, or build an alpine coaster in summer. The village gets a pizzeria, a bakery and a tourist office, and a grass strip lets people skydive, hang glide or paraglide on clear days. The winter carnival now has a parade. I have only played these in short test runs, so the balance may be off.",
     "shot": "sled-run"
+  },
+  "0.5.0": {
+    "tagline": "a smoother look",
+    "lead": "This release is about how things look. Animals, buildings, lifts and vehicles have rounder shapes, the lift icons in the drawer are different for each kind of lift, the edge of the map is a layered cliff, and rivers and ponds have soft shorelines. On the High graphics setting there are now real shadows from the sun. I can only check this on a software renderer, so I do not know yet how it runs on a real graphics card or how it feels while you pan. Nothing in the economy changed.",
+    "shot": "hero-winter"
   }
 }

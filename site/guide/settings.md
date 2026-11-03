@@ -19,7 +19,7 @@ Open **Settings** with the gear icon in the top bar. The game pauses while Setti
 
 ## Look and feel
 
-- **Quality**: lower it on a modest laptop (also in the top bar as *Graphics*).
+- **Quality**: *Low*, *Medium* or *High* (also in the top bar as *Graphics*). Lower it on a modest laptop or a phone. **High** also casts real sun shadows from trees, buildings, lifts, guests and vehicles onto the ground; they fade at dusk, vanish at night and are softer in bad weather. Soft contact shadows under buildings and forests are on at every setting. The game never starts on High by itself: try it, and go back to Medium if the map stutters.
 - **Atmosphere**: *Off*, *Low* or *High* for valley fog, special sunrises, stars and the moon, mist, frost and rainbows. Off looks exactly like 0.3.1; the default is High on a desktop and Low on touch screens. See [Atmosphere](page:atmosphere).
 - **Feedback intensity**: *Off*, *Subtle* or *Lively* controls popups, puffs, confetti and festival fireworks when things happen.
 - **Show hints** and **Replay tutorial**.

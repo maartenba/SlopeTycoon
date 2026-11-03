@@ -26,7 +26,7 @@ async function tile(file: string, text: string, left: number, top: number, w = W
   const img = await sharp(`.weave/shots/${file}.png`).resize(w, h, { fit: 'cover' }).toBuffer();
   return { input: await sharp(img).composite([{ input: label(text, w), top: h - 22, left: 0 }]).toBuffer(), left, top };
 }
-async function save(name: string, base: sharp.Sharp): Promise<void> {
+async function save(name: string, base: ReturnType<typeof sharp>): Promise<void> {
   for (const q of [80, 70, 60, 50, 40]) {
     await base.clone().webp({ quality: q }).toFile(`docs/img/${name}.webp`);
     const kb = statSync(`docs/img/${name}.webp`).size / 1024;
