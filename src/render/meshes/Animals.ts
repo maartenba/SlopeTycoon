@@ -151,7 +151,7 @@ const finish = (parts: THREE.BufferGeometry[]): THREE.BufferGeometry => keepNorm
 export function createCowGeometry(): THREE.BufferGeometry {
   const hide = 0xf2efe8, patch = 0x3a2c25, pink = 0xe8a8a0, horn = 0xe8d8a0;
   return finish([
-    ...torso({ L: 0.52, H: 0.26, W: 0.2, legH: 0.12, c: hide, leg: 0x3a2c25 }),
+    ...torso({ L: 0.52, H: 0.26, W: 0.2, legH: 0.12, c: hide, leg: 0xb9b0a4, legR: 1.3 }),
     ell(0.1, 0.1, 0.12, patch, 0, 0.3, 0.04, {}, 6, 3), ell(0.08, 0.05, 0.09, patch, 0.02, 0.38, -0.2, {}, 5, 3), // coat patches
     ell(0.07, 0.07, 0.13, hide, 0, 0.35, 0.3, { rx: 0.9 }, 6, 4), // neck
     ell(0.06, 0.07, 0.085, hide, 0, 0.36, 0.38, { rx: 0.35 }, 6, 4), ell(0.045, 0.035, 0.035, pink, 0, 0.32, 0.45, {}, 5, 3), // head, muzzle
@@ -163,16 +163,16 @@ export function createCowGeometry(): THREE.BufferGeometry {
 export function createSheepGeometry(): THREE.BufferGeometry {
   const wool = 0xf4f1e8, face = 0x2b2b2b;
   return finish([
-    ...torso({ L: 0.3, H: 0.2, W: 0.18, legH: 0.09, c: wool, leg: face, legR: 0.8 }),
+    ...torso({ L: 0.3, H: 0.2, W: 0.18, legH: 0.09, c: wool, leg: 0x4a4540, legR: 1.25 }),
     ell(0.07, 0.05, 0.08, wool, 0.02, 0.29, 0.0, {}, 6, 3), ell(0.06, 0.05, 0.07, wool, -0.03, 0.28, -0.11, {}, 6, 3), // fluffy lumps
-    ell(0.04, 0.045, 0.06, face, 0, 0.25, 0.2, { rx: 0.4 }, 6, 4), ell(0.03, 0.02, 0.03, wool, 0, 0.3, 0.17, {}, 4, 3), // face, forelock
-    ell(0.03, 0.012, 0.018, face, 0.05, 0.27, 0.185, { rz: -0.5 }, 4, 3), ell(0.03, 0.012, 0.018, face, -0.05, 0.27, 0.185, { rz: 0.5 }, 4, 3),
+    ell(0.055, 0.06, 0.08, face, 0, 0.25, 0.2, { rx: 0.4 }, 6, 4), ell(0.04, 0.025, 0.04, wool, 0, 0.305, 0.17, {}, 4, 3), // face, forelock
+    ell(0.035, 0.014, 0.02, face, 0.065, 0.27, 0.185, { rz: -0.5 }, 4, 3), ell(0.035, 0.014, 0.02, face, -0.065, 0.27, 0.185, { rz: 0.5 }, 4, 3),
   ]);
 }
 export function createGoatGeometry(): THREE.BufferGeometry {
   const c = 0xd8c9ac, dk = 0x6b5a44;
   return finish([
-    ...torso({ L: 0.3, H: 0.14, W: 0.12, legH: 0.12, c, leg: dk, legR: 0.8 }),
+    ...torso({ L: 0.3, H: 0.14, W: 0.12, legH: 0.12, c, leg: dk, legR: 1.1 }),
     ell(0.04, 0.07, 0.04, c, 0, 0.27, 0.15, { rx: 0.6 }, 6, 3), ell(0.035, 0.04, 0.06, c, 0, 0.3, 0.21, { rx: 0.5 }, 6, 4),
     tube(0.012, 0.004, 0.08, dk, 0.025, 0.31, 0.2, { rx: -0.5, rz: -0.25 }, 4), tube(0.012, 0.004, 0.08, dk, -0.025, 0.31, 0.2, { rx: -0.5, rz: 0.25 }, 4), // swept-back horns
     cone(0.012, 0.045, c, 0, 0.23, 0.245, { rx: Math.PI }, 3), tube(0.012, 0.006, 0.05, dk, 0, 0.2, -0.16, { rx: 0.9 }, 4), // beard, tail
