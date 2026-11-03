@@ -83,7 +83,7 @@ export function smallHydro(b: PartBuilder, w: number, h: number): void {
   frameWin(b, -0.35, 0.4, 0.5, 's', 0.2, 0, C.cream);
   frameWin(b, 0.1, 0.4, 0.5, 's', 0.2, 0, C.cream);
   // penstock: sloped steel pipe into the house + support saddles
-  b.cyl(0.95, 0.35, -0.55, 0.11, 1.5, C.grey, 'stone', 10, { rz: Math.PI / 2 });
+  b.cyl(0.88, 0.37 - 0.625, -0.55, 0.11, 1.25, C.grey, 'stone', 10, { rz: Math.PI / 2 }); // axis lies on the saddles (cyl y0 is the base of the UNROTATED cylinder: it used to float at y 1.1)
   for (const x of [0.5, 0.95, 1.35]) b.box(x, 0, -0.55, 0.1, 0.26, 0.2, C.stone, 'stone');
   b.cyl(1.2, 0.0, 0.1, 0.1, 0.25, C.dark, 'wood', 8);
   // tailrace trough and a gauge post

@@ -8,10 +8,10 @@ export function tackleHut(b: PartBuilder, w: number, h: number): void {
   const bw = 1.05, bd = 0.72, cz = -0.28;
   b.box(0, 0, cz + 0.02, bw + 0.1, 0.06, bd + 0.1, C.dark); // sill
   b.box(0, 0.06, cz, bw, 0.5, bd, 0xb98a55);
-  b.gable(0, 0.56, cz, bd + 0.22, bw + 0.16, 0.3, C.roofGreen, false);
+  b.gable(0, 0.56, cz, bw + 0.16, bd + 0.22, 0.3, C.roofGreen, false); // ridge along z: span across x, length along z (they were swapped: the gable ends stuck out as green slabs)
   const fz = cz + bd / 2;
   doorway(b, -0.22, fz, 's', 0.22, 0.42, C.dark, C.cream);
-  frameWin(b, 0.26, 0.26, fz, 's', 0.2, 1, C.cream, C.roofGreen);
+  frameWin(b, 0.26, 0.26, fz, 's', 0.2, 0.07, C.cream, C.roofGreen);
   b.sign('BAIT', 0.26, 0.5, fz + 0.045, 0.34, 0.12);
   chimney(b, 0.42, 0.86, cz - 0.2, 0.2);
   // porch planks + bait crate + bucket
