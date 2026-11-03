@@ -38,8 +38,8 @@ export function buildGondolaGeometry(size = 6, near = false): THREE.BufferGeomet
     const iw = W * 0.52, il = L - 0.2;
     b.box(0, y0 + 0.07, 0, iw, 0.012, il, 0x6b6f76);
     for (const s of [-1, 1]) {
-      b.box(s * (iw / 2 - 0.05), y0 + 0.12, 0, 0.1, 0.03, il - 0.04, 0x3d6fb6); // bench seat
-      b.box(s * (iw / 2 + 0.005), y0 + 0.15, 0, 0.025, 0.14, il - 0.04, 0x3d6fb6); // backrest
+      b.ball(s * (iw / 2 - 0.05), y0 + 0.135 - 0.5, 0, 0.5, 0x3d6fb6, 'wood', 6, { sx: 0.1, sy: 0.03, sz: il - 0.04 }); // rounded cushion (ellipsoid)
+      b.ball(s * (iw / 2 + 0.005), y0 + 0.22 - 0.5, 0, 0.5, 0x3d6fb6, 'wood', 6, { sx: 0.03, sy: 0.15, sz: il - 0.04, rz: s * 0.12 }); // backrest, leaning a little
       b.box(s * (iw / 2 - 0.05), y0 + 0.07, 0, 0.09, 0.05, il - 0.08, C.dark); // bench base
       for (const z of big ? [-0.2, 0.2] : [-0.06, 0.06]) b.cyl(s * (hullHalfWidth(W, L, z) * 0.99 + 0.006), y0 + 0.17, z, 0.007, 0.07, C.grey, 'stone', 6); // door handles
     }

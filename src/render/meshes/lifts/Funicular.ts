@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { C, PartBuilder } from '../common';
 import { STRAND_OFFSET, samplePath, type CablePath } from '../../../sim/Lift';
 import { finishGeometry } from './geo';
+import { addHull } from './loft';
 
 /**
  * Funicular car: origin on the track (pitched by the instance). Three stepped compartments (each floor lower than the previous,
@@ -15,13 +16,13 @@ export function buildFunicularCarGeometry(near = false): THREE.BufferGeometry {
   for (const z of [-0.65, 0.65]) for (const x of [-0.3, 0.3]) b.cyl(x, 0.0, z, 0.06, 0.06, C.black, 'wood', 6, { rz: Math.PI / 2 });
   for (let i = 0; i < 3; i++) { // stepped compartments: front is lower (carries the downhill end), back is higher
     const z = -0.55 + i * 0.55, step = (2 - i) * 0.06;
-    b.box(0, 0.09 + step, z, 0.88, 0.42, 0.52, i === 1 ? C.roofGreen : C.green);
-    b.box(0, 0.51 + step, z, 0.92, 0.05, 0.56, C.cream, 'roof'); // roof
-    b.box(0, 0.09 + step, z, 0.92, 0.05, 0.56, C.dark); // skirt
-    for (const s of [-1, 1]) {
-      b.box(s * 0.445, 0.22 + step, z, 0.02, 0.2, 0.4, GLASS, 'glass');
-      b.box(s * 0.452, 0.21 + step, z, 0.02, 0.24, 0.04, C.dark); // door line
-    }
+    // M8 lane E: each compartment is a lofted rounded hull (green lower shell, curved glass band, cream roof shell) instead of a box
+    addHull(b, 0, 0.09 + step + 0.235, z, { L: 0.56, W: 0.92, H: 0.47, rings: near ? 6 : 5, seg: near ? 18 : 14, plan: 6, sec: 3.2, taper: 0.1 }, [
+      { lo: -2, hi: -0.35, color: i === 1 ? C.roofGreen : C.green, layer: 'wood' },
+      { lo: -0.35, hi: 0.55, color: GLASS, layer: 'glass' },
+      { lo: 0.55, hi: 2, color: C.cream, layer: 'roof' },
+    ]);
+    for (const s of [-1, 1]) b.box(s * 0.452, 0.21 + step, z, 0.02, 0.24, 0.04, C.dark); // door line
     b.box(0, 0.56 + step, z, 0.12, 0.05, 0.12, C.glass); // roof light
   }
   // end faces: windscreens + headlamps
