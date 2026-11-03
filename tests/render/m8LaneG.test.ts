@@ -18,7 +18,7 @@ describe('M8 lane G: Altiport plane detail', () => {
     const a = parts('altiport' as never), b = parts('altiport' as never);
     const t = a.reduce((s, g) => s + tris(g), 0);
     expect(t).toBeGreaterThan(2396);
-    expect(t).toBeLessThanOrEqual(2396 + 150);
+    expect(t).toBeLessThanOrEqual(2396 + 150 + 40); // lane I: +34 for the larger plane (apron pad, wing tips)
     for (const g of a) expect(finite(g)).toBe(true);
     expect(a.length).toBe(b.length);
     a.forEach((g, i) => expect(geometryHash(g)).toBe(geometryHash(b[i]!)));
