@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { NET_SNOW } from './meshes/Paths';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MIN_PART_THICKNESS } from './props/Trees';
 
@@ -130,6 +131,25 @@ const bx = (w: number, h: number, d: number): THREE.BufferGeometry => new THREE.
 const FLOWERS = [0xf06292, 0xf2c14e, 0xfafafa, 0x8e5bd0, 0xf08a24, 0xd9453a];
 const FESTIVAL_FLAGS = [0xd9534a, 0xf2c14e, 0x4f86a8, 0xf4efe2, 0x6fae5a];
 
+/**
+ * Foliage material with winter snow caps (M8 lane I): upward-facing surfaces whiten with the SAME snow amount as roofs / bridge decks (NET_SNOW, set from the season),
+ * with a soft world-space noise edge (flicker-safe, no screen-space terms). Cheap: one patched Lambert, no extra draw call. Exported for tests.
+ */
+export function snowCapMaterial(): THREE.MeshLambertMaterial {
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true });
+  m.onBeforeCompile = (sh): void => {
+    sh.uniforms.uSnowCap = NET_SNOW;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vCapUp;\nvarying vec2 vCapP;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCapUp = normalize(mat3(modelMatrix) * objectNormal).y;\nvCapP = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uSnowCap;\nvarying float vCapUp;\nvarying vec2 vCapP;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n{ float cn = sin(vCapP.x * 23.0) * sin(vCapP.y * 19.0) * 0.04; float cap = smoothstep(0.42, 0.7, vCapUp + cn - 0.03) * uSnowCap; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.95, 0.97, 1.0), cap * 0.92); }');
+  };
+  m.customProgramCacheKey = (): string => 'village-snowcap';
+  return m;
+}
+
 export class VillageDecor {
   readonly group = new THREE.Group();
   readonly wood: THREE.Mesh; readonly plants: THREE.Mesh; readonly glass: THREE.Mesh;
@@ -147,7 +167,7 @@ export class VillageDecor {
   constructor(private ground: (x: number, z: number) => number) {
     const lam = new THREE.MeshLambertMaterial({ vertexColors: true });
     const empty = (): THREE.BufferGeometry => new THREE.BufferGeometry();
-    this.wood = new THREE.Mesh(empty(), lam); this.plants = new THREE.Mesh(empty(), new THREE.MeshLambertMaterial({ vertexColors: true })); this.glass = new THREE.Mesh(empty(), this.glassMat);
+    this.wood = new THREE.Mesh(empty(), lam); this.plants = new THREE.Mesh(empty(), snowCapMaterial()); this.glass = new THREE.Mesh(empty(), this.glassMat);
     for (const m of [this.wood, this.plants, this.glass]) { m.frustumCulled = false; this.group.add(m); }
     this.group.name = 'villageDecor';
   }
@@ -219,7 +239,13 @@ export class VillageDecor {
           break;
         case 'shrub': {
           const r = 0.2 + ((it.ry * 37) % 5) * 0.03;
-          plants.push(col(new THREE.IcosahedronGeometry(r, 1), n % 3 === 0 ? 0x3f7d33 : 0x2f6b2f, it.x, y + r * 0.75, it.z));
+          // lumpy foliage (M8 lane I): a main blob + three offset lobes of a lighter / darker green instead of one plain sphere; the plants material adds winter snow caps
+          const gc = n % 3 === 0 ? 0x3f7d33 : 0x2f6b2f;
+          plants.push(col(new THREE.IcosahedronGeometry(r, 1), gc, it.x, y + r * 0.72, it.z));
+          for (let k = 0; k < 3; k++) {
+            const a = it.ry * 1.7 + k * 2.1, rr = r * (0.5 + 0.06 * k);
+            plants.push(col(new THREE.IcosahedronGeometry(rr, 1), k % 2 ? 0x3a7a37 : 0x44853a, it.x + Math.cos(a) * r * 0.62, y + rr * 0.8 + 0.02 * k, it.z + Math.sin(a) * r * 0.62));
+          }
           break;
         }
         case 'lot': plants.push(col(bx(it.w!, 0.02, it.d!), 0x55585f, it.x, y + 0.01, it.z)); break;
@@ -266,7 +292,7 @@ export class VillageDecor {
           const L = it.w!, c = Math.cos(it.ry), sn = Math.sin(it.ry), k = Math.max(3, Math.round(L / 0.3));
           plants.push(col(bx(L, 0.2, 0.24), 0x2f6b2f, it.x, y + 0.1, it.z, it.ry));
           plants.push(col(bx(L - 0.04, 0.07, 0.19), 0x3a7a37, it.x, y + 0.235, it.z, it.ry));
-          for (let i = 0; i < k; i++) { const t = ((i + 0.5) / k - 0.5) * L; plants.push(col(new THREE.IcosahedronGeometry(0.085, 0), (i + n) % 2 === 0 ? 0x44853a : 0x3a7a37, it.x + c * t, y + 0.29, it.z - sn * t)); }
+          for (let i = 0; i < k; i++) { const t = ((i + 0.5) / k - 0.5) * L; plants.push(col(new THREE.IcosahedronGeometry(0.095, 1), (i + n) % 2 === 0 ? 0x44853a : 0x3a7a37, it.x + c * t, y + 0.29, it.z - sn * t)); }
           break;
         }
         case 'wall': { // dry-stone wall: three staggered courses of blocks + cap stones
