@@ -63,6 +63,15 @@ export function altiport(b: PartBuilder, w: number, h: number): void {
   b.box(px - 0.4, 0.17, pz, 0.1, 0.12, 0.02, C.red); b.box(px - 0.4, 0.15, pz, 0.1, 0.02, 0.26, C.white); // tail fin + stabiliser
   tyre(b, px + 0.12, 0.0, pz + 0.12, 0.04, 0.02, 0, C.black, C.grey, 6); tyre(b, px + 0.12, 0.0, pz - 0.12, 0.04, 0.02, 0, C.black, C.grey, 6);
   tyre(b, px - 0.3, 0.0, pz, 0.025, 0.015, 0, C.black, C.grey, 6);
+  // M8 lane G detail: spinning-propeller blur disc, livery stripe, cabin windows, gear legs, taller tail fin (cheap: <= 150 triangles)
+  b.cyl(px + 0.395, 0.01, pz, 0.11, 0.004, C.grey, 'wood', 10, { rz: Math.PI / 2 }); // prop disc (grey blur)
+  for (const sz of [-1, 1]) {
+    b.box(px + 0.05, 0.035, pz + sz * 0.094, 0.3, 0.018, 0.008, C.red, 'roof'); // livery stripe along both sides
+    b.box(px + 0.1, 0.06, pz + sz * 0.088, 0.1, 0.03, 0.008, C.glass, 'glass'); // cabin window (both sides)
+    tube(b, px + 0.12, 0.0, pz + sz * 0.12, px + 0.1, 0.07, pz + sz * 0.05, 0.007, C.grey, 'stone', 4); // main gear leg
+  }
+  tube(b, px - 0.3, 0.0, pz, px - 0.3, 0.07, pz, 0.006, C.grey, 'stone', 4); // tail-wheel leg
+  b.box(px - 0.4, 0.26, pz, 0.1, 0.06, 0.02, C.white); // taller tail fin
   // fuel drums + windsock
   for (const dz of [0, 0.2]) drum(b, w / 2 - 1.0, 0.05, h / 2 - 0.35 - dz, 0.08, 0.22, C.red);
   windsock(b, w / 2 - 0.3, 0.0, h / 2 - 0.4, 0.8);
