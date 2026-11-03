@@ -112,7 +112,7 @@ export function snowCannon(b: PartBuilder): void {
   b.ball(0, 0.94, 0.26, 0.055, C.white, 'stone', 6); // nozzle core
   b.cyl(0, 0.84, -0.06, 0.06, 0.14, C.dark, 'wood', 8, { rx: tilt }); // motor
   b.box(0.12, 0.1, 0.12, 0.12, 0.28, 0.1, C.blue); // control box
-  b.box(0.12, 0.36, 0.12, 0.14, 0.03, 0.12, C.dark, 'roof');
+  b.box(0.12, 0.36, 0.12, 0.14, 0.03, 0.12, C.dark, 'wood'); // same material as the rest: +0 draw calls
   b.ring(-0.14, 0.08, 0.12, 0.09, 0.02, C.black, 'wood', 10); // hose coil
   tube(b, -0.14, 0.12, 0.2, 0.0, 0.7, 0.1, 0.014, C.black, 'wood', 5); // hose to the head
   b.cone(0.0, 0.0, 0.42, 0.22, 0.16, C.white, 'stone', 10); // snow pile

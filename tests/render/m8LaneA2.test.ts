@@ -35,6 +35,9 @@ describe('M8 lane A2: buildings', () => {
       expect(buildingTris(id), id).toBe(buildingTris(id));
     }
   });
+  it('the snow cannon keeps its baseline layer count (M8 8.8: a stray roof layer cost one draw call per cannon)', () => {
+    expect(parts('snowCannon').length).toBeLessThanOrEqual(3);
+  });
   it('the hotels keep their four layers (a fifth layer would be an extra draw call)', () => {
     for (const id of ['smallHotel', 'luxuryHotel']) expect(parts(id).length, id).toBeLessThanOrEqual(5); // wood, stone, roof, glass-free + the sign
   });

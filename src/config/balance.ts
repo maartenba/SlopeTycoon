@@ -320,7 +320,7 @@ export interface GroundQuality {
   detailTexture: boolean;
 }
 export const QUALITY_PRESETS: Record<GraphicsQuality, QualityPreset> = {
-  low: { shadows: false, pixelRatioCap: 1, lodScale: 0.7, treeDensity: 0.55, particles: 0.35, guestFarScale: 0.7, ground: { nearTiles: 0, nearTreesPerCell: 0, nearRocksPerCell: 0, nearFigures: 0, fogRangeScale: 0.7, detailTexture: false } },
+  low: { shadows: false, pixelRatioCap: 1, lodScale: 0.7, treeDensity: 0.52, particles: 0.35, guestFarScale: 0.7, ground: { nearTiles: 0, nearTreesPerCell: 0, nearRocksPerCell: 0, nearFigures: 0, fogRangeScale: 0.7, detailTexture: false } },
   med: { shadows: false, pixelRatioCap: 1.5, lodScale: 1, treeDensity: 0.85, particles: 0.7, guestFarScale: 1, ground: { nearTiles: 6, nearTreesPerCell: 70, nearRocksPerCell: 40, nearFigures: 40, fogRangeScale: 1, detailTexture: true } },
   high: { shadows: true, pixelRatioCap: 2, lodScale: 1.25, treeDensity: 1, particles: 1, guestFarScale: 1.25, ground: { nearTiles: 8, nearTreesPerCell: 90, nearRocksPerCell: 50, nearFigures: 40, fogRangeScale: 1.15, detailTexture: true } },
 };
