@@ -93,6 +93,7 @@
     "sled:sanity": "vite-node scripts/sled-sanity.ts",
     "winter:sanity": "vite-node scripts/winter-sanity.ts",
     "m74:sanity": "vite-node scripts/m74-sanity.ts",
+    "schirmbar:sanity": "vite-node scripts/schirmbar-sanity.ts",
     "backcountry:sanity": "vite-node scripts/backcountry-sanity.ts"
   },
   "dependencies": {
