@@ -42,7 +42,9 @@ export function chamferBox(sx: number, sy: number, sz: number, c: number): THREE
   return g;
 }
 
-export interface PartOpts { rx?: number; ry?: number; rz?: number; sx?: number; sy?: number; sz?: number }
+/** UV of a light, plain texel in the stone texture (row 0 cell): a seamless white-grey surface for snow hills / piles (no mortar lines, no roof hue tint). */
+export const FLAT_SNOW_UV: readonly [number, number] = [0.156, 0.875];
+export interface PartOpts { rx?: number; ry?: number; rz?: number; sx?: number; sy?: number; sz?: number; /** sample ONE texel for every vertex (a seamless plain surface on a textured layer; M8 lane G) */ flatUv?: readonly [number, number] }
 
 export interface SignSpec { text: string; bg: string; fg: string; geometry: THREE.BufferGeometry }
 export interface BuiltParts {
@@ -71,7 +73,7 @@ export class PartBuilder {
     );
     geo.applyMatrix4(m);
     const uv = geo.getAttribute('uv') as THREE.BufferAttribute;
-    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * 2);
+    for (let i = 0; i < uv.count; i++) { if (o.flatUv) uv.setXY(i, o.flatUv[0], o.flatUv[1]); else uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * 2); }
     const col = new THREE.Color(color);
     const arr = new Float32Array(geo.getAttribute('position').count * 3);
     for (let i = 0; i < arr.length; i += 3) { arr[i] = col.r; arr[i + 1] = col.g; arr[i + 2] = col.b; }
@@ -496,9 +498,9 @@ export function drum(b: PartBuilder, x: number, y0: number, z: number, r: number
 }
 
 /** Dome / rounded cap: a half sphere with base radius r and height hgt (squashed ellipsoid), `seg` around. */
-export function domeCap(b: PartBuilder, cx: number, y0: number, cz: number, r: number, hgt: number, color: number, layer: Layer = 'roof', seg = 10, rings = 4): PartBuilder {
+export function domeCap(b: PartBuilder, cx: number, y0: number, cz: number, r: number, hgt: number, color: number, layer: Layer = 'roof', seg = 10, rings = 4, flatUv?: readonly [number, number]): PartBuilder {
   const g = new THREE.SphereGeometry(r, seg, rings, 0, Math.PI * 2, 0, Math.PI / 2);
-  return b.add(g, layer, color, cx, y0, cz, { sy: hgt / r });
+  return b.add(g, layer, color, cx, y0, cz, { sy: hgt / r, flatUv });
 }
 
 /** Barrel-vault roof (circular segment, thin shell with a flat soffit): `span` across, `len` long, `rise` above the soffit at y0. ridge along x when alongX, else along z. */

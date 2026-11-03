@@ -1,4 +1,4 @@
-import { C, PartBuilder, awning, chimney, curvedRamp, domeCap, doorway, flagPole, frameWin, railing, redCross, eaveBrackets, tube } from '../common';
+import { C, FLAT_SNOW_UV, PartBuilder, awning, chimney, curvedRamp, domeCap, doorway, flagPole, frameWin, railing, redCross, eaveBrackets, tube } from '../common';
 
 /** Magic Carpet (1x6): conveyor belt with chevrons, side walls, a glazed canopy tunnel over the loading end and drive housings. */
 export function magicCarpet(b: PartBuilder, _w: number, h: number): void {
@@ -35,7 +35,7 @@ export function kidsGround(b: PartBuilder, w: number, h: number): void {
   b.box(-1, 0.55, -1, 0.5, 0.05, 0.5, C.blue);
   domeCap(b, -1, 0.6, -1, 0.34, 0.14, C.red, 'roof', 10, 3);
   curvedRamp(b, -1, 0.04, -0.35, 0.9, 0.55, 0.3, C.red, Math.PI * 1.5 + Math.PI / 2 * 0, true, 5, 'wood');
-  domeCap(b, 0.9, 0.04, -0.4, 0.8, 0.38, 0xffffff, 'roof', 14, 5); // little snow hill: roof layer (snow-tinted, no brick texture), lower so it no longer reads as an igloo
+  domeCap(b, 0.9, 0.04, -0.4, 0.8, 0.38, 0xffffff, 'stone', 14, 5, FLAT_SNOW_UV); // little snow hill: roof layer (snow-tinted, no brick texture), lower so it no longer reads as an igloo
   for (const pz of [-1.0, 0.4]) { b.cyl(0.35, 0.04, pz, 0.03, 0.55, C.dark, 'wood', 6); b.box(0.35, 0.56, pz, 0.14, 0.04, 0.14, C.yellow); }
   b.box(0.35, 0.5, -0.3, 0.02, 0.02, 1.4, C.black);
   for (let i = 0; i < 3; i++) b.box(0.35, 0.34, -0.8 + i * 0.5, 0.05, 0.14, 0.03, C.red);
@@ -45,7 +45,7 @@ export function kidsGround(b: PartBuilder, w: number, h: number): void {
   b.box(1.2, 0, -1.2, 0.6, 0.4, 0.6, C.green);
   b.gable(1.2, 0.4, -1.2, 0.7, 0.7, 0.3, C.roofRed, true);
   frameWin(b, 1.2, 0.15, -0.9, 's', 0.14);
-  b.ball(-1.2, 0.04, 1.0, 0.16, C.white, 'stone'); b.ball(-1.2, 0.3, 1.0, 0.11, C.white, 'stone');
+  b.ball(-1.2, 0.04, 1.0, 0.16, C.white, 'stone', 10, { flatUv: FLAT_SNOW_UV }); b.ball(-1.2, 0.3, 1.0, 0.11, C.white, 'stone', 10, { flatUv: FLAT_SNOW_UV }); // snowman: smooth, no brick lines
   b.cone(-1.2, 0.34, 1.1, 0.025, 0.1, C.orange, 'roof', 5, { rx: Math.PI / 2 });
   b.cyl(-1.2, 0.5, 1.0, 0.06, 0.06, C.blue, 'wood', 6);
 }

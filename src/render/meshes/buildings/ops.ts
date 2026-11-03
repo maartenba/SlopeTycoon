@@ -1,4 +1,4 @@
-import { C, PartBuilder, barrelRoof, domeCap, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
+import { C, FLAT_SNOW_UV, PartBuilder, barrelRoof, domeCap, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
 import { curveTube } from '../lifts/loft';
 
 /** Helipad (3x3): round pad with big H, ring of edge lights, windsock, fuel drums and a small ops hut. */
@@ -119,7 +119,7 @@ export function snowCannon(b: PartBuilder): void {
   b.box(0.12, 0.36, 0.12, 0.14, 0.03, 0.12, C.dark, 'wood'); // same material as the rest: +0 draw calls
   b.ring(-0.14, 0.08, 0.12, 0.09, 0.02, C.black, 'wood', 10); // hose coil
   tube(b, -0.14, 0.12, 0.2, 0.0, 0.7, 0.1, 0.014, C.black, 'wood', 5); // hose to the head
-  domeCap(b, 0.0, 0.0, 0.42, 0.24, 0.13, 0xffffff, 'roof', 12, 4); // snow pile: smooth dome on the snow-tinted roof layer (the stone layer made it look like an igloo)
+  domeCap(b, 0.0, 0.0, 0.42, 0.24, 0.13, 0xffffff, 'stone', 12, 4, FLAT_SNOW_UV); // snow pile: smooth dome on the snow-tinted roof layer (the stone layer made it look like an igloo)
   b.ball(0.12, 0.0, 0.48, 0.08, C.white, 'stone', 6);
 }
 
