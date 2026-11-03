@@ -105,7 +105,7 @@ Done (render only; tests in `tests/render/m8LaneE.test.ts`):
 
 Not done, on purpose:
 
-* **Shadow receiving on buildings / trees** and **sun shadows in ride / photo / walk views**: the building and prop materials are patched Lambert / custom shaders without the sun map, so receiving needs per-material shader work plus a perspective-camera window fit (the fit is orthographic, rotation invariant and texel snapped, the only reason iso is flicker free). With the budget (no extra main-pass call, flicker <= 0.7) I did not take that risk blind; contact shadows (0 calls) remain the answer on all tiers.
+* ~~Shadow receiving on buildings / trees and sun shadows in ride / photo / walk views~~: **done in lane F** (High only): see `docs/shadows.md` ("Lane F numbers"). Main-pass draw calls identical (164 / 169 / 169 on 128 / zoom 1.5), Low / Med compile the same 20 programs, shadow memory ~20 MB, gzip JS +1.4 kB, flicker 64 winter rotfine (High) 0.687, 0 pops.
 * (Plane detail and the terrain bed corners under lakes were done in lane G, below.)
 
 ## Lane G: water bed, plane, full sweep, confirmations (after lane E)

@@ -57,7 +57,7 @@ Reviewed by reading; fixes below are covered by unit tests in `tests/render/rend
 | IncidentView | avalanche debris (up to 2,048 matrix composes) rewritten every frame | rewritten only when the set of slides changes |
 | GroomingView / Snowcat fleet, HeliView, animals | tiny counts, instanced | none needed |
 | Thumbnails prewarm | already deferred (500 ms after start, idle batches, dock refresh coalesced to one rAF) | none needed |
-| Shadows | `Renderer.setShadows` existed but nothing used it; terrain/props use custom shaders that do not sample a shadow map | **M8 (8.6)**: `high` only runs a real sun shadow map (`ShadowRig`, own depth pass, terrain receives; see `docs/shadows.md`); its draw calls / triangles are counted separately from the main pass. Contact shadows (ground mask A channel) are on every tier at no draw-call cost |
+| Shadows | `Renderer.setShadows` existed but nothing used it; terrain/props use custom shaders that do not sample a shadow map | **M8 (8.6)**: `high` only runs a real sun shadow map (`ShadowRig`, own depth pass; terrain, buildings, props, trees receive; iso + ride / photo / walk; see `docs/shadows.md`); its draw calls / triangles are counted separately from the main pass. Contact shadows (ground mask A channel) are on every tier at no draw-call cost |
 
 ### Graphics quality (top bar "Graphics: low / med / high", stored in `localStorage["slope.quality"]`)
 
@@ -93,7 +93,7 @@ _Not measured yet (agents cannot run WebGL). Paste the table + machine / browser
 ## What remains unverified
 
 * All FPS / frame-time / GPU / memory numbers in the browser (draw-call and triangle counts of the instanced layers are only unit-tested).
-* That `high` shadows look right (nothing casts shadows yet), and the visual quality of `low` (55 % trees, LOD x0.7) on a real screen.
+* That `high` shadows look right (see docs/shadows.md for what casts and receives), and the visual quality of `low` (55 % trees, LOD x0.7) on a real screen.
 * CPU culling margin of `GuestRenderer` during fast camera pans (it uses the camera matrices of the same frame, 12 % margin).
 
 ## Perf tests vs. default tests
