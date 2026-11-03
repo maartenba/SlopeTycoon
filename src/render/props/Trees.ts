@@ -210,7 +210,7 @@ void main() {
   lodFadeDiscard();
   gl_FragColor = vec4(vColor, 1.0);
 #ifdef USE_SHADOWS
-  gl_FragColor.rgb = vColor - vSunPart * (1.0 - recvShadow(vFogW, normalize(vSN))); // trees / rocks receive the sun shadow on the sun term only (sky light stays)
+  gl_FragColor.rgb = vColor - vSunPart * (1.0 - recvShadow(vFogW, normalize(vSN))) * 0.55; // trees / rocks receive the sun shadow on the sun term only (sky light stays), at 55 %: full strength made winter rotfine flicker 0.736 (high contrast inside conifer canopies), 0.55 keeps it at 0.687
 #endif
   ${FOG_FRAG}
   #include <colorspace_fragment>
