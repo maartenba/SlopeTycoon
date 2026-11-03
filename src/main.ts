@@ -3135,6 +3135,7 @@ if (DEMO) {
     jumpSeason: (s) => jumpSimToDay(s === 'summer' ? DEMO_SUMMER_DAY : DEMO_WINTER_DAY, 8),
     reducedMotion: !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, container: document.body, blur: !params.has('nomenu'),
   }, SEED);
+  renderer.shadows.staticRateScale = 0.25; // title demo: fewer cached-shadow refreshes (docs/flicker.md "Title camera")
   scene.seasonsEnabled = !!townOf(DEMO_TOWN.id)?.seasonLoop && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; // summer towns stay summer; reduced motion: no season flashes
   { const c = renderer.controls; c.yaw = 0.9; c.zoom = (MAP_SIZE * 0.75) / 24; c.target.set(lc.x, heightAt(grid, lc.x, lc.z), lc.z); c.zoomBy(1); }
   // Morning top-up: the guests leave at closing time like in a real game; every morning ~8:30 the car park refills (own RNG stream)

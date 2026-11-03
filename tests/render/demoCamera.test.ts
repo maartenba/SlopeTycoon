@@ -1,6 +1,6 @@
 import { REAL_SECONDS_PER_DAY_1X } from '@/config/balance';
 import { describe, expect, it } from 'vitest';
-import { DemoCamera, angleDelta, damp, easeInOutCubic, frameInside, lerpAngle, mulberry, pickPoi, planShot, shotAt, viewHeightAt, type Poi } from '../../src/render/DemoCamera';
+import { DemoCamera, springStep, angleDelta, damp, easeInOutCubic, frameInside, lerpAngle, mulberry, pickPoi, planShot, shotAt, viewHeightAt, type Poi } from '../../src/render/DemoCamera';
 import { DisposeBag, SeasonCycler, demoTimeScale, disposeTree } from '../../src/render/DemoScene';
 
 const poi = (id: string, kind: Poi['kind'], x: number, z: number, zoom: [number, number] = [2, 4], extra: Partial<Poi> = {}): Poi => ({ id, kind, at: () => ({ x, z }), zoom, ...extra });
@@ -128,5 +128,48 @@ describe('DemoScene helpers', () => {
     expect(n).toBe(disposed.length);
     expect(new Set(disposed).size).toBe(disposed.length); // none twice
     expect(new Set(disposed)).toEqual(new Set(['geoA', 'geoB', 'geoC', 'matShared', 'matM1', 'matM2', 'tex']));
+  });
+});
+
+describe('DemoCamera smoothness (the title camera used to wobble)', () => {
+  it('springStep is exact: the same result at any step size, no overshoot, settles on the goal', () => {
+    const a = { x: 0, v: 0 }, b = { x: 0, v: 0 };
+    for (let i = 0; i < 100; i++) springStep(a, 10, 1.2, 0.01);
+    springStep(b, 10, 1.2, 1);
+    expect(a.x).toBeCloseTo(b.x, 9); expect(a.v).toBeCloseTo(b.v, 9);
+    const c = { x: 0, v: 0 }; let max = -1;
+    for (let i = 0; i < 2000; i++) { springStep(c, 10, 1.2, 0.01); max = Math.max(max, c.x); }
+    expect(max).toBeLessThanOrEqual(10 + 1e-9); expect(c.x).toBeCloseTo(10, 6);
+  });
+  it('the velocity is continuous across a cut: a goal that jumps never makes the position jump or the speed step', () => {
+    const s = { x: 5, v: 0 }; let prevV = 0, worst = 0;
+    for (let i = 0; i < 600; i++) { const goal = i < 300 ? 5 : 45; springStep(s, goal, 0.9, 1 / 60); worst = Math.max(worst, Math.abs(s.v - prevV)); prevV = s.v; }
+    expect(worst).toBeLessThan(0.7); // per-frame speed change (units / s): w^2 * distance / 60 = 0.54 here; a first-order follower jumps by rate * distance = 36
+  });
+  const run = (dtOf: (i: number) => number, frames: number): { poses: Array<{ x: number; z: number; y: number; yaw: number; zoom: number; t: number }> } => {
+    const cam = { target: { x: 20, y: 0, z: 20, set(x: number, y: number, z: number) { this.x = x; this.y = y; this.z = z; } }, yaw: 0.9, zoom: 4, minZoom: 1, maxZoom: 12, zoomBy() {} };
+    // the look height has a kink at every tile edge (bilinear ground): 0.8 per tile
+    const d = new DemoCamera(cam, { size: 128, aspect: () => 1.6, pois: () => [poi('v', 'village', 60, 60, [2, 4]), poi('l', 'lift', 90, 30, [3, 6]), poi('s', 'skier', 40, 90, [4, 8], { follow: true })], groundY: (x, z) => Math.abs(((x * 0.8) % 2) - 1) * 0.8 + Math.abs(((z * 0.8) % 2) - 1) * 0.8, seed: 9 });
+    const poses = []; let t = 0;
+    for (let i = 0; i < frames; i++) { const dt = dtOf(i); t += dt; d.update(dt); poses.push({ x: cam.target.x, z: cam.target.z, y: cam.target.y, yaw: cam.yaw, zoom: cam.zoom, t }); }
+    return { poses };
+  };
+  const accel = (p: Array<{ t: number; [k: string]: number }>, k: string): number => {
+    let m = 0;
+    for (let i = 2; i < p.length; i++) { const dt0 = p[i - 1]!.t - p[i - 2]!.t, dt1 = p[i]!.t - p[i - 1]!.t; const a = ((p[i]![k]! - p[i - 1]![k]!) / dt1 - (p[i - 1]![k]! - p[i - 2]![k]!) / dt0) / dt1; m = Math.max(m, Math.abs(a)); }
+    return m;
+  };
+  it('over 90 s of shots (cuts included) the acceleration of every channel stays small and bounded at 60 fps', () => {
+    const { poses } = run(() => 1 / 60, 5400);
+    expect(accel(poses, 'x')).toBeLessThan(150); expect(accel(poses, 'z')).toBeLessThan(150); // w^2 * the longest cut (~128 tiles); the first-order follower reached 1000+
+    expect(accel(poses, 'yaw')).toBeLessThan(3); expect(accel(poses, 'zoom')).toBeLessThan(6);
+    expect(accel(poses, 'y')).toBeLessThan(10); // the bilinear kinks of the ground height are low-passed
+  });
+  it('a frame-time spike (a 120 ms hitch every second) does not make the camera lurch: the path is a function of continuous time', () => {
+    const smooth = run(() => 1 / 60, 3600).poses, hitchy = run((i) => (i % 60 === 30 ? 0.12 : 1 / 60), 3600).poses;
+    // compare the poses at the same elapsed time: nearest hitchy sample to each smooth time
+    let worst = 0, j = 0;
+    for (let i = 600; i < smooth.length; i += 7) { while (j < hitchy.length - 1 && hitchy[j]!.t < smooth[i]!.t) j++; worst = Math.max(worst, Math.hypot(hitchy[j]!.x - smooth[i]!.x, hitchy[j]!.z - smooth[i]!.z)); }
+    expect(worst).toBeLessThan(6); // (tiles) the integration of the hitchy run is exact, only the shot clock / picking differ slightly
   });
 });

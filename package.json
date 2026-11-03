@@ -46,6 +46,8 @@
     "audio:export": "vite-node scripts/audio-export.ts",
     "audio:crosscheck": "vite-node scripts/audio-crosscheck.ts",
     "flicker:building": "vite-node scripts/flicker-building.ts",
+    "flicker:tower": "vite-node scripts/flicker-tower.ts",
+    "title:camera": "vite-node scripts/title-camera.ts",
     "shot:suite": "vite-node scripts/shot-suite.ts",
     "perf:ground": "vite-node scripts/perf-ground.ts",
     "recap:shot": "vite-node scripts/recap-shot.ts",

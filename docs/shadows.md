@@ -99,6 +99,11 @@ On SwiftShader the new design costs more per second (the CPU rasteriser pays 8 m
 
 Within noise of the previous numbers (0.687 / 0.150 / 0.156 / 0.037 in the table below), 0 pops. Honest note: zoomfine is 0.003 .. 0.005 above the baseline in two of three runs; I could not make it better or worse by the ladder size or the depth precision.
 
+## Title demo, static rate scale, bisect switches (owner report: slow camera "wobbly")
+
+* `ShadowRig.staticRateScale` (default 1) multiplies every static refresh rate (sun steps, set / density / camera changes), never a window re-fit. The title demo sets 0.25 (`main.ts`): its sun moves ~9 steps / s, so the cached depth map was re-rendered ~10 times a second (260 passes in 25 s on the demo harness, 105 after). A frame that already hitched (dt > max(30 ms, 2 x smoothed)) defers a pure refresh by a frame.
+* Debug / bisect: `stats.why` = { sun, view, set, density, camera, first } counts the reason of every static render; `freezeStatic = true` stops static re-renders after the first. See docs/flicker.md "Title camera wobble + pylon foot flicker" for the by-eye checklist.
+
 ## Tests
 
 `tests/render/shadowSchedule.test.ts` (static refresh decision, load scaling that never delays a re-fit, density band / slew / quantisation, nested per-tree sets, and the rig itself with a fake renderer: static pass once, dynamic pass every frame at any frame rate, scene restored, panning inside the window keeps the cache, leaving it re-fits, a new building re-renders the static map and a new guest does not, 24 MB, density steps <= 0.2), then `tests/render/shadowFit.test.ts` (quantisation idempotent, orthonormal basis, ladder, texel snapping under sub-cell pans, rotation-invariant coverage, off beyond `MAX_HALF`, depth range finite, minimum sun slope, strength never NaN, tier gating of the shader define and the render target) and the skirt `aWet.x` depth test in `tests/render/terrainGeometry.test.ts`.

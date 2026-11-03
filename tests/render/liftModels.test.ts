@@ -109,3 +109,18 @@ describe('lift models', () => {
     }
   });
 });
+
+describe('tower footing (pylon foot z-fight)', () => {
+  it('the concrete footing stands proud of the ground: no up-facing face sits at ground height (a tie with the flat terrain z-fights on a real GPU)', async () => {
+    const { buildTowerGeometry, TOWER_FOOT_PROUD, TOWER_FOOT_DEPTH } = await import('../../src/render/meshes/lifts/Tower');
+    for (const kind of ['tbar', 'chair2', 'chair4', 'chair4d', 'gondola6', 'cablecar'] as const) {
+      const g = buildTowerGeometry(3, kind), pos = g.attributes.position!, nor = g.attributes.normal!;
+      const tops = new Set<string>(); let up = 0;
+      for (let i = 0; i < pos.count; i++) if (nor.getY(i) > 0.99 && Math.abs(pos.getY(i)) < 0.2) { tops.add(pos.getY(i).toFixed(3)); up++; }
+      expect(up).toBeGreaterThan(0);
+      for (const y of tops) { const v = Number(y); expect(Math.abs(v)).toBeGreaterThan(0.02); } // nothing at exactly y = 0 (+-2 cm)
+      expect(tops.has(TOWER_FOOT_PROUD.toFixed(3))).toBe(true);
+      expect(TOWER_FOOT_DEPTH).toBeGreaterThan(0.1);
+    }
+  });
+});

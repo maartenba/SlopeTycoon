@@ -32,12 +32,15 @@ function mast(b: PartBuilder, height: number, w0: number, w1: number, t: number,
  */
 /** Thickness factor for tall towers (1 up to TOWER_THICK_FROM, then ~sqrt growth, capped): tall poles / masts must not look like needles. */
 export const TOWER_THICK_FROM = 2.4;
+/** Footing plinth: sunk `TOWER_FOOT_DEPTH` below the tower's ground height and standing `TOWER_FOOT_PROUD` above it. The tower is placed at the BILINEAR ground height but the terrain mesh is drawn as planar triangles (`surfaceHeightAt`), so on a flat tile the old footing top (exactly at ground height) was COPLANAR with the snow: the two depth values tie and a real GPU z-fights them (a shimmering patch at the pylon foot, only while the camera moves); a few cm proud there is no tie anywhere on the disc. */
+export const TOWER_FOOT_DEPTH = 0.2;
+export const TOWER_FOOT_PROUD = 0.06;
 export const towerThickness = (height: number): number => Math.min(1.7, Math.max(1, Math.sqrt(height / TOWER_THICK_FROM)));
 
 export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', armHalfWidth = 0.3, near = false): THREE.BufferGeometry {
   const b = new PartBuilder(1, 1);
   const d = liftDef(kind);
-  b.cyl(0, -0.2, 0, 0.3, 0.2, C.stone, 'stone', 10); // round concrete footing (M8)
+  b.cyl(0, -TOWER_FOOT_DEPTH, 0, 0.3, TOWER_FOOT_DEPTH + TOWER_FOOT_PROUD, C.stone, 'stone', 10); // round concrete footing (M8): a plinth that stands PROUD of the ground
   const topY = height;
   const k = towerThickness(height);
   switch (d.family) {

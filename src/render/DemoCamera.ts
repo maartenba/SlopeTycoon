@@ -35,6 +35,16 @@ export function lerpAngle(a: number, b: number, t: number): number { return a + 
 /** Frame-rate independent exponential approach: fraction of the remaining distance covered in `dt` with response `rate` (1/s). */
 export const damp = (rate: number, dt: number): number => 1 - Math.exp(-Math.max(0, rate) * Math.max(0, dt));
 
+/** One critically damped spring state (SmoothDamp): position `x` follows a moving goal with a CONTINUOUS velocity, so a cut, a reversing target or a frame-time spike never makes a kink (a first-order exponential has a velocity step at every change of the goal). */
+export interface Spring { x: number; v: number }
+/** Exact solution of x'' = w^2 (goal - x) - 2 w x' over `dt` (no integration error, stable for any dt). `w` in rad/s: the response time is about 3 / w. */
+export function springStep(s: Spring, goal: number, w: number, dt: number): void {
+  if (!(dt > 0)) return;
+  const e = Math.exp(-Math.max(0, w) * dt), d = s.x - goal, t = s.v + w * d;
+  s.x = goal + (d + t * dt) * e;
+  s.v = (s.v - w * t * dt) * e;
+}
+
 /** Visible ground height (world units) at a zoom level for a map size (mirrors CameraController.viewHeight = 0.75 * size). */
 export const viewHeightAt = (size: number, zoom: number): number => (size * 0.75) / Math.max(0.01, zoom);
 
@@ -108,6 +118,8 @@ export interface CameraLike {
   minZoom: number;
   maxZoom: number;
   zoomBy(f: number): void;
+  /** Re-poses the camera from target / yaw (the director runs after the controls' own update, so without this the pose lags the projection by a frame). */
+  update?(dt: number): void;
 }
 
 export interface DemoCameraOptions {
@@ -130,8 +142,10 @@ export class DemoCamera {
   private recent: string[] = [];
   private lastKind: PoiKind | null = null;
   private readonly rand: () => number;
-  /** Smoothed state. */
+  /** Smoothed state (critically damped springs: position, yaw, log zoom, ground height). */
   private cur: Shot | null = null;
+  private sx: Spring = { x: 0, v: 0 }; private sz: Spring = { x: 0, v: 0 }; private syaw: Spring = { x: 0, v: 0 }; private szoom: Spring = { x: 0, v: 0 }; private sy: Spring = { x: 0, v: 0 };
+  private ready = false;
   current(): { kind: PoiKind; id: string } | null { return this.plan ? { kind: this.plan.poi.kind, id: this.plan.poi.id } : null; }
 
   constructor(private cam: CameraLike, private o: DemoCameraOptions) {
@@ -160,20 +174,26 @@ export class DemoCamera {
     if (!plan) return;
     this.t += dt;
     const want = shotAt(plan, this.t, this.o.size, this.o.aspect());
-    const c = this.cur ?? (this.cur = { x: this.cam.target.x, z: this.cam.target.z, yaw: this.cam.yaw, zoom: this.cam.zoom });
-    const first = this.t <= dt * 1.5 && !this.o.reducedMotion;
-    // long cuts glide: stronger smoothing right after a new shot starts, relaxed afterwards (follow shots track tighter)
-    const settle = smoothstep01(this.t / 3);
-    const rateMove = (plan.poi.follow ? 2.4 : 0.9) * (0.35 + 0.65 * settle) * (first ? 0.5 : 1);
-    const kPos = damp(rateMove, dt), kYaw = damp(0.9, dt), kZoom = damp(0.7, dt);
-    c.x += (want.x - c.x) * kPos;
-    c.z += (want.z - c.z) * kPos;
-    c.yaw = lerpAngle(c.yaw, want.yaw, kYaw);
-    c.zoom += (want.zoom - c.zoom) * kZoom;
+    if (!this.ready) { // first frame: start from wherever the camera is, at rest
+      this.sx.x = this.cam.target.x; this.sz.x = this.cam.target.z; this.syaw.x = this.cam.yaw; this.szoom.x = Math.log(this.cam.zoom); this.sy.x = this.cam.target.y;
+      this.ready = true;
+    }
+    // critically damped followers: velocity stays continuous across cuts, reversing follow targets and frame-time spikes (the title camera used to wobble:
+    // first-order exponentials with a time-varying rate + a half-rate first frame + the raw bilinear ground height as the look height)
+    const wMove = plan.poi.follow ? 1.5 : 0.9;
+    springStep(this.sx, want.x, wMove, dt);
+    springStep(this.sz, want.z, wMove, dt);
+    springStep(this.syaw, this.syaw.x + angleDelta(this.syaw.x, want.yaw), 0.9, dt);
+    springStep(this.szoom, Math.log(Math.max(0.01, want.zoom)), 0.8, dt);
+    const c = this.cur ?? (this.cur = { x: 0, z: 0, yaw: 0, zoom: 1 });
+    c.x = this.sx.x; c.z = this.sz.x; c.yaw = this.syaw.x; c.zoom = Math.exp(this.szoom.x);
     const s = frameInside(c, this.o.size, this.o.aspect());
-    this.cam.target.set(s.x, this.o.groundY ? this.o.groundY(s.x, s.z) : 0, s.z);
+    // the ground height under the look target is a bilinear patch: its slope changes at every tile edge, which would bob the whole picture. Follow it with a slow spring instead.
+    springStep(this.sy, this.o.groundY ? this.o.groundY(s.x, s.z) : 0, 2.2, dt);
+    this.cam.target.set(s.x, this.sy.x, s.z);
     this.cam.yaw = s.yaw;
     this.cam.zoom = clamp(s.zoom, this.cam.minZoom, this.cam.maxZoom);
     this.cam.zoomBy(1); // re-project
+    this.cam.update?.(0); // pose from the NEW target / yaw now (the controls ran earlier this frame)
   }
 }

@@ -88,3 +88,37 @@ Note: `flicker-test.ts` and `flicker-building.ts` used `populateDemo('Medium')`,
 
 ## Quality tier (M8)
 `npm run flicker -- --quality low|med|high` writes `slope.quality` before the page boots (default: the game's own default for the map size, `med` on 64 / 128). Use `--quality high` to measure the shadow map (`docs/shadows.md`): the texel-snapped window must keep `rotfine` / `zoomfine` within noise of `--quality med`. M8 lane C numbers are in `docs/shadows.md`.
+
+
+## Title camera wobble + pylon foot flicker (owner report, real GPU, 0.5.x High)
+
+Report: the title screen camera "is sometimes a bit wobbly"; "flickering at the pylon foot". What was measured, what was fixed, what could NOT be reproduced on SwiftShader.
+
+### 1. Title camera (`npm run title:camera`, `scripts/title-camera.ts`)
+
+The script boots the live title demo (`?demoscene=1&nomenu=1&demosize=64&demoseed=7`) and logs, per game frame, dt, the pose the renderer actually used (camera position, look target, yaw, zoom) and whether a static shadow pass ran; with `--fixed 1 --dt 0.0333` it runs on a virtual clock so the PATH is separated from SwiftShader's frame time. Metric: **acceleration of each channel** (change of per-second velocity between frames / dt). A smooth camera has a small bounded value; a wobble is a spike.
+
+Causes found in `DemoCamera` / `DemoScene` (all confirmed by the log, same seed 7, same virtual clock, 25 s):
+
+1. **First-order exponential followers** (`c += (want - c) * damp(rate, dt)`): velocity jumps by `rate * distance` at every cut (a new shot), every time the followed skier / animal reverses, and the rate itself changed over time (`settle` smoothstep, a half-rate first frame). Peak acceleration of the camera x 1063 -> 38, z 521 -> 43, yaw 11.5 -> 0.55 rad / s^2, zoom 41 -> 0.77.
+2. **Look height = the raw bilinear ground height** under the target: its slope changes at every tile edge, so the whole picture bobbed vertically as the target drifted over the terrain (p99 52, max 139 -> p99 1.3, max 1.3).
+3. **The director ran AFTER `controls.update`** (Renderer: controls, preFrame, onFrame): the camera pose (position, lookAt) was built from the PREVIOUS frame's target / yaw while the projection (zoom) was already new: a one-frame lag between zoom and pose, so any frame-time variation made them disagree. Now the director re-poses the camera (`CameraLike.update(0)`) right after it sets the target.
+4. **Periodic static shadow pass** (suspected, not measurable here): the title demo's sun moves ~9 steps a second, each re-rendering the cached static depth map (135 calls, ~1.3 M submitted triangles): 260 passes in 25 s = a ~10 Hz pulse of GPU work, which on a modest GPU is a regular frame-time hitch that reads as a wobble of a slow camera. `ShadowRig.staticRateScale` (title demo 0.25) lowers the refresh RATE of pure changes (sun steps now <= 5 Hz, steps < 0.5 degrees): **260 -> 105 passes in 25 s**; a window re-fit is never throttled. A frame that already hitched (dt > max(30 ms, 2 x smoothed)) defers a pure refresh by one frame instead of piling on. Honest limit: SwiftShader has no real GPU timings, so I can state the pass count, not the hitch it causes on the owner's machine.
+
+Fix: `DemoCamera` follows with **critically damped springs** (`springStep`, exact solution, any dt): x, z, yaw (shortest way round), log zoom and the look height; velocity is continuous at cuts and for reversing follow targets; the path is a function of continuous time (a 120 ms hitch every second moves the camera < 6 tiles off the smooth run, test). Tests: `tests/render/demoCamera.test.ts` ("DemoCamera smoothness"), `tests/render/shadowSchedule.test.ts` (rate scale, hitch guard, `why` counters).
+
+### 2. Pylon foot (`npm run flicker:tower`, `scripts/flicker-tower.ts`)
+
+`flicker:tower` centres the camera on a lift tower, crops 100-160 px around its foot and counts oscillating pixels (rotation windows, running time, slow pan) with the same metric as `flicker`; options `--quality`, `--shadows off`, `--static off`, `--freeze 1` (hold the carriers still), `--noshadow cable|towers|stations|carriers|liftsAll` (stop a group from casting), `--bias k` / `--nofs k` (receiver depth bias / normal offset), `--flat 1`, `--dump 1`.
+
+What the measurement said (honest):
+
+* A first run showed High at 10-16 x the Med / shadows-off value in the tower crop (e.g. zoom 8 rot 119 vs 8). **That was an artefact**: the lift carriers animate on the RENDER clock even with the sim paused, so chairs (and their shadows) kept moving through the crop. Held still (`--freeze 1`): High 3.6 / 2.5 vs shadows off 2.9 / 2.9 osc px per window (zoom 8 / 16), High vs Med on three towers 15.8 / 12.3 vs 13.8 / 9.8 (zoom 4) and 5.6 / 3.4 vs 4.5 / 3.1 (zoom 8): **no foot flicker from the shadow receivers, the static re-render or the dynamic pass reproduces on SwiftShader**. (Also checked by bisect: tower / station / cable casters, bias x0.3..x3, normal offset x0..x3: no effect.)
+* So the likely cause on a real GPU is one SwiftShader cannot show: **z-fighting between the footing cap and the terrain.** `Lift.ts` places a tower at `heightAt` (bilinear) but the terrain mesh is drawn as planar triangles (`surfaceHeightAt`, "exactly as the terrain mesh triangulates it"), and tile corner heights are whole steps, so on every flat tile the old footing cap (a stone disc with its top exactly at tower ground height) was COPLANAR with the snow over the whole 0.3 radius, and within ~0.1 of it on a gentle slope. Equal depths flip winner per pixel and per frame on a real GPU as soon as the camera moves (tiny sub-pixel jitter): a shimmering patch at the foot. SwiftShader evaluates both planes with the same arithmetic and consistently picks one, so the harness shows nothing (confirmed on the flattest tower: 9.4 vs 8.6). Status: **suspected from the code and the geometry, not confirmed by an image.**
+* Fix (conservative, no draw-call change): the footing is a plinth that stands `TOWER_FOOT_PROUD` = 0.06 above the tower's ground height (still sunk `TOWER_FOOT_DEPTH` = 0.2), so no up-facing face of the tower sits at ground height anywhere (`tests/render/liftModels.test.ts`: "tower footing"). Same triangle count, same material.
+
+### By-eye checklist for the owner (High, real GPU)
+
+1. Title screen, 2 minutes: is the wobble gone? If it remains, in the console set `__slope.renderer.shadows.staticRateScale = 0.05` (almost no static refresh) and watch again; then `__slope.renderer.shadows.freezeStatic = true` (no static re-render at all) and `__slope.renderer.setShadows(false)`: whichever makes it stop is the cause (static shadow pass vs the pass in general vs the camera path). `__slope.renderer.shadows.stats.why` counts why static passes ran (`sun`, `view`, `set`, `density`, `camera`).
+2. Pylon foot: zoom in on a tower on a flat snowy tile and orbit slowly. If the footing still shimmers, `__slope.renderer.shadows.freezeStatic = true`, then `setShadows(false)`: gone with shadows off = shadow receiving at the contact (bias: raise `uShadowP.y`); gone only when the footing is hidden = geometry (z-fight: tell me which tower kind).
+3. Also look at the tower base flange (near LOD, ride / walk) and the station slabs: the same coplanar-with-terrain pattern may exist there (not changed: no report).

@@ -6,6 +6,8 @@ import { patchLambertReceiver, shadowPassUniforms } from './shadowChunk';
 import { PERSP_CAMERA_SLACK, SIG_SEED, castDensityTarget, mixSig, needsStaticRender, quantiseDensity, slewDensity, staticLoadScale } from './shadowSchedule';
 
 type V3 = [number, number, number];
+/** True when the old window would still have covered the view (a re-fit that happened only because the sun stepped). */
+const windowCoversNow = (w: ShadowWindow | null, f: V3, radius: number, need: number): boolean => !!w && windowCovers(w, f, radius) && !(need < w.half / 1.3);
 /** Groups that never cast: flat draped decals (roads, rails, pistes) would shadow the ground they sit on. */
 const NO_CAST_NAMES = new Set(['networks', 'springMarkers', 'emotes', 'railCrossings', 'model-gallery']);
 
@@ -59,7 +61,14 @@ export class ShadowRig {
   /** Benchmark switch (scripts/shadow-cost.ts): a 1-pixel `readPixels` ends every pass so `stats.*Ms` are real GPU / rasteriser times instead of submit times. Never on in the game. */
   measureSync = false;
   /** Last measured shadow pass: draw calls, triangles, ms, passes so far (docs/perf.md "Shadow pass"). */
-  readonly stats = { calls: 0, triangles: 0, ms: 0, passes: 0, strength: 0, half: 0, totalMs: 0, staticPasses: 0, dynPasses: 0, dynCalls: 0, dynTriangles: 0, dynMs: 0, copyMs: 0, staticMsTotal: 0, dynMsTotal: 0, copyMsTotal: 0, density: 1, dynRoots: 0, memMB: 0 };
+  readonly stats = { calls: 0, triangles: 0, ms: 0, passes: 0, strength: 0, half: 0, totalMs: 0, staticPasses: 0, dynPasses: 0, dynCalls: 0, dynTriangles: 0, dynMs: 0, copyMs: 0, staticMsTotal: 0, dynMsTotal: 0, copyMsTotal: 0, density: 1, dynRoots: 0, memMB: 0,
+    /** Why the static map was re-rendered (bisecting hitches: docs/flicker.md "Title camera"): a sun step (re-fit), a view re-fit (camera left the window / zoom ladder), a changed static set, a cast density step, a perspective camera move, the first render. */
+    why: { sun: 0, view: 0, set: 0, density: 0, camera: 0, first: 0 } };
+  /** Debug / bisect switch (`__slope.renderer.shadows.freezeStatic`): never re-render the static map after the first time (shadows of new casters and the sun stop updating, nothing else changes). */
+  freezeStatic = false;
+  /** Scales every static refresh RATE (sun steps, set / density / camera changes; never a window re-fit). The title demo runs at 0.25: its sun moves ~9 steps / s, so the cached map was re-rendered ~10 times a second, a regular hitch on a modest GPU that read as a wobble of the slow camera; at 5 Hz each pass is spread further apart and the steps are still < 0.5 degrees. */
+  staticRateScale = 1;
+  private refitWhy: 'sun' | 'view' = 'view';
 
   /** The renderer's own `render`, captured before any harness wraps it (the flicker / shot harnesses count wrapped calls as game frames; the shadow pass is not one). */
   private readonly render0: (scene: THREE.Scene, camera: THREE.Camera) => void;
@@ -193,7 +202,8 @@ export class ShadowRig {
     if (this.sinceAdopt >= 1) { this.sinceAdopt = 0; this.adopt(); }
     this.age += dt; this.sinceScan += dt;
     this.smoothDt += (Math.min(dt, 0.25) - this.smoothDt) * 0.1;
-    const load = staticLoadScale(this.smoothDt);
+    const load = staticLoadScale(this.smoothDt) * this.staticRateScale;
+    const spike = dt > Math.max(0.03, this.smoothDt * 2); // this frame already hitched (a shader compile, GC, a tab switch): a re-fit still renders, a pure refresh waits a frame instead of piling on
     this.heights = heights;
     // the previous main pass's triangle count (info is read before any shadow render resets it): the tree cast density falls gradually between 50 % and 100 % of the budget
     this.density = slewDensity(this.density, castDensityTarget(this.webgl.info.render.triangles, this.heavyTriBudget), dt);
@@ -205,8 +215,9 @@ export class ShadowRig {
     this.realCam.copy(camera.position);
     const need = quantiseHalf(radius * 1.2 + 2);
     const sunChanged = !!this.win && (this.win.sunDir[0] !== q[0] || this.win.sunDir[1] !== q[1] || this.win.sunDir[2] !== q[2]);
-    const sunDue = sunChanged && this.age >= 1 / (20 * load); // a pure sun step is rate limited (STATIC only); every re-fit adopts the newest sun
+    const sunDue = sunChanged && !spike && this.age >= 1 / (20 * load); // a pure sun step is rate limited (STATIC only); every re-fit adopts the newest sun
     if (!this.win || sunDue || !windowCovers(this.win, f, radius) || need < this.win.half / 1.3) {
+      this.refitWhy = sunDue && windowCoversNow(this.win, f, radius, need) ? 'sun' : 'view';
       const w = fitShadowWindow(q, f, radius, this.mapSize);
       this.win = w;
       if (!w) { this.uniforms.uShadowP.value.x = 0; this.stats.half = 0; this.camWin = null; this.hasStatic = false; return; }
@@ -220,7 +231,9 @@ export class ShadowRig {
       setChanged: this.sig !== this.staticSig, densityChanged: dq !== this.densityQ,
       cameraMoved: persp && this.staticCam.distanceToSquared(camera.position) > PERSP_CAMERA_SLACK * PERSP_CAMERA_SLACK,
     };
-    if (needsStaticRender(state, load)) {
+    if ((!this.freezeStatic || !this.hasStatic) && (!spike || windowChanged || !this.hasStatic) && needsStaticRender(state, load)) {
+      const why = this.stats.why;
+      if (!this.hasStatic) why.first++; else if (windowChanged) why[this.refitWhy]++; else if (state.setChanged) why.set++; else if (state.densityChanged) why.density++; else why.camera++;
       if (windowChanged) this.setupCamera(win);
       shadowPassUniforms.uShDens.value = this.densityQ = dq;
       this.renderStatic();

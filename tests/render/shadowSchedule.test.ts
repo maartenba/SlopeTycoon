@@ -147,6 +147,46 @@ describe('ShadowRig: static cache + per-frame dynamic pass', () => {
     scene.add(mesh('houseC', 5)); for (let i = 0; i < 6; i++) frame(0.05);
     expect(rig.stats.staticPasses).toBe(n + 1);
   });
+  it('staticRateScale slows the static refresh of a pure change (the title demo) but never a window re-fit; a hitching frame defers a pure refresh by one frame', () => {
+    const { rig, scene, frame } = setup();
+    for (let i = 0; i < 60; i++) frame(1 / 60);
+    rig.staticRateScale = 0.25; // set rate 8 Hz -> 2 Hz: a new building waits 0.5 s
+    scene.add(mesh('houseB2', 4)); for (let i = 0; i < 3; i++) frame(1 / 60); // old cache: renders at once (age >> 0.5 s)
+    const n = rig.stats.staticPasses;
+    scene.add(mesh('houseC', 5)); for (let i = 0; i < 20; i++) frame(1 / 60); // 0.33 s since the last static render < 0.5 s
+    expect(rig.stats.staticPasses).toBe(n);
+    for (let i = 0; i < 20; i++) frame(1 / 60); // past 0.5 s
+    expect(rig.stats.staticPasses).toBe(n + 1);
+    // a re-fit is never throttled by the scale
+    frame(1 / 60, new THREE.Vector3(80, 0, 80));
+    expect(rig.stats.staticPasses).toBe(n + 2);
+    // a spike frame (dt 0.2 after smooth 60 fps frames) defers a pure refresh by a frame, a normal frame after it renders it
+    rig.staticRateScale = 1;
+    for (let i = 0; i < 30; i++) frame(1 / 60);
+    const m1 = rig.stats.staticPasses;
+    scene.add(mesh('houseE', -4)); for (let i = 0; i < 12 && rig.stats.staticPasses === m1; i++) frame(1 / 60); // renders at once (cache old), so the cache is fresh again
+    const m0 = rig.stats.staticPasses;
+    scene.add(mesh('houseD', -5)); for (let i = 0; i < 4; i++) frame(1 / 60); // the scan notices it, the 8 Hz rate is not due yet
+    expect(rig.stats.staticPasses).toBe(m0);
+    frame(0.2);
+    expect(rig.stats.staticPasses).toBe(m0);
+    frame(1 / 60);
+    expect(rig.stats.staticPasses).toBe(m0 + 1);
+    rig.dispose();
+  });
+  it('reports why the static map was re-rendered (bisect counters) and freezeStatic stops further re-renders', () => {
+    const { rig, scene, frame } = setup();
+    frame();
+    expect(rig.stats.why.first).toBe(1);
+    for (let i = 0; i < 10; i++) frame(0.05);
+    scene.add(mesh('houseC', 5)); for (let i = 0; i < 6; i++) frame(0.05);
+    expect(rig.stats.why.set).toBe(1);
+    rig.freezeStatic = true;
+    const n = rig.stats.staticPasses;
+    scene.add(mesh('houseE', 6)); for (let i = 0; i < 10; i++) frame(0.05);
+    expect(rig.stats.staticPasses).toBe(n);
+    rig.dispose();
+  });
   it('shadows off at night: nothing renders; memory is the 24 MB the doc promises and both targets are freed when High goes off', () => {
     const { rig, fr } = setup();
     rig.update(1 / 60, true, new THREE.OrthographicCamera(), new THREE.Vector3(), [0.4, 0.8, 0.3], 1, 0, [-3, 60]);
