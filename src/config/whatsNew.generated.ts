@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.5.1",
+    "date": "2026-11-03",
+    "highlights": [
+      "Smoother bubble chairs and gondolas: rounded hoods and cabins, curved glass and one-piece hangers.",
+      "Rounder Altiport, Beach, Kids Ground, Reservoir, Ice Rink and Tourist Office, plus a hood over the chair bullwheels and a turned village fountain.",
+      "An open Apres-Ski Bar plays a quiet polka when you zoom in close to it.",
+      "Birds are quieter and come forward when you zoom in; streams and rivers babble or rush when you are beside them.",
+      "A Support page with a Ko-fi link; nothing is loaded from Ko-fi until you click."
+    ]
+  },
+  {
     "version": "0.5.0",
     "date": "2026-11-03",
     "highlights": [
@@ -22,17 +33,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "A Pizzeria for families, a morning Bakery that makes nearby lodgings a bit nicer, and one Tourist Office per resort that brings in a few more guests.",
       "A grass strip with a Skydive Centre, plus a launch ramp and landing field for hang gliders and paragliders. They only fly by day in clear weather.",
       "The Carnival (6 to 11 February) has a parade of masked guests along a village street, brass music and a bit more spending in shops and restaurants."
-    ]
-  },
-  {
-    "version": "0.3.3",
-    "date": "2026-11-02",
-    "highlights": [
-      "Phones show the map: drawers are small bottom sheets with a grab bar. They open at a low peek, drag up for more, and fold to the bar once you pick a…",
-      "A one-row top bar with a ... button for the rest, a one-line HUD strip (money, stars, guests) with an arrow for the date and weather, and one row of…",
-      "While you build or paint, the goals, news and Rudi chips step aside; while you drag the map the cards fade out and return when you let go.",
-      "Inspectors, Rudi's advice and the news list are sheets too: first lines at a glance, pull up for the rest. Toasts are small, one at a time, above…",
-      "Landscape phones get a side sheet; tablets keep their drawers, capped at about 40 % of the height. The map is at least half the screen in every…"
     ]
   }
 ];

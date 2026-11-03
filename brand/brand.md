@@ -3,7 +3,7 @@
 Palette sampled from `public/icons/favicon.svg` (the logo) and `site/assets/site.css`.
 
 ## Name
-**Slope Tycoon** (two words, both capitalised). Describe it as "a free, in-browser ski resort game". Version 0.5.0, pre-release: never call it 1.0. Licence: all rights reserved. Say "source-available", never "open source".
+**Slope Tycoon** (two words, both capitalised). Describe it as "a free, in-browser ski resort game". Version 0.5.1, pre-release: never call it 1.0. Licence: all rights reserved. Say "source-available", never "open source".
 
 ## Logo
 A rounded square: blue-to-navy sky, a gold sun, two snowy mountains and a white piste with amber dots.

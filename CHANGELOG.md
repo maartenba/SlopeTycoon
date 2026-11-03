@@ -4,6 +4,18 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-03 (pre-release)
+
+Smoother lifts, sound that follows the camera, and a Support page. Nothing in the economy or the saves changed.
+
+### Highlights
+
+- Smoother bubble chairs and gondolas: rounded hoods and cabins, curved glass and one-piece hangers.
+- Rounder Altiport, Beach, Kids Ground, Reservoir, Ice Rink and Tourist Office, plus a hood over the chair bullwheels and a turned village fountain.
+- An open Apres-Ski Bar plays a quiet polka when you zoom in close to it.
+- Birds are quieter and come forward when you zoom in; streams and rivers babble or rush when you are beside them.
+- A Support page with a Ko-fi link; nothing is loaded from Ko-fi until you click.
+
 ### Changes
 
 - Sound follows the camera: the Apres-Ski Bar now plays a quiet procedural polka (oompah bass, accordion, handclaps, glass clinks, crowd murmur) when you zoom in close to an open bar, and the game music dips a little while you listen; birds and other nature sounds are quieter in general and come forward only when zoomed in; streams and rivers now babble (or rush, over rapids) when you zoom in beside them and go quiet under winter ice. Everything follows the ambience volume and mute. Tuned by numbers, not by ear: levels are in `src/config/audioProximity.ts`.

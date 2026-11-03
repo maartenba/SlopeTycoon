@@ -78,5 +78,10 @@
     "tagline": "a smoother look",
     "lead": "This release is about how things look. Animals, buildings, lifts and vehicles have rounder shapes, the lift icons in the drawer are different for each kind of lift, the edge of the map is a layered cliff, and rivers and ponds have soft shorelines. On the High graphics setting there are now real shadows from the sun. I can only check this on a software renderer, so I do not know yet how it runs on a real graphics card or how it feels while you pan. Nothing in the economy changed.",
     "shot": "hero-winter"
+  },
+  "0.5.1": {
+    "tagline": "smoother lifts and nearby sound",
+    "lead": "Bubble chairs and gondolas are smoother now, and a few more buildings lost their sharp corners. Sound now follows the camera: zoom in on an open bar to hear some music, or on a stream to hear the water, and the birds are quieter until you get close. There is also a Support page with a Ko-fi link. I could not listen to the new sounds myself, only measure them, so the levels may need adjusting. Nothing in the economy changed.",
+    "shot": "hero-winter"
   }
 }

@@ -1,6 +1,26 @@
 # Release notes and checklist
 
-Current release: **0.5.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.5.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.5.1 (2026-11-03, macOS, Node v22.23.4)
+
+Smoother bubble chairs / gondolas and more rounded buildings (lane D), the Ko-fi `/support/` page, and proximity audio (Apres-Ski Bar music, quieter nearby-only birds, stream / river / pond water; `docs/playtest-audio.md`). No sim, save or golden change. Release prep: version bump (package.json, lock, README, brand, AGENTS.md, deploy.md, the `whatsNew` test), CHANGELOG `[0.5.1]` with five Highlights, `whats-new`, `licenses`, a devlog entry, guide `settings.md` ambience wording. No new site screenshots this time.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 441 files passed, 1 skipped; 4664 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed (goldens untouched) |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74` | all OK (0 console errors, MaterialGuard 0) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 |
+| Flicker | `npm run flicker -- --only 64-winter` | winter rotfine 0.65 (0.5.0: 0.65), zoomfine 0.15, no pops |
+| Audio in a real page | harness eval: real `AudioEngine` + `Ambience`, one `update` with a bar and rapids in range | state running, 19 layers built, no console errors (not heard) |
+| Size | `npm run size` | 2992.8 kB raw / 1068.7 kB gzip (budget < 2048 kB gzip; +5.0 kB gzip over 0.5.0: 1063.7) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (55 pages, 268 URLs crawled on both bases, screenshots 8.3 MB of the 8.5 MB budget) |
+
+Not verified by agents: how the new sounds sound (`docs/playtest-audio.md`), real GPU fps, the final look of the new carriers on a real screen.
 
 ## 0.5.0 (2026-11-03, macOS, Node v22.23.4)
 
