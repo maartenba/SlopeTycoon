@@ -17,10 +17,10 @@ export class Renderer {
   private isoSaved: IsoPose | null = null;
   readonly sun: THREE.DirectionalLight;
   readonly hemi: THREE.HemisphereLight;
-  /** High-tier sun shadows (docs/shadows.md): own depth pass, terrain receives. Off (no cost, no shader define) on low / med. */
+  /** High-tier sun shadows (docs/shadows.md): own depth pass; terrain, buildings, props, trees receive; iso + ride / photo / walk. Off (no cost, no shader define) on low / med. */
   readonly shadows: ShadowRig;
   /** Per-frame inputs of the shadow pass (set by main.ts from Lighting / the terrain): sun direction, night 0..1, overcast 0..1, ground height under the focus, terrain y range. */
-  shadowFeed: (() => { sunDir: [number, number, number]; night: number; overcast: number; groundY: number; heights: [number, number] }) | null = null;
+  shadowFeed: ((x: number, z: number) => { sunDir: [number, number, number]; night: number; overcast: number; groundY: number; heights: [number, number] }) | null = null;
   private shadowFocus = new THREE.Vector3();
   quality: GraphicsQuality = 'med';
   private raf = 0;
@@ -112,9 +112,10 @@ export class Renderer {
         this.preFrame?.(dt);
         this.onFrame?.(dt);
         if (this.shadows.enabled && this.shadowFeed) {
-          const f = this.shadowFeed();
-          this.shadowFocus.set(this.controls.target.x, f.groundY, this.controls.target.z);
-          try { this.shadows.update(dt, this.viewMode.isIso, this.controls.camera, this.shadowFocus, f.sunDir, f.night, f.overcast, f.heights); }
+          const iso = this.viewMode.isIso, fx = iso ? this.controls.target.x : this.rig.camera.position.x, fz = iso ? this.controls.target.z : this.rig.camera.position.z;
+          const f = this.shadowFeed(fx, fz);
+          this.shadowFocus.set(fx, f.groundY, fz);
+          try { this.shadows.update(dt, true, this.camera, this.shadowFocus, f.sunDir, f.night, f.overcast, f.heights); }
           catch (e) { console.error('[shadows] disabled after an error', e); this.shadows.setEnabled(false); } // never let the optional pass take the frame loop down
         }
         this.webgl.render(this.scene, this.camera);

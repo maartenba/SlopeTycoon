@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {
-  SHADOW_MAP_SIZE, fitShadowWindow, quantiseHalf, quantiseSun, shadowSunDir, shadowDepthRange, shadowStrength, windowCovers, type ShadowWindow,
+  SHADOW_MAP_SIZE, fitShadowWindow, quantiseHalf, quantiseSun, shadowSunDir, shadowDepthRange, shadowStrength, windowCovers, perspectiveRadius, type ShadowWindow,
 } from './shadowFit';
+import { patchLambertReceiver, shadowPassUniforms } from './shadowChunk';
 
 type V3 = [number, number, number];
 /** Groups that never cast: flat draped decals (roads, rails, pistes) would shadow the ground they sit on. */
@@ -28,6 +29,11 @@ export class ShadowRig {
   private hidden: THREE.Object3D[] = [];
   private readonly excluded = new Set<THREE.Object3D>();
   private on = false;
+  /** Materials adopted as receivers (built-in Lambert patched by wrapping their onBeforeCompile; custom ShaderMaterials flagged `userData.shadowRecv`). Restored when High goes off. */
+  private readonly adopted = new Map<THREE.Material, { had: boolean; obc: THREE.Material['onBeforeCompile']; key: THREE.Material['customProgramCacheKey'] | null; lambert: boolean }>();
+  private sinceAdopt = 99;
+  private dummy: THREE.DepthTexture | null = null;
+  private readonly realCam = new THREE.Vector3();
   /** Shared receiver uniforms (the same objects live in every receiver material). */
   readonly uniforms = {
     tShadow: { value: null as THREE.DepthTexture | null },
@@ -74,8 +80,61 @@ export class ShadowRig {
     if (on === this.on) return;
     this.on = on;
     for (const m of this.receivers) this.applyDefine(m);
-    if (on) this.ensureTarget();
-    else { this.rt?.dispose(); this.rt?.depthTexture?.dispose(); this.rt = null; this.uniforms.tShadow.value = null; this.uniforms.uShadowP.value.x = 0; this.win = null; this.winKey = ''; this.stats.strength = 0; }
+    if (on) { this.ensureTarget(); this.adopt(); }
+    else {
+      this.release(); this.rt?.dispose(); this.rt?.depthTexture?.dispose(); this.rt = null; this.uniforms.tShadow.value = null; this.dummy?.dispose(); this.dummy = null; this.uniforms.uShadowP.value.x = 0; this.win = null; this.winKey = ''; this.stats.strength = 0; }
+  }
+
+  /**
+   * Finds receivers in the scene (cheap traversal, at most once a second while High is on): opaque built-in Lambert materials (buildings, lift stations, vehicles,
+   * guests, props) get the shared receiver patch chained after their own onBeforeCompile; custom ShaderMaterials with `userData.shadowRecv` (trees, rocks) get the
+   * shared uniforms. Both get the `USE_SHADOWS` define. Nothing is touched on Low / Med.
+   */
+  private adopt(): void { this.adoptTree(this.scene); }
+
+  private adoptTree(o: THREE.Object3D): void {
+    if (o.userData.noShadow || this.excluded.has(o)) return; // whole subtree: terrain, water, overlays, particles ...
+    const mat = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    if (mat) for (const m of Array.isArray(mat) ? mat : [mat]) this.adoptOne(m);
+    for (const c of o.children) this.adoptTree(c);
+  }
+
+  private adoptOne(m: THREE.Material): void {
+    if (this.adopted.has(m)) return;
+    const sm = m as THREE.ShaderMaterial;
+    if (sm.isShaderMaterial) {
+      if (!m.userData.shadowRecv) return;
+      Object.assign(sm.uniforms, this.uniforms);
+      this.adopted.set(m, { had: false, obc: m.onBeforeCompile, key: null, lambert: false });
+      this.applyDefine(sm);
+      return;
+    }
+    if (!(m as THREE.MeshLambertMaterial).isMeshLambertMaterial || m.transparent) return;
+    const had = Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile');
+    const obc = m.onBeforeCompile, key = Object.prototype.hasOwnProperty.call(m, 'customProgramCacheKey') ? m.customProgramCacheKey : null;
+    const baseKey = m.customProgramCacheKey(); // computed before wrapping: the default key is the onBeforeCompile source text
+    const uniforms = this.uniforms;
+    m.onBeforeCompile = (shader, r): void => {
+      obc.call(m, shader, r);
+      Object.assign(shader.uniforms, uniforms);
+      patchLambertReceiver(shader);
+    };
+    m.customProgramCacheKey = (): string => `${baseKey}|sunrecv`;
+    this.adopted.set(m, { had, obc, key, lambert: true });
+    this.applyDefine(m as unknown as THREE.ShaderMaterial);
+  }
+
+  /** Undoes `adopt` (High off): the original onBeforeCompile / cache key / defines return, so Low and Med compile exactly the programs they did before. */
+  private release(): void {
+    for (const [m, a] of this.adopted) {
+      if (a.lambert) {
+        if (a.had) m.onBeforeCompile = a.obc; else delete (m as { onBeforeCompile?: unknown }).onBeforeCompile;
+        if (a.key) m.customProgramCacheKey = a.key; else delete (m as { customProgramCacheKey?: unknown }).customProgramCacheKey;
+      }
+      const sm = m as THREE.ShaderMaterial;
+      if (sm.defines && 'USE_SHADOWS' in sm.defines) { const d = { ...sm.defines }; delete d.USE_SHADOWS; sm.defines = Object.keys(d).length ? d : (undefined as never); m.needsUpdate = true; }
+    }
+    this.adopted.clear();
   }
 
   private ensureTarget(): THREE.WebGLRenderTarget {
@@ -88,6 +147,8 @@ export class ShadowRig {
     this.rt = new THREE.WebGLRenderTarget(this.mapSize, this.mapSize, { depthBuffer: true, depthTexture: dt, format: THREE.RedFormat, type: THREE.UnsignedByteType, generateMipmaps: false });
     this.rt.texture.colorSpace = this.webgl.outputColorSpace; // same output colour space as the screen: the casters' shader programs are reused, not recompiled
     this.uniforms.tShadow.value = dt;
+    const prev = this.webgl.getRenderTarget(); // allocate + clear the depth texture now: a main pass before the first shadow pass would otherwise sample an unallocated shadow texture
+    this.webgl.setRenderTarget(this.rt); this.webgl.clear(); this.webgl.setRenderTarget(prev);
     return this.rt;
   }
 
@@ -102,8 +163,13 @@ export class ShadowRig {
     const strength = active ? shadowStrength(night, overcast, sunDir[1] / Math.hypot(sunDir[0], sunDir[1], sunDir[2])) : 0;
     this.stats.strength = strength;
     if (strength < 0.02) { this.uniforms.uShadowP.value.x = 0; return; }
-    const f: V3 = [focus.x, focus.y, focus.z];
-    const radius = this.viewRadius(camera, focus) + 4;
+    this.sinceAdopt += dt;
+    if (this.sinceAdopt >= 1) { this.sinceAdopt = 0; this.adopt(); }
+    const persp = !(camera as THREE.OrthographicCamera).isOrthographicCamera;
+    // Perspective views (ride / photo / walk): one window around the CAMERA (not its look direction), so a yaw never moves it; radius grows with the eye height (docs/shadows.md)
+    const f: V3 = persp ? [camera.position.x, focus.y, camera.position.z] : [focus.x, focus.y, focus.z];
+    const radius = persp ? perspectiveRadius(Math.max(0, camera.position.y - focus.y)) : this.viewRadius(camera, focus) + 4;
+    this.realCam.copy(camera.position);
     const need = quantiseHalf(radius * 1.2 + 2);
     const sunChanged = !this.win || this.win.sunDir[0] !== q[0] || this.win.sunDir[1] !== q[1] || this.win.sunDir[2] !== q[2];
     if (!this.win || sunChanged || !windowCovers(this.win, f, radius) || need < this.win.half / 1.3) {
@@ -123,7 +189,7 @@ export class ShadowRig {
     }
     this.stats.half = win.half;
     const P = this.uniforms.uShadowP.value;
-    P.x = strength; P.z = 1 / this.mapSize; P.w = win.texel * 1.6; // y (bias) is set with the matrix, in render()
+    P.x = strength; P.z = 1 / this.mapSize; P.w = Math.max(win.texel * 2.2, 0.05); // y (bias) is set with the matrix, in render()
   }
 
   /** Radius (world units, on the ground plane through the focus) of the circle around the focus that contains the camera's whole view: rotation invariant. */
@@ -166,6 +232,10 @@ export class ShadowRig {
     const mainTris = this.webgl.info.render.triangles;
     this.skipHeavy = this.skipHeavy ? mainTris > this.heavyTriBudget * 0.7 : mainTris > this.heavyTriBudget;
     this.hide(this.scene);
+    // receivers must not sample the texture they are being drawn into (WebGL feedback loop): bind a 1x1 stand-in and switch the sampling off for the pass
+    const P = this.uniforms.uShadowP.value, strength = P.x, realMap = this.uniforms.tShadow.value;
+    this.uniforms.tShadow.value = this.dummyTexture(); P.x = 0;
+    shadowPassUniforms.uShCam.value.set(this.realCam.x, this.realCam.y, this.realCam.z, 1);
     const bg = this.scene.background; this.scene.background = null;
     const prev = this.webgl.getRenderTarget(), ac = this.webgl.autoClear;
     this.webgl.setRenderTarget(rt);
@@ -173,10 +243,22 @@ export class ShadowRig {
     this.render0(this.scene, cam);
     this.webgl.setRenderTarget(prev); this.webgl.autoClear = ac;
     this.scene.background = bg;
+    shadowPassUniforms.uShCam.value.w = 0;
+    this.uniforms.tShadow.value = realMap; P.x = strength;
     for (const o of this.hidden) o.visible = true;
     this.hidden.length = 0;
     const info = this.webgl.info.render;
     this.stats.calls = info.calls; this.stats.triangles = info.triangles; this.stats.ms = performance.now() - t0; this.stats.passes++;
+  }
+
+  private dummyTexture(): THREE.DepthTexture {
+    if (!this.dummy) {
+      const d = new THREE.DepthTexture(1, 1);
+      d.format = THREE.DepthFormat; d.type = THREE.UnsignedIntType; d.compareFunction = THREE.LessEqualCompare;
+      d.minFilter = THREE.LinearFilter; d.magFilter = THREE.LinearFilter; d.needsUpdate = true; // uploaded as a real (empty) shadow-sampler texture
+      this.dummy = d;
+    }
+    return this.dummy;
   }
 
   /** Hides everything that must not cast (excluded roots, transparent meshes, points / lines / sprites); restored right after the pass. */

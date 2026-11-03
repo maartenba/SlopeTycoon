@@ -2285,9 +2285,9 @@ renderer.scene.add(focusMarker);
 for (const o of [terrain.group, water.group, overlays.group, covOverlay.group, pisteHl.mesh, precip.group, smoke.group, snowSpray.group, rapidsSplash.group, springMarkers.group, atmos.mist.group, skyActivity.group, fx.particles.mesh, emotes.mesh, selRing, focusMarker, dropRing.group, sledRunView.group] as THREE.Object3D[]) o.userData.noShadow = true;
 trees.group.userData.shadowHeavy = true; // the tree layers are the bulk of the triangles: they stop casting when a pass gets too heavy (ShadowRig.heavyTriBudget)
 renderer.shadows.addReceiver(terrain.material);
-renderer.shadowFeed = () => {
-  const L = lighting.last, k = weather.current.kind, t = renderer.controls.target;
-  return { sunDir: L?.sunDir ?? [0.4, 0.8, 0.3], night: L?.night ?? 0, overcast: k === 'clear' ? 0 : k === 'cloudy' ? 0.5 : k === 'storm' ? 1 : 0.8, groundY: heightAt(grid, t.x, t.z), heights: [-3, maxWorld + 6] };
+renderer.shadowFeed = (fx, fz) => {
+  const L = lighting.last, k = weather.current.kind;
+  return { sunDir: L?.sunDir ?? [0.4, 0.8, 0.3], night: L?.night ?? 0, overcast: k === 'clear' ? 0 : k === 'cloudy' ? 0.5 : k === 'storm' ? 1 : 0.8, groundY: heightAt(grid, fx, fz), heights: [-3, maxWorld + 6] };
 };
 let markerT = 0;
 { const prev = renderer.onFrame; renderer.onFrame = (dt): void => { prev?.(dt); if (markerT > 0) { markerT -= dt; const k = 1 + 0.35 * Math.sin(markerT * 9); focusMarker.scale.set(k, k, k); if (markerT <= 0) focusMarker.visible = false; } }; }

@@ -97,3 +97,15 @@ export function shadowStrength(night: number, overcast = 0, sunElevation = 1): n
   const low = 0.3 + 0.7 * Math.min(1, Math.max(0, sunElevation * 4)); // a grazing sun gives much fainter shadows (callers pass the REAL sun elevation): long dusk fingers fade instead of combing the map
   return Math.min(1, Math.max(0, day * low * (1 - 0.6 * Math.min(1, Math.max(0, overcast)))));
 }
+
+/** Perspective views (ride / photo / walk): shadow radius (world units) around the camera. Grows with the eye height above the ground (a gondola sees farther than a walker); the half-size ladder quantises it. Capped so a window stays <= ~120 (texel ~0.12). */
+export const PERSP_RADIUS_BASE = 52;
+export function perspectiveRadius(eyeHeight: number): number {
+  const h = Number.isFinite(eyeHeight) ? Math.max(0, eyeHeight) : 0;
+  return Math.min(90, PERSP_RADIUS_BASE + 0.8 * h);
+}
+
+/** Window for a perspective camera: centred on the camera's ground position (rotation invariant: yaw / pitch never move it), texel-snapped like the iso fit. Null beyond MAX_HALF. */
+export function fitPerspectiveWindow(sunDir: V3, camPos: V3, groundY: number, mapSize = SHADOW_MAP_SIZE): ShadowWindow | null {
+  return fitShadowWindow(sunDir, [camPos[0], groundY, camPos[2]], perspectiveRadius(camPos[1] - groundY), mapSize);
+}

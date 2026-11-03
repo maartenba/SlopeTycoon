@@ -7,6 +7,7 @@ import { seasonWeights } from '../Season';
 import type { SeasonWeights } from '../Season';
 import type { PropChunk } from '@/world/Props';
 import { CHUNK_SIZE } from '@/world/Grid';
+import { SH_CAM_GLSL, SHADOW_RECV_FRAG, shadowPassUniforms, shadowReceiverUniforms } from '../shadowChunk';
 import { FOG_FRAG, FOG_PARS_FRAG, FOG_PARS_VERT, fogUniforms, fogVert } from '../Fog';
 import { isPerspective } from '../view/cameraMath';
 import { NEAR_CAPS } from '../lod/nearLod';
@@ -153,7 +154,12 @@ ${LODFADE_VERT_PARS}
 ${XFADE_VERT_PARS}
 ${SEASON_GLSL}
 ${FOG_PARS_VERT}
+${SH_CAM_GLSL}
 varying vec3 vColor;
+#ifdef USE_SHADOWS
+varying vec3 vSunPart; // the sun term of vColor (the shadow map scales it) and the world normal (normal-offset bias)
+varying vec3 vSN;
+#endif
 void main() {
   mat4 im = modelMatrix * instanceMatrix;
   vec3 pos = position;
@@ -180,10 +186,13 @@ void main() {
   base = mix(base, vec3(0.92, 0.95, 1.0), cap);
   float ndl = max(dot(n, uSunDir), 0.0);
   vColor = base * (uSkyColor + uSunColor * ndl);
+#ifdef USE_SHADOWS
+  vSunPart = base * uSunColor * ndl; vSN = n;
+#endif
   vec4 vp = viewMatrix * wp;
   ${fogVert('vp')}
   gl_Position = projectionMatrix * vp;
-  float dCam = distance(cameraPosition, wp.xyz);
+  float dCam = distance(shCam(), wp.xyz);
   if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
   vLodW = lodFadeW(dCam);
 }`;
@@ -192,9 +201,17 @@ const MESH_FRAG = /* glsl */ `
 ${FOG_PARS_FRAG}
 ${LODFADE_FRAG_PARS}
 varying vec3 vColor;
+${SHADOW_RECV_FRAG}
+#ifdef USE_SHADOWS
+varying vec3 vSunPart;
+varying vec3 vSN;
+#endif
 void main() {
   lodFadeDiscard();
   gl_FragColor = vec4(vColor, 1.0);
+#ifdef USE_SHADOWS
+  gl_FragColor.rgb = vColor - vSunPart * (1.0 - recvShadow(vFogW, normalize(vSN))); // trees / rocks receive the sun shadow on the sun term only (sky light stays)
+#endif
   ${FOG_FRAG}
   #include <colorspace_fragment>
 }`;
@@ -212,6 +229,7 @@ ${LODFADE_VERT_PARS}
 ${XFADE_VERT_PARS}
 ${SEASON_GLSL}
 ${FOG_PARS_VERT}
+${SH_CAM_GLSL}
 varying vec2 vUv;
 varying vec3 vTint;
 void main() {
@@ -232,7 +250,7 @@ void main() {
   vec4 vp = viewMatrix * vec4(wp, 1.0);
   ${fogVert('vp')}
   gl_Position = projectionMatrix * vp;
-  float dCam = distance(cameraPosition, wp);
+  float dCam = distance(shCam(), wp);
   if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
   vLodW = lodFadeW(dCam);
 }`;
@@ -628,11 +646,12 @@ function tri(ctx: CanvasRenderingContext2D, cx: number, base: number, hw: number
 }
 
 export function createMeshMaterial(u: PropUniforms, sp?: TreeSpecies): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
+  const mat = new THREE.ShaderMaterial({
     vertexShader: MESH_VERT,
     fragmentShader: MESH_FRAG,
     uniforms: {
       ...u,
+      ...shadowPassUniforms, ...shadowReceiverUniforms(),
       uSpecies: { value: sp?.species ?? SPECIES_EVERGREEN },
       uBlossom: { value: sp?.blossom ?? 0 },
       uAutumnMax: { value: sp?.autumnMax ?? 1 },
@@ -644,6 +663,8 @@ export function createMeshMaterial(u: PropUniforms, sp?: TreeSpecies): THREE.Sha
       uXf: { value: new THREE.Vector2(0, 0) },
     },
   });
+  mat.userData.shadowRecv = true; // ShadowRig adopts it on High (the USE_SHADOWS block above)
+  return mat;
 }
 
 export function createBillboardMaterial(u: PropUniforms, atlas: THREE.Texture, sp: TreeSpecies): THREE.ShaderMaterial {
@@ -658,6 +679,7 @@ export function createBillboardMaterial(u: PropUniforms, atlas: THREE.Texture, s
       uSize: { value: new THREE.Vector2(sp.size[0], sp.size[1]) },
       uLeaf: { value: sp.leaf.clone() },
       uSeason: u.uSeason,
+      ...shadowPassUniforms, // billboards (far LOD) cast but do not receive: the quad faces the camera, not the sun, so its depth is not a surface
       uSpecies: { value: sp.species },
       uBlossom: { value: sp.blossom },
       uAutumnMax: { value: sp.autumnMax },
