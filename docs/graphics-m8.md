@@ -106,7 +106,29 @@ Done (render only; tests in `tests/render/m8LaneE.test.ts`):
 Not done, on purpose:
 
 * **Shadow receiving on buildings / trees** and **sun shadows in ride / photo / walk views**: the building and prop materials are patched Lambert / custom shaders without the sun map, so receiving needs per-material shader work plus a perspective-camera window fit (the fit is orthographic, rotation invariant and texel snapped, the only reason iso is flicker free). With the budget (no extra main-pass call, flicker <= 0.7) I did not take that risk blind; contact shadows (0 calls) remain the answer on all tiers.
-* Plane detail on the Altiport (the plane is a few pixels at gallery zoom and mostly hidden by the hangar), terrain bed corners under lakes.
+* (Plane detail and the terrain bed corners under lakes were done in lane G, below.)
+
+## Lane G: water bed, plane, full sweep, confirmations (after lane E)
+
+Render only (no sim, save or golden change). Tests: `tests/render/m8LaneG.test.ts`. Sheets: `docs/img/graphics-m8g-*.webp` (`scripts/shots/m8-montage-g.ts`; before shots were taken in a clean worktree of the lane E commit on the same machine).
+
+**Water (before / after: `graphics-m8g-water.webp`).** The terrain bed under a lake is a per-tile kind, so its dark colour ended in a hard tile square outside the rounded water surface. The lake-bed colour is now masked by the per-vertex water share that was already in `aWet.x` (1/4 at a tile corner, 1/2 on an edge, 1 inside) with a slow world-space wobble, and the cut-off part fades into the sandy shore band (`bedM` in `TerrainMesh.ts`; no new attribute, no new draw call, no `gl_FragCoord`, flicker unchanged). Convex corners now read as scallops that follow the water; river beds use the same mask on `aWet.y` so bends round off (`graphics-m8g-water`, rows 3-5). The bank wet tint on land next to a river was cut from 0.75 to 0.55. Tried and dropped: lowering the water share at concave corners (made pale diamonds along straight edges). Checked on seed 5 (square lake + staircase) and seed 7 (natural lake with 11 concave corners, `scripts/shots/m8-water-g.ts <prefix> <seed> <zoom> <size> <pick> <winter> [dig]`, `TT=6` for rivers).
+
+**Altiport plane.** Propeller blur disc, livery stripes, cabin windows, main-gear legs, tail-wheel leg and a taller fin: +<= 150 triangles, same parts (no new draw call). It was tucked behind the sign and the hangar, so it is now parked at x -1.5 where the iso camera sees it (`graphics-m8g-fixes`, last row).
+
+**Sweep.** Every building (18 gallery shots, `graphics-m8g-sweep-buildings`), lift station / tower / carrier rows, vehicles, trees, guests, farm animals and ground-level ride / lift / walk shots (`graphics-m8g-sweep-lifts-vehicles`, `graphics-m8g-sweep-nature`) were looked at. Fixed after looking: **Tackle Hut** (`frameWin` shutter width 1 instead of 0.07 put two 1-unit green slabs through the roof; gable span / length were also swapped), **Small Hydro** (the penstock cylinder floated at y 1.1: `cyl` takes the base of the unrotated cylinder, now its axis rests on the saddles), **Kids Ground mound + snowman, snow-cannon pile** (the roof / stone texture gave a lilac tint and ring seams: new `flatUv` part option, one plain texel from the stone texture, `FLAT_SNOW_UV` in `meshes/common.ts`), **Ice Rink** (paving-tile pattern on the ice: flat texel, lighter ice).
+
+**Confirmed by looking:** Beach palm crown (green fronds on a curved trunk, reads), snow-cannon pile (now white), Kids Ground mound (white, no seams), goats and sheep in the real farm shot (`m8-farm-e.ts <prefix> <zoom> goat|cow|sheep`), Ice Rink, near conifers / broadleaf trees in real walk shots (`scripts/shots/m8-ground-g.ts`; scalloped whorls, clean silhouettes) and a lift-ride shot.
+
+**What is still not great (honest list).**
+
+* The dug bank wall shows as a dark notch at every concave lake / river corner (the land quarter disc cut out of the water exposes the steep bank face); it reads as a muddy bank but is darker than the sand around it. A real fix needs bank geometry, not colour.
+* Lake water over the faded bed rim is a pale, flat shallow band; the rim has no real depth gradient.
+* The pond / lake outline is still tile-sized scallops, not free curves.
+* The harness shows screen-aligned horizontal banding on flat grass and water (SwiftShader / sun-shadow texel bands, also on terrain with no water); not a water bug, but it hides fine shore detail in screenshots. Worker F owns the shadow system.
+* Rocks were not seen up close in a real ground shot (none in the walk / ride frames); the walk-mode near-hide dither on roofs and signs is intentional but visibly stippled.
+* The Altiport plane is still a few pixels at gallery zoom; round bushes (hedges / shrubs) are plain spheres with no snow in winter; the gallery's lift rows sit on rock for seed 5 (harness terrain, not the models).
+* Still not done: shadow receiving on buildings / trees and sun shadows in ride / photo / walk (lane F).
 
 ## Reproduce
 
