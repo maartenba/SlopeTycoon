@@ -226,7 +226,7 @@ void main() {
   // corners round off like the water surface and the cut edge fades into a sandy / muddy band; a slow world-space wobble keeps the edge organic (flicker-safe).
   float bedM = 1.0;
   if (vKind > 1.5 && vKind < 2.5) {
-    bedM = smoothstep(0.36, 0.62, vWet.x + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.1);
+    bedM = smoothstep(0.7, 1.0, vWet.x + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.1);
     base = mix(base, mix(dirt, base, 0.15) * vec3(0.55, 0.75, 0.8), bedM);
   }
   else if (vKind > 3.5 && vKind < 4.5) base *= 0.82;    // Forest floor
@@ -234,12 +234,12 @@ void main() {
   bool isStream = vKind > 5.5 && vKind < 6.5;
   // sandy / pebble ring around lakes (shore tiles + lake rim)
   float shoreAmt = isLake ? (1.0 - bedM) * 0.9 : smoothstep(0.05, 0.45, vWet.x);
-  vec3 sand = mix(vec3(0.80, 0.72, 0.52), vec3(0.62, 0.58, 0.52), step(0.55, vnoise(vWorld.xz * 2.3 + 4.0)));
+  vec3 sand = mix(vec3(0.80, 0.72, 0.52), vec3(0.70, 0.64, 0.52), smoothstep(0.45, 0.85, vnoise(vWorld.xz * 1.6 + 4.0)) * 0.7); // soft pebble patches (were hard grey blobs)
   sand *= 0.92 + 0.16 * vnoise(vWorld.xz * 5.0);
   base = mix(base, sand, shoreAmt * 0.9);
   // stream bed + banks: dark wet soil and pebbles
-  vec3 wetSoil = mix(dirt, rock, 0.35 + 0.3 * vnoise(vWorld.xz * 3.1)) * vec3(0.42, 0.38, 0.34);
-  if (isStream) base = mix(base, wetSoil, smoothstep(0.18, 0.46, vWet.y + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.08)); // river bed: masked like the lake bed (bend corners round off into the wet bank)
+  vec3 wetSoil = mix(dirt, rock, 0.35 + 0.3 * vnoise(vWorld.xz * 3.1)) * vec3(0.52, 0.47, 0.42);
+  if (isStream) base = mix(base, wetSoil, smoothstep(0.5, 0.9, vWet.y + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.08)); // river bed: masked like the lake bed (bend corners round off into the wet bank)
   else base = mix(base, wetSoil, smoothstep(0.05, 0.5, vWet.y) * 0.55);
 
   // rock: smoothed per-vertex steepness + per-vertex rock weight (interpolated, so no per-tile sawtooth),
@@ -250,7 +250,8 @@ void main() {
   float rockAmt = smoothstep(2.0, 3.2, vSteep + rockEdge);
   rockAmt = max(rockAmt, smoothstep(0.4, 0.75, vRock + rockEdge * 0.35));
   if (isStream) rockAmt *= 0.3;
-  rockAmt *= 1.0 - shoreAmt * 0.8;
+  rockAmt *= 1.0 - shoreAmt * 0.97;
+  rockAmt *= 1.0 - 0.95 * smoothstep(0.02, 0.12, max(vWet.x, vWet.y)); // banks next to water never turn into steep dark rock: the dug bank wall is sand / wet soil (no dark notch at concave corners)
   { // slope-aware richness (M8): steep ground dries out (olive / ochre), rock gets faint horizontal bedding with wavy planes (fades before it can go sub-pixel)
     base = mix(base, base * vec3(1.14, 0.98, 0.76) + vec3(0.012, 0.0, -0.01), smoothstep(0.7, 1.7, vSteep) * 0.4 * (1.0 - uAutumn));
     float bed = sin(vWorld.y * 5.5 + vnoise(vWorld.xz * 0.3) * 4.0) * 0.5 + 0.5;

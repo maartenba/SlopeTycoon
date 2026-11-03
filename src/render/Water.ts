@@ -82,7 +82,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
     const sides = [isW(x, y - 1) ? 0 : 1, isW(x + 1, y) ? 0 : 1, isW(x, y + 1) ? 0 : 1, isW(x - 1, y) ? 0 : 1];
     const cc = [!isW(x - 1, y - 1) && !sides[0] && !sides[3], !isW(x + 1, y - 1) && !sides[0] && !sides[1], !isW(x + 1, y + 1) && !sides[2] && !sides[1], !isW(x - 1, y + 1) && !sides[2] && !sides[3]].map((q) => (q ? 1 : 0));
     const cn = [[0, 0], [1, 0], [1, 1], [0, 1]] as const; // n e s w
-    const vdepth = (k: number): number => (lake && bed ? Math.min(1, Math.max(0, bed[k]! / 2)) : 0.25);
+    const vdepth = (k: number): number => (lake && bed ? Math.min(1, Math.max(0, bed[k]! / 2)) : 0.4);
     const v = (k: number): void => {
       const [cx, cy] = cn[k]!;
       pos.push(x + cx, hs[k]! * HEIGHT_UNIT + LIFT, y + cy);
@@ -205,18 +205,28 @@ void main() {
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dS, R - dW), 0.0)), vSides.z * vSides.w));
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dW, R - dN), 0.0)), vSides.w * vSides.x));
   // concave corners (land only on the diagonal): the land pokes in as a rounded quarter disc, so a pond's staircase outline reads as a smooth curve
-  const float RC = 0.22;
+  const float RC = 0.42;
   dm = min(dm, mix(9.0, length(vLocal - vec2(0.0, 0.0)) - RC, vCorners.x));
   dm = min(dm, mix(9.0, length(vLocal - vec2(1.0, 0.0)) - RC, vCorners.y));
   dm = min(dm, mix(9.0, length(vLocal - vec2(1.0, 1.0)) - RC, vCorners.z));
   dm = min(dm, mix(9.0, length(vLocal - vec2(0.0, 1.0)) - RC, vCorners.w));
-  float sw = vnoise(vWorld.xz * 1.7 + 3.0) * 0.6 + vnoise(vWorld.xz * 4.1 + 11.0) * 0.4;
-  float d = dm - 0.04 - (sw - 0.5) * 0.14;
+  // free-form outline (M8 lane I): two world-space noise octaves push the waterline in and out by up to ~0.2 tile, so the staircase of tiles reads as a hand-drawn curve
+  float sw = vnoise(vWorld.xz * 0.9 + 3.0) * 0.5 + vnoise(vWorld.xz * 2.3 + 11.0) * 0.3 + vnoise(vWorld.xz * 5.1 + 29.0) * 0.2;
+  float d = dm - 0.04 - (sw - 0.5) * 0.36;
   float e = 1.0 - smoothstep(0.0, 0.22, d);
   e *= step(dm, 8.0);
   float wob = vnoise(vWorld.xz * 3.0 + uTime * vec2(0.4, 0.3));
   float foam = e * (0.45 + 0.55 * wob) * (1.0 - fl * 0.7);
-  col = mix(col, vec3(0.93, 0.97, 1.0), foam * 0.55 * (1.0 - uFreezeL * 0.5));
+  // depth gradient (M8 lane I): sandy shallows at the waterline -> clear turquoise -> darker, bluer water inside; a wet-sand edge and a thin soft foam line.
+  // d is the distance to the (wobbled) waterline; it saturates by ~0.9 so it is continuous across tile borders. World-space only.
+  float shoreK = smoothstep(0.0, 0.6, d);
+  float vary = 0.85 + 0.3 * vnoise(vWorld.xz * 1.3 + 5.0);
+  vec3 sandy = vec3(0.74, 0.70, 0.52) * (0.65 + 0.35 * diff);
+  col = mix(col, sandy, (1.0 - smoothstep(0.0, 0.42 * vary, d)) * 0.5 * (1.0 - uFreezeL));
+  col = mix(col, col * vec3(0.78, 0.9, 1.0), smoothstep(0.2, 0.6, d) * 0.5 * (1.0 - fl));
+  float aaD = 1.0 - smoothstep(0.1, 0.35, fwidth(d) * 6.0);
+  float line = (1.0 - smoothstep(0.0, 0.07, abs(d - 0.07))) * aaD * step(dm, 8.0);
+  col = mix(col, vec3(0.95, 0.98, 1.0), (line * 0.45 + foam * 0.3) * (1.0 - uFreezeL * 0.5));
   // rapids: white water streaks = world-space noise advected with the flow (no screen-space noise), only on rapids / brisk tiles
   float rap = vInfo.y * (1.0 - uFreezeL);
   vec2 rp = vWorld.xz * 5.0 - vFlow * tm * 1.6 * sp;
@@ -227,8 +237,9 @@ void main() {
   // winter ice
   vec3 ice = vec3(0.82, 0.90, 0.96) * (0.9 + 0.1 * vnoise(vWorld.xz * 1.5)) + uSunColor * spec * 0.25;
   col = mix(col, ice, uFreezeL);
-  float alpha = mix(0.42, 0.88, smoothstep(0.0, 1.0, vDepth)) + foam * 0.2;
+  float alpha = mix(0.55, 0.9, smoothstep(0.0, 1.0, vDepth)) + foam * 0.2;
   alpha = clamp(mix(alpha, 0.96, uFreezeL), 0.0, 1.0);
+  alpha = mix(alpha * 0.8, alpha, shoreK);
   alpha *= smoothstep(-0.015, 0.05, d); // soft rounded waterline
   if (alpha < 0.01) discard;
   gl_FragColor = vec4(col, alpha);

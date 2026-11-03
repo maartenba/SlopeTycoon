@@ -2,7 +2,7 @@
  * Centres on the pick-th water cluster tile (a lake / pond); logs concave corner count. -> .weave/shots/<prefix>.png */
 import { launch, shot, startServer } from '../lib/harness';
 const prefix = process.argv[2] ?? 'm8-after-g-water', seed = Number(process.argv[3] ?? 5), zoom = Number(process.argv[4] ?? 30), size = Number(process.argv[5] ?? 128), pick = Number(process.argv[6] ?? 0), winter = process.argv[7] === '1', dig = process.argv[8] === 'dig';
-const HIDE = "(()=>{const s=document.createElement('style');s.textContent='#ui,st-toast{display:none!important}';document.head.appendChild(s);})()";
+const HIDE = "(()=>{" + (process.env.Q ? "__slope.view.setQuality('" + process.env.Q + "');" : '') + "const s=document.createElement('style');s.textContent='#ui,st-toast{display:none!important}';document.head.appendChild(s);})()";
 const DIG = `(()=>{const s=__slope,L=s.landscapeDebug;const p=L.find(4,0)||L.find(3,0);if(!p){console.log('[stats] no pond site');return;}console.log('[stats] dig '+L.dig(p.x,p.y,4)+' at '+p.x+','+p.y);const q=L.find(4,0);for(let i=0;i<30;i++){const r=L.find(3,i);if(r&&Math.abs(r.x-p.x)>=3&&Math.abs(r.x-p.x)<=5&&Math.abs(r.y-p.y)>=3&&Math.abs(r.y-p.y)<=6){console.log('[stats] dig2 '+L.dig(r.x,r.y,3));break;}}})()`;
 const FIND = `(()=>{const s=__slope;s.loop.setSpeed(0);__slope.trees.group.visible=false;const g=s.grid;const N=g.size;const W=[];for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){if(g.tileType[y*N+x]!==${Number(process.env.TT||2)}) continue;W.push([x,y]);}
 console.log('[stats] water tiles '+W.length);if(!W.length)return;
