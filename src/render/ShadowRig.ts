@@ -99,7 +99,7 @@ export class ShadowRig {
   update(dt: number, active: boolean, camera: THREE.Camera, focus: THREE.Vector3, sunDir: V3, night: number, overcast: number, heights: [number, number]): void {
     if (!this.on) return;
     const q = quantiseSun(shadowSunDir(sunDir));
-    const strength = active ? shadowStrength(night, overcast, q[1]) : 0;
+    const strength = active ? shadowStrength(night, overcast, sunDir[1] / Math.hypot(sunDir[0], sunDir[1], sunDir[2])) : 0;
     this.stats.strength = strength;
     if (strength < 0.02) { this.uniforms.uShadowP.value.x = 0; return; }
     const f: V3 = [focus.x, focus.y, focus.z];

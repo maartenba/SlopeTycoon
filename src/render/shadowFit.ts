@@ -38,9 +38,9 @@ export function quantiseSun(d: V3, stepDeg = SUN_STEP_DEG): V3 {
  */
 export function shadowSunDir(d: V3, lower = SHADOW_SUN_LOWER): V3 {
   const h = Math.hypot(d[0], d[2]);
-  return norm([d[0], Math.max(d[1] * lower, h * SHADOW_MIN_SLOPE), d[2]]); // never flatter than ~17 deg: a grazing dawn / dusk sun would comb the whole map with 10x-long fingers
+  return norm([d[0], Math.max(d[1] * lower, h * SHADOW_MIN_SLOPE), d[2]]); // never flatter than ~22 deg: a grazing dawn / dusk sun would comb the whole map with 10x-long fingers
 }
-export const SHADOW_MIN_SLOPE = 0.3;
+export const SHADOW_MIN_SLOPE = 0.4; // ~22 deg: dawn / dusk fingers at most ~2.5x the caster (was 0.3 = 3.3x, a busy comb)
 export const SHADOW_SUN_LOWER = 0.6;
 
 /** Smallest ladder size >= `need` (never below HALF_BASE). */
@@ -94,6 +94,6 @@ export function shadowDepthRange(win: ShadowWindow, minHeight: number, maxHeight
 /** Strength 0..1 of the sun shadow from the day factor (`night` 0 day .. 1 night) and weather: fades through dusk, gone at night, softer under cloud. */
 export function shadowStrength(night: number, overcast = 0, sunElevation = 1): number {
   const day = Math.min(1, Math.max(0, (1 - night) * 1.25 - 0.1));
-  const low = 0.55 + 0.45 * Math.min(1, Math.max(0, sunElevation * 3)); // a grazing sun gives fainter (but longer) shadows
+  const low = 0.3 + 0.7 * Math.min(1, Math.max(0, sunElevation * 4)); // a grazing sun gives much fainter shadows (callers pass the REAL sun elevation): long dusk fingers fade instead of combing the map
   return Math.min(1, Math.max(0, day * low * (1 - 0.6 * Math.min(1, Math.max(0, overcast)))));
 }

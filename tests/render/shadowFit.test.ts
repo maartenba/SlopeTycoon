@@ -79,6 +79,9 @@ describe('shadow fit (pure)', () => {
     expect(shadowStrength(0.5, 0, 0.8)).toBeLessThan(shadowStrength(0.2, 0, 0.8));
     expect(shadowStrength(0, 1, 0.8)).toBeLessThan(shadowStrength(0, 0, 0.8));
     expect(shadowStrength(0, 0, 0.05)).toBeLessThan(shadowStrength(0, 0, 0.8));
+    // lane E: a grazing dusk sun (real elevation ~0.1) draws clearly fainter shadows than a high one, and the cast direction is never flatter than ~22 degrees
+    expect(shadowStrength(0, 0, 0.1)).toBeLessThan(shadowStrength(0, 0, 0.8) * 0.6);
+    expect(shadowSunDir([1, 0.02, 0])[1]).toBeGreaterThan(0.36);
     for (const n of [-1, 0, 0.3, 1, 2]) for (const o of [-1, 0, 0.5, 2]) expect(Number.isNaN(shadowStrength(n, o, 0.5))).toBe(false);
   });
 });
