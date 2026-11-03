@@ -16,6 +16,8 @@ export interface WaterGeometryData {
   local: Float32Array;
   /** per vertex: 1 where the side (n, e, s, w) of the tile borders non-water => shoreline foam */
   sides: Float32Array;
+  /** per vertex (nw, ne, se, sw): 1 where that diagonal neighbour is land while both tile sides next to it are water (a concave shoreline corner, rounded in the shader) */
+  corners: Float32Array;
   /** per vertex flow direction in (x, z); zero for lakes */
   flow: Float32Array;
   /** 0 shallow .. 1 deep */
@@ -70,7 +72,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
     return t === TileType.Water || t === TileType.Stream;
   };
   const isLakeT = (x: number, y: number): boolean => grid.inBounds(x, y) && T[y * N + x] === TileType.Water;
-  const pos: number[] = [], loc: number[] = [], sid: number[] = [], flw: number[] = [], dep: number[] = [], inf: number[] = [];
+  const pos: number[] = [], loc: number[] = [], sid: number[] = [], cor: number[] = [], flw: number[] = [], dep: number[] = [], inf: number[] = [];
   const ranges: WaterRange[] = [];
   // quad corner order n(0,0) w(0,1) e(1,0) s(1,1) -> two triangles
   const emit = (
@@ -78,6 +80,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
   ): void => {
     // foam only on edges that border land (not other water)
     const sides = [isW(x, y - 1) ? 0 : 1, isW(x + 1, y) ? 0 : 1, isW(x, y + 1) ? 0 : 1, isW(x - 1, y) ? 0 : 1];
+    const cc = [!isW(x - 1, y - 1) && !sides[0] && !sides[3], !isW(x + 1, y - 1) && !sides[0] && !sides[1], !isW(x + 1, y + 1) && !sides[2] && !sides[1], !isW(x - 1, y + 1) && !sides[2] && !sides[3]].map((q) => (q ? 1 : 0));
     const cn = [[0, 0], [1, 0], [1, 1], [0, 1]] as const; // n e s w
     const vdepth = (k: number): number => (lake && bed ? Math.min(1, Math.max(0, bed[k]! / 2)) : 0.25);
     const v = (k: number): void => {
@@ -85,6 +88,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
       pos.push(x + cx, hs[k]! * HEIGHT_UNIT + LIFT, y + cy);
       loc.push(cx, cy);
       sid.push(sides[0]!, sides[1]!, sides[2]!, sides[3]!);
+      cor.push(cc[0]!, cc[1]!, cc[2]!, cc[3]!);
       flw.push(fx, fz);
       dep.push(vdepth(k));
       inf.push(1, 0, -1);
@@ -115,7 +119,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
   streams.forEach((s, i) => emitWay(`n${i}`, false, s.path));
   for (const r of dug) emitWay(r.id, true, r.path);
   return {
-    positions: new Float32Array(pos), local: new Float32Array(loc), sides: new Float32Array(sid),
+    positions: new Float32Array(pos), local: new Float32Array(loc), sides: new Float32Array(sid), corners: new Float32Array(cor),
     flow: new Float32Array(flw), depth: new Float32Array(dep), info: new Float32Array(inf), ranges, vertexCount: pos.length / 3,
   };
 }
@@ -123,6 +127,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
 const VERT = /* glsl */ `
 attribute vec2 aLocal;
 attribute vec4 aSides;
+attribute vec4 aCorners;
 attribute vec2 aFlow;
 attribute float aDepth;
 attribute vec3 aInfo;
@@ -130,6 +135,7 @@ varying vec3 vInfo;
 varying vec3 vWorld;
 varying vec2 vLocal;
 varying vec4 vSides;
+varying vec4 vCorners;
 varying vec2 vFlow;
 varying float vDepth;
 ${FOG_PARS_VERT}
@@ -137,6 +143,7 @@ void main() {
   vWorld = position;
   vLocal = aLocal;
   vSides = aSides;
+  vCorners = aCorners;
   vFlow = aFlow;
   vDepth = aDepth;
   vInfo = aInfo;
@@ -152,6 +159,7 @@ ${FOG_PARS_FRAG}
 varying vec3 vWorld;
 varying vec2 vLocal;
 varying vec4 vSides;
+varying vec4 vCorners;
 varying vec2 vFlow;
 varying float vDepth;
 varying vec3 vInfo;
@@ -196,6 +204,12 @@ void main() {
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dE, R - dS), 0.0)), vSides.y * vSides.z));
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dS, R - dW), 0.0)), vSides.z * vSides.w));
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dW, R - dN), 0.0)), vSides.w * vSides.x));
+  // concave corners (land only on the diagonal): the land pokes in as a rounded quarter disc, so a pond's staircase outline reads as a smooth curve
+  const float RC = 0.22;
+  dm = min(dm, mix(9.0, length(vLocal - vec2(0.0, 0.0)) - RC, vCorners.x));
+  dm = min(dm, mix(9.0, length(vLocal - vec2(1.0, 0.0)) - RC, vCorners.y));
+  dm = min(dm, mix(9.0, length(vLocal - vec2(1.0, 1.0)) - RC, vCorners.z));
+  dm = min(dm, mix(9.0, length(vLocal - vec2(0.0, 1.0)) - RC, vCorners.w));
   float sw = vnoise(vWorld.xz * 1.7 + 3.0) * 0.6 + vnoise(vWorld.xz * 4.1 + 11.0) * 0.4;
   float d = dm - 0.04 - (sw - 0.5) * 0.14;
   float e = 1.0 - smoothstep(0.0, 0.22, d);
@@ -279,6 +293,7 @@ export class Water {
     g.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
     g.setAttribute('aLocal', new THREE.BufferAttribute(d.local, 2));
     g.setAttribute('aSides', new THREE.BufferAttribute(d.sides, 4));
+    g.setAttribute('aCorners', new THREE.BufferAttribute(d.corners, 4));
     g.setAttribute('aFlow', new THREE.BufferAttribute(d.flow, 2));
     g.setAttribute('aDepth', new THREE.BufferAttribute(d.depth, 1));
     g.setAttribute('aInfo', new THREE.BufferAttribute(d.info, 3).setUsage(THREE.DynamicDrawUsage));
