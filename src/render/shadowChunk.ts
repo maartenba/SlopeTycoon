@@ -45,8 +45,8 @@ export function shadowReceiverUniforms(): Record<string, THREE.IUniform> {
 type Shader = { vertexShader: string; fragmentShader: string };
 
 /**
- * Patches a built-in Lambert program (after its own onBeforeCompile) so the SUN term (`reflectedLight.directDiffuse`) is scaled by the shadow factor;
- * ambient / hemisphere light and emissive (night windows) stay. World position comes from the view-space position (works for instanced, batched and
+ * Patches a built-in Lambert program (after its own onBeforeCompile) so the SUN term (`reflectedLight.directDiffuse`) is scaled by the shadow factor and the
+ * ambient / hemisphere term loses up to ~11 % in shade (like the terrain); emissive (night windows) stays. World position comes from the view-space position (works for instanced, batched and
  * custom-vertex materials alike). r186: `vColor` is vec4 and untouched here.
  */
 export function patchLambertReceiver(s: Shader): void {
@@ -55,5 +55,5 @@ export function patchLambertReceiver(s: Shader): void {
     .replace('#include <project_vertex>', '#include <project_vertex>\n#ifdef USE_SHADOWS\nvSWp = transpose(mat3(viewMatrix)) * mvPosition.xyz + cameraPosition;\n#endif');
   s.fragmentShader = s.fragmentShader
     .replace('#include <common>', '#include <common>\n#ifdef USE_SHADOWS\nvarying vec3 vSWp;\n#endif\n' + SHADOW_RECV_FRAG)
-    .replace('#include <aomap_fragment>', '#ifdef USE_SHADOWS\nreflectedLight.directDiffuse *= recvShadow(vSWp, normalize(transpose(mat3(viewMatrix)) * normal));\n#endif\n#include <aomap_fragment>');
+    .replace('#include <aomap_fragment>', '#ifdef USE_SHADOWS\nfloat rsF = recvShadow(vSWp, normalize(transpose(mat3(viewMatrix)) * normal));\nreflectedLight.directDiffuse *= rsF;\nreflectedLight.indirectDiffuse *= 1.0 - 0.16 * (1.0 - rsF); // a little sky / bounce is lost in shade too (same idea as the terrain)\n#endif\n#include <aomap_fragment>');
 }
