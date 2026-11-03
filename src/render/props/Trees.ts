@@ -352,12 +352,12 @@ export function tier(r: number, h: number, y: number, seg: number, k: number, sk
     const last = ri === nRings - 1;
     for (let i = 0; i < seg; i++) {
       const a = (i / seg) * Math.PI * 2 + phase;
-      const noise = 1 + (hash3(i, k, ri, 7) - 0.5) * 0.26;
+      const noise = 1 + (hash3(i, k, ri, 7) - 0.5) * 0.2;
       // hem: every other vertex is a long drooping branch tip, the ones between are short and lifted (3-D silhouette with branch hints, same triangle count)
       const tip = i % 2 === 1;
-      const sc = last ? (tip ? 1.12 : 0.9) : 0.74;
+      const sc = last ? (tip ? 1.1 : 0.94) : 0.74;
       const rr = r * noise * sc;
-      const yy = last ? y + (tip ? -0.16 : 0.035) * h * (0.8 + 0.4 * hash3(i, k, 9, 2)) : y + h * 0.3;
+      const yy = last ? y + (tip ? -0.12 : 0.02) * h : y + h * 0.3;
       pos.push(Math.cos(a) * rr, yy, Math.sin(a) * rr);
     }
   }
