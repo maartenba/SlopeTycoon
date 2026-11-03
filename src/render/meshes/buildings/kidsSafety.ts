@@ -35,7 +35,7 @@ export function kidsGround(b: PartBuilder, w: number, h: number): void {
   b.box(-1, 0.55, -1, 0.5, 0.05, 0.5, C.blue);
   domeCap(b, -1, 0.6, -1, 0.34, 0.14, C.red, 'roof', 10, 3);
   curvedRamp(b, -1, 0.04, -0.35, 0.9, 0.55, 0.3, C.red, Math.PI * 1.5 + Math.PI / 2 * 0, true, 5, 'wood');
-  domeCap(b, 0.9, 0.04, -0.4, 0.8, 0.45, C.white, 'stone', 12, 4); // little hill (rounded mound)
+  domeCap(b, 0.9, 0.04, -0.4, 0.8, 0.38, 0xffffff, 'roof', 14, 5); // little snow hill: roof layer (snow-tinted, no brick texture), lower so it no longer reads as an igloo
   for (const pz of [-1.0, 0.4]) { b.cyl(0.35, 0.04, pz, 0.03, 0.55, C.dark, 'wood', 6); b.box(0.35, 0.56, pz, 0.14, 0.04, 0.14, C.yellow); }
   b.box(0.35, 0.5, -0.3, 0.02, 0.02, 1.4, C.black);
   for (let i = 0; i < 3; i++) b.box(0.35, 0.34, -0.8 + i * 0.5, 0.05, 0.14, 0.03, C.red);

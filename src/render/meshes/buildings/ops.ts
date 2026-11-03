@@ -1,4 +1,4 @@
-import { C, PartBuilder, arcTube, barrelRoof, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
+import { C, PartBuilder, barrelRoof, domeCap, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
 import { curveTube } from '../lifts/loft';
 
 /** Helipad (3x3): round pad with big H, ring of edge lights, windsock, fuel drums and a small ops hut. */
@@ -83,7 +83,7 @@ export function reservoir(b: PartBuilder, w: number, h: number): void {
   const earth = 0x7b6a4a;
   b.cyl(0, 0, 0, r, 0.22, earth, 'stone', 24);
   b.ring(0, 0.16, 0, r - 0.15, 0.13, earth, 'stone', 24, { sy: 0.8 });
-  b.ring(0, 0.3, 0, r - 0.15, 0.03, C.stone, 'stone', 24);
+  b.ring(0, 0.39, 0, r - 0.15, 0.025, C.stone, 'stone', 24); // coping line on the crest of the berm
   b.cyl(0, 0.22, 0, r - 0.3, 0.02, C.water, 'stone', 24);
   b.cyl(0, 0.24, 0, r - 0.5, 0.012, 0x62bfe6, 'stone', 20);
   // pump house + pipes
@@ -96,8 +96,8 @@ export function reservoir(b: PartBuilder, w: number, h: number): void {
   b.ring(px - 0.95, 0.17, pz + 0.18, 0.06, 0.012, C.red, 'stone', 8); // valve wheel
   b.cyl(px + 0.1, 0.5, pz - 0.05, 0.06, 0.4, C.dark, 'stone', 6); // vent stack
   b.ball(px + 0.1, 0.84, pz - 0.05, 0.05, C.dark, 'stone', 6); // rounded vent cap (top stays <= the catalogue height 0.95: tests/sim/LiftClearance)
-  for (const a of [0.6, 0.9, 1.2]) b.cyl(Math.cos(a + 2) * (r - 0.1), 0.0, Math.sin(a + 2) * (r - 0.1), 0.03, 0.4, C.dark, 'wood', 6); // fence posts
-  arcTube(b, 0, 0.34, 0, r - 0.1, 0.014, 0.6, C.grey, 'stone', 8, { rx: Math.PI / 2, rz: 2.6 }); // rail between the posts
+  for (const a of [0.6, 0.9, 1.2]) b.cyl(Math.cos(a + 2) * (r - 0.15), 0.36, Math.sin(a + 2) * (r - 0.15), 0.03, 0.26, C.dark, 'wood', 6); // fence posts on the berm crest
+  curveTube(b, [2.6, 2.75, 2.9, 3.05, 3.2].map((a) => [Math.cos(a) * (r - 0.15), 0.56, Math.sin(a) * (r - 0.15)] as [number, number, number]), 0.014, C.grey, 'stone', 12, 5); // rail between the posts: follows the post circle exactly (the old rotated arc drifted off it)
   b.sign('H2O', -r + 0.5, 0.3, r - 0.4, 0.5, 0.24, 0, '#2d5fa8');
   b.box(-r + 0.5, 0.0, r - 0.42, 0.05, 0.3, 0.05, C.dark);
 }
@@ -119,7 +119,7 @@ export function snowCannon(b: PartBuilder): void {
   b.box(0.12, 0.36, 0.12, 0.14, 0.03, 0.12, C.dark, 'wood'); // same material as the rest: +0 draw calls
   b.ring(-0.14, 0.08, 0.12, 0.09, 0.02, C.black, 'wood', 10); // hose coil
   tube(b, -0.14, 0.12, 0.2, 0.0, 0.7, 0.1, 0.014, C.black, 'wood', 5); // hose to the head
-  b.cone(0.0, 0.0, 0.42, 0.22, 0.16, C.white, 'stone', 10); // snow pile
+  domeCap(b, 0.0, 0.0, 0.42, 0.24, 0.13, 0xffffff, 'roof', 12, 4); // snow pile: smooth dome on the snow-tinted roof layer (the stone layer made it look like an igloo)
   b.ball(0.12, 0.0, 0.48, 0.08, C.white, 'stone', 6);
 }
 
