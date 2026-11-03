@@ -53,6 +53,22 @@ export function loft(secs: Sec[], ring: Ring, pal: Palette, capKeyFront = 'glass
   return g.toNonIndexed();
 }
 
+/** Inserts one extra section between every pair (4-point cubic interpolation on z / w / y0 / y1): the lofted body reads rounder with the same ring profile. Pillar flags are copied from the lower section. */
+export function smoothSecs(secs: Sec[]): Sec[] {
+  if (secs.length < 3) return secs;
+  const out: Sec[] = [];
+  const at = (i: number): Sec => secs[Math.max(0, Math.min(secs.length - 1, i))]!;
+  const f = (a: number, b: number, c: number, d: number): number => (-a + 9 * b + 9 * c - d) / 16;
+  for (let i = 0; i < secs.length - 1; i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    out.push(p1);
+    const y0 = f(p0.y0, p1.y0, p2.y0, p3.y0), y1 = f(p0.y1, p1.y1, p2.y1, p3.y1);
+    out.push({ z: (p1.z + p2.z) / 2, w: Math.max(0.01, f(p0.w, p1.w, p2.w, p3.w)), y0: Math.min(y0, y1 - 0.01), y1: Math.max(y1, y0 + 0.01), pillar: p1.pillar });
+  }
+  out.push(secs[secs.length - 1]!);
+  return out;
+}
+
 function paint(g: THREE.BufferGeometry, c: Rgb): THREE.BufferGeometry {
   const geo = g.index ? g.toNonIndexed() : g;
   geo.deleteAttribute('uv');
@@ -64,11 +80,19 @@ function paint(g: THREE.BufferGeometry, c: Rgb): THREE.BufferGeometry {
 const box = (w: number, h: number, d: number, c: Rgb, x: number, y: number, z: number, rx = 0): THREE.BufferGeometry => {
   const g = new THREE.BoxGeometry(w, h, d); if (rx) g.rotateX(rx); g.translate(x, y, z); return paint(g, c);
 };
-/** Wheel with a lighter hub; axis along x. */
+/** Disc facing +x (dir 1) or -x (dir -1) at (x,y,z). */
+function disc(r: number, seg: number, x: number, y: number, z: number, dir: 1 | -1, c: Rgb, inner = 0, half = false): THREE.BufferGeometry {
+  const g = inner > 0 ? new THREE.RingGeometry(inner, r, seg) : new THREE.CircleGeometry(r, seg, 0, half ? Math.PI : Math.PI * 2);
+  g.rotateY(dir > 0 ? Math.PI / 2 : -Math.PI / 2); g.translate(x, y, z); return paint(g, c);
+}
+/** Wheel with a lighter hub; axis along x. M8: an open tyre band plus a sidewall ring + hub disc on the OUTER side(s) only (the inner faces are never seen): ~half the triangles of the closed cylinders. */
 function wheel(r: number, w: number, x: number, y: number, z: number, tire: Rgb, hub: Rgb, seg = 10): THREE.BufferGeometry[] {
-  const t = new THREE.CylinderGeometry(r, r, w, Math.max(12, seg)); t.rotateZ(Math.PI / 2); t.translate(x, y, z);
-  const hb = new THREE.CylinderGeometry(r * 0.55, r * 0.55, w + 0.004, 8); hb.rotateZ(Math.PI / 2); hb.translate(x, y, z);
-  return [paint(t, tire), paint(hb, hub)];
+  const n = Math.max(10, seg);
+  const t = new THREE.CylinderGeometry(r, r, w, n, 1, true); t.rotateZ(Math.PI / 2); t.translate(x, y, z);
+  const out = [paint(t, tire)];
+  const sides: Array<1 | -1> = x > 0.02 ? [1] : x < -0.02 ? [-1] : [1, -1];
+  for (const d of sides) out.push(disc(r, n, x + d * (w / 2), y, z, d, tire, r * 0.56), disc(r * 0.56, 8, x + d * (w / 2 + 0.002), y, z, d, hub));
+  return out;
 }
 
 const BASE_PAL = (body: number): Palette => ({
@@ -123,15 +147,18 @@ void WHITE_GLOW;
 export function buildCar(style: number, colorHex: number, rack: number): ModelParts {
   const st = STYLES[style % STYLES.length]!;
   const pal = BASE_PAL(colorHex);
-  const parts: THREE.BufferGeometry[] = [loft(st.body, CAR_RING_BODY, pal, 'body', 'body'), loft(st.cabin, CAR_RING_CABIN, pal, 'glass', 'glass')];
+  const parts: THREE.BufferGeometry[] = [loft(smoothSecs(st.body), CAR_RING_BODY, pal, 'body', 'body'), loft(smoothSecs(st.cabin), CAR_RING_CABIN, pal, 'glass', 'glass')];
   const tire = rgb(0x151618), hub = rgb(0x9aa0a8);
   for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(...wheel(st.wheelR, 0.055, sx * st.wheelX, st.wheelR, sz * st.wheelZ, tire, hub));
   // wheel arches (dark discs just outside each wheel, reads as a recess) and door mirrors (M8)
   for (const sx of [1, -1]) for (const sz of [1, -1]) {
-    const arch = new THREE.CylinderGeometry(st.wheelR * 1.22, st.wheelR * 1.22, 0.012, 8); arch.rotateZ(Math.PI / 2); arch.translate(sx * (st.wheelX + 0.033), st.wheelR, sz * st.wheelZ);
-    parts.push(paint(arch, rgb(0x1c1d20)));
+    parts.push(disc(st.wheelR * 1.3, 10, sx * (st.body[2]!.w + 0.003), st.wheelR + 0.005, sz * st.wheelZ, sx as 1 | -1, rgb(0x1c1d20), 0, true)); // dark arch (upper half only: a full disc would hang below the body) flush on the body side, behind the wheel
   }
   for (const sx of [1, -1]) parts.push(box(0.03, 0.025, 0.04, rgb(0x2c2f34), sx * (st.cabin[1]!.w + 0.02), st.cabin[1]!.y0 + 0.03, st.cabin[1]!.z + 0.04));
+  // door seam, side skirt, antenna, number plate (M8)
+  for (const sx of [1, -1]) parts.push(box(0.006, 0.09, 0.012, rgb(0x1c1d20), sx * (st.body[2]!.w + 0.002), st.body[2]!.y0 + 0.09, st.cabin[1]!.z + 0.12), box(0.006, 0.09, 0.012, rgb(0x1c1d20), sx * (st.body[2]!.w + 0.002), st.body[2]!.y0 + 0.09, st.cabin[2]!.z));
+  parts.push(box(0.05, 0.025, 0.006, rgb(0xf0f2f4), 0, st.body[0]!.y0 + 0.06, -st.len / 2 - 0.002));
+  if (rack === 0) parts.push(paint(new THREE.CylinderGeometry(0.004, 0.004, 0.14, 4).translate(0.1, st.roofY + 0.06, -0.12), rgb(0x2c2f34)));
   // bumpers + grille line
   const hw = st.body[st.body.length - 1]!.w;
   parts.push(box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, st.len / 2 - 0.005), box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, -st.len / 2 + 0.005));
@@ -172,7 +199,17 @@ export function buildBus(mini: boolean, colorHex: number): ModelParts {
   const parts = [loft(secs, BUS_RING, pal, 'glass', 'body')];
   const r = 0.085, tire = rgb(0x151618), hub = rgb(0x9aa0a8);
   const zs = mini ? [0.3, -0.3] : [0.5, -0.45, -0.62];
-  for (const z of zs) for (const sx of [1, -1]) parts.push(...wheel(r, 0.07, sx * (w - 0.01), r, z, tire, hub));
+  for (const z of zs) for (const sx of [1, -1]) {
+    parts.push(...wheel(r, 0.07, sx * (w - 0.01), r, z, tire, hub));
+    parts.push(disc(r * 1.28, 12, sx * (w + 0.003), r + 0.01, z, sx as 1 | -1, rgb(0x1c1d20), 0, true)); // wheel arch, upper half only (M8)
+  }
+  // coach details (M8): side mirrors, roof hatches, door outline, front bumper + grille, rear engine grille
+  for (const sx of [1, -1]) {
+    parts.push(box(0.03, 0.05, 0.02, rgb(0x2c2f34), sx * (w + 0.03), y0 + H * 0.78, L / 2 - 0.1), box(0.05, 0.004, 0.012, rgb(0x2c2f34), sx * (w + 0.015), y0 + H * 0.8, L / 2 - 0.1));
+    parts.push(box(0.006, H * 0.6, mini ? 0.09 : 0.11, rgb(0x9aa3ad), sx * (w + 0.002), y0 + H * 0.38, L / 2 - (mini ? 0.2 : 0.26))); // door
+  }
+  for (const zz of mini ? [0.0] : [0.2, -0.25]) parts.push(box(0.16, 0.012, 0.14, rgb(0xc9ced4), 0, y0 + H + 0.004, zz)); // roof hatch
+  parts.push(box(w * 1.7, 0.04, 0.03, rgb(0x2c2f34), 0, y0 + 0.03, L / 2 + 0.002), box(w * 1.0, 0.04, 0.012, rgb(0x1c1d20), 0, y0 + 0.14, L / 2 - 0.0), box(w * 1.2, 0.05, 0.015, rgb(0x1c1d20), 0, y0 + 0.2, -L / 2 - 0.002));
   const lights = lightGeo([[0.07, 0.04, 0.012, 0.13, y0 + 0.1, L / 2 - 0.0, HEAD], [0.07, 0.04, 0.012, -0.13, y0 + 0.1, L / 2 - 0.0, HEAD], [0.06, 0.04, 0.012, 0.14, y0 + 0.14, -L / 2 - 0.0, TAIL], [0.06, 0.04, 0.012, -0.14, y0 + 0.14, -L / 2 - 0.0, TAIL]]);
   return { body: merge(parts), lights };
 }
@@ -187,6 +224,9 @@ function carriage(zc: number, len: number, loco: boolean): THREE.BufferGeometry[
   const out = [loft(secs, TRAIN_RING, pal, loco ? 'glass' : 'body', 'body')];
   for (const z of [len * 0.3, -len * 0.3]) for (const sx of [1, -1]) out.push(...wheel(0.06, 0.04, sx * 0.17, 0.07, z, rgb(0x1c1d20), rgb(0x7a7f87), 8));
   out.push(box(0.4, 0.04, len * 0.8, rgb(0x2c2f34), 0, 0.1, 0)); // underframe
+  for (const sx of [1, -1]) for (const dz of [len * 0.18, -len * 0.18]) out.push(box(0.006, 0.34, 0.12, rgb(loco ? 0x7a2420 : 0x6c727a), sx * (w + 0.002), y0 + 0.2, dz * 1.0)); // doors (M8)
+  for (const dz of loco ? [-0.2] : [0.3, -0.3]) out.push(paint(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 8).rotateX(Math.PI / 2).translate(0, y0 + H + 0.02, dz), rgb(0xc9ced4))); // roof AC pods
+  if (!loco) out.push(box(0.3, 0.3, 0.02, rgb(0x2c2f34), 0, y0 + 0.24, len / 2 + 0.03)); // gangway bellows
   if (loco) { // pantograph
     const y = y0 + H;
     out.push(box(0.2, 0.01, 0.02, rgb(0x2c2f34), 0, y + 0.2, -0.1), box(0.012, 0.2, 0.012, rgb(0x2c2f34), 0.05, y + 0.1, -0.12, 0.35), box(0.012, 0.2, 0.012, rgb(0x2c2f34), -0.05, y + 0.1, -0.12, -0.35), box(0.14, 0.02, 0.12, rgb(0x6c727a), 0, y + 0.01, -0.1));

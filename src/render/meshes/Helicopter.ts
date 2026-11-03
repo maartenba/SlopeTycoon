@@ -19,10 +19,18 @@ export class HelicopterMesh {
   private tail: THREE.Mesh;
 
   constructor() {
+    // M8: an ellipsoid cabin + glass bubble, a tapered tail boom, round skids on struts, an engine hump and a rotor mast (was a stack of boxes)
+    const ell = (rx: number, ry: number, rz: number, c: number, x: number, y: number, z: number, seg = 10, rings = 7): THREE.BufferGeometry => paint(new THREE.SphereGeometry(1, seg, rings).scale(rx, ry, rz), c, x, y, z);
+    const cyl = (rt: number, rb: number, len: number, c: number, x: number, y: number, z: number, rx = 0, rz = 0, seg = 8): THREE.BufferGeometry => paint(new THREE.CylinderGeometry(rt, rb, len, seg).rotateX(rx).rotateZ(rz), c, x, y, z);
+    const boom = new THREE.CylinderGeometry(0.03, 0.09, 0.95, 8).rotateX(Math.PI / 2); // narrow end (+z of the cylinder top) towards the tail
+    boom.rotateY(Math.PI);
     const body = mergeGeometries([
-      box(0.55, 0.45, 1.0, 0xd9302c, 0, 0.45, 0), box(0.5, 0.3, 0.38, 0x8fd3f0, 0, 0.55, 0.45), box(0.12, 0.12, 0.9, 0xd9302c, 0, 0.55, -0.85),
-      box(0.05, 0.3, 0.14, 0xe8e8e8, 0, 0.7, -1.28), box(0.7, 0.04, 0.05, 0x333333, 0, 0.12, 0.2), box(0.7, 0.04, 0.05, 0x333333, 0, 0.12, -0.2),
-      box(0.06, 0.3, 0.06, 0x333333, 0.3, 0.27, 0), box(0.06, 0.3, 0.06, 0x333333, -0.3, 0.27, 0),
+      ell(0.3, 0.27, 0.55, 0xd9302c, 0, 0.5, 0.05, 12, 8), ell(0.25, 0.2, 0.3, 0x8fd3f0, 0, 0.55, 0.38, 10, 7), // cabin + canopy
+      paint(boom, 0xd9302c, 0, 0.58, -0.85), ell(0.13, 0.08, 0.22, 0xb52420, 0, 0.74, -0.1, 8, 5), // tail boom + engine hump
+      box(0.05, 0.3, 0.14, 0xe8e8e8, 0, 0.72, -1.28), box(0.3, 0.025, 0.06, 0xe8e8e8, 0, 0.62, -1.15), // tail fin + stabiliser
+      cyl(0.015, 0.015, 0.7, 0x333333, 0.32, 0.12, 0.15, Math.PI / 2, 0, 6), cyl(0.015, 0.015, 0.7, 0x333333, -0.32, 0.12, 0.15, Math.PI / 2, 0, 6), // skid tubes
+      cyl(0.013, 0.013, 0.26, 0x333333, 0.3, 0.24, 0.35), cyl(0.013, 0.013, 0.26, 0x333333, -0.3, 0.24, 0.35), cyl(0.013, 0.013, 0.26, 0x333333, 0.3, 0.24, -0.1), cyl(0.013, 0.013, 0.26, 0x333333, -0.3, 0.24, -0.1),
+      cyl(0.025, 0.025, 0.12, 0x222222, 0, 0.8, -0.1), box(0.1, 0.02, 0.1, 0x222222, 0, 0.84, -0.1),
     ], false)!;
     body.computeVertexNormals();
     const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
