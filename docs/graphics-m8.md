@@ -47,7 +47,7 @@ Lane tests pin each budget (`tests/render/m8LaneA.test.ts`, `m8LaneA2.test.ts`, 
 
 Atmosphere variants on HEAD, med: winter rotfine Off 0.6548 / Low 0.6531 / High 0.6532; High quality + Atmosphere High 0.6616. No pops, no LOD flips in any run.
 
-Attribution: winter rotfine moved **+0.09 absolute (+16 %)** on every quality tier and every atmosphere level, so it comes from the geometry (lane B conifer whorls, +0.09 after lane B's own trim; shadows add <= 0.014), not from the shaders. The "regression" threshold I set was 0.3 absolute above the same-machine baseline: **not a real regression**, left as is. Summer and zoom sweeps are within +-0.01. The number worth watching on the owner's machine is the winter pan on conifers (`docs/playtest-m8.md`).
+Attribution: winter rotfine moved **+0.09 absolute (+16 %)** on every quality tier and every atmosphere level, so it comes from the geometry (most likely the lane B conifer whorls and crowns; the shadow map adds <= 0.014 on top), not from the tier or atmosphere settings. I did not bisect it further. The "regression" threshold I set was 0.3 absolute above the same-machine baseline: **not a real regression**, left as is. Summer and zoom sweeps are within +-0.01. The number worth watching on the owner's machine is the winter pan on conifers (`docs/playtest-m8.md`).
 
 ## Terrain shader error (lane B shots)
 
