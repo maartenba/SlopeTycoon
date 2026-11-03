@@ -120,15 +120,27 @@ Render only (no sim, save or golden change). Tests: `tests/render/m8LaneG.test.t
 
 **Confirmed by looking:** Beach palm crown (green fronds on a curved trunk, reads), snow-cannon pile (now white), Kids Ground mound (white, no seams), goats and sheep in the real farm shot (`m8-farm-e.ts <prefix> <zoom> goat|cow|sheep`), Ice Rink, near conifers / broadleaf trees in real walk shots (`scripts/shots/m8-ground-g.ts`; scalloped whorls, clean silhouettes) and a lift-ride shot.
 
-**What is still not great (honest list).**
+**What is still not great (honest list, after lane I).**
 
-* The dug bank wall shows as a dark notch at every concave lake / river corner (the land quarter disc cut out of the water exposes the steep bank face); it reads as a muddy bank but is darker than the sand around it. A real fix needs bank geometry, not colour.
-* Lake water over the faded bed rim is a pale, flat shallow band; the rim has no real depth gradient.
-* The pond / lake outline is still tile-sized scallops, not free curves.
-* The harness shows screen-aligned horizontal banding on flat grass and water (SwiftShader / sun-shadow texel bands, also on terrain with no water); not a water bug, but it hides fine shore detail in screenshots. Worker F owns the shadow system.
-* Rocks were not seen up close in a real ground shot (none in the walk / ride frames); the walk-mode near-hide dither on roofs and signs is intentional but visibly stippled.
-* The Altiport plane is still a few pixels at gallery zoom; round bushes (hedges / shrubs) are plain spheres with no snow in winter; the gallery's lift rows sit on rock for seed 5 (harness terrain, not the models).
-* Still not done: shadow receiving on buildings / trees and sun shadows in ride / photo / walk (lane F).
+* Lake / river shores: the dark concave notch is gone (the cut-out of the rounded water now shows sand, or the bank grass on rivers) and the outline wobbles as a free-form curve, but the water mesh is still tile quads: the outline can only move INSIDE the water tiles (it cannot bulge onto land), so large lakes still have a faint diamond-shaped "ghost" quad at their outer tile corners and rivers show a mild per-tile brightness step (the bed under the translucent water changes tile to tile). Real marching-squares bank geometry is still not built.
+* The terrain keeps a faint, narrow dark band where a very steep dug bank meets the sand (slope lighting, not a colour bug).
+* Rocks: close ground shots now read as grey bedded boulders with patchy moss; snow-covered summit rocks were only checked in one shot.
+* Harness "banding": measured (lane I), see below: it is 8-bit contouring of very smooth low-frequency gradients plus the SwiftShader capture, identical on Low and High (so not the sun shadows) and invisible below ~8x contrast; nothing to fix in the shaders.
+* The gallery's lift rows sit on rock for seed 5 (harness terrain, not the models). The walk-mode near-hide dither on roofs and signs is intentional but visibly stippled.
+* Shadow receiving on buildings / trees and sun shadows in ride / photo / walk: done in lane F; worker H1 owns further shadow work.
+
+### Lane I (shores, shrubs, rocks, plane; render only)
+
+Before / after sheet: `docs/img/graphics-m8i-before-after.webp` (left to right, top to bottom: before lake, after lake (L-shaped dug pond, seed 5), after winding river, snowy shrub, before rock, after rock, Altiport in the gallery). Tests: `tests/render/m8LaneI.test.ts`. Shot scripts: `m8-water-g.ts` (`Q=low|med|high` forces a tier, `TT=6` frames rivers), `m8-hedge-i.ts`, `m8-rock-i.ts`, `m8-guard-i.ts`.
+
+* **Notch.** The dark notch was not the bank wall: it was the lake-bed colour on the lake tile under the rounded cut-out (the bed mask counted 3/4 water at a concave corner as full bed). The bed now needs the full water share (`smoothstep(0.7, 1.0, vWet.x)`), so a half-water tile blends sand -> bed across the tile; river beds use `(0.5, 0.9)` and a lighter wet soil; banks beside water never turn into rock (the old grey blotches on the rim were rock + hard grey pebble patches, now soft).
+* **Depth gradient.** Water shader: sandy shallows at the waterline -> turquoise -> darker, bluer inside, a wet-sand edge, a thin soft foam line (fades with `fwidth`), all from the distance to the drawn shoreline (saturates by 0.6 tile so it is continuous across tile borders). Rivers use the same code (river depth 0.4, so they read as consistent).
+* **Outline.** Concave fillet radius 0.22 -> 0.42 and a three-octave world-space wobble of up to ~0.18 tile; no `gl_FragCoord`.
+* **Shrubs.** Village shrubs are a main blob + three lobes (was one icosphere), hedge lumps detail 1; the foliage material (`snowCapMaterial`, one patched Lambert, no extra draw call) whitens upward faces with the same season snow value as roofs and bridge decks. Instanced forest shrubs already had snow caps through `aTint.a`.
+* **Rocks.** Near rocks use smooth normals (the black / white facet patchwork on snowy rocks is gone), vertex bedding bands and a lighter top; moss is patchy olive instead of a dark green blanket (shared shader, far rocks too). Triangle counts unchanged (500 near).
+* **Altiport plane.** 1.5x larger, a dark apron pad under it, red wing tips; +34 triangles (2580 total), same parts / draw calls.
+* **Banding.** 8x-contrast crops of the same lake frame on Low / Med / High are pixel-for-pixel alike in the contouring (concentric 8-bit contour lines of the world-space tone patches, plus a fine horizontal line texture in the darkest corner from the capture); row-mean luminance rises smoothly 0.1-0.3 levels per 6 rows with no steps. It is not shadow texels (Low has none), not a missing dither (the terrain is textured; a world-space dither of 1/255 would be sub-pixel noise in iso and risks flicker), so it is documented, not "fixed".
+* **Budget.** Flicker 64 winter rotfine 0.695 High / 0.657 Med, 0 pops (summer rotfine 0.139); MaterialGuard READ 0 on Low / Med / High (`m8-guard-i.ts`, reads `__slope.materialGuard.count`); +0 draw calls; Low triangles +0 %; JS gzip delta well under 2 kB.
 
 ## Reproduce
 
