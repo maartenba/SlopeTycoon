@@ -187,12 +187,19 @@ void main() {
   col = mix(col, uSkyColor, fr * 0.45);
   col *= 0.6 + 0.5 * diff;
   col += uSunColor * spec * 0.8 * (1.0 - uFreezeL * 0.6);
-  // shoreline foam: along tile sides that border land
-  float e = 0.0;
-  e = max(e, vSides.x * (1.0 - smoothstep(0.0, 0.2, vLocal.y)));
-  e = max(e, vSides.y * (1.0 - smoothstep(0.0, 0.2, 1.0 - vLocal.x)));
-  e = max(e, vSides.z * (1.0 - smoothstep(0.0, 0.2, 1.0 - vLocal.y)));
-  e = max(e, vSides.w * (1.0 - smoothstep(0.0, 0.2, vLocal.x)));
+  // shoreline (M8): the DRAWN edge only (sim tiles are untouched): distance to the nearest land side, with convex corners rounded and a slow world-space wobble,
+  // so shores read as organic curves instead of tile squares. d = 0 at the (wobbled) waterline, grows into the water.
+  float dN = mix(9.0, vLocal.y, vSides.x), dE = mix(9.0, 1.0 - vLocal.x, vSides.y), dS = mix(9.0, 1.0 - vLocal.y, vSides.z), dW = mix(9.0, vLocal.x, vSides.w);
+  const float R = 0.5;
+  float dm = min(min(dN, dE), min(dS, dW));
+  dm = min(dm, mix(9.0, R - length(max(vec2(R - dN, R - dE), 0.0)), vSides.x * vSides.y));
+  dm = min(dm, mix(9.0, R - length(max(vec2(R - dE, R - dS), 0.0)), vSides.y * vSides.z));
+  dm = min(dm, mix(9.0, R - length(max(vec2(R - dS, R - dW), 0.0)), vSides.z * vSides.w));
+  dm = min(dm, mix(9.0, R - length(max(vec2(R - dW, R - dN), 0.0)), vSides.w * vSides.x));
+  float sw = vnoise(vWorld.xz * 1.7 + 3.0) * 0.6 + vnoise(vWorld.xz * 4.1 + 11.0) * 0.4;
+  float d = dm - 0.04 - (sw - 0.5) * 0.14;
+  float e = 1.0 - smoothstep(0.0, 0.22, d);
+  e *= step(dm, 8.0);
   float wob = vnoise(vWorld.xz * 3.0 + uTime * vec2(0.4, 0.3));
   float foam = e * (0.45 + 0.55 * wob) * (1.0 - fl * 0.7);
   col = mix(col, vec3(0.93, 0.97, 1.0), foam * 0.55 * (1.0 - uFreezeL * 0.5));
@@ -208,6 +215,8 @@ void main() {
   col = mix(col, ice, uFreezeL);
   float alpha = mix(0.42, 0.88, smoothstep(0.0, 1.0, vDepth)) + foam * 0.2;
   alpha = clamp(mix(alpha, 0.96, uFreezeL), 0.0, 1.0);
+  alpha *= smoothstep(-0.015, 0.05, d); // soft rounded waterline
+  if (alpha < 0.01) discard;
   gl_FragColor = vec4(col, alpha);
   ${FOG_FRAG}
   #include <colorspace_fragment>

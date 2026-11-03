@@ -129,4 +129,18 @@ describe('far LOD never rises above the fine surface (roads/buildings stay visib
     expect(d.vertexCount).toBeGreaterThan(d.tileVertexCount);
     for (let i = d.tileVertexCount; i < d.vertexCount; i++) expect(d.kind[i]).toBe(SKIRT_KIND);
   });
+  it('skirt vertices carry their depth below the rim in aWet.x (strata shader): 0 on the rim, rim height - bottom at the foot, no NaN', () => {
+    const grid = new G2(64);
+    genT(grid, 5);
+    const d = buildTerrainGeometry(grid, 0, 0, 64, 64, 1);
+    let rim = 0, foot = 0;
+    for (let i = d.tileVertexCount; i < d.vertexCount; i++) {
+      const dep = d.wet[i * 2]!;
+      expect(Number.isFinite(dep)).toBe(true);
+      expect(dep).toBeGreaterThanOrEqual(0);
+      expect(d.wet[i * 2 + 1]).toBe(0);
+      if (dep === 0) rim++; else foot++;
+    }
+    expect(rim).toBeGreaterThan(0); expect(foot).toBeGreaterThan(0);
+  });
 });

@@ -190,8 +190,12 @@ export function buildTerrainGeometry(
     ax: number, ay: number, az: number, bx: number, by: number, bz: number, nx: number, nz: number, sn: number, kd: number,
   ): void => {
     // top a -> top b, bottom below each
+    const v0 = vi;
     tri(ax, ay, az, bx, B, bz, bx, by, bz, sn, kd, nx, 0, nz);
     tri(ax, ay, az, ax, B, az, bx, B, bz, sn, kd, nx, 0, nz);
+    // aWet.x of a skirt vertex = its depth below the rim (world units): the strata shader needs the distance from the top edge (linear across the wall)
+    const depth = [0, by - B, 0, 0, ay - B, by - B]; // a-top, b-bottom, b-top, a-top, a-bottom, b-bottom
+    for (let k = 0; k < 6; k++) { wet[(v0 + k) * 2] = depth[k]!; wet[(v0 + k) * 2 + 1] = 0; }
   };
   if (skirtW) for (let t = 0; t < qy; t++) { const y = y0 + t * step; quad(0, hAt(0, y), y, 0, hAt(0, y + step), y + step, -1, 0, 0, SKIRT_KIND); }
   if (skirtE) for (let t = 0; t < qy; t++) { const y = y0 + t * step; quad(N, hAt(N, y + step), y + step, N, hAt(N, y), y, 1, 0, 0, SKIRT_KIND); }
