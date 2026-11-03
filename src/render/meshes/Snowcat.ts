@@ -1,27 +1,59 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { loft, type Palette } from './VehicleModels';
 
-const part = (g: THREE.BufferGeometry, color: number, x: number, y: number, z: number): THREE.BufferGeometry => {
+const pal = {
+  body: [0.85, 0.27, 0.23] as Rgb3, glass: [0.5, 0.77, 0.91] as Rgb3, dark: [0.13, 0.13, 0.14] as Rgb3, rubber: [0.1, 0.1, 0.11] as Rgb3,
+  trim: [0.2, 0.2, 0.22] as Rgb3, blade: [0.92, 0.92, 0.93] as Rgb3, amber: [0.95, 0.76, 0.3] as Rgb3, steel: [0.58, 0.6, 0.64] as Rgb3,
+};
+type Rgb3 = [number, number, number];
+const paintG = (g: THREE.BufferGeometry, c: Rgb3): THREE.BufferGeometry => {
   const geo = g.index ? g.toNonIndexed() : g;
   geo.deleteAttribute('uv');
-  geo.translate(x, y, z);
-  const c = new THREE.Color(color), n = geo.getAttribute('position').count, arr = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
-  geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  const n = geo.getAttribute('position').count, a = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { a[i * 3] = c[0]; a[i * 3 + 1] = c[1]; a[i * 3 + 2] = c[2]; }
+  geo.setAttribute('color', new THREE.BufferAttribute(a, 3));
   return geo;
 };
-const box = (w: number, h: number, d: number, c: number, x: number, y: number, z: number): THREE.BufferGeometry => part(new THREE.BoxGeometry(w, h, d), c, x, y + h / 2, z);
+const bx = (w: number, h: number, d: number, c: Rgb3, x: number, y: number, z: number, rx = 0): THREE.BufferGeometry => {
+  const g = new THREE.BoxGeometry(w, h, d); if (rx) g.rotateX(rx); g.translate(x, y, z); return paintG(g, c);
+};
+const cylX = (r: number, w: number, c: Rgb3, x: number, y: number, z: number, seg = 10): THREE.BufferGeometry => {
+  const g = new THREE.CylinderGeometry(r, r, w, seg); g.rotateZ(Math.PI / 2); g.translate(x, y, z); return paintG(g, c);
+};
 
-/** Procedural low-poly snowcat (forward = +z, origin on the ground, ~0.9 tiles long): one merged, vertex-coloured geometry. */
+/**
+ * Procedural low-poly snowcat (forward = +z, origin on the ground, ~0.9 tiles long): one merged, vertex-coloured geometry (~380 triangles).
+ * M8: lofted rounded body + glazed cab with a roof visor, tracks as rounded pods (sprocket / idler wheels + rubber cleats), a blade on two push
+ * arms with a lifted lip, an amber light bar, beacon, exhaust stack and tiller. Same footprint / length as before.
+ */
 export function createSnowcatGeometry(): THREE.BufferGeometry {
-  const parts = [
-    box(0.2, 0.14, 0.9, 0x222222, -0.24, 0, 0), box(0.2, 0.14, 0.9, 0x222222, 0.24, 0, 0), // tracks
-    box(0.5, 0.2, 0.8, 0xd9453a, 0, 0.1, 0), // body
-    box(0.4, 0.2, 0.32, 0x7fc4e8, 0, 0.3, 0.1), // cab
-    box(0.46, 0.05, 0.12, 0xf2c14e, 0, 0.28, -0.4), // tiller bar
-    box(0.62, 0.08, 0.1, 0xe8e8e8, 0, 0.1, 0.5), // blade
-    box(0.1, 0.05, 0.1, 0xf2c14e, 0, 0.5, 0.1), // beacon
-  ];
+  const P: Palette = { body: pal.body, glass: pal.glass, dark: pal.dark, trim: pal.trim };
+  const body = loft([
+    { z: -0.4, w: 0.2, y0: 0.12, y1: 0.28 }, { z: -0.33, w: 0.25, y0: 0.09, y1: 0.31 }, { z: 0.05, w: 0.26, y0: 0.09, y1: 0.3 },
+    { z: 0.34, w: 0.24, y0: 0.1, y1: 0.26 }, { z: 0.42, w: 0.18, y0: 0.12, y1: 0.2 },
+  ], [[0.8, 0, 'trim'], [1, 0.25, 'body'], [1, 0.7, 'body'], [0.8, 1, 'body']], P, 'body', 'body');
+  const cab = loft([
+    { z: -0.1, w: 0.17, y0: 0.29, y1: 0.4 }, { z: -0.07, w: 0.2, y0: 0.3, y1: 0.52 }, { z: 0.2, w: 0.2, y0: 0.3, y1: 0.5 }, { z: 0.27, w: 0.15, y0: 0.3, y1: 0.38 },
+  ], [[0.92, 0, 'glass'], [1, 0.15, 'glass'], [1, 0.8, 'glass'], [0.85, 0.96, 'body'], [0.5, 1, 'body']], P, 'glass', 'glass');
+  const parts: THREE.BufferGeometry[] = [body, cab];
+  for (const sx of [-1, 1]) {
+    const x = sx * 0.27;
+    parts.push(bx(0.13, 0.12, 0.62, pal.rubber, x, 0.1, 0.0)); // belt run
+    for (const z of [0.43, -0.43]) parts.push(cylX(0.1, 0.13, pal.rubber, x, 0.1, z, 8)); // sprocket / idler
+    for (const z of [0.15, -0.15]) parts.push(cylX(0.05, 0.145, pal.steel, x, 0.1, z, 6)); // road wheels
+    parts.push(bx(0.15, 0.03, 0.62, pal.trim, x, 0.205, 0.0)); // fender
+  }
+  parts.push(bx(0.1, 0.05, 0.1, pal.amber, 0, 0.55, 0.05)); // beacon
+  parts.push(bx(0.34, 0.035, 0.1, pal.dark, 0, 0.52, 0.12)); // visor / roof
+  parts.push(bx(0.3, 0.03, 0.04, pal.amber, 0, 0.545, 0.26)); // light bar
+  const ex = new THREE.CylinderGeometry(0.018, 0.018, 0.14, 5); ex.translate(0.12, 0.42, -0.28); parts.push(paintG(ex, pal.dark));
+  parts.push(bx(0.46, 0.04, 0.12, pal.amber, 0, 0.27, -0.4)); // tiller bar
+  for (const sx of [-1, 1]) {
+    parts.push(bx(0.025, 0.03, 0.2, pal.steel, sx * 0.17, 0.12, 0.55)); // blade arm
+  }
+  const bladeG = bx(0.66, 0.12, 0.05, pal.blade, 0, 0.13, 0.66, -0.18); parts.push(bladeG);
+  parts.push(bx(0.66, 0.025, 0.07, pal.blade, 0, 0.2, 0.675, -0.5)); // curled lip
   const g = mergeGeometries(parts, false)!;
   g.computeVertexNormals();
   return g;

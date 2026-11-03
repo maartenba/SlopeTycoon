@@ -1,9 +1,7 @@
 import * as THREE from 'three';
 import type { BuildingMeshes } from '../meshes';
-import { buildStationParts } from '../meshes/lifts/Station';
-import { createSignTexture } from '../textures/sign';
+import { buildTowerGeometry } from '../meshes/lifts/Tower';
 import { LIFTS } from '../../config/lifts';
-import { LIFT_STATION_HEAD } from '../../config/balance';
 import { buildCarrierGeometry } from '../meshes/lifts';
 import { glassGroups, liftGlassMaterial, liftMaterial } from '../meshes/lifts/geo';
 import type { LiftKind } from '../../config/lifts';
@@ -82,26 +80,33 @@ export class Thumbnails {
     idle(step);
   }
 
-  /** Bottom station + a carrier of the right type hanging on a short cable stub (or on rails for the funicular). */
+  /**
+   * Lift drawer icon (M8, one composition per lift family): a family-specific tower with its cable head, the cable running to a LARGE carrier
+   * (T-bar pole + bar, open chair with the right seat count, bubble hood, gondola / tram cabin) hanging from it; the funicular is a trestle with
+   * rails and a car. The tower + carrier meshes are the in-game ones, so every kind reads differently (seat count, hood, tower style, colour).
+   */
   private liftObject(kind: LiftKind): THREE.Group {
     const mat = liftMaterial();
     const glass = liftGlassMaterial();
     const g = new THREE.Group();
-    const parts = buildStationParts(kind, false);
-    g.add(new THREE.Mesh(parts.geometry, mat));
-    if (parts.sign) g.add(new THREE.Mesh(parts.sign.geometry, new THREE.MeshLambertMaterial({ map: createSignTexture(parts.sign.text, parts.sign.bg, parts.sign.fg), side: THREE.DoubleSide })));
+    const fam = LIFTS[kind].family;
+    const cableMat = new THREE.MeshLambertMaterial({ color: 0x2a2a2e });
+    const towerH = fam === 'cablecar' ? 1.9 : fam === 'gondola' ? 1.7 : fam === 'funicular' ? 0.9 : fam === 'tbar' ? 1.5 : 1.5;
+    const tower = new THREE.Mesh(buildTowerGeometry(towerH, kind, 0.3, false), mat);
+    g.add(tower);
+    const scale = fam === 'tbar' ? 2.0 : fam === 'chair' ? 2.1 : fam === 'gondola' ? 1.5 : 1.1;
     const cg = buildCarrierGeometry(kind);
     const car = new THREE.Mesh(cg, glassGroups(cg) ? [mat, glass] : mat);
-    const funi = LIFTS[kind].family === 'funicular';
-    const cableMat = new THREE.MeshLambertMaterial({ color: 0x2a2a2e });
-    if (funi) {
-      car.position.set(0, 0.1, 1.9);
-      for (const x of [-0.3, 0.3]) g.add(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 2.6), cableMat)).position.set(x, 0.08, 1.2);
+    car.scale.setScalar(scale);
+    if (fam === 'funicular') {
+      for (const x of [-0.3, 0.3]) g.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 2.6), cableMat)).position.set(x, towerH - 0.04, 1.1);
+      car.position.set(0, towerH, 1.5);
     } else {
-      car.position.set(0.3, LIFT_STATION_HEAD, 1.9);
-      const cable = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 2.6), cableMat);
-      cable.position.set(0.3, LIFT_STATION_HEAD, 1.2);
+      const cx = 0.3;
+      const cable = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 2.4), cableMat);
+      cable.position.set(cx, towerH, 0.9);
       g.add(cable);
+      car.position.set(cx, towerH, 1.5);
     }
     g.add(car);
     return g;
