@@ -64,6 +64,31 @@ export class Thumbnails {
     return this.cache.get(thumbKey(kind, id, size)) ?? null;
   }
 
+  private wanted: Array<{ kind: ThumbKind; id: string; size: number }> = [];
+  private wantRaf = 0;
+  private wantCb: (() => void) | null = null;
+
+  /**
+   * On-demand render (M8): a drawer that shows a card whose thumbnail is not cached yet asks for it here; the card renders on the NEXT animation frame
+   * (a few ms budget per frame, at least one) instead of waiting for the idle pre-warm, then `onReady` lets the dock swap the fallback icon for the image.
+   */
+  request(kind: ThumbKind, id: string, size: number, onReady?: () => void): void {
+    const key = thumbKey(kind, id, size);
+    if (this.cache.has(key) || this.wanted.some((w) => thumbKey(w.kind, w.id, w.size) === key)) return;
+    this.wanted.push({ kind, id, size });
+    if (onReady) this.wantCb = onReady;
+    if (!this.wantRaf && typeof requestAnimationFrame === 'function') this.wantRaf = requestAnimationFrame(() => this.drainWanted());
+  }
+
+  private drainWanted(): void {
+    this.wantRaf = 0;
+    const t0 = performance.now();
+    let n = 0;
+    while (this.wanted.length && (n === 0 || performance.now() - t0 < 6)) { const it = this.wanted.shift()!; this.get(it.kind, it.id, it.size); n++; }
+    this.wantCb?.();
+    if (this.wanted.length && typeof requestAnimationFrame === 'function') this.wantRaf = requestAnimationFrame(() => this.drainWanted());
+  }
+
   /** Render the given thumbnails one per idle slot so the first frames and hovers never stall. */
   prewarm(items: ReadonlyArray<{ kind: ThumbKind; id: string; size: number }>, onItem?: () => void): void {
     const queue = items.slice();

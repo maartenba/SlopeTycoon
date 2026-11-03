@@ -579,7 +579,7 @@ export class StDock extends StElement {
     if (url) {
       if (!img || img.tagName !== 'IMG') { box.textContent = ''; img = document.createElement('img'); img.alt = ''; img.width = size; img.height = size; box.appendChild(img); }
       if (img.src !== url) img.src = url;
-    } else if (!img && !box.textContent) box.textContent = icon;
+    } else if (!img && !box.firstChild) setIcon(box, icon);
   }
 
   private renderDrawer(): void {

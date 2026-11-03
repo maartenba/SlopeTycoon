@@ -2606,7 +2606,7 @@ if (ui && !DEMO) {
     autoFlatten: { get: getFlatten, set: setFlatten },
     clearLane: { get: () => liftToolsRef?.tool.clearLane ?? true, set: (v) => liftToolsRef?.tool.setClearLane(v) },
     rotate: (dir) => placement.rotate(dir),
-    thumb: (kind, id, size) => thumbs.peek(kind, id, size),
+    thumb: (kind, id, size) => { const u = thumbs.peek(kind, id, size); if (!u) thumbs.request(kind, id, size, () => dock.refreshThumbs()); return u; }, // miss: render next frame (no idle gap)
     flattenCost: () => {
       if (tools.current === 'lift') { const c = liftToolsRef?.tool.lastCheck; return c && c.flatten ? c.flattenCost : null; }
       return placement.ghostInfo()?.flattenCost ?? null;

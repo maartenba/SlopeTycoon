@@ -34,6 +34,7 @@ export function buildingsInTab(tab: BuildingTab): BuildingDef[] {
   return Object.values(BUILDINGS).filter((d) => buildingTab(d) === tab);
 }
 
+import { LIFT_FALLBACK_ICONS } from './liftIcons';
 export const BUILDING_ICONS: Record<string, string> = {
   mountainHut: '🏔️', apresBar: '🍻', baseLodge: '🏠', lodge: '🍲', cafe: '☕', shop: '🛍️', rental: '🎿', chalet: '🏡', apartment: '🏢', ticketOffice: '🎫', toilets: '🚻', quadBase: '🏍️', sleighStable: '🐴', snowshoeHut: '🥾', snowscooterBase: '🛷', sledRental: '⛄', alpineCoaster: '🎢', crag: '🧗', raftingBase: '🛶', canyoningBase: '🪢', parking: '🅿️',
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
@@ -41,7 +42,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
   smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', pizzeria: '🍕', bakery: '🥐', touristOffice: 'ℹ️', grassStrip: '🛩️', skydiveCentre: '🪂', launchRamp: '🪁', landingField: '🛬', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
-export const LIFT_ICONS: Record<LiftKind, string> = { tbar: '⛷️', chair2: '🚡', chair4: '🚡', chair4d: '🚡', chair6: '🚡', chair6d: '🚡', chair6b: '🚡', chair8b: '🚡', gondola6: '🚠', gondola10: '🚠', cablecar: '🚞', funicular: '🚋' };
+export const LIFT_ICONS: Record<LiftKind, string> = LIFT_FALLBACK_ICONS;
 
 const DESCRIPTIONS: Record<string, string> = {
   baseLodge: 'Resort core: tickets, lockers and the heart of the village.',
