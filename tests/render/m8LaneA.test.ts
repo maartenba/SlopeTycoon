@@ -13,7 +13,7 @@ const finite = (g: THREE.BufferGeometry): boolean => ['position', 'normal'].ever
 const buildingTris = (id: string): number => {
   const d = BUILDINGS[id as keyof typeof BUILDINGS]!;
   const p = buildParts(d.id, d.w, d.h) as unknown as Record<string, THREE.BufferGeometry | undefined>;
-  return Object.values(p).reduce((t, g) => t + (g && g.getAttribute ? tris(g) : 0), 0);
+  return Object.values(p).reduce((t, g) => t + (g instanceof THREE.BufferGeometry ? tris(g) : 0), 0);
 };
 
 /** M8 lane A budgets (docs/graphics-audit.md D8-2): main buildings <= 3400, low-end six <= 2000, station pair <= 3200, carriers iso <= 780 / near <= 1300, tower(3) <= 900. */
@@ -69,5 +69,17 @@ describe('M8 lane A: smoothing helpers', () => {
     const e = geo((b) => eaveBrackets(b, 0, 1, 0, 's', 1));
     expect(e.boundingBox!.max.y).toBeLessThanOrEqual(1.0);
     expect(e.boundingBox!.min.y).toBeGreaterThan(0.8);
+  });
+});
+
+describe('M8 lane A: road vehicles', () => {
+  it('cars stay <= 700 triangles (was 552; roof racks add up to ~+300) and are finite, for every style / rack', async () => {
+    const { buildCar } = await import('../../src/render/meshes/VehicleModels');
+    for (let st = 0; st < 5; st++) for (const rack of [0, 1, 2]) {
+      const m = buildCar(st, 0xc93a32, rack);
+      expect(tris(m.body), `style ${st} rack ${rack}`).toBeLessThanOrEqual(900);
+      if (rack === 0) expect(tris(m.body), `style ${st}`).toBeLessThanOrEqual(700);
+      expect(finite(m.body)).toBe(true);
+    }
   });
 });

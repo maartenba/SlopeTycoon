@@ -126,6 +126,12 @@ export function buildCar(style: number, colorHex: number, rack: number): ModelPa
   const parts: THREE.BufferGeometry[] = [loft(st.body, CAR_RING_BODY, pal, 'body', 'body'), loft(st.cabin, CAR_RING_CABIN, pal, 'glass', 'glass')];
   const tire = rgb(0x151618), hub = rgb(0x9aa0a8);
   for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(...wheel(st.wheelR, 0.055, sx * st.wheelX, st.wheelR, sz * st.wheelZ, tire, hub));
+  // wheel arches (dark discs just outside each wheel, reads as a recess) and door mirrors (M8)
+  for (const sx of [1, -1]) for (const sz of [1, -1]) {
+    const arch = new THREE.CylinderGeometry(st.wheelR * 1.22, st.wheelR * 1.22, 0.012, 8); arch.rotateZ(Math.PI / 2); arch.translate(sx * (st.wheelX + 0.033), st.wheelR, sz * st.wheelZ);
+    parts.push(paint(arch, rgb(0x1c1d20)));
+  }
+  for (const sx of [1, -1]) parts.push(box(0.03, 0.025, 0.04, rgb(0x2c2f34), sx * (st.cabin[1]!.w + 0.02), st.cabin[1]!.y0 + 0.03, st.cabin[1]!.z + 0.04));
   // bumpers + grille line
   const hw = st.body[st.body.length - 1]!.w;
   parts.push(box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, st.len / 2 - 0.005), box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, -st.len / 2 + 0.005));
