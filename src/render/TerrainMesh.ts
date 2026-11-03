@@ -222,12 +222,18 @@ void main() {
   vec3 trailCol = mix(dirt, vec3(0.62, 0.52, 0.38), 0.45) * (0.92 + 0.14 * vnoise(vWorld.xz * 3.0));
   base = mix(base, trailCol, trailW * 0.9);
   if (vKind > 2.5 && vKind < 3.5) base = dirt;          // Dirt
-  else if (vKind > 1.5 && vKind < 2.5) base = mix(dirt, base, 0.15) * vec3(0.55, 0.75, 0.8); // Water bed (teal-tinted)
+  // Water bed (teal-tinted). Drawn only: the dark bed is masked by the per-vertex water share (vWet.x, 1/4 at a tile corner, 1/2 on an edge), so the square tile
+  // corners round off like the water surface and the cut edge fades into a sandy / muddy band; a slow world-space wobble keeps the edge organic (flicker-safe).
+  float bedM = 1.0;
+  if (vKind > 1.5 && vKind < 2.5) {
+    bedM = smoothstep(0.36, 0.62, vWet.x + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.1);
+    base = mix(base, mix(dirt, base, 0.15) * vec3(0.55, 0.75, 0.8), bedM);
+  }
   else if (vKind > 3.5 && vKind < 4.5) base *= 0.82;    // Forest floor
   bool isLake = vKind > 1.5 && vKind < 2.5;
   bool isStream = vKind > 5.5 && vKind < 6.5;
   // sandy / pebble ring around lakes (shore tiles + lake rim)
-  float shoreAmt = smoothstep(0.05, 0.45, vWet.x) * (isLake ? 0.0 : 1.0);
+  float shoreAmt = isLake ? (1.0 - bedM) * 0.9 : smoothstep(0.05, 0.45, vWet.x);
   vec3 sand = mix(vec3(0.80, 0.72, 0.52), vec3(0.62, 0.58, 0.52), step(0.55, vnoise(vWorld.xz * 2.3 + 4.0)));
   sand *= 0.92 + 0.16 * vnoise(vWorld.xz * 5.0);
   base = mix(base, sand, shoreAmt * 0.9);
