@@ -180,7 +180,8 @@ void main() {
   if (uMoss > 0.0) {
     float mossSeason = uSeason.x * 0.6 + uSeason.y * 0.95 + uSeason.z * 0.5;
     float up = smoothstep(0.3, 0.75, clamp(n.y, 0.0, 1.0));
-    base = mix(base, vec3(0.045, 0.12, 0.03) * (0.8 + 0.5 * fract(aSeed * 3.3)), up * mossSeason * (0.3 + 0.7 * fract(aSeed * 5.7)));
+    float mp = smoothstep(-0.2, 0.55, sin(position.x * 17.0 + aSeed * 40.0) * sin(position.z * 13.0 + aSeed * 17.0) + 0.35 * sin(position.y * 23.0)); // patchy moss (object-space: stable under any camera), not a green blanket
+    base = mix(base, vec3(0.13, 0.21, 0.065) * (0.8 + 0.5 * fract(aSeed * 3.3)), up * mossSeason * (0.25 + 0.55 * fract(aSeed * 5.7)) * mp);
   }
   float cap = clamp(aTint.a * 1.7, 0.0, 1.0) * smoothstep(0.2, 0.64, clamp(n.y, 0.0, 1.0)); // smooth normals: a higher threshold keeps the tier / lobe structure readable under snow
   base = mix(base, vec3(0.92, 0.95, 1.0), cap);
@@ -193,7 +194,7 @@ void main() {
   ${fogVert('vp')}
   gl_Position = projectionMatrix * vp;
   float dCam = distance(shCam(), wp.xyz);
-  if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+  if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed) || shDropTree(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
   vLodW = lodFadeW(dCam);
 }`;
 
@@ -251,7 +252,7 @@ void main() {
   ${fogVert('vp')}
   gl_Position = projectionMatrix * vp;
   float dCam = distance(shCam(), wp);
-  if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+  if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed) || shDropTree(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
   vLodW = lodFadeW(dCam);
 }`;
 

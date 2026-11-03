@@ -150,5 +150,11 @@ export function nearRockGeometry(): THREE.BufferGeometry {
     const ny = Math.max(y * j * 0.66 + 0.1, 0.0);
     p.setXYZ(i, p.getX(i) * j * 1.12, ny, p.getZ(i) * j * 0.94);
   }
-  return mergeParts([{ geo: g, color: new THREE.Color(0x56534f), foliage: 0 }]);
+  const out = mergeParts([{ geo: g, color: new THREE.Color(0x6a665f), foliage: 0, smooth: true }]); // smooth normals: the lit facets no longer read as a black / white patchwork (M8 lane I)
+  const pos = out.getAttribute('position'), col = out.getAttribute('aBase'); // bedding bands + a lighter top, per vertex (the rounded shape stays readable)
+  for (let v = 0; v < pos.count; v++) {
+    const y = pos.getY(v), tone = 0.92 + 0.16 * (Math.floor(y * 9) % 2) + 0.12 * Math.min(1, y / 0.4);
+    col.setXYZ(v, col.getX(v) * tone, col.getY(v) * tone, col.getZ(v) * tone);
+  }
+  return out;
 }
