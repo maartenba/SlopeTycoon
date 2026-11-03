@@ -31,10 +31,9 @@ export function midStationDesign(family: LiftFamily): (s: SB) => void {
     }
     s.box(0, 0.12, 0, 0.5, 0.04, 1.8, STEEL_DARK);
     // posts + canopy roof (low gable with a snow cap, like the terminals)
-    for (const x of [-0.95, 0.95]) for (const u of [-0.8, 0, 0.8]) s.box(x, 0.12, u, 0.07, roofY - 0.12, 0.07, t.accent);
+    for (const x of [-0.95, 0.95]) for (const u of [-0.8, 0, 0.8]) s.cyl(x, 0.12, u, 0.045, roofY - 0.12, t.accent, 5); // round posts
     s.box(0, roofY, 0, 2.0, 0.07, 1.9, t.roof);
-    s.box(0, roofY + 0.07, 0, 2.04, 0.03, 1.94, C.white);
-    s.gable(0, roofY + 0.1, 0, 1.9, 1.9, 0.14, t.roof);
+    s.barrel(0, roofY + 0.07, 0, 2.04, 1.94, 0.2, t.roof); // curved canopy skin (M8)
     if (family === 'gondola') { // glazed side walls
       for (const x of [-0.95, 0.95]) s.box(x, 0.22, 0, 0.03, roofY - 0.5, 1.7, PANE);
     }
@@ -44,6 +43,7 @@ export function midStationDesign(family: LiftFamily): (s: SB) => void {
     // the cable passes straight through: two guide rails at the strands where carriers slow down + a rail every 0.5
     guideRails(s, -0.95, 0.95, HEAD - 0.3, STEEL_DARK);
     for (const x of [-0.3, 0.3]) for (const u of [-0.8, 0, 0.8]) s.box(x, HEAD - 0.3, u, 0.04, 0.3, 0.04, STEEL);
+    for (const x of [-0.6, 0.6]) s.rail(x, -0.85, x, 0.85, 0.22, 0.2, STEEL_DARK, 1); // platform hand rails (M8)
     // two lamp posts for the night
     for (const x of [-0.95, 0.95]) { s.box(x * 1.0, 0.12, 0.92, 0.04, roofY - 0.1, 0.04, STEEL_DARK); s.box(x * 1.0, roofY - 0.18, 0.92, 0.16, 0.08, 0.16, LAMP_HEAD); }
     // sign board on both ends

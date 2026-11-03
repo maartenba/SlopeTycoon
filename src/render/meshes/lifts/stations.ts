@@ -1,5 +1,5 @@
 import { C } from '../common';
-import { HEAD, PANE, STEEL, STEEL_DARK, CONCRETE, SB, archTunnel, bullwheel, guideRails, turnstiles, wheelFrame } from './stationKit';
+import { HEAD, PANE, STEEL, STEEL_DARK, CONCRETE, SB, archTunnel, bullwheel, bullwheelHood, guideRails, turnstiles, wheelFrame } from './stationKit';
 import type { LiftKind } from '../../../config/lifts';
 
 /**
@@ -24,19 +24,16 @@ const tbar: Design = (s) => {
   // wheel on an A-frame of yellow posts
   const r = T ? 0.3 : 0.22, wu = T ? 0.1 : -0.15;
   bullwheel(s, wu, r, C.yellow);
+  bullwheelHood(s, wu, r, C.orange);
   wheelFrame(s, wu, r, C.yellow, 0.9);
   s.box(0, 0.08, wu, 0.9, 0.06, 0.3, C.yellow);
   // tiny open shed with the motor (no roof canopy: just a slab-lid housing)
   s.box(-0.55, 0.08, T ? -0.1 : -0.75, 0.4, 0.3, 0.4, C.grey);
-  s.box(-0.55, 0.38, T ? -0.1 : -0.75, 0.46, 0.04, 0.46, C.orange);
+  s.barrel(-0.55, 0.38, T ? -0.1 : -0.75, 0.46, 0.46, 0.07, C.orange); // curved motor-shed lid
   s.box(-0.55, 0.12, T ? 0.12 : -0.53, 0.2, 0.2, 0.04, C.dark);
   s.cyl(-0.55, 0.38, T ? -0.1 : -0.75, 0.05, 0.14, C.black, 6);
   // rail posts along the loading lane
-  for (let i = 0; i < 4; i++) {
-    const u = -0.8 + i * 0.35;
-    for (const x of [-0.5, 0.5]) { s.box(x, 0.08, u, 0.05, 0.3, 0.05, C.yellow); }
-  }
-  for (const x of [-0.5, 0.5]) s.box(x, 0.3, 0, 0.03, 0.03, 1.1, C.dark);
+  for (const x of [-0.5, 0.5]) s.rail(x, -0.8, x, 0.25, 0.08, 0.26, C.yellow, 3); // round hand rails along the loading lane
   if (T) { s.ramp(0, 0.0, -0.75, 0.55, 0.08, 0.7, CONCRETE, -1); s.box(0.5, 0.08, 0.7, 0.04, 0.4, 0.04, C.red); s.box(0.5, 0.42, 0.7, 0.3, 0.14, 0.02, C.yellow); }
   else { turnstiles(s, -0.5, [-0.25, 0.25], C.dark, C.yellow); s.box(0, 0.08, -0.95, 0.5, 0.35, 0.1, C.yellow); }
   s.signs('T-BAR', 0, 0.78, T ? 0.95 : -0.92, 0.7, 0.28, '#e8a800', '#2a2a2e');
@@ -56,12 +53,13 @@ const chair2: Design = (s) => {
   // bullwheel on a red steel frame
   const r = T ? 0.3 : 0.25, wu = T ? 0.0 : -0.1;
   bullwheel(s, wu, r, C.red);
+  bullwheelHood(s, wu, r, C.roofRed);
   wheelFrame(s, wu, r, C.red, 0.95);
   // open boarding platform with a tiny shelter
   if (!T) {
     for (const x of [-0.9, -0.5]) for (const u of [-0.85, -0.45]) s.box(x, 0.1, u, 0.05, 0.6, 0.05, C.dark);
-    s.box(-0.7, 0.7, -0.65, 0.55, 0.04, 0.55, C.roofRed);
-    s.gable(-0.7, 0.72, -0.65, 0.6, 0.6, 0.15, C.roofRed);
+    s.barrel(-0.7, 0.7, -0.65, 0.62, 0.62, 0.16, C.roofRed); // curved shelter roof
+    s.rail(-0.95, -0.35, -0.45, -0.35, 0.1, 0.22, C.dark, 3);
     s.box(-0.7, 0.1, -0.85, 0.5, 0.12, 0.08, C.wood); // bench
     s.box(0, 0.1, 0.45, 0.4, 0.04, 0.6, C.white); // boarding strip
   } else {
@@ -81,13 +79,13 @@ const chair4 = (detach: boolean): Design => (s) => {
   for (let i = 0; i < 6; i++) s.box(0, 0.16, (T ? 0.2 : 0.0) - 0.5 + i * 0.2, 0.5, 0.01, 0.05, C.yellow);
   // sloped canopy on posts (higher at the wheel end)
   const bu = T ? 0.45 : -0.45;
-  for (const x of [-0.85, 0.85]) for (const u of [bu - 0.4, bu + 0.4]) s.box(x, 0.14, u, 0.08, 1.15, 0.08, C.red);
+  for (const x of [-0.85, 0.85]) for (const u of [bu - 0.4, bu + 0.4]) s.cyl(x, 0.14, u, 0.05, 1.15, C.red, 8); // round posts
   s.box(0, 1.29, bu, 1.9, 0.07, 1.05, detach ? C.roofRed : C.dark, { rz: 0 });
-  s.box(0, 1.36, bu, 1.96, 0.03, 1.1, C.white);
-  s.gable(0, 1.36, bu, 2.0, 1.1, 0.18, detach ? C.roofRed : C.roofBrown);
+  s.barrel(0, 1.36, bu, 2.0, 1.12, 0.22, detach ? C.roofRed : C.roofBrown); // curved canopy
   // bullwheel inside, with frame
   const r = 0.32, wu = T ? 0.5 : -0.5;
   bullwheel(s, wu, r, STEEL);
+  bullwheelHood(s, wu, r, STEEL_DARK);
   wheelFrame(s, wu, r, C.red, 1.0);
   if (detach) { // tyre rails + guide rails along the platform
     s.box(-0.3, 0.7, bu, 0.03, 0.05, 1.0, STEEL_DARK); s.box(0.3, 0.7, bu, 0.03, 0.05, 1.0, STEEL_DARK);
@@ -99,7 +97,7 @@ const chair4 = (detach: boolean): Design => (s) => {
   s.box(-0.75, 0.64, T ? -0.35 : 0.35, 0.42, 0.04, 0.42, C.red);
   if (!T) { // gates
     turnstiles(s, 0.05, [-0.22, 0.22], STEEL_DARK, C.red);
-    s.box(0.7, 0.14, 0.35, 0.03, 0.3, 0.8, C.red); // barrier
+    s.rail(0.7, -0.05, 0.7, 0.75, 0.14, 0.3, C.red, 3); // round barrier rail
     s.box(0, 0.14, -0.88, 1.9, 0.5, 0.08, C.cream); // wall behind
   } else {
     s.box(0.75, 0.14, -0.4, 0.3, 0.3, 0.4, C.grey); // motor housing under the canopy
@@ -129,7 +127,7 @@ const chairBig = (bubble: boolean, seats: number, label?: { text: string; bg: st
   s.box(-0.7, 0.12, bu, 0.5, 0.7, 0.55, STEEL);
   s.box(-0.7, 0.4, bu + (T ? -0.28 : 0.28), 0.4, 0.3, 0.03, C.glass);
   s.box(-0.7, 0.82, bu, 0.56, 0.05, 0.6, accent);
-  if (!T) { turnstiles(s, -0.05, [-0.25, 0.25], STEEL_DARK, accent); s.box(0.7, 0.12, -0.4, 0.4, 0.5, 0.5, C.white); s.box(0.7, 0.4, -0.4, 0.42, 0.2, 0.3, C.glass); }
+  if (!T) { turnstiles(s, -0.05, [-0.25, 0.25], STEEL_DARK, accent); s.rail(0.45, -0.5, 0.45, 0.3, 0.12, 0.26, accent, 2); s.box(0.7, 0.12, -0.4, 0.4, 0.5, 0.5, C.white); s.box(0.7, 0.4, -0.4, 0.42, 0.2, 0.3, C.glass); }
   else { s.box(0.65, 0.12, 0.6, 0.5, 0.5, 0.6, C.grey); s.cyl(0.65, 0.62, 0.6, 0.08, 0.1, C.black, 8); s.ramp(0, 0.0, -0.7, 0.6, 0.12, 0.9, CONCRETE, -1); }
   s.signs(label?.text ?? (seats >= 8 ? 'BUBBLE 8' : bubble ? 'BUBBLE 6' : 'EXPRESS 6'), 0, 1.6, (T ? 0.95 : -0.95), 1.0, 0.32, label?.bg ?? (bubble ? '#4a5a6a' : '#a93226'));
   s.box(0, 1.35, T ? 0.95 : -0.95, 0.06, 0.2, 0.06, STEEL_DARK);
@@ -149,7 +147,7 @@ const gondola = (big: boolean): Design => (s) => {
     s.box(x, 0.12, hu, 0.08, 0.1, len, STEEL_DARK);
   }
   s.box(0, roofY, hu, W * 2 + 0.2, 0.08, len + 0.1, STEEL);
-  s.box(0, roofY + 0.08, hu, W * 2 + 0.25, 0.03, len + 0.15, accent);
+  s.barrel(0, roofY + 0.08, hu, W * 2 + 0.25, len + 0.15, 0.13, accent); // curved roof skin
   // second storey (big only): upper glazed band with a smaller roof
   if (big) {
     s.box(0, roofY + 0.11, T ? 0.35 : -0.35, W * 2 - 0.2, 0.3, 0.8, PANE);
@@ -168,6 +166,7 @@ const gondola = (big: boolean): Design => (s) => {
     s.box(0, 0.4, -0.99, W * 2 - 0.3, 0.6, 0.03, PANE);
     s.box(0, roofY - 0.28, -1.1, W * 2 + 0.1, 0.06, 0.4, accent); // entrance canopy
     turnstiles(s, -0.6, [-0.55, -0.35, 0.35, 0.55], STEEL_DARK, accent);
+    s.rail(-0.75, -0.7, 0.75, -0.7, 0.12, 0.26, STEEL_DARK, 4);
   } else {
     s.box(0, 0.12, 0.8, W * 2, roofY - 0.1, 0.3, STEEL_DARK); // drive house
     s.cyl(0.5, roofY + 0.0, 0.8, 0.1, 0.3, C.black, 8); s.box(-0.4, roofY, 0.8, 0.4, 0.2, 0.2, STEEL); // motor + vent
@@ -191,10 +190,12 @@ const cablecar: Design = (s) => {
   s.box(0, 0.1, 0.9, 1.9, 0.12, 0.1, C.yellow); // front threshold with hazard stripe
   s.box(0, 1.35, 0.92, 1.9, 0.3, 0.16, C.yellow); // lintel
   s.box(0, 0.1, 0.95, 0.12, 0.3, 0.12, C.black);
+  for (const x of [-0.7, 0.7]) s.rail(x, 0.9, x * 0.95, 1.12, 0.1, 0.24, C.stone, 2); // round balustrade wings
   // head-house tower behind with the main sheave
   s.box(0, 0.1, back - 0.2, 0.9, 2.1, 0.5, C.stone);
   s.box(0, 2.2, back - 0.2, 1.0, 0.1, 0.6, C.roofRed);
   s.cone(0, 2.3, back - 0.2, 0.5, 0.35, C.roofRed, 4, { ry: Math.PI / 4 });
+  s.cyl(0, 2.62, back - 0.2, 0.015, 0.2, C.dark, 6); s.cone(0, 2.78, back - 0.2, 0.05, 0.1, C.yellow, 6); // spire + finial
   for (const x of [-0.35, 0.35]) s.box(x, 1.0, back + 0.07, 0.15, 0.25, 0.04, C.glass);
   bullwheel(s, 0.1, 0.3, STEEL_DARK);
   // windows along the hall
@@ -222,11 +223,11 @@ const funicular: Design = (s) => {
   for (const x of [-0.3, 0.3]) s.box(x, 0.12, 0, 0.05, 0.05, 2.0, STEEL);
   // platforms either side of the track with canopy
   for (const x of [-0.65, 0.65]) s.box(x, 0.08, 0.1, 0.5, 0.16, 1.6, C.stone);
+  for (const x of [-0.87, 0.87]) s.rail(x, -0.6, x, 0.7, 0.16, 0.24, C.green, 4); // platform hand rails
   const cu = 0.0;
   for (const x of [-0.95, 0.95]) for (const u of [-0.55, 0.65]) s.box(x, 0.24, u, 0.07, 0.95, 0.07, C.roofGreen);
   s.box(0, 1.19, cu, 2.1, 0.07, 1.6, C.roofGreen);
-  s.box(0, 1.26, cu, 2.0, 0.03, 1.5, C.cream);
-  s.gable(0, 1.26, cu, 1.6, 1.6, 0.2, C.roofGreen);
+  s.barrel(0, 1.26, cu, 2.0, 1.62, 0.24, C.roofGreen); // curved platform canopy
   // tunnel portal at the far end (top: behind, bottom: below the facade): stone arch with a dark opening
   const pu = T ? 0.95 : -0.95;
   s.box(-0.6, 0.0, pu, 0.5, 1.1, 0.14, C.stone); s.box(0.6, 0.0, pu, 0.5, 1.1, 0.14, C.stone);

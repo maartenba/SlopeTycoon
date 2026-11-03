@@ -1,14 +1,15 @@
 import type * as THREE from 'three';
-import { C, PartBuilder } from '../common';
+import { C, PartBuilder, tube } from '../common';
 import type { LiftKind } from '../../../config/lifts';
 import { liftDef } from '../../../config/lifts';
 import { finishGeometry } from './geo';
 import { STEEL, STEEL_DARK } from './stationKit';
 
 /** Sheave train: `n` small wheels in a row along the line (axis along x) under the cable at lateral x, top at height. */
-function sheaves(b: PartBuilder, x: number, height: number, n: number, r: number, spacing: number, color = C.black): void {
+function sheaves(b: PartBuilder, x: number, height: number, n: number, r: number, spacing: number, color = C.black, caps = false): void {
   for (let i = 0; i < n; i++) b.cyl(x, height - 2 * r, (i - (n - 1) / 2) * spacing, r, 0.08, color, 'wood', 10, { rz: Math.PI / 2 });
   b.box(x, height - 2 * r - 0.03, 0, 0.04, 0.03, (n - 1) * spacing + 0.1, STEEL_DARK);
+  if (caps) for (let i = 0; i < n; i++) b.cyl(x, height - 2 * r, (i - (n - 1) / 2) * spacing, r * 0.45, 0.1, STEEL, 'wood', 5, { rz: Math.PI / 2 }); // hub caps (M8, near LOD only)
 }
 
 /** Tapering two-legged mast (legs at ±w0 at the base, ±w1 at height) with X bracing every `step`. */
@@ -36,14 +37,15 @@ export const towerThickness = (height: number): number => Math.min(1.7, Math.max
 export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', armHalfWidth = 0.3, near = false): THREE.BufferGeometry {
   const b = new PartBuilder(1, 1);
   const d = liftDef(kind);
-  b.box(0, -0.2, 0, 0.5, 0.2, 0.5, C.stone, 'stone');
+  b.cyl(0, -0.2, 0, 0.3, 0.2, C.stone, 'stone', 10); // round concrete footing (M8)
   const topY = height;
   const k = towerThickness(height);
   switch (d.family) {
     case 'tbar': { // slim wooden pole with a small crossarm and single sheaves
       b.cyl(0, 0, 0, 0.045 * k, topY - 0.06, C.wood, 'wood', 10);
-      b.box(0, topY - 0.1, 0, 0.5, 0.04, 0.05, C.dark);
-      for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 1, 0.05, 0.1);
+      b.cyl(0, topY - 0.1 - 0.25, 0, 0.022, 0.5, C.dark, 'wood', 6, { rz: Math.PI / 2 }); // round crossarm
+      b.cone(0, topY - 0.06, 0, 0.06, 0.08, C.yellow, 'roof', 8); // pole cap
+      for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 1, 0.05, 0.1, C.black, near);
       b.box(0, topY * 0.5, 0, 0.05, 0.03, 0.2, C.yellow); // yellow marker plate
       break;
     }
@@ -51,17 +53,21 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
       if (kind === 'chair2' || kind === 'chair4') { // tubular steel pole + T arm, two-wheel sheave trains
         b.cyl(0, 0, 0, 0.07 * k, topY - 0.1, STEEL, 'stone', 12);
         b.cyl(0, 0, 0, 0.1 * k, 0.12, STEEL_DARK, 'stone', 12);
-        b.box(0, topY - 0.1, 0, 0.74, 0.06, 0.1, d.capacityPerCarrier > 2 ? C.red : C.dark);
-        for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 2, 0.06, 0.13);
+        b.cyl(0, topY - 0.1 - 0.37 + 0.0, 0, 0.04, 0.74, d.capacityPerCarrier > 2 ? C.red : C.dark, 'wood', 8, { rz: Math.PI / 2 }); // round crossarm (M8)
+        for (const sx of [-1, 1]) tube(b, 0, topY - 0.45, 0, sx * 0.32, topY - 0.12, 0, 0.016, STEEL_DARK, 'stone'); // arm struts
+        b.cone(0, topY - 0.07, 0, 0.1 * k, 0.1, STEEL_DARK, 'stone', 10); // pole cap
+        for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 2, 0.06, 0.13, C.black, near);
       } else if (kind === 'chair4d') { // tube + ladder + 3-wheel trains
         b.cyl(0, 0, 0, 0.08 * k, topY - 0.1, STEEL, 'stone', 12);
-        b.box(0, topY - 0.1, 0, 0.8, 0.07, 0.12, C.red);
+        b.cyl(0, topY - 0.1 - 0.4, 0, 0.045, 0.8, C.red, 'wood', 8, { rz: Math.PI / 2 }); // round crossarm (M8)
+        for (const sx of [-1, 1]) tube(b, 0, topY - 0.5, 0, sx * 0.35, topY - 0.12, 0, 0.018, STEEL_DARK, 'stone');
         b.box(0.1, 0.1, 0, 0.03, topY * 0.8, 0.03, STEEL_DARK); b.box(0.16, 0.1, 0, 0.03, topY * 0.8, 0.03, STEEL_DARK);
-        for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 3, 0.055, 0.12);
+        for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 3, 0.055, 0.12, C.black, near);
       } else { // 6-seat / bubble: A-frame steel tower with red cap
         mast(b, topY - 0.1, 0.32 * (1 + (k - 1) * 0.5), 0.18, 0.06 * k, STEEL, 0.035 * k, 0.7);
-        b.box(0, topY - 0.1, 0, 0.8, 0.08, 0.14, C.red);
-        for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 4, 0.055, 0.13);
+        b.cyl(0, topY - 0.1 - 0.4, 0, 0.05, 0.8, C.red, 'wood', 8, { rz: Math.PI / 2 }); // round headstock (M8)
+        for (const sx of [-1, 1]) b.ball(sx * 0.4, topY - 0.15, 0, 0.05, C.red, 'wood', 6);
+        for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 4, 0.055, 0.13, C.black, near);
         if (d.bubble) b.box(0, topY * 0.5, 0.06, 0.34, 0.12, 0.03, C.white);
       }
       break;
@@ -70,8 +76,9 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
       const big = d.capacityPerCarrier >= 10;
       const w0 = big ? 0.46 : 0.4, w1 = big ? 0.3 : 0.26;
       mast(b, topY - 0.12, w0 * (1 + (k - 1) * 0.5), w1, 0.07 * k, STEEL, 0.04 * k, 0.6);
-      b.box(0, topY - 0.12, 0, 0.9, 0.09, 0.2, big ? 0xc0392b : C.blue);
-      for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 5, 0.06, 0.12, C.black);
+      b.cyl(0, topY - 0.12 - 0.45, 0, 0.065, 0.9, big ? 0xc0392b : C.blue, 'wood', 8, { rz: Math.PI / 2 }); // round headstock (M8)
+      for (const sx of [-1, 1]) b.ball(sx * 0.45, topY - 0.185, 0, 0.065, big ? 0xc0392b : C.blue, 'wood', 6);
+      for (const x of [-armHalfWidth, armHalfWidth]) sheaves(b, x, topY, 5, 0.06, 0.12, C.black, near);
       for (const x of [-armHalfWidth, armHalfWidth]) b.box(x, topY - 0.36, 0, 0.1, 0.06, 0.55, STEEL_DARK);
       b.box(0, topY * 0.55, 0.15, 0.6, 0.03, 0.18, STEEL_DARK); // platform
       break;
@@ -90,7 +97,7 @@ export function buildTowerGeometry(height: number, kind: LiftKind = 'chair4', ar
         b.box(0, y1 - 0.02, 0, 2 * a1 + 0.05, 0.05, 2 * a1 + 0.05, C.dark);
       }
       b.box(0, topY - 0.15, 0, 0.9, 0.1, 0.5, C.yellow); // saddle
-      for (const x of [-armHalfWidth, armHalfWidth]) { sheaves(b, x, topY, 3, 0.09, 0.2); b.box(x, topY - 0.25, 0, 0.12, 0.1, 0.5, C.black); }
+      for (const x of [-armHalfWidth, armHalfWidth]) { sheaves(b, x, topY, 3, 0.09, 0.2, C.black, near); b.box(x, topY - 0.25, 0, 0.12, 0.1, 0.5, C.black); }
       b.box(0, 0, 0, 1.0, 0.12, 1.0, C.stone, 'stone');
       break;
     }

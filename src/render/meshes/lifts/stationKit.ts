@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { C, PartBuilder, type Layer, type PartOpts } from '../common';
+import { C, PartBuilder, barrelRoof, curvedRamp, railing, tube, type Layer, type PartOpts } from '../common';
 import { LIFT_STATION_HEAD } from '../../../config/balance';
 
 export const HEAD = LIFT_STATION_HEAD;
@@ -31,7 +31,19 @@ export class SB {
   /** Ramp rising towards +u (dir=1) or -u (dir=-1) along the line. */
   ramp(cx: number, y0: number, u: number, len: number, rise: number, width: number, color: number, dir: 1 | -1 = 1): this {
     const toward = (dir * (this.top ? -1 : 1)) as 1 | -1; // z direction of the rise
-    this.b.wedge(cx, y0, this.z(u), len, rise, width, color, toward > 0 ? -Math.PI / 2 : Math.PI / 2, 'wood' as Layer); return this;
+    curvedRamp(this.b, cx, y0, this.z(u), len, rise, width, color, toward > 0 ? -Math.PI / 2 : Math.PI / 2, false, 3, 'wood' as Layer); return this; // smooth convex roll-off (M8)
+  }
+  /** Round hand rail with round balusters from (x0,u0) to (x1,u1) at floor height y (M8). */
+  rail(x0: number, u0: number, x1: number, u1: number, y: number, hgt: number, color: number, posts = 3): this {
+    railing(this.b, x0, this.z(u0), x1, this.z(u1), y, hgt, color, posts); return this;
+  }
+  /** Round tube between two points in station space (M8). */
+  tube(x0: number, y0: number, u0: number, x1: number, y1: number, u1: number, r: number, color: number): this {
+    tube(this.b, x0, y0, this.z(u0), x1, y1, this.z(u1), r, color, 'wood'); return this;
+  }
+  /** Curved (barrel-vault) canopy running along the line: span across x, len along u, `rise` above its soffit at y0 (M8). */
+  barrel(cx: number, y0: number, u: number, span: number, len: number, rise: number, color: number): this {
+    barrelRoof(this.b, cx, y0, this.z(u), span, len, rise, color, false, 'roof'); return this;
   }
   /** Sign boards (front and back faces) across the line and on both sides so the text reads from several angles. */
   signs(text: string, cx: number, cy: number, u: number, sx: number, sy: number, bg: string, fg = '#ffffff'): this {
@@ -53,6 +65,18 @@ export function bullwheel(s: SB, u: number, r: number, color = STEEL, tyre = C.b
     s.box(x, cy - 0.015, u, 0.04, 0.03, r * 1.8, color);
     s.box(x, cy - r * 0.9, u, 0.04, r * 1.8, 0.03, color);
   }
+}
+
+/** Curved guard hood over the back-top of a bullwheel (a thin shell about the axle, behind the cable run so carriers never pass through it): centre u, wheel radius r (M8). ~36 triangles. */
+export function bullwheelHood(s: SB, u: number, r: number, color = STEEL_DARK): void {
+  const cy = HEAD - r, R0 = r + 0.05, R1 = r + 0.09, n = 6, a0 = 0.2, a1 = 2.1, sh = new THREE.Shape();
+  sh.moveTo(Math.cos(a0) * R1, Math.sin(a0) * R1);
+  for (let i = 1; i <= n; i++) { const a = a0 + ((a1 - a0) * i) / n; sh.lineTo(Math.cos(a) * R1, Math.sin(a) * R1); }
+  for (let i = n; i >= 0; i--) { const a = a0 + ((a1 - a0) * i) / n; sh.lineTo(Math.cos(a) * R0, Math.sin(a) * R0); }
+  const g = new THREE.ExtrudeGeometry(sh, { depth: 0.95, bevelEnabled: false });
+  g.translate(0, 0, -0.475);
+  // extrusion runs along x after the yaw; shape +x points to the back of the station (-u for a bottom station, +u mirrored for a top one)
+  s.b.add(g, 'wood', color, 0, cy, s.top ? -u : u, { ry: s.top ? -Math.PI / 2 : Math.PI / 2 });
 }
 
 /** Support frame carrying a wheel axle: two posts and a cross-beam. */
