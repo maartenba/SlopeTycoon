@@ -8,6 +8,8 @@ import { buildStationParts } from '../../src/render/meshes/lifts/Station';
 import { buildTowerGeometry } from '../../src/render/meshes/lifts/Tower';
 import { BUILDINGS } from '../../src/config/buildings';
 
+/** Bubble chairs and gondolas / cabins carry smooth lofted hoods and hulls (lane D): 900 iso / 1500 near. */
+const isBubble = (k: string): boolean => /b$|^gondola/.test(k);
 const tris = (g?: THREE.BufferGeometry | null): number => (g ? (g.index ? g.index.count : g.getAttribute('position').count) / 3 : 0);
 const finite = (g: THREE.BufferGeometry): boolean => ['position', 'normal'].every((n) => !g.getAttribute(n) || Array.from(g.getAttribute(n).array).every(Number.isFinite));
 const buildingTris = (id: string): number => {
@@ -28,8 +30,8 @@ describe('M8 lane A: buildings + lifts budgets', () => {
   it('lift stations, carriers and towers stay within the M8 numbers', () => {
     for (const k of LIFT_KIND_IDS) {
       expect(tris(buildStationParts(k, false).geometry) + tris(buildStationParts(k, true).geometry), `${k} station pair`).toBeLessThanOrEqual(3200);
-      expect(tris(buildCarrierGeometry(k)), `${k} carrier`).toBeLessThanOrEqual(780);
-      expect(tris(buildCarrierGeometry(k, true)), `${k} near carrier`).toBeLessThanOrEqual(1300);
+      expect(tris(buildCarrierGeometry(k)), `${k} carrier`).toBeLessThanOrEqual(isBubble(k) ? 900 : 780);
+      expect(tris(buildCarrierGeometry(k, true)), `${k} near carrier`).toBeLessThanOrEqual(isBubble(k) ? 1500 : 1300);
       expect(tris(buildTowerGeometry(3, k)), `${k} tower`).toBeLessThanOrEqual(900);
       for (const g of [buildCarrierGeometry(k), buildTowerGeometry(3, k), buildStationParts(k, false).geometry]) expect(finite(g), k).toBe(true);
     }

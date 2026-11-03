@@ -277,24 +277,34 @@ export function createDecoratedCowGeometry(): THREE.BufferGeometry {
 
 /** Carnival reveller (about 0.5 tiles tall): harlequin costume, ruff and a tall pointed hat (forward = +z). */
 export function createCostumeFigureGeometry(): THREE.BufferGeometry {
+  // M8 lane D: tapered legs and arms, an egg-shaped torso in two colours, a round head, a flared ruff and a curved pointed hat (cone + brim), instead of stacked boxes
   return finish([
-    box(0.07, 0.22, 0.07, 0xd9453a, -0.04, 0, 0), box(0.07, 0.22, 0.07, 0xf2c14e, 0.04, 0, 0), // legs, one of each colour
-    box(0.2, 0.22, 0.12, 0x8e5bd0, 0, 0.22, 0), box(0.1, 0.22, 0.12, 0x2ba6a0, 0.05, 0.22, 0.0), // torso (half teal)
-    box(0.06, 0.18, 0.06, 0xf2c14e, -0.13, 0.24, 0), box(0.06, 0.18, 0.06, 0xd9453a, 0.13, 0.24, 0), // arms
-    box(0.22, 0.04, 0.14, 0xf4efe2, 0, 0.44, 0), // ruff
-    box(0.12, 0.12, 0.12, 0xf0c8a0, 0, 0.47, 0), // head
-    box(0.13, 0.09, 0.03, 0x8a5a2e, 0, 0.485, 0.075), box(0.035, 0.07, 0.04, 0x6a3f1e, 0, 0.465, 0.11), // Carnival (M7.4): wooden mask with a long nose
-    box(0.04, 0.04, 0.13, 0xd9b44a, 0.1, 0.38, 0.09), box(0.08, 0.08, 0.02, 0xd9b44a, 0.1, 0.36, 0.17), // a small brass horn (the band)
-    box(0.15, 0.04, 0.15, 0xd9453a, 0, 0.58, 0), box(0.09, 0.09, 0.09, 0xf2c14e, 0, 0.62, 0), box(0.04, 0.05, 0.04, 0x8e5bd0, 0, 0.7, 0), // pointed hat
+    tube(0.033, 0.026, 0.22, 0xd9453a, -0.04, 0, 0, {}, 6), tube(0.033, 0.026, 0.22, 0xf2c14e, 0.04, 0, 0, {}, 6), // legs, one of each colour
+    ell(0.05, 0.03, 0.065, 0x1b1b1b, -0.04, 0.02, 0.02, {}, 6, 3), ell(0.05, 0.03, 0.065, 0x1b1b1b, 0.04, 0.02, 0.02, {}, 6, 3), // shoes
+    ell(0.105, 0.13, 0.075, 0x8e5bd0, 0, 0.33, 0, {}, 10, 6), ell(0.055, 0.115, 0.08, 0x2ba6a0, 0.055, 0.33, 0.004, {}, 8, 5), // torso (half teal)
+    tube(0.026, 0.021, 0.19, 0xf2c14e, -0.13, 0.2, 0, { rz: -0.35 }, 6), tube(0.026, 0.021, 0.19, 0xd9453a, 0.13, 0.2, 0, { rz: 0.35 }, 6), // arms
+    tube(0.12, 0.075, 0.05, 0xf4efe2, 0, 0.42, 0, {}, 10), // flared ruff
+    ell(0.065, 0.07, 0.065, 0xf0c8a0, 0, 0.51, 0, {}, 10, 6), // head
+    ell(0.07, 0.045, 0.02, 0x8a5a2e, 0, 0.52, 0.062, {}, 8, 4), cone(0.018, 0.07, 0x6a3f1e, 0, 0.49, 0.095, { rx: Math.PI / 2 }, 5), // Carnival (M7.4): wooden mask with a long nose
+    tube(0.015, 0.035, 0.12, 0xd9b44a, 0.1, 0.36, 0.13, { rx: Math.PI / 2 }, 6), tube(0.05, 0.015, 0.05, 0xd9b44a, 0.1, 0.36, 0.25, { rx: Math.PI / 2 }, 8), // a small brass horn (the band): tube + bell
+    tube(0.1, 0.1, 0.02, 0xd9453a, 0, 0.56, 0, {}, 12), // hat brim
+    cone(0.075, 0.2, 0xd9453a, 0, 0.57, 0, { rx: -0.12 }, 10), ell(0.022, 0.022, 0.022, 0xf2c14e, 0, 0.78, -0.025, {}, 6, 3), // curved pointed hat + bobble
   ]);
 }
 
 /** World Cup racer in a tuck (forward = +z): coloured suit, helmet, two skis and poles. */
 export function createRacerGeometry(): THREE.BufferGeometry {
+  // M8 lane D: rounded tuck (ellipsoid torso and thighs, tapered shins), a round helmet with a goggle strap, tapered skis with upturned tips, poles tucked under the arms
+  const ski = (x: number): THREE.BufferGeometry[] => [
+    box(0.07, 0.02, 0.46, 0x1b1b1b, x, 0, -0.02), // ski body
+    ell(0.034, 0.014, 0.05, 0x1b1b1b, x, 0.022, 0.25, { rx: -0.35 }, 6, 3), // upturned tip
+  ];
   return finish([
-    box(0.07, 0.02, 0.5, 0x1b1b1b, -0.06, 0, 0), box(0.07, 0.02, 0.5, 0x1b1b1b, 0.06, 0, 0), // skis
-    box(0.16, 0.14, 0.12, 0x2a5fb0, 0, 0.04, -0.02), box(0.14, 0.14, 0.14, 0xe8453c, 0, 0.16, 0.03), // legs + tucked torso
-    box(0.09, 0.09, 0.09, 0xf4efe2, 0, 0.27, 0.12), box(0.06, 0.03, 0.04, 0x1b1b1b, 0, 0.29, 0.18), // helmet + goggles
-    box(0.02, 0.02, 0.3, 0x888888, -0.1, 0.12, 0.2), box(0.02, 0.02, 0.3, 0x888888, 0.1, 0.12, 0.2), // poles
+    ...ski(-0.06), ...ski(0.06),
+    tube(0.03, 0.04, 0.15, 0x2a5fb0, -0.05, 0.02, -0.04, { rx: -0.9 }, 6), tube(0.03, 0.04, 0.15, 0x2a5fb0, 0.05, 0.02, -0.04, { rx: -0.9 }, 6), // shins
+    ell(0.06, 0.05, 0.1, 0x2a5fb0, 0, 0.13, -0.05, {}, 8, 4), // thighs
+    ell(0.085, 0.07, 0.12, 0xe8453c, 0, 0.19, 0.04, { rx: 0.25 }, 10, 5), // tucked torso (egg)
+    ell(0.05, 0.05, 0.05, 0xf4efe2, 0, 0.26, 0.15, {}, 8, 5), box(0.07, 0.025, 0.02, 0x1b1b1b, 0, 0.265, 0.195), // helmet + goggles
+    tube(0.012, 0.012, 0.3, 0x888888, -0.1, 0.12, 0.05, { rx: Math.PI / 2 + 0.1 }, 5), tube(0.012, 0.012, 0.3, 0x888888, 0.1, 0.12, 0.05, { rx: Math.PI / 2 + 0.1 }, 5), // poles
   ]);
 }

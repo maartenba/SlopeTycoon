@@ -1,0 +1,35 @@
+<!doctype html><meta charset="utf-8"><title>carriers (QA)</title>
+<body style="margin:0;background:#9fc3e6"><canvas id="c" width="1200" height="640"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { buildCarrierGeometry } from '/src/render/meshes/lifts/index.ts';
+import { glassGroups, liftGlassMaterial, liftMaterial } from '/src/render/meshes/lifts/geo.ts';
+import { LIFTS } from '/src/config/lifts.ts';
+const q = new URLSearchParams(location.search), kinds = (q.get('kinds') ?? 'chair6b').split(','), old = q.get('old') === '1', near = q.get('near') === '1';
+const az = Number(q.get('az') ?? 0.6), el = Number(q.get('el') ?? 0.25), dist = Number(q.get('dist') ?? 3.2), fov = Number(q.get('fov') ?? 35);
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
+r.setClearColor(0xa9c8e8); r.setPixelRatio(1);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xdfeeff, 0x7b8a6c, 1.6)); const sun = new THREE.DirectionalLight(0xfff2d8, 1.9); sun.position.set(3, 5, 2.5); scene.add(sun);
+const mat = liftMaterial(), gl = liftGlassMaterial();
+// `old=1`: drop pre-lane-D copies of Chair.ts / Gondola.ts next to the lift meshes as ChairOld.ts / GondolaOld.ts (git show <rev>:...) to compare; they are not kept in the repo.
+const C = old ? await import(/* @vite-ignore */ '/src/render/meshes/lifts/ChairOld.ts') : null, O = old ? await import(/* @vite-ignore */ '/src/render/meshes/lifts/GondolaOld.ts') : null;
+let i = 0;
+const AN = await import('/src/render/meshes/Animals.ts');
+for (const f of (q.get('figs') ?? '').split(',').filter(Boolean)) {
+  const g = f === 'costume' ? AN.createCostumeFigureGeometry() : AN.createRacerGeometry();
+  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true })); m.scale.setScalar(2.2); m.position.set(i * 1.0 - 0.5, -0.9, 0); scene.add(m); i++;
+}
+if (q.get('figs')) kinds.length = 0;
+for (const k of kinds) {
+  const d = LIFTS[k]; let g;
+  if (C && d.family === 'chair') g = C.buildChairGeometry(d.capacityPerCarrier, d.bubble, d.detachable, near, undefined, k === 'chair6d');
+  else if (O && d.family === 'gondola') g = O.buildGondolaGeometry(d.capacityPerCarrier, near);
+  else g = buildCarrierGeometry(k, near);
+  const m = new THREE.Mesh(g, glassGroups(g) ? [mat, gl] : mat); m.position.set((i - (kinds.length - 1) / 2) * 1.9, 0, 0); scene.add(m); i++;
+}
+const cam = new THREE.PerspectiveCamera(fov, 1200 / 640, 0.1, 100);
+const c = new THREE.Vector3(q.get('figs') ? 0 : 0, q.get('figs') ? -0.5 : -0.45, 0);
+cam.position.set(c.x + Math.sin(az) * Math.cos(el) * dist * Math.max(1, kinds.length) ** 0.5, c.y + Math.sin(el) * dist, c.z + Math.cos(az) * Math.cos(el) * dist * Math.max(1, kinds.length) ** 0.5);
+cam.lookAt(c); r.render(scene, cam); window.__done = true;
+</script>

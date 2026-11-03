@@ -1,4 +1,4 @@
-import { C, PartBuilder, curvedRamp, doorway, frameWin, railing, tube, windsock } from '../common';
+import { C, PartBuilder, curvedRamp, domeCap, doorway, frameWin, railing, tube, windsock } from '../common';
 
 /** M7.4 buildings (docs/m74-buildings.md): Pizzeria, Bakery, Tourist Office, Grass Strip, Skydive Centre, Launch Ramp, Landing Field. All small, all under the 3,000-triangle budget. */
 
@@ -43,7 +43,10 @@ export function touristOffice(b: PartBuilder, w: number, h: number): void {
   frameWin(b, bx + 0.3, 0.36, bz + 0.46, 's', 0.2);
   b.sign('INFO', bx + 0.3, 0.64, bz + 0.5, 0.45, 0.16, 0, '#2f6fb0', '#ffffff');
   // map stand (post + board) and a flag on a pole
-  b.box(0.65, 0.03, 0.45, 0.05, 0.5, 0.05, C.dark); b.box(0.65, 0.4, 0.45, 0.4, 0.3, 0.04, C.white); b.box(0.65, 0.5, 0.48, 0.28, 0.1, 0.01, C.green);
+  b.cyl(0.65, 0.03, 0.45, 0.025, 0.5, C.dark, 'wood', 6); b.box(0.65, 0.4, 0.45, 0.4, 0.22, 0.04, C.white); domeCap(b, 0.65, 0.62, 0.45, 0.2, 0.09, C.white, 'wood', 10, 3); b.box(0.65, 0.5, 0.48, 0.28, 0.1, 0.01, C.green); // map stand with a rounded top
+  b.cyl(0.05, 0.03, 0.66, 0.02, 0.42, C.dark, 'wood', 6); b.cyl(0.05, 0.485, 0.66, 0.14, 0.03, C.blue, 'wood', 14, { rx: Math.PI / 2 }); b.ball(0.05, 0.545, 0.69, 0.022, C.white, 'wood', 6); b.box(0.05, 0.43, 0.69, 0.035, 0.09, 0.012, C.white, 'wood'); // round blue 'i' board on a post
+  for (const x of [-0.78, 0.58]) { b.cyl(x, 0.03, bz + 0.52, 0.045, 0.2, C.wood, 'wood', 8); domeCap(b, x, 0.23, bz + 0.52, 0.06, 0.08, C.green, 'roof', 8, 2); } // barrel planters with shrubs
+  b.cyl(bx + 0.62, 0.03, bz + 0.48, 0.02, 0.46, C.dark, 'wood', 6); b.cyl(bx - 0.62, 0.03, bz + 0.48, 0.02, 0.46, C.dark, 'wood', 6); // porch posts
   b.cyl(-0.7, 0.03, 0.55, 0.02, 1.2, C.grey, 'stone', 6); b.box(-0.58, 1.0, 0.55, 0.22, 0.14, 0.01, C.red, 'roof');
 }
 

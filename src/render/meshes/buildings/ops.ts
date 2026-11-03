@@ -1,4 +1,5 @@
-import { C, PartBuilder, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
+import { C, PartBuilder, arcTube, barrelRoof, chimney, doorway, drum, frameWin, snowcat, tube, windsock } from '../common';
+import { curveTube } from '../lifts/loft';
 
 /** Helipad (3x3): round pad with big H, ring of edge lights, windsock, fuel drums and a small ops hut. */
 export function helipad(b: PartBuilder, w: number, h: number): void {
@@ -88,12 +89,15 @@ export function reservoir(b: PartBuilder, w: number, h: number): void {
   // pump house + pipes
   const px = r - 0.5, pz = -r + 0.5;
   b.box(px, 0, pz, 0.55, 0.5, 0.5, C.grey);
-  b.gable(px, 0.5, pz, 0.6, 0.65, 0.22, C.roofBlue, true);
+  barrelRoof(b, px, 0.5, pz, 0.6, 0.65, 0.2, C.roofBlue, false, 'roof', 7); // arched pump-house roof
   frameWin(b, px, 0.2, pz + 0.25, 's', 0.14);
-  b.cyl(px - 0.55, 0.3, pz + 0.1, 0.04, 0.5, C.grey, 'stone', 6, { rz: Math.PI / 2 });
-  b.cyl(px - 0.8, 0.2, pz + 0.1, 0.07, 0.2, C.blue, 'stone', 8);
+  curveTube(b, [[px - 0.28, 0.32, pz + 0.1], [px - 0.6, 0.34, pz + 0.1], [px - 0.8, 0.24, pz + 0.1], [px - 0.95, 0.12, pz + 0.18]], 0.035, C.grey, 'stone', 10, 6); // curved intake pipe down to the stopcock
+  b.cyl(px - 0.95, 0.04, pz + 0.18, 0.07, 0.12, C.blue, 'stone', 8);
+  b.ring(px - 0.95, 0.17, pz + 0.18, 0.06, 0.012, C.red, 'stone', 8); // valve wheel
   b.cyl(px + 0.1, 0.5, pz - 0.05, 0.06, 0.4, C.dark, 'stone', 6); // vent stack
-  for (const a of [0.6, 0.9, 1.2]) b.box(Math.cos(a + 2) * (r - 0.1), 0.0, Math.sin(a + 2) * (r - 0.1), 0.06, 0.4, 0.06, C.dark); // fence posts
+  b.ball(px + 0.1, 0.84, pz - 0.05, 0.05, C.dark, 'stone', 6); // rounded vent cap (top stays <= the catalogue height 0.95: tests/sim/LiftClearance)
+  for (const a of [0.6, 0.9, 1.2]) b.cyl(Math.cos(a + 2) * (r - 0.1), 0.0, Math.sin(a + 2) * (r - 0.1), 0.03, 0.4, C.dark, 'wood', 6); // fence posts
+  arcTube(b, 0, 0.34, 0, r - 0.1, 0.014, 0.6, C.grey, 'stone', 8, { rx: Math.PI / 2, rz: 2.6 }); // rail between the posts
   b.sign('H2O', -r + 0.5, 0.3, r - 0.4, 0.5, 0.24, 0, '#2d5fa8');
   b.box(-r + 0.5, 0.0, r - 0.42, 0.05, 0.3, 0.05, C.dark);
 }

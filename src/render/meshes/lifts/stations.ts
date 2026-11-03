@@ -119,6 +119,7 @@ const chairBig = (bubble: boolean, seats: number, label?: { text: string; bg: st
   for (const u of [u0, u1]) s.box(0, 0.12, u, 2.0, 0.08, 0.1, accent);
   const wu = T ? 0.45 : -0.45;
   bullwheel(s, wu, 0.32, STEEL);
+  bullwheelHood(s, wu, 0.32, bubble ? accent : STEEL_DARK); // rounded weather hood over the bullwheel (lane D: chair6 / 6b / 8b had none)
   wheelFrame(s, wu, 0.32, STEEL_DARK, 1.0);
   guideRails(s, T ? -0.2 : 0.0, T ? 0.2 : 0.2, HEAD - 0.5, STEEL_DARK); // chair park rail (bubble chairs park under the tunnel)
   if (bubble) for (const x of [-0.3, 0.3]) for (let i = 0; i < 3; i++) s.cyl(x, HEAD - 0.62, (T ? 0.8 : -0.2) + i * 0.2 - (T ? 1.2 : 0), 0.02, 0.1, STEEL_DARK, 5);

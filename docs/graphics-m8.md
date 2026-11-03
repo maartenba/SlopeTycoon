@@ -72,6 +72,26 @@ I looked at all five. Honest read:
 ![Buildings](img/graphics-m8-buildings.webp)
 ![Terrain](img/graphics-m8-terrain.webp)
 
+## Follow-up lane D: smooth bubble chairs and gondolas + weak-spot pass
+
+Owner feedback: the bubble chairlift and the gondola cabin were still blocky. New helpers in `src/render/meshes/lifts/loft.ts`: `addHull` (lofted rounded-rectangle hull: superellipse plan + cross-section, tapered lower shell, split into colour / layer bands that share vertices so lighting has no seam), `addHood` (half superellipsoid, closed behind, open in front and underneath), `curveTube` (Catmull-Rom tube: arched hangers, curved arms, palm trunks). They go through `PartBuilder` into the existing opaque + glass groups: **no new draw call, no new material** (the glass group already used the translucent `liftGlassMaterial`; the hood is a smoked amber `0xe3a24e` through it).
+
+| Carrier (iso / near triangles) | before | after |
+|---|---|---|
+| chair6b | 492 / 1128 | 776 / 1268 |
+| chair8b | 540 / 1272 | 824 / 1364 |
+| gondola6 | 268 / 516 | 772 / 1292 |
+| gondola10 | 328 / 576 | 804 / 1324 |
+| open chairs, T-bar, cable car, funicular | unchanged | unchanged |
+
+Budgets (`tests/render/m8LaneD.test.ts`, `m8LaneA.test.ts`): bubble chairs and gondolas <= 900 iso / 1500 near (everything else still 780 / 1300). The carrier drop is unchanged (gondola bottom -0.94, chair -0.6), so station clearance holds. The drawer thumbnails use the same carrier meshes, so they show the smoother carriers (`m8-after-d-icons`). Near-detail bug fixed on the way: the chairs' padded top roll floated above the chair (a cylinder placed by its base instead of its centre).
+
+Weak spots fixed (triangles before -> after): Altiport 1488 -> 2396 (ellipsoid plane with cowling, propeller, struts, wheels; domed glass cab; arched hangar; windsock and drums from the shared helpers), Beach 762 -> 1734 (domed parasols, rounded towels, dunes, curved palm, round castle towers, striped ball), Kids Ground 1094 -> 1288 (domed slide top, round posts, curved chute, mound), Reservoir 1252 -> 1536 (arched pump-house roof, curved intake pipe, valve wheel, round posts and rail), Ice Rink 1596 -> 2148 (32 boards that follow the oval tangent, leaning masts, round lamps), Tourist Office 376 -> 726 (round `i` board, domed map stand, planters, porch posts). Chair6 / 6b / 8b stations now have the bullwheel hood. The village fountain (visible in walk mode) is lathe-turned. The carnival costume figure and the World Cup racer use ellipsoids and tapered tubes instead of stacked boxes.
+
+Still open: near-view trees and rocks (`NearTrees.ts` / `Rocks.ts`: not re-checked, there is no ground-level shot that shows them up close in the harness), cow / sheep / goat in a real farm shot, pond staircase outline, concave shoreline corners, no shadows in ride / photo / walk views, shadow receiving on buildings and trees, near-LOD gondola interior is still boxy (bench boxes), funicular and cable-car cabins are still box shells.
+
+Test page for carrier close-ups: `npx vite-node scripts/shots/m8-carriers-d.ts <out> new chair6b,gondola10 <az> <el> <dist> [near]` (real meshes + materials on a plain perspective page, `scripts/shots/carriers-d.html`).
+
 ## Reproduce
 
 ```

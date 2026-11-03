@@ -227,13 +227,17 @@ export class VillageDecor {
         case 'cobble':
           for (let a = 0; a < 4; a++) for (let b2 = 0; b2 < 3; b2++) plants.push(col(bx(it.w! / 4 - 0.02, 0.022, it.d! / 3 - 0.02), (a + b2) % 2 ? 0xb3a896 : 0xa59b89, it.x - it.w! / 2 + (a + 0.5) * it.w! / 4, y + 0.011, it.z - it.d! / 2 + (b2 + 0.5) * it.d! / 3));
           break;
-        case 'fountain':
-          wood.push(col(new THREE.CylinderGeometry(0.46, 0.5, 0.2, 14), 0xa9a69c, it.x, y + 0.1, it.z));
-          plants.push(col(new THREE.CylinderGeometry(0.38, 0.38, 0.02, 14), 0x5fb3dc, it.x, y + 0.205, it.z));
-          wood.push(col(new THREE.CylinderGeometry(0.06, 0.08, 0.45, 8), 0xb9b5aa, it.x, y + 0.4, it.z));
-          wood.push(col(new THREE.CylinderGeometry(0.2, 0.1, 0.06, 10), 0xb9b5aa, it.x, y + 0.62, it.z));
-          plants.push(col(new THREE.CylinderGeometry(0.15, 0.15, 0.02, 10), 0x7cc6e8, it.x, y + 0.655, it.z));
+        case 'fountain': { // M8 lane D: lathe-turned basin with a rounded lip, a vase-shaped stem, a scalloped upper bowl, a finial ball and a water jet (was stacked 10-14 sided cylinders)
+          const lathe = (pts: Array<[number, number]>, seg: number): THREE.BufferGeometry => new THREE.LatheGeometry(pts.map(([r, h]) => new THREE.Vector2(r, h)), seg);
+          wood.push(col(lathe([[0, 0], [0.5, 0], [0.53, 0.05], [0.53, 0.16], [0.5, 0.215], [0.46, 0.22], [0.44, 0.19], [0.44, 0.12], [0, 0.12]], 24), 0xa9a69c, it.x, y, it.z));
+          plants.push(col(new THREE.CylinderGeometry(0.43, 0.43, 0.02, 24), 0x5fb3dc, it.x, y + 0.19, it.z));
+          wood.push(col(lathe([[0, 0.12], [0.1, 0.12], [0.06, 0.2], [0.045, 0.32], [0.05, 0.45], [0.08, 0.5], [0.0, 0.5]], 12), 0xb9b5aa, it.x, y, it.z));
+          wood.push(col(lathe([[0, 0.5], [0.1, 0.5], [0.2, 0.58], [0.22, 0.64], [0.19, 0.645], [0.17, 0.62], [0, 0.6]], 16), 0xb9b5aa, it.x, y, it.z));
+          plants.push(col(new THREE.CylinderGeometry(0.17, 0.17, 0.015, 16), 0x7cc6e8, it.x, y + 0.625, it.z));
+          wood.push(col(new THREE.SphereGeometry(0.05, 8, 6), 0xb9b5aa, it.x, y + 0.7, it.z));
+          plants.push(col(new THREE.CylinderGeometry(0.012, 0.02, 0.18, 6), 0x9fd8f0, it.x, y + 0.78, it.z)); // water jet
           break;
+        }
         case 'awning': {
           const c = n % 2 ? 0xc65a4a : 0x4f86a8;
           wood.push(col(bx(0.7, 0.2, 0.32), 0x8b5a2b, it.x, y + 0.1, it.z, it.ry));

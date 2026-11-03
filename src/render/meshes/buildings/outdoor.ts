@@ -1,4 +1,5 @@
-import { C, PartBuilder, awning, boatHull, curvedRamp, eaveBrackets, railing, chimney, doorway, frameWin, lampPost, parasolTable, picnicTable } from '../common';
+import { C, PartBuilder, awning, barrelRoof, boatHull, curvedRamp, domeCap, eaveBrackets, railing, chimney, doorway, frameWin, lampPost, parasolTable, picnicTable } from '../common';
+import { curveTube } from '../lifts/loft';
 
 /** Boat Rental (2x2): boathouse with a long jetty, moored rowing boats and a canoe rack. */
 export function boatRental(b: PartBuilder, w: number, h: number): void {
@@ -25,32 +26,38 @@ export function boatRental(b: PartBuilder, w: number, h: number): void {
 export function beach(b: PartBuilder, w: number, h: number): void {
   b.box(0, 0, 0, w - 0.1, 0.05, h - 0.1, C.sand, 'stone');
   b.box(-0.2, 0.05, 0.9, w - 1.0, 0.01, 0.4, 0xe7cd8a, 'stone'); // wet sand strip
+  for (const [dx, dz, dr] of [[-1.5, -0.2, 0.5], [1.2, 0.55, 0.4], [0.4, -0.9, 0.35]] as const) domeCap(b, dx, 0.05, dz, dr, 0.1, 0xe9d398, 'stone', 10, 3); // soft sand dunes
   const cols = [C.red, C.blue, C.yellow];
   cols.forEach((c, i) => {
     const x = -1.2 + i * 1.2, z = -0.3 + (i % 2) * 0.6;
-    b.cyl(x, 0.05, z, 0.025, 0.7, C.white, 'wood', 6);
-    b.cone(x, 0.65, z, 0.4, 0.2, c, 'roof', 10);
-    b.cone(x, 0.65, z, 0.41, 0.12, C.white, 'roof', 5, { ry: 0.3, sy: 0.9 });
-    b.box(x + 0.1, 0.05, z + 0.4, 0.4, 0.02, 0.2, cols[(i + 1) % 3]!, 'wood', { ry: 0.3 });
-    b.box(x - 0.35, 0.05, z + 0.3, 0.2, 0.02, 0.45, cols[(i + 2) % 3]!, 'wood', { ry: -0.2 });
+    curveTube(b, [[x, 0.05, z], [x + 0.01, 0.35, z], [x, 0.68, z]], 0.022, C.white, 'wood', 4, 5); // pole
+    domeCap(b, x, 0.6, z, 0.42, 0.2, c, 'roof', 12, 3); // rounded canopy
+    domeCap(b, x, 0.6, z, 0.43, 0.16, C.white, 'roof', 4, 2); // white panels (4-sided so they alternate with the colour)
+    b.ball(x, 0.78, z, 0.03, C.white, 'roof', 6);
+    b.cyl(x + 0.1, 0.05, z + 0.4, 1, 0.02, cols[(i + 1) % 3]!, 'wood', 10, { sx: 0.22, sz: 0.11, ry: 0.3 }); // rounded towels (ellipses)
+    b.cyl(x - 0.35, 0.05, z + 0.3, 1, 0.02, cols[(i + 2) % 3]!, 'wood', 10, { sx: 0.1, sz: 0.24, ry: -0.2 });
   });
-  // lifeguard tower
+  // lifeguard tower: round stilts, cabin with a rounded roof, ladder, flag
   const lx = w / 2 - 0.4, lz = -h / 2 + 0.45;
-  for (const dx of [-0.13, 0.13]) for (const dz of [-0.13, 0.13]) b.box(lx + dx, 0, lz + dz, 0.04, 0.65, 0.04, C.white);
+  for (const dx of [-0.13, 0.13]) for (const dz of [-0.13, 0.13]) b.cyl(lx + dx, 0, lz + dz, 0.025, 0.65, C.white, 'wood', 6);
   b.box(lx, 0.6, lz, 0.4, 0.05, 0.4, C.white);
   b.box(lx, 0.65, lz, 0.34, 0.25, 0.34, C.red);
   frameWin(b, lx, 0.72, lz + 0.17, 's', 0.1, 0, C.white);
-  b.box(lx, 0.9, lz, 0.5, 0.04, 0.5, C.white, 'roof');
+  barrelRoof(b, lx, 0.9, lz, 0.5, 0.5, 0.1, C.white, true, 'roof', 5);
   b.box(lx, 0.0, lz + 0.35, 0.18, 0.04, 0.4, C.wood, 'wood', { rx: -0.9 }); // ladder
   b.cyl(lx + 0.2, 0.9, lz + 0.2, 0.015, 0.3, C.white, 'wood', 5); b.box(lx + 0.3, 1.1, lz + 0.2, 0.18, 0.1, 0.01, C.red, 'roof');
-  // sandcastle, ball, bar hut
-  b.box(-w / 2 + 0.6, 0.05, h / 2 - 0.6, 0.35, 0.15, 0.35, 0xe3c785, 'stone');
-  for (const dx of [-0.17, 0.17]) b.cyl(-w / 2 + 0.6 + dx, 0.05, h / 2 - 0.6 + dx, 0.07, 0.25, 0xe3c785, 'stone', 6);
-  b.ball(0.3, 0.05, 0.9, 0.09, C.pink, 'roof');
+  // sandcastle (round towers with cone roofs), striped beach ball, bar hut, palm
+  const sx = -w / 2 + 0.6, sz = h / 2 - 0.6;
+  b.cyl(sx, 0.05, sz, 0.2, 0.14, 0xe3c785, 'stone', 10, { sx: 1.2 });
+  for (const dx of [-0.2, 0.2]) { b.cyl(sx + dx, 0.05, sz + dx, 0.07, 0.25, 0xe3c785, 'stone', 8); b.cone(sx + dx, 0.3, sz + dx, 0.09, 0.1, C.red, 'roof', 8); }
+  b.ball(0.3, 0.05, 0.9, 0.09, C.pink, 'roof'); b.ring(0.3, 0.14, 0.9, 0.09, 0.008, C.white, 'roof', 10, { rx: 0.2 });
   b.box(-w / 2 + 0.2, 0.05, h / 2 - 0.2, 0.5, 0.2, 0.2, C.water, 'wood');
   b.box(-0.2, 0.05, -h / 2 + 0.3, 0.6, 0.35, 0.35, C.wood);
   b.gable(-0.2, 0.4, -h / 2 + 0.3, 0.45, 0.7, 0.18, C.roofBlue, true);
   awning(b, -0.2, 0.3, -h / 2 + 0.55, 0.6, 0.2, C.yellow, C.white);
+  const palmX = -w / 2 + 0.35, palmZ = -h / 2 + 0.45;
+  curveTube(b, [[palmX, 0.05, palmZ], [palmX + 0.07, 0.4, palmZ], [palmX + 0.05, 0.75, palmZ + 0.03], [palmX - 0.04, 1.05, palmZ + 0.05]], 0.045, 0xb08a5a, 'wood', 8, 5); // curved palm trunk
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; b.cone(palmX - 0.04 + Math.cos(a) * 0.16, 0.97, palmZ + 0.05 + Math.sin(a) * 0.16, 0.05, 0.3, C.green, 'roof', 5, { rz: Math.cos(a) * 1.2, rx: -Math.sin(a) * 1.2 }); } // drooping fronds
 }
 
 /** Ice Rink (5x4): oval ice sheet with striped boards, warm-up hut, floodlight masts, centre circle and benches. */
@@ -58,11 +65,12 @@ export function iceRink(b: PartBuilder, w: number, h: number): void {
   const rx = w / 2 - 0.15, rz = h / 2 - 0.15;
   b.cyl(0, 0, 0, 1, 0.06, C.white, 'stone', 28, { sx: rx, sz: rz });
   b.cyl(0, 0.06, 0, 1, 0.01, 0xcfeeff, 'stone', 28, { sx: rx - 0.1, sz: rz - 0.1 });
-  const n = 20;
+  const n = 32;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
-    b.box(Math.cos(a) * rx, 0, Math.sin(a) * rz, 0.1, 0.22, ((Math.PI * 2 * Math.max(rx, rz)) / n) * 0.9, i % 2 ? C.red : C.blue, 'wood', { ry: -a });
-    b.box(Math.cos(a) * rx, 0.22, Math.sin(a) * rz, 0.12, 0.02, ((Math.PI * 2 * Math.max(rx, rz)) / n) * 0.9, C.white, 'wood', { ry: -a });
+    const tang = Math.atan2(-Math.sin(a) * rx, Math.cos(a) * rz), seg = Math.hypot(-Math.sin(a) * rx, Math.cos(a) * rz) * ((Math.PI * 2) / n) * 1.02; // follow the oval tangent: smooth corners
+    b.box(Math.cos(a) * rx, 0, Math.sin(a) * rz, 0.1, 0.22, seg, i % 2 ? C.red : C.blue, 'wood', { ry: tang });
+    b.box(Math.cos(a) * rx, 0.22, Math.sin(a) * rz, 0.12, 0.02, seg, C.white, 'wood', { ry: tang });
   }
   b.cyl(0, 0.07, 0, 0.3, 0.01, C.blue, 'stone', 16);
   b.box(0, 0.07, 0, 2 * rx - 0.8, 0.012, 0.04, C.red, 'stone');
@@ -74,9 +82,9 @@ export function iceRink(b: PartBuilder, w: number, h: number): void {
   chimney(b, -2.25, 0.45, -1.6, 0.35);
   // floodlight masts
   for (const [x, z] of [[2.3, -1.8], [2.3, 1.8], [-2.3, 1.8]] as const) {
-    b.cyl(x, 0, z, 0.03, 1.1, C.grey, 'wood', 6);
-    b.box(x, 1.1, z, 0.26, 0.1, 0.08, C.dark);
-    b.box(x - 0.07, 1.1, z + 0.05, 0.08, 0.07, 0.03, C.glass); b.box(x + 0.07, 1.1, z + 0.05, 0.08, 0.07, 0.03, C.glass);
+    curveTube(b, [[x, 0, z], [x, 0.6, z], [x - 0.01, 1.0, z + 0.03], [x - 0.06, 1.16, z + 0.08]], 0.03, C.grey, 'wood', 6, 6); // masts lean over the ice
+    b.box(x - 0.06, 1.12, z + 0.1, 0.28, 0.06, 0.1, C.dark);
+    for (const dx of [-0.08, 0.08]) { b.cyl(x - 0.06 + dx, 1.12, z + 0.17, 0.05, 0.03, C.glass, 'glass', 8, { rx: Math.PI / 2 }); }
   }
   picnicTable(b, 1.0, rz + 0.45); picnicTable(b, -0.5, rz + 0.45);
   b.sign('ICE RINK', 0, 0.3, rz + 0.12, 1.0, 0.3, 0, '#2d5fa8');

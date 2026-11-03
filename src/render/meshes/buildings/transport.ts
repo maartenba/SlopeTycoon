@@ -1,4 +1,4 @@
-import { C, PartBuilder, car, chimney, doorway, flagPole, frameWin, lampPost } from '../common';
+import { C, PartBuilder, barrelRoof, car, chimney, domeCap, doorway, drum, flagPole, frameWin, lampPost, tube, tyre, windsock } from '../common';
 
 /** Train Station (4x2): station hall with clock tower, long platform canopy on posts, benches, signal and track bed. */
 export function trainStation(b: PartBuilder, w: number, h: number): void {
@@ -40,26 +40,32 @@ export function altiport(b: PartBuilder, w: number, h: number): void {
   b.box(0.8, 0, h / 2 - 0.5, 3.0, 0.05, 0.8, C.grey, 'stone');
   b.box(-2.5, 0, h / 2 - 0.5, 0.6, 1.1, 0.6, C.cream);
   frameWin(b, -2.5, 0.5, h / 2 - 0.2, 's', 0.16);
-  b.box(-2.5, 1.1, h / 2 - 0.5, 0.8, 0.35, 0.8, C.glass);
-  for (const [dx, dz] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]] as const) b.box(-2.5 + dx, 1.1, h / 2 - 0.5 + dz, 0.05, 0.35, 0.05, C.dark);
-  b.box(-2.5, 1.45, h / 2 - 0.5, 0.95, 0.06, 0.95, C.roofRed, 'roof');
-  b.cyl(-2.5, 1.51, h / 2 - 0.5, 0.015, 0.25, C.grey, 'stone', 5); b.ball(-2.5, 1.74, h / 2 - 0.5, 0.05, C.red, 'roof');
+  b.cyl(-2.5, 1.1, h / 2 - 0.5, 0.5, 0.06, C.white, 'wood', 12); // gallery floor (round)
+  b.cyl(-2.5, 1.14, h / 2 - 0.5, 0.44, 0.35, C.glass, 'glass', 12); // octagonal-ish glass cab
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; b.cyl(-2.5 + Math.cos(a) * 0.44, 1.14, h / 2 - 0.5 + Math.sin(a) * 0.44, 0.022, 0.35, C.dark, 'wood', 5); } // frame posts
+  domeCap(b, -2.5, 1.49, h / 2 - 0.5, 0.52, 0.2, C.roofRed, 'roof', 12, 3); // rounded cab roof
+  b.cyl(-2.5, 1.66, h / 2 - 0.5, 0.015, 0.12, C.grey, 'stone', 5); b.ball(-2.5, 1.76, h / 2 - 0.5, 0.04, C.red, 'roof'); // beacon (top <= catalogue height 1.85)
   // hangar
   b.box(1.5, 0.05, h / 2 - 0.5, 1.6, 0.5, 0.7, C.blue);
-  b.gable(1.5, 0.55, h / 2 - 0.5, 0.8, 1.7, 0.25, C.roofBlue, true);
+  barrelRoof(b, 1.5, 0.55, h / 2 - 0.5, 0.8, 1.7, 0.3, C.roofBlue, true, 'roof', 7); // arched hangar roof
   b.box(1.5, 0.05, h / 2 - 0.14, 1.2, 0.4, 0.04, C.dark);
   b.sign('ALTIPORT', -0.5, 0.45, h / 2 - 0.12, 1.1, 0.3, 0, '#1f3f7a');
-  // parked plane
+  // parked plane: ellipsoid fuselage, tapered tail boom, cowling + spinner + propeller, wing with struts, wheels on stubs
   const px = 0.1, pz = h / 2 - 0.45;
-  b.cyl(px, 0.12, pz, 0.08, 0.7, C.white, 'wood', 8, { rz: Math.PI / 2 });
-  b.cone(px + 0.4, 0.12, pz, 0.08, 0.14, C.red, 'roof', 8, { rz: -Math.PI / 2 });
-  b.box(px + 0.05, 0.19, pz, 0.2, 0.02, 0.9, C.white, 'wood');
-  b.box(px - 0.32, 0.2, pz, 0.12, 0.1, 0.02, C.red); b.box(px - 0.32, 0.17, pz, 0.12, 0.02, 0.3, C.white);
-  b.box(px + 0.1, 0.04, pz + 0.12, 0.05, 0.1, 0.05, C.dark); b.box(px + 0.1, 0.04, pz - 0.12, 0.05, 0.1, 0.05, C.dark);
+  b.ball(px, 0.02, pz, 0.1, C.white, 'wood', 10, { sx: 2.3, sy: 0.95, sz: 0.95 });
+  b.cone(px - 0.42, 0.11 - 0.16, pz, 0.065, 0.32, C.white, 'wood', 8, { rz: Math.PI / 2 }); // tail boom
+  b.cone(px + 0.3, 0.11 - 0.05, pz, 0.075, 0.1, C.red, 'roof', 8, { rz: -Math.PI / 2 }); // cowling
+  b.ball(px + 0.37, 0.09, pz, 0.03, C.dark, 'wood', 6);
+  b.box(px + 0.39, 0.01, pz, 0.015, 0.22, 0.04, C.black, 'wood'); // propeller
+  b.ball(px + 0.08, 0.16, pz, 0.07, C.glass, 'wood', 8, { sx: 1.6, sy: 0.7 }); // canopy
+  b.ball(px + 0.05, 0.17, pz, 0.04, C.white, 'wood', 8, { sx: 2.5, sy: 0.35, sz: 11 }); // rounded wing (flattened ellipsoid across)
+  tube(b, px + 0.02, 0.13, pz + 0.07, px + 0.02, 0.19, pz + 0.3, 0.008, C.grey, 'stone', 4); tube(b, px + 0.02, 0.13, pz - 0.07, px + 0.02, 0.19, pz - 0.3, 0.008, C.grey, 'stone', 4); // wing struts
+  b.box(px - 0.4, 0.17, pz, 0.1, 0.12, 0.02, C.red); b.box(px - 0.4, 0.15, pz, 0.1, 0.02, 0.26, C.white); // tail fin + stabiliser
+  tyre(b, px + 0.12, 0.0, pz + 0.12, 0.04, 0.02, 0, C.black, C.grey, 6); tyre(b, px + 0.12, 0.0, pz - 0.12, 0.04, 0.02, 0, C.black, C.grey, 6);
+  tyre(b, px - 0.3, 0.0, pz, 0.025, 0.015, 0, C.black, C.grey, 6);
   // fuel drums + windsock
-  for (const dz of [0, 0.2]) b.cyl(w / 2 - 1.0, 0.05, h / 2 - 0.35 - dz, 0.08, 0.22, C.red, 'wood', 8);
-  b.cyl(w / 2 - 0.3, 0, h / 2 - 0.4, 0.03, 0.8, C.dark, 'wood', 6);
-  b.cone(w / 2 - 0.3, 0.6, h / 2 - 0.4, 0.1, 0.4, C.orange, 'roof', 8, { rz: Math.PI / 2 });
+  for (const dz of [0, 0.2]) drum(b, w / 2 - 1.0, 0.05, h / 2 - 0.35 - dz, 0.08, 0.22, C.red);
+  windsock(b, w / 2 - 0.3, 0.0, h / 2 - 0.4, 0.8);
   flagPole(b, -3.2, h / 2 - 0.3, 0.6, C.blue, C.white);
 }
 
