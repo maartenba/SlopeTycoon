@@ -51,7 +51,7 @@ export function altiport(b: PartBuilder, w: number, h: number): void {
   b.box(1.5, 0.05, h / 2 - 0.14, 1.2, 0.4, 0.04, C.dark);
   b.sign('ALTIPORT', -0.5, 0.45, h / 2 - 0.12, 1.1, 0.3, 0, '#1f3f7a');
   // parked plane: ellipsoid fuselage, tapered tail boom, cowling + spinner + propeller, wing with struts, wheels on stubs
-  const px = 0.1, pz = h / 2 - 0.45;
+  const px = -1.5, pz = h / 2 - 0.45; // parked clear of the sign and hangar so it reads from the iso camera (M8 lane G; was tucked behind the sign at x 0.1)
   b.ball(px, 0.02, pz, 0.1, C.white, 'wood', 10, { sx: 2.3, sy: 0.95, sz: 0.95 });
   b.cone(px - 0.42, 0.11 - 0.16, pz, 0.065, 0.32, C.white, 'wood', 8, { rz: Math.PI / 2 }); // tail boom
   b.cone(px + 0.3, 0.11 - 0.05, pz, 0.075, 0.1, C.red, 'roof', 8, { rz: -Math.PI / 2 }); // cowling
