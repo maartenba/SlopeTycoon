@@ -204,3 +204,6 @@ Owner feedback: the game music was "very meh"; the bar music needed beats; the g
 ## Feedback sounds (M5.1)
 - `money:changed` no longer plays a ka-ching by itself: the FX layer (`src/render/fx`) plays one quiet ka-ching (gain 0.4) only when a significant +$ popup appears, at most once per 3 s. `Feedback intensity: Off` therefore silences it.
 - `building:placed` = soft thunk (`thud` gain 0.45, pitch 1.1). `milestone` (major only) = one `chimeImportant` at gain 0.55 (shares the `alert` limiter group with the news chime, so they never stack); minor milestones are silent.
+
+## Schirmbar (M7.8)
+The Schirmbar counts as a bar for the apres proximity: `src/main.ts` `apresBars` lists `apresBar` and `schirmbar` (active, open, serving), so the same gating applies (open, serving hours 10:00 - 17:30 for the Schirmbar, zoomed in, near) and the levels / cap in `src/config/audioProximity.ts` are shared. See `docs/schirmbar.md`.

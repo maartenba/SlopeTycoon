@@ -1,6 +1,28 @@
 # Release notes and checklist
 
-Current release: **0.5.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.6.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.6.0 (2026-11-03, macOS, Node v22.23.4)
+
+The Schirmbar (`docs/schirmbar.md`) and the resort name, plus the unreleased 0.5.x graphics / shadow / title-camera work and the music rework (CHANGELOG). One golden part moved: the `progression` part of the staff golden (new level-2 unlock row; `docs/balance.md` "M7.8"). The new save module `resort` is observer-only (no hash change, no format bump).
+
+| Check | Command | Result |
+|---|---|---|
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 451 files passed, 1 skipped; 4770 tests passed, 43 skipped (two more UI test files, 6 tests, were added after the second run started and pass on their own: `tests/ui-dom` + `repo` + `site` + `config` 717 passed) |
+| Balance | `npm run test:balance` | 48 passed (bot money goldens byte-identical; only the staff `progression` part re-recorded, in the unit suite) |
+| Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74`, `schirmbar` | all OK (0 console errors, MaterialGuard 0) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 (the known flaky placement test passed this time) |
+| Mobile | `npm run mobile:audit` | OK (map-visible shares asserted) |
+| Desktop | `npm run desktop:diff` (before = 3425eef, after = this commit) | SAME on buildings drawer, HUD, landscape, pricing, statistics; **Settings differs 2.19 %** (the new Resort name row in Gameplay: expected) |
+| Flicker | `npm run flicker -- --only 64-winter` | winter rotfine 0.66 (0.5.1: 0.65), zoomfine 0.15, no pops |
+| Schirmbar render | `npm run schirmbar:sanity -- --shots 1` | open / closed meshes 1,974 / 942 triangles (budget 2,000), banner canvas carries the name, MaterialGuard 0 (seen on SwiftShader only) |
+| Size | `npm run size` | 3040.8 kB raw / 1084.1 kB gzip (budget < 2048 kB gzip; +15.4 kB gzip over 0.5.1: 1068.7, mostly the Schirmbar mesh + banner, the resort name UI and the unreleased music / shadow work) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (57 pages, 272 URLs crawled on both bases, screenshots 8.4 MB of the 8.5 MB budget, new guide page "The Schirmbar & your resort's name" with one figure) |
+
+Not verified by agents: how the bar and its music feel by hand, real GPU fps and the look at real frame rates, the sound of the reworked music (`docs/playtest-audio.md`), a phone in the hand. Owner checklist: `docs/playtest-m78.md`.
 
 ## 0.5.1 (2026-11-03, macOS, Node v22.23.4)
 

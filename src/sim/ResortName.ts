@@ -6,8 +6,31 @@ import { SCHIRMBAR } from '../config/schirmbar';
  */
 export const RESORT_NAME_MAX = SCHIRMBAR.nameMax;
 
-const HEAD = ['Alpen', 'Hinter', 'Silber', 'Sonnen', 'Kron', 'Nebel', 'Gold', 'Fels', 'Eis', 'Bären', 'Edel', 'Schnee', 'Mittel', 'Rauh', 'Vorder', 'Gams'] as const;
-const TAIL = ['glow', 'kogel', 'horn', 'spitz', 'alm', 'joch', 'tal', 'wald', 'grat', 'blick', 'feld', 'kar', 'hang', 'stein', 'berg', 'see'] as const;
+/** Curated, pleasant, invented resort names (Alpine, French, Italian, Nordic, English). Append-only keeps old seeds stable; never real resorts. */
+export const RESORT_NAMES: readonly string[] = [
+  'Alpenglow', 'Silberhorn', 'Sonnenalm', 'Val Clair', 'Monte Rosina', 'Hinterkogel',
+  'Edelweiss Hollow', 'Nordkamm', 'Pine Ridge', 'Goldkar', 'Schneeblick', 'Eisenkamm',
+  'Bärenalm', 'Rauhtal', 'Vorderjoch', 'Gamsblick', 'Kronenalm', 'Fichtenhain',
+  'Lärchenhang', 'Almrausch', 'Morgenrot', 'Silbertal', 'Sonnenhang', 'Birkenfeld',
+  'Tannenblick', 'Edelalm', 'Firnwald', 'Gipfelruh', 'Hochnebel', 'Zirbenhof',
+  'Steinadler', 'Murmeltal', 'Schneerose', 'Winterhorn', 'Kristallkar', 'Sonnjoch',
+  'Weissenkamm', 'Val Argent', 'Les Mélèzes', 'Mont Blanchet', 'Col des Aigles', 'Val Doré',
+  'Pic Lumière', 'Les Cimes Claires', 'Belle Neige', 'Mont Sérénité', 'Val Perle', 'Crêt du Soleil',
+  'Les Sapins', 'Col Rosé', 'Monte Rosina Alta', 'Valle Serena', 'Cima Bella', 'Passo Aurora',
+  'Monte Argento', 'Val Chiara', 'Campo Sereno', 'Pian dei Larici', 'Monte Lume', 'Borgo Neve',
+  'Cima Dorata', 'Valle dei Cervi', 'Sella Alta', 'Fjellro', 'Snøtind', 'Nordlys Dal',
+  'Frostvik', 'Björnåsen', 'Skogsfjell', 'Blåfjell', 'Vintervik', 'Norrsken',
+  'Stjärnfjäll', 'Isdalen', 'Granliden', 'Pine Ridge Lodge', 'Silver Larch', 'Eagle Crest',
+  'Moonlit Pass', 'Frosted Peak', 'Cedar Hollow', 'Snowdrift Bay', 'Juniper Summit', 'Blue Spruce',
+  'Northern Lights Peak', 'Whitefir Basin', 'Granite Meadow', 'Starlight Ridge', 'Quiet Pines', 'Winterbourne',
+  'Crystal Hollow', 'Hazel Peak', 'Larch Valley', 'Sunbeam Slopes', 'Alpine Heather', 'Ravenwood Pass',
+  'Silverbirch', 'Kaiserblick', 'Waldrast', 'Lindenhof Alm', 'Bergfried', 'Almenrausch',
+  'Enzianblick', 'Jägerruh', 'Wiesengrund', 'Himmelreich Alm', 'Rotbuchenkamm', 'Sterntal',
+  'Mondscheinalm', 'Glockenjoch', 'Eichhorn Alm', 'Hirschbühl', 'Reifhorn', 'Zauberwald',
+  'Lichtenalm', 'Brunnenjoch', 'Alpenrose', 'Sonnenkamm', 'Tannenhorn', 'Silberwald',
+  'Edelhorn', 'Frühlingsalm', 'Schneeglöckchen', 'Val Soleil', 'Monte Verde Alto', 'Mont Cristal',
+  'Lärchental',
+];
 
 /** A plain-text resort name: markup characters and control characters dropped, whitespace collapsed, trimmed, at most RESORT_NAME_MAX characters. Empty when nothing usable is left. */
 export function sanitizeResortName(raw: unknown): string {
@@ -17,12 +40,11 @@ export function sanitizeResortName(raw: unknown): string {
   return Array.from(t).slice(0, RESORT_NAME_MAX).join('').trim();
 }
 
-/** The default name of a seed: 'Alpenglow', 'Hinterkogel', 'Sonnenjoch' ... (a pure function of the seed). */
+/** The default name of a seed: 'Alpenglow', 'Val Clair', 'Pine Ridge' ... picked from RESORT_NAMES (a pure function of the seed; any number, even NaN, gives a name). */
 export function defaultResortName(seed: number): string {
-  let h = (Math.trunc(seed) ^ 0x9e3779b9) >>> 0;
+  let h = (Math.trunc(seed) | 0) ^ 0x9e3779b9;
   h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0; h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0; h = (h ^ (h >>> 16)) >>> 0;
-  const a = HEAD[h % HEAD.length]!, b = TAIL[(h >>> 8) % TAIL.length]!;
-  return a + b;
+  return RESORT_NAMES[h % RESORT_NAMES.length]!;
 }
 
 /** The name to use: the sanitised choice, else the seed's default. */

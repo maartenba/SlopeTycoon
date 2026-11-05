@@ -3,6 +3,18 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.0",
+    "date": "2026-11-03",
+    "highlights": [
+      "The Schirmbar: a small domed bar with a striped roof that you can put right beside a piste or a lift station. Skiers stop for a drink on the way…",
+      "It opens in good weather only and only in winter; a storm, heavy snow, rain, fog or strong wind closes it (the card says why), and you can close it…",
+      "Your resort has a name: pick one in the New Game dialog (or take the suggestion), rename it any time in Settings. It is on the Schirmbar banner, in…",
+      "Smoother chairs, cabins and trees up close, and rounder shores for lakes and rivers.",
+      "Sun shadows on the High setting now fall on buildings, trees and paths, and also work in the ride, photo and walk views.",
+      "A steadier title screen camera, and no more shimmer at the foot of lift towers."
+    ]
+  },
+  {
     "version": "0.5.1",
     "date": "2026-11-03",
     "highlights": [
@@ -22,17 +34,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "A new set of lift icons in the Lifts drawer: each family (T-bar, fixed and detachable chairs, bubble chairs, gondola, cabin, funicular) has its own…",
       "The edge of the map is a layered rock cliff with ledges and a grassy lip, and drawn rivers and ponds have soft, rounded shorelines instead of tile…",
       "Real sun shadows on the High graphics setting, and a soft contact shadow under buildings, towers and forests on every setting."
-    ]
-  },
-  {
-    "version": "0.4.0",
-    "date": "2026-11-02",
-    "highlights": [
-      "Sled runs: paint a gentle toboggan track from a Sled Rental hut in winter, and families, couples and school classes will ride it. A gondola or a…",
-      "An Alpine Coaster for summer: lay the rail on steeper ground, run it from its own station, and sell a ride.",
-      "A Pizzeria for families, a morning Bakery that makes nearby lodgings a bit nicer, and one Tourist Office per resort that brings in a few more guests.",
-      "A grass strip with a Skydive Centre, plus a launch ramp and landing field for hang gliders and paragliders. They only fly by day in clear weather.",
-      "The Carnival (6 to 11 February) has a parade of masked guests along a village street, brass music and a bit more spending in shops and restaurants."
     ]
   }
 ];

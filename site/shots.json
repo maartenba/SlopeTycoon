@@ -1731,6 +1731,27 @@
       }
     },
     {
+      "id": "schirmbar-open",
+      "alt": "A domed bar with a striped yellow and white roof and glass walls, glowing warmly at dusk beside a ski piste, with a red banner around the base.",
+      "pages": [
+        "schirmbar"
+      ],
+      "kind": "harness",
+      "caption": "A Schirmbar beside the piste at dusk: open, warm inside, with the resort name on the banner.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 17.2,
+        "extra": "starter=1&mode=career&hints=0&name=Hinterkogel",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 7,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,imp=(u)=>new Function('u','return import(u)')(u);const {findSite}=await imp('/src/tutorial/suggest.ts');sim.progression.bypass++;sim.game.money+=9e6;const adv=(k)=>{const t=s.loop.tickCount+k;let q=0;while(s.loop.tickCount<t&&q++<1e6)s.loop.advance(1)};const st=s.guestSim.store,heat=new Map();s.loop.setSpeed(1);s.spawnGuests(180,'skiers');for(let q=0;q<40;q++){adv(2);for(let k=0;k<st.limit;k++)if(st.alive[k]&&st.act[k]===5){const key=Math.floor(st.y[k])*sim.size+Math.floor(st.x[k]);heat.set(key,(heat.get(key)||0)+1)}}s.loop.setSpeed(0);const bottom=sim.lifts.all()[0].bottom;let site=null;const ranked=[...heat].filter(([k])=>Math.hypot(k%sim.size-bottom.x,Math.floor(k/sim.size)-bottom.y)<=10).sort((a,b)=>b[1]-a[1]||a[0]-b[0]);for(const [k] of ranked){site=findSite(sim,'schirmbar',{x:k%sim.size,y:Math.floor(k/sim.size)},{rmax:2});if(site)break}const o=s.debugPlace('schirmbar',site.x,site.y,site.rot,true);sim.progression.bypass--;const b=o.building;const w=sim.weather.current;w.kind='clear';w.intensity=0;w.fog=0;w.wind=0.1;sim.attractions.refreshOpen(b.id);s.buildingsView.sync();const tt=[];s.props.removeInRect(b.x-4,b.y-5,b.x+b.w+4,b.y+b.h+3,tt);s.refreshProps(tt);s.loop.setSpeed(1);adv(40);s.loop.setSpeed(0);const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(14);const u=document.getElementById('ui');if(u)u.style.display='none';return 'ok'})()"
+      }
+    },
+    {
       "id": "guests-seniors-school",
       "alt": "A school class of about a dozen children in matching orange bibs walking with their teacher along a footpath in a snowy ski village.",
       "pages": [

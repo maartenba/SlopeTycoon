@@ -10,7 +10,7 @@ export const SCHIRMBAR = {
   /** Mid-descent stop: a skier within `passRadius` tiles of an open bar's centre (about 2 tiles from its walls), with a budget of at least `minBudget`, takes it on 1 pass in `oneIn` (stateless hash of guest id and runs: no RNG, nothing stored). */
   passRadius: 3, oneIn: 4, minBudget: 8,
   /** Places at the bar, ticks a drink takes, guests per day (the bar runs out of glasses: a hard daily cap, then "turned away"). */
-  slots: 8, serviceTicks: 3, dailyCap: 90,
+  slots: 8, serviceTicks: 3, dailyCap: 60,
   /** What a drink does: mood up, hunger down a little (a snack with it), tiredness down (a rest in the warm). */
   happiness: 0.08, hungerBy: 0.08, fatigue: -0.12,
   /** Longest resort name (characters). */

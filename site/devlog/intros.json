@@ -83,5 +83,10 @@
     "tagline": "smoother lifts and nearby sound",
     "lead": "Bubble chairs and gondolas are smoother now, and a few more buildings lost their sharp corners. Sound now follows the camera: zoom in on an open bar to hear some music, or on a stream to hear the water, and the birds are quieter until you get close. There is also a Support page with a Ko-fi link. I could not listen to the new sounds myself, only measure them, so the levels may need adjusting. Nothing in the economy changed.",
     "shot": "hero-winter"
+  },
+  "0.6.0": {
+    "tagline": "a bar on the slope",
+    "lead": "This release adds the Schirmbar, a small domed bar you can put right beside a piste or a lift station. Skiers stop for a drink on the way down, and it plays some apres-ski music when you zoom in. It only opens in winter and in good weather, and you can close it yourself. Your resort also has a name now: pick one when you start a game or change it in Settings, and it is written on the banner. Lakes and rivers have softer banks, chairs and trees look rounder up close, and the sun shadows reach more of the scene. I have only tried the bar in short test runs on a software renderer, so the numbers and the look still need a real playthrough.",
+    "shot": "schirmbar-open"
   }
 }

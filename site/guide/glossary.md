@@ -101,6 +101,8 @@ screenshots: []
 
 **Ranger Rudi** The friendly adviser at the bottom left.
 
+**Resort name** The name of your resort: suggested from the seed, yours to change in the New Game dialog or Settings. It is on the Schirmbar banner. See [The Schirmbar & your resort's name](page:schirmbar).
+
 **River** A one-tile-wide channel you dig from a spring, a lake shore or a stream to a lake, a stream or the map edge (Landscape > Water). It flows calm, brisk or as rapids and freezes in a hard winter.
 
 **Run** One stretch of piste between two junctions or lift stations, with its own name, difficulty, traffic and open / closed switch.
@@ -108,6 +110,8 @@ screenshots: []
 **Runs overlay** The map view that colours and labels every run.
 
 **Sandbox** Everything unlocked from day one.
+
+**Schirmbar** A domed bar on the slope, winter only: no road or power, beside a piste or a lift station, open in good weather. Skiers stop for a drink and it plays apres-ski music. See [The Schirmbar & your resort's name](page:schirmbar).
 
 **School group** A class of one teacher and 8 to 15 children in orange bibs, arriving by coach on weekdays outside the holidays. See [Seniors & school trips](page:seniors-schools).
 

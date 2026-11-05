@@ -1614,5 +1614,21 @@
     "bytes": 67388
    }
   ]
+ },
+ "schirmbar-open": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "schirmbar-open-640.webp",
+    "bytes": 28776
+   },
+   {
+    "w": 1280,
+    "file": "schirmbar-open-1280.webp",
+    "bytes": 48660
+   }
+  ]
  }
 }

@@ -95,6 +95,7 @@ Year = 180 days from 1 December in the sandbox starter resort (all defaults on),
 | Ice Rink | winterFun | 5 | $5,014 | $18 | -$541 | $1,673 | **-$2,214** ±$2,619 | never | +0.041 | -0.01 | no measurable profit (within noise) |
 | Toilets | cost centre | 5 | $600 | $3 | -$1,022 | $1,516 | **-$2,539** ±$2,292 | never | +0.049 | -0.01 | – |
 | Coffee Stand | food | 5 | $1,200 | $4 | -$332 | $2,426 | **-$2,758** ±$1,866 | never | +0.002 | -0.01 | no measurable profit (within noise) |
+| Schirmbar (M7.8, `docs/schirmbar.md`) | - | 5 | $1,500 | $5 | $271 | -$2,256 | **$2,527** ±$3,325 | 107 | +0.025 | -0.02 | within noise (a sandbox site away from the ski line: the pessimistic case) |
 | Rafting Base | summerFun | 5 | $5,500 | $22 | $1,180 | $3,987 | **-$2,806** ±$2,070 | never | +0.054 | -0.06 | no measurable profit (within noise); dominated by Boat Rental |
 | Ranger Station | cost centre | 5 | $9,000 | $25 | $2,165 | $5,882 | **-$3,717** ±$1,803 | never | +0.019 | +0.02 | – |
 | Reservoir | cost centre | 5 | $7,000 | $15 | -$1,377 | $2,515 | **-$3,892** ±$1,758 | never | -0.023 | -0.02 | – |

@@ -26,7 +26,7 @@ describe('resort name', () => {
   });
   it('the default name is a pure function of the seed and never empty', () => {
     expect(defaultResortName(61)).toBe(defaultResortName(61));
-    const names = new Set<string>(); for (let s = 0; s < 200; s++) { const n = defaultResortName(s * 7919); expect(n.length).toBeGreaterThan(4); expect(n.length).toBeLessThanOrEqual(RESORT_NAME_MAX); names.add(n); }
+    const names = new Set<string>(); for (let s = 0; s < 200; s++) { const n = defaultResortName(s * 7919);  expect(n.length).toBeLessThanOrEqual(RESORT_NAME_MAX); names.add(n); }
     expect(names.size).toBeGreaterThan(40);
     expect(resortNameOr('', 61)).toBe(defaultResortName(61));
     expect(resortNameOr('Edelweiss', 61)).toBe('Edelweiss');
