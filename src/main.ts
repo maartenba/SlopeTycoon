@@ -44,6 +44,8 @@ import { Fireworks, fireworksAllowed } from '@/render/fx/Fireworks';
 import { isWaterType } from '@/world/Grid';
 import { waterways } from '@/world/Streams';
 import { RapidsSplash, SmokeView, type SmokeSource } from '@/render/Smoke';
+import { BUILDING_HEIGHT } from '@/config/buildingHeights';
+import { ApresNotesView, notesForQuality, type BarSource } from '@/render/ApresNotes';
 import { SnowSprayView } from '@/render/SnowSpray';
 import { modalPause } from '@/ui/modalPauseGate';
 import { PlantTool } from '@/build/PlantTool';
@@ -1205,6 +1207,22 @@ const activityViews = (): ActivityView[] => {
 };
 const activity = new AttractionActivity(activityViews, (x, y) => heightAt(grid, x, y));
 renderer.scene.add(activity.group);
+// Apres-ski notes (docs/audio.md): a few notes drift up from every OPEN, serving Apres-Ski Bar / Schirmbar (one shared instanced layer, 1 draw call, render clock only).
+const apresNotes = new ApresNotesView(lighting.nightUniform);
+apresNotes.group.userData.noShadow = true;
+renderer.scene.add(apresNotes.group);
+const apresBarBuf: BarSource[] = [], _apO = new THREE.Vector3();
+const apresNotesBars = (): BarSource[] => {
+  apresBarBuf.length = 0;
+  for (const b of buildings.all()) {
+    if ((b.type !== 'apresBar' && b.type !== 'schirmbar') || !b.active) continue;
+    const a = attractions.get(b.id);
+    if (!a || !a.open || !attractions.servingNow(a)) continue;
+    const g = buildingsView.get(b.id);
+    if (g) { _apO.set(0, (BUILDING_HEIGHT[b.type] ?? 2) + 0.1, 0); g.localToWorld(_apO); apresBarBuf.push({ id: b.id, x: _apO.x, y: _apO.y, z: _apO.z }); }
+  }
+  return apresBarBuf;
+};
 const guestRenderer = new GuestRenderer(guestSim.store);
 guestRenderer.legacyBoarderBelow = () => guestSim.spawner.legacyBoarderBelow;
 const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => { const g = heightAt(grid, x, y), d = sim.networks.deckY(x, y); return d !== null && d > g ? d : g; }); // cars cross road bridges on the deck
@@ -1231,6 +1249,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     activity.update(game.date.tick + a, lodHeightFor(cam));
     cragClimbers.far = activity.far; cragClimbers.update(game.date.tick + a);
     skyActivity.far = activity.far; skyActivity.update(game.date.tick + a);
+    { const tg = viewCentre(); apresNotes.update(dt, lodHeightFor(cam), apresNotesBars(), getReducedMotion(), notesForQuality(QUALITY_PRESETS[quality].particles), { x: tg.x, z: tg.z }); }
     audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
   };
 }
@@ -3061,7 +3080,7 @@ const atmosDebug = {
   suggestions: () => atmos.suggestions(atmosSample(currentHour())),
   settings: atmosSettings,
 };
-(window as unknown as { __slope: unknown }).__slope = { planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

@@ -1,0 +1,49 @@
+import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
+import { APRES_NOTES as A, ApresNotesView, beatPhase, beatPulse, hash01, noteState, notesForQuality, stepLevel, viewFade } from '../../src/render/ApresNotes';
+
+describe('apres notes (pure animation)', () => {
+  it('is deterministic: same id / time / index => same state; different bars differ', () => {
+    expect(noteState(12.3, 7, 2, 6)).toEqual(noteState(12.3, 7, 2, 6));
+    expect(noteState(12.3, 7, 2, 6)).not.toEqual(noteState(12.3, 8, 2, 6));
+    expect(hash01(5, 9)).toBe(hash01(5, 9));
+  });
+  it('notes rise, fade in and out, stay near the roof', () => {
+    let maxY = 0, seen = 0;
+    for (let t = 0; t < 40; t += 0.05) { const s = noteState(t, 3, 0, 6); if (!s) continue; seen++; maxY = Math.max(maxY, s.dy); expect(s.alpha).toBeGreaterThan(0); expect(s.alpha).toBeLessThanOrEqual(A.alpha + 1e-9); expect(Math.abs(s.dx)).toBeLessThanOrEqual(A.spread + A.sway + 1e-9); expect(s.dy).toBeGreaterThanOrEqual(0); expect(s.dy).toBeLessThanOrEqual(A.rise + 1e-9); }
+    expect(seen).toBeGreaterThan(0); expect(maxY).toBeGreaterThan(A.rise * 0.5);
+  });
+  it('the beat pulse peaks on the beat, decays to ~0 and repeats every 60 / bpm seconds; reduced motion = 0', () => {
+    const beat = 60 / A.bpm;
+    expect(beatPulse(0, 0)).toBeCloseTo(1, 6);
+    expect(beatPulse(beat, 0)).toBeCloseTo(1, 6);
+    expect(beatPulse(beat * 0.5, 0)).toBeCloseTo(0.125, 6);
+    expect(beatPulse(beat * 0.99, 0)).toBeLessThan(0.01);
+    expect(beatPhase(beat * 3.25, 0)).toBeCloseTo(0.25, 6);
+    for (let t = 0; t < 5; t += 0.07) { expect(beatPulse(t, 0.3)).toBeGreaterThanOrEqual(0); expect(beatPulse(t, 0.3)).toBeLessThanOrEqual(1); expect(beatPulse(t, 0.3, true)).toBe(0); }
+  });
+  it('reduced motion is static: same notes at any time, no pulse', () => {
+    const a = [0, 1, 2].map((i) => noteState(0, 4, i, 6, true)), b = [0, 1, 2].map((i) => noteState(99.7, 4, i, 6, true));
+    expect(a).toEqual(b); expect(a.every((s) => !!s)).toBe(true);
+    expect(noteState(0, 4, 3, 6, true)).toBeNull();
+  });
+  it('open / closed gating: the level fades in and out, never past 0..1', () => {
+    let l = 0; for (let i = 0; i < 100; i++) l = stepLevel(l, true, 0.05); expect(l).toBe(1);
+    for (let i = 0; i < 100; i++) l = stepLevel(l, false, 0.05); expect(l).toBe(0);
+    expect(stepLevel(0, true, A.fade / 2)).toBeCloseTo(0.5, 6);
+  });
+  it('quality tiers and the camera distance', () => {
+    expect(notesForQuality(0.35)).toBe(2); expect(notesForQuality(0.7)).toBe(4); expect(notesForQuality(1)).toBe(6); expect(notesForQuality(0)).toBe(0);
+    expect(viewFade(A.nearView)).toBe(1); expect(viewFade(A.farView)).toBe(0); expect(viewFade(60)).toBeGreaterThan(0); expect(viewFade(60)).toBeLessThan(1);
+  });
+  it('the view: nothing when closed or far, notes when open and near, none after it closes, one mesh (one draw call)', () => {
+    const v = new ApresNotesView(); const bars = [{ id: 1, x: 5, y: 2, z: 5 }];
+    expect(v.group.children.length).toBe(1); expect(v.mesh).toBeInstanceOf(THREE.Mesh);
+    v.update(0.1, 30, [], false, 6); expect(v.drawn).toBe(0); expect(v.mesh.visible).toBe(false);
+    for (let i = 0; i < 40; i++) v.update(0.1, 30, bars, false, 6); expect(v.drawn).toBeGreaterThan(0); expect(v.drawn).toBeLessThanOrEqual(6); expect(v.mesh.visible).toBe(true);
+    v.update(0.1, 90, bars, false, 6); expect(v.drawn).toBe(0);
+    v.update(0.1, 30, bars, false, 0); expect(v.drawn).toBe(0);
+    for (let i = 0; i < 40; i++) v.update(0.1, 30, bars, true, 6); expect(v.drawn).toBe(3);
+    for (let i = 0; i < 40; i++) v.update(0.1, 30, [], false, 6); expect(v.drawn).toBe(0); expect(v.mesh.visible).toBe(false);
+  });
+});
