@@ -11,7 +11,7 @@ const distArg = argv.indexOf('--dist') >= 0 ? argv[argv.indexOf('--dist') + 1]! 
 const dist = join(process.cwd(), distArg);
 const TYPES: Record<string, RegExp> = {
   '.html': /^text\/html/, '.js': /javascript/, '.css': /^text\/css/, '.webmanifest': /manifest\+json|application\/json/,
-  '.png': /^image\/png/, '.svg': /^image\/svg\+xml/, '.json': /json/, '.wasm': /wasm/, '.woff2': /font\/woff2/,
+  '.png': /^image\/png/, '.svg': /^image\/svg\+xml/, '.json': /json/, '.wasm': /wasm/, '.woff2': /font\/woff2/, '.mp3': /^audio\/mpeg/,
 };
 
 const problems: string[] = [];
@@ -54,6 +54,9 @@ try {
   }
   for (const must of ['./index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/favicon.svg', './fonts/nunito-latin.woff2', './fonts/nunito-latin-ext.woff2', './fonts/lilita-one-latin.woff2', './fonts/lilita-one-latin-ext.woff2', './fonts/OFL.txt']) check(urls.includes(must), `${must} not precached`);
   console.log(`[verify-pwa] ${urls.length} precached files, ${(total / 1024).toFixed(0)} kB raw, ${(gz / 1024).toFixed(0)} kB gzip (excl. sw.js)`);
+  // Menu music: shipped in dist/audio, served as audio/mpeg, and deliberately NOT precached (runtime-cached on first play).
+  check(!urls.some((u) => u.startsWith('./audio/')), 'audio/ must not be precached (runtime cache only)');
+  for (const f of ['menu-seasons-of-management.mp3', 'menu-seasonal-menu.mp3']) { const r = await get(`./audio/${f}`); check(r.status === 200 && TYPES['.mp3']!.test(r.type) && r.body.length > 1_000_000, `audio/${f} not served as audio/mpeg (${r.status} ${r.type})`); }
   if (argBase && !argv.includes('--no-404')) {
     const miss = await fetch(new URL('definitely/missing', base)); const t = await miss.text();
     check(miss.status === 404 && t.includes('Slope Tycoon'), 'unknown path should return 404.html (run post-build)');

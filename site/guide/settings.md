@@ -11,7 +11,7 @@ Open **Settings** with the gear icon in the top bar. The game pauses while Setti
 
 ## Sound
 
-- **Music** and **mute all** (<kbd>M</kbd>), plus volume sliders for master, music, effects and ambience. Music and sounds are synthesised live; there are no audio files.
+- **Music** and **mute all** (<kbd>M</kbd>), plus volume sliders for master, music, effects and ambience. Music and sounds are synthesised live. The only audio files are the two tracks that play on the title screen (they fade out when a game starts); the same sliders, <kbd>M</kbd> and the Music checkbox control them.
 - **Music style**: *Auto* picks one of **twelve tracks** to fit the season, time of day and weather (Morning Snow, Alpine Noon, Snow Piano, Après, Starlight, Night Chill, Summer Meadow, Autumn Gold, Blizzard, Festival, Title Theme, Menu Theme), or choose a single one by name. **Next track** skips to another piece and shows what is playing; the music keeps playing for a short while even though the game is paused in Settings, so you can preview it.
 - **Ambience** (wind, birds, water, crowds, lifts) is quiet by default (28 %) and made of soft noise, with no whistling tones; raise the slider if you want more of it. Some of it depends on where the camera is: birds and other nature sounds are quiet and come forward when you zoom in, streams and rivers babble (or rush over rapids) when you zoom in beside them and go quiet under winter ice, and an open Apres-Ski Bar plays a party-schlager groove with a real beat when you zoom in close to it, and the game music pauses while you listen and picks up again when you zoom back out. All of it follows the ambience volume and mute.
 - **Ambience only** and **Reduce loud sounds** for a calmer mix.

@@ -16,6 +16,7 @@ beforeAll(() => {
   writeFileSync(join(dist, 'assets', 'a.css'), 'a{}');
   writeFileSync(join(dist, 'icons', 'icon-192.png'), 'png');
   writeFileSync(join(dist, 'manifest.webmanifest'), '{}');
+  mkdirSync(join(dist, 'audio')); writeFileSync(join(dist, 'audio', 'menu-x.mp3'), 'mp3'); // runtime-cached only, never precached
 });
 afterAll(() => rmSync(dist, { recursive: true, force: true }));
 
@@ -23,6 +24,7 @@ describe('precache plugin', () => {
   it('lists every emitted asset exactly once with hashes, relative URLs, no maps/sw.js', () => {
     const m = enumerateDist(dist);
     expect(m.map((e) => e.url)).toEqual(['./assets/a.css', './assets/index-abc.js', './icons/icon-192.png', './index.html', './manifest.webmanifest']);
+    expect(m.some((e) => e.url.includes('audio/'))).toBe(false); // menu music is runtime-cached (docs/pwa.md)
     for (const e of m) { expect(e.revision).toMatch(/^[0-9a-f]{16}$/); expect(e.url.startsWith('./')).toBe(true); }
   });
   it('writes a self-contained ES2019 sw.js with version + list injected', () => {

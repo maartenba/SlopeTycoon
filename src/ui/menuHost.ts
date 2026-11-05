@@ -34,6 +34,8 @@ export interface MenuHostDeps {
   /** Analytics consent (first-run card on the title screen + the Settings > Privacy toggle). Absent = no card, no toggle (tests). */
   consent?: ConsentUi;
   /** Reuse the game's own dialogs instead of creating new ones (in-game menu). */
+  /** Shared audio settings (the title music reads the same ones as the Settings dialog). Default: a private instance. */
+  audioSettings?: AudioSettings;
   parts?: { settings?: StSettings; help?: StHelp; saveLoad?: StSaveLoad | null };
 }
 export interface MenuHandle {
@@ -59,7 +61,7 @@ export function mountMainMenu(d: MenuHostDeps): MenuHandle {
   if (!d.parts?.settings) {
     const st = d.storage ?? null;
     const quality = { get: () => { try { const v = st?.getItem('slope.quality'); return (GRAPHICS_QUALITIES as readonly string[]).includes(v ?? '') ? v! : 'medium'; } catch { return 'medium'; } }, set: (q: string) => { try { st?.setItem('slope.quality', q); } catch { /* storage unavailable */ } }, options: GRAPHICS_QUALITIES };
-    settings.bind(new AudioSettings(st), null, [], { quality, profile: { cosmetics: cosmeticsApiFromProfile(profile, (kind, id) => { void profile.update((p) => { p.achievements.cosmetics.selected[kind] = id; }); return true; }), reset: () => profile.resetProfile() }, ...(d.consent ? { privacy: { get: () => d.consent!.get() === 'granted', set: (on: boolean) => d.consent!.set(on ? 'granted' : 'denied'), url: d.consent.privacyUrl } } : {}) });
+    settings.bind(d.audioSettings ?? new AudioSettings(st), null, [], { quality, profile: { cosmetics: cosmeticsApiFromProfile(profile, (kind, id) => { void profile.update((p) => { p.achievements.cosmetics.selected[kind] = id; }); return true; }), reset: () => profile.resetProfile() }, ...(d.consent ? { privacy: { get: () => d.consent!.get() === 'granted', set: (on: boolean) => d.consent!.set(on ? 'granted' : 'denied'), url: d.consent.privacyUrl } } : {}) });
   }
   let saveLoad: StSaveLoad | null = d.parts?.saveLoad ?? null;
   const saves = d.saves;

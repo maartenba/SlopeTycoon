@@ -4,6 +4,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- The title screen now plays two music tracks (generated with Suno, provided by the owner): shuffled, crossfaded, controlled by the music volume, mute and the Music checkbox, and faded out when a game starts. They are cached on first play (not precached), so they work offline afterwards. Owner playtest pending; nobody has heard it on a real device yet.
+
 ## [0.6.0] - 2026-11-03 (pre-release)
 
 The Schirmbar release: a domed bar you can put anywhere on the slope, and a name for your resort. Plus smoother lifts, softer shores and shadows that reach every view. The economy and your old saves are unchanged.

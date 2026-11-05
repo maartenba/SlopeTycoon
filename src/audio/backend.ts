@@ -39,6 +39,8 @@ export interface AudioBackend {
   createStereoPanner(): PannerLike;
   createDynamicsCompressor(): CompressorLike;
   createBuffer(length: number, sampleRate: number): BufferLike;
+  /** Optional: decode a whole encoded file (menu music). */
+  decode?(data: ArrayBuffer): Promise<BufferLike & { duration: number }>;
   /** Optional (music reverb); music runs dry without it. */
   createConvolver?(): ConvolverLike;
   /** Optional (music reverb = feedback delay network); music runs dry without it. */
@@ -63,6 +65,7 @@ export function wrapContext(ctx: AudioContext): AudioBackend {
     createBuffer: (length, rate) => ctx.createBuffer(1, length, rate),
     createConvolver: () => ctx.createConvolver() as unknown as ConvolverLike,
     createDelay: (max) => ctx.createDelay(max) as unknown as DelayLike,
+    decode: (data) => ctx.decodeAudioData(data) as unknown as Promise<BufferLike & { duration: number }>,
   };
 }
 

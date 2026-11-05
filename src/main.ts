@@ -134,6 +134,7 @@ import { registerComponents, el } from '@/ui';
 import { wireTouch } from '@/ui/touchWire';
 import { onPalette } from '@/config/palette';
 import { createAudio, type AudioApi } from '@/audio';
+import { createMenuAudio } from '@/audio/menuAudio';
 import { countTrunks, hashCount } from '@/audio/worldProbe';
 import { AMB } from '@/audio/Ambience';
 import { THEMES } from '@/audio/musicThemes';
@@ -348,9 +349,11 @@ async function showMainMenu(): Promise<void> {
   }
   if (!ui || params.has('nomenu')) return;
   const saves = saveBackend ? new SaveManager({ backend: saveBackend, getSim: () => null, restore: async (_env, id) => { window.location.search = loadQuery(id); }, toast: () => {}, download: downloadBytes }) : null;
+  const menuAudio = params.has('nomenumusic') ? null : (() => { try { return createMenuAudio({ storage: (() => { try { return window.localStorage; } catch { return null; } })(), rand: uiRand }); } catch (e) { console.warn('[menu music] disabled:', e); return null; } })();
+  (window as unknown as { __menuAudio?: unknown }).__menuAudio = menuAudio;
   const h = mountMainMenu({
-    ui, saves, version: APP_VERSION, plainBackground: !preview, consent: consentUi(),
-    go: (q) => { preview?.dispose(); window.location.search = q; },
+    ui, saves, ...(menuAudio ? { audioSettings: menuAudio.settings } : {}), version: APP_VERSION, plainBackground: !preview, consent: consentUi(),
+    go: (q) => { const leave = (): void => { preview?.dispose(); window.location.search = q; }; if (menuAudio) menuAudio.leave(leave); else leave(); },
     storage: (() => { try { return window.localStorage; } catch { return null; } })(),
   });
   watchOnline(window, () => navigator.onLine, (off) => h.menu.setOffline(off));

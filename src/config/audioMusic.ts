@@ -55,3 +55,25 @@ export const EXPORT = {
   /** The renders are normalised to these loudness targets so the owner can compare tracks fairly (in the game the bus sliders make them quieter). */
   musicLufs: -17, apresLufs: -15, maxPeak: 0.89,
 } as const;
+
+/**
+ * Title-screen / main-menu music: two owner-provided Suno tracks in `public/audio` (owner decision, 2026-11-05), played by `src/audio/MenuMusic.ts`.
+ * Swap a track: replace the file (or change `file`); add a track: add a row; disable all: set `enabled` false (or empty `tracks`).
+ * `lufs` = integrated loudness measured with `ffmpeg -i f.mp3 -af ebur128 -f null -` (2026-11-05); `trim` = 10^((targetLufs - lufs) / 20) so
+ * the menu music sits at the loudness the procedural music is normalised to (EXPORT.musicLufs) at the same slider. Peaks are -3.5 / -3.8 dBFS, so no clipping.
+ * Not tuned by ear (agents have no audio device).
+ */
+export const MENU_MUSIC = {
+  enabled: true,
+  /** Relative to the page (`./audio/..`), so it works under `/play/` and `/slopetycoon/play/`. Runtime-cached by the service worker (not precached). */
+  dir: 'audio/',
+  targetLufs: -17,
+  tracks: [
+    { id: 'seasons-of-management', file: 'menu-seasons-of-management.mp3', title: 'Seasons of Management', lufs: -15.9, trim: 0.881 },
+    { id: 'seasonal-menu', file: 'menu-seasonal-menu.mp3', title: 'Seasonal Menu', lufs: -15.6, trim: 0.851 },
+  ] as ReadonlyArray<{ id: string; file: string; title: string; lufs: number; trim: number }>,
+  /** Seconds: fade in at the first start, crossfade between tracks, fade out when a game starts. */
+  fadeIn: 1.5, crossfade: 3, fadeOut: 1,
+  /** Poll period (ms) of the scheduler. */
+  tickMs: 250,
+} as const;

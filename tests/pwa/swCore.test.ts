@@ -105,3 +105,13 @@ describe('sw handlers (fake self + Cache API)', () => {
     expect(((await f.fetchEv(reqOf(SCOPE + 'other.json'))) as { status: number }).status).toBe(503);
   });
 });
+
+describe('menu music files (runtime cache, not precache)', () => {
+  it('first request goes to the network and is cached; offline afterwards it is served from the cache', async () => {
+    const f = fake(); f.ev('install', {}); await Promise.all(f.waits);
+    const u = SCOPE + 'audio/menu-seasonal-menu.mp3';
+    expect(matchPrecache(u, SCOPE, MANIFEST)).toBeNull();
+    await f.fetchEv(reqOf(u)); f.net.online = false;
+    expect(((await f.fetchEv(reqOf(u))) as { body: string }).body).toBe('net:' + u);
+  });
+});
