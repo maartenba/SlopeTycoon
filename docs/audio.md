@@ -1,6 +1,6 @@
 # Audio (Task 30)
 
-All sound is **synthesized with the Web Audio API** – no audio files. Code lives in `src/audio/`.
+Sound effects and ambience are **synthesized with the Web Audio API** (no files). The **music is mp3 files** generated with Suno and provided by the project owner (`public/audio`, see "Music" below). Code lives in `src/audio/`.
 
 | File | Role |
 |---|---|
@@ -12,19 +12,20 @@ All sound is **synthesized with the Web Audio API** – no audio files. Code liv
 | `eventSounds.ts` | Pure GameEvents → cues table (every event mapped or explicitly ignored; unit-tested) and news chime rule. |
 | `spatial.ts`, `worldProbe.ts` | Camera-relative pan/gain; samples the sim (guest density via SpatialHash, water tiles, nearest lift/snowcat/heli/cows/buildings, altitude) into an `AmbienceState` at ~10 Hz. |
 | `AudioSettings.ts` | Volumes/mute/reduce-loud/ambience-only, persisted under `slope.audio.v1`. |
+| `Music.ts`, `BarMusic.ts`, `MenuMusic.ts`, `TrackPlayer.ts`, `musicPlaylist.ts`, `musicHold.ts` | The music: game player, bar player, title player, the shared mp3 player, pure selection logic and the hand-off state machine (see "Music"). Tables: `src/config/audioMusic.ts`. |
 | `index.ts` | `createAudio(deps)` wiring (bus subscriptions, first-gesture unlock, visibility, UI button ticks via delegated capture listener, `M` mute key, 10 Hz tick). |
 
-UI: `⚙` in the top bar opens `<st-settings>` (4 sliders incl. Ambience, mute, music on/off + **Music style** + Next track, reduce-loud, ambience-only, shortcuts to graphics quality / fast nights / unmute news). A 🔇 icon (bottom-left) shows until audio is unlocked (or while muted).
+UI: `⚙` in the top bar opens `<st-settings>` (4 sliders incl. Ambience, mute, music on/off + Next track, reduce-loud, ambience-only, shortcuts to graphics quality / fast nights / unmute news). A 🔇 icon (bottom-left) shows until audio is unlocked (or while muted).
 Tutorial / other code can call `audio.sfx.play('chimeInfo')` etc. (`window.__slope` does not expose it; main.ts holds `audioRef`).
 
 ## Verification status
-Since the audio redesign (below) the music and ambience are **rendered offline and analysed objectively** (software Web Audio renderer, cross-checked against Chrome's own `OfflineAudioContext`). That verifies headroom, DC, clicks, spectrum, whistles / hum lines, loudness range, harmonicity, determinism and node budgets. **Nobody has listened yet**: whether it sounds pleasant, whether the levels sit right against the SFX, and how pieces feel over an hour are unverified by ear (the harness has no audio device). Walk-mode footsteps, spatial pan and the sfx recipes outside the ones changed below are still estimates (see the notes in their sections).
+The ambience beds are **rendered offline and analysed objectively** (software Web Audio renderer in `tests/audio/offlineBackend.ts`): headroom, DC, clicks, spectrum, whistles / hum lines, loudness range and node budgets. The music is a set of mp3 files: its logic (which track when, crossfades, hand-off, pause / mute / hidden tab) is unit-tested with a fake media element, and `npm run music:e2e` checks the real player in Chrome. **Nobody has listened to the music in the game yet**: how the transitions feel, whether the levels sit right against the SFX and the ambience, and how the tracks feel over an hour are unverified by ear (the harness has no audio device). Walk-mode footsteps, spatial pan and the sfx recipes are estimates (see the notes in their sections).
 
 ## Walk mode footsteps and near-field (Task 12)
 Five footstep recipes (`stepSnow / Gravel / Grass / Wood / Road`, `Sfx.ts`): noise bursts peaking 0.04-0.07 (click .18), `PRIORITY.ambience`, max 4/s, `loud` (halved by reduce-loud), pitch jitter per step. Cadence from walked distance (`stepStride`, `walkPhysics.ts`). The listener is the walker with `AMB.walkZoom` = 6 as the zoom proxy (near-field crowd / lift / birds / water). Levels are reasoned estimates, NOT heard (no audio device). See `docs/walk-mode.md`. Forest shelter: >= 10 trunks within 6 tiles of the walker lower the wind bed by up to 30 % (`AmbienceState.shelter`).
 
 ## Tunable constants (where)
-- Defaults: `DEFAULT_AUDIO_SETTINGS` (master .7 / music .5 / sfx .8 / ambience .28 since the audio redesign (.45 before, .7 originally); see Mix levels), `REDUCE_LOUD_FACTOR` (.55) – `AudioSettings.ts`.
+- Defaults: `DEFAULT_AUDIO_SETTINGS` (master .7 / music .5 / sfx .8 / ambience .28 since the audio redesign (.45 before, .7 originally); see Mix levels; the music loudness targets are in `audioMusic.ts`, see Music > Default level), `REDUCE_LOUD_FACTOR` (.55) – `AudioSettings.ts`.
 - Compressor (threshold −16 dB, ratio 6; −24 dB in reduce-loud), `MAX_VOICES` (24), `PRIORITY` – `AudioEngine.ts`.
 - Per-sfx loudness (`peak` args × `o.gain`), `maxPerSec`, `minGap`, `group`, `loud` – each entry of `RECIPES` in `Sfx.ts`.
 - `AMB.closeZoom/farZoom` (zoom in visible tiles at which the view counts as close/far), `AMB.layerMax` (ceiling per looping layer), `AMB.rates` (one-shots/s), `AMB.fadeTc` (crossfade, s) – `Ambience.ts`.
@@ -61,17 +62,9 @@ Estimated dB at defaults (old → new), vs sfx / vs music: wind −7.7→−21.5
 5. Too many one-shots → lower `AMB.rates.*` or the recipe `maxPerSec`.
 6. Per-layer solo while debugging: in the console, `__slope` doesn't expose audio; temporarily set `AMB.layerMax` entries to 0 in code.
 
-# Why it sounded weird (analysis, audio redesign 0.2.x)
-User feedback: *"The background music is weird (the bells in it)… some of the background noise is also weird. Can we make it more palatable?"* Everything below was measured with the offline renderer (`npm run audio:render`, spectrograms in `.weave/shots/audio-old-*.png`, old code rendered from git HEAD for comparison; the old reverb convolver was not rendered, so the old music was analysed dry). Numbers are from that analysis.
+# Ambience: what was wrong with the first beds (analysis, audio redesign 0.2.x)
+Measured with the offline renderer. (The procedural music that the same analysis covered was replaced by mp3 files in Nov 2026 and is not described any more.)
 
-## Music: the bells
-- **Root cause 1: inharmonic FM bell as the winter lead.** `bell` = FM carrier with modulator ratio 3.5 (index 0.9 x f): partials land at **1.00, 2.50, 2.76, 4.50 x f0** (measured: -18 / -12 / -18 dB vs the fundamental) plus a stretched 2.76x sine; 2.4 s decay (-60 dB), 70 % reverb send. Non-integer partials read as a *bell/gong* and clash with every pad chord (they do not belong to any key). The winter theme used it for the **melody**, summer used a marimba (partials 1/4/10x), autumn a "handpan" (1/2/3x, harmless), spring a flute.
-- **Root cause 2: the glockenspiel** (`glock`, sine x2 and a sine at **5.4x**, 1.7 s decay) played the winter **arpeggio** on the grid (a note every beat, 25 % rests) and the **rating-up jingle** (4 glock notes). So bells were the arp, the lead and the jingle: constantly present, very regular.
-- **Contributing**: high register (melody indices 7..16 = up to 2 octaves + a 7th above the root; bell partials reach 5 kHz+), long reverb (2.2 s, noise impulse decaying cubic) that smeared the clusters, a 70 % wet send, random walk melodies with passing tones against held triads (the `aeolian/dorian/phrygian-free` modes were fine, the *voicing* of bell partials was not), and the old **perc "shaker"** = white noise highpassed at 6 kHz (hiss ticks).
-- **Not the cause**: pitch picks were all in scale (tested), levels were fine, no clicks.
-- Other old instruments: `pluck`/`guitar` were bright-burst saws closing from 7-9 x f0 (a "zap" at each attack, plus a white-noise pick at 3-4 x f0 up to 5 kHz), the flute had a 5 Hz vibrato from the first sample (wobbly) and white breath noise.
-
-## Ambience: the weird noises
 Measured on the old layers at ambience 100 % (`tonal` = strongest narrow line vs its neighbourhood; noise is ~3-8 dB, a tone 15 dB+):
 | Old layer | Finding | Measured |
 |---|---|---|
@@ -86,59 +79,92 @@ Measured on the old layers at ambience 100 % (`tonal` = strongest narrow line vs
 | **cowbell / churchBell / clank** | square-wave cowbell (540 + 810 Hz), **inharmonic church bell** (2.76 / 5.4 / 8.93 x) on every hour (up to 3 strikes) when near buildings, square clank on every lift tower | more "bells" and ringing |
 Also: the one-shot `drip` and `creak` (sawtooth through a Q 6 bandpass = squeak) were louder than the beds they decorate.
 
-# Audio redesign (music + ambience)
+## Music (mp3 files, owner decision 2026-11-05)
+All music is **generated with Suno and provided by the project owner** (no licence asserted beyond "owner-provided"; the in-game credit is "Music: generated with Suno."). It replaced the procedural music (the generators, instruments, `audio:export` and the Music style selector are gone). Sound effects and ambience stay procedural. Files: `public/audio/*.mp3` (clean ASCII names; `public/audio/README.md` lists the owner's original titles). Tables and tunables: **`src/config/audioMusic.ts`** (`TRACKS`, `PLAYLISTS`, `FALLBACK`, `SITUATION`, `MUSIC_PLAY`, `HANDOFF`, `BAR_AUDIO`, `MENU_MUSIC`); pure logic: `src/audio/musicPlaylist.ts`.
 
-Current default ambience volume is **0.28**; saved values of exactly .7 or .45 (both former defaults, `LEGACY_AMBIENCE_DEFAULT` / `PREVIOUS_AMBIENCE_DEFAULT`) migrate to it, any other saved value is kept (`DEFAULT_AUDIO_SETTINGS.ambience`); the .45 figures above are the intermediate value.
+### Code
+| Code | Role |
+|---|---|
+| `TrackPlayer.ts` | Plays the files: one `<audio>` element per track -> `MediaElementAudioSourceNode` -> track gain (trim x fade) -> the destination the owner class gives it. The bytes are fetched with a plain GET (a 200 the service worker can cache) and played from a blob URL, so a file is never decoded to PCM (a decoded track would be ~70 MB). Equal-power fades on the track gain. Elements are paused while the engine is not running (hidden tab, blocked) or held, and continue exactly where they were. A load failure resolves null. |
+| `Music.ts` | The in-game music: situation tracking, playlist rotation, crossfades, pause / mute / speed 0 gate, hand-off hold. Graph: track -> hold (hand-off) -> gate (pause / mute) -> music bus. |
+| `BarMusic.ts` | The music next to an open bar (owned by `Ambience`): bar playlist, proximity low-pass + level, hand-off fade. Graph: track -> low-pass -> level -> fade gate -> **ambience** bus. |
+| `MenuMusic.ts`, `menuAudio.ts` | Title screen / main menu (own engine + settings, no sim). |
+| `musicPlaylist.ts` | Pure: `situationFor`, `SituationTracker` (hysteresis), `pickNext` / `nextInPlaylist` (never the same track twice), fades, trim, day parts. |
+| `musicHold.ts` | The hand-off state machine (unchanged logic). |
 
-## Music engine
-Files: `theory.ts` (modes, chords, voice leading, pentatonic subsets), `musicThemes.ts` (**twelve tracks**, `MUSIC` constants, layer tables), `musicSelect.ts` (pure fit scores + seeded no-repeat choice), `musicState.ts` (state -> tempo/layer weights), `musicComposer.ts` (pure `composePiece(seed, track, key)` -> note events; song sections, drums, counter-melody), `instruments.ts` (oscillator / noise instruments incl. the drum kits), `Music.ts` (lookahead scheduler, crossfades, reverb + delay, sidechain, hand-off hold), `musicHold.ts` (the game-music / bar-music hand-off state machine), `apresSong.ts` (pure bar-music song generator), `Apres.ts` (bar-music scheduler), `musicContexts.ts` (a game state per track for tests / export). **All new music tunables: `src/config/audioMusic.ts`** (see "Music rework" below).
+### Track table
+Loudness measured with `ffmpeg -af ebur128` on the committed files; trim = 10^((target - LUFS) / 20); targets: game and menu -20, bar -18 LUFS.
 
-### Tracks (`musicThemes.ts`)
-Each track is a full **song form** (see "Music rework"): I = intro (4 bars), A = verse, B = chorus, C = bridge (8 bars each), O = outro (4 bars).
-| Track | When (auto) | Mood / sound | bpm | Form |
-|---|---|---|---|---|
-| **Morning Snow** | dawn to late morning, esp. winter | bright pentatonic pad, harp arpeggio, mallet lead, string counter-line | 76 | IABABO |
-| **Alpine Noon** | midday / afternoon | warm major, groovy plucked bass, guitar, pluck lead, flute counter-line, soft pop beat when busy (swing .12, sidechain) | 84 | IABCBO |
-| **Snow Piano** | it is snowing (day) | calm: felt piano lead, mallet shimmer, slow strings, no drums | 62 | IABAO |
-| **Après** | dusk (also early night, late afternoon) | jazz: electric piano 7ths, piano lead, walking-ish bass, brushes with swing | 72 | IABABO |
-| **Starlight** | night | sparse pad, slow harp, distant strings, 4 bars per chord | 60 | IABAO |
-| **Night Chill** | night / dusk (alternative to Starlight) | lo-fi: swung soft kit (kick, laid-back rim, shuffled + ghost hats, fills), e-piano, plucked bass, warm lead, sidechain | 78 | IABABO |
-| **Summer Meadow** | summer / spring days | sunny uplift: flute, guitar, bouncing bass, shaker, mallet counter | 88 | IAABAO |
-| **Autumn Gold** | autumn days / evening | strings pad, piano lead, flute answer | 70 | IABABO |
-| **Blizzard** | storm / heavy snow (only then) | tension: dark drone, low strings, sparse (unchanged, no intro / outro) | 52 | ABAB |
-| **Festival** | a festival is on (or very busy by day) | livelier: warm synth lead, bouncing bass, flute answer, pop beat + fills, sidechain | 104 | IAABABO |
-| **Title Theme** | menu context `{ menu: true }` (default screen) | calm cinematic: strings, harp, piano; transposed -5 | 78 | IABAO |
-| **Menu Theme** | menu context `{ menu: true, screen: 'menu' }` | quiet and open: e-piano, mallets, flute, no drums | 72 | IABAO |
-Tempo is the track's bpm x time of day (night x.85) x **season** (winter .97, autumn .96, spring / summer 1) x **weather** (snow / rain .94, cloud .98, heavy snow / storm .9) x game speed (1 / 1.12 / 1.25): `MUSIC_MIX.seasonTempo / weatherTempo`. Harmonically all pitched notes are scale tones, the lead is pentatonic, pads are voice-led, keys move by 4th / 5th between pieces. Pieces are 95-150 s.
-The title screen runs without an audio engine (`DEMO`), so the Title and Menu themes are reachable by Music style (Settings) and by feeding a menu context; they are not wired to a menu screen yet.
+| File | Title | Used for | Size | LUFS | Trim |
+|---|---|---|---|---|---|
+| `menu-seasons-of-management.mp3` | Seasons of Management | Title theme and main menu | 1.8 MB | -15.9 | 0.624 |
+| `menu-seasonal-menu.mp3` | Seasonal Menu | Main menu (alternates) | 1.9 MB | -15.6 | 0.603 |
+| `game-winter-mountain-morning.mp3` | Mountain Morning | Winter, dawn to late morning | 2.0 MB | -15.8 | 0.617 |
+| `game-winter-early-slopes.mp3` | Winter Early slopes | Winter, dawn to late morning | 2.0 MB | -14.3 | 0.519 |
+| `game-winter-day.mp3` | Winter Day | Winter day, busy resort | 2.4 MB | -15.4 | 0.589 |
+| `game-winter-snow.mp3` | Winter Snow | Snowing in the daytime | 2.4 MB | -17.6 | 0.759 |
+| `game-evening-corner.mp3` | Evening Corner | Dusk / winter evening | 0.8 MB | -16.6 | 0.676 |
+| `game-night-melted-snow.mp3` | Melted Snow | Night (calm) | 2.5 MB | -16.4 | 0.661 |
+| `game-night-vinny-f-minor.mp3` | Vinny F Minor | Night (chill lo-fi alternative) | 1.7 MB | -16.4 | 0.661 |
+| `game-summer-meadow-loop.mp3` | Meadow Loop | Spring / summer day | 2.0 MB | -15.7 | 0.610 |
+| `game-summer-pastoral-walk.mp3` | Pastoral Walk | Spring / summer day | 2.2 MB | -15.3 | 0.582 |
+| `game-autumn-gentle-sway.mp3` | Autumn's Gentle Sway | Autumn day and evening | 2.3 MB | -16.3 | 0.653 |
+| `game-autumn-gold.mp3` | Autumn Gold | Autumn day and evening | 2.8 MB | -16.0 | 0.631 |
+| `game-storm-tente-restringida.mp3` | Tente Restringida | Storm / heavy snow | 0.6 MB | -17.8 | 0.776 |
+| `game-festival-groove.mp3` | Festival groove | Festival on | 2.4 MB | -15.8 | 0.617 |
+| `apres-ski-hut-groove.mp3` | Ski Hut Groove | Next to an open bar | 2.2 MB | -16.1 | 0.804 |
+| `apres-polka-party-time.mp3` | Polka Party Time | Next to an open bar | 1.7 MB | -16.5 | 0.841 |
+| `apres-alpine-apres-ski.mp3` | Alpine Après-Ski | Next to an open bar | 1.7 MB | -16.1 | 0.804 |
+| `apres-ski-brass.mp3` | Après-Ski Brass | Next to an open bar | 1.6 MB | -16.5 | 0.841 |
+The files are 37.0 MB in total (63.1 MB as provided).
 
-### Instruments (`instruments.ts`): no bells, nothing inharmonic
-`pad` (3 detuned saws -> low-pass opening slowly, 2 s swell), `strings` (detuned saw choir, vibrato fading in, band-limited 110 Hz-1.7 kHz), `epiano` (sine + fast-dying 2nd partial + trace 3rd, 12 ms attack), `pluck` / `guitar` (saw+triangle through a closing low-pass, no bright burst, very soft pick), `harp` (sines, 3 kHz ceiling), `flute` (triangle+sine, vibrato after 0.5 s, whisper of pink breath), `sub` (sine + triangle, low-passed at 300 Hz, low level), `brush` / `shaker` (pink noise bands with 12-14 ms swell, low-passed 5-6.5 kHz), `drone` (tension). Added in the music rework: `piano` (felt: sine + decaying 2nd / 3rd / 4th partial, detuned twin), `mallet` (sine + a 4th partial that dies at once, harmonic), `warmLead` (saw + saw + sub triangle through an opening low-pass, delayed vibrato), `bassPluck`, the soft kit `kickSoft / snareSoft / rim / hatSoft`, and for the bar music `kick / snare / clap / hat / hatO / crash / riser / accordion / accM / accm / acc7 (one voice = one reed chord) / brass / brassStab / bassSaw`. A test (`tests/audio/offline.test.ts`) asserts every spectral peak within 30 dB of the strongest sits on an integer multiple of the fundamental (<= 1.5 %).
-Signal path: voice -> (stereo pan, deterministic per layer: pad voices spread, arp by pitch, lead +-0.2, bass centre) -> track gain -> gate (pause/mute fade) -> **music bus tone low-pass 5.2 kHz** -> bus -> master -> compressor. **Reverb** = feedback-delay network (6 damped combs 43-97 ms, feedback 0.84, 2.6 kHz damping, two stereo taps, 30 ms pre-delay, return 0.3), no impulse buffer (cheaper and identical in the offline renderer); sends are 8-30 % per instrument.
+### Situation -> playlist (`PLAYLISTS`, rules in `situationFor`)
+| Situation | When | Tracks (alternate, never the same twice in a row) |
+|---|---|---|
+| `storm` | storm or heavy snow, any hour | Tente Restringida |
+| `night` | night (hours shift with sunrise / sunset), any weather but a storm | Melted Snow (calm), Vinny F Minor (chill lo-fi alternative) |
+| `festival` | a festival is on, day or dusk | Festival groove |
+| `snow` | snowing, dawn or day (any season) | Winter Snow |
+| `autumn` | autumn, dawn to dusk | Autumn's Gentle Sway, Autumn Gold |
+| `dusk` | dusk (any season but autumn) | Evening Corner |
+| `winter-morning` | winter, dawn to late morning (before 11:00), and an afternoon that is not busy | Mountain Morning, Winter Early slopes |
+| `winter-day` | winter, 11:00 to dusk, resort busy (guests / 300 >= .35 on, < .2 off) | Winter Day |
+| `summer` | spring and summer days | Meadow Loop, Pastoral Walk |
+| title / menu | main menu | Seasons of Management (always first, it is the title theme), Seasonal Menu |
+| bar | next to an open Apres-Ski Bar or Schirmbar | Ski Hut Groove, Polka Party Time, Alpine Après-Ski, Après-Ski Brass |
 
-### Choosing tracks
-- `trackFit(track, ctx)` (0..1): from season, day part (shifted by sunrise/sunset), weather, `busy` (guests/300), `festival`, `menu`. Storm / heavy snow allow **only Blizzard**; Blizzard needs weather; Title only in the menu; every state has at least one track (tested for all 24 h x 4 seasons x 6 weathers).
-- `chooseTrack`: weighted draw (fit^2) from a seeded PRNG, **never the previous track (and avoids the one before) while an alternative fits**; a lone fitting track (a long storm) repeats with a new key / seed.
-- A running track is swapped (8 s crossfade, `MUSIC.crossfadeSec`) when it no longer fits (`fit < 0.12`, checked every 2 s) after it has played >= 30 s; first piece fades in over 3.5 s; between pieces **12-35 s of silence**.
-- Weights per layer (pad/bass/arp/melody/perc) come from time of day and weather as before (night = pads + sparse; storm = pads only; tension thins). **Percussion is a detail**: it only plays when the resort is busy (`busy x 1.2`) or on tracks with a baseline (Après .55, Festival .7).
-- Game speed 1/3/10x = tempo x1 / 1.12 / 1.25 (pitch never changes); paused fades out; music + ambience are ducked during fast-forward.
+Rain and cloud do not change the pick. A playlist with a single track would repeat itself, so when it ends the next track comes from `FALLBACK[situation]` (Winter Day -> the winter morning pair, Evening Corner -> the night pair, Tente Restringida -> the night pair, Festival groove -> the summer pair, ...): a track is never repeated back to back.
 
-### Player settings (Settings > Audio)
-- **Music style** (`musicStyle` in `slope.audio.v1`): *Auto (fits the moment)*, each track by name, or *Off* (= the Music checkbox). Changing it crossfades immediately.
-- **Next track** + "Now playing" line (in-game Settings only): crossfades to another piece; the Settings dialog pauses the game, so a Next / style change keeps the music audible for 25 s (`MUSIC.previewSec`) while paused so it can be previewed.
-- Existing: Music / Ambience / Effects / Master sliders (Ambience volume already existed), Pause music at speed 0, Reduce loud sounds, Ambience only.
-- The title-screen demo (`DEMO`) has no game audio engine; it has the menu music instead (see "Menu music"). So the *Title Theme* plays only if a menu context is fed (`music.setInputs({ menu: true })`; not wired to any menu yet) or when chosen as the style.
+### When the music changes (hysteresis)
+- A new situation must hold for `SITUATION.settleSec` (20 s) before it counts: the hour ticking over, a short snow shower or a flickering storm change nothing. "Busy resort" has its own on / off thresholds.
+- Most changes wait for the playing track to end; the next track then comes from the new situation. Only a **storm, nightfall or a festival** cut in with a 5 s crossfade (`MUSIC_PLAY.situationCrossfade`), and never more often than every 150 s (`SITUATION.minChangeGapSec`).
+- At a track's end the next one starts 4 s early and crossfades (`MUSIC_PLAY.trackCrossfade`). The next track is picked and **preloaded** while the current one plays.
+- **Next track** (Settings) crossfades over 2.5 s to another track of the situation and keeps the music audible for 25 s while the game is paused by the dialog.
+- Pause (speed 0 with "Pause music at speed 0"), mute, Ambience only and the Music checkbox fade the gate to 0, then **pause the element** (position kept); resuming continues where it stopped. A hidden tab suspends the audio context and pauses the elements the same way.
 
-## Menu music (Nov 2026)
-The title screen plays two owner-provided tracks, generated with Suno by the owner (owner decision 2026-11-05; no licence statement beyond "owner-provided"; `public/audio/README.md`): `menu-seasons-of-management.mp3` (2:20) and `menu-seasonal-menu.mp3` (2:34), cover art and tags stripped, audio stream copied as is (about 185 kbps, 3.2 + 3.6 MB).
-- **Code**: `src/audio/menuAudio.ts` (own `AudioSettings` shared with the title Settings dialog, an `AudioEngine`, the M key), `MenuMusic.ts` (player), `menuPlaylist.ts` (pure: next-track choice, equal-power fades, trim), table `MENU_MUSIC` in `src/config/audioMusic.ts`. Disable: `MENU_MUSIC.enabled = false`, or `?nomenumusic=1`. Swap: replace the files (same names) or edit the table rows.
-- **When**: nothing is requested or created until the first pointer / key press on the title screen (the engine's gesture unlock); then the first track is fetched (a plain 200 GET, decoded with `decodeAudioData`) and fades in over 1.5 s. The first track is random, the next one is never the same (with two tracks they alternate), the next is preloaded while one plays and crossfaded over 3 s before the end (`MENU_MUSIC.crossfade`), looping forever. It plays through the engine's **music bus**: the Music slider, Master, mute (M), Ambience only and the Music checkbox (off = silent and no fetch) all apply, and the tab being hidden suspends the context (it resumes where it was). Settings and the other dialogs do not interrupt it.
-- **Game start** (New game / Continue / Tutorial / Scenario / Load): the music fades out over 1 s and the page then navigates (when nothing was playing there is no delay). Starting a game is a new page load, so the in-game procedural music starts as usual after the first gesture on the game page; it is not a crossfade between the two.
-- **Loudness**: `ffmpeg -af ebur128` gives -15.9 LUFS (Seasons of Management, peak -3.5 dBFS) and -15.6 LUFS (Seasonal Menu, peak -3.8 dBFS). The procedural renders are normalised to `EXPORT.musicLufs` = -17, so the trims are 0.881 and 0.851 (`MENU_MUSIC.tracks[].trim`). Set by measurement, not by ear.
-- **Offline / size**: not precached (6.8 MB would blow the 2048 kB gzip budget, and mp3 does not compress). `vite-plugins/precache.ts` skips `audio/`; the service worker's generic same-origin runtime cache (cache-first) stores each file the first time it is fetched, so the menu music works offline after one play. The cache is per build version (`slope-tycoon-<version>`), so a new release refetches them once. `npm run size` lists them as "runtime-cached, excluded"; `verify:pwa` checks they are served as `audio/mpeg` and are NOT in the precache list. Paths are relative to the page (`./audio/..`), so `/play/` and `/slopetycoon/play/` both work.
-- **Caveat**: the service worker is registered by the game page, not by the title screen (`registerSW` sits in the `ui && !DEMO` block of `src/main.ts`). A brand-new visitor who has only seen the title has no worker yet, so the music is fetched from the network (and is not cached until the worker controls a title visit, i.e. after the first game start). Offline before that: the menu is silent (the load fails quietly, one console warning). Registering the worker on the title would close the gap; not done (PWA behaviour change, owner call).
-- **Real-page check**: `npm run menu-music:e2e` (needs `npm run build`): no mp3 request before the gesture, both files 200 `audio/mpeg`, engine running, both runtime-cached, `leave()` fades out (~1 s), offline reload plays from the cache; no errors. It cannot hear anything.
-- **Not verified by ear**: how it sounds, the loudness against the procedural music in a real room, the fade feel.
+### Loading and failure
+Nothing is requested before the first pointer / key press (the engine unlock), and the first track only after `MUSIC_PLAY.startDelay` (1.5 s), never during boot. A file that fails to load is skipped for the next candidate; when every candidate fails (offline with nothing cached) the music stays silent, one console warning is printed and the next try is 60 s later. Nothing else in the game depends on the music.
+
+### Hand-off with the bar music (`musicHold.ts`, unchanged logic)
+`main -> toApres -> apres -> toMain -> main`. The bar level (proximity x zoom window) must reach `HANDOFF.enterLevel` (.12) for `enterDwell` (.5 s) and the game music must have played >= `minMainSec` (3 s): the game music **fades out over 0.7 s**, then it is paused (position kept) and the bar song starts and fades in over 0.8 s. Leaving: the level must stay below `exitLevel` (.04) for `exitDwell` (2 s) and the bar song has played >= 4 s: the bar song fades out (0.6 s) and is paused, then the game music **fades back in over 0.9 s from where it stopped** (the old "rewind to the start of the chord" is gone; with files there is nothing to re-strike). The two never overlap: the envelopes are products of exclusive phases (tested for random level walks), and the integration test checks the elements: a bar element only plays in apres / toMain, a game element only in main / toApres (plus the short silent idle before an element is paused). When an open bar comes into reach (level > 0) the first bar song is **fetched ahead**, so the hand-off does not wait for a download.
+
+Back at the bar within `BAR_AUDIO.restartAfterSec` (25 s) the same song resumes where it stopped; after longer, the next song of the rotation plays; a song that ends while you stand there crossfades (2.5 s) into the next. The bar music runs on the **ambience bus** (the Ambience slider governs it, nothing plays with the slider at 0 or while muted); `BAR_AUDIO.busBoost` (+5 dB) makes up for the quieter default bus so the bar sits at its target loudness at default sliders. Proximity still shapes it: low-pass 1200 Hz (far) to 9500 Hz (near) and a level gain `minGain .3 + .7 x level`. The crowd murmur layer (`apres`, ceiling .05) is kept; it does not clash.
+
+### Default level (-3 dB)
+The owner found the music a bit loud at the old default. All trims are normalised to targets 3 dB lower than the procedural music's (game and menu -20 instead of -17 LUFS, bar -18 instead of -15) through the trim table, so the **slider range and defaults (Music 50 %) are unchanged**: at the same slider position the music is 3 dB quieter. Menu music included.
+
+### How to swap a track, add one, or switch the music off
+- **Swap**: put the new mp3 into `public/audio` under the same name. Re-encode first (`ffmpeg -i IN.mp3 -map 0:a -map_metadata -1 -c:a libmp3lame -q:a 6 -joint_stereo 1 public/audio/NAME.mp3`; every committed mp3 stays in git history forever, so encode once, then commit), measure it (`ffmpeg -i f.mp3 -af ebur128 -f null -`, the "I:" line of the summary), and update `lufs` and `trim` (= 10^((target - lufs) / 20), 3 decimals) of its row in `TRACKS`, plus the README row. `tests/repo/musicAssets.test.ts` checks files, trims and the size budget.
+- **Add**: a new file, a `TRACKS` row, an entry in a playlist, the README row.
+- **Switch off**: the Music checkbox in Settings (no fetch, silent); the title music: `MENU_MUSIC.enabled = false` or `?nomenumusic=1`; the in-game music: empty the playlists in `audioMusic.ts`.
+
+### Offline, cache and storage (see `docs/pwa.md`)
+`audio/` is **not precached** (the 2048 kB budget is untouched; mp3 does not compress). The service worker's generic same-origin runtime cache (cache-first) stores a file the first time it is fetched (a plain 200 GET, which is why the player fetches the bytes instead of letting an `<audio>` element send 206 range requests). The cache is **per build version** (`slope-tycoon-<version>`), so a new release deletes the old cache and files are fetched again as they play. Storage impact: only tracks that were played are cached; a long session that touches every situation caches at most the whole folder, **about 37 MB**, once per build. Offline without a cached copy the music is silent (one console warning); sound effects and ambience are unaffected. Caveat: the title screen does not register the service worker (that happens on the game page), so a first-time visitor who has only seen the title has the menu music fetched from the network and not cached until after the first game start.
+
+### Tests and checks
+`tests/audio/musicPlaylist.test.ts` (every season x hour x weather x festival x busy x sunrise maps to a non-empty playlist, never the same track twice, hysteresis, fades, trim), `music.test.ts` (fake media: nothing before a gesture, trim routing, crossfade, hysteresis, storm cut-in and gap, mute / speed 0 / hidden-tab pause and exact resume, Next, load failures), `handoff.test.ts` (state machine, never-overlap for random level walks and for the elements, rotation, ramped hold gain), `menuMusic.test.ts`, `proximity.test.ts`, `tests/repo/musicAssets.test.ts` (every mapped file exists, trim table complete, size budget, no other audio files, plain tags).
+
+**Real page: `npm run music:e2e`** (needs `npm run build`): loads the built game over https in Chrome (SwiftShader) and checks that no mp3 is requested before a gesture, the files are served as `audio/mpeg`, there are no console errors, a situation change triggers a crossfade, an open bar triggers the hand-off to a bar song and back, and the title music (`npm run menu-music:e2e`) fades out when a game starts. It reads the audio graph state; **it cannot hear anything**.
 
 ## Ambience rework
 Rules: **noise beds only** (no oscillator tones, no resonant filters: every Q <= 1 (lowpass/highpass Q is in dB: 0)), modulations are **slow sines or sums of unrelated slow sines** (`wander`), never square/saw gates, two noise reads at unrelated playback rates per layer, noise buffer **9 s** (was 3 s) with DC removed, nothing narrow above 5 kHz, ceilings lowered (`AMB.layerMax`: leaves .2, crickets .05, insects .05, crowd .2, lift .16, water .2, snowcat .16, heli .2; wind .2 / rain .245 / muffled .175 unchanged).
@@ -165,52 +191,22 @@ Owner feedback: nature was too loud everywhere, streams were silent, and the Apr
 | Nature (birds, crickets, insects, cowbells, leaves, drips) | `natureGain(close) = far + (1 - far) * close^power`, far .08, power 2; `close` = 0 at zoom 60 .. 1 at zoom 10 | Old bird curve was `0.4 + 0.6 * close` (0.70 at the default zoom 36); now 0.33 there, 0.08 zoomed right out, 1.0 (unchanged) fully zoomed in. Chirp gain x0.8. |
 | Stream / river (`stream` + `rapids` layers) | smoothstep zoom window (silent at zoom >= 38, full at <= 14) x `(1 - d / 12)^1.6`, d = tiles to the nearest `Stream` tile (`WorldProbe`, scanned only while zoomed in) | Flow class (from `sim.flow`, via `streamClassAt`): calm = soft brook, brisk = full brook + some rush, rapids = rush + a quieter brook. `iceFrozen` (global river ice) = silent. Ceilings .17 / .14. |
 | Ponds / lakes (`water` layer) | tile fraction near the camera x zoom window (30 .. 10) x .45 | Very soft lapping; silent under ice (`iceFrozen`). Old floor of 0.3 at any zoom is gone. Ceiling .08. |
-| Apres-Ski Bar (`apres` layer + `Apres.ts` music) | per bar `(1 - d / 22)^1.5`; bars add, the sum is capped at 1; x zoom window (silent at >= 34, full at <= 12) | Only a bar that is built, active, open AND serving (`attractions.servingNow`, 08:00-23:00 in winter, 22:30 summer) is passed to the probe. Rain damps 30 %. |
+| Apres-Ski Bar (`apres` layer + `BarMusic.ts` songs) | per bar `(1 - d / 22)^1.5`; bars add, the sum is capped at 1; x zoom window (silent at >= 34, full at <= 12) | Only a bar that is built, active, open AND serving (`attractions.servingNow`, 08:00-23:00 in winter, 22:30 summer) is passed to the probe. Rain damps 30 %. |
 
-**Bar music** (`src/audio/apresSong.ts` + `Apres.ts`, since the music rework; docs below): a 124-128 bpm party-schlager / EDM-polka groove with a real beat, replacing the old 118 bpm polka. The **game music stops** while it is audible (hand-off with hysteresis, see "Music rework"). Levels: the bar music sits on the ambience bus at `APRES_SONG.outGain` (1), so it follows the Ambience slider (default 28 %) and mute; nothing is scheduled with the ambience slider at 0 or while muted. Proximity still shapes it: its low-pass goes from 1200 Hz (far) to 9500 Hz (near, `PROX.apres.cutoffFar / cutoffNear`) and the level follows `apresLevel`. The `apres` layer remains a quiet crowd murmur bed (ceiling .05).
+**Bar music** (`src/audio/BarMusic.ts`, owner-provided mp3 songs; see "Music" above): the **game music stops** while it is audible (hand-off with hysteresis). It sits on the ambience bus, so it follows the Ambience slider (default 28 %) and mute; nothing plays with the ambience slider at 0 or while muted. Proximity still shapes it: its low-pass goes from 1200 Hz (far) to 9500 Hz (near, `PROX.apres.cutoffFar / cutoffNear`) and the level follows `apresLevel`. The `apres` layer remains a quiet crowd murmur bed (ceiling .05).
 
-Node budget: the three new layers add about 44 live nodes (stream 17, rapids 9, apres 12, plus gains), so the ambience test budget went from 236 / 250 to 290 / 310; the bar music owns its voices (`APRES_SONG.maxVoices` 30, each 4-12 nodes, freed by its own reap): about 150 extra nodes at the busiest moment (a drop), only while you stand next to a bar and the game music is silent (which frees its ~200).
-
-## Music rework (Nov 2026)
-Owner feedback: the game music was "very meh"; the bar music needed beats; the game music must stop (not duck) near the bar. All of it is **procedural and seeded, nothing was heard by the agent** (no audio device): tunables are in `src/config/audioMusic.ts` (`MUSIC_MIX`, `HANDOFF`, `APRES_SONG`, `EXPORT`), per-track data in `musicThemes.ts`. The sim is untouched (observer only, `stateHash` unchanged).
-
-### Game music: song structure and arrangement (`musicComposer.ts`)
-- **Form**: `I` intro (4 bars: pad + sparse arp, bass enters in bar 3, a drum fill leads in), `A` verse (lighter drums, melody with more rests), `B` chorus (busiest: melody, **counter-melody**, full drums, melody lifted a step), `C` bridge (own progression, kick drops out, counter-melody leads, sparse melody), `O` outro (4 bars, bass + pad, the melody resolves in a long final note). A repeated letter is a varied repeat (verse 2 gets the counter-melody and a lifted melody). Phrases are 4 bars; the last bar of a phrase is a cadence on a chord tone; fills end 8-bar sections.
-- **Harmony**: 3-4 progressions per track (scale degrees), one chosen per letter, verse / chorus / bridge differ; pads and e-pianos are voice-led (`voiceLead`), basses follow the chord roots, the counter-melody uses chord tones moving by step in its own register.
-- **Bass**: `groove` style picks per section two patterns from a library of four rhythms (syncopated, 16th pickups, fifth / octave jumps) and adds a walking pickup into the next chord at chord changes; plus the older whole-note / root-fifth / pulse styles on the calm tracks.
-- **Drums** (`drumBar`, pure): kits `lofi`, `pop` (soft kick, rim / soft snare, swung off-beat hats, deterministic ghost hats and fills), `brush`, `shaker`. Swing delays the off-beat eighths by a `nudge` (a fraction of a beat, applied at scheduling time; the lo-fi snare sits slightly behind). **Ranks** decide what survives when the resort is quiet: kick and backbeat first, ghost notes last. Percussion is still only on when the resort is busy (or the track has a baseline); Night Chill keeps a soft beat after dark (`Theme.nightPerc`).
-- **Sends / mix**: instruments send to the reverb (feedback-delay network) and, new, a **ping-pong delay** (dotted eighth, follows the tempo, damped feedback .36, return `MUSIC_MIX.delayWet` .16); kit tracks **duck pads and the counter-line against the kick** (gentle sidechain, depth .28, release .11 s, a per-track `pump` gain); the master compressor (threshold -16 dB) is the only compression. Voices cap 18, lookahead 150 ms, nodes < 400 on a 15 minute fake-backend run.
-- **No obvious loops**: every piece is composed from `hash(seed, day, piece index, track)`; a new seed means a new progression, motif, rhythms, bass groove and counter rhythm, and the key moves by a 4th / 5th every piece; pieces are followed by 12-35 s of silence or a crossfade (8 s). Within a piece, repeats are varied (lift, ornaments, different drums, fills).
-- **Context**: `trackFit` picks Snow Piano in snow, Night Chill or Starlight at night, Summer Meadow in summer, Blizzard in a storm; layer weights and tempo follow season, time of day and weather as above. Crisis tension still thins the melody and adds a drone.
-
-### Bar music (`apresSong.ts`, `Apres.ts`)
-- **Groove** (all variants): kick on every beat (four-on-the-floor), clap on 2 and 4, open hats on the off-beats (closed 16th ghosts), driving bass, accordion chord stabs, brass hits. 4/4 at 124-128 bpm.
-- **Arrangement** (44 bars ~ 84 s, then it loops with a varied hook): intro (4: filtered chords + hats, bass from bar 3) - verse (8: beat, hook only in the last 4 bars, quieter) - **build-up** (4: snare roll quarter / eighth / sixteenth notes, rising velocity, a 4-bar noise riser, the last bar without kick and a 2-step gap) - **drop** (8: crash, full groove, hook in accordion / brass, brass hits) - break (4: no kick, hook solo, sustained chord) - build-up - drop 2 (hook doubled by the other lead) - outro (4). `APRES_SONG.sectionGain` sets the dynamics (verse .72, drop 1).
-- **Hook**: a 4-bar sing-along tune on the major pentatonic (no lyrics): motif, repeat (call), higher answer, long resolving note on a chord tone; strong beats snap to chord tones; `loop` varies the contour so a long stay does not repeat exactly.
-- **Four variants by seed** (`apresVariantIndex`): Party-Schlager (126, I V vi IV, offbeat bass, accordion), Polka-EDM (124, I IV V7 I, oompah bass + "pah" stabs under the four-on-the-floor), Ballermann Anthem (128, vi IV I V, brass lead), Brass Drop (125, rolling 16th bass, brass lead). Key (C / D / F / G) and +-1 bpm also come from the seed. The seed is the game's music seed (day-based, `createAudio`), so a bar sounds the same during a day and differs between days; `PROX.apres.seed` is the fallback.
-- **Restart**: after leaving for more than `APRES_SONG.restartAfterSec` (25 s) the song starts again from its intro (the build-up and drop are the point); a short absence continues on the next bar line.
-- Own gain chain: voices -> low-pass (proximity) -> level gain -> fade gate -> ambience bus; its own voice list (cap 30), lookahead 0.4 s, nothing scheduled with the ambience slider at 0.
-
-### Hand-off: the game music STOPS near an open bar (`musicHold.ts`)
-`main -> toApres -> apres -> toMain -> main`. The bar level (proximity x zoom window, as before) must reach `HANDOFF.enterLevel` (.12) for `enterDwell` (.5 s) and the game music has played >= `minMainSec` (3 s): the game music **fades out linearly over `mainFadeOut` 0.7 s** (it keeps scheduling meanwhile), and only then the bar music starts and fades in over 0.8 s. Leaving: the level must stay below `exitLevel` (.04) for `exitDwell` (2 s) and the bar music has played >= 4 s: the bar music fades out (0.6 s), then the game music **fades back in over 0.9 s**. In between, the game music holds: nothing scheduled, its position kept (no new piece, no gap timer decisions), and it resumes at the **start of the current chord group** (a held pad is re-struck instead of missing; `HANDOFF.resumeRewind`). The two never overlap: the nominal envelopes are products of exclusive phases (tested for every instant of random level walks), and the rendered audio of the steady bar window equals a bar-only render to 1e-4 (test with the software renderer). The enter / exit gap plus the dwell and minimum times make zooming in and out at the edge of the bar's reach harmless. The ambience slider at 0 or mute count as "the bar is silent": the game music is then never stopped. The old 30 % music-bus duck is gone (`AudioEngine.setMusicDuck`, `PROX.apres.duck`).
-
-### Previews for the owner: `npm run audio:export`
-`scripts/audio-export.ts` renders the real code offline (software renderer at 40960 Hz, real default sliders) into `.weave/audio-previews/` (git-ignored): `01-title`, `10-19` the game tracks by situation, `20-23` the four bar variants (91 s each), `30-handoff-demo` (game music -> bar -> game music), `90-menu-theme`, plus `index.md` (id, mood, bpm, key / form, seed, what to listen for, objective numbers). Needs local `ffmpeg` (mp3 192 kbps via libmp3lame, LUFS via `ebur128`); without it WAV files are written. Each file is lifted by a plain gain to **-17 LUFS (music) / -15 LUFS (bar)** with a soft peak limiter (<= 0.89) so tracks are comparable; the report lists raw LUFS, gain, limited samples, peak, clipped samples, DC and spectral centroid. `--only 20,30` renders a subset, `--seconds` / `--apres-seconds` change lengths. At the real defaults a track is about -28 to -30 LUFS raw (very quiet on purpose), the bar music about -27 LUFS (+3 dB, "a bit hotter").
-
-### Tests
-`tests/audio/musicStructure.test.ts` (sections, intro / chorus / outro roles, counter-melody, bass variation, drum determinism, swing nudges, ghost ranks, fills, kit sidechain, tempo by season / weather, track fit), `apresSong.test.ts` (determinism, four variants, tempo 123-129, kick / clap / hats / bass in the drop for all variants, build-up roll + riser + gap, hook in key, pitched hits in key), `handoff.test.ts` (state machine, hysteresis, minimum dwell, never-overlap envelopes, fake-backend stop / rewind / resume, ramped hold gain, rendered never-overlap), plus the updated `music`, `musicSelect`, `proximity`, `offline` suites (12 tracks, voices <= `MUSIC.maxVoices` 18, nodes budget, bar-music voice budget). Update note: the "identical bars" test ignores the percussion layer (drums repeat by design); the piece length bounds are 90-150 s (full song forms); the bpm bound is 108 (Festival 104).
+Node budget: the three new layers add about 44 live nodes (stream 17, rapids 9, apres 12, plus gains), so the ambience test budget went from 236 / 250 to 290 / 310; the bar music is one media element and a few gain / filter nodes.
 
 ## Offline verification (what the tests prove)
-- `tests/audio/offlineBackend.ts`: a **software Web Audio renderer** (oscillators with polyBLEP, buffer sources, biquads with Web-Audio Q semantics, panner, delay, compressor with measured makeup gain, param automation incl. `setTarget`, audio-rate param inputs, 128-sample blocks) that runs the **real** `Music` / `Ambience` / `Sfx` / `AudioEngine` (`tests/audio/renderHarness.ts`). `npm run audio:crosscheck` renders the same tracks / beds in **Chrome's own OfflineAudioContext** and compares: levels agree within ~1.5 dB and centroids within ~10 % (apres 345 vs 308 Hz, wind 168 vs 171, rain 2198 vs 2219) after calibrating the compressor makeup (+5 dB). It is not bit-exact (k-rate filter coefficients, compressor curve).
-- `tests/audio/offline.test.ts` (~25 s): per track (12) at worst-case volume: peak < 0.9, |DC| < 1e-3, no clicks (`clickScore` < 25 and max step < .25), RMS -42..-14 dBFS, spectral centroid 80-1500 Hz, < 1 % energy above 4 kHz and < 0.1 % above 8 kHz, loudness range < 15 dB over 4 s windows, stereo width, graph nodes < 500; determinism (bit-identical per seed); crossfade / Next with no click or 9 dB jump; pause fade-out really silent and clean resume; every pitched partial harmonic; per ambience state (12): peak, DC, clicks, **tonal line < 7 dB** (old crickets 15.5), bursts < 12 dB, < 1 % above 8 kHz, nodes < 330; ambience RMS < -30 dBFS at default volumes; birds quiet, smooth, < 6 kHz.
-- `tests/audio/musicSelect.test.ts`, `music.test.ts` (fake backend): fit table, no-immediate-repeat, determinism per seed, all pitched notes in scale / lead pentatonic, voice-led pad leaps <= 7 scale steps, twelve distinct tracks, 15 min bounded nodes / <= 14 voices / no late events, style lock, Next, preview-while-paused, context swap with minimum play time.
-- Previews: `npm run audio:render [-- --seconds 90 --only apres,ambience]` writes `.weave/audio-preview/v2-<track>.wav|ogg` (+ `old-*` A/B renders of the previous music / ambience) and spectrograms to `.weave/shots/audio-v2-*.png` (git-ignored). Typical output (peak / RMS at music 100 %, centroid): Morning Snow 0.39 / -22.7 dB / 286 Hz, Après 0.64 / -24.1 / 280, Starlight 0.35 / -26.9 / 314, Summer Meadow 0.41 / -20.4 / 487, Blizzard 0.15 / -30.7 / 192. At the default settings (music .5, master .7) that is roughly **-33 dBFS RMS**, well below the sfx peaks.
+- `tests/audio/offlineBackend.ts`: a **software Web Audio renderer** (oscillators with polyBLEP, buffer sources, biquads with Web-Audio Q semantics, panner, delay, compressor with measured makeup gain, param automation, 128-sample blocks) that runs the **real** `Ambience` / `Sfx` / `AudioEngine` (`tests/audio/renderHarness.ts`) for the ambience and SFX tests: per ambience state (12): peak, DC, clicks, **tonal line < 7 dB**, bursts < 12 dB, < 1 % above 8 kHz, nodes < 330; ambience RMS < -30 dBFS at default volumes; birds quiet, smooth, < 6 kHz. It has no media-element routing, so the music players do nothing there (by design).
+- The music logic is tested with a fake backend and a fake media element (`tests/audio/fakeBackend.ts`: `FakeMedia`, `fakeMediaHooks`).
 
 ## NOT verified (by ear)
-- Whether it is actually pleasant: melodic quality of the generated phrases, the feel of the harmonic rhythm, whether the brush / shaker / flute timbres convince, whether the reverb tail is pleasing and not metallic (6 combs without allpass diffusion can colour: judge on real speakers), whether the tracks are different enough from each other.
-- Absolute levels against the sfx on real hardware and small laptop speakers (the music is deliberately warm: centroid 200-500 Hz, bass at low level; on tiny speakers the sub notes disappear and the harmony thins).
-- How often tracks swap in real play (the fit table is reasoned), whether 12-35 s of silence between pieces feels right.
-- Real GPU/CPU cost of ~150-330 live audio nodes (beds are always built, as before, but with more LFO nodes: 175 live nodes with all layers vs ~100 before); the renderer only counts nodes.
+- Whether the **transitions** feel right: the 4-5 s crossfades between two different songs, the 0.7 s fade-out into a bar song, the way a song resumes after the hand-off.
+- The levels: the -20 / -18 LUFS targets (3 dB below before) against sound effects and ambience on real hardware and on small laptop speakers, and the bar level (+5 dB bus compensation) against the game music.
+- Whether the situation rules feel right over an hour of play (how often tracks change, whether a one-track situation such as a long storm or a busy winter day feels repetitive with the fallback tracks).
+- Real browsers' behaviour of media elements in a suspended context (we pause them explicitly), autoplay edge cases, and phones.
+- Real GPU/CPU cost of the ambience beds (about 175 live nodes with all layers); the tests only count nodes.
 
 ## Feedback sounds (M5.1)
 - `money:changed` no longer plays a ka-ching by itself: the FX layer (`src/render/fx`) plays one quiet ka-ching (gain 0.4) only when a significant +$ popup appears, at most once per 3 s. `Feedback intensity: Off` therefore silences it.

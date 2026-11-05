@@ -491,5 +491,5 @@ Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts
 - Human playtest STOP of Task 32 still open.
 
 
-## Menu music (unreleased, Nov 2026)
-Size: the two Suno menu tracks add 6.8 MB (3.2 + 3.6) to `dist` and `dist-site/play`, runtime-cached on first play, not precached: the precache total and the 2048 kB gzip budget are unchanged (`npm run size` excludes `audio/`). Owner playtest: listen to the title screen (both tracks, the crossfade, volume / mute / Music off, the fade when a game starts); nobody has heard it. See `docs/audio.md`.
+## Music (unreleased, Nov 2026)
+All music is now owner-provided Suno mp3 files (19, 37.0 MB after one re-encode; title / menu, game, apres-bar), replacing the procedural music. They are runtime-cached by the service worker as they play, not precached: the precache total and the 2048 kB gzip budget are unchanged (`npm run size` excludes `audio/`); the Pages artifact grows by 37 MB (`dist-site/play/audio`). Every committed mp3 stays in git history. Owner playtest: `docs/playtest-audio.md` (nobody has heard the new music in the game). See `docs/audio.md`.

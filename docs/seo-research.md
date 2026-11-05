@@ -216,7 +216,7 @@ Already present: `VideoGame` + `WebApplication` (landing), `WebSite`, `Breadcrum
 Realistic, owner-driven, one post each, honest tone, **no AI-generated mass posting**:
 1. **itch.io page** (web game embed or a "play on the website" link): itch is DR 92 and ranks for "snowtopia" and tycoon tag pages (itch.io/games/free/tag-tycoon). Check `docs/deploy.md` for what hosting means for the proprietary licence before uploading. The itch page links back (nofollow likely, but the SERP presence is real).
 2. **Reddit**: r/tycoon (the "ski resort tycoon" and "browser based tycoon games" threads rank on page 1 in Google), r/skiing (launch posts like Skingdom's rank), r/WebGames, r/incremental_games is not a fit. Follow each sub's self-promotion rules; participate, do not drop links. Reply to the existing r/tycoon threads "I would really like to play ski resort tycoon again" and "browser based tycoon games" only if the thread allows self-promo and say you are the developer.
-3. **Hacker News "Show HN"**: fits (procedural everything, no assets, PWA). One post, a technical angle, not marketing.
+3. **Hacker News "Show HN"**: fits (procedural graphics, effects and ambience, almost no assets, PWA). One post, a technical angle, not marketing.
 4. **Product Hunt**: optional; low relevance for games, small effect.
 5. **AlternativeTo**: list as an alternative to Ski Resort Tycoon / Snowtopia; free listing.
 6. **IndieDB, Game Jolt**, **GameFAQs/RPS-style small blogs**: submit once.

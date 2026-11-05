@@ -1,31 +1,32 @@
-# Playtest: music rework + proximity audio (nature, streams, Apres-Ski Bar)
+# Playtest: music (owner mp3 files) + proximity audio (nature, streams, bar music)
 
-**Nothing here was heard by the agent that wrote it** (no audio device): levels come from reasoned estimates and offline renders (`tests/audio/proximity.test.ts`). Please check by ear, with the ambience slider at its default (28 %) and again at 60 %. **All proximity constants live in `src/config/audioProximity.ts` (`PROX`), all music / bar-music / hand-off constants in `src/config/audioMusic.ts`**; the ambience ceilings are `AMB.layerMax` in `src/audio/Ambience.ts`.
+**Nothing here was heard by the agent that wrote it** (no audio device): the logic is tested with fake media elements and `npm run music:e2e` reads the audio graph in Chrome, but nobody listened. Please check by ear, with the Music slider at its default (50 %) and the ambience slider at its default (28 %) and again at 60 %. **All music tables (track trims, playlists, situation rules, hand-off, bar level) live in `src/config/audioMusic.ts`; all proximity constants in `src/config/audioProximity.ts` (`PROX`).** The track table, the mapping and how to swap a track: `docs/audio.md` "Music".
 
-## A. Listen to the previews first (`npm run audio:export`, folder `.weave/audio-previews/`, see its `index.md`)
-Each file is a software render of the real code, normalised to -17 LUFS (music) / -15 LUFS (bar music). Judge arrangement and sound there; judge the in-game LEVEL in the game (previews are much louder than the defaults).
-1. Go through `01`-`19`, `90` one by one. For each: is it still "meh"? If yes, is it the **melody**, the **timbre**, the **beat** or the **arrangement**? Do the sections read as intro / verse / chorus / bridge / outro, is the chorus bigger than the verse? Counter-melody audible but not fighting the lead?
-2. Beat tracks (`11 alpine-noon`, `15 night-chill`, `19 festival`): is the swing pleasant (`MUSIC_MIX.swingLofi` .3, `Theme.swing`), do pads "breathe" with the kick (`sidechainDepth` .28 too much / too little), is the delay tail nice (`delayWet` .16, `delayFeedback` .36), are fills too frequent?
-3. Piano / mallet / warm lead timbres (`12 snow-piano`, `10`, `15`): natural or toy-like? (`piano`, `mallet`, `warmLead` in `instruments.ts`.)
-4. `20`-`23` the four bar variants: **danceable?** Kick / clap / off-beat hats / bass clear? Does the build-up (snare roll + riser + gap) and the drop land? Is the accordion / brass hook catchy and singable, not shrill (`accordion` / `brass` gains in `instruments.ts`, `APRES_SONG.sectionGain`)? Which variant do you like best?
-5. `30 handoff-demo`: game music -> (walk up) fade out ~0.7 s, then the bar fades in -> (walk away) the bar fades out, then the game music fades back in from the start of its chord. They must never overlap; no clicks.
+## A. Level (the owner said the music is a bit loud: the default is now 3 dB lower)
+1. Music 50 %, master 70 %: is the music now comfortable under the sound effects and the ambience, on laptop speakers and on headphones? Too quiet / still loud: change `MUSIC_TARGET_LUFS` (game / menu -20, bar -18) and recompute the `trim` column (docs/audio.md), or the slider default.
+2. The title music and the in-game music should sit at the same loudness; the bar songs about 2 dB hotter than the game music (ambience bus at 28 %, `BAR_AUDIO.busBoost` +5 dB makes up for the quieter bus). If a bar song is too loud or too quiet at the default sliders: `BAR_AUDIO.busBoost`.
+3. Do any two tracks differ in loudness noticeably (the trims are measured LUFS, not by ear)? Note the track and adjust its `trim` row.
 
-## B. In the game
-0. Music default levels (Music 50 %): check the tracks are still quiet and restrained; the bar music (ambience bus, 28 %) should be about 3 dB hotter than the game music, clearly a party. If not: `APRES_SONG.outGain`.
-1. **Game music is stopped near an open Apres-Ski Bar** (winter, open, serving): zoom in to the bar: within about a second the game music fades out and the bar music starts (never both). Zoom out / walk away: the bar fades out, the game music returns after a moment, continuing the same piece (not a new one). Tune `HANDOFF` (enterLevel .12, exitLevel .04, dwell, fades).
-2. **No flip-flop**: zoom in and out repeatedly at the edge of the bar's reach and with the mouse wheel: it must not stutter between the two musics (min times 3 s / 4 s, dwell .5 s / 2 s). Too sticky? lower `exitDwell` / `minApresSec`.
-3. Ambience slider at 0 or mute (M): the bar is silent and the game music must keep playing (not be paused for a silent bar). Another browser tab: everything stops, no burst on return.
-4. Staying at the bar for several minutes: the song loops with a varied hook; leaving for more than 25 s and returning starts it over from the intro.
-5. Time of day / season / weather: snow in the day = Snow Piano; night = Starlight or Night Chill; summer day = Summer Meadow; storm = Blizzard; tempo should be a bit slower in autumn / winter / snow.
-6. Title / Menu themes: only reachable via Settings > Music style (the title demo has no audio engine). Do they fit?
+## B. What plays when
+1. Winter morning: Mountain Morning / Winter Early slopes alternate. From 11:00 with a busy resort: Winter Day (note: it is one song, so when it ends the next comes from the morning pair). Snow in the daytime: Winter Snow. Dusk: Evening Corner. Night: Melted Snow and Vinny F Minor alternate. Summer / spring day: Meadow Loop / Pastoral Walk. Autumn: Autumn's Gentle Sway / Autumn Gold. Storm or heavy snow: Tente Restringida. A festival: Festival groove.
+2. **Changes feel natural**: the hour ticking over or a short weather flicker must not swap the song mid-way (it waits for the end); a storm, nightfall and a festival cut in with a 5 s crossfade (`MUSIC_PLAY.situationCrossfade`), never more often than every 150 s (`SITUATION.minChangeGapSec`). Too slow / too eager? `SITUATION.settleSec` (20 s), `minChangeGapSec`.
+3. Crossfade at the end of a song (4 s, `MUSIC_PLAY.trackCrossfade`): smooth, or do the tail of one and the start of the next clash? Next track in Settings: 2.5 s crossfade, keeps playing while the dialog pauses the game.
+4. One-song situations (Winter Day, Winter Snow, Evening Corner, Tente Restringida, Festival groove): when they end, a track from the neighbouring situation plays (`FALLBACK`). Is that acceptable, or is a pause / repeat better?
+5. Pause (speed 0), mute (M), Ambience only, the Music checkbox: fades out and, when back, continues the same song where it stopped (not from the start). Switching to another browser tab: silence, and the song continues from the same place when you return, without a burst.
+6. Start of a session: nothing sounds until the first click; the first song starts about 1.5 s later with a slow fade-in. Offline (after one earlier session that played the track): it works; offline with a file never played: silence, no error dialog.
+7. Title screen: Seasons of Management opens (it is the title theme), Seasonal Menu follows; starting a game fades it out; the game music starts after the first click on the game page.
 
-## Proximity checklist (still valid, bar items updated)
-1. **Apres-Ski Bar (winter, daytime or evening, bar open and serving)**: zoom in until the bar fills a good part of the screen. The party groove (see section A) should come in smoothly after the game music has faded out, clearly audible, with a faint crowd murmur. Zoom out: it should fade to silence around the default view. Too quiet/loud? `APRES_SONG.outGain` (1), `murmurMax` (0.05). Too far-reaching? `reach` (22 tiles), `zoomFar` (34).
-2. The game music is STOPPED near the bar, not ducked (see section B).
-3. Close the bar (or wait until after 23:00): the music must stop within a second or so. Two bars side by side: louder, but never more than the cap (`apres.cap`).
-4. The bar music should sound cheerful, not shrill: if the accordion / hats are too bright lower `cutoffNear` (9500); tempo per variant is `APRES_SONG.bpms` (124-128).
-5. **Birds / nature**: at the default zoom they should be rare and soft; zoomed in close (summer morning) they come forward as before. Tune `nature.far` (0.08), `nature.power` (2), `chirpGain` (0.8).
-6. **Streams**: zoom in beside a stream or a dug river: a soft brook; faster (rapids) water should sound brighter and louder. Zoom out: silent. Winter with ice: silent. Tune `stream.zoomFar/zoomNear/reach`, ceilings `AMB.layerMax.stream` (0.17) / `rapids` (0.14), flow mix `stream.flow`.
-7. Ponds / lakes: barely audible lapping only when very close (`pond.max` 0.45).
-8. Mute (M), ambience slider at 0, and switching to another browser tab: everything including the polka must stop; coming back must not burst.
-9. Zoom in and out with the mouse wheel: no zippering / pumping (layers ease over about 1 s).
+## C. Bar songs and the hand-off
+1. **Game music is stopped near an open Apres-Ski Bar or Schirmbar** (open, serving): zoom in: within about a second the game music fades out and a bar song fades in (never both). Zoom out / walk away: the bar song fades out, the game music returns after a moment, **from where it stopped**. Tune `HANDOFF` (enterLevel .12, exitLevel .04, dwell, fades).
+2. **No flip-flop**: zoom in and out repeatedly at the edge of the bar's reach with the mouse wheel: it must not stutter between the two musics (min times 3 s / 4 s, dwell .5 s / 2 s).
+3. The first bar song is fetched when you come into reach of the bar: is there a silent gap between the game music fading out and the bar song starting on a slow connection?
+4. Staying at the bar: the four songs (Ski Hut Groove, Polka Party Time, Alpine Après-Ski, Après-Ski Brass) alternate and crossfade; leaving for less than 25 s and coming back resumes the same song, after longer the next one plays (`BAR_AUDIO.restartAfterSec`).
+5. Ambience slider at 0 or mute: the bar is silent and the game music keeps playing. The faint crowd murmur under the songs: does it clash? If so lower `PROX.apres.murmurMax` (.05) or remove the layer.
+6. Close the bar (or wait until after closing time): the song fades out within a second or so and the game music returns. Two bars side by side: louder, never more than the cap (`PROX.apres.cap`).
+
+## D. Proximity checklist (unchanged)
+1. **Birds / nature**: at the default zoom rare and soft; zoomed in close (summer morning) they come forward. Tune `nature.far` (0.08), `nature.power` (2), `chirpGain` (0.8).
+2. **Streams**: zoom in beside a stream or a dug river: a soft brook; faster (rapids) water brighter and louder. Zoom out: silent. Winter with ice: silent. Tune `stream.zoomFar/zoomNear/reach`, ceilings `AMB.layerMax.stream` (0.17) / `rapids` (0.14), `stream.flow`.
+3. Ponds / lakes: barely audible lapping only when very close (`pond.max` 0.45).
+4. Mute (M), ambience slider at 0, and switching to another browser tab: everything stops; coming back must not burst.
+5. Zoom in and out with the mouse wheel: no zippering / pumping (layers ease over about 1 s).
