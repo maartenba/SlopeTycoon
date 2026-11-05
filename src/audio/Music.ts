@@ -1,293 +1,172 @@
+import { Rng } from '../core/Rng';
+import { HANDOFF, MUSIC_PLAY, SITUATION, type SituationId } from '../config/audioMusic';
 import type { AudioEngine } from './AudioEngine';
-import type { GainLike, NodeLike } from './backend';
-import { playNote, type InstCtx, type InstVoice } from './instruments';
-import { HANDOFF, MUSIC_MIX } from '../config/audioMusic';
-import { composePiece, chordStartBar, nextRoot, pieceSeed, type NoteEvent, type Piece } from './musicComposer';
+import type { GainLike } from './backend';
 import { MusicHandoff, type HoldPhase } from './musicHold';
-import { chooseTrack, shouldSwap } from './musicSelect';
-import { bpmFor, smoothParams, targetParams, type MusicInput, type MusicParams } from './musicState';
-import { MUSIC, THEMES, type MusicStyle, type TrackId } from './musicThemes';
-import { mulberry32, scaleNote } from './theory';
+import { isUrgent, pickNext, SituationTracker, trackTitle, type MusicInput } from './musicPlaylist';
+import { TrackPlayer, type PlayerDeps, type Prepared } from './TrackPlayer';
 
-export * from './musicComposer';
-const HANDOFF_FADES = { out: HANDOFF.mainFadeOut, in: HANDOFF.mainFadeIn, rewind: HANDOFF.resumeRewind } as const;
+export type { MusicInput };
+const P = MUSIC_PLAY;
 
-interface Track { piece: Piece; id: TrackId; ptr: number; beat: number; time: number; out: GainLike; /** Pads / counter-melody go through this gain, which dips gently on every kick (kit tracks). */ pump: GainLike | null; /** Backend time the track started sounding. */ startedAt: number; /** Backend time when this track must stop (crossfade out). */ endAt: number; done: boolean }
-interface Retiring { out: GainLike; at: number }
-
-export interface MusicOpts { seed?: number; dayKey?: number; /** Shared with the bar music (Apres.ts): near an open Apres-Ski Bar the game music stops. Default: a private one that never leaves `main`. */ handoff?: MusicHandoff }
-
-/** Feedback-delay reverb (6 damped combs, two stereo taps): soft room tail, no impulse buffer, cheap, identical in the offline renderer. */
-const COMBS = [0.0431, 0.0527, 0.0613, 0.0709, 0.0829, 0.0971];
+export interface MusicOpts {
+  /** Shared with the bar music (BarMusic.ts): near an open Apres-Ski Bar the game music stops. Default: a private one that never leaves `main`. */
+  handoff?: MusicHandoff;
+  /** UI-only randomness (not the sim's). */
+  rand?: () => number;
+  /** Test hooks for the player (media element factory, URL resolver, base URL). */
+  player?: Partial<Pick<PlayerDeps, 'createMedia' | 'resolve' | 'release' | 'base'>>;
+}
 
 /**
- * Lookahead step-sequencer. `tick()` (called every ~25 ms) schedules notes up to `MUSIC.lookahead` s ahead on the backend clock,
- * from pieces produced by the pure `composePiece`. A piece belongs to one of nine moods (`musicThemes.ts`) chosen by `chooseTrack` from the
- * game state (or locked by the player's Music style). Handles crossfades between tracks, pause/resume fades, silence gaps, tension and jingles.
+ * The in-game music: owner-provided mp3 files (docs/audio.md "Music") chosen by situation (season, time of day, weather, festival, busy resort, night alternative;
+ * `musicPlaylist.ts` + the PLAYLISTS table) and played by a `TrackPlayer`. Track changes are conservative: a new situation must hold for a while (`SituationTracker`),
+ * most changes wait for the playing track to end, only a storm, nightfall or a festival cut in with a crossfade (and not more often than `SITUATION.minChangeGapSec`).
+ * Pause / mute / speed 0 / the hand-off to the bar music fade the gain, then pause the element (position kept); the music resumes exactly where it stopped.
+ * Graph: track gain -> hold (hand-off) -> gate (pause / mute fade) -> the engine's music bus (Music slider, Master, mute, ambience-only apply).
  */
 export class Music {
-  params: MusicParams | null = null;
-  readonly input: MusicInput = { season: 'winter', weather: 'clear', hour: 12, speed: 1, tension: 0 };
-  tension = 0;
-  stats = { notes: 0, dropped: 0, pieces: 0, crossfades: 0, late: 0, jingles: 0 };
-  /** Tracks played, oldest first (capped at 12). */
-  history: TrackId[] = [];
+  readonly input: MusicInput = { season: 'winter', weather: 'clear', hour: 12, speed: 1 };
+  stats = { started: 0, crossfades: 0, failures: 0 };
+  /** Track ids played, oldest first (capped at 12). */
+  history: string[] = [];
+  readonly tracker = new SituationTracker();
+  readonly handoff: MusicHandoff;
+  readonly player: TrackPlayer;
   private gate: GainLike | null = null;
-  /** Hand-off hold gain (after the pause gate): 1 = game music audible, 0 = stopped for the bar music. */
   private hold: GainLike | null = null;
   private holdPhase: HoldPhase = 'main';
-  private rewindOnResume = false;
-  private delayIn: NodeLike | null = null;
-  private delayNodes: Array<{ delayTime: { setTargetAtTime(v: number, t: number, tc: number): unknown } }> = [];
-  private delayBpm = 0;
-  readonly handoff: MusicHandoff;
-  private reverb: NodeLike | null = null;
-  private ctx: InstCtx | null = null;
-  private tracks: Track[] = [];
-  private retiring: Retiring[] = [];
-  private voices: InstVoice[] = [];
-  private lastNow: number | null = null;
-  private nextPieceAt = -1;
-  private pieceIndex = 0;
-  private lastRoot: number | null = null;
-  private playing = false;
   private gateTarget = -1;
-  private lastJingle = -1e9;
-  private nextCheck = 0;
+  private curSituation: SituationId | null = null;
+  private queued: string | null = null;
+  private queuedFor: SituationId | null = null;
+  private starting = false;
   private skipRequested = false;
-  /** While the Settings dialog pauses the game, a Next / style change keeps the music audible for a while so it can be previewed. */
   private previewUntil = -1;
-  private lastStyle: MusicStyle | null = null;
-  private rng: () => number;
-  readonly seed: number; dayKey: number;
+  private lastChangeAt = -Infinity;
+  private runningSince = -1;
+  private idleSince = -1;
+  private backoffUntil = -1;
+  private failed = new Set<string>();
+  private warnedAll = false;
+  private rand: () => number;
 
   constructor(private engine: AudioEngine, o: MusicOpts = {}) {
-    this.seed = o.seed ?? 1; this.dayKey = o.dayKey ?? 0; this.handoff = o.handoff ?? new MusicHandoff();
-    this.rng = mulberry32(this.seed ^ 0x51ed);
+    this.handoff = o.handoff ?? new MusicHandoff();
+    if (o.rand) this.rand = o.rand; else { const r = new Rng(Date.now() >>> 0); this.rand = () => r.next(); }
+    this.player = new TrackPlayer({ engine, dest: () => this.hold, dir: 'audio/', label: 'music', ...(o.player ?? {}) });
   }
 
-  /** Voices sounding right now (excludes notes scheduled a few ms ahead). */
-  get activeVoices(): number { const n = this.lastNow ?? 0; return this.voices.filter((v) => v.start <= n && v.end > n).length; }
-  get scheduledVoices(): number { return this.voices.length; }
-  get trackCount(): number { return this.tracks.length; }
-  get isPlaying(): boolean { return this.playing; }
+  get isPlaying(): boolean { return this.player.playing && this.gateTarget === 1; }
   get gateValue(): number { return this.gateTarget; }
   /** Target of the hand-off hold gain (1 = game music may be heard, 0 = stopped for the bar music). */
   get holdValue(): number { return this.handoff.phase === 'main' ? 1 : 0; }
-  get currentPiece(): Piece | null { return this.tracks[this.tracks.length - 1]?.piece ?? null; }
-  /** Mood playing now (null in a silence gap / before the first piece). */
-  get currentTrack(): TrackId | null { return this.tracks[this.tracks.length - 1]?.id ?? null; }
-  get bpm(): number { const t = this.currentTrack; return this.params && t ? bpmFor(t, this.params.tempoMul) : 0; }
+  /** Track id playing now (null before the first track / between failures). */
+  get currentTrack(): string | null { return this.player.cur?.track.id ?? null; }
+  get currentTitle(): string { return trackTitle(this.currentTrack); }
+  get situation(): SituationId | null { return this.tracker.committed; }
+  get trackCount(): number { return this.player.active.length; }
 
   setInputs(p: Partial<MusicInput>): void { Object.assign(this.input, p); }
-  /** Crisis spike (0..1); decays over ~25 s. */
-  addTension(x: number): void { this.tension = Math.min(1, Math.max(this.tension, x)); }
-  /** Skip to another track (crossfade). In Auto the next track is drawn from what fits; with a locked style a fresh piece of that style. Works inside a silence gap too. */
-  next(): void { this.skipRequested = true; this.previewUntil = this.engine.now() + MUSIC.previewSec; }
+  /** Skip to another track of the situation (crossfade). Keeps the music audible for a while when the game is paused (Settings preview). */
+  next(): void { this.skipRequested = true; this.previewUntil = this.engine.now() + P.previewSec; }
 
   private build(): boolean {
-    const b = this.engine.backend, bus = this.engine.busNode('music'), noise = this.engine.noise;
-    if (!b || !bus || !noise) return false;
-    if (this.ctx) return true;
-    // gate (pause / mute fade) -> soft tone low-pass -> music bus
-    const tone = b.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = MUSIC.toneHz; tone.Q.value = 0; tone.connect(bus);
-    const hold = b.createGain(); hold.gain.value = 1; hold.connect(tone); this.hold = hold;
-    const gate = b.createGain(); gate.gain.value = 0; gate.connect(hold); this.gate = gate;
-    const mkDelay = b.createDelay?.bind(b);
-    if (mkDelay) {
-      const rin = b.createGain(), pre = mkDelay(0.1), ret = b.createGain(), a = b.createGain(), c = b.createGain(), pa = b.createStereoPanner(), pc = b.createStereoPanner();
-      rin.gain.value = 1; pre.delayTime.value = 0.03; ret.gain.value = MUSIC.reverbWet; a.gain.value = 0.5; c.gain.value = 0.5; pa.pan.value = -0.85; pc.pan.value = 0.85;
-      rin.connect(pre);
-      COMBS.forEach((tm, i) => {
-        const d = mkDelay(0.2), damp = b.createBiquadFilter(), fb = b.createGain();
-        d.delayTime.value = tm; damp.type = 'lowpass'; damp.frequency.value = 2600; damp.Q.value = 0; fb.gain.value = 0.84;
-        pre.connect(d); d.connect(damp); damp.connect(fb); fb.connect(d); damp.connect(i % 2 ? c : a);
-      });
-      a.connect(pa); c.connect(pc); pa.connect(ret); pc.connect(ret); ret.connect(gate);
-      this.reverb = rin;
-    }
-    if (mkDelay && MUSIC_MIX.delayWet > 0) { // ping-pong delay (dotted eighth, damped feedback), sends per instrument
-      const din = b.createGain(), d1 = mkDelay(2), d2 = mkDelay(2), lp = b.createBiquadFilter(), fb = b.createGain(), ret = b.createGain(), pl = b.createStereoPanner(), pr = b.createStereoPanner();
-      lp.type = 'lowpass'; lp.frequency.value = MUSIC_MIX.delayDamp; lp.Q.value = 0; fb.gain.value = MUSIC_MIX.delayFeedback; ret.gain.value = MUSIC_MIX.delayWet; pl.pan.value = -0.7; pr.pan.value = 0.7;
-      d1.delayTime.value = 0.4; d2.delayTime.value = 0.4;
-      din.connect(d1); d1.connect(pl); pl.connect(ret); d1.connect(lp); lp.connect(d2); d2.connect(pr); pr.connect(ret); d2.connect(fb); fb.connect(d1); ret.connect(gate);
-      this.delayIn = din; this.delayNodes = [d1, d2];
-    }
-    this.ctx = { b, noise, dest: gate, reverb: this.reverb, delay: this.delayIn };
+    const b = this.engine.backend, bus = this.engine.busNode('music');
+    if (!b || !bus) return false;
+    if (this.hold) return true;
+    const gate = b.createGain(); gate.gain.value = 0; gate.connect(bus); this.gate = gate;
+    const hold = b.createGain(); hold.gain.value = 1; hold.connect(gate); this.hold = hold;
     return true;
   }
 
-  private style(): MusicStyle { return this.engine.settings.get().musicStyle; }
-  private pick(exclude?: TrackId): TrackId { return chooseTrack(this.input, this.rng, this.history, this.style(), exclude); }
-
-  /** Scheduler pass. Safe to call at any rate; does nothing until the engine is running. */
+  /** Scheduler pass (every `MUSIC_PLAY.tickMs`). Safe at any rate; does nothing until the engine is running. */
   tick(): void {
-    if (!this.engine.running || !this.build()) { this.lastNow = null; return; }
-    const b = this.engine.backend!, now = b.now(), st = this.engine.settings.get();
-    const dt = this.lastNow === null ? 0 : Math.min(1, Math.max(0, now - this.lastNow));
-    this.lastNow = now;
-    this.tension *= Math.exp(-dt / MUSIC.tensionDecayTc);
-    this.input.tension = this.tension;
-    const cur = this.tracks[this.tracks.length - 1];
-    this.params = smoothParams(this.params, targetParams(this.input, THEMES[cur?.id ?? 'alpineNoon']), dt);
-    this.reap(now);
-
+    if (!this.engine.running || !this.build()) { this.runningSince = -1; return; }
+    const now = this.engine.now(), st = this.engine.settings.get();
+    if (this.runningSince < 0) this.runningSince = now;
+    this.player.reap();
     this.applyHold(now);
-    if (this.params && this.delayNodes.length) { const bpm = bpmFor(cur?.id ?? 'alpineNoon', this.params.tempoMul); if (Math.abs(bpm - this.delayBpm) > this.delayBpm * 0.03) { this.delayBpm = bpm; const tm = Math.min(0.9, Math.max(0.15, (60 / bpm) * 0.75)); for (const d of this.delayNodes) d.delayTime.setTargetAtTime(tm, now, 0.6); } }
     const want = st.musicOn && !st.muted && !st.ambienceOnly && this.handoff.mainScheduling && !(st.pauseMusicAtZero && this.input.speed === 0 && now > this.previewUntil);
     const target = want ? 1 : 0;
     if (target !== this.gateTarget) {
       this.gate!.gain.cancelScheduledValues(now);
-      this.gate!.gain.setTargetAtTime(target, now, want ? MUSIC.resumeFadeTc : MUSIC.pauseFadeTc);
+      this.gate!.gain.setTargetAtTime(target, now, want ? P.resumeFadeTc : P.pauseFadeTc);
       this.gateTarget = target;
     }
-    if (!want) { this.playing = false; return; }
-    if (!this.playing) { // resume: continue the held piece from "now"
-      this.playing = true;
-      for (const t of this.tracks) { t.time = Math.max(t.time, now + 0.1); if (this.rewindOnResume) this.rewind(t); }
-      this.rewindOnResume = false;
-      if (this.nextPieceAt >= 0) this.nextPieceAt = Math.max(this.nextPieceAt, now + 0.5);
+    if (!want) { // silent: pause the element once the fade is done (position kept)
+      if (this.idleSince < 0) this.idleSince = now;
+      if (now - this.idleSince >= P.holdAfter) this.player.setHold(true);
+      return;
     }
-
+    this.idleSince = -1; this.player.setHold(false);
+    this.tracker.update(this.input, now);
+    if (!this.player.supported) return;
     this.decide(now);
-    for (const t of [...this.tracks]) this.runTrack(t, now);
-    for (const t of [...this.tracks]) if (t.done) this.finishTrack(t, now);
   }
 
-  /** Follows the hand-off phase: fade the game music out (linear, mainFadeOut) before the bar music starts, back in (mainFadeIn) after it left; hold = nothing scheduled, position kept. */
+  /** Follows the hand-off phase: the game music fades out (linear, mainFadeOut) before the bar music starts, and back in (mainFadeIn) after it left. */
   private applyHold(now: number): void {
     const ph = this.handoff.phase;
     if (ph === this.holdPhase) return;
     const g = this.hold!.gain, cur = g.value;
     g.cancelScheduledValues(now);
-    if (ph === 'toApres') { g.setValueAtTime(cur, now); g.linearRampToValueAtTime(0, Math.max(now + 0.05, this.handoff.since + HANDOFF_FADES.out)); }
-    else if (ph === 'main') { g.setValueAtTime(0, now); g.linearRampToValueAtTime(1, now + HANDOFF_FADES.in); }
-    else { g.setValueAtTime(0, now); if (ph === 'apres' && HANDOFF_FADES.rewind) this.rewindOnResume = true; }
+    if (ph === 'toApres') { g.setValueAtTime(cur, now); g.linearRampToValueAtTime(0, Math.max(now + 0.05, this.handoff.since + HANDOFF.mainFadeOut)); }
+    else if (ph === 'main') { g.setValueAtTime(0, now); g.linearRampToValueAtTime(1, now + HANDOFF.mainFadeIn); }
+    else g.setValueAtTime(0, now);
     this.holdPhase = ph;
   }
 
-  /** Resume at the start of the current chord group (a held pad is re-struck instead of missing); never moves forward. */
-  private rewind(t: Track): void {
-    const bar = Math.floor(t.beat / MUSIC.barBeats), target = chordStartBar(bar, t.piece.barsPerChord) * MUSIC.barBeats;
-    if (target >= t.beat) return;
-    t.beat = target; t.ptr = 0;
-    const ev = t.piece.events; while (t.ptr < ev.length && ev[t.ptr]!.beat < target - 1e-9) t.ptr++;
-  }
-
-  /** Track-level decisions: start the first piece, honour Next / Music style, swap a track that no longer fits the context. */
   private decide(now: number): void {
-    const live = this.tracks.filter((t) => t.endAt === Infinity), cur = live[live.length - 1];
-    const style = this.style(), styleChanged = this.lastStyle !== null && style !== this.lastStyle;
-    this.lastStyle = style;
-    if (styleChanged) this.previewUntil = now + MUSIC.previewSec;
+    const sit = this.tracker.committed; if (!sit || this.starting) return;
+    const cur = this.player.cur;
     if (!cur) {
-      if (this.skipRequested) { this.skipRequested = false; this.nextPieceAt = now; }
-      if (this.nextPieceAt < 0) this.nextPieceAt = now + 1.5;
-      if (this.tracks.length === 0 && now >= this.nextPieceAt) this.startTrack(this.pick(), now + 0.1, now, MUSIC.introFadeSec);
+      if (now < this.backoffUntil || now - this.runningSince < P.startDelay) return;
+      void this.begin(sit, P.introFade);
       return;
     }
-    if (this.skipRequested) { this.skipRequested = false; this.crossfadeTo(this.pick(cur.id), now); return; }
-    if (styleChanged && style !== 'auto' && cur.id !== style) { this.crossfadeTo(style, now); return; }
-    if (now < this.nextCheck) return;
-    this.nextCheck = now + 2;
-    if (style === 'auto' && now - cur.startedAt >= MUSIC.minPlaySec && shouldSwap(cur.id, this.input)) this.crossfadeTo(this.pick(cur.id), now);
+    if (this.queuedFor !== sit) this.preloadNext(sit);
+    if (this.skipRequested) { this.skipRequested = false; void this.begin(sit, P.skipCrossfade, cur.track.id); return; }
+    if (this.curSituation !== sit && isUrgent(sit) && now - this.lastChangeAt >= SITUATION.minChangeGapSec) { this.lastChangeAt = now; void this.begin(sit, P.situationCrossfade, cur.track.id); return; }
+    if (this.player.remaining <= P.trackCrossfade + 0.1) void this.begin(sit, Math.min(P.trackCrossfade, Math.max(0.3, this.player.remaining)));
   }
 
-  private startTrack(id: TrackId, time: number, now: number, fade: number): Track {
-    const th = THEMES[id], seed = pieceSeed(this.seed, this.dayKey, this.pieceIndex, id);
-    const root = nextRoot(this.lastRoot, th, mulberry32(seed ^ 0xabc));
-    this.lastRoot = root; this.pieceIndex++;
-    const piece = composePiece(seed, id, root);
-    const out = this.ctx!.b.createGain();
-    out.gain.value = fade > 0 ? 0 : 1;
-    if (fade > 0) { out.gain.setValueAtTime(0, now); out.gain.linearRampToValueAtTime(1, now + fade); }
-    out.connect(this.gate!);
-    let pump: GainLike | null = null;
-    if (th.sidechain) { pump = this.ctx!.b.createGain(); pump.gain.value = 1; pump.connect(out); }
-    const t: Track = { piece, id, ptr: 0, beat: 0, time, out, pump, startedAt: now, endAt: Infinity, done: false };
-    this.tracks.push(t); this.stats.pieces++;
-    this.history.push(id); if (this.history.length > 12) this.history.shift();
-    return t;
+  private preloadNext(sit: SituationId): void {
+    const cur = this.player.cur?.track.id ?? null;
+    this.queued = pickNext(sit, cur ? [...this.history.slice(0, -1), cur] : this.history, this.rand, [...this.failed]);
+    this.queuedFor = sit;
+    this.player.keepOnly([cur, this.queued].filter((x): x is string => !!x));
+    void this.player.prepare(this.queued);
   }
 
-  private crossfadeTo(id: TrackId, now: number): void {
-    const live = this.tracks.filter((t) => t.endAt === Infinity);
-    for (const t of live) {
-      t.out.gain.cancelScheduledValues(now); t.out.gain.setValueAtTime(1, now); t.out.gain.linearRampToValueAtTime(0, now + MUSIC.crossfadeSec);
-      t.endAt = now + MUSIC.crossfadeSec;
-    }
-    this.stats.crossfades++;
-    this.startTrack(id, now + 0.1, now, MUSIC.crossfadeSec);
-  }
-
-  private runTrack(t: Track, now: number): void {
-    const p = this.params!, horizon = now + MUSIC.lookahead, step = MUSIC.stepBeats;
-    while (t.time < horizon && !t.done) {
-      const spb = 60 / bpmFor(t.id, p.tempoMul);
-      if (t.time >= t.endAt) { t.done = true; break; }
-      const barStart = t.beat % MUSIC.barBeats === 0;
-      const ev = t.piece.events;
-      while (t.ptr < ev.length && ev[t.ptr]!.beat < t.beat + step - 1e-9) {
-        const e = ev[t.ptr++]!;
-        if (e.beat < t.beat - 1e-9) continue;
-        this.emit(e, t, spb, now);
+  /** Load and start a track for `sit` (crossfading from the playing one); a track that fails to load is skipped for the next candidate. */
+  private async begin(sit: SituationId, fade: number, avoid?: string): Promise<void> {
+    this.starting = true;
+    try {
+      let id = this.queuedFor === sit && this.queued && this.queued !== avoid ? this.queued : pickNext(sit, this.history, this.rand, [...this.failed, ...(avoid ? [avoid] : [])]);
+      let prep: Prepared | null = null;
+      for (let tries = 0; tries < 4 && !prep; tries++) {
+        prep = await this.player.prepare(id);
+        if (!prep) { this.stats.failures++; this.failed.add(id); id = pickNext(sit, this.history, this.rand, [...this.failed]); }
       }
-      if (barStart && this.tension > 0.2 && t.endAt === Infinity) this.drone(t, spb, now);
-      t.beat += step; t.time += step * spb;
-      if (t.beat >= t.piece.totalBeats) { t.done = true; }
-    }
+      if (!prep) {
+        this.backoffUntil = this.engine.now() + P.failBackoffSec; this.failed.clear();
+        if (!this.warnedAll) { this.warnedAll = true; console.warn('[music] no track could be loaded (offline without a cached copy?): staying silent'); }
+        return;
+      }
+      if (!this.engine.running) return; // the engine stopped while loading: the next tick tries again
+      this.failed.delete(prep.track.id);
+      const first = !this.player.cur;
+      const p = this.player.play(prep, fade, 1, () => { this.player.stop(0.05); });
+      if (!p) return;
+      if (!first) this.stats.crossfades++;
+      this.stats.started++; this.curSituation = sit; this.queuedFor = null;
+      this.history.push(prep.track.id); if (this.history.length > 12) this.history.shift();
+      this.preloadNext(sit);
+    } finally { this.starting = false; }
   }
 
-  private drone(t: Track, spb: number, now: number): void {
-    if (t.time < now) return;
-    const th = t.piece, midi = scaleNote(th.root, th.mode, -14);
-    this.voice('drone', midi, t.time, MUSIC.barBeats * spb, 0.5 + 0.5 * this.tension, t.out, 0);
-  }
-
-  private emit(e: NoteEvent, t: Track, spb: number, now: number): void {
-    const at = t.time + (e.nudge ?? 0) * spb; // swing / laid-back snare: a fraction of a beat late
-    if (at < now) { this.stats.late++; return; } // never schedule into the past
-    const w = this.params!.layers[e.layer];
-    if (!(e.rank < w)) return;
-    const dest = t.pump && (e.layer === 'pad' || e.layer === 'counter') ? t.pump : t.out;
-    this.voice(e.inst, e.midi, at, e.dur * spb, e.vel * (0.6 + 0.4 * w), dest, e.pan);
-    if (t.pump && e.inst === 'kickSoft') { // gentle sidechain: pads and the counter-line dip under the kick, then swell back
-      const g = t.pump.gain; g.setTargetAtTime(1 - MUSIC_MIX.sidechainDepth, at, 0.006); g.setTargetAtTime(1, at + 0.045, MUSIC_MIX.sidechainRelease);
-    }
-  }
-
-  private voice(inst: Parameters<typeof playNote>[1], midi: number, time: number, dur: number, vel: number, dest: GainLike, pan: number): void {
-    const live = this.voices.filter((v) => v.end > time).length;
-    if (live >= MUSIC.maxVoices) { this.stats.dropped++; return; }
-    const v = playNote({ ...this.ctx!, dest }, inst, midi, time, dur, vel, pan);
-    if (v) { this.voices.push(v); this.stats.notes++; }
-  }
-
-  private finishTrack(t: Track, now: number): void {
-    this.tracks.splice(this.tracks.indexOf(t), 1);
-    this.retiring.push({ out: t.out, at: Math.max(now, t.time) + 5 });
-    if (t.pump) this.retiring.push({ out: t.pump, at: Math.max(now, t.time) + 5 });
-    if (this.tracks.length === 0) this.nextPieceAt = Math.max(now, t.time) + MUSIC.gapMin + this.rng() * (MUSIC.gapMax - MUSIC.gapMin);
-  }
-
-  private reap(now: number): void {
-    for (let i = this.voices.length - 1; i >= 0; i--) { const v = this.voices[i]!; if (v.end <= now) { v.scope.dispose(); this.voices.splice(i, 1); } }
-    for (let i = this.retiring.length - 1; i >= 0; i--) { const r = this.retiring[i]!; if (r.at <= now) { try { r.out.disconnect(); } catch { /* ignore */ } this.retiring.splice(i, 1); } }
-  }
-
-  /** Short success motif (rating up): three soft harp notes in the current key (pentatonic); rate-limited. */
-  jingle(): void {
-    if (!this.engine.running || !this.ctx || !this.playing) return;
-    const now = this.engine.now();
-    if (now - this.lastJingle < MUSIC.jingleGap) return;
-    this.lastJingle = now; this.stats.jingles++;
-    const p = this.currentPiece, root = p?.root ?? 55, mode = p?.mode ?? 'ionian';
-    [0, 2, 4].forEach((idx, i) => this.voice('harp', scaleNote(root, mode, idx + 7), now + 0.12 + i * 0.2, 0.4, 0.7, this.gate!, (i - 1) * 0.2));
-  }
-
-  dispose(): void {
-    for (const v of this.voices.splice(0)) v.scope.dispose();
-    for (const t of this.tracks.splice(0)) { try { t.out.disconnect(); } catch { /* ignore */ } }
-    for (const r of this.retiring.splice(0)) { try { r.out.disconnect(); } catch { /* ignore */ } }
-  }
+  dispose(): void { this.player.dispose(); }
 }
+
+

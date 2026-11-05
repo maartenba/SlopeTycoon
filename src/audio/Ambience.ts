@@ -5,7 +5,7 @@ import type { NodeLike, ParamLike } from './backend';
 import type { NodeScope } from './synth';
 import type { SeasonId, WeatherKind } from '../core/events';
 import { PROX } from '../config/audioProximity';
-import { ApresMusic } from './Apres';
+import { BarMusic } from './BarMusic';
 import type { MusicHandoff } from './musicHold';
 import { apresLevel, natureGain, pondLevel, streamLevels } from './proximity';
 
@@ -199,7 +199,7 @@ const LAYER_BUILDERS: Record<LayerId, Builder> = {
   },
   // Rapids: a broader, brighter hiss with a slow surge (rushing water over stones).
   rapids: (s) => { const a = s.noiseSrc('pink', 1.1), b = s.noiseSrc('white', 0.6), bg = s.gain(0.12), hp = s.filter('highpass', 500, 0), lp = s.filter('lowpass', 5000, 0), g = s.gain(0.7); wander(s, g.gain, [[0.23, 0.16], [0.61, 0.1], [1.7, 0.05]]); a.connect(hp); b.connect(bg); bg.connect(hp); link(hp, lp, g, s.out); },
-  // Apres bar murmur (PROX.apres): crowd babble + a rare-glass shimmer band; the music itself is Apres.ts. Quiet (ceiling 0.05).
+  // Apres bar murmur (PROX.apres): crowd babble + a rare-glass shimmer band; the music itself is BarMusic.ts. Quiet (ceiling 0.05).
   apres: (s) => {
     const n0 = s.noiseSrc('pink', 0.8), n2 = s.noiseSrc('pink', 1.17), n = s.gain(1), sum = s.gain(0.6), lp = s.filter('lowpass', 2600, 0);
     n0.connect(n); n2.connect(n);
@@ -251,10 +251,10 @@ export class Ambience {
   lastState: AmbienceState | null = null;
   /** liftPan for clanks (-1..1). */
   liftPan = 0;
-  /** Apres bar music scheduler (src/audio/Apres.ts). */
-  readonly apres: ApresMusic;
+  /** Bar music player (src/audio/BarMusic.ts). */
+  readonly apres: BarMusic;
 
-  constructor(private engine: AudioEngine, private sfx: Sfx, private rng: () => number = defaultRng(), apresSeed?: number, handoff?: MusicHandoff) { this.apres = new ApresMusic(engine, apresSeed, handoff); }
+  constructor(private engine: AudioEngine, private sfx: Sfx, private rng: () => number = defaultRng(), handoff?: MusicHandoff, barOpts?: ConstructorParameters<typeof BarMusic>[2]) { this.apres = new BarMusic(engine, handoff, barOpts); }
 
   get layerCount(): number { return Object.keys(this.layers).length; }
 

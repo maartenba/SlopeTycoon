@@ -1,5 +1,5 @@
 /** `npm run verify:pwa [-- --base /slopetycoon/] [--dist dist-site/play --no-404]` (after `npm run build` / `build:site`): serves dist/ with a tiny static server and checks every PWA asset resolves. */
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import type { AddressInfo } from 'node:net';
@@ -56,7 +56,12 @@ try {
   console.log(`[verify-pwa] ${urls.length} precached files, ${(total / 1024).toFixed(0)} kB raw, ${(gz / 1024).toFixed(0)} kB gzip (excl. sw.js)`);
   // Menu music: shipped in dist/audio, served as audio/mpeg, and deliberately NOT precached (runtime-cached on first play).
   check(!urls.some((u) => u.startsWith('./audio/')), 'audio/ must not be precached (runtime cache only)');
-  for (const f of ['menu-seasons-of-management.mp3', 'menu-seasonal-menu.mp3']) { const r = await get(`./audio/${f}`); check(r.status === 200 && TYPES['.mp3']!.test(r.type) && r.body.length > 1_000_000, `audio/${f} not served as audio/mpeg (${r.status} ${r.type})`); }
+  // every music file in the track table is served as audio/mpeg; the folder holds no other audio
+  const tracks = readdirSync(join(dist, 'audio')).filter((f) => f.endsWith('.mp3'));
+  check(tracks.length >= 19, `expected the 19 music files in dist/audio (${tracks.length})`);
+  let audioBytes = 0;
+  for (const f of tracks) { const r = await get(`./audio/${f}`); audioBytes += r.body.length; check(r.status === 200 && TYPES['.mp3']!.test(r.type) && r.body.length > 500_000, `audio/${f} not served as audio/mpeg (${r.status} ${r.type})`); }
+  check(audioBytes < 42 * 1024 * 1024, `dist/audio is ${(audioBytes / 1048576).toFixed(1)} MB, over the 42 MB budget (runtime-cached per build: tests/repo/musicAssets.test.ts)`);
   if (argBase && !argv.includes('--no-404')) {
     const miss = await fetch(new URL('definitely/missing', base)); const t = await miss.text();
     check(miss.status === 404 && t.includes('Slope Tycoon'), 'unknown path should return 404.html (run post-build)');

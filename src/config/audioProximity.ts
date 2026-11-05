@@ -21,7 +21,7 @@ export const PROX = {
   },
   /** Lakes / ponds (the old `water` layer, tile fraction near the camera): very soft lapping only when zoomed in; winter ice = silent. */
   pond: { zoomFar: 30, zoomNear: 10, max: 0.45, frozen: 0 },
-  /** Apres-Ski Bar music: only an OPEN, serving bar contributes. The groove, tempo and hand-off with the game music live in `audioMusic.ts` (APRES_SONG, HANDOFF). */
+  /** Apres-Ski Bar music: only an OPEN, serving bar contributes. The songs, levels and hand-off with the game music live in `audioMusic.ts` (BAR_PLAYLIST, BAR_AUDIO, HANDOFF). */
   apres: {
     /** Camera -> bar distance (tiles) at which a bar is silent; per-bar level (1 - d / reach)^falloff. */
     reach: 22, falloff: 1.5,

@@ -1,156 +1,109 @@
 import { Rng } from '../core/Rng';
-import { MENU_MUSIC } from '../config/audioMusic';
+import { MENU_MUSIC, MENU_PLAYLIST } from '../config/audioMusic';
 import type { AudioEngine } from './AudioEngine';
 import type { AudioSettings } from './AudioSettings';
-import type { BufferLike, GainLike, ParamLike, SourceLike } from './backend';
-import { fadeIn, fadeOut, nextStartAt, nextTrackIndex } from './menuPlaylist';
+import type { GainLike } from './backend';
+import { nextInPlaylist } from './musicPlaylist';
+import { ramp, TrackPlayer, type PlayerDeps, type Prepared } from './TrackPlayer';
 
 type Cfg = typeof MENU_MUSIC;
-type Decoded = BufferLike & { duration: number };
 export interface MenuMusicDeps {
   engine: AudioEngine;
   settings: AudioSettings;
-  /** Fetches the encoded bytes of a track URL (the service worker runtime-caches them). */
-  load: (url: string) => Promise<ArrayBuffer>;
-  /** Base URL the track files are resolved against (default: the page). */
-  base?: string;
+  /** Test hooks for the player (media element factory, URL resolver, base URL). */
+  player?: Partial<Pick<PlayerDeps, 'createMedia' | 'resolve' | 'release' | 'base'>>;
   /** UI-only randomness (not the sim's). */
   rand?: () => number;
   cfg?: Cfg;
   /** false = the caller drives `tick()` (tests). */
   autoTick?: boolean;
 }
-interface Playing { idx: number; src: SourceLike; gain: GainLike; startedAt: number; endsAt: number; dur: number }
-
-const STEPS = 12;
-/** Equal-power ramp built from linear segments (the param interface has no value curve). */
-function ramp(p: ParamLike, from: number, to: number, t0: number, dur: number, curve: (x: number) => number): void {
-  p.cancelScheduledValues(t0);
-  p.setValueAtTime(from, t0);
-  for (let i = 1; i <= STEPS; i++) p.linearRampToValueAtTime(to < from ? to + (from - to) * curve(i / STEPS) : from + (to - from) * curve(i / STEPS), t0 + dur * i / STEPS); // fadeOut curves run 1 -> 0, fadeIn curves 0 -> 1
-}
 
 /**
- * Title-screen music: two owner-provided tracks, shuffled without an immediate repeat, crossfaded, looping as a playlist.
- * Graph: source -> track gain (trim x fade) -> out gain -> the engine's MUSIC bus, so the Music slider, mute (M), ambience-only and the
- * engine's tab-hidden suspend all apply. Starts once the engine is running (first user gesture); the files are fetched after that, never
- * during boot. `fadeOut()` ends it before a game starts (the in-game music is a different page load and takes over from there).
+ * Title-screen music: the two owner-provided tracks of `MENU_PLAYLIST` (Seasons of Management is the title theme and opens; the two alternate, crossfaded, never the same twice in a row).
+ * Graph: track gain (trim x fade) -> out gain -> the engine's MUSIC bus, so the Music slider, mute (M), ambience-only and the engine's tab-hidden suspend all apply.
+ * Starts once the engine is running (first user gesture); the files are fetched after that, never during boot. `fadeOut()` ends it before a game starts (the in-game
+ * music is a different page load and takes over from there).
  */
 export class MenuMusic {
   private readonly cfg: Cfg;
-  private readonly rand: () => number; // set in the constructor
+  private readonly rand: () => number;
+  readonly player: TrackPlayer;
   private out: GainLike | null = null;
-  private cur: Playing | null = null;
-  private fading: Playing[] = [];
-  private decoded = new Map<number, Decoded>();
-  private pending = new Map<number, Promise<Decoded | null>>();
-  private last = -1;
   private starting = false;
   private ended = false;
-  private failed = false;
+  private queued: string | null = null;
+  private history: string[] = [];
+  private failed: string[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private offs: Array<() => void> = [];
   /** Counters for tests / debug. */
-  stats = { started: 0, loaded: 0, errors: 0 };
+  get stats(): { started: number; loaded: number; errors: number } { return this.player.stats; }
 
   constructor(private d: MenuMusicDeps) {
     this.cfg = d.cfg ?? MENU_MUSIC;
-    if (d.rand) this.rand = d.rand; else { const r = new Rng(Date.now() >>> 0); this.rand = () => r.next(); } // UI-only: the first track differs between visits
+    if (d.rand) this.rand = d.rand; else { const r = new Rng(Date.now() >>> 0); this.rand = () => r.next(); }
+    this.player = new TrackPlayer({ engine: d.engine, dest: () => this.out, dir: this.cfg.dir, label: 'menu music', ...(d.player ?? {}) });
     this.offs.push(d.engine.onState(() => this.arm()), d.settings.subscribe(() => this.arm()));
     if (d.autoTick !== false && typeof setInterval === 'function') this.timer = setInterval(() => this.tick(), this.cfg.tickMs);
     this.arm();
   }
 
-  get playing(): boolean { return !!this.cur && !this.ended; }
-  get currentTrack(): number { return this.cur?.idx ?? -1; }
-  private get wanted(): boolean { return this.cfg.enabled && this.cfg.tracks.length > 0 && !this.ended && this.d.settings.get().musicOn; }
-
-  private url(i: number): string { return new URL(this.cfg.dir + this.cfg.tracks[i]!.file, this.d.base ?? (typeof document !== 'undefined' ? document.baseURI : 'http://localhost/')).href; }
+  get playing(): boolean { return !!this.player.cur && !this.ended; }
+  get currentTrack(): string | null { return this.player.cur?.track.id ?? null; }
+  private get wanted(): boolean { return this.cfg.enabled && MENU_PLAYLIST.length > 0 && !this.ended && this.d.settings.get().musicOn; }
 
   /** (Re)evaluate: begin playing once the engine runs and the music setting is on; fade the whole thing with the setting. */
   private arm(): void {
     if (this.ended) return;
     const e = this.d.engine, b = e.backend;
     if (this.out && b) this.out.gain.setTargetAtTime(this.d.settings.get().musicOn ? 1 : 0, b.now(), 0.25);
-    if (!this.cur && !this.starting && this.wanted && e.running && b?.decode) { this.starting = true; void this.begin(); }
+    if (!this.player.cur && !this.starting && this.wanted && e.running && b?.createMediaElementSource) void this.begin(this.cfg.fadeIn);
   }
 
-  private fetchTrack(i: number): Promise<Decoded | null> {
-    const have = this.decoded.get(i); if (have) return Promise.resolve(have);
-    let p = this.pending.get(i);
-    if (!p) {
-      p = (async () => {
-        try {
-          const dec = await this.d.engine.backend!.decode!(await this.d.load(this.url(i)));
-          this.decoded.set(i, dec); this.stats.loaded++; return dec;
-        } catch (err) { this.stats.errors++; if (!this.failed) { this.failed = true; console.warn('[menu music] unavailable:', err); } return null; }
-        finally { this.pending.delete(i); }
-      })();
-      this.pending.set(i, p);
-    }
-    return p;
+  private async begin(fade: number): Promise<void> {
+    this.starting = true;
+    try {
+      const last = this.history[this.history.length - 1] ?? null;
+      let id = last === null ? MENU_PLAYLIST[0]! : (this.queued && this.queued !== last ? this.queued : nextInPlaylist(MENU_PLAYLIST, last, this.rand, this.failed));
+      let prep: Prepared | null = null;
+      for (let tries = 0; tries < MENU_PLAYLIST.length && !prep; tries++) {
+        prep = await this.player.prepare(id);
+        if (!prep) { this.failed.push(id); id = nextInPlaylist(MENU_PLAYLIST, id, this.rand, this.failed); }
+      }
+      if (!prep || !this.wanted || !this.d.engine.running) return;
+      this.failed = [];
+      const b = this.d.engine.backend!, bus = this.d.engine.busNode('music');
+      if (!bus) return;
+      if (!this.out) { this.out = b.createGain(); this.out.gain.value = this.d.settings.get().musicOn ? 1 : 0; this.out.connect(bus); }
+      this.player.play(prep, fade, 1, () => { this.player.stop(0.05); });
+      this.history.push(prep.track.id);
+      this.queued = nextInPlaylist(MENU_PLAYLIST, prep.track.id, this.rand);
+      this.player.keepOnly([prep.track.id, this.queued]);
+      void this.player.prepare(this.queued); // preload the next one while this plays
+    } finally { this.starting = false; }
   }
 
-  private async begin(): Promise<void> {
-    const idx = nextTrackIndex(-1, this.cfg.tracks.length, this.rand);
-    const dec = await this.fetchTrack(idx);
-    this.starting = false;
-    if (!dec || !this.wanted || !this.d.engine.running || this.cur) return;
-    this.play(idx, dec, this.cfg.fadeIn);
-  }
-
-  private play(idx: number, dec: Decoded, fade: number): void {
-    const b = this.d.engine.backend, bus = this.d.engine.busNode('music');
-    if (!b || !bus) return;
-    if (!this.out) { this.out = b.createGain(); this.out.gain.value = this.d.settings.get().musicOn ? 1 : 0; this.out.connect(bus); }
-    const now = b.now(), trim = this.cfg.tracks[idx]!.trim;
-    const gain = b.createGain(); gain.gain.value = 0; gain.connect(this.out);
-    const src = b.createBufferSource(); src.buffer = dec; src.loop = false; src.connect(gain);
-    ramp(gain.gain, 0, trim, now, fade, fadeIn);
-    src.start(now);
-    if (this.cur) this.retire(this.cur, now, fade);
-    this.cur = { idx, src, gain, startedAt: now, endsAt: now + dec.duration, dur: dec.duration };
-    this.last = idx; this.stats.started++;
-    const nxt = nextTrackIndex(idx, this.cfg.tracks.length, this.rand);
-    this.nextIdx = nxt; void this.fetchTrack(nxt); // preload the next one while this plays
-  }
-  private nextIdx = -1;
-
-  private retire(p: Playing, now: number, fade: number): void {
-    const cur = p.gain.gain.value;
-    ramp(p.gain.gain, cur, 0, now, fade, fadeOut);
-    p.src.stop(now + fade + 0.05);
-    p.endsAt = now + fade + 0.05;
-    this.fading.push(p);
-  }
-
-  /** Scheduler step (every `tickMs`): crossfade into the next track near the end of this one, free finished sources. */
+  /** Scheduler step (every `tickMs`): crossfade into the next track near the end of this one, free finished tracks. */
   tick(): void {
-    const b = this.d.engine.backend;
-    if (!b || this.ended || !this.d.engine.running) return;
-    const now = b.now();
-    for (let i = this.fading.length - 1; i >= 0; i--) { const p = this.fading[i]!; if (now >= p.endsAt) { try { p.src.disconnect(); p.gain.disconnect(); } catch { /* ignore */ } this.fading.splice(i, 1); } }
-    const c = this.cur;
-    if (!c || !this.wanted) { if (!c) this.arm(); return; }
-    const startNext = nextStartAt(c.startedAt, c.dur, this.cfg.crossfade);
-    if (now < startNext - 0.001) return;
-    const i = this.nextIdx >= 0 ? this.nextIdx : nextTrackIndex(c.idx, this.cfg.tracks.length, this.rand);
-    const dec = this.decoded.get(i);
-    if (!dec) { void this.fetchTrack(i); return; } // not decoded yet: try again next tick (the current track just ends meanwhile)
-    if (now >= c.endsAt + 0.02) { this.cur = null; this.play(i, dec, this.cfg.fadeIn); return; } // it already ended: plain fade-in
-    this.play(i, dec, Math.min(this.cfg.crossfade, c.dur / 2));
+    if (!this.d.engine.running) return;
+    this.player.reap();
+    if (this.ended) return;
+    const c = this.player.cur;
+    if (!c) { this.arm(); return; }
+    if (!this.wanted || this.starting) return;
+    if (this.player.remaining <= Math.min(this.cfg.crossfade, c.duration / 2) + 0.1) void this.begin(Math.min(this.cfg.crossfade, Math.max(0.3, this.player.remaining)));
   }
 
   /** Fade everything out (default `cfg.fadeOut` s) and stop for good. Returns the fade time in ms (0 when nothing was playing). */
-  fadeOut(sec = this.cfg.fadeOut): number {
+  fadeOut(sec: number = this.cfg.fadeOut): number {
     const b = this.d.engine.backend;
     const was = this.playing;
     this.ended = true;
     if (!b || !was || !this.out) { this.dispose(); return 0; }
-    const now = b.now();
-    ramp(this.out.gain, this.out.gain.value, 0, now, sec, fadeOut);
-    for (const p of [this.cur!, ...this.fading]) p.src.stop(now + sec + 0.05);
-    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    ramp(this.out.gain, this.out.gain.value, 0, b.now(), sec);
+    this.player.stop(sec);
+    if (typeof setTimeout === 'function') setTimeout(() => this.dispose(), sec * 1000 + 500); // the ticker keeps freeing the faded track until then
     return Math.round(sec * 1000);
   }
 
@@ -158,12 +111,6 @@ export class MenuMusic {
     this.ended = true;
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
     for (const o of this.offs.splice(0)) o();
-    for (const p of [...(this.cur ? [this.cur] : []), ...this.fading]) { try { p.src.stop(); p.src.disconnect(); p.gain.disconnect(); } catch { /* ignore */ } }
-    this.cur = null; this.fading = [];
+    this.player.dispose();
   }
-}
-
-/** Fetches a file's bytes (a plain 200 GET: the service worker can runtime-cache it, unlike the 206 range requests of an <audio> element). */
-export function loadBytes(url: string): Promise<ArrayBuffer> {
-  return fetch(url).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`); return r.arrayBuffer(); });
 }

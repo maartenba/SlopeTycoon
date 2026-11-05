@@ -5,10 +5,8 @@ import { Ambience, type AmbienceState } from '../../src/audio/Ambience';
 import { Music } from '../../src/audio/Music';
 import { MusicHandoff } from '../../src/audio/musicHold';
 import { Sfx } from '../../src/audio/Sfx';
-import { HANDOFF } from '../../src/config/audioMusic';
-import { FakeBackend, MemStorage } from './fakeBackend';
-import { statsOf, windowedDb } from './offlineBackend';
-import { renderAudio } from './renderHarness';
+import { BAR_PLAYLIST, HANDOFF, MUSIC_PLAY } from '../../src/config/audioMusic';
+import { FakeBackend, fakeMediaHooks, MemStorage } from './fakeBackend';
 
 const run = (h: MusicHandoff, level: (t: number) => number, seconds: number, dt = 0.1): Array<{ t: number; phase: string }> => {
   const log: Array<{ t: number; phase: string }> = [];
@@ -54,72 +52,70 @@ describe('music hand-off state machine (pure)', () => {
 });
 
 const base: AmbienceState = { season: 'winter', weather: 'clear', hour: 17, zoom: 8, altitude: 0.2, wind: 0, water: 0, crowd: 0, lifts: 0, buildings: 0, cows: 0, snowcat: 0, heli: 0 };
-async function rig() {
+const flush = async (): Promise<void> => { for (let i = 0; i < 25; i++) await Promise.resolve(); };
+async function rig(dur = 200) {
   const fb = new FakeBackend(), settings = new AudioSettings(new MemStorage()), engine = new AudioEngine({ factory: () => fb, settings });
   await engine.onGesture();
-  const handoff = new MusicHandoff(), music = new Music(engine, { seed: 4, handoff }), amb = new Ambience(engine, new Sfx(engine), () => 0.5, 9, handoff);
+  const mm = fakeMediaHooks({ dur }), mb = fakeMediaHooks({ dur });
+  const handoff = new MusicHandoff(), music = new Music(engine, { handoff, rand: () => 0.3, player: mm.hooks }), amb = new Ambience(engine, new Sfx(engine), () => 0.5, handoff, { rand: () => 0.3, player: mb.hooks });
   music.setInputs({ season: 'winter', hour: 13, weather: 'clear' });
-  const step = (sec: number, apres: number): void => { for (let i = 0; i < Math.round(sec / 0.025); i++) { fb.t += 0.025; music.tick(); if (i % 4 === 0) amb.update({ ...base, apres }, 0.1); } };
-  return { fb, music, amb, handoff, step };
+  const log: string[] = [];
+  const step = async (sec: number, apres: number): Promise<void> => {
+    for (let i = 0; i < Math.round(sec / 0.1); i++) {
+      fb.t += 0.1; mm.advance(0.1); mb.advance(0.1); music.tick(); amb.update({ ...base, apres }, 0.1); await flush();
+      // invariants: the game music only plays in main / toApres (the element is paused up to holdAfter after the phase left), the bar music only in apres / toMain
+      const ph = handoff.phase;
+      const slack = fb.t - handoff.since > MUSIC_PLAY.holdAfter + HANDOFF.apresFadeOut + 0.4; // after the fade the element idles until it is paused: silent
+      if (slack && mb.playing.length && (ph === 'main' || ph === 'toApres')) log.push(`bar element playing in ${ph} at ${fb.t.toFixed(1)}`);
+      if (slack && mm.playing.length && ph === 'toMain') log.push(`game element playing in toMain at ${fb.t.toFixed(1)}`);
+      if (music.holdValue === 1 && amb.apres.gateValue === 1) log.push('both gates open');
+    }
+  };
+  return { fb, music, amb, handoff, step, mm, mb, log };
 }
 
-describe('game music stops near the bar and resumes exactly (fake backend)', () => {
-  it('fades out (no new notes once silent), holds its position, resumes the same piece at the start of the chord, never while the bar plays', async () => {
-    const { fb, music, amb, handoff, step } = await rig();
-    step(20, 0);
-    const piece = music.currentPiece!, track = music.currentTrack;
-    expect(music.holdValue).toBe(1); const notes0 = music.stats.notes;
-    // walk up to the bar: the game music keeps scheduling only during its fade-out
-    let overlapSeen = false;
-    for (let i = 0; i < 120; i++) { step(0.1, 1); if (handoff.apresScheduling && music.isPlaying) overlapSeen = true; if (handoff.mainScheduling && amb.apres.isActive) overlapSeen = true; }
-    expect(overlapSeen).toBe(false);
+describe('game music stops near the bar and resumes exactly (fake backend, fake media)', () => {
+  it('fades out, pauses and holds its position while a bar track plays, never overlaps, and resumes the same track where it stopped', async () => {
+    const { music, amb, handoff, step, mm, mb, log } = await rig();
+    await step(20, 0);
+    const track = music.currentTrack!; expect(track).toBe('winter-mountain-morning'); expect(music.holdValue).toBe(1);
+    const el = mm.playing[0]!; expect(mb.fetched).toEqual([]);
+    await step(0.5, 1); // the bar is in reach: its first song is fetched ahead, the game music is still on
+    expect(handoff.phase).toBe('main'); expect(mb.fetched.length).toBeGreaterThan(0); expect(mm.playing.length).toBe(1);
+    await step(15, 1);
     expect(handoff.phase).toBe('apres'); expect(music.holdValue).toBe(0); expect(amb.apres.isActive).toBe(true);
-    const held = music.stats.notes; expect(held).toBeGreaterThan(notes0); // it did play on during the 0.7 s fade
-    step(10, 1); expect(music.stats.notes).toBe(held); // frozen while the bar plays
-    expect(amb.apres.scheduled).toBeGreaterThan(100);
-    // leave: the bar fades out first, then the game music comes back: same piece, continuing
-    step(8, 0);
-    expect(handoff.phase).toBe('main'); expect(music.holdValue).toBe(1);
-    expect(amb.apres.isActive).toBe(false);
-    step(6, 0);
-    expect(music.stats.notes).toBeGreaterThan(held); expect(music.currentTrack).toBe(track); expect(music.currentPiece).toBe(piece); expect(music.stats.pieces).toBe(1);
-    void fb;
+    expect(el.paused).toBe(true); const held = el.currentTime; expect(mm.playing.length).toBe(0);
+    expect(mb.playing.length).toBe(1); expect(BAR_PLAYLIST).toContain(amb.apres.currentTrack!); expect(mb.fetched[0]).toMatch(/apres-.*\.mp3$/);
+    await step(10, 1); expect(el.currentTime).toBe(held); // frozen while the bar plays
+    await step(10, 0);
+    expect(handoff.phase).toBe('main'); expect(amb.apres.isActive).toBe(false); expect(mb.playing.length).toBe(0);
+    await step(3, 0);
+    expect(music.currentTrack).toBe(track); expect(el.paused).toBe(false); expect(el.currentTime).toBeGreaterThanOrEqual(held); expect(el.currentTime).toBeLessThan(held + 13);
+    expect(log).toEqual([]);
   });
-  it('resume rewinds to the start of the current chord group (never forward, never past the start of the piece)', async () => {
-    const { music, step, handoff } = await rig();
-    step(33, 0);
-    const t = (music as unknown as { tracks: Array<{ beat: number; piece: { barsPerChord: number } }> }).tracks[0]!;
-    const before = t.beat;
-    step(9, 1); expect(handoff.phase).toBe('apres');
-    const mid = t.beat; expect(mid).toBeGreaterThanOrEqual(before);
-    step(8, 0); expect(handoff.phase).toBe('main');
-    const bpc = t.piece.barsPerChord * 4; // beats per chord group
-    const resumedAt = t.beat; expect(resumedAt).toBeGreaterThanOrEqual(0);
-    expect(Math.floor(mid / 4 / (bpc / 4)) * bpc).toBeLessThanOrEqual(mid);
+  it('coming back to the bar soon resumes the same song; after a long absence the next song of the rotation plays', async () => {
+    const { amb, step, log } = await rig(200);
+    await step(15, 1); const first = amb.apres.currentTrack!; expect(first).toBeTruthy(); expect(amb.apres.history).toEqual([first]);
+    await step(10, 0); await step(5, 1); expect(amb.apres.history).toEqual([first]); expect(amb.apres.currentTrack).toBe(first); // away for ~10 s: same song, where it stopped
+    await step(15, 0); await step(40, 0); await step(8, 1);
+    expect(amb.apres.history.length).toBe(2); expect(amb.apres.currentTrack).not.toBe(first);
+    expect(log).toEqual([]);
+  });
+  it('short songs: the next one crossfades in before the end, songs alternate and the same one never plays twice in a row', async () => {
+    const { amb, step, log } = await rig(20);
+    await step(100, 1);
+    const h = amb.apres.history; expect(h.length).toBeGreaterThanOrEqual(5); for (let i = 1; i < h.length; i++) expect(h[i]).not.toBe(h[i - 1]);
+    expect(new Set(h).size).toBeGreaterThanOrEqual(2); expect(log).toEqual([]);
   });
   it('hold gain is ramped (linear fade-out ~0.7 s, fade-in ~0.9 s), never switched', async () => {
     const { music, step } = await rig();
-    step(10, 0);
+    await step(10, 0);
     const hold = (music as unknown as { hold: { gain: { calls: string[] } } }).hold.gain, c0 = hold.calls.length;
-    step(6, 1); const out = hold.calls.slice(c0); expect(out).toContain('lin'); expect(out.filter((c) => c === 'set').length).toBeLessThanOrEqual(3);
-    const c1 = hold.calls.length; step(8, 0); expect(hold.calls.slice(c1)).toContain('lin');
+    await step(6, 1); const out = hold.calls.slice(c0); expect(out).toContain('lin'); expect(out.filter((c) => c === 'set').length).toBeLessThanOrEqual(3);
+    const c1 = hold.calls.length; await step(14, 0); expect(hold.calls.slice(c1)).toContain('lin');
   });
-});
-
-describe('game music / bar music never overlap in the rendered audio (software Web Audio renderer)', () => {
-  it('while the bar plays the game music contributes exactly nothing: the render equals a bar-only render; before and after it is audible again', async () => {
-    const SR = 25600, level = (t: number): number => (t >= 14 && t < 36 ? 1 : 0); // 25.6 kHz: one 25 ms scheduler step = exactly five 128-sample blocks, so test time == audio time
-    const both = await renderAudio({ seconds: 56, sampleRate: SR, seed: 5, settings: { master: 1, music: 1, ambience: 1 }, music: { season: 'winter', hour: 13 }, ambience: { ...base, wind: 0 }, ambienceAt: (t) => ({ apres: level(t) }) });
-    const bar = await renderAudio({ seconds: 56, sampleRate: SR, seed: 5, settings: { master: 1, music: 1, ambience: 1 }, ambience: { ...base, wind: 0 }, ambienceAt: (t) => ({ apres: level(t) }), musicOn: false });
-    const win = (r: { l: Float32Array }, a: number, b: number): Float32Array => r.l.subarray(Math.round(a * SR), Math.round(b * SR));
-    // steady bar window (after the game music's fade-out, before the bar music's fade-out): identical
-    const a = win(both, 17, 33), b = win(bar, 17, 33); let maxDiff = 0; for (let i = 0; i < a.length; i++) maxDiff = Math.max(maxDiff, Math.abs(a[i]! - b[i]!));
-    expect(maxDiff).toBeLessThan(1e-4); expect(statsOf(a).rmsDb).toBeGreaterThan(-35);
-    // before the walk-up the game music is there (difference to the bar-only render), and it is back after the bar music faded out
-    const diffDb = (from: number, to: number): number => { const x = win(both, from, to), y = win(bar, from, to), d = new Float32Array(x.length); for (let i = 0; i < d.length; i++) d[i] = x[i]! - y[i]!; return statsOf(d).rmsDb; };
-    expect(diffDb(4, 13)).toBeGreaterThan(-45); expect(diffDb(44, 55)).toBeGreaterThan(-45); expect(diffDb(17, 33)).toBeLessThan(-90);
-    // no click at the edges, smooth loudness (1 s windows) through both hand-overs
-    const db = windowedDb(both.l, SR, 0.5); let worst = 0; for (let i = 1; i < db.length; i++) worst = Math.max(worst, Math.abs(db[i]! - db[i - 1]!)); expect(worst).toBeLessThan(18);
-    expect(both.l.reduce((m, v) => Math.max(m, Math.abs(v)), 0)).toBeLessThan(0.95);
-  }, 120000);
+  it('a bar that is out of reach never stops the game music, and with no media support (offline renderer) nothing is fetched', async () => {
+    const { music, step, handoff, mb } = await rig();
+    await step(10, 0); expect(handoff.transitions).toBe(0); expect(music.holdValue).toBe(1); expect(mb.fetched).toEqual([]);
+  });
 });

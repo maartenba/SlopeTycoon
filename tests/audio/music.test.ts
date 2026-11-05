@@ -1,222 +1,111 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AudioEngine } from '../../src/audio/AudioEngine';
-import { AudioSettings, AUDIO_STORAGE_KEY } from '../../src/audio/AudioSettings';
-import { Music, composePiece } from '../../src/audio/Music';
-import { MUSIC, THEMES, LAYERS, TRACK_IDS, type TrackId } from '../../src/audio/musicThemes';
-import { bpmFor, dayPart, targetParams } from '../../src/audio/musicState';
-import { inScale, MODES, PENTATONIC_DEGREES, type ModeName } from '../../src/audio/theory';
-import { FakeBackend, MemStorage } from './fakeBackend';
+import { AudioSettings } from '../../src/audio/AudioSettings';
+import { Music } from '../../src/audio/Music';
+import { MUSIC_PLAY, PLAYLISTS, SITUATION, TRACK_BY_ID } from '../../src/config/audioMusic';
+import { FakeBackend, fakeMediaHooks, MemStorage, type FakeNode } from './fakeBackend';
 
-/** Scale index (mod 7 via position in the mode) of a midi note known to be in the scale. */
-function scaleIndexOf(midi: number, root: number, mode: ModeName): number { return MODES[mode].indexOf((((midi - root) % 12) + 12) % 12); }
+const flush = async (): Promise<void> => { for (let i = 0; i < 25; i++) await Promise.resolve(); };
 
-async function setup(seed = 3, settings0: Partial<import('../../src/audio/AudioSettings').AudioSettingsData> = {}) {
+async function rig(o: { dur?: number; fail?: (src: string) => boolean; locked?: boolean; settings?: Record<string, unknown> } = {}) {
   const fb = new FakeBackend(), settings = new AudioSettings(new MemStorage());
-  if (Object.keys(settings0).length) settings.set(settings0);
+  if (o.settings) settings.set(o.settings as never);
   const engine = new AudioEngine({ factory: () => fb, settings });
-  await engine.onGesture();
-  const music = new Music(engine, { seed });
-  const run = (sec: number, each?: () => void): void => { for (let i = 0; i < Math.round(sec / 0.025); i++) { fb.t += 0.025; music.tick(); each?.(); } };
-  return { fb, settings, engine, music, run };
+  const m = fakeMediaHooks({ ...(o.dur ? { dur: o.dur } : {}), ...(o.fail ? { fail: o.fail } : {}) });
+  let x = 3; const rand = (): number => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  const music = new Music(engine, { rand, player: m.hooks });
+  if (!o.locked) await engine.onGesture();
+  /** Advance `sec` of game time in 0.25 s steps (clock, playing elements, scheduler). */
+  const run = async (sec: number): Promise<void> => { for (let i = 0; i < Math.round(sec / 0.25); i++) { fb.t += 0.25; m.advance(0.25); music.tick(); await flush(); } };
+  return { fb, settings, engine, m, music, run };
 }
+const files = (urls: string[]): string[] => urls.map((u) => u.split('/').pop()!);
 
-describe('composer', () => {
-  it('is deterministic per seed and differs across seeds', () => {
-    for (const id of TRACK_IDS) {
-      expect(composePiece(5, id, 50)).toEqual(composePiece(5, id, 50));
-      expect(composePiece(5, id, 50).events).not.toEqual(composePiece(6, id, 50).events);
-    }
+describe('Music (mp3 player, fake media)', () => {
+  it('fetches nothing and plays nothing before the first gesture; starts after the gesture + start delay, relative to the page', async () => {
+    const r = await rig({ locked: true }); r.music.tick(); await flush();
+    expect(r.m.fetched).toEqual([]); expect(r.music.currentTrack).toBeNull();
+    await r.engine.onGesture(); await r.run(1); expect(r.music.currentTrack).toBeNull(); // within the start delay
+    await r.run(MUSIC_PLAY.startDelay + 1);
+    expect(r.music.currentTrack).toBeTruthy(); expect(r.m.fetched[0]).toMatch(/^https:\/\/x\.test\/play\/audio\/game-.*\.mp3$/);
+    expect(r.music.situation).toBe('winter-morning'); expect(PLAYLISTS['winter-morning']).toContain(r.music.currentTrack!);
   });
-  it('uses only scale tones (melody pentatonic), melody in range, grid-aligned, in-bounds, pans in range', () => {
-    for (const id of TRACK_IDS) for (let seed = 1; seed <= 10; seed++) {
-      const p = composePiece(seed, id, 48 + (seed % 12)), th = THEMES[id];
-      for (const e of p.events) {
-        expect(e.beat % MUSIC.stepBeats).toBe(0);
-        expect(e.beat).toBeGreaterThanOrEqual(0); expect(e.beat).toBeLessThan(p.totalBeats);
-        expect(Math.abs(e.pan)).toBeLessThanOrEqual(0.8);
-        if (e.layer !== 'perc') expect(inScale(e.midi, p.root, p.mode)).toBe(true);
-        if (e.layer === 'melody') {
-          expect(e.midi).toBeGreaterThanOrEqual(p.root + 11); expect(e.midi).toBeLessThanOrEqual(p.root + 36);
-          if (th.pentatonic) expect(PENTATONIC_DEGREES[p.mode].includes(((scaleIndexOf(e.midi, p.root, p.mode) % 7) + 7) % 7)).toBe(true);
-        }
-      }
-    }
+  it('plays a track of the situation through track gain (trim) -> hold -> gate -> music bus', async () => {
+    const r = await rig(); r.music.setInputs({ season: 'winter', hour: 13, busy: 0.8 });
+    await r.run(8);
+    const id = r.music.currentTrack!; expect(id).toBe('winter-day');
+    const g = r.fb.nodes.filter((n) => n.kind === 'gain') as FakeNode[];
+    const gate = g.find((n) => n.connections.includes(r.engine.busNode('music')))!; const hold = g.find((n) => n.connections.includes(gate))!;
+    const trackGain = g.find((n) => n.connections.includes(hold))!;
+    expect(trackGain.gain.value).toBeCloseTo(TRACK_BY_ID.get(id)!.trim, 5);
+    expect(gate.gain.value).toBe(1); expect(r.m.playing.length).toBe(1);
+    r.settings.set({ music: 0.3 }); expect(r.engine.busNode('music')!.gain.value).toBeCloseTo(0.3, 5);
   });
-  it('avoids repeating identical bars', () => {
-    for (const id of TRACK_IDS) for (let seed = 1; seed <= 8; seed++) {
-      const p = composePiece(seed, id, 52), sig = new Map<string, number>(), seq: string[] = [];
-      for (let b = 0; b < p.bars; b++) {
-        const k = p.events.filter((e) => e.layer !== 'pad' && e.layer !== 'perc' && (e.layer !== 'bass' || THEMES[id].bassStyle !== 'whole') && e.beat >= b * 4 && e.beat < b * 4 + 4).map((e) => `${e.layer}${e.beat - b * 4}:${e.midi - p.root}`).join(',');
-        if (k.split(',').length >= 3) sig.set(k, (sig.get(k) ?? 0) + 1); // pad-only bars and held whole-note basses (a chord held in the sparse tracks) and bars with < 3 notes (the sparse night / storm tracks) are not repeats
-        seq.push(k);
-      }
-      expect(Math.max(...sig.values())).toBeLessThanOrEqual(4);
-      for (let i = 3; i < seq.length; i++) expect(seq[i]!.split(',').length >= 3 && seq[i] === seq[i - 1] && seq[i] === seq[i - 2] && seq[i] === seq[i - 3]).toBe(false);
-    }
+  it('preloads the next track, crossfades near the end (never the same track), and keeps going', async () => {
+    const r = await rig({ dur: 60 }); r.music.setInputs({ season: 'winter', hour: 8 });
+    await r.run(10); const first = r.music.currentTrack!; expect(r.m.fetched.length).toBe(2); // the next is preloaded
+    await r.run(40); expect(r.music.currentTrack).toBe(first); expect(r.m.playing.length).toBe(1);
+    await r.run(12); expect(r.music.currentTrack).not.toBe(first); expect(r.m.playing.length).toBeGreaterThanOrEqual(1);
+    await r.run(80); const hist = r.music.history; expect(hist.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < hist.length; i++) expect(hist[i]).not.toBe(hist[i - 1]);
+    expect(r.music.stats.crossfades).toBeGreaterThanOrEqual(2);
   });
-  it('has twelve distinct tracks with distinct character, all moderate-tempo and consonant (no bells, no phrygian)', () => {
-    expect(TRACK_IDS.length).toBe(12);
-    expect(new Set(TRACK_IDS.map((t) => THEMES[t].name)).size).toBe(TRACK_IDS.length);
-    expect(new Set(TRACK_IDS.map((t) => JSON.stringify(THEMES[t].inst))).size).toBeGreaterThanOrEqual(9);
-    expect(new Set(TRACK_IDS.map((t) => THEMES[t].bpm)).size).toBeGreaterThanOrEqual(9);
-    for (const id of TRACK_IDS) {
-      const th = THEMES[id];
-      expect(th.bpm).toBeGreaterThanOrEqual(50); expect(th.bpm).toBeLessThanOrEqual(108); // the Festival groove is the liveliest (104)
-      for (const m of th.modes) expect(['ionian', 'lydian', 'mixolydian', 'dorian', 'aeolian']).toContain(m);
-      expect(th.barsPerChord).toBeGreaterThanOrEqual(1);
-      for (const inst of Object.values(th.inst)) expect(['bell', 'glock', 'marimba', 'handpan']).not.toContain(inst);
-    }
-    expect(THEMES.starlight.barsPerChord).toBe(4); expect(THEMES.apres.seventh).toBe(true);
-    expect(THEMES.blizzard.transpose).toBeLessThan(0);
-    const used = (t: TrackId): string[] => [...new Set(composePiece(1, t, 50).events.map((e) => e.inst))].sort();
-    expect(used('apres')).not.toEqual(used('summerMeadow'));
+  it('hysteresis: the hour ticking over mid-song does not switch; the next track then comes from the new situation', async () => {
+    const r = await rig({ dur: 60 }); r.music.setInputs({ season: 'winter', hour: 10.9, busy: 0.9 });
+    await r.run(8); const first = r.music.currentTrack!; expect(PLAYLISTS['winter-morning']).toContain(first);
+    r.music.setInputs({ hour: 11.2 }); await r.run(30);
+    expect(r.music.situation).toBe('winter-day'); expect(r.music.currentTrack).toBe(first); expect(r.music.stats.crossfades).toBe(0);
+    await r.run(30); expect(r.music.currentTrack).not.toBe(first); expect(PLAYLISTS['winter-day'].concat(PLAYLISTS['winter-morning'])).toContain(r.music.currentTrack!);
   });
-  it('pieces last 90-150 s (a full song form: intro, verse, chorus, bridge, outro); chords move slowly and are voice-led (pad tops move by small steps)', () => {
-    for (const id of TRACK_IDS) { const p = composePiece(1, id, 50), sec = (p.totalBeats * 60) / THEMES[id].bpm; expect(sec, id).toBeGreaterThan(90); expect(sec, id).toBeLessThan(150); }
-    for (const id of TRACK_IDS) {
-      const p = composePiece(2, id, 50), th = THEMES[id], pads = p.events.filter((e) => e.layer === 'pad');
-      const byBeat = new Map<number, number[]>(); for (const e of pads) byBeat.set(e.beat, [...(byBeat.get(e.beat) ?? []), e.midi]);
-      const tops = [...byBeat.entries()].sort((a, b) => a[0] - b[0]).map(([, m]) => Math.max(...m));
-      for (let i = 1; i < tops.length; i++) expect(Math.abs(tops[i]! - tops[i - 1]!), `${id} pad leap`).toBeLessThanOrEqual(7);
-      // harmonic rhythm: at most one new chord per `barsPerChord` bars
-      expect(byBeat.size).toBeLessThanOrEqual(Math.ceil(p.bars / (th.inst.pad === 'epiano' ? 1 : th.barsPerChord)) + 1);
-    }
+  it('a storm cuts in with one crossfade after it settles, at most once per minChangeGap even when it flickers', async () => {
+    const r = await rig({ dur: 200 }); r.music.setInputs({ season: 'winter', hour: 13, busy: 0.9 });
+    await r.run(8); expect(r.music.currentTrack).toBe('winter-day');
+    r.music.setInputs({ weather: 'storm' }); await r.run(SITUATION.settleSec - 5); expect(r.music.currentTrack).toBe('winter-day'); // not yet settled
+    await r.run(12); expect(r.music.currentTrack).toBe('storm-tente-restringida'); expect(r.music.stats.crossfades).toBe(1);
+    for (let i = 0; i < 6; i++) { r.music.setInputs({ weather: i % 2 ? 'storm' : 'clear' }); await r.run(SITUATION.settleSec + 2); }
+    expect(r.music.stats.crossfades).toBeLessThanOrEqual(1 + Math.ceil(6 * (SITUATION.settleSec + 2) / SITUATION.minChangeGapSec));
   });
-});
-
-describe('musicState', () => {
-  const base = { season: 'summer' as const, weather: 'clear' as const, hour: 12, speed: 1, tension: 0 };
-  it('tempo by speed stays within +25%', () => {
-    expect(targetParams(base).tempoMul).toBe(1);
-    expect(targetParams({ ...base, speed: 2 }).tempoMul).toBeGreaterThan(1);
-    expect(targetParams({ ...base, speed: 3 }).tempoMul).toBeLessThanOrEqual(1.25);
-    expect(bpmFor('summerMeadow', targetParams({ ...base, speed: 3 }).tempoMul)).toBeLessThanOrEqual(88 * 1.25 + 1e-9);
+  it('mute / ambience-only / speed 0 fade to silence then PAUSE the element; resuming continues at the same position', async () => {
+    const r = await rig({ dur: 200 }); r.music.setInputs({ season: 'summer', hour: 13 });
+    await r.run(10); const el = r.m.playing[0]!; const pos = el.currentTime;
+    r.settings.set({ muted: true }); await r.run(3); expect(r.music.gateValue).toBe(0); expect(el.paused).toBe(true);
+    const frozen = el.currentTime; await r.run(5); expect(el.currentTime).toBe(frozen); expect(frozen).toBeGreaterThanOrEqual(pos);
+    r.settings.set({ muted: false }); await r.run(2); expect(el.paused).toBe(false); expect(el.currentTime).toBeGreaterThanOrEqual(frozen);
+    expect(el.currentTime).toBeLessThan(frozen + 3);
+    r.music.setInputs({ speed: 0 }); await r.run(3); expect(el.paused).toBe(true);
+    r.music.setInputs({ speed: 1 }); await r.run(2); expect(el.paused).toBe(false);
+    r.settings.set({ ambienceOnly: true }); await r.run(3); expect(el.paused).toBe(true);
+    r.settings.set({ ambienceOnly: false, musicOn: false }); await r.run(3); expect(el.paused).toBe(true);
+    r.settings.set({ musicOn: true }); await r.run(2); expect(el.paused).toBe(false);
   });
-  it('night is sparse and slow; dawn builds; snowstorm is pads only', () => {
-    const n = targetParams({ ...base, hour: 2 }), d = targetParams(base), dawn = targetParams({ ...base, hour: 6.5 });
-    expect(dayPart(2)).toBe('night'); expect(dayPart(6.5)).toBe('dawn');
-    expect(n.tempoMul).toBeLessThan(d.tempoMul); expect(n.layers.melody).toBeLessThan(d.layers.melody);
-    expect(dawn.layers.melody).toBeGreaterThan(n.layers.melody); expect(dawn.layers.melody).toBeLessThan(d.layers.melody);
-    const s = targetParams({ ...base, weather: 'heavySnow' });
-    for (const l of LAYERS) expect(s.layers[l]).toBe(l === 'pad' ? 1 : 0);
+  it('"Next track" crossfades to another track of the situation and stays audible for a while at speed 0', async () => {
+    const r = await rig({ dur: 200 }); r.music.setInputs({ season: 'winter', hour: 8, speed: 0 });
+    await r.run(8); r.music.setInputs({ speed: 1 }); await r.run(2); const first = r.music.currentTrack!;
+    r.music.setInputs({ speed: 0 }); r.music.next(); await r.run(6);
+    expect(r.music.currentTrack).not.toBe(first); expect(r.m.playing.length).toBeGreaterThanOrEqual(1); expect(r.music.gateValue).toBe(1);
   });
-  it('tension thins melody; percussion is a detail: only when busy (or a track baseline)', () => {
-    const t = targetParams({ ...base, tension: 1, busy: 1 });
-    expect(t.layers.melody).toBeLessThan(1); expect(t.layers.perc).toBe(0);
-    expect(targetParams(base, THEMES.alpineNoon).layers.perc).toBe(0);
-    expect(targetParams({ ...base, busy: 0.9 }, THEMES.alpineNoon).layers.perc).toBeGreaterThan(0.5);
-    expect(targetParams(base, THEMES.apres).layers.perc).toBeGreaterThan(0);
-    expect(targetParams({ ...base, busy: 1, hour: 2 }, THEMES.starlight).layers.perc).toBe(0);
+  it('tab hidden: the elements pause (position kept) and continue when visible again', async () => {
+    const r = await rig({ dur: 200 }); await r.run(8); const el = r.m.playing[0]!; await r.run(2); const pos = el.currentTime;
+    await r.engine.setHidden(true); expect(el.paused).toBe(true);
+    r.fb.t += 50; r.music.tick(); await flush(); expect(el.currentTime).toBe(pos);
+    await r.engine.setHidden(false); expect(el.paused).toBe(false); expect(el.currentTime).toBe(pos);
   });
-});
-
-describe('Music playback (fake backend)', () => {
-  it('stays silent until the engine runs', () => {
-    const fb = new FakeBackend(), engine = new AudioEngine({ factory: () => fb, settings: new AudioSettings(null) });
-    const m = new Music(engine); m.tick(); expect(fb.nodes.length).toBe(1);
+  it('a track that cannot load is skipped for the next candidate; when every track fails: silence, one console warning, no throw, retries later', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const a = await rig({ fail: (s) => s.includes('mountain-morning') }); a.music.setInputs({ season: 'winter', hour: 8 }); await a.run(10);
+      expect(a.music.currentTrack).toBe('winter-early-slopes'); expect(a.music.stats.failures + a.m.fetched.length).toBeGreaterThan(0);
+      warn.mockClear(); const b = await rig({ fail: () => true }); await b.run(30);
+      expect(b.music.currentTrack).toBeNull(); expect(b.m.playing.length).toBe(0);
+      expect(warn.mock.calls.filter((c) => String(c[0]).includes('unavailable')).length).toBe(1);
+      const before = b.m.fetched.length; await b.run(MUSIC_PLAY.failBackoffSec + 5); expect(b.m.fetched.length).toBeGreaterThan(before);
+    } finally { warn.mockRestore(); }
   });
-  it('15 minutes: bounded nodes, voice cap, no events in the past, several pieces, never the same track twice in a row', async () => {
-    const { fb, music, run } = await setup();
-    music.setInputs({ season: 'summer', hour: 12 });
-    let maxLive = 0, maxVoices = 0;
-    run(900, () => { maxLive = Math.max(maxLive, fb.live); maxVoices = Math.max(maxVoices, music.activeVoices); });
-    const lead = fb.nodes.filter((n) => n.started).map((n) => n.startAt - n.createdAt);
-    expect(music.stats.notes).toBeGreaterThan(400);
-    expect(maxVoices).toBeLessThanOrEqual(MUSIC.maxVoices);
-    expect(maxLive).toBeLessThan(400);
-    expect(Math.min(...lead)).toBeGreaterThanOrEqual(-1e-9);
-    expect(music.stats.late).toBe(0);
-    expect(music.stats.pieces).toBeGreaterThanOrEqual(3); expect(music.stats.pieces).toBeLessThanOrEqual(12);
-    for (let i = 1; i < music.history.length; i++) expect(music.history[i]).not.toBe(music.history[i - 1]);
-    expect(fb.live).toBeLessThan(400);
-  }, 60000);
-  it('keys change between pieces', async () => {
-    const { music, run } = await setup();
-    const roots: number[] = [];
-    run(600, () => { const p = music.currentPiece; if (p && roots[roots.length - 1] !== p.root) roots.push(p.root); });
-    expect(roots.length).toBeGreaterThanOrEqual(2);
-    for (let i = 1; i < roots.length; i++) expect(roots[i]).not.toBe(roots[i - 1]);
+  it('the engine not running (blocked / locked): the scheduler does nothing', async () => {
+    const r = await rig({ locked: true }); await r.run(20); expect(r.m.fetched).toEqual([]);
+    expect(files(r.m.fetched)).toEqual([]);
   });
-  it('schedules only within the lookahead window', async () => {
-    const { fb, music, run } = await setup();
-    run(60, () => { for (const n of fb.nodes) if (n.started && n.createdAt === fb.t && n.startAt - fb.t > MUSIC.lookahead + 0.3) throw new Error('scheduled too far ahead'); });
-    expect(music.stats.notes).toBeGreaterThan(10);
-  });
-  it('starts the piece that fits the state (night = Starlight / Night Chill, storm = Blizzard, snow = Snow Piano, menu = Title or Menu Theme)', async () => {
-    for (const [inp, want] of [[{ hour: 23, season: 'winter' }, ['starlight', 'nightChill']], [{ weather: 'storm', hour: 12 }, ['blizzard']], [{ menu: true }, ['title']], [{ menu: true, screen: 'menu' }, ['menu']], [{ weather: 'snow', hour: 13, season: 'winter' }, ['snowPiano', 'alpineNoon', 'morningSnow']]] as const) {
-      const { music, run } = await setup(); music.setInputs(inp); run(5);
-      expect(want as readonly string[]).toContain(music.currentTrack);
-    }
-  });
-  it('a context change swaps an unsuitable track via a crossfade (after the minimum play time), not abruptly', async () => {
-    const { music, run } = await setup();
-    music.setInputs({ season: 'winter', hour: 12, weather: 'clear' }); run(5);
-    const first = music.currentTrack; expect(first).toBe('alpineNoon'); expect(music.trackCount).toBe(1);
-    music.setInputs({ weather: 'storm' }); run(10);
-    expect(music.currentTrack).toBe('alpineNoon'); // minimum play time not reached: no swap yet
-    run(MUSIC.minPlaySec + 3);
-    expect(music.stats.crossfades).toBe(1); expect(music.currentTrack).toBe('blizzard');
-    run(MUSIC.crossfadeSec + 1);
-    expect(music.trackCount).toBe(1);
-  });
-  it('Music style locks one track; Next skips (crossfade) and is audible while the game is paused by a dialog', async () => {
-    const { settings, music, run } = await setup(3, { musicStyle: 'festival' });
-    music.setInputs({ season: 'winter', hour: 3 }); run(5);
-    expect(music.currentTrack).toBe('festival');
-    settings.set({ musicStyle: 'apres' }); run(1);
-    expect(music.stats.crossfades).toBe(1); run(MUSIC.crossfadeSec + 1);
-    expect(music.currentTrack).toBe('apres');
-    settings.set({ musicStyle: 'auto' }); music.setInputs({ season: 'winter', hour: 23 }); run(40);
-    const before = music.currentTrack; music.setInputs({ speed: 0 }); music.next(); run(2);
-    expect(music.currentTrack).not.toBe(before); expect(music.gateValue).toBe(1); // preview window beats the pause fade
-    run(MUSIC.previewSec + 3); expect(music.gateValue).toBe(0);
-  });
-  it('pauses (fade out) at speed 0 and resumes; honours the option', async () => {
-    const { settings, music, run } = await setup();
-    run(10);
-    expect(music.gateValue).toBe(1);
-    music.setInputs({ speed: 0 }); run(5);
-    expect(music.gateValue).toBe(0); expect(music.isPlaying).toBe(false);
-    const held = music.stats.notes; run(5); expect(music.stats.notes).toBe(held);
-    music.setInputs({ speed: 1 }); run(5);
-    expect(music.gateValue).toBe(1); expect(music.stats.notes).toBeGreaterThan(held);
-    settings.set({ pauseMusicAtZero: false }); music.setInputs({ speed: 0 }); run(2);
-    expect(music.gateValue).toBe(1);
-  });
-  it('music off fades out', async () => {
-    const { settings, music, run } = await setup();
-    run(5); settings.set({ musicOn: false }); run(1);
-    expect(music.gateValue).toBe(0);
-  });
-  it('tempo follows game speed', async () => {
-    const { music, run } = await setup();
-    music.setInputs({ season: 'summer', hour: 12 }); run(5);
-    const b1 = music.bpm; music.setInputs({ speed: 3 }); run(30);
-    expect(music.bpm / b1).toBeGreaterThan(1.15); expect(music.bpm / b1).toBeLessThanOrEqual(1.25 + 1e-6);
-  });
-  it('tension adds a drone; jingle plays (soft harp, no bell) and is rate limited', async () => {
-    const { music, run } = await setup();
-    run(10);
-    music.addTension(1); const before = music.stats.notes; run(10);
-    expect(music.stats.notes).toBeGreaterThan(before);
-    music.jingle(); music.jingle();
-    expect(music.stats.jingles).toBe(1);
-  });
-  it('snowstorm is pads only (sparse)', async () => {
-    const { music, run } = await setup();
-    music.setInputs({ weather: 'heavySnow' }); run(30);
-    const n = music.stats.notes; run(10);
-    expect(music.stats.notes - n).toBeLessThan(25);
-  });
-});
-
-describe('music settings', () => {
-  it('defaults and LocalStorage roundtrip', () => {
-    const st = new MemStorage(), a = new AudioSettings(st);
-    expect(a.get().musicOn).toBe(true); expect(a.get().pauseMusicAtZero).toBe(true); expect(a.get().muteMusicInMenus).toBe(false);
-    a.set({ musicOn: false, pauseMusicAtZero: false, muteMusicInMenus: true });
-    expect(st.getItem(AUDIO_STORAGE_KEY)).toContain('musicOn');
-    const b = new AudioSettings(st);
-    expect(b.get().musicOn).toBe(false); expect(b.get().pauseMusicAtZero).toBe(false); expect(b.get().muteMusicInMenus).toBe(true);
+  it('dispose frees every element', async () => {
+    const r = await rig(); await r.run(8); r.music.dispose(); expect(r.m.playing.length).toBe(0);
   });
 });

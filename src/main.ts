@@ -137,7 +137,6 @@ import { createAudio, type AudioApi } from '@/audio';
 import { createMenuAudio } from '@/audio/menuAudio';
 import { countTrunks, hashCount } from '@/audio/worldProbe';
 import { AMB } from '@/audio/Ambience';
-import { THEMES } from '@/audio/musicThemes';
 import type { StSettings } from '@/ui/components/StSettings';
 import type { StSaveLoad } from '@/ui/components/StSaveLoad';
 import { createSim } from '@/game/createSim';
@@ -1309,7 +1308,7 @@ const fxApi = { emotes, demo: () => fx.demo(), policy: () => fx.policy(), setInt
     emotes.update(Math.min(dt, 0.1), ecam, loop.tickCount, guestRenderer.far, lodHeightFor(ecam), renderer.webgl.domElement.clientHeight);
   };
 }
-// Audio (Task 30): all sound is synthesized (Web Audio). Created here so it works even if the UI fails to mount.
+// Audio (Task 30): sound effects and ambience are synthesized (Web Audio); the music is mp3 files (public/audio). Created here so it works even if the UI fails to mount.
 let audioRef: AudioApi | null = null;
 let settingsRef: StSettings | null = null;
 let saveLoadRef: StSaveLoad | null = null;
@@ -1349,6 +1348,7 @@ try {
     },
   });
 } catch (err) { if (!DEMO) console.warn('[audio] disabled:', err); }
+if (audioRef) (window as unknown as { __audio?: unknown }).__audio = audioRef; // debug / e2e handle (scripts/music-e2e.ts), like __menuAudio
 // Guest inspector (Task 27): click a guest in select mode; small ring under the selected guest.
 let guestSelId = 0;
 let guestInspEl: StGuestInspector | null = null;
@@ -2840,7 +2840,7 @@ if (ui && !DEMO) {
   if (audioRef) {
     const audio = audioRef;
     settingsEl.bind(audioRef.settings, audioRef.engine, [{ label: 'Trophies', title: 'Open the trophy shelf', run: () => trophiesEl.open() }], {
-      music: { next: () => audio.music.next(), now: () => { const t = audio.music.currentTrack; return t ? THEMES[t].name : ''; } },
+      music: { next: () => audio.music.next(), now: () => audio.music.currentTitle },
       profile: { cosmetics: achCosmetics, reset: async () => { ach.resetProfile(); await profileStore().resetProfile(); } },
       quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
     atmosphere: { get: () => atmosSettings.level, set: (l) => atmosSettings.set(l as AtmosLevel), options: ATMOS_LEVELS },

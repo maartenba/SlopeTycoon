@@ -1,20 +1,18 @@
 import { AudioEngine } from '../../src/audio/AudioEngine';
 import { AudioSettings, type AudioSettingsData } from '../../src/audio/AudioSettings';
 import { Ambience, type AmbienceState } from '../../src/audio/Ambience';
-import { Music } from '../../src/audio/Music';
 import { MusicHandoff } from '../../src/audio/musicHold';
 import { Sfx } from '../../src/audio/Sfx';
-import type { MusicInput } from '../../src/audio/musicState';
 import { OfflineBackend } from './offlineBackend';
 import { MemStorage } from './fakeBackend';
 
-export interface Rendered { l: Float32Array; r: Float32Array; sampleRate: number; backend: OfflineBackend; music: Music; ambience: Ambience; engine: AudioEngine }
-export interface RenderOpts { seconds: number; sampleRate?: number; seed?: number; settings?: Partial<AudioSettingsData>; music?: Partial<MusicInput>; ambience?: Partial<AmbienceState> | null; musicOn?: boolean; ambienceOn?: boolean; skipAt?: number[]; /** Time-varying ambience patch (e.g. the apres level while the camera walks to a bar and back), applied on top of `ambience`. */ ambienceAt?: (t: number) => Partial<AmbienceState>; /** Seed of the bar music (default: the config seed). */ apresSeed?: number; /** Called every scheduler step with the audio time, e.g. to change speed / settings mid-render. */ onStep?: (t: number, h: { music: Music; settings: AudioSettings }) => void }
+export interface Rendered { l: Float32Array; r: Float32Array; sampleRate: number; backend: OfflineBackend; ambience: Ambience; engine: AudioEngine }
+export interface RenderOpts { seconds: number; sampleRate?: number; seed?: number; settings?: Partial<AudioSettingsData>; ambience?: Partial<AmbienceState> | null; ambienceOn?: boolean; /** Time-varying ambience patch (e.g. the apres level while the camera walks to a bar and back), applied on top of `ambience`. */ ambienceAt?: (t: number) => Partial<AmbienceState>; /** Called every scheduler step with the audio time, e.g. to change settings mid-render. */ onStep?: (t: number, h: { settings: AudioSettings }) => void }
 
 const AMB_DEFAULT: AmbienceState = { season: 'winter', weather: 'clear', hour: 12, zoom: 20, altitude: 0.5, wind: 0.3, water: 0.5, crowd: 40, lifts: 0.5, buildings: 0.4, cows: 0, snowcat: 0, heli: 0 };
 
 /**
- * Drives the real Music / Ambience / Sfx / AudioEngine against the software renderer for `seconds` of audio time (25 ms scheduler ticks, 100 ms ambience ticks).
+ * Drives the real Ambience / Sfx / AudioEngine (the music is mp3 files: tests/audio/music*.test.ts use a fake media player) against the software renderer for `seconds` of audio time (25 ms scheduler ticks, 100 ms ambience ticks).
  * Output is what comes out of the master chain (buses -> master -> compressor -> destination), at the bus / master settings given (defaults: the real defaults).
  */
 export async function renderAudio(o: RenderOpts): Promise<Rendered> {
@@ -23,19 +21,16 @@ export async function renderAudio(o: RenderOpts): Promise<Rendered> {
   const engine = new AudioEngine({ factory: () => ob as never, settings });
   await engine.onGesture();
   const handoff = new MusicHandoff();
-  const music = new Music(engine, { seed: o.seed ?? 5, handoff }), sfx = new Sfx(engine), amb = new Ambience(engine, sfx, mulb(o.seed ?? 5), o.apresSeed, handoff);
-  if (o.music) music.setInputs(o.music);
+  const sfx = new Sfx(engine), amb = new Ambience(engine, sfx, mulb(o.seed ?? 5), handoff);
   const state0 = { ...AMB_DEFAULT, ...(o.ambience ?? {}) };
-  const step = 0.025, n = Math.round(o.seconds / step), skips = new Set((o.skipAt ?? []).map((s) => Math.round(s / step)));
+  const step = 0.025, n = Math.round(o.seconds / step);
   for (let i = 0; i < n; i++) {
-    if (skips.has(i)) music.next();
-    o.onStep?.(i * step, { music, settings });
-    if (o.musicOn !== false) music.tick();
+    o.onStep?.(i * step, { settings });
     if (o.ambience !== null && o.ambienceOn !== false && i % 4 === 0) amb.update(o.ambienceAt ? { ...state0, ...o.ambienceAt(i * step) } : state0, 0.1);
     ob.process(step);
   }
   const c = ob.capture();
-  return { l: c.l, r: c.r, sampleRate: c.sampleRate, backend: ob, music, ambience: amb, engine };
+  return { l: c.l, r: c.r, sampleRate: c.sampleRate, backend: ob, ambience: amb, engine };
 }
 function mulb(seed: number): () => number { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 

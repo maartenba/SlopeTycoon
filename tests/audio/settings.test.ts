@@ -4,7 +4,7 @@ import { MemStorage } from './fakeBackend';
 
 describe('AudioSettings', () => {
   it('defaults: master .7, music .5, sfx .8, ambience .45, not muted', () => {
-    expect(new AudioSettings(new MemStorage()).get()).toEqual({ master: 0.7, music: 0.5, sfx: 0.8, ambience: 0.28, muted: false, reduceLoud: false, ambienceOnly: false, musicOn: true, pauseMusicAtZero: true, musicStyle: 'auto', muteMusicInMenus: false });
+    expect(new AudioSettings(new MemStorage()).get()).toEqual({ master: 0.7, music: 0.5, sfx: 0.8, ambience: 0.28, muted: false, reduceLoud: false, ambienceOnly: false, musicOn: true, pauseMusicAtZero: true, muteMusicInMenus: false });
   });
   it('persists under slope.audio.v1 and round-trips', () => {
     const st = new MemStorage();
@@ -53,12 +53,11 @@ describe('legacy ambience default migration', () => {
   });
 });
 
-describe('music style setting', () => {
-  it('defaults to auto, persists, rejects unknown styles', () => {
-    const st = new MemStorage(), a = new AudioSettings(st);
-    expect(a.get().musicStyle).toBe('auto');
-    a.set({ musicStyle: 'apres' }); expect(new AudioSettings(st).get().musicStyle).toBe('apres');
-    a.set({ musicStyle: 'nope' as never }); expect(a.get().musicStyle).toBe('apres');
-    st.setItem(AUDIO_STORAGE_KEY, JSON.stringify({ musicStyle: 'zzz' })); expect(new AudioSettings(st).get().musicStyle).toBe('auto');
+describe('old music style setting', () => {
+  it('is gone: a saved musicStyle is ignored and dropped on the next save; the other settings survive', () => {
+    const st = new MemStorage();
+    st.setItem(AUDIO_STORAGE_KEY, JSON.stringify({ musicStyle: 'apres', music: 0.4, musicOn: false }));
+    const a = new AudioSettings(st); expect('musicStyle' in a.get()).toBe(false); expect(a.get().music).toBe(0.4); expect(a.get().musicOn).toBe(false);
+    a.set({ music: 0.45 }); expect(JSON.parse(st.getItem(AUDIO_STORAGE_KEY)!).musicStyle).toBeUndefined();
   });
 });

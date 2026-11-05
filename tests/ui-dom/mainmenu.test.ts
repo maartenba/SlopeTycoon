@@ -35,7 +35,7 @@ describe('main menu + new game dialog', () => {
     const h = mountMainMenu({ ui, saves: null, go: (q) => went.push(q), version: '9.9.9' });
     await Promise.resolve(); await Promise.resolve();
     const text = root(h.menu).textContent ?? '';
-    for (const t of ['Continue', 'New game', 'Tutorial', 'Settings', 'Help & keys', 'About', 'v9.9.9', 'procedural everything']) expect(text, t).toContain(t);
+    for (const t of ['Continue', 'New game', 'Tutorial', 'Settings', 'Help & keys', 'About', 'v9.9.9', 'graphics generated in code']) expect(text, t).toContain(t);
     expect(btn(h.menu, 'Continue').disabled).toBe(true);
     expect(text).toContain('No saved game yet');
     btn(h.menu, 'Tutorial').click();

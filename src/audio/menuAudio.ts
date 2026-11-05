@@ -1,7 +1,7 @@
 import { AudioEngine } from './AudioEngine';
 import { AudioSettings, type StorageLike } from './AudioSettings';
 import { createRealBackend, type AudioBackend } from './backend';
-import { loadBytes, MenuMusic } from './MenuMusic';
+import { MenuMusic, type MenuMusicDeps } from './MenuMusic';
 
 export interface MenuAudio {
   settings: AudioSettings;
@@ -16,10 +16,10 @@ export interface MenuAudio {
  * Title-screen audio (no sim, no game audio engine): settings (shared with the Settings dialog), an engine that unlocks on the first
  * pointer / key press and suspends while the tab is hidden, the M mute key, and the menu music. Nothing is fetched until the engine runs.
  */
-export function createMenuAudio(d: { storage: StorageLike | null; win?: Window; doc?: Document; factory?: () => AudioBackend | null; load?: (url: string) => Promise<ArrayBuffer>; rand?: () => number }): MenuAudio {
+export function createMenuAudio(d: { storage: StorageLike | null; win?: Window; doc?: Document; factory?: () => AudioBackend | null; player?: MenuMusicDeps['player']; rand?: () => number }): MenuAudio {
   const settings = new AudioSettings(d.storage);
   const engine = new AudioEngine({ factory: d.factory ?? createRealBackend, settings });
-  const music = new MenuMusic({ engine, settings, load: d.load ?? loadBytes, ...(d.rand ? { rand: d.rand } : {}) });
+  const music = new MenuMusic({ engine, settings, ...(d.player ? { player: d.player } : {}), ...(d.rand ? { rand: d.rand } : {}) });
   const win = d.win ?? (typeof window !== 'undefined' ? window : undefined), doc = d.doc ?? (typeof document !== 'undefined' ? document : undefined);
   const offs: Array<() => void> = [];
   if (win && doc) {

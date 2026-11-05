@@ -7,9 +7,9 @@ import { cueForNews, soundsForEvent } from './eventSounds';
 import { GAME_EVENT_NAMES } from '../core/events';
 import { Music } from './Music';
 import { MusicHandoff } from './musicHold';
-import { MUSIC } from './musicThemes';
 import { Sfx } from './Sfx';
 import { PROX } from '../config/audioProximity';
+import { MUSIC_PLAY } from '../config/audioMusic';
 import { WorldProbe, type ProbeDeps } from './worldProbe';
 
 export interface AudioDeps {
@@ -22,8 +22,8 @@ export interface AudioDeps {
   win?: Window;
   doc?: Document;
   rng?: () => number;
-  /** Composition seed (default: derived from today's date). */
-  musicSeed?: number;
+  /** Test hooks for the music players (media element factory, URL resolver). */
+  musicPlayer?: NonNullable<ConstructorParameters<typeof Music>[1]>['player'];
   /** Throttled tick period (s). */
   tickEvery?: number;
 }
@@ -47,10 +47,9 @@ export function createAudio(d: AudioDeps): AudioApi {
   const engine = new AudioEngine({ factory: d.factory ?? createRealBackend, settings });
   const sfx = new Sfx(engine);
   const probe = new WorldProbe(d.probe);
-  const today = Math.floor(Date.now() / 86400000);
   const handoff = new MusicHandoff(); // shared: near an open Apres-Ski Bar the game music stops, the bar music plays (and back)
-  const ambience = new Ambience(engine, sfx, d.rng, d.musicSeed ?? (today ^ 0x5eed), handoff);
-  const music = new Music(engine, { seed: d.musicSeed ?? 7, dayKey: d.musicSeed === undefined ? today : 0, handoff });
+  const ambience = new Ambience(engine, sfx, d.rng, handoff, d.musicPlayer ? { player: d.musicPlayer } : undefined);
+  const music = new Music(engine, { handoff, ...(d.musicPlayer ? { player: d.musicPlayer } : {}) });
   const offs: Array<() => void> = [];
   const win = d.win ?? (typeof window !== 'undefined' ? window : undefined);
   const doc = d.doc ?? (typeof document !== 'undefined' ? document : undefined);
@@ -61,11 +60,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   for (const n of GAME_EVENT_NAMES) hook(n);
   offs.push(d.bus.on('time:hour', (p) => ambience.onHour(p.hour)));
   offs.push(d.bus.on('speed:changed', (p) => music.setInputs({ speed: p.speed })));
-  offs.push(d.bus.on('incident:avalanche', (p) => music.addTension(p.controlled ? 0.3 : 0.9)));
-  offs.push(d.bus.on('incident:created', (p) => { if (p.severity >= 1) music.addTension(p.severity >= 2 ? 0.8 : 0.5); }));
-  offs.push(d.bus.on('incident:escalated', () => music.addTension(0.6)));
-  offs.push(d.bus.on('rating:changed', (p) => { if (p.stars > p.previous) music.jingle(); }));
-  const musicTimer = typeof setInterval === 'function' ? setInterval(() => music.tick(), MUSIC.tickMs) : null;
+  const musicTimer = typeof setInterval === 'function' ? setInterval(() => music.tick(), MUSIC_PLAY.tickMs) : null;
 
   if (win && doc) {
     offs.push(engine.attach(win, doc));

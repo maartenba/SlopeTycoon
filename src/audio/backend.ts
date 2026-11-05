@@ -15,6 +15,13 @@ export interface GainLike extends NodeLike { gain: ParamLike }
 export interface OscLike extends NodeLike { type: string; frequency: ParamLike; start(t?: number): void; stop(t?: number): void; onended: (() => void) | null }
 export interface BufferLike { getChannelData(ch: number): Float32Array }
 export interface SourceLike extends NodeLike { buffer: BufferLike | null; loop: boolean; playbackRate: ParamLike; start(t?: number, offset?: number): void; stop(t?: number): void; onended: (() => void) | null }
+/** Structural subset of HTMLAudioElement used by the music players (tests inject a fake). */
+export interface MediaLike {
+  src: string; currentTime: number; readonly duration: number; readonly paused: boolean; readonly ended: boolean; loop: boolean; preload: string;
+  play(): Promise<void> | void; pause(): void;
+  addEventListener(type: string, fn: () => void): void; removeEventListener(type: string, fn: () => void): void;
+  removeAttribute?(name: string): void; load?(): void;
+}
 export interface FilterLike extends NodeLike { type: string; frequency: ParamLike; Q: ParamLike }
 export interface PannerLike extends NodeLike { pan: ParamLike }
 export interface CompressorLike extends NodeLike { threshold: ParamLike; knee: ParamLike; ratio: ParamLike; attack: ParamLike; release: ParamLike }
@@ -39,8 +46,8 @@ export interface AudioBackend {
   createStereoPanner(): PannerLike;
   createDynamicsCompressor(): CompressorLike;
   createBuffer(length: number, sampleRate: number): BufferLike;
-  /** Optional: decode a whole encoded file (menu music). */
-  decode?(data: ArrayBuffer): Promise<BufferLike & { duration: number }>;
+  /** Optional: route an <audio> element through the graph (the music players; without it there is no music). */
+  createMediaElementSource?(el: MediaLike): NodeLike;
   /** Optional (music reverb); music runs dry without it. */
   createConvolver?(): ConvolverLike;
   /** Optional (music reverb = feedback delay network); music runs dry without it. */
@@ -65,7 +72,7 @@ export function wrapContext(ctx: AudioContext): AudioBackend {
     createBuffer: (length, rate) => ctx.createBuffer(1, length, rate),
     createConvolver: () => ctx.createConvolver() as unknown as ConvolverLike,
     createDelay: (max) => ctx.createDelay(max) as unknown as DelayLike,
-    decode: (data) => ctx.decodeAudioData(data) as unknown as Promise<BufferLike & { duration: number }>,
+    createMediaElementSource: (el) => ctx.createMediaElementSource(el as unknown as HTMLMediaElement) as unknown as NodeLike,
   };
 }
 

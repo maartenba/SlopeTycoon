@@ -42,15 +42,15 @@ describe('concert bed', () => {
   });
   it('rendered at full gain: headroom, no DC, no clicks, no tonal line, far below the music; quiet at defaults', async () => {
     const SR = 24000;
-    const r = await renderAudio({ seconds: 24, sampleRate: SR, seed: 7, settings: { ambience: 1, master: 1 }, ambience: { ...AMB_BASE, season: 'summer', hour: 20, wind: 0, concert: 1 }, musicOn: false });
+    const r = await renderAudio({ seconds: 24, sampleRate: SR, seed: 7, settings: { ambience: 1, master: 1 }, ambience: { ...AMB_BASE, season: 'summer', hour: 20, wind: 0, concert: 1 } });
     const x = r.l.subarray(SR * 8), s = statsOf(x), tp = tonalProminence(x, SR);
     expect(s.peak).toBeLessThan(0.9); expect(Math.abs(s.dc)).toBeLessThan(1e-3);
     expect(clickScore(x)).toBeLessThan(12); expect(tp.db, `tonal ${tp.hz} Hz`).toBeLessThan(7);
     expect(spectrum(x, SR).above(8000)).toBeLessThan(0.01);
-    const d = await renderAudio({ seconds: 14, sampleRate: 16000, seed: 7, ambience: { ...AMB_BASE, season: 'summer', hour: 20, wind: 0, concert: 1 }, musicOn: false });
+    const d = await renderAudio({ seconds: 14, sampleRate: 16000, seed: 7, ambience: { ...AMB_BASE, season: 'summer', hour: 20, wind: 0, concert: 1 } });
     expect(statsOf(d.l.subarray(16000 * 6)).rmsDb).toBeLessThan(-30);
     // muted ambience = silence
-    const m = await renderAudio({ seconds: 10, sampleRate: 16000, seed: 7, settings: { ambience: 0 }, ambience: { ...AMB_BASE, concert: 1 }, musicOn: false });
+    const m = await renderAudio({ seconds: 10, sampleRate: 16000, seed: 7, settings: { ambience: 0 }, ambience: { ...AMB_BASE, concert: 1 } });
     expect(statsOf(m.l.subarray(16000 * 5)).peak).toBeLessThan(1e-4);
   }, 120000);
 });

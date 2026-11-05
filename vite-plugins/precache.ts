@@ -6,7 +6,7 @@ import { buildSync } from 'esbuild';
 import type { Plugin } from 'vite';
 
 export interface PrecacheEntry { url: string; revision: string }
-/** `audio/` (the two owner-provided menu tracks, 6.8 MB) is NOT precached: the service worker runtime-caches it on first play (docs/pwa.md, docs/audio.md). */
+/** `audio/` (the owner-provided music, 19 mp3 files, 37 MB) is NOT precached: the service worker runtime-caches it on first play (docs/pwa.md, docs/audio.md). */
 export const RUNTIME_ONLY_PREFIX = 'audio/';
 const SKIP = (rel: string): boolean => rel.startsWith(RUNTIME_ONLY_PREFIX) || rel === 'sw.js' || rel === 'whats-new.json' || rel === '404.html' || rel === '.nojekyll' || rel === 'CNAME' || rel.endsWith('.map') || rel.endsWith('.DS_Store');
 
