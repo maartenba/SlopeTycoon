@@ -33,7 +33,7 @@ describe('music assets', () => {
       expect(t.trim).toBeGreaterThan(0.3); expect(t.trim).toBeLessThanOrEqual(1); // measured true peaks are <= -2.4 dBFS and the targets sit 2-4 dB below the files: no clipping
       expect(t.title.length).toBeGreaterThan(2);
     }
-    expect(MUSIC_TARGET_LUFS.game).toBe(-20); expect(MUSIC_TARGET_LUFS.bar).toBe(-18); // 3 dB below the old procedural targets (-17 / -15): the owner found the default level a bit loud
+    expect(MUSIC_TARGET_LUFS.game).toBe(-21.2); expect(MUSIC_TARGET_LUFS.bar).toBe(-19.2); // -1.2 dB more (owner: slider 16 -> 14); 3 dB below the old procedural targets (-17 / -15): the owner found the default level a bit loud
   });
   it('every playlist entry exists and has the right group; every situation has a playlist; fallbacks resolve', () => {
     for (const s of SITUATION_IDS) { expect(PLAYLISTS[s].length).toBeGreaterThan(0); for (const id of PLAYLISTS[s]) expect(TRACK_BY_ID.get(id)?.group, id).toBe('game'); expect(PLAYLISTS[FALLBACK[s]].length).toBeGreaterThan(0); }

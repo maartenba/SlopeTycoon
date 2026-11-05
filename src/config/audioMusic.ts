@@ -11,9 +11,10 @@ export type TrackGroup = 'menu' | 'game' | 'bar';
 /**
  * Loudness targets (integrated LUFS) the trims normalise to. The old procedural music was normalised to -17 (game) and -15 (bar); the owner found the Suno
  * music "a bit loud" at the same slider, so every target is 3 dB lower (about -3 dB at the default Music slider; the slider range is unchanged).
+ * Second step (owner playtest, 2026-11-05): the Music slider read 16 and was still too loud, 14 felt right: every target another 1.2 dB lower (20 log10(14/16) = -1.16 dB), so the SAME slider position now sounds like 14 did relative to 16; slider range and default untouched.
  * The bar target is the level it should sound at; the bar music runs on the (quieter by default) Ambience bus, `BAR_AUDIO.busBoost` makes up for that.
  */
-export const MUSIC_TARGET_LUFS: Record<TrackGroup, number> = { menu: -20, game: -20, bar: -18 };
+export const MUSIC_TARGET_LUFS: Record<TrackGroup, number> = { menu: -21.2, game: -21.2, bar: -19.2 };
 
 export interface TrackDef {
   /** Stable id (used by PLAYLISTS and the saved nothing: not persisted). */
@@ -30,25 +31,25 @@ export interface TrackDef {
 }
 
 export const TRACKS: readonly TrackDef[] = [
-  { id: 'seasons-of-management', file: 'menu-seasons-of-management.mp3', title: 'Seasons of Management', group: 'menu', lufs: -15.9, trim: 0.624 },
-  { id: 'seasonal-menu', file: 'menu-seasonal-menu.mp3', title: 'Seasonal Menu', group: 'menu', lufs: -15.6, trim: 0.603 },
-  { id: 'winter-mountain-morning', file: 'game-winter-mountain-morning.mp3', title: 'Mountain Morning', group: 'game', lufs: -15.8, trim: 0.617 },
-  { id: 'winter-early-slopes', file: 'game-winter-early-slopes.mp3', title: 'Winter Early slopes', group: 'game', lufs: -14.3, trim: 0.519 },
-  { id: 'winter-day', file: 'game-winter-day.mp3', title: 'Winter Day', group: 'game', lufs: -15.4, trim: 0.589 },
-  { id: 'winter-snow', file: 'game-winter-snow.mp3', title: 'Winter Snow', group: 'game', lufs: -17.6, trim: 0.759 },
-  { id: 'evening-corner', file: 'game-evening-corner.mp3', title: 'Evening Corner', group: 'game', lufs: -16.6, trim: 0.676 },
-  { id: 'night-melted-snow', file: 'game-night-melted-snow.mp3', title: 'Melted Snow', group: 'game', lufs: -16.4, trim: 0.661 },
-  { id: 'night-vinny-f-minor', file: 'game-night-vinny-f-minor.mp3', title: 'Vinny F Minor', group: 'game', lufs: -16.4, trim: 0.661 },
-  { id: 'summer-meadow-loop', file: 'game-summer-meadow-loop.mp3', title: 'Meadow Loop', group: 'game', lufs: -15.7, trim: 0.61 },
-  { id: 'summer-pastoral-walk', file: 'game-summer-pastoral-walk.mp3', title: 'Pastoral Walk', group: 'game', lufs: -15.3, trim: 0.582 },
-  { id: 'autumn-gentle-sway', file: 'game-autumn-gentle-sway.mp3', title: "Autumn's Gentle Sway", group: 'game', lufs: -16.3, trim: 0.653 },
-  { id: 'autumn-gold', file: 'game-autumn-gold.mp3', title: 'Autumn Gold', group: 'game', lufs: -16.0, trim: 0.631 },
-  { id: 'storm-tente-restringida', file: 'game-storm-tente-restringida.mp3', title: 'Tente Restringida', group: 'game', lufs: -17.8, trim: 0.776 },
-  { id: 'festival-groove', file: 'game-festival-groove.mp3', title: 'Festival groove', group: 'game', lufs: -15.8, trim: 0.617 },
-  { id: 'bar-ski-hut-groove', file: 'apres-ski-hut-groove.mp3', title: 'Ski Hut Groove', group: 'bar', lufs: -16.1, trim: 0.804 },
-  { id: 'bar-polka-party-time', file: 'apres-polka-party-time.mp3', title: 'Polka Party Time', group: 'bar', lufs: -16.5, trim: 0.841 },
-  { id: 'bar-alpine-apres-ski', file: 'apres-alpine-apres-ski.mp3', title: 'Alpine Après-Ski', group: 'bar', lufs: -16.1, trim: 0.804 },
-  { id: 'bar-ski-brass', file: 'apres-ski-brass.mp3', title: 'Après-Ski Brass', group: 'bar', lufs: -16.5, trim: 0.841 },
+  { id: 'seasons-of-management', file: 'menu-seasons-of-management.mp3', title: 'Seasons of Management', group: 'menu', lufs: -15.9, trim: 0.543 },
+  { id: 'seasonal-menu', file: 'menu-seasonal-menu.mp3', title: 'Seasonal Menu', group: 'menu', lufs: -15.6, trim: 0.525 },
+  { id: 'winter-mountain-morning', file: 'game-winter-mountain-morning.mp3', title: 'Mountain Morning', group: 'game', lufs: -15.8, trim: 0.537 },
+  { id: 'winter-early-slopes', file: 'game-winter-early-slopes.mp3', title: 'Winter Early slopes', group: 'game', lufs: -14.3, trim: 0.452 },
+  { id: 'winter-day', file: 'game-winter-day.mp3', title: 'Winter Day', group: 'game', lufs: -15.4, trim: 0.513 },
+  { id: 'winter-snow', file: 'game-winter-snow.mp3', title: 'Winter Snow', group: 'game', lufs: -17.6, trim: 0.661 },
+  { id: 'evening-corner', file: 'game-evening-corner.mp3', title: 'Evening Corner', group: 'game', lufs: -16.6, trim: 0.589 },
+  { id: 'night-melted-snow', file: 'game-night-melted-snow.mp3', title: 'Melted Snow', group: 'game', lufs: -16.4, trim: 0.575 },
+  { id: 'night-vinny-f-minor', file: 'game-night-vinny-f-minor.mp3', title: 'Vinny F Minor', group: 'game', lufs: -16.4, trim: 0.575 },
+  { id: 'summer-meadow-loop', file: 'game-summer-meadow-loop.mp3', title: 'Meadow Loop', group: 'game', lufs: -15.7, trim: 0.531 },
+  { id: 'summer-pastoral-walk', file: 'game-summer-pastoral-walk.mp3', title: 'Pastoral Walk', group: 'game', lufs: -15.3, trim: 0.507 },
+  { id: 'autumn-gentle-sway', file: 'game-autumn-gentle-sway.mp3', title: "Autumn's Gentle Sway", group: 'game', lufs: -16.3, trim: 0.569 },
+  { id: 'autumn-gold', file: 'game-autumn-gold.mp3', title: 'Autumn Gold', group: 'game', lufs: -16.0, trim: 0.55 },
+  { id: 'storm-tente-restringida', file: 'game-storm-tente-restringida.mp3', title: 'Tente Restringida', group: 'game', lufs: -17.8, trim: 0.676 },
+  { id: 'festival-groove', file: 'game-festival-groove.mp3', title: 'Festival groove', group: 'game', lufs: -15.8, trim: 0.537 },
+  { id: 'bar-ski-hut-groove', file: 'apres-ski-hut-groove.mp3', title: 'Ski Hut Groove', group: 'bar', lufs: -16.1, trim: 0.7 },
+  { id: 'bar-polka-party-time', file: 'apres-polka-party-time.mp3', title: 'Polka Party Time', group: 'bar', lufs: -16.5, trim: 0.733 },
+  { id: 'bar-alpine-apres-ski', file: 'apres-alpine-apres-ski.mp3', title: 'Alpine Après-Ski', group: 'bar', lufs: -16.1, trim: 0.7 },
+  { id: 'bar-ski-brass', file: 'apres-ski-brass.mp3', title: 'Après-Ski Brass', group: 'bar', lufs: -16.5, trim: 0.733 },
 ];
 export const TRACK_BY_ID: ReadonlyMap<string, TrackDef> = new Map(TRACKS.map((t) => [t.id, t]));
 

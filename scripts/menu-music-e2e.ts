@@ -31,12 +31,12 @@ try {
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (process.env.MM_DEBUG) console.log('console:', m.type(), m.text().slice(0, 200)); if (m.type() === 'error' && !/GPU stall|GL Driver Message/.test(m.text())) errors.push(m.text()); });
   page.on('response', (r) => { if (r.url().endsWith('.mp3')) reqs.push({ url: r.url(), status: r.status(), type: r.headers()['content-type'] ?? '', fromSw: r.fromServiceWorker() }); });
-  // The title screen itself does not register the service worker (registerSW lives in the game page), so install it through a game page first, like a returning player.
-  await page.goto(`${origin}/?size=64&seed=3&start=winter&hints=0`, { waitUntil: 'load', timeout: 90000 });
-  await page.waitForFunction(`navigator.serviceWorker.getRegistration().then((r) => !!r && !!r.active && r.active.state === 'activated')`, { timeout: 120000 });
+  // FIRST VISIT, title screen only (no game page before): the title registers the service worker itself (docs/pwa.md), so the menu music is cached from the first visit.
+  await page.goto(`${origin}/`, { waitUntil: 'load', timeout: 90000 });
+  await page.waitForFunction(`navigator.serviceWorker.getRegistration().then((r) => !!r && !!r.active && r.active.state === 'activated' && !!navigator.serviceWorker.controller)`, { timeout: 120000 });
+  ok(true, 'first title visit: service worker registered, active and controlling the title page');
   await new Promise((r) => setTimeout(r, 3000)); // let it finish precaching
   reqs.length = 0;
-  await page.goto(`${origin}/`, { waitUntil: 'load', timeout: 90000 });
   await page.waitForFunction(() => !!(window as unknown as { __menuAudio?: unknown }).__menuAudio, { timeout: 90000 });
   await new Promise((r) => setTimeout(r, 1500));
   ok(reqs.length === 0, 'no mp3 requested before the first gesture');

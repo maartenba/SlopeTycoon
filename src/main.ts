@@ -347,6 +347,9 @@ async function showMainMenu(): Promise<void> {
     }
   }
   if (!ui || params.has('nomenu')) return;
+  // Title screen registers the service worker too (docs/pwa.md): a first-time visitor who only sees the title still gets the menu music cached. Same guards as the game page
+  // (production build, https / localhost, dev cleanup); no update card here (nothing to save): a waiting new version is announced by the game page, or applies when all tabs close.
+  void registerSW({ prod: import.meta.env.PROD, navigator, protocol: location.protocol, hostname: location.hostname, cachesApi: typeof caches !== 'undefined' ? caches : undefined, reload: () => { /* title: never reloads by itself */ }, onUpdate: () => { /* game page shows the update card */ } }).catch(() => { /* never affects the title */ });
   const saves = saveBackend ? new SaveManager({ backend: saveBackend, getSim: () => null, restore: async (_env, id) => { window.location.search = loadQuery(id); }, toast: () => {}, download: downloadBytes }) : null;
   const menuAudio = params.has('nomenumusic') ? null : (() => { try { return createMenuAudio({ storage: (() => { try { return window.localStorage; } catch { return null; } })(), rand: uiRand }); } catch (e) { console.warn('[menu music] disabled:', e); return null; } })();
   (window as unknown as { __menuAudio?: unknown }).__menuAudio = menuAudio;
