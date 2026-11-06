@@ -207,6 +207,7 @@ import { mountMainMenu } from '@/ui/menuHost';
 import { modalStack } from '@/ui/modal';
 import { showModal, confirmDialog } from '@/ui/components/StModal';
 import { BackcountryFlags } from '@/render/BackcountryFlags';
+import { VisitorView } from '@/render/VisitorView';
 import { SledRunView } from '@/render/SledRunView';
 import { routeInfo, OVERRIDE_CONFIRM } from '@/ui/backcountryFormat';
 import type { StRouteInspector } from '@/ui/components/StRouteInspector';
@@ -745,6 +746,8 @@ const springMarkers = new SpringMarkers(grid, sim.rivers); // Phase 6 Task 14: o
 renderer.scene.add(springMarkers.group);
 const bcFlags = new BackcountryFlags(grid, sim.backcountry); // Phase 6 Task 32: flag poles (danger colour) along backcountry routes, one merged mesh
 renderer.scene.add(bcFlags.group);
+const visitorView = new VisitorView(grid, sim.visitor, () => game.date.year * DAYS_PER_YEAR * 1440 + game.date.day * 1440 + game.date.minute); // rare high-country visitor: one mesh + one footprint layer, nothing while no visit is on
+renderer.scene.add(visitorView.group);
 const sledRunView = new SledRunView(grid, networks); // Phase 7 M7.3: sled runs + alpine coaster rails, one merged mesh
 renderer.scene.add(sledRunView.group);
 const landscapeTool = new LandscapeTool({
@@ -777,6 +780,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   updateLandscapeView();
   springMarkers.update();
   bcFlags.update();
+  visitorView.update(dt);
   sledRunView.update();
   updateFestival(dt);
   tourVehicles.update(sim.loop.tickCount);
@@ -991,6 +995,7 @@ const startPlacement = (type: string): void => {
     if (e.button !== 0 || e.target !== dom || !mapToolsIdle()) return;
     const r = dom.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), renderer.controls.camera);
+    if (visitorView.hit(ray.ray)) { ach.note('rareSeen'); toast('Something big, there and gone.'); return; }
     const p = pickHeightfield(grid, ray.ray.origin, ray.ray.direction);
     const b = p ? buildings.at(p.tileX, p.tileY) : undefined;
     const onPiste = !b && !!p && !!sim.pisteReportAt(p.tileX, p.tileY);
@@ -1732,6 +1737,7 @@ const savePhoto = async (): Promise<void> => {
   downloadBlob(res.png, name);
   audioRef?.sfx.play('shutter');
   ach.note('photos');
+  if (visitorView.inFrame(renderer.camera)) { ach.note('rareSeen'); ach.note('rarePhoto'); } // the visitor was in the frame
   toast('Photo saved');
   photoEl?.say(`Saved ${name} (${res.w}×${res.h}${res.clamped ? ', size limited by this device' : ''})`);
   if (!photoStore) return;
@@ -2129,6 +2135,7 @@ const showPanel = (p: PanelRef | null | undefined): void => {
   dockRef?.showPanel(p.drawer, p.item);
 };
 const goTo = (f: FocusTarget): void => {
+  if (f.quiet) renderer.controls.target.y = heightAt(grid, f.x + 0.5, f.y + 0.5); // high ground: look at the ground there, not at sea level
   renderer.controls.focusOn(f.x + 0.5, f.y + 0.5);
   if (f.entityKind === 'building' && f.entityId !== undefined && buildings.get(f.entityId)) select(f.entityId);
   else if (f.entityKind === 'guest' && f.entityId !== undefined && guestSim.store.slotOf(f.entityId) >= 0) { guestSelId = f.entityId; refreshGuestInfo(); }
@@ -2762,7 +2769,7 @@ if (ui && !DEMO) {
     date: () => game.date,
     // The news feed is the single source of toasts: only critical + important rows toast (muted categories excluded; per-key cooldown in the limiter).
     onSeasonal: (it) => { if (!closureGrouper.add({ ...it.seasonal!, text: it.text, ...(it.focus ? { focus: it.focus } : {}) }, seasonOf(game.date), performance.now())) return; window.setTimeout(() => { const g = closureGrouper.flush(performance.now()); if (g) toastEl.show(g.text, 'warn', 3500, { key: `closure-group:${performance.now()}`, category: 'closure', severity: 'warn', tier: 'important', ...(g.focus ? { action: { label: 'Go to', run: () => goTo(g.focus!) } } : {}), ttlMs: 7000 }); }, closureGrouper.windowMs + 50); },
-    onItem: (it) => { audioRef?.news(it); if (it.seasonal) return; const f = it.focus; toastEl.show(it.text, it.severity === 'bad' ? 'error' : it.severity === 'warn' ? 'warn' : 'info', 3500, { key: it.key, category: it.category, severity: it.severity, tier: it.tier, ...(f ? { action: { label: 'Go to', run: () => goTo(f) }, ttlMs: 7000 } : {}) }); },
+    onItem: (it) => { audioRef?.news(it); if (it.seasonal) return; const f = it.focus; toastEl.show(it.text, it.severity === 'bad' ? 'error' : it.severity === 'warn' ? 'warn' : 'info', 3500, { key: it.key, category: it.category, severity: it.severity, tier: it.tier, ...(f ? { action: { label: f.label ?? 'Go to', run: () => goTo(f) }, ttlMs: 7000 } : {}) }); },
     stamp: () => `${formatGameDate(game.date).short} ${String(Math.floor(game.date.minute / 60)).padStart(2, '0')}:${String(game.date.minute % 60).padStart(2, '0')}`,
     goTo: (f) => goTo(f),
     focus: (x, y) => goTo({ x, y }),
@@ -3085,7 +3092,7 @@ const atmosDebug = {
   suggestions: () => atmos.suggestions(atmosSample(currentHour())),
   settings: atmosSettings,
 };
-(window as unknown as { __slope: unknown }).__slope = { apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { visitorView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

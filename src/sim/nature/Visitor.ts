@@ -115,16 +115,23 @@ export class Visitor {
     const g = this.d.grid, N = this.d.size;
     if (x < 3 || y < 3 || x >= N - 3 || y >= N - 3) return false;
     const i = y * N + x, t = g.tileType[i]!;
-    return !isWaterType(t) && t !== 5 && !this.d.blocked(i);
+    return !isWaterType(t) && t !== 5 && !this.d.blocked(i) && this.d.forest[i]! < 100; // open ground: the walk can be seen from above
   }
   /** High, snowy ground at least `emptyR` tiles from anything built. Null = no valid spot (no visit this year). Prefers ground near trees. */
   findSpot(year: number): { x: number; y: number } | null {
     const N = this.d.size, g = this.d.grid, R = V.emptyR[N] ?? 10, rng = new Rng(mix(this.d.seed, year, 55));
-    const { cells, w } = this.blockedGrid(), { lo, hi } = this.altRange(), minAlt = lo + (hi - lo) * V.altFrac;
+    const { cells, w } = this.blockedGrid(), { lo, hi } = this.altRange();
     const rc = Math.ceil(R / CELL) + 1;
+    for (const frac of [V.altFrac, V.altFracLow]) { // high ground first; lower slopes only when the high ground is all built over
+      const r = this.scan(rng, N, g, cells, w, rc, R, lo + (hi - lo) * frac);
+      if (r) return r;
+    }
+    return null;
+  }
+  private scan(rng: Rng, N: number, g: Grid, cells: Uint8Array, w: number, rc: number, R: number, minAlt: number): { x: number; y: number } | null {
     let best: { x: number; y: number; score: number } | null = null, found = 0;
     for (let a = 0; a < V.attempts && found < 6; a++) {
-      const x = rng.int(6, N - 7), y = rng.int(6, N - 7);
+      const x = rng.int(14, N - 15), y = rng.int(14, N - 15); // away from the map edge: the camera has to be able to look there
       if (!this.tileOk(x, y) || g.snowDepth[y * N + x]! < V.minSnow) continue;
       const [c0, c1, c2, c3] = g.getCorners(x, y);
       if (((c0 + c1 + c2 + c3) / 4) * HEIGHT_UNIT < minAlt) continue;
@@ -133,9 +140,11 @@ export class Visitor {
       for (let yy = Math.max(0, cy - rc); yy <= Math.min(w - 1, cy + rc) && clear; yy++) for (let xx = Math.max(0, cx - rc); xx <= Math.min(w - 1, cx + rc); xx++) if (cells[yy * w + xx] && Math.hypot((xx + 0.5) * CELL - x, (yy + 0.5) * CELL - y) < R + CELL * 0.7) { clear = false; break; }
       if (!clear) continue;
       found++;
+      // a treeline: some trees close by (about a fifth of the neighbourhood), never a thick forest
       let trees = 0;
       for (let yy = y - 5; yy <= y + 5; yy++) for (let xx = x - 5; xx <= x + 5; xx++) if (xx >= 0 && yy >= 0 && xx < N && yy < N && this.d.forest[yy * N + xx]! > 120) trees++;
-      if (!best || trees > best.score) best = { x, y, score: trees };
+      const score = -Math.abs(trees - 24);
+      if (!best || score > best.score) best = { x, y, score };
     }
     return best ? { x: best.x, y: best.y } : null;
   }
@@ -159,7 +168,7 @@ export class Visitor {
     let fb: [number, number] = [spot.x + 0.5, spot.y + 0.5 + V.showMe.min];
     for (let k = 0; k < 16; k++) {
       const a = a0 + (k * Math.PI * 2) / 16, fx = spot.x + 0.5 + Math.cos(a) * dist, fy = spot.y + 0.5 + Math.sin(a) * dist;
-      if (fx < 2 || fy < 2 || fx > N - 2 || fy > N - 2) continue;
+      if (fx < 4 || fy < 4 || fx > N - 4 || fy > N - 4) continue;
       let mn = Infinity;
       for (let i = 0; i < path.length; i += 2) mn = Math.min(mn, Math.hypot(path[i]! - fx, path[i + 1]! - fy));
       if (mn >= 2) return [fx, fy];

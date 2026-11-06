@@ -11,7 +11,7 @@ export const VISITOR = {
   /** Footprints stay (fading in the last quarter) for this many sim days. */
   trackDays: 2,
   /** Ground rules: height share of the map's range, snow depth, empty radius (tiles) around buildings / lifts / pistes by map size. */
-  altFrac: 0.55, minSnow: 0.05, emptyR: { 64: 7, 128: 10, 256: 12 } as Record<number, number>,
+  altFrac: 0.55, altFracLow: 0.4, minSnow: 0.05, emptyR: { 64: 6, 128: 10, 256: 12 } as Record<number, number>,
   attempts: 700, wanderR: 4, steps: 6, stepMin: 2, stepMax: 4, leadIn: 8, printGap: 1.1,
   /** 'Show me' camera offset ring (tiles) from where the visitor was first seen. */
   showMe: { min: 6, max: 12 },
