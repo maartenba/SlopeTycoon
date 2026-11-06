@@ -51,7 +51,7 @@ If you are looking for other options in this genre, I wrote an honest page: [gam
 - **Money that matters.** Day and season passes, marketing campaigns, loans and an energy bill. See [how money works](page:money).
 - **Goals, scenarios and a yearly report.** Career mode levels your resort up and six scenarios give you a specific problem to solve.
 - **Ride along, walk or photograph.** Follow a guest down a run, walk through your village in first person, or take a picture and save it as a PNG.
-- **Almost no asset files.** The models and textures are made by code in your browser; sound effects and ambience mix recorded CC0 samples with sounds made in code; the music is a set of tracks generated with Suno, and there are two fonts.
+- **Almost no asset files.** The models and textures are made by code in your browser; sound effects and ambience mix recorded CC0 samples (mostly from Freesound) with sounds made in code; the music is a set of tracks generated with Suno, and there are two fonts.
 
 {{fig:ui-hud}}
 

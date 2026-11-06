@@ -32,9 +32,11 @@ Encoding (done once; the files are committed as they are): the owner's originals
 
 # Sound recordings (`sfx/`)
 
+Credit line (About dialog, `THIRD_PARTY_NOTICES.md`): "Sound recordings: CC0, mostly from Freesound (see the audio README)." Where the exact source page of a file is not recorded, the table says `Freesound (CC0)`; the rows that name OpenGameArt or Wikimedia Commons are the ones whose page is known.
+
 `sfx/` holds the recorded sound effects and ambience loops (88 mono mp3 files, about 7.5 MB). Owner decision, 2026-11-06: a second exception to "everything but the music is generated in code". Every file is a CC0 or public-domain recording the owner picked; the game still synthesises the same sounds and plays those whenever a recording is not loaded (offline before the first cache, a failed download, `?nosamples=1`). Nothing from the unclear-provenance folder of the staging library (the Public Domain Mark radio recordings) is shipped.
 
-Licence keys (the same strings as `src/config/audioSamples.ts`, tested in `tests/repo/sfxAssets.test.ts`): `CC0` = CC0 1.0 on the source page, `PD` = public domain on the source page, `CC0-freesound` = CC0 per the Freesound page (the owner downloaded these logged in; the owner still verifies each page, see below), `CC0-collection` = CC0 / public domain per the collection page, no per-file page recorded (owner to verify). Only these keys are allowed; no attribution is required, the credit is given here and in the About dialog.
+Licence keys (the same strings as `src/config/audioSamples.ts`, tested in `tests/repo/sfxAssets.test.ts`): `CC0` = CC0 1.0 on the source page, `PD` = public domain on the source page, `CC0-freesound` = CC0 per the Freesound page (the owner downloaded these logged in; the owner still verifies each page, see below), `CC0-collection` = CC0 per the collection the file came from, no per-file page recorded (the Source column then says `Freesound (CC0)`; owner to verify). Only these keys are allowed; no attribution is required, the credit is given here and in the About dialog.
 
 Encoding (done once, the files are committed as they are): mono mp3 from the cleaned staging clips. One-shots 44.1 kHz 96 kbps with 15 ms fade-in / 30 ms fade-out; long clips (avalanche, thunder) 22.05 kHz 64 kbps with a short fade-in and a 0.3 s fade-out; loops ("beds") 22.05 kHz (32 kHz for the bright ones: birds, crickets, bells) 80 kbps, no fades (the loops were crossfaded when they were cleaned). The player decodes them to PCM at the same rate, so a loop stays seamless (the encoder delay and padding are in the Xing / LAME header, which the browsers' decoders honour) and big beds cost half the memory. No tags, no cover art.
 
@@ -71,7 +73,7 @@ Owner to verify on the page (the manifest says "owner to verify"): all `CC0-free
 | `step-stone-01.mp3` | OpenGameArt | https://opengameart.org/content/different-steps-on-wood-stone-leaves-gravel-and-mud | TinyWorlds | CC0 | road__different-steps-on-stone01 |
 | `step-stone-02.mp3` | OpenGameArt | https://opengameart.org/content/fantozzis-footsteps-grasssand-stone | qubodup (recorded by Fantozzi) | CC0 | road__fantozzis-footstep-Fantozzi-StoneL2 |
 | `step-stone-03.mp3` | OpenGameArt | https://opengameart.org/content/fantozzis-footsteps-grasssand-stone | qubodup (recorded by Fantozzi) | CC0 | road__fantozzis-footstep-Fantozzi-StoneL3 |
-| `thud-dull-01.mp3` | Wikimedia Commons | no per-file page recorded in the library index; original file cm-Dull_thud.ogg | (not listed in INDEX.md) | CC0-collection | generic__cm-Dull-thud |
+| `thud-dull-01.mp3` | Freesound (CC0) | no per-file page recorded in the library index; original file cm-Dull_thud.ogg | (not listed in INDEX.md) | CC0-collection | generic__cm-Dull-thud |
 | `thud-step-01.mp3` | OpenGameArt | https://opengameart.org/content/footsteps-0 | GboxMikeFozzy | CC0 | generic__footsteps-0-01-footstep |
 | `thud-step-02.mp3` | OpenGameArt | https://opengameart.org/content/footsteps-0 | GboxMikeFozzy | CC0 | generic__footsteps-0-02-footstep |
 | `bird-partridge-01.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3ASnow_Partridge.ogg | hi:User:Somesh Tripathi | CC0 | bird-calls-cm-Snow-Partridge-001 |
@@ -91,7 +93,7 @@ Owner to verify on the page (the manifest says "owner to verify"): all `CC0-free
 | `bed-crossing-02.mp3` | Freesound | https://freesound.org/people/mycompasstv/sounds/457125/ | mycompasstv | CC0-freesound | crossing-bell__fs457125-mycompasstv-railway-crossing-w |
 | `bell-sleigh-01.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3ASleigh_bells.wav | The Midnite Wolf | CC0 | sleigh-bells-cm-Sleigh-bells-001 |
 | `bell-sleigh-02.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3ASleigh_bells.wav | The Midnite Wolf | CC0 | sleigh-bells-cm-Sleigh-bells-002 |
-| `bed-morning-01.mp3` | OpenGameArt | no per-file page recorded in the library index; original file amb-morning-sounds-perfect-loop__amb_morning.ogg | (not listed in INDEX.md) | CC0-collection | ambience-outdoor__amb-morning-sounds-amb-morning-seg1 |
+| `bed-morning-01.mp3` | Freesound (CC0) | no per-file page recorded in the library index; original file amb-morning-sounds-perfect-loop__amb_morning.ogg | (not listed in INDEX.md) | CC0-collection | ambience-outdoor__amb-morning-sounds-amb-morning-seg1 |
 | `bed-brook-01.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3AShallow_small_river_with_stony_riverbed.ogg | stephan | PD | brook__cm-Shallow-small-river-with-stony-riverbed |
 | `bed-brook-02.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3AWater_flowing_pouring_trickling.ogg | stephan | PD | brook__cm-Water-flowing-pouring-trickling-seg1 |
 | `bed-campfire-01.mp3` | OpenGameArt | https://opengameart.org/content/fireplace-sound-loop | PagDev | CC0 | campfire__fireplace-sound-lo-fire |
@@ -119,7 +121,7 @@ Owner to verify on the page (the manifest says "owner to verify"): all `CC0-free
 | `bed-wind-storm-01.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3AKilliney_Hill_Storm_Floris_20250804_1537.ogg | Karlunun | CC0 | wind-storm__cm-Killiney-Hill-Storm-Floris-20250804-1537-seg1 |
 | `avalanche-01.mp3` | Freesound | https://freesound.org/people/blaukreuz/sounds/162674/ | blaukreuz | CC0-freesound | avalanche__fs162674-blaukreuz-avl05 |
 | `avalanche-02.mp3` | OpenGameArt | https://opengameart.org/content/muffled-distant-explosion | NenadSimic | CC0 | avalanche__muffled-distant-ex-NenadSimic-Muffled-Distant-Exp |
-| `avalanche-03.mp3` | OpenGameArt | no per-file page recorded in the library index; original file explosion-somewhere-far__explosion_somewhere_far.mp3 | (not listed in INDEX.md) | CC0-collection | avalanche__explosion-somewher-explosion-somewhere-far |
+| `avalanche-03.mp3` | Freesound (CC0) | no per-file page recorded in the library index; original file explosion-somewhere-far__explosion_somewhere_far.mp3 | (not listed in INDEX.md) | CC0-collection | avalanche__explosion-somewher-explosion-somewhere-far |
 | `mach-chairlift-seg1.mp3` | Freesound | https://freesound.org/people/schafferdavid/sounds/419317/ | schafferdavid | CC0-freesound | chairlift__fs419317-schafferdavid-ski-resort-under-seg2 |
 | `mach-chairlift-seg2.mp3` | Freesound | https://freesound.org/people/nome_diva/sounds/585385/ | nome_diva | CC0-freesound | chairlift__fs585385-nome-diva-chairlift-1-seg2 |
 | `mach-chairlift-squeak-01.mp3` | Freesound | https://freesound.org/people/jc144940/sounds/180942/ | jc144940 | CC0-freesound | chairlift__fs180942-jc144940-chairlift-1 (cut 24.6-27.6 s of the cleaned file) |

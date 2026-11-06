@@ -17,8 +17,8 @@
 7. Title screen: Seasons of Management opens (it is the title theme), Seasonal Menu follows; starting a game fades it out; the game music starts after the first click on the game page.
 
 ## C. Bar songs and the hand-off
-1. **Game music is stopped near an open Apres-Ski Bar or Schirmbar** (open, serving): zoom in: within about a second the game music fades out and a bar song fades in (never both). Zoom out / walk away: the bar song fades out, the game music returns after a moment, **from where it stopped**. Tune `HANDOFF` (enterLevel .12, exitLevel .04, dwell, fades).
-2. **No flip-flop**: zoom in and out repeatedly at the edge of the bar's reach with the mouse wheel: it must not stutter between the two musics (min times 3 s / 4 s, dwell .5 s / 2 s).
+1. **Game music is stopped near an open Apres-Ski Bar or Schirmbar** (open, serving): zoom in: within about a second the game music fades out and a bar song fades in (never both). Zoom out / walk away: the bar song fades out, the game music returns after a moment, **from where it stopped**. Tune `HANDOFF` (enterLevel .28, exitLevel .09, dwell, fades). Since 2026-11-06 it starts only slightly closer (about 12 tiles from the bar, zoomed in) and the bar song stays for at least 30 s.
+2. **No flip-flop**: zoom in and out repeatedly at the edge of the bar's reach with the mouse wheel: it must not stutter between the two musics (min times 3 s / 30 s, dwell .5 s / 2 s).
 3. The first bar song is fetched when you come into reach of the bar: is there a silent gap between the game music fading out and the bar song starting on a slow connection?
 4. Staying at the bar: the four songs (Ski Hut Groove, Polka Party Time, Alpine Après-Ski, Après-Ski Brass) alternate and crossfade; leaving for less than 25 s and coming back resumes the same song, after longer the next one plays (`BAR_AUDIO.restartAfterSec`).
 5. Ambience slider at 0 or mute: the bar is silent and the game music keeps playing. The faint crowd murmur under the songs: does it clash? If so lower `PROX.apres.murmurMax` (.05) or remove the layer.
@@ -48,3 +48,17 @@ Use `?size=64&seed=61`, headphones, ambience slider at the default (28 %), effec
 - [ ] **Autumn rustle, pond lapping, tree creaks, drips**: all very quiet; the leaves rustle in autumn wind, lapping only zoomed in at a lake in spring / summer.
 - [ ] **Mute / sliders**: M mutes samples and beds immediately; the effects slider scales footsteps / bells / avalanche, the ambience slider scales beds, thunder, birds, bells.
 - [ ] **Offline** (after one session online): airplane mode, reload, play: recordings still play (cached); a sound that was never played online is the synth.
+
+
+## F. The faint beep / honk (owner report after 0.6.0, 2026-11-06; nothing here was heard by the agent)
+
+What was found by measurement (`npm run build && npm run audio:census`: the large demo resort on 128 / seed 5 at speed 3, ambient and event sounds counted with the new debug log, ~90 s per camera position): the **church hour chime** was by far the most frequent sound. A game hour is 6.25 s at 1x, any building counts as the village, and the chime was a 0.43 s dense recording: 18 to 50 strikes per real minute at speed 3 (about one per game hour, so a strike group every ~6 s of daytime at speed 1). Now 2 to 3 a minute and the soft synthesised bell. Table (counts per 90 s, speed 3, before -> after): churchBell 27 / 42 / 75 -> 3 / 2 / 4 (default view / on a lift / in the village); chairlift squeak 1-2 -> 0 (the lifts of the demo were not busy, see the by-ear checks); everything else (beds starting, ka-ching, news chime, creak, blip) unchanged and at most a few per minute. I could NOT reproduce a honk from the crossing bell (the demo resort has no level crossing) or from cars (there is no car or horn sound in the game: `grep -ri "horn\|honk" src/audio` finds nothing).
+
+To match what you hear to a line (about 3 minutes):
+1. Open the game, press F12 (console) and run `__slope.audio.log(true)`. Every ambient one-shot and every loop that starts now prints a line: time, kind (`shot` / `loop` / `ring`), id, `sample` or `synth`, the file for samples and the gain. `__slope.audio.log('all')` also prints UI and event sounds (clicks, hover ticks, chimes); `__slope.audio.log(false)` stops.
+2. Play at speed 1, zoomed in over houses and a lift, until you hear the beep. Note the line that scrolled by at that moment: its id tells the culprit (`churchBell` = the hour chime, `clank` = the lift squeak, `crossingBell` / `crossing-a` = the rail crossing, `birdChirp`, `cowbell`, `chimeImportant` / `alarm` / `blip` / `hover` = UI and event sounds).
+3. `__slope.audio.counts()` lists every id with its count and per-minute rate since the log was switched on (`log(true)` again resets it).
+4. Compare with `?nosamples=1`: if the beep stays, it is a synthesised sound (source `synth` in the log); if it goes, it is a recording.
+5. Tell me the id. If it is not on the list above, the `hover` tick (2.2 kHz, on every button you move over) is the next candidate; it is a UI sound and not part of this change.
+
+Checks after the fix: the hour passes without a bell at every hour (at most one chime a minute); the lift squeak is rare (about one every 12 s at most, only zoomed in on a running lift); the crossing bell is heard only when you look at a crossing with a train coming and are zoomed in; the music: a song that just started is not replaced by night or a storm before 30 s (Next track works at once); apres-ski music begins only when you are clearly near the bar (about 12 tiles, zoomed in) and a bar song is not cut by a quick fly-by.

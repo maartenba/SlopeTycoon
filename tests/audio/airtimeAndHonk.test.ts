@@ -62,9 +62,9 @@ describe('music airtime in the scheduler (fake media)', () => {
 
 describe('bar music hand-off: slightly closer, and bar songs keep their airtime', () => {
   /** Distance (tiles) at which ONE open bar's level reaches `lvl` with the camera zoomed right in (zoom window 1). */
-  const distFor = (lvl: number): number => { let lo = 0, hi = PROX.apres.reach; for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (apresBarLevel(mid) > lvl) lo = mid; else hi = mid; } return lo; };
+  const distFor = (lvl: number): number => { let lo = 0, hi: number = PROX.apres.reach; for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (apresBarLevel(mid) > lvl) lo = mid; else hi = mid; } return lo; };
   /** Zoom (tiles) at which a bar right next to the camera reaches `lvl`. */
-  const zoomFor = (lvl: number): number => { let lo = PROX.apres.zoomNear, hi = PROX.apres.zoomFar; for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (apresLevel(1, mid) > lvl) lo = mid; else hi = mid; } return lo; };
+  const zoomFor = (lvl: number): number => { let lo: number = PROX.apres.zoomNear, hi: number = PROX.apres.zoomFar; for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (apresLevel(1, mid) > lvl) lo = mid; else hi = mid; } return lo; };
   it('old (0.12 / 0.04) vs new enter / exit levels: enter distance is about 75 % of the old one, exit about 90 %; zoom a little tighter', () => {
     expect(HANDOFF.enterLevel).toBeGreaterThan(HANDOFF.exitLevel); // hysteresis kept
     const oldEnter = distFor(0.12), oldExit = distFor(0.04), enter = distFor(HANDOFF.enterLevel), exit = distFor(HANDOFF.exitLevel);

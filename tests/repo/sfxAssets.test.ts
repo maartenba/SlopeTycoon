@@ -45,6 +45,17 @@ describe('sfx assets', () => {
     expect(SAMPLE_DEFS.some((s) => s.licence === 'CC0-freesound')).toBe(true);
     expect(readme).toMatch(/Owner to verify/);
   });
+  it('credit wording: "Sound recordings: CC0, mostly from Freesound"; rows whose source page is not recorded say "Freesound (CC0)"; no row names a source it cannot back up', () => {
+    const credit = 'Sound recordings: CC0, mostly from Freesound';
+    expect(readme).toContain(credit);
+    expect(readFileSync('src/ui/components/StMainMenu.ts', 'utf8')).toContain(`${credit} (see the audio README in the project)`);
+    expect(readFileSync('scripts/licenses.ts', 'utf8')).toContain(credit); expect(readFileSync('THIRD_PARTY_NOTICES.md', 'utf8')).toContain(credit);
+    for (const s of SAMPLE_DEFS.filter((d) => d.licence === 'CC0-collection')) {
+      const row = readme.split('\n').find((l) => l.startsWith(`| \`${s.id}.mp3\``))!;
+      expect(row.split('|')[2]!.trim(), s.id).toBe('Freesound (CC0)'); // no per-file page recorded
+    }
+    expect(SAMPLE_DEFS.filter((d) => d.licence === 'CC0-collection').map((d) => d.id).sort()).toEqual(['avalanche-03', 'bed-morning-01', 'thud-dull-01']);
+  });
   it('the shipped loops fit the decoded memory cap together with their one-shots in the worst realistic scene', () => {
     // ~12 simultaneously audible beds at their decode rate (mono float32)
     const bytes = BED_SLOTS.slice(0, 12).reduce((a, sl) => { const d = SAMPLE_DEFS.find((s) => s.id === sl.sample)!; return a + d.dur * (d.rate ?? 48000) * 4; }, 0);
