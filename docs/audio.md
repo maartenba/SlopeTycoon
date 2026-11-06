@@ -1,6 +1,6 @@
 # Audio (Task 30)
 
-Sound effects and ambience are **synthesized with the Web Audio API** (no files). The **music is mp3 files** generated with Suno and provided by the project owner (`public/audio`, see "Music" below). Code lives in `src/audio/`.
+Sound effects and ambience **mix recorded CC0 samples with sounds synthesized live with the Web Audio API** (the synth is always the fallback, see "Samples" below). The **music is mp3 files** generated with Suno and provided by the project owner (`public/audio`, see "Music" below). Code lives in `src/audio/`.
 
 | File | Role |
 |---|---|
@@ -179,6 +179,89 @@ While an Apres-Ski Bar or Schirmbar is open and serving, a few small music notes
 `tests/audio/musicPlaylist.test.ts` (every season x hour x weather x festival x busy x sunrise maps to a non-empty playlist, never the same track twice, hysteresis, fades, trim), `music.test.ts` (fake media: nothing before a gesture, trim routing, crossfade, hysteresis, storm cut-in and gap, mute / speed 0 / hidden-tab pause and exact resume, Next, load failures), `handoff.test.ts` (state machine, never-overlap for random level walks and for the elements, rotation, ramped hold gain), `menuMusic.test.ts`, `proximity.test.ts`, `tests/repo/musicAssets.test.ts` (every mapped file exists, trim table complete, size budget, no other audio files, plain tags).
 
 **Real page: `npm run music:e2e`** (needs `npm run build`): loads the built game over https in Chrome (SwiftShader) and checks that no mp3 is requested before a gesture, the files are served as `audio/mpeg`, there are no console errors, a situation change triggers a crossfade, an open bar triggers the hand-off to a bar song and back, and the title music (`npm run menu-music:e2e`) fades out when a game starts. It reads the audio graph state; **it cannot hear anything**.
+
+## Samples (recorded CC0 sounds, owner decision 2026-11-06)
+
+A second owner-approved exception to "everything but the music is procedural": 88 mono mp3 files in `public/audio/sfx` (7.5 MB, CC0 / public domain recordings the owner picked from the staging library; every file with its source, author and licence in `public/audio/README.md`, tested in `tests/repo/sfxAssets.test.ts`). **The synthesised sounds stay as the fallback**: a sample that is not decoded yet, failed to load, was never cached offline, or is switched off simply leaves `Sfx.ts RECIPES` / `Ambience.ts LAYER_BUILDERS` in charge. Credit line: "Music: generated with Suno. Sound recordings: CC0 (see audio README)." (About dialog, `THIRD_PARTY_NOTICES.md`). Nobody has listened to any of this from here (agents have no audio device): the trims are computed from measured levels, not tuned by ear (`docs/playtest-audio.md` section E).
+
+### Code and config
+
+* `src/config/audioSamples.ts`: ONE table (`SAMPLE_DEFS`: id, role, tag, trim, loop, decode rate, gain jitter, pitch jitter, licence key, measured duration / peak / rms), the pools (`POOLS`), the bed slots (`BED_SLOTS`: sample, gate, synth layer, weight), the global switches (`SAMPLES`: `enabled`, `dir`, `memoryCapMB` 40, `maxJobs` 2, `retryAfterSec`, `silentSec`, `bedsOnLow` false, `crossingHold`) and the extra-roll rates (`SAMPLE_RATES`).
+* `src/audio/SamplePlayer.ts`: fetch + decode on demand, the decoded cache (LRU eviction of IDLE buffers above the cap), one-shots as normal engine voices (`playShot` / `playExtra`), looping beds on the ambience bus (`updateBeds`, `ring` for the crossing bell). `src/audio/sampleMix.ts`: the pure parts (gates from the ambience mix, slot targets, synth coverage, no-immediate-repeat pick, jitter).
+* `Sfx.play()` asks `SamplePlayer.playShot()` first (same limiter, priority, bus, 'reduce loud sounds' scaling) and plays the synth recipe when it returns false. `Ambience.update()` drives the beds and multiplies each synth layer by `1 - coverage` (plus a `keep` share: crowd 25 %), so while a bed is still loading the synth bed carries the sound and fades out as the recording fades in.
+* `AudioApi.samples` is on `window.__audio.samples` (`stats`, `loadedIds`, `activeBeds`, `memoryBytes`, `roleReady(role)`).
+
+### Loading, memory and failure
+
+* Nothing is requested before the engine runs (a user gesture, so long after the first paint). A one-shot role loads its whole pool the first time it is asked for (the synth plays that first time, so a footstep is never delayed); a bed loads when its slot first becomes audible (gate x weight x ceiling > 0.002). At most 2 fetch + decode jobs run at once.
+* Plain GET of `audio/sfx/<id>.mp3` relative to the page (works under `/play/` and `/slopetycoon/play/`), then `decodeAudioData`. Beds are decoded at their own rate (22.05 kHz / 32 kHz, via an `OfflineAudioContext`) so a 30 s bed costs 2.6 MB instead of 5.8. Worst realistic scene (wind x2 + gust, crowd, 3 lift beds, stream, rain) is about 25 MB decoded (all 29 beds together would be 61 MB, all one-shot pools 14 MB, which is why the cap and the LRU exist); the cap is 40 MB: above it the least recently used IDLE buffer is dropped (a bed that plays keeps its buffer). A bed that stays under 0.002 for 6 s is stopped and its source freed, restarting at a random offset.
+* A failed fetch / decode is remembered per file (retry after 90 s, one console warning in total) and never throws. Beds do not play on the **Low** graphics tier (`SAMPLES.bedsOnLow`); one-shots do. Mute, the master / effects / ambience sliders, ambience-only, reduce-loud and the hidden-tab suspend work unchanged: samples go through the same buses.
+* The service worker caches them like the music (cache-first runtime cache, not precached: `precache.ts` skips `audio/`; `npm run verify:pwa` checks the 88 files are served as `audio/mpeg`, each under 400 kB, the folder under 12 MB). A new build gets a new cache name and the old one is deleted on activate. The first time through, samples play only after being cached online; offline before that the synth plays.
+* Loops: browsers add encoder padding to mp3, so beds are played as decoded AudioBuffers with `loop = true` (the LAME / Xing header gives a gapless decode). `npm run sfx:e2e` decodes every bed in real Chrome and checks its length equals the source length and the wrap-around jump is at most 4x the typical sample step (worst 2.58; a measurement of the decoded output, not a listening test).
+
+### What plays what
+
+Trim = linear gain per file (one-shots: peak at gain 1 -> `SAMPLE_TARGETS.peak[role]`, which sits at or a little above the synth recipe's own peak; beds: rms -> 0.08 at the layer ceiling, about the synth layer's own nominal rms, 1.5 dB under it for wind). Mixer defaults are untouched.
+
+| Role | Files | Trim | Fallback |
+|---|---|---|---|
+| `stepSnow` | walk-mode footsteps on snow (dry 3 + wet 2) (5) | 0.124-0.146 | `stepSnow` synth burst |
+| `stepGravel` | gravel / snow-gravel steps + a mud step as the damp alternative (6) | 0.125-0.951 | `stepGravel` synth |
+| `stepGrass` | hiking boot / grass / leaves steps (10) | 0.117-0.127 | `stepGrass` synth |
+| `stepWood` | wood steps (3) | 0.118-0.125 | `stepWood` synth |
+| `stepRoad` | stone steps (3) | 0.12-0.124 | `stepRoad` synth |
+| `thud` | dull thud + 2 light generic steps: building placed, lift built (3) | 0.877-0.898 | `thud` synth |
+| `birdChirp` | snow partridge, herring gull (warm seasons, 20 %), night bird (warm nights, rare); the quieter-overall / louder-zoomed-in rule is unchanged (it lives in the mix, not in the files) (7) | 0.06-0.161 | `birdChirp` synth |
+| `cowbell` | cowbell (2) | 0.105-0.109 | `cowbell` synth |
+| `churchBell` | one church bell strike, the hourly strikes (1) | 0.19 | `churchBell` synth |
+| `bell` | bell ding: lift opened / repaired (pitch 1.5) (1) | 0.299 | `bell` synth |
+| `clank` | squeaky-wheel segments of the chairlift recording (see the cut note below) (2) | 0.198-0.577 | `clank` synth |
+| `creak` | tree creak, winter nights (1) | 0.074 | `creak` synth |
+| `avalanche` | avalanche / distant explosion recordings (3) | 1.047-1.641 | `avalanche` synth |
+| `thunder` | rain-and-thunder recordings (30 s each), about once every 75 s of storm; ambience bus (2) | 0.673-0.681 | new `thunder` synth recipe (low brown-noise rumble) |
+| `rustle` | dry-leaf rustles, autumn, rate follows the leaves level; the synth leaves bed drops to 40 % once decoded (7) | 0.168-0.251 | none needed (the synth leaves bed carries it) |
+| `lap` | pond wave, rate follows the water level; the synth bed drops to 60 % (1) | 0.18 | none (the synth water bed) |
+| `sleighBell` | sleigh bell shakes, rate follows the sleigh level; the synth bed drops to 40 % (2) | 0.076-0.078 | none (the synth sleigh bed) |
+
+| Bed | Layer | Fallback |
+|---|---|---|
+| wind (light: `bed-wind-01`, `-02`; gust `bed-wind-gust-01`; storm `bed-wind-storm-01`) | wind | synth wind layer (to 0 once covered) |
+| rain (`bed-rain-01`, `-03`; storm: `bed-rain-02`) | rain | synth rain layer |
+| crickets (`bed-crickets-01`) | crickets | synth crickets |
+| crowd (`bed-crowd-01`) | crowd | synth crowd murmur (keeps 25 %) |
+| lift (`mach-chairlift-seg1`, `-seg2`, `mach-skilift-01`; under-hum `mach-lifthum-01`, `-02`) | lift | synth lift rumble |
+| stream (`bed-brook-01`, `-02`, `bed-river-01`) / rapids (`bed-rapids-01`, `bed-river-02`); the flow class mapping is unchanged | stream / rapids | synth stream / rapids |
+| snowcat (`mach-snowcat-01`) | snowcat | synth snowcat |
+| helicopter (`mach-heli-01`) | heli | synth heli |
+| campfire (`bed-campfire-01`) | campfire | synth campfire |
+| snow cannon (`mach-cannon-01`), near a RUNNING cannon (new layer `cannon`, ceiling 0.06) | cannon | new synth air hiss |
+| birds (`bed-birds-01`, ceiling 0.05), morning (`bed-morning-01`, 0.035), cow herd (`bed-cowbells-01`, 0.05), drips (`bed-drips-01`, 0.05) | extra beds | none (extras: silent until decoded) |
+| level crossing (`bed-crossing-01`, ceiling 0.07): a loop that plays while the barrier ticks (`ring()`) | crossingBell | the synth ding-ding one-shot |
+
+Bird calls: partridge by default, a gull now and then in summer / spring, a rare night bird on warm nights (`PlayOpts.tag`); level and rate are still the old `birds` mix, quieter overall and louder zoomed in.
+
+### Spare (picked by the owner, NOT shipped: no existing game sound or layer to map to)
+
+* `bicycle-bell` x2 (no bike bell sound exists; the lift `bell` took the bell ding), `bell-ding` 1-3 (not picked).
+* `chairlift__fs519459-andriiperevodchyk-passing-chair` (a carrier passing a tower: the engine has no such event).
+* `road-traffic` Varniu (a distant road layer needs road proximity in the world probe, which is not cheap here).
+* `helicopter` Chinook (a maybe; the other helicopter is the bed), `road` StoneL1 (a maybe), the whole `30-cc0-sfx-loops` set picked (machine-01 / 02 / 04 / 06 / 11, noise-03, rain, alarm-02, rolling, saw: no matching game sound; the generated `alarm` stays; the rain bed is the three rain recordings).
+* Everything marked 'maybe' by the owner, and the unclear-provenance (Public Domain Mark) folder, stay in the staging library.
+
+### The chairlift cut (owner note)
+
+`fs180942-jc144940-chairlift-1`: the real lift only starts at about 25-26 s of the source (squeaky wheel). Everything before is CUT; two clean segments are shipped as `mach-chairlift-squeak-01` (cleaned-file 24.6-27.6 s) and `-02` (28.6-32.0 s), used as the `clank` one-shots near a running lift. Documented in the staging `cleaning-log.md`.
+
+### How to swap, add or switch off a sample
+
+* Swap: replace `public/audio/sfx/<id>.mp3` (keep the name; mono, 96 kbps one-shot at 44.1 kHz or 80 kbps loop at 22.05 / 32 kHz; ffmpeg `-map_metadata -1 -write_id3v2 0`), re-measure peak and rms (`ffmpeg -i f.mp3 -af volumedetect -f null -`), update `dur`, `peakDb`, `rmsDb` and `trim` in `SAMPLE_DEFS` and the row in `public/audio/README.md` (the repo test needs the licence row and key).
+* Add: add the file, a `SAMPLE_DEFS` row (role = an existing one-shot role, or `bed` + a `BED_SLOTS` row with a gate), the README row. New role: add it to `SHOT_ROLES` and `SAMPLE_TARGETS`, give it a synth recipe (or make it an extra like `rustle`).
+* Only CC0 / public domain files: the repo test allows the four licence keys only. Committed binaries stay in git history: encode once.
+* Switch off: `?nosamples=1` in the URL, or `SAMPLES.enabled = false` (nothing is fetched, the synth plays); beds alone: `bedsOnLow` / the Low tier.
+
+### Tests and checks
+
+`tests/audio/samples.test.ts` (table integrity, pure picks / jitter / gates / coverage, fallback while loading, failed fetch / decode, the disable switch, the memory cap, beds start / crossfade / stop, the Low tier, crossing loop, extras, thunder), `tests/repo/sfxAssets.test.ts` (files = table, names, size guard, licence rows and keys, no unclear-provenance material), `npm run sfx:e2e` (real Chrome, see above; it cannot hear anything).
 
 ## Ambience rework
 Rules: **noise beds only** (no oscillator tones, no resonant filters: every Q <= 1 (lowpass/highpass Q is in dB: 0)), modulations are **slow sines or sums of unrelated slow sines** (`wander`), never square/saw gates, two noise reads at unrelated playback rates per layer, noise buffer **9 s** (was 3 s) with DC removed, nothing narrow above 5 kHz, ceilings lowered (`AMB.layerMax`: leaves .2, crickets .05, insects .05, crowd .2, lift .16, water .2, snowcat .16, heli .2; wind .2 / rain .245 / muffled .175 unchanged).

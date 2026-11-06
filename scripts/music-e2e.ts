@@ -36,7 +36,7 @@ try {
   const errors: string[] = [], reqs: Array<{ url: string; status: number; type: string }> = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (process.env.MM_DEBUG) console.log('console:', m.type(), m.text().slice(0, 200)); if (m.type() === 'error' && !/GPU stall|GL Driver Message/.test(m.text())) errors.push(m.text()); });
-  page.on('response', (r) => { if (r.url().endsWith('.mp3')) reqs.push({ url: r.url(), status: r.status(), type: r.headers()['content-type'] ?? '' }); });
+  page.on('response', (r) => { if (r.url().endsWith('.mp3') && !r.url().includes('/audio/sfx/')) reqs.push({ url: r.url(), status: r.status(), type: r.headers()['content-type'] ?? '' }); });
   await page.goto(`${origin}/?size=64&seed=3&start=winter&hints=0`, { waitUntil: 'load', timeout: 120000 });
   await page.waitForFunction(`!!${A}`, { timeout: 120000 });
   await sleep(2500);

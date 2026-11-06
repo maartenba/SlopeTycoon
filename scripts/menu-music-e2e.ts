@@ -30,7 +30,7 @@ try {
   const errors: string[] = [], reqs: Array<{ url: string; status: number; type: string; fromSw: boolean }> = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (process.env.MM_DEBUG) console.log('console:', m.type(), m.text().slice(0, 200)); if (m.type() === 'error' && !/GPU stall|GL Driver Message/.test(m.text())) errors.push(m.text()); });
-  page.on('response', (r) => { if (r.url().endsWith('.mp3')) reqs.push({ url: r.url(), status: r.status(), type: r.headers()['content-type'] ?? '', fromSw: r.fromServiceWorker() }); });
+  page.on('response', (r) => { if (r.url().endsWith('.mp3') && !r.url().includes('/audio/sfx/')) reqs.push({ url: r.url(), status: r.status(), type: r.headers()['content-type'] ?? '', fromSw: r.fromServiceWorker() }); });
   // FIRST VISIT, title screen only (no game page before): the title registers the service worker itself (docs/pwa.md), so the menu music is cached from the first visit.
   await page.goto(`${origin}/`, { waitUntil: 'load', timeout: 90000 });
   await page.waitForFunction(`navigator.serviceWorker.getRegistration().then((r) => !!r && !!r.active && r.active.state === 'activated' && !!navigator.serviceWorker.controller)`, { timeout: 120000 });

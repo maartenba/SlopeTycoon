@@ -1,4 +1,4 @@
-# Playtest: music (owner mp3 files) + proximity audio (nature, streams, bar music)
+# Playtest: music (owner mp3 files) + proximity audio (nature, streams, bar music) + recorded samples
 
 **Nothing here was heard by the agent that wrote it** (no audio device): the logic is tested with fake media elements and `npm run music:e2e` reads the audio graph in Chrome, but nobody listened. Please check by ear, with the Music slider at its default (50 %) and the ambience slider at its default (28 %) and again at 60 %. **All music tables (track trims, playlists, situation rules, hand-off, bar level) live in `src/config/audioMusic.ts`; all proximity constants in `src/config/audioProximity.ts` (`PROX`).** The track table, the mapping and how to swap a track: `docs/audio.md` "Music".
 
@@ -30,3 +30,21 @@
 3. Ponds / lakes: barely audible lapping only when very close (`pond.max` 0.45).
 4. Mute (M), ambience slider at 0, and switching to another browser tab: everything stops; coming back must not burst.
 5. Zoom in and out with the mouse wheel: no zippering / pumping (layers ease over about 1 s).
+
+
+## E. Recorded samples (CC0 recordings, 2026-11-06; nobody has heard any of this: the checks below are all by ear)
+
+Use `?size=64&seed=61`, headphones, ambience slider at the default (28 %), effects at the default. Compare once with `?nosamples=1` (the synthesised versions only): the recording version should feel like the same game with more real sounds, not louder. After the first minute the recordings are cached; the very first footsteps / beds may still be the synth (that is by design: the synth plays until a file is decoded).
+
+- [ ] **Footsteps variety** (walk mode): snow, gravel / path, grass, wooden bridge or deck, road / stone. No two identical steps in a row, a small pitch and volume wobble, no machine-gun repetition at a run. Level: a texture under the ambience, not an event (about as present as the old synthesised steps).
+- [ ] **Birds not too present**: spring / summer mornings zoomed out they are faint, zoomed in they come forward (the owner's earlier rule). Partridge calls by default, a gull now and then, a rare night bird on a warm night. None of them should startle.
+- [ ] **Wind and rain beds, loop seams**: stand still 2 minutes in a storm (wind) and in rain (zoom in): no audible click, bump or "the same second again" every 25-30 s (wind plays two beds of 30.5 s and 26.5 s so they never line up). Light wind to storm crossfades without a gap. Rain at the default is below the old synthesised rain (it was already loud).
+- [ ] **Crowd** (a busy base area, zoomed in): the recording (it is a shouting / speaking crowd) should not sound like a stadium; it sits under the synth murmur at about the old level. If it is too much: lower the `crowd` gate weight in `BED_SLOTS` or raise `SYNTH_KEEP.crowd`.
+- [ ] **Lift hum near stations** (zoom in on a running lift): a soft mechanical bed with a squeaky-wheel clank now and then; not a tonal drone (the two short hum loops under it are the risk: if one loops audibly, remove `lift-hum` / `lift-hum-b` from `BED_SLOTS`).
+- [ ] **Thunder** (a storm): rare (about once every 75 s), distant, rumbling, not louder than the wind bed's gusts; it must not make you jump.
+- [ ] **Snow cannon** (a running cannon at night / cold, zoom in beside it): a steady hiss that fades out within about 14 tiles; silent when the cannon is paused or off.
+- [ ] **Bells**: church hour strike (one bell per strike), cowbells near pastures in summer (and the herd bed under them), the crossing bell as a loop while a train passes the barrier, sleigh bells near a sleigh ride, the lift-opened bell ding.
+- [ ] **Avalanche** (a controlled release or a natural one): a deep rumble / distant blast, loud enough to notice, not harsh. 'Reduce loud sounds' halves it.
+- [ ] **Autumn rustle, pond lapping, tree creaks, drips**: all very quiet; the leaves rustle in autumn wind, lapping only zoomed in at a lake in spring / summer.
+- [ ] **Mute / sliders**: M mutes samples and beds immediately; the effects slider scales footsteps / bells / avalanche, the ambience slider scales beds, thunder, birds, bells.
+- [ ] **Offline** (after one session online): airplane mode, reload, play: recordings still play (cached); a sound that was never played online is the synth.
