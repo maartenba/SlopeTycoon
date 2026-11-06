@@ -62,6 +62,13 @@ try {
   let audioBytes = 0;
   for (const f of tracks) { const r = await get(`./audio/${f}`); audioBytes += r.body.length; check(r.status === 200 && TYPES['.mp3']!.test(r.type) && r.body.length > 500_000, `audio/${f} not served as audio/mpeg (${r.status} ${r.type})`); }
   check(audioBytes < 42 * 1024 * 1024, `dist/audio is ${(audioBytes / 1048576).toFixed(1)} MB, over the 42 MB budget (runtime-cached per build: tests/repo/musicAssets.test.ts)`);
+  // Recorded samples (audio/sfx): served as audio/mpeg, not precached (runtime cache, cache-first like the music), small files, folder under the cap (tests/repo/sfxAssets.test.ts).
+  const sfx = readdirSync(join(dist, 'audio', 'sfx')).filter((f) => f.endsWith('.mp3'));
+  check(sfx.length >= 80, `expected the recorded samples in dist/audio/sfx (${sfx.length})`);
+  let sfxBytes = 0;
+  for (const f of sfx) { const r = await get(`./audio/sfx/${f}`); sfxBytes += r.body.length; check(r.status === 200 && TYPES['.mp3']!.test(r.type) && r.body.length > 1000 && r.body.length < 400 * 1024, `audio/sfx/${f} not served as audio/mpeg or the wrong size (${r.status} ${r.type} ${r.body.length})`); }
+  check(sfxBytes < 12 * 1024 * 1024, `dist/audio/sfx is ${(sfxBytes / 1048576).toFixed(1)} MB, over the 12 MB budget`);
+  console.log(`[verify-pwa] audio/sfx: ${sfx.length} files, ${(sfxBytes / 1048576).toFixed(1)} MB, not precached`);
   if (argBase && !argv.includes('--no-404')) {
     const miss = await fetch(new URL('definitely/missing', base)); const t = await miss.text();
     check(miss.status === 404 && t.includes('Slope Tycoon'), 'unknown path should return 404.html (run post-build)');

@@ -13,7 +13,7 @@ export interface ParamLike {
 export interface NodeLike { connect(dest: NodeLike): unknown; disconnect(): void }
 export interface GainLike extends NodeLike { gain: ParamLike }
 export interface OscLike extends NodeLike { type: string; frequency: ParamLike; start(t?: number): void; stop(t?: number): void; onended: (() => void) | null }
-export interface BufferLike { getChannelData(ch: number): Float32Array }
+export interface BufferLike { getChannelData(ch: number): Float32Array; readonly length?: number; readonly sampleRate?: number; readonly numberOfChannels?: number; readonly duration?: number }
 export interface SourceLike extends NodeLike { buffer: BufferLike | null; loop: boolean; playbackRate: ParamLike; start(t?: number, offset?: number): void; stop(t?: number): void; onended: (() => void) | null }
 /** Structural subset of HTMLAudioElement used by the music players (tests inject a fake). */
 export interface MediaLike {
@@ -46,6 +46,8 @@ export interface AudioBackend {
   createStereoPanner(): PannerLike;
   createDynamicsCompressor(): CompressorLike;
   createBuffer(length: number, sampleRate: number): BufferLike;
+  /** Optional (the recorded samples, src/audio/SamplePlayer.ts): decode an encoded file to PCM, at `rate` Hz when given (a lower rate keeps big beds small in memory); without it the player never fetches anything. */
+  decodeAudioData?(data: ArrayBuffer, rate?: number): Promise<BufferLike>;
   /** Optional: route an <audio> element through the graph (the music players; without it there is no music). */
   createMediaElementSource?(el: MediaLike): NodeLike;
   /** Optional (music reverb); music runs dry without it. */
@@ -72,6 +74,11 @@ export function wrapContext(ctx: AudioContext): AudioBackend {
     createBuffer: (length, rate) => ctx.createBuffer(1, length, rate),
     createConvolver: () => ctx.createConvolver() as unknown as ConvolverLike,
     createDelay: (max) => ctx.createDelay(max) as unknown as DelayLike,
+    decodeAudioData: async (data, rate) => {
+      // A lower decode rate = half the memory for noise-like beds: an OfflineAudioContext at that rate decodes (and resamples) to it; AudioBuffers play in any context (resampled on playback).
+      const dec: BaseAudioContext = rate && rate !== ctx.sampleRate && typeof OfflineAudioContext !== 'undefined' ? new OfflineAudioContext(1, 1, rate) : ctx;
+      return (await dec.decodeAudioData(data)) as unknown as BufferLike;
+    },
     createMediaElementSource: (el) => ctx.createMediaElementSource(el as unknown as HTMLMediaElement) as unknown as NodeLike,
   };
 }

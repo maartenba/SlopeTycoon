@@ -1,16 +1,19 @@
 import { AudioEngine, PRIORITY, type BusId } from './AudioEngine';
 import { midiToHz, pluckEnv, swellEnv, type NodeScope } from './synth';
 import type { GainLike, NodeLike } from './backend';
+import { POOLS, type ShotRole } from '../config/audioSamples';
+import type { SamplePlayer } from './SamplePlayer';
 
 export const SFX_NAMES = [
   'click', 'hover', 'tick', 'blip', 'thud', 'crunch', 'scrape', 'kaching', 'clank', 'bell', 'grind', 'alarm',
   'chimeInfo', 'chimeImportant', 'chimeCritical', 'rescue', 'avalanche', 'bankruptcy', 'ratingUp', 'ratingDown', 'season',
   'birdChirp', 'cowbell', 'churchBell', 'drip', 'creak', 'shutter',
-  'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'crossingBell',
+  'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'crossingBell', 'thunder',
 ] as const;
 export type SfxName = (typeof SFX_NAMES)[number];
 
-export interface PlayOpts { pitch?: number; pan?: number; gain?: number; /** kaching: extra coins coalesced into the arpeggio. */ count?: number; delay?: number }
+export interface PlayOpts { pitch?: number; pan?: number; gain?: number; /** kaching: extra coins coalesced into the arpeggio. */ count?: number; delay?: number;
+  /** Sample sub-pool (birdChirp: 'partridge' | 'gull' | 'night'); ignored by the synth. */ tag?: string }
 
 interface Recipe {
   priority: number;
@@ -145,6 +148,12 @@ export const RECIPES: Record<SfxName, Recipe> = {
     t.frequency.setValueAtTime(150 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(110 * o.pitch, s.t0 + 0.7);
     swellEnv(e.gain, s.t0, 0.03 * o.gain, 0.25, 0.7, 0.3); connectChain(t, f, e); toOut(s, e, o.pan, 1);
   } },
+  // Distant thunder in a storm (restrained, ambience bus; Ambience.update rolls it about once every 75 s): the synth twin of the thunder samples = a low brown-noise rumble that swells and rolls off.
+  thunder: { priority: PRIORITY.ambience, bus: 'ambience', dur: 4.2, maxPerSec: 1, minGap: 8, build: (s, o) => {
+    const n = s.noiseSrc('brown'), f = s.filter('lowpass', 320, 0.7), e = s.gain(0);
+    f.frequency.setValueAtTime(320, s.t0); f.frequency.exponentialRampToValueAtTime(90, s.t0 + 4);
+    swellEnv(e.gain, s.t0, 0.5 * o.gain, 0.25, 4.1, 3); connectChain(n, f, e); toOut(s, e, o.pan, 1);
+  } },
   /**
    * Walk mode footsteps (Task 12): one short filtered-noise burst per step, peak ~0.05-0.07 (click = 0.18, so ~ -9 to -11 dB under the quietest UI sfx:
    * a texture, not an event). Lowest priority (never steals a voice from an action or alert), scaled by 'reduce loud sounds' (loud). Pitch varies per step.
@@ -183,6 +192,8 @@ export class RateLimiter {
 
 export class Sfx {
   private lim = new RateLimiter();
+  /** Recorded samples (SamplePlayer): when set and the role's files are decoded they replace the synth recipe of the same name; the recipe stays the fallback. */
+  samples: SamplePlayer | null = null;
   /** Coins waiting to be merged into the next ka-ching arpeggio. */
   private pendingCoins = 0;
   private pendingGain = 0;
@@ -203,7 +214,13 @@ export class Sfx {
     }
     const merged = name === 'kaching' ? this.pendingCoins : 0;
     const opts = { ...o, pitch: o.pitch ?? 1, gain: (o.gain ?? 1) * (r.loud ? this.engine.loudScale : 1) * (name === 'kaching' && merged ? Math.max(1, this.pendingGain) : 1), count: (o.count ?? 0) + merged };
-    const v = this.engine.startVoice(name, r.priority, r.dur, r.bus, (s) => r.build(s, opts), o.delay ?? 0);
+    const sp = this.samples;
+    let played = false;
+    if (sp?.enabled) {
+      if (name === 'crossingBell') played = sp.ring(opts.gain);
+      else if (name in POOLS && POOLS[name as ShotRole].length) played = sp.playShot(name as ShotRole, { pitch: opts.pitch, gain: opts.gain, ...(o.pan !== undefined ? { pan: o.pan } : {}), ...(o.delay ? { delay: o.delay } : {}), ...(o.tag ? { tag: o.tag } : {}) }, { name, priority: r.priority, bus: r.bus });
+    }
+    const v = played ? true : this.engine.startVoice(name, r.priority, r.dur, r.bus, (s) => r.build(s, opts), o.delay ?? 0);
     if (!v) return false;
     this.lim.record(name, now);
     if (r.group) this.lim.record('g:' + r.group, now);

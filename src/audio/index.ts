@@ -8,6 +8,7 @@ import { GAME_EVENT_NAMES } from '../core/events';
 import { Music } from './Music';
 import { MusicHandoff } from './musicHold';
 import { Sfx } from './Sfx';
+import { SamplePlayer } from './SamplePlayer';
 import { PROX } from '../config/audioProximity';
 import { MUSIC_PLAY } from '../config/audioMusic';
 import { WorldProbe, type ProbeDeps } from './worldProbe';
@@ -24,6 +25,8 @@ export interface AudioDeps {
   rng?: () => number;
   /** Test hooks for the music players (media element factory, URL resolver). */
   musicPlayer?: NonNullable<ConstructorParameters<typeof Music>[1]>['player'];
+  /** Recorded samples: injected hooks (tests) and switches (main.ts: `?nosamples=1`, the Low graphics tier). */
+  samples?: ConstructorParameters<typeof SamplePlayer>[1];
   /** Throttled tick period (s). */
   tickEvery?: number;
 }
@@ -31,6 +34,7 @@ export interface AudioDeps {
 export interface AudioApi {
   engine: AudioEngine;
   sfx: Sfx;
+  samples: SamplePlayer;
   ambience: Ambience;
   music: Music;
   settings: AudioSettings;
@@ -46,6 +50,8 @@ export function createAudio(d: AudioDeps): AudioApi {
   const settings = new AudioSettings(d.storage ?? null);
   const engine = new AudioEngine({ factory: d.factory ?? createRealBackend, settings });
   const sfx = new Sfx(engine);
+  const samples = new SamplePlayer(engine, d.samples);
+  sfx.samples = samples;
   const probe = new WorldProbe(d.probe);
   const handoff = new MusicHandoff(); // shared: near an open Apres-Ski Bar the game music stops, the bar music plays (and back)
   const ambience = new Ambience(engine, sfx, d.rng, handoff, d.musicPlayer ? { player: d.musicPlayer } : undefined);
@@ -80,7 +86,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   const every = d.tickEvery ?? PROX.tickEvery;
   let acc = 0;
   return {
-    engine, sfx, ambience, music, settings,
+    engine, sfx, samples, ambience, music, settings,
     frame(dt: number): void {
       acc += dt;
       if (acc >= every) { const e = d.probe.env(); music.setInputs({ season: e.season, weather: e.weather, hour: e.hour, sunrise: e.sunrise, sunset: e.sunset, busy: Math.min(1, (e.guests ?? 0) / 300), festival: !!e.festival }); }
@@ -94,7 +100,7 @@ export function createAudio(d: AudioDeps): AudioApi {
       sfx.update();
     },
     news(it): void { const c = cueForNews(it); if (c) sfx.play(c.sfx, c.opts); },
-    dispose(): void { for (const o of offs.splice(0)) o(); if (musicTimer !== null) clearInterval(musicTimer); music.dispose(); ambience.dispose(); engine.dispose(); },
+    dispose(): void { for (const o of offs.splice(0)) o(); if (musicTimer !== null) clearInterval(musicTimer); music.dispose(); ambience.dispose(); samples.dispose(); engine.dispose(); },
   };
 }
 
@@ -108,3 +114,4 @@ export function isButtonEvent(e: Event): boolean {
   }
   return false;
 }
+export { SamplePlayer, samplesDisabledByUrl } from './SamplePlayer';

@@ -7,6 +7,7 @@ import type { SeasonId, WeatherKind } from '../core/events';
 import { PROX } from '../config/audioProximity';
 import { BarMusic } from './BarMusic';
 import type { MusicHandoff } from './musicHold';
+import { SAMPLE_RATES } from '../config/audioSamples';
 import { apresLevel, natureGain, pondLevel, streamLevels } from './proximity';
 
 export interface AmbienceState {
@@ -47,6 +48,8 @@ export interface AmbienceState {
   concert?: number;
   /** Carnival proximity 0..1 (0 = no Carnival parade running near the listener; M7.4). Optional: absent = 0. */
   carnival?: number;
+  /** Snow cannon proximity 0..1 (0 = no cannon running near the listener; samples: mach-cannon). Optional: absent = 0. */
+  cannon?: number;
   /** Walk mode: forest wind shelter 0..1 (0 = open ground, 1 = >= SHELTER.fullTrunks tree trunks within SHELTER.radius tiles). Only the walker's near-field view sets it. */
   shelter?: number;
   /** Tiles to the nearest stream / river tile within PROX.stream.reach (absent / Infinity = none). Sampled only while zoomed in. */
@@ -69,7 +72,7 @@ export const SHELTER = {
 /** Pure: shelter 0..1 from a trunk count (linear up to SHELTER.fullTrunks). */
 export const shelterFromTrunks = (n: number): number => Math.min(1, Math.max(0, n / SHELTER.fullTrunks));
 
-export const LAYER_IDS = ['wind', 'rain', 'leaves', 'crickets', 'insects', 'crowd', 'lift', 'water', 'stream', 'rapids', 'apres', 'snowcat', 'heli', 'quad', 'sleigh', 'campfire', 'concert', 'carnival', 'muffled'] as const;
+export const LAYER_IDS = ['wind', 'rain', 'leaves', 'crickets', 'insects', 'crowd', 'lift', 'water', 'stream', 'rapids', 'apres', 'snowcat', 'heli', 'quad', 'sleigh', 'campfire', 'concert', 'carnival', 'muffled', 'cannon'] as const;
 export type LayerId = (typeof LAYER_IDS)[number];
 export const ONESHOT_IDS = ['birds', 'cowbells', 'bells', 'clanks', 'drips', 'creaks'] as const;
 export type OneShotId = (typeof ONESHOT_IDS)[number];
@@ -84,7 +87,7 @@ export const AMB = {
   /** Max one-shot rates per second at intensity 1. */
   rates: { birds: 0.8, cowbells: 0.15, clanks: 0.35, drips: 0.8, creaks: 0.1 } as const,
   /** Per-layer ceiling (linear gain on the ambience bus). */
-  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.08, stream: 0.17, rapids: 0.14, apres: PROX.apres.murmurMax, snowcat: 0.16, heli: 0.2, quad: 0.045, sleigh: 0.03, campfire: 0.035, concert: 0.04, carnival: 0.036, muffled: 0.175 } as Record<LayerId, number>,
+  layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.08, stream: 0.17, rapids: 0.14, apres: PROX.apres.murmurMax, snowcat: 0.16, heli: 0.2, quad: 0.045, sleigh: 0.03, campfire: 0.035, concert: 0.04, carnival: 0.036, muffled: 0.175, cannon: 0.06 } as Record<LayerId, number>,
   /** Layer crossfade time constant (s). */
   fadeTc: 0.9,
 };
@@ -131,6 +134,7 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const concert = clamp01(s.concert ?? 0) * Math.pow(close, 1.2) * window(h, 11, 23, 1) * (1 - wet * 0.5) * quiet;
   // Carnival (M7.4): a distant, quiet brass oompah while the parade walks (10:00 - 16:00) and the camera is near; damped by rain
   const carnival = clamp01(s.carnival ?? 0) * Math.pow(close, 1.2) * window(h, 10, 16, 0.5) * (1 - wet * 0.5) * quiet;
+  const cannon = clamp01(s.cannon ?? 0) * (0.3 + 0.7 * close) * (1 - wet * 0.3); // a running snow cannon: a steady hiss, only close by
   const sleigh = clamp01(s.sleigh ?? 0) * (0.25 + 0.75 * close) * (1 - wet * 0.6); // faint bells, only while a sleigh is out and the camera is near
   const cowSeason = summer ? 1 : spring || autumn ? 0.4 : 0;
   const cowbells = cowSeason * (1 - Math.exp(-Math.max(0, s.cows) / 3)) * close * nat * day * (1 - wet);
@@ -138,7 +142,7 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const clanks = lift * 0.9;
   const drips = spring ? close * nat * clamp01(0.3 + day) * (1 - wet * 0.5) * 0.6 : 0;
   const creaks = winter ? close * (0.3 + 0.5 * night) * quiet : 0;
-  return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, stream, rapids, apres, snowcat, heli, quad, sleigh, campfire, concert, carnival, muffled, birds, cowbells, bells, clanks, drips, creaks };
+  return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, stream, rapids, apres, snowcat, heli, quad, sleigh, campfire, concert, carnival, muffled, cannon, birds, cowbells, bells, clanks, drips, creaks };
 }
 
 type Builder = (s: NodeScope) => void;
@@ -234,6 +238,8 @@ const LAYER_BUILDERS: Record<LayerId, Builder> = {
     for (const f of [130, 392] as const) { const bp = s.filter('bandpass', f, 1.2); link(n, bp, sum); }
     link(sum, lp, s.out);
   },
+  // Snow cannon (samples: mach-cannon): the synth twin is a steady high-passed air hiss with a slow surge; noise only, ceiling 0.06.
+  cannon: (s) => { const a = s.noiseSrc('white', 0.9), hp = s.filter('highpass', 900, 0), lp = s.filter('lowpass', 6000, 0), g = s.gain(0.6); wander(s, g.gain, [[0.17, 0.12], [0.53, 0.06]]); link(a, hp, lp, g, s.out); },
   heli: (s) => { const n = s.noiseSrc('pink'), lp = s.filter('lowpass', 450, 0), chop = s.gain(0.55); wander(s, chop.gain, [[8.5, 0.28], [0.3, 0.08]]); link(n, lp, chop, s.out); },
   muffled: (s) => { const n = s.noiseSrc('brown'), hp = s.filter('highpass', 35, 0), f = s.filter('lowpass', 250, 0); link(n, hp, f, s.out); },
 };
@@ -271,13 +277,25 @@ export class Ambience {
     if (!this.engine.running) return mix;
     this.ensureBuilt();
     const t = this.engine.now();
-    for (const id of LAYER_IDS) this.layers[id]?.out.gain.setTargetAtTime(mix[id] * AMB.layerMax[id], t, AMB.fadeTc);
+    // Recorded beds (SamplePlayer) take over from the synthesised layers as far as their buffers are ready (coverage); with no samples every scale is 1 (the synth alone, as before).
+    const sp = this.sfx.samples, cov = sp ? sp.updateBeds(mix, s, AMB.layerMax, AMB.fadeTc) : {};
+    for (const id of LAYER_IDS) this.layers[id]?.out.gain.setTargetAtTime(mix[id] * AMB.layerMax[id] * (sp ? sp.synthScale(id, cov) : 1), t, AMB.fadeTc);
     this.apres.update(mix.apres); // bar-music groove while an open bar is near and the camera is close; the game music is STOPPED meanwhile (MusicHandoff, hysteresis)
-    const roll = (id: keyof typeof AMB.rates, sfx: SfxName, base: number): void => {
+    const roll = (id: keyof typeof AMB.rates, sfx: SfxName, base: number, tag?: string): void => {
       const rate = mix[id] * AMB.rates[id];
-      if (rate > 0.001 && this.rng() < rate * dt) this.sfx.play(sfx, { pitch: base * (0.85 + this.rng() * 0.4), pan: (this.rng() * 2 - 1) * 0.7, gain: (0.5 + 0.5 * mix[id]) * (id === 'birds' ? PROX.nature.chirpGain : 1) });
+      if (rate > 0.001 && this.rng() < rate * dt) this.sfx.play(sfx, { pitch: base * (0.85 + this.rng() * 0.4), pan: (this.rng() * 2 - 1) * 0.7, gain: (0.5 + 0.5 * mix[id]) * (id === 'birds' ? PROX.nature.chirpGain : 1), ...(tag ? { tag } : {}) });
     };
-    roll('birds', 'birdChirp', 1); roll('cowbells', 'cowbell', 1); roll('drips', 'drip', 1); roll('creaks', 'creak', 1);
+    // Bird calls (samples): a snow partridge by default, now and then a gull in the warm seasons; the synth chirp ignores the tag. A rare night bird on warm nights (the crickets' hours).
+    roll('birds', 'birdChirp', 1, (s.season === 'summer' || s.season === 'spring') && this.rng() < 0.2 ? 'gull' : 'partridge');
+    if (mix.crickets > 0.05 && sp?.roleReady('birdChirp', 'night') && this.rng() < SAMPLE_RATES.nightBird * mix.crickets * dt) this.sfx.play('birdChirp', { pitch: 0.95 + this.rng() * 0.1, pan: (this.rng() * 2 - 1) * 0.7, gain: 0.5 * PROX.nature.chirpGain, tag: 'night' });
+    else if (mix.crickets > 0.05 && sp && !sp.roleReady('birdChirp', 'night')) sp.load(['bird-night-01']);
+    // Extra one-shots (samples only; the synth beds carry the sound until their pools are decoded): leaves rustle in autumn, pond lapping, sleigh bells, thunder in a storm.
+    if (sp) {
+      const r = (role: 'rustle' | 'lap' | 'sleighBell', lvl: number, rate: number): void => { if (lvl > 0.02 && this.rng() < lvl * rate * dt) sp.playExtra(role, { pitch: 0.92 + this.rng() * 0.16, pan: (this.rng() * 2 - 1) * 0.6, gain: 0.4 + 0.6 * Math.min(1, lvl) }); };
+      r('rustle', mix.leaves, SAMPLE_RATES.rustle); r('lap', mix.water, SAMPLE_RATES.lap); r('sleighBell', mix.sleigh, SAMPLE_RATES.sleighBell);
+    }
+    if (s.weather === 'storm' && this.rng() < SAMPLE_RATES.thunderStorm * dt) this.sfx.play('thunder', { pitch: 0.9 + this.rng() * 0.2, pan: (this.rng() * 2 - 1) * 0.5, gain: 0.6 + this.rng() * 0.4 });
+    roll('cowbells', 'cowbell', 1); roll('drips', 'drip', 1); roll('creaks', 'creak', 1);
     const cr = mix.clanks * AMB.rates.clanks;
     if (cr > 0.001 && this.rng() < cr * dt) this.sfx.play('clank', { pitch: 0.8 + this.rng() * 0.3, pan: this.liftPan, gain: 0.3 + 0.7 * mix.clanks });
     return mix;

@@ -108,6 +108,12 @@ export class NodeScope {
     s.buffer = this.noise.get(kind); s.loop = true; s.playbackRate.value = rate;
     return this.startSrc(s);
   }
+  /** A decoded recording (one-shot: `loop` false, plays once from t0 at `rate`). */
+  bufferSrc(buf: BufferLike, rate = 1, loop = false): SourceLike {
+    const s = this.reg(this.b.createBufferSource());
+    s.buffer = buf; s.loop = loop; s.playbackRate.value = rate;
+    return this.startSrc(s);
+  }
   /** FM voice: modulator osc (freq = carrier*ratio) scaled by `index` Hz-deviation into the carrier's frequency. Returns the carrier (its output carries the tone). */
   fm(carrierHz: number, ratio: number, indexHz: number): OscLike {
     const c = this.osc('sine', carrierHz), m = this.osc('sine', carrierHz * ratio), mg = this.gain(indexHz);

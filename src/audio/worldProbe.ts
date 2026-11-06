@@ -25,6 +25,8 @@ export interface ProbeDeps {
   concerts?: () => Array<{ x: number; y: number }>;
   /** Carnival parade streets while it runs (chain centre tile; M7.4). Optional: absent = none. */
   carnivals?: () => Array<{ x: number; y: number }>;
+  /** Snowmaking cannons that are RUNNING (centre tile; the recorded cannon hiss only near them). Optional: absent = none. */
+  cannons?: () => Array<{ x: number; y: number }>;
   /** OPEN, serving Apres-Ski Bars (centre tile): closed / outside-hours bars are left out, so they never sound. Optional: absent = none. */
   apresBars?: () => Array<{ x: number; y: number }>;
   /** Flow class (0 calm, 1 brisk, 2 rapids) of the stream tile at (x, y). Optional: absent = brisk. */
@@ -89,6 +91,7 @@ export class WorldProbe {
     const concert = d.concerts ? nearestSource(l, d.concerts()) : null; o.concert = concert ? proximity(concert.dist, 30) : 0;
     const carn = d.carnivals ? nearestSource(l, d.carnivals()) : null; o.carnival = carn ? proximity(carn.dist, 24) : 0;
     o.apres = d.apresBars ? apresProximity(d.apresBars().map((b) => Math.hypot(b.x - l.x, b.y - l.z))) : 0;
+    const cannon = d.cannons ? nearestSource(l, d.cannons()) : null; o.cannon = cannon ? proximity(cannon.dist, 14) : 0;
     const quad = d.quads ? nearestSource(l, d.quads()) : null; o.quad = quad ? 0.3 + 0.7 * proximity(quad.dist, 40) : 0;
     const sleigh = d.sleighs ? nearestSource(l, d.sleighs()) : null; o.sleigh = sleigh ? 0.3 + 0.7 * proximity(sleigh.dist, 30) : 0;
     return o;

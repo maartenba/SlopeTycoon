@@ -4,7 +4,7 @@ import { BAR_PLAYLIST, FALLBACK, MENU_PLAYLIST, MUSIC_TARGET_LUFS, PLAYLISTS, SI
 import { trimFor } from '../../src/audio/musicPlaylist';
 
 /**
- * The ONLY audio asset files allowed in the repo: the owner-provided Suno music tracks listed in TRACKS (owner decision, 2026-11-05; AGENTS.md, public/audio/README.md).
+ * The audio asset files allowed in public/audio: the owner-provided Suno music tracks listed in TRACKS (owner decision, 2026-11-05; AGENTS.md, public/audio/README.md) and, in public/audio/sfx, the recorded CC0 samples (second owner exception, 2026-11-06; tests/repo/sfxAssets.test.ts).
  * Sound effects and ambience are procedural. Adding a track = add the file, a TRACKS row (id, file, title, group, lufs, trim) and a playlist entry, then extend ALLOWED.
  */
 const ALLOWED = ['README.md', ...TRACKS.map((t) => t.file)].sort();
@@ -14,7 +14,7 @@ const PER_FILE_BUDGET = 3.2 * 1024 * 1024;
 
 describe('music assets', () => {
   it('public/audio holds exactly the files of the track table (clean ASCII kebab-case names) and nothing else', () => {
-    expect(readdirSync('public/audio').sort()).toEqual(ALLOWED);
+    expect(readdirSync('public/audio').filter((n) => n !== 'sfx').sort()).toEqual(ALLOWED); // public/audio/sfx = the recorded CC0 samples (tests/repo/sfxAssets.test.ts)
     for (const t of TRACKS) { expect(t.file).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*\.mp3$/); expect(existsSync(`public/audio/${t.file}`)).toBe(true); }
     expect(new Set(TRACKS.map((t) => t.file)).size).toBe(TRACKS.length); expect(new Set(TRACKS.map((t) => t.id)).size).toBe(TRACKS.length);
   });

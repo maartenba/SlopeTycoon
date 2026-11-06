@@ -135,7 +135,7 @@ import { EventBus } from '@/core/EventBus';
 import { registerComponents, el } from '@/ui';
 import { wireTouch } from '@/ui/touchWire';
 import { onPalette } from '@/config/palette';
-import { createAudio, type AudioApi } from '@/audio';
+import { createAudio, samplesDisabledByUrl, type AudioApi } from '@/audio';
 import { createMenuAudio } from '@/audio/menuAudio';
 import { countTrunks, hashCount } from '@/audio/worldProbe';
 import { AMB } from '@/audio/Ambience';
@@ -1344,6 +1344,7 @@ try {
   const cc = renderer.controls;
   audioRef = createAudio({
     bus,
+    samples: { enabled: () => !samplesDisabledByUrl(window.location.search), beds: () => quality !== 'low' },
     storage: (() => { try { return window.localStorage; } catch { return null; } })(),
     camera: () => (renderer.viewMode.mode === 'walk' ? { x: renderer.rig.pose.x, z: renderer.rig.pose.z, yaw: renderer.rig.pose.yaw, zoom: AMB.walkZoom } : { x: cc.target.x, z: cc.target.z, yaw: cc.yaw, zoom: cc.camera.top - cc.camera.bottom }), // walk mode: the walker is the listener (near-field ambience)
     probe: {
@@ -1360,6 +1361,7 @@ try {
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad' || c.kind === 'scooter')),
       sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
+      cannons: () => (opsRef?.snowmaking.runningIds() ?? []).map((id) => buildings.get(id)).filter((b): b is NonNullable<typeof b> => !!b).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
       apresBars: () => buildings.all().filter((b) => (b.type === 'apresBar' || b.type === 'schirmbar') && b.active).filter((b) => { const a = attractions.get(b.id); return !!a && attractions.servingNow(a) && a.open; }).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
       streamClassAt: (x, y) => { // tile -> flow class, rebuilt only when the flow table changes
         const tbl = sim.flow.all();
