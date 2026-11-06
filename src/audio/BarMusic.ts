@@ -5,7 +5,7 @@ import type { GainLike } from './backend';
 import { busGains } from './AudioSettings';
 import type { AudioEngine } from './AudioEngine';
 import { MusicHandoff, type HoldPhase } from './musicHold';
-import { nextInPlaylist, playedLongEnough, trackTitle } from './musicPlaylist';
+import { nextInPlaylist, trackTitle } from './musicPlaylist';
 import { TrackPlayer, type PlayerDeps, type Prepared } from './TrackPlayer';
 
 const A = PROX.apres;
@@ -88,7 +88,7 @@ export class BarMusic {
     this.lv!.gain.setTargetAtTime(barLevelGain(eff) * BAR_AUDIO.busBoost, now, 0.4); this.lp!.frequency.setTargetAtTime(apresCutoff(eff), now, 0.4);
     if (!this.active) {
       this.active = true;
-      if (now - this.lastActiveAt > BAR_AUDIO.restartAfterSec && this.player.cur && playedLongEnough(this.player.position)) this.player.stop(0.05); // away for a while: the next song of the rotation (a song that has not had its minimum airtime yet resumes instead)
+      if (now - this.lastActiveAt > BAR_AUDIO.restartAfterSec && this.player.cur && this.player.position >= HANDOFF.minApresSec) this.player.stop(0.05); // away for a while: the next song of the rotation (a song that has not had its minimum airtime yet resumes instead)
     }
     this.player.setHold(false);
     if (this.starting || !this.player.supported) return;

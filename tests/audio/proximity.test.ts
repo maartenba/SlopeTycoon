@@ -144,7 +144,7 @@ describe('proximity layers on the fake backend', () => {
     expect(amb.apres.isActive).toBe(true); expect(mb.playing.length).toBe(1); expect(BAR_PLAYLIST).toContain(amb.apres.currentTrack!);
     expect(engine.voiceCount).toBe(0); // the bar music owns its own player (not the shared SFX pool)
     // walked away: the song fades out and the element is paused once the level stays under the exit threshold
-    await upd({ apres: 0 }, 80);
+    await upd({ apres: 0 }, 10);
     expect(amb.apres.isActive).toBe(true); // a bar song has its minimum airtime (HANDOFF.minApresSec = 10 s): a quick walk-away does not cut it
     await upd({ apres: 0 }, 300);
     expect(amb.apres.isActive).toBe(false); expect(amb.apres.handoff.phase).toBe('main'); expect(mb.playing.length).toBe(0);
