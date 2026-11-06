@@ -2,27 +2,27 @@
 
 Current release: **0.6.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
 
-## 0.6.0 (2026-11-03, macOS, Node v22.23.4)
+## 0.6.0 (2026-11-06, macOS, Node v22.23.4)
 
-The Schirmbar (`docs/schirmbar.md`) and the resort name, plus the unreleased 0.5.x graphics / shadow / title-camera work and the music rework (CHANGELOG). One golden part moved: the `progression` part of the staff golden (new level-2 unlock row; `docs/balance.md` "M7.8"). The new save module `resort` is observer-only (no hash change, no format bump).
+The Schirmbar (`docs/schirmbar.md`) and the resort name, plus the music (owner-provided Suno mp3 files: title / menu, game and apres-bar tracks), the recorded CC0 sound samples (88 mono mp3, synthesised sounds stay as the fallback), apres-ski notes over open bars, the church-bell honk fix, shadows on buildings / trees and in ride / photo / walk views, smoother shores / shrubs / rocks / cabins, a steadier title camera and the pylon footing (CHANGELOG). One golden part moved: the `progression` part of the staff golden (new level-2 unlock row; `docs/balance.md` "M7.8"); nothing since. The new save module `resort` is observer-only (no hash change, no format bump). Audio files are runtime-cached by the service worker, not precached: music 19 files, 35 MB; samples 88 files, 7.6 MB (`public/audio` is 43 MB on disk).
 
 | Check | Command | Result |
 |---|---|---|
-| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 451 files passed, 1 skipped; 4770 tests passed, 43 skipped (two more UI test files, 6 tests, were added after the second run started and pass on their own: `tests/ui-dom` + `repo` + `site` + `config` 717 passed) |
-| Balance | `npm run test:balance` | 48 passed (bot money goldens byte-identical; only the staff `progression` part re-recorded, in the unit suite) |
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 457 files passed, 1 skipped; 4790 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed (goldens unchanged since the Schirmbar re-record) |
 | Perf | `npm run test:perf` | 28 files, 49 tests passed (alone) |
-| Shots | `npm run shot:suite` | 0 errors |
+| Shots | `npm run shot:suite` | 0 errors in all 17 shots |
 | Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Audio in a real page | `npm run music:e2e`, `npm run menu-music:e2e`, `npm run sfx:e2e` | OK |
 | Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74`, `schirmbar` | all OK (0 console errors, MaterialGuard 0) |
-| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 (the known flaky placement test passed this time) |
-| Mobile | `npm run mobile:audit` | OK (map-visible shares asserted) |
-| Desktop | `npm run desktop:diff` (before = 3425eef, after = this commit) | SAME on buildings drawer, HUD, landscape, pricing, statistics; **Settings differs 2.19 %** (the new Resort name row in Gameplay: expected) |
-| Flicker | `npm run flicker -- --only 64-winter` | winter rotfine 0.66 (0.5.1: 0.65), zoomfine 0.15, no pops |
-| Schirmbar render | `npm run schirmbar:sanity -- --shots 1` | open / closed meshes 1,974 / 942 triangles (budget 2,000), banner canvas carries the name, MaterialGuard 0 (seen on SwiftShader only) |
-| Size | `npm run size` | 3040.8 kB raw / 1084.1 kB gzip (budget < 2048 kB gzip; +15.4 kB gzip over 0.5.1: 1068.7, mostly the Schirmbar mesh + banner, the resort name UI and the unreleased music / shadow work) |
-| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (57 pages, 272 URLs crawled on both bases, screenshots 8.4 MB of the 8.5 MB budget, new guide page "The Schirmbar & your resort's name" with one figure) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 |
+| Mobile | `npm run mobile:audit` | OK. The landscape inspector state first measured 49.5 % (< 50 %): a random "Powder day" event toast was floating over the map during the measurement (it appears since the Schirmbar commit shifted the event timing). The audit now hides event toasts for the inspector state (the toasts state still measures them); 52 % |
+| Desktop | `npm run desktop:diff` (before = a92f5b8, after = this commit) | SAME on buildings drawer, HUD, landscape, pricing, statistics; **Settings differs 0.78 %** (the Music style selector is gone: expected) |
+| Flicker | `npm run flicker -- --only 64-winter` | winter-day rotfine 0.66 (0.5.1: 0.65), zoomfine 0.15, no pops |
+| Size | `npm run size` | 3048.7 kB raw / 1085.1 kB gzip (budget < 2048 kB gzip; precache 16 files; +16.4 kB gzip over 0.5.1: 1068.7) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (57 pages, 272 URLs crawled on both bases) |
 
-Not verified by agents: how the bar and its music feel by hand, real GPU fps and the look at real frame rates, the sound of the reworked music (`docs/playtest-audio.md`), a phone in the hand. Owner checklist: `docs/playtest-m78.md`.
+Not verified by agents: how the bar, the music and the recorded sounds sound and feel by hand (and whether the faint honk is really gone), real GPU fps and the look at real frame rates, a phone in the hand. Owner checklists: `docs/playtest-m78.md`, `docs/playtest-audio.md`, `docs/playtest-m8.md`.
 
 ## 0.5.1 (2026-11-03, macOS, Node v22.23.4)
 
