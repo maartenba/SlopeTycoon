@@ -32,7 +32,9 @@ export interface Visit {
 }
 export interface VisitorSave { last: number; count: number; /** Absolute sim minute the arrival boost ends (0 = none). */ buzzUntil?: number; visit: Visit | null; reacted: number[] }
 
-export interface VisitorPose { x: number; y: number; yaw: number; alpha: number; phase: number }
+/** `dist` = tiles walked so far (the gait phase is dist / (2 stepLen)); `mode` 'walk' | 'idle' (a pause: look around) | 'wave' (the last peek); `modeT` 0..1 through an idle / wave. */
+export type VisitorMode = 'walk' | 'idle' | 'wave';
+export interface VisitorPose { x: number; y: number; yaw: number; alpha: number; phase: number; dist: number; mode: VisitorMode; modeT: number }
 export interface Print { x: number; y: number; yaw: number; side: 1 | -1 }
 
 export interface VisitorDeps {
@@ -88,7 +90,7 @@ export class Visitor {
     const spot = this.findSpot(plan.year);
     if (!spot) return false;
     const rng = new Rng(mix(this.d.seed, plan.year, 77));
-    const path = this.makePath(spot, rng);
+    const path = this.makePath(spot, rng, plan.durMin * V.pace * V.walkShare);
     const [fx, fy] = this.focusFor(spot, path, rng);
     const v: Visit = { year: plan.year, startMin: Math.min(plan.startMin, now), durMin: plan.durMin, path, fx, fy, ranger: this.d.ranger(), left: false, followed: false };
     this.visit = v; this.count++; this.reacted.clear();
@@ -151,15 +153,16 @@ export class Visitor {
     }
     return best ? { x: best.x, y: best.y } : null;
   }
-  private makePath(spot: { x: number; y: number }, rng: Rng): number[] {
+  private makePath(spot: { x: number; y: number }, rng: Rng, targetLen: number): number[] {
     const path = [spot.x + 0.5, spot.y + 0.5];
+    let walked = 0;
     let x = spot.x + 0.5, y = spot.y + 0.5, a = rng.next() * Math.PI * 2;
-    for (let k = 0; k < V.steps; k++) {
+    for (let k = 0; k < V.steps && (k < 6 || walked < targetLen); k++) {
       for (let tries = 0; tries < 8; tries++) {
         const aa = a + (rng.next() - 0.5) * 1.6, len = V.stepMin + rng.next() * (V.stepMax - V.stepMin);
         const nx = x + Math.cos(aa) * len, ny = y + Math.sin(aa) * len;
         if (Math.hypot(nx - spot.x - 0.5, ny - spot.y - 0.5) > V.wanderR || !this.tileOk(Math.floor(nx), Math.floor(ny))) continue;
-        x = nx; y = ny; a = aa; path.push(x, y); break;
+        walked += len; x = nx; y = ny; a = aa; path.push(x, y); break;
       }
     }
     if (path.length < 6) path.push(spot.x + 0.5 + 1.5, spot.y + 0.5 + 1); // always at least a short walk
@@ -197,7 +200,31 @@ export class Visitor {
     for (let i = 2; i < v.path.length; i += 2) cum.push(cum[cum.length - 1]! + Math.hypot(v.path[i]! - v.path[i - 2]!, v.path[i + 1]! - v.path[i - 1]!));
     return { cum, total: cum[cum.length - 1]! };
   }
-  private distAt(v: Visit, t: number): number { return Math.min(1, Math.max(0, (t - v.startMin) / v.durMin)) * this.lengths(v).total; }
+  /**
+   * Time -> distance along the walk, with the plodding rhythm: walk, stop at the `pauseAt` waypoints to look around, walk on, and stand for the final
+   * wave. Pure in (visit, t): nothing extra is saved.
+   */
+  private motion(v: Visit, t: number): { dist: number; mode: VisitorMode; modeT: number } {
+    const { cum, total } = this.lengths(v), D = v.durMin, el = Math.min(D, Math.max(0, t - v.startMin));
+    const waveMin = Math.min(V.waveMin, D * 0.2), interior = cum.length - 2; // waypoints 1..n-2
+    let idxs = V.pauseAt.filter((i) => i > 0 && i < cum.length - 1);
+    if (!idxs.length && interior >= 1) idxs = [1 + Math.floor((interior - 1) / 2)]; // a short path still stops once, in the middle
+    const stops = idxs.map((i) => cum[i]!);
+    const pauseMin = Math.min(V.pauseMin, (D * 0.3) / Math.max(1, stops.length)), walkMin = Math.max(1, D - waveMin - stops.length * pauseMin), speed = Math.max(V.pace, total / walkMin);
+    if (el >= D - waveMin) return { dist: total, mode: 'wave', modeT: Math.min(1, (el - (D - waveMin)) / Math.max(1, waveMin)) };
+    let dist = 0, rem = el;
+    for (const sd of stops) {
+      const reach = (sd - dist) / speed;
+      if (rem < reach) return { dist: dist + rem * speed, mode: 'walk', modeT: 0 };
+      rem -= reach; dist = sd;
+      if (rem < pauseMin) return { dist, mode: 'idle', modeT: rem / pauseMin };
+      rem -= pauseMin;
+    }
+    const d = dist + rem * speed;
+    if (d >= total) { const idle = Math.max(0, rem - (total - dist) / speed); return { dist: total, mode: 'idle', modeT: (idle / pauseMin) % 1 }; } // the path is done early: it stands and looks around until the wave
+    return { dist: d, mode: 'walk', modeT: 0 };
+  }
+  private distAt(v: Visit, t: number): number { return this.motion(v, t).dist; }
   private pointAt(v: Visit, d: number): { x: number; y: number; yaw: number } {
     const { cum } = this.lengths(v);
     let i = 1; while (i < cum.length - 1 && cum[i]! < d) i++;
@@ -209,9 +236,9 @@ export class Visitor {
   poseAt(t = this.d.now()): VisitorPose | null {
     const v = this.visit;
     if (!v || !this.enabled || v.left || t < v.startMin) return null;
-    const end = v.startMin + v.durMin, d = this.distAt(v, t), p = this.pointAt(v, d);
+    const end = v.startMin + v.durMin, m = this.motion(v, t), d = m.dist, p = this.pointAt(v, d);
     const alpha = Math.min(1, (t - v.startMin) / V.fadeIn, (end - t) / V.fadeOut);
-    return alpha <= 0 ? null : { x: p.x, y: p.y, yaw: p.yaw, alpha, phase: d * 2.2 };
+    return alpha <= 0 ? null : { x: p.x, y: p.y, yaw: p.yaw, alpha, phase: d / (2 * V.stepLen), dist: d, mode: m.mode, modeT: m.modeT };
   }
   /** Footprints in the snow: a lead-in trail, then the steps taken so far; fades over the last quarter of `trackDays`. */
   prints(t = this.d.now()): { list: Print[]; alpha: number } {
@@ -226,15 +253,18 @@ export class Visitor {
     const first = this.pointAt(v, 0), nxt = this.pointAt(v, Math.min(0.5, total)), hx = Math.sin(first.yaw), hy = Math.cos(first.yaw);
     void nxt;
     const back = (mix(this.d.seed, v.year, 31) % 2 === 0 ? 1 : -1) * 0.6, ba = Math.atan2(hx, hy) + Math.PI + back, bx = Math.sin(ba), by = Math.cos(ba);
-    let side: 1 | -1 = 1;
-    for (let s = V.leadIn; s > 0; s -= V.printGap) {
-      const x = first.x + bx * s, y = first.y + by * s;
+    // footfalls alternate left (+1, the model's +x foot) / right; the left foot lands at gait phase 0.25, i.e. half a step into the cycle
+    const first0 = V.stepLen / 2;
+    const ahead = (p: { x: number; y: number; yaw: number }, side: 1 | -1): Print => ({ x: p.x + Math.sin(p.yaw) * V.printAhead + Math.cos(p.yaw) * 0.12 * side, y: p.y + Math.cos(p.yaw) * V.printAhead - Math.sin(p.yaw) * 0.12 * side, yaw: p.yaw, side });
+    const nLead = Math.floor(V.leadIn / V.stepLen);
+    for (let k = nLead; k >= 1; k--) { // lead-in: it came from somewhere up the slope; the foot that lands next is the one after the last lead-in print
+      const s = k * V.stepLen - first0 + 0.0, x = first.x + bx * s, y = first.y + by * s;
       if (x < 1 || y < 1 || x > N - 1 || y > N - 1) continue;
-      list.push({ x: x + Math.cos(ba) * 0.12 * side, y: y - Math.sin(ba) * 0.12 * side, yaw: ba + Math.PI, side }); side = side === 1 ? -1 : 1;
+      list.push({ ...ahead({ x, y, yaw: ba + Math.PI }, k % 2 === 0 ? 1 : -1), side: k % 2 === 0 ? 1 : -1 });
     }
-    for (let s = 0; s <= dist; s += V.printGap) {
-      const p = this.pointAt(v, s);
-      list.push({ x: p.x + Math.cos(p.yaw) * 0.12 * side, y: p.y - Math.sin(p.yaw) * 0.12 * side, yaw: p.yaw, side }); side = side === 1 ? -1 : 1;
+    for (let k = 0; first0 + k * V.stepLen <= dist; k++) {
+      const side: 1 | -1 = k % 2 === 0 ? 1 : -1;
+      list.push(ahead(this.pointAt(v, first0 + k * V.stepLen), side));
     }
     return { list, alpha };
   }

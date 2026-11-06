@@ -149,3 +149,29 @@ describe('rare visitor: mountain buzz (+10 % arrivals for one in-game month)', (
     expect(stateHash(b).hash).toBe(stateHash(sim).hash);
   });
 });
+
+describe('rare visitor: plodding walk', () => {
+  it('walks, pauses to look around at two waypoints, walks on and ends with one wave; distance never goes back and the pace is steady', () => {
+    const sim = mk(); sim.visitor.force(540); const v = sim.visitor.visit!;
+    const modes: string[] = []; let last = -1, speeds: number[] = [], prev = 0, pd = 0;
+    for (let m = 1; m < v.durMin - 1; m += 3) {
+      const p = sim.visitor.poseAt(v.startMin + m); if (!p) continue;
+      if (modes[modes.length - 1] !== p.mode) modes.push(p.mode);
+      expect(p.dist).toBeGreaterThanOrEqual(last - 1e-9); last = p.dist;
+      if (p.mode === 'walk') { if (prev && pd) speeds.push((p.dist - pd) / 3); pd = p.dist; } else pd = 0;
+      prev = p.dist; expect(p.phase).toBeCloseTo(p.dist / (2 * VISITOR.stepLen), 9);
+    }
+    expect(modes.filter((x) => x === 'idle').length).toBeLessThanOrEqual(2); expect(modes.filter((x) => x === 'idle').length).toBeGreaterThanOrEqual(1);
+    expect(modes[modes.length - 1]).toBe('wave'); expect(modes[0]).toBe('walk');
+    const mean = speeds.reduce((a, b) => a + b, 0) / speeds.length; for (const s of speeds) expect(Math.abs(s - mean)).toBeLessThan(mean * 0.02 + 1e-6);
+    expect(mean * 10).toBeGreaterThan(0.25); expect(mean * 10).toBeLessThan(0.7); // tiles per second at 1x (a sim minute is ~0.1 s)
+  });
+  it('footprints alternate left / right at one step spacing along the walk', () => {
+    const sim = mk(); sim.visitor.force(540); const v = sim.visitor.visit!;
+    const { list } = sim.visitor.prints(v.startMin + v.durMin + 5);
+    expect(list.length).toBeGreaterThan(20);
+    for (let i = 1; i < list.length; i++) expect(list[i]!.side).toBe(-list[i - 1]!.side);
+    let near = 0; for (let i = 1; i < list.length; i++) { const d = Math.hypot(list[i]!.x - list[i - 1]!.x, list[i]!.y - list[i - 1]!.y); if (d < 0.6) near++; }
+    expect(near).toBeGreaterThan(list.length * 0.6);
+  });
+});
