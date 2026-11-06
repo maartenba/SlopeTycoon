@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Grid } from '../world/Grid';
 import { BUILDING_BUILDERS, DEFAULT_FOUNDATION, type BuildingMeshes } from './meshes';
-import { baseHeight, rootedSeatOf, seatOf } from '../sim/PlaceBuilding';
+import { gentleSeat, rootedSeatOf, seatOf } from '../sim/PlaceBuilding';
 import { BUILDINGS } from '../config/buildings';
 
 /** The slice of the Buildings store the view reads. */
@@ -38,13 +38,15 @@ export class BuildingsView {
     const seen = new Set<number>();
     for (const b of this.source.all()) {
       seen.add(b.id);
-      // gentle-slope types (magic carpet) follow the slope on the lowest corner; everything else sits on a pad at the highest corner
+      // gentle-slope types (magic carpet) lie on the footprint's best-fit plane (pitch + roll, the mesh follows the ground); everything else sits on a pad at the highest corner
       // with a stone plinth reaching down to the lowest one, so no part is buried.
       const gentle = BUILDINGS[b.type]?.site.slopeKind === 'gentleSlope';
       const rooted = BUILDING_BUILDERS[BUILDINGS[b.type]?.meshBuilder ?? b.type]?.rooted === true;
-      const seat = gentle ? { y: baseHeight(this.grid, b.x, b.y, b.w, b.h), depth: DEFAULT_FOUNDATION } : rooted ? rootedSeatOf(this.grid, b.x, b.y, b.w, b.h) : seatOf(this.grid, b.x, b.y, b.w, b.h, DEFAULT_FOUNDATION);
+      const tilt = gentle ? gentleSeat(this.grid, b.x, b.y, b.w, b.h, b.rot) : null;
+      const seat = tilt ? { y: tilt.y, depth: DEFAULT_FOUNDATION } : rooted ? rootedSeatOf(this.grid, b.x, b.y, b.w, b.h) : seatOf(this.grid, b.x, b.y, b.w, b.h, DEFAULT_FOUNDATION);
       const y = seat.y;
       const sig = `${b.x},${b.y},${b.w},${b.h},${b.rot},${y}`;
+      const tiltSig = tilt ? `${tilt.pitch.toFixed(4)},${tilt.roll.toFixed(4)}` : '';
       let e = this.entries.get(b.id);
       const variant = this.variantOf?.(b.id, b.type) ?? '';
       if (e && (e.type !== b.type || e.depth !== seat.depth || e.variant !== variant)) { this.scene.remove(e.group); this.entries.delete(b.id); e = undefined; }
@@ -54,10 +56,11 @@ export class BuildingsView {
         this.entries.set(b.id, e);
         this.scene.add(group);
       }
-      if (e.sig !== sig) {
-        e.sig = sig;
+      if (e.sig !== sig + tiltSig) {
+        e.sig = sig + tiltSig;
         e.group.position.set(b.x + b.w / 2, y, b.y + b.h / 2);
-        e.group.rotation.y = -(b.rot % 4) * (Math.PI / 2);
+        e.group.rotation.order = 'YXZ';
+        e.group.rotation.set(tilt ? tilt.pitch : 0, -(b.rot % 4) * (Math.PI / 2), tilt ? tilt.roll : 0);
       }
     }
     for (const [id, e] of this.entries) {

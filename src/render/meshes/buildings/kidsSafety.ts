@@ -6,7 +6,8 @@ export function magicCarpet(b: PartBuilder, _w: number, h: number): void {
   b.box(0, 0.05, 0, 0.5, 0.12, L, C.black);
   b.box(0, 0.17, 0, 0.4, 0.03, L, C.orange);
   for (let i = 0; i < 12; i++) b.box(0, 0.2, -L / 2 + 0.2 + i * (L / 12), 0.4, 0.015, 0.06, i % 2 ? C.yellow : C.red);
-  for (const x of [-0.27, 0.27]) { b.box(x, 0.12, 0, 0.04, 0.2, L, C.blue); b.box(x, 0.32, 0, 0.03, 0.02, L, C.white); }
+  // low side kerbs (a conveyor is a flat band with a rail, not a trough): 0.09 high, a thin white capping on top
+  for (const x of [-0.27, 0.27]) { b.box(x, 0.12, 0, 0.04, 0.1, L, C.blue); b.box(x, 0.18, 0, 0.05, 0.02, L, C.white); }
   // canopy tunnel over the loading end: ribs, sloped perspex roof, end beams
   const z0 = L / 2 - 1.6, z1 = L / 2 - 0.1;
   for (let z = z0; z <= z1 + 0.01; z += 0.5) {

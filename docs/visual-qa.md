@@ -203,3 +203,6 @@ New Game with Career preselected: `npm run shot -- --bare 1 --viewport 1280x800 
 ![Alpine, winter](img/rich-alpine-winter.webp)
 
 - The harness hides `st-toast` in every shot (`ShotOpts.toasts: true` keeps them), so seasonal closure toasts never end up in documentation screenshots.
+
+## Magic Carpet on a slope
+The model gallery is flat, so it cannot show tilt bugs. `vite-node scripts/shots/carpet-slope.ts <prefix> [zoom] [legacy]` places a Ski School HQ and a Magic Carpet on a real slope (128 / seed 5, winter) and shoots it; `legacy` re-applies the old seat (flat on the lowest corner, the "blue trough" of 0.6.0). The seat is `gentleSeat` (best-fit plane, pitch + roll), used by `BuildingsView` and the placement ghost; `tests/render/magicCarpetSeat.test.ts` checks that no vertex sinks and the base hugs the ground at both ends.

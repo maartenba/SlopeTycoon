@@ -296,6 +296,26 @@ export function baseHeight(grid: Grid, x: number, y: number, w: number, h: numbe
   return min * HEIGHT_UNIT;
 }
 
+/**
+ * Seat of a gentle-slope building (Magic Carpet): the footprint's best-fit plane. `y` = world height of the footprint centre, `pitch` / `roll` (radians) tilt the mesh
+ * (apply with Euler order 'YXZ' after the yaw `-rot * PI / 2`) so a long conveyor lies ON the slope instead of hovering above its high end (it used to sit flat on the lowest corner:
+ * up to `GENTLE_MAX_RISE` half-steps = 3 world units of air at the far end). `rotation.x = pitch` lifts the local +z end when the ground rises that way.
+ */
+export function gentleSeat(grid: Grid, x: number, y: number, w: number, h: number, rot: number): { y: number; pitch: number; roll: number } {
+  let sum = 0, n = 0, gx = 0, gz = 0;
+  for (let vy = y; vy <= y + h; vy++) for (let vx = x; vx <= x + w; vx++) {
+    const c = grid.getCorner(vx, vy); sum += c; n++;
+    gx += c * (vx - x - w / 2); gz += c * (vy - y - h / 2);
+  }
+  // least-squares plane slope per tile (corners are on a regular lattice): sum(c * offset) / sum(offset^2)
+  let sxx = 0, szz = 0;
+  for (let vy = y; vy <= y + h; vy++) for (let vx = x; vx <= x + w; vx++) { sxx += (vx - x - w / 2) ** 2; szz += (vy - y - h / 2) ** 2; }
+  const sx = (sxx > 0 ? gx / sxx : 0) * HEIGHT_UNIT, sz = (szz > 0 ? gz / szz : 0) * HEIGHT_UNIT; // world units of rise per tile along +x / +z
+  const th = -(((rot % 4) + 4) % 4) * (Math.PI / 2), dirX = Math.sin(th), dirZ = Math.cos(th), sideX = Math.cos(th), sideZ = -Math.sin(th);
+  const along = sx * dirX + sz * dirZ, across = sx * sideX + sz * sideZ; // rise per tile toward the local +z (long axis) / +x (side)
+  return { y: (sum / n) * HEIGHT_UNIT, pitch: -Math.atan(along), roll: Math.atan(across) };
+}
+
 /** Corner extremes of a footprint in half-steps. */
 export function cornerRange(grid: Grid, x: number, y: number, w: number, h: number): { min: number; max: number } {
   let min = Infinity, max = -Infinity;

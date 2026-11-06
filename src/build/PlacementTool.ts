@@ -8,14 +8,17 @@ import { pickHeightfield, type PickResult } from '../render/Picking';
 import type { BuildingMeshes } from '../render/meshes';
 import type { Overlays } from '../render/Overlays';
 
-import { baseHeight, EDGE_MARGIN, validatePlacement, placeBuilding, anchorFor, type PlacementEnv, type PlacementCheck, type PlaceOutcome } from '../sim/PlaceBuilding';
+import { BUILDINGS } from '../config/buildings';
+import { baseHeight, gentleSeat, EDGE_MARGIN, validatePlacement, placeBuilding, anchorFor, type PlacementEnv, type PlacementCheck, type PlaceOutcome } from '../sim/PlaceBuilding';
 export { baseHeight, EDGE_MARGIN, validatePlacement, placeBuilding, anchorFor };
 export type { PlacementEnv, PlacementCheck, PlaceOutcome };
 
 /** Position a mesh group (origin = footprint centre) on terrain, foundation reaching the lowest corner. */
-export function positionMesh(g: THREE.Group, grid: Grid, b: { x: number; y: number; w: number; h: number; rot: number }): void {
-  g.position.set(b.x + b.w / 2, baseHeight(grid, b.x, b.y, b.w, b.h), b.y + b.h / 2);
-  g.rotation.y = -(b.rot % 4) * (Math.PI / 2);
+export function positionMesh(g: THREE.Group, grid: Grid, b: { x: number; y: number; w: number; h: number; rot: number; type?: string }): void {
+  const tilt = b.type && BUILDINGS[b.type]?.site.slopeKind === 'gentleSlope' ? gentleSeat(grid, b.x, b.y, b.w, b.h, b.rot) : null; // the Magic Carpet lies on the slope, as built (BuildingsView)
+  g.position.set(b.x + b.w / 2, tilt ? tilt.y : baseHeight(grid, b.x, b.y, b.w, b.h), b.y + b.h / 2);
+  g.rotation.order = 'YXZ';
+  g.rotation.set(tilt ? tilt.pitch : 0, -(b.rot % 4) * (Math.PI / 2), tilt ? tilt.roll : 0);
 }
 
 export interface GhostLine { kind: 'error' | 'warn' | 'info' | 'ok'; text: string }
@@ -158,7 +161,7 @@ export class PlacementTool {
     const clampX = Math.max(0, Math.min(this.o.env.grid.size - w, x));
     const clampY = Math.max(0, Math.min(this.o.env.grid.size - h, y));
     const chk = validatePlacement(this.o.env, type, clampX, clampY, this.rot, this.autoFlatten);
-    positionMesh(ghost, this.o.env.grid, { x: clampX, y: clampY, w, h, rot: this.rot });
+    positionMesh(ghost, this.o.env.grid, { x: clampX, y: clampY, w, h, rot: this.rot, type });
     if (chk.flattenPlan) ghost.position.y = chk.flattenPlan.base * HEIGHT_UNIT; // show the building on the levelled pad
     ghost.visible = true;
     // Red = blocked, amber = placeable with a warning (e.g. inactive without access), green = fine.
