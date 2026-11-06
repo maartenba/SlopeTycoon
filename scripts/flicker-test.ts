@@ -227,7 +227,8 @@ try {
       const b = s.buildings.all().find((q: any) => q.type === 'baseLodge');
       const c = s.renderer.controls;
       if (o.focus) c.target.set(o.focus.x, 0, o.focus.y); else if (b) c.target.set(b.x + b.w / 2, 0, b.y + b.h / 2);
-    }, { hour: sc.hour, extra: sc.extra ?? null, focus: null as { x: number; y: number } | null });
+      if (o.visit && s.sim.visitor.force(60 * 30)) { const p = s.sim.visitor.poseAt(); if (p) c.target.set(p.x, 0, p.y); console.log('SCENE visit on screen'); } // --visit 1: the rare visitor walking in the frame
+    }, { visit: !!a.visit, hour: sc.hour, extra: sc.extra ?? null, focus: null as { x: number; y: number } | null });
     await new Promise((r) => setTimeout(r, 2500));
     const minZoom = await page.evaluate(() => (window as any).__slope.renderer.controls.minZoom as number);
     const maxZoom = await page.evaluate(() => (window as any).__slope.renderer.controls.maxZoom as number);
