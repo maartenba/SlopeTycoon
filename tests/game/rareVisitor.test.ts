@@ -153,7 +153,7 @@ describe('rare visitor: mountain buzz (+10 % arrivals for one in-game month)', (
 describe('rare visitor: plodding walk', () => {
   it('walks, pauses to look around at two waypoints, walks on and ends with one wave; distance never goes back and the pace is steady', () => {
     const sim = mk(); sim.visitor.force(540); const v = sim.visitor.visit!;
-    const modes: string[] = []; let last = -1, speeds: number[] = [], prev = 0, pd = 0;
+    const modes: string[] = []; let last = -1, prev = 0, pd = 0; const speeds: number[] = [];
     for (let m = 1; m < v.durMin - 1; m += 3) {
       const p = sim.visitor.poseAt(v.startMin + m); if (!p) continue;
       if (modes[modes.length - 1] !== p.mode) modes.push(p.mode);

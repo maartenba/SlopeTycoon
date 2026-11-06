@@ -402,3 +402,7 @@ Only the `progression` part of the staff golden (`tests/sim/staff.test.ts`, 64 /
 ## 0.6.1 check (small winter surprises)
 
 Observer state only (own save module, not in `stateHash`; the schedule is a pure function of seed and year) plus a tiny one-off mood nudge for guests that happen to stand within sight of a remote visit. `npm run test:balance`: 48 passed, goldens unchanged, no re-record.
+
+## Visitor buzz (small winter surprise, follow-up)
+
+The surprise now gives one in-game month (15 sim days) of +10 % arrivals from the moment it begins: one more multiplicative factor in the same arrival-rate hook as the Tourist Office (`setAttractiveness`), one window per sighting (an overlapping second one neither extends nor stacks it), saved as one number (`buzzUntil`) in the existing observer module, off in the tutorial, the title demo and scenarios. Because `createSim` defaults equal the real game, the default-start sim has a sighting in year 1 winter: the `yearReport` snapshot moved (y1 guests 1539 -> 1576, y2 3172 -> 3126 through the shifted arrival draw; one-off re-record, reason above). `npm run test:balance`: 48 passed, no band moved.

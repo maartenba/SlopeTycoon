@@ -3116,7 +3116,7 @@ hideSplash();
 };
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {
   /** Debug (owner 'what was that beep?'): `__slope.audio.log(true)` prints every ambient one-shot / loop start (id, sample|synth, gain); `.counts()` = per-minute table (docs/playtest-audio.md). */
-  audio: audioRef ? { log: audioRef.log, counts: audioRef.log.counts, engine: audioRef.engine } : null,
+  audio: audioRef ? { log: audioRef.log, counts: audioRef.log.counts, engine: audioRef.engine, sfx: audioRef.sfx } : null,
   skyActivity, festivalDressing, fx: fxApi, view: viewApi, ff, startFf,
   /** QA (touch e2e): the ToolManager and the touch wire (controller / gestures state). */
   tools, touch: touchWire, selection: () => ({ building: selectedId, piste: selectedPiste }),

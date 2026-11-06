@@ -58,9 +58,9 @@ try {
     const { soundsForEvent } = await imp('/src/audio/eventSounds.ts');
     return { a: a?.text, label: a?.focus?.label, b: b?.text, sound: soundsForEvent('visitor:spotted', sp).map((c: any) => c.sfx), ranger: s.sim.visitor.visit.ranger };
   });
-  check('news (ranger wording) with a Show me button', news.a === 'A yeti has been spotted! A ranger is investigating the area.' && news.label === 'Show me' && news.ranger === true, news);
-  check('news without a ranger reads differently', news.b === 'Guests report a yeti up on the mountain. Nobody is free to investigate.');
-  check('one quiet distant call is mapped to the event', news.sound.join() === 'distantCall', news.sound);
+  check('news (ranger wording) with a Show me button', news.a === 'A yeti has been spotted! A ranger is investigating the area. Visitors are flocking in to see it.' && news.label === 'Show me' && news.ranger === true, news);
+  check('news without a ranger reads differently', news.b === 'Guests report a yeti up on the mountain. Nobody is free to investigate. Visitors are flocking in to see it.');
+  check('the event itself maps no cue (the render side schedules the call: global, spatial, Show me)', news.sound.length === 0, news.sound);
 
   // ---- the real Show me button in the real news panel ----
   await page.evaluate(() => { const s = (window as any).__slope; s.sim.visitor.visit.startMin -= 60; s.setHour?.(10); });
@@ -103,6 +103,37 @@ try {
     await page.evaluate(() => { const s = (window as any).__slope, v = s.visitorView; s.renderer.controls.target.y = v.pos.y - 0.5; s.renderer.controls.focusOn(v.pos.x, v.pos.z, { duration: 0, zoom: 30 }); });
     await sleep(1500); await page.screenshot({ path: '.weave/shots/visitor-wide.png' });
   }
+
+
+  // ---- gait: it walks (frames change), pauses to look around, waves at the end; footprints alternate ----
+  const gait = await page.evaluate(async () => {
+    const s = (window as any).__slope, v = s.sim.visitor.visit, now = s.game.date.year * 180 * 1440 + s.game.date.day * 1440 + s.game.date.minute, D = v.durMin;
+    const base = v.startMin; const frames = new Set<number>(), modes = new Set<string>(), looks = new Set<number>(); let order = true, lastD = -1;
+    for (let m = 5; m < D; m += 6) {
+      v.startMin = now - m; const p = s.sim.visitor.poseAt(now); if (!p) continue;
+      modes.add(p.mode); if (p.dist < lastD - 1e-9) order = false; lastD = p.dist;
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+      const lp = s.visitorView.lastPose; if (lp.kind === 'walk') frames.add(lp.frame); if (lp.kind === 'idle') looks.add(lp.look);
+    }
+    v.startMin = base;
+    const pr = s.sim.visitor.prints(now + 1e6 * 0 + 1); let alt = true; for (let i = 1; i < pr.list.length; i++) if (pr.list[i].side === pr.list[i - 1].side) alt = false;
+    return { frames: [...frames].sort(), modes: [...modes], looks: [...looks], order, alt, n: pr.list.length };
+  });
+  check('gait: eight walk frames show, pauses look around, it ends with a wave, distance only grows', gait.frames.length >= 6 && gait.modes.includes('idle') && gait.modes.includes('wave') && gait.order, gait);
+  check('footprints alternate left / right', gait.alt === true && gait.n > 10, gait.n);
+  // ---- sound: unlock the audio with a real click, the global call is scheduled (audio log shows distantCall) ----
+  await page.evaluate(() => { const a = (window as any).__slope.audio ?? (window as any).__audio; a?.log?.(true); });
+  await page.mouse.click(640, 400); await sleep(1500);
+  const snd = await page.evaluate(() => { const s = (window as any).__slope, a = s.audio; return { has: !!a, running: a?.engine?.running, played: a?.sfx?.played?.distantCall ?? 0, counts: a?.log?.counts?.() }; });
+  console.log(JSON.stringify(snd));
+  check('audio runs after a click and the call was scheduled (distantCall played, not just pending)', snd.running === true && snd.played >= 1, snd);
+  // ---- bonus: +10 % arrivals for one in-game month, a HUD chip and an Events row ----
+  const buzz = await page.evaluate(() => {
+    const s = (window as any).__slope, v = s.sim.visitor, hud: any = document.querySelector('st-hud'), txt = hud?.shadowRoot?.textContent ?? '';
+    const badge = [...(hud?.shadowRoot?.querySelectorAll('span') ?? [])].find((e: any) => /Mountain buzz/.test(e.textContent ?? '')) as any;
+    return { mult: v.buzzMult(), days: v.buzzDaysLeft(), badge: !!badge && !badge.hidden, txt: txt.includes('Mountain buzz') };
+  });
+  check('mountain buzz: x1.1 arrivals, about 15 sim days, shown as a HUD chip', buzz.mult === 1.1 && buzz.days >= 14 && buzz.days <= 15 && buzz.badge, buzz);
 
   // ---- click it: the first hidden achievement ----
   const pt = await page.evaluate(() => {
