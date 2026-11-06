@@ -23,7 +23,7 @@ One doc per feature or system. Player-facing docs are the guide in `site/guide/*
 
 ## Rendering, UI, audio, platform
 - [models.md](models.md), [flicker.md](flicker.md), [ground-level.md](ground-level.md), [ride-along.md](ride-along.md), [walk-mode.md](walk-mode.md), [photo-mode.md](photo-mode.md).
-- [ui-kit.md](ui-kit.md), [fonts.md](fonts.md), [touch.md](touch.md), [tutorial.md](tutorial.md), [audio.md](audio.md).
+- [ui-kit.md](ui-kit.md), [fonts.md](fonts.md), [touch.md](touch.md), [tutorial.md](tutorial.md), [audio.md](audio.md), [music-prompts.md](music-prompts.md).
 - [saves.md](saves.md), [pwa.md](pwa.md), [analytics.md](analytics.md) (opt-in, anonymous).
 
 ## Human playtest checklists (keep)
