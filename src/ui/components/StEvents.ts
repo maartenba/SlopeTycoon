@@ -71,6 +71,7 @@ export class StEvents extends StElement {
       strip.append(cell);
     }
     out.push(strip);
+    if (v.buzz) out.push(el('div', 'row ok', `🐾 ${v.buzz.text}`));
     if (!v.running.length) out.push(el('div', 'muted', 'No festival this week.'));
     for (const r of v.running) {
       const row = el('div', 'row');

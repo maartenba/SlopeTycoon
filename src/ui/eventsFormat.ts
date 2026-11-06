@@ -39,6 +39,8 @@ export interface EventsView {
   /** Twelve cells January..December with event markers (running, booked, automatic) for the next 12 months. */
   strip: MonthStripCell[];
   running: EventsRow[];
+  /** Optional note row (e.g. 'Mountain buzz +10 % visitors'); the caller adds it. */
+  buzz?: { text: string };
   upcoming: EventsRow[];
   cards: FestivalCard[];
   review: { score: number; when: string } | null;

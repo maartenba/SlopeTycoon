@@ -30,7 +30,7 @@ export interface Visit {
   fx: number; fy: number;
   ranger: boolean; left: boolean; followed: boolean;
 }
-export interface VisitorSave { last: number; count: number; visit: Visit | null; reacted: number[] }
+export interface VisitorSave { last: number; count: number; /** Absolute sim minute the arrival boost ends (0 = none). */ buzzUntil?: number; visit: Visit | null; reacted: number[] }
 
 export interface VisitorPose { x: number; y: number; yaw: number; alpha: number; phase: number }
 export interface Print { x: number; y: number; yaw: number; side: 1 | -1 }
@@ -54,6 +54,8 @@ export class Visitor {
   /** Off in the tutorial, the title demo and scenarios. */
   enabled = true;
   last = -1; count = 0;
+  /** Absolute sim minute until which the sighting's arrival boost runs (saved; a pure function of when the sighting began). */
+  buzzUntil = 0;
   visit: Visit | null = null;
   private reacted = new Set<number>();
   /** Debug / test: the spot override for the next forced start. */
@@ -90,6 +92,7 @@ export class Visitor {
     const [fx, fy] = this.focusFor(spot, path, rng);
     const v: Visit = { year: plan.year, startMin: Math.min(plan.startMin, now), durMin: plan.durMin, path, fx, fy, ranger: this.d.ranger(), left: false, followed: false };
     this.visit = v; this.count++; this.reacted.clear();
+    if (now >= this.buzzUntil) this.buzzUntil = now + V.buzz.days * 1440; // one window per sighting: an overlapping second visit does not extend or stack it
     this.d.bus.emit('visitor:spotted', { x: spot.x, y: spot.y, fx, fy, ranger: v.ranger });
     return true;
   }
@@ -240,14 +243,20 @@ export class Visitor {
   /** True while it is out walking (for the stateful observers: sound, photo, spotted). */
   active(t = this.d.now()): boolean { return !!this.poseAt(t); }
 
+  /** Arrival multiplier while the sighting's buzz runs (1 otherwise and whenever the visitor is disabled). */
+  buzzMult(t = this.d.now()): number { return this.enabled && t < this.buzzUntil ? V.buzz.mult : 1; }
+  /** Whole sim days left of the buzz (0 = none). */
+  buzzDaysLeft(t = this.d.now()): number { return this.enabled && t < this.buzzUntil ? Math.ceil((this.buzzUntil - t) / 1440) : 0; }
+
   // ---- save -----------------------------------------------------------------------------------------------------------------------
-  serialize(): VisitorSave { return { last: this.last, count: this.count, visit: this.visit ? { ...this.visit, path: [...this.visit.path] } : null, reacted: [...this.reacted] }; }
+  serialize(): VisitorSave { return { last: this.last, count: this.count, buzzUntil: this.buzzUntil, visit: this.visit ? { ...this.visit, path: [...this.visit.path] } : null, reacted: [...this.reacted] }; }
   load(d: unknown): void {
     const s = (d ?? {}) as Partial<VisitorSave>;
     this.last = Number.isFinite(s.last) ? s.last! : -1; this.count = Number.isFinite(s.count) ? s.count! : 0;
+    this.buzzUntil = Number.isFinite(s.buzzUntil) ? s.buzzUntil! : 0;
     const v = s.visit;
     this.visit = v && Array.isArray(v.path) && v.path.length >= 4 && Number.isFinite(v.startMin) ? { ...v, path: v.path.map(Number) } : null;
     this.reacted = new Set(Array.isArray(s.reacted) ? s.reacted.map(Number) : []);
   }
-  reset(): void { this.last = -1; this.count = 0; this.visit = null; this.reacted.clear(); }
+  reset(): void { this.last = -1; this.count = 0; this.buzzUntil = 0; this.visit = null; this.reacted.clear(); }
 }

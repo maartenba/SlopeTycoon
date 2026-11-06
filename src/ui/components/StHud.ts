@@ -145,7 +145,10 @@ export class StHud extends StElement {
       this.snowEl.replaceChildren(icon('mountain', 14), ` ${Math.round(i.snowlineM).toLocaleString('en-US')} m`);
       this.weatherEl.title = this.tempEl.title = line;
       this.snowEl.title = `Snowline: snow settles above ${Math.round(i.snowlineM).toLocaleString('en-US')} m`;
-      this.badgeEl.hidden = !i.summerDiscount;
+      const buzz = (i.buzzDays ?? 0) > 0;
+      this.badgeEl.textContent = buzz ? 'Mountain buzz +10% visitors' : '-50% summer construction';
+      this.badgeEl.title = buzz ? `Visitors are flocking in: ${i.buzzDays} more day${i.buzzDays === 1 ? '' : 's'}` : '';
+      this.badgeEl.hidden = !(i.summerDiscount || buzz);
       this.seasonEl.textContent = (i.progress ?? '').replace(/^[^·]*· /, ''); // season name is already in row 2
       this.seasonEl.hidden = !i.progress;
       if (i.progress) this.seasonEl.title = i.daylight ? `${i.progress}\n${i.daylight}` : i.progress;

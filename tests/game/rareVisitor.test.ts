@@ -63,8 +63,8 @@ describe('rare visitor in the sim', () => {
   });
   it('news wording with and without a Ranger Station, and a ranger-only follow-up', () => {
     const e = { x: 10, y: 10, fx: 18, fy: 12 };
-    expect(formatEvent('visitor:spotted', { ...e, ranger: true })?.text).toBe('A yeti has been spotted! A ranger is investigating the area.');
-    expect(formatEvent('visitor:spotted', { ...e, ranger: false })?.text).toBe('Guests report a yeti up on the mountain. Nobody is free to investigate.');
+    expect(formatEvent('visitor:spotted', { ...e, ranger: true })?.text).toBe('A yeti has been spotted! A ranger is investigating the area. Visitors are flocking in to see it.');
+    expect(formatEvent('visitor:spotted', { ...e, ranger: false })?.text).toBe('Guests report a yeti up on the mountain. Nobody is free to investigate. Visitors are flocking in to see it.');
     expect(formatEvent('visitor:spotted', { ...e, ranger: true })?.focus).toMatchObject({ label: 'Show me' });
     const sim = mk(); const fol: unknown[] = []; sim.bus.on('visitor:followup', (x) => fol.push(x));
     sim.visitor.force(); sim.visitor.visit!.ranger = false; // no station: no follow-up
@@ -119,5 +119,33 @@ describe('rare visitor in the sim', () => {
   it('two hidden achievements exist and are gated on the render counters', () => {
     const r = ACHIEVEMENTS.filter((a) => a.id.startsWith('rare-'));
     expect(r.length).toBe(2); for (const a of r) { expect(a.hidden).toBe(true); expect(a.tracker.kind).toBe('render'); }
+  });
+});
+
+describe('rare visitor: mountain buzz (+10 % arrivals for one in-game month)', () => {
+  const attr = (sim: Sim): number => { sim.tick(60); return sim.guestSim.spawner.status().attractiveness; };
+  it('is +10 % from the sighting for 15 sim days, then gone; one window per sighting (no stacking)', () => {
+    const a = mk(), b = mk();
+    expect(b.visitor.force()).toBe(true);
+    const ratio = attr(b) / attr(a);
+    expect(ratio).toBeGreaterThan(1.099); expect(ratio).toBeLessThan(1.101);
+    expect(VISITOR.buzz.days).toBe(15);
+    const t0 = b.visitor.buzzUntil;
+    expect(b.visitor.buzzMult(t0 - 1)).toBe(1.1); expect(b.visitor.buzzMult(t0)).toBe(1); expect(b.visitor.buzzDaysLeft(t0 - 1440 * 15 + 1)).toBe(15);
+    b.visitor.visit = null; b.tick(240 * 3); b.visitor.force(); // a second sighting inside the window neither extends nor stacks it
+    expect(b.visitor.buzzUntil).toBe(t0); expect(b.visitor.buzzMult(b.visitor.buzzUntil - 1)).toBe(1.1);
+    b.tick(240 * 14); expect(b.visitor.buzzMult()).toBe(1); // 17 days in
+  });
+  it('does nothing when the visitor is off or before any sighting', () => {
+    const sim = mk({ visitor: false }); sim.visitor.buzzUntil = 1e9; expect(sim.visitor.buzzMult()).toBe(1);
+    expect(mk().visitor.buzzMult()).toBe(1);
+  });
+  it('is saved: reload mid window keeps it, and the run stays identical', async () => {
+    const sim = mk(); sim.visitor.force(); sim.tick(30);
+    const env = await snapshot(sim), b = loadFrom(env);
+    expect(b.visitor.buzzUntil).toBe(sim.visitor.buzzUntil); expect(b.visitor.buzzMult()).toBe(1.1);
+    applySave(sim, structuredClone(env.modules)); // control (as above): in-place apply carries the documented guest demotions
+    for (const x of [sim, b]) { x.ops.quality.attachTraffic(); x.tick(240); }
+    expect(stateHash(b).hash).toBe(stateHash(sim).hash);
   });
 });

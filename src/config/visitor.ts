@@ -17,6 +17,14 @@ export const VISITOR = {
   showMe: { min: 6, max: 12 },
   /** Guests within this many tiles of the visitor react once (most: a small mood bump, some: a brief fright; nobody is hurt). */
   reactR: 14, cheer: 0.05, fright: 0.06,
+  /**
+   * Mountain buzz: a sighting brings +10 % arrivals for ONE in-game month (a game month is 15 sim days: 12 months = 180-day year), counted from the start
+   * of the sighting. One window per sighting (a second visit inside it neither extends nor stacks it). Applied multiplicatively in the same
+   * arrival-rate hook as the Tourist Office (createSim `setAttractiveness`), so a stacked boost stays bounded by that product.
+   */
+  buzz: { mult: 1.1, days: 15 },
+  /** Which model is shown: 'plush' (plump storybook), 'shaggy' (tall, lean, scruffy), 'bigfoot' (broad, grey-white, apelike). `?visitorModel=` overrides it (testing). */
+  model: 'plush' as 'plush' | 'shaggy' | 'bigfoot',
   /** Fade in / out (sim minutes). */
   fadeIn: 20, fadeOut: 45,
 } as const;

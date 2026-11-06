@@ -795,8 +795,9 @@ export function createSim(opts: SimOptions) {
     news: (title, id) => bus.emit('milestone', { id, title, major: false }),
   });
   bus.on('day:changed', () => rivals.newDay());
+  let visitorRef: Visitor | null = null; // rare visitor (built further down): its sighting buzz is one more arrival factor
   let eventsRef: EventCalendar | null = null; // Events calendar (festival / critic / powder arrival effects), built further down
-  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * rivals.arrivalMult() * eco.arrivalMult());
+  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * (visitorRef?.buzzMult() ?? 1) * rivals.arrivalMult() * eco.arrivalMult());
   pricing.bind({
     date: () => game.date,
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
@@ -1302,6 +1303,7 @@ export function createSim(opts: SimOptions) {
     nudge: (id, d) => { const st = guestSim.store, sl = st.slotOf(id); if (sl >= 0) st.happiness[sl] = Math.max(0, Math.min(1, st.happiness[sl]! + d)); },
   });
   visitor.enabled = opts.visitor !== false && opts.autoEvents !== false && !sdef;
+  visitorRef = visitor;
   bus.on('time:hour', () => visitor.onHour());
   const resort = { name: resortNameOr(opts.resortName, seed) };
   const sim = {

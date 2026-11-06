@@ -2416,7 +2416,7 @@ if (ui && !DEMO) {
   hud.bindGuests(() => ({ count: guestSim.store.count, message: guestSim.spawner.status().text }));
   hud.bindWeather(bus, () => ({
     season: SEASON_LABELS[seasonOf(game.date)], fog: atmos.foggy, kind: weather.current.kind, tempC: weather.valleyTempAt(hourOfDay(game.date)),
-    snowlineM: altitudeMetres(weather.current.snowline), summerDiscount: isSummer(game.date),
+    snowlineM: altitudeMetres(weather.current.snowline), summerDiscount: isSummer(game.date), buzzDays: sim.visitor.buzzDaysLeft(),
     daylight: ((t) => `Sunrise ${fmtClock(t.sunrise)} · sunset ${fmtClock(t.sunset)} (${(t.sunset - t.sunrise).toFixed(1)} h of daylight)`)(sunTimes(game.date.day)),
     progress: formatSeasonProgress(((p) => ({ ...p, season: SEASON_LABELS[p.season], next: SEASON_LABELS[p.next] }))(seasonProgress(game.date))),
   }));
@@ -2510,7 +2510,7 @@ if (ui && !DEMO) {
   const mktPanel = el('st-marketing');
   const evPanel = el('st-events');
   evPanel.bind({
-    view: () => buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money),
+    view: () => { const v = buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money), bd = sim.visitor.buzzDaysLeft(); return bd > 0 ? { ...v, buzz: { text: `Mountain buzz +10% visitors (${bd} day${bd === 1 ? '' : 's'} left)` } } : v; },
     book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
     cancel: (id, start) => { if (!sim.events.cancel(id as FestivalId, start)) return 'Cannot cancel'; refreshUi(); return null; },
     showMe: (what, id) => {
