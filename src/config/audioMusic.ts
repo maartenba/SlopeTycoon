@@ -107,7 +107,7 @@ export const SITUATION = {
  * Airtime (owner, 2026-11-06: "if a song just started playing, keep it playing for at least 30 seconds before you start the next; these are long enough and deserve some airtime").
  * `minPlaySec`: a game track that is playing is never replaced by a SITUATION change (storm / night / festival cut-in) before it has actually played this many seconds
  * (media time: a pause or a hand-off to the bar does not count). Never applies to "Next track" (an explicit action, always immediate) or to the track simply ending.
- * Also the least time the bar music stays once it started (`HANDOFF.minApresSec`), so a quick fly-by does not cut a bar song mid-intro. Before: no minimum (a cut-in could replace a track a few seconds in).
+ * The bar music has its own, shorter minimum (`HANDOFF.minApresSec` = 10 s). Before: no minimum (a cut-in could replace a track a few seconds in).
  */
 export const MUSIC = { minPlaySec: 30 } as const;
 
@@ -135,7 +135,7 @@ export const MUSIC_PLAY = {
  * Hand-off between the game music and the bar music: the game music STOPS (fades out, holds its position, fades back in); the two never sound together.
  * Owner 2026-11-06: "apres-ski should still play, but probably only when slightly closer to the venues". Enter / exit levels (proximity x zoom window, `apresLevel`) were 0.12 / 0.04, now 0.28 / 0.09:
  * zoomed in, the bar music starts about 12.5 tiles from an open bar (was 16.7, 75 %) and hands back at about 17.5 tiles (was 19.4, 90 %); with the camera right at the bar it starts at zoom 26.7 (was 29.3).
- * `PROX.apres` (reach 22, zoom 34..12) and the bar gain curve are unchanged. `minApresSec` 4 -> `MUSIC.minPlaySec` (30): a quick fly-by does not cut a bar song mid-intro.
+ * `PROX.apres` (reach 22, zoom 34..12) and the bar gain curve are unchanged. `minApresSec` 4 -> 30 -> 10 (owner 2026-11-06: 30 was too long for the bar): a quick fly-by does not cut a bar song mid-intro. The game music keeps `MUSIC.minPlaySec` = 30.
  */
 export const HANDOFF = {
   /** Bar level (proximity x zoom window, 0..1) to start the bar music / to give the game music back. enter > exit = hysteresis. */
@@ -143,7 +143,7 @@ export const HANDOFF = {
   /** The level must stay beyond the threshold this long (s) before the state flips (no flip-flop while zooming). */
   enterDwell: 0.5, exitDwell: 2,
   /** Minimum time (s) spent in each steady state before the next switch may start. */
-  minApresSec: MUSIC.minPlaySec, minMainSec: 3,
+  minApresSec: 10, minMainSec: 3,
   /** Fades (s): game music out (before the bar music starts), bar music in, bar music out (before the game music returns), game music back in. */
   mainFadeOut: 0.7, apresFadeIn: 0.8, apresFadeOut: 0.6, mainFadeIn: 0.9,
 } as const;

@@ -81,11 +81,11 @@ describe('bar music hand-off: slightly closer, and bar songs keep their airtime'
     const h = new MusicHandoff(); for (let s = 0; s <= 100; s += 0.1) h.update(s < 20 ? 0.5 : 0.1, s); expect(h.phase).toBe('apres'); // 0.1 > exit: still there
     for (let s = 100; s <= 140; s += 0.1) h.update(0.05, s); expect(h.phase).toBe('main');
   });
-  it('the hand-off still happens (apres still plays) and the bar song holds for MUSIC.minPlaySec before it hands back', () => {
-    expect(HANDOFF.minApresSec).toBe(MUSIC.minPlaySec);
+  it('the hand-off still happens (apres still plays) and the bar song holds for HANDOFF.minApresSec (10 s, not the game music 30 s) before it hands back', () => {
+    expect(HANDOFF.minApresSec).toBe(10); expect(MUSIC.minPlaySec).toBe(30);
     const h = new MusicHandoff(); let applied = -1, back = -1;
     for (let s = 0; s <= 80; s += 0.1) { const lv = s < 3 ? 0.6 : 0; const p = h.update(lv, s); if (p === 'apres' && applied < 0) applied = s; if (p === 'toMain' && back < 0) back = s; }
-    expect(applied).toBeGreaterThan(0); expect(back - applied).toBeGreaterThanOrEqual(MUSIC.minPlaySec - 0.15);
+    expect(applied).toBeGreaterThan(0); expect(back - applied).toBeGreaterThanOrEqual(HANDOFF.minApresSec - 0.15); expect(back - applied).toBeLessThan(MUSIC.minPlaySec);
   });
 });
 
