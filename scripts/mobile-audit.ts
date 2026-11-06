@@ -57,7 +57,7 @@ const MEASURE = `(() => {
 })()`;
 
 const D = `const D=document,dock=D.querySelector('st-dock'),q=(t)=>D.querySelector(t);`;
-const CLOSE_ALL = `(async()=>{ ${D} dock.show(null); __slope.tools.reset?.(); __slope.touch?.toolChanged?.(); for (const t of ['st-settings','st-stats','st-help','st-pause-menu','st-whats-new']) { const e=q(t); try{ e&&e.close&&e.close(); }catch{} } try{ __slope.yearReport.el.close() }catch{}; window.__init=window.__init||{}; for (const t of ['st-news','st-goals']) { const b=q(t)?.shadowRoot?.querySelector('[aria-expanded]'); if (!b) continue; if (window.__init[t]===undefined) window.__init[t]=b.getAttribute('aria-expanded')==='true'; if ((b.getAttribute('aria-expanded')==='true')!==window.__init[t]) b.click(); } const a=q('st-assistant'); a&&a.toggleAdvice&&a.toggleAdvice(false); __slope.view&&0; __slope.select(null); })()`;
+const CLOSE_ALL = `(async()=>{ ${D} dock.show(null); __slope.tools.reset?.(); __slope.touch?.toolChanged?.(); for (const t of ['st-settings','st-stats','st-help','st-pause-menu','st-whats-new']) { const e=q(t); try{ e&&e.close&&e.close(); }catch{} } try{ __slope.yearReport.el.close() }catch{}; window.__init=window.__init||{}; for (const t of ['st-news','st-goals']) { const b=q(t)?.shadowRoot?.querySelector('[aria-expanded]'); if (!b) continue; if (window.__init[t]===undefined) window.__init[t]=b.getAttribute('aria-expanded')==='true'; if ((b.getAttribute('aria-expanded')==='true')!==window.__init[t]) b.click(); } const a=q('st-assistant'); a&&a.toggleAdvice&&a.toggleAdvice(false); __slope.view&&0; __slope.select(null); const tt=q('st-toast'); if (tt) tt.style.visibility=''; })()`;
 
 interface State { id: string; kind: 'default' | 'drawer' | 'peek' | 'modal' | 'bare'; setup: string; note?: string; tapMap?: boolean }
 const drawer = (id: string): State => ({ id: `drawer-${id}`, kind: 'drawer', setup: `${D} dock.show('${id}')` });
@@ -67,7 +67,7 @@ const STATES: State[] = [
   { id: 'rudi-tip', kind: 'default', setup: `${D} const a=q('st-assistant'); a.toggleAdvice&&a.toggleAdvice(true)` },
   { id: 'news-open', kind: 'default', setup: `${D} const n=q('st-news'); const b=n.shadowRoot.querySelector('[aria-expanded]'); if(b&&b.getAttribute('aria-expanded')!=='true') b.click()` },
   { id: 'toasts', kind: 'default', setup: `${D} const t=q('st-toast'); t.show('Snow is on the way: the lifts open at 08:00','info',4500); t.show('A guest left a review: lovely pistes','info',4500); t.show('Not enough money for a Lodge','warn',4500)` },
-  { id: 'inspector', kind: 'default', setup: `${D} const b=__slope.buildings.all().find(x=>x.type==='baseLodge'); __slope.select(b.id)` },
+  { id: 'inspector', kind: 'default', setup: `${D} const b=__slope.buildings.all().find(x=>x.type==='baseLodge'); __slope.select(b.id); const tt=q('st-toast'); if (tt) tt.style.visibility='hidden'`, note: 'random event toasts hidden: the toasts state measures them' },
   ...['buildings', 'lifts', 'paths', 'pistes', 'terrain', 'landscape', 'view', 'finance', 'ops', 'marketing', 'pricing'].map(drawer),
   { id: 'peek-building-tool', kind: 'peek', setup: `${D} dock.show('buildings'); await new Promise(r=>setTimeout(r,500)); const c=dock.shadowRoot.querySelector('.card:not(.locked)'); c&&c.click(); await new Promise(r=>setTimeout(r,900))` },
   { id: 'peek-lift-tool', kind: 'peek', setup: `${D} dock.show('lifts'); await new Promise(r=>setTimeout(r,500)); const c=dock.shadowRoot.querySelector('.card:not(.locked)'); c&&c.click(); await new Promise(r=>setTimeout(r,900))` },
