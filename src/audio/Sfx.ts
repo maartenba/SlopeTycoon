@@ -150,13 +150,35 @@ export const RECIPES: Record<SfxName, Recipe> = {
     t.frequency.setValueAtTime(150 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(110 * o.pitch, s.t0 + 0.7);
     swellEnv(e.gain, s.t0, 0.03 * o.gain, 0.25, 0.7, 0.3); connectChain(t, f, e); toOut(s, e, o.pan, 1);
   } },
-  // A far-off, low call across the snow (rare event cue): a slow-swelling breathy tone that glides down, with a little wind. Quiet, ambience bus.
-  distantCall: { priority: PRIORITY.ambience, bus: 'ambience', dur: 3.4, maxPerSec: 1, minGap: 10, build: (s, o) => {
-    const t = s.osc('sawtooth', 150 * o.pitch), v = s.osc('sine', 5.2), vg = s.gain(5 * o.pitch), f = s.filter('bandpass', 420, 2.2), e = s.gain(0);
-    t.frequency.setValueAtTime(130 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(190 * o.pitch, s.t0 + 0.9); t.frequency.linearRampToValueAtTime(95 * o.pitch, s.t0 + 3.1);
-    connectChain(v, vg); vg.connect(t.frequency as unknown as NodeLike);
-    swellEnv(e.gain, s.t0, 0.035 * o.gain, 0.9, 3.2, 1.6); connectChain(t, f, e); toOut(s, e, o.pan, 1);
-    noiseHit(s, 'pink', 'bandpass', 700, 0.8, 0, 0.012 * o.gain, 2.4, o.pan);
+  /**
+   * The rare visitor's call (owner: the first version, 0.035 peak through a narrow band-pass on the 0.28 ambience bus, was inaudible): a soft, low,
+   * drawn-out 'whoo-ooh', two syllables over ~2.3 s with a slow pitch glide, a gentle vibrato, an 'oo' vowel (two parallel formants) and a breath of
+   * wind, plus a short feedback-delay tail. SFX bus (so master + SFX sliders and mute apply), measured master peak ~0.11 at gain 1 (the church bell measures ~0.03 on the quieter
+   * ambience bus), `gain` scales it (the spatial / global calls set the level). Rate limiting for the game is done by `VisitorCalls`.
+   */
+  distantCall: { priority: PRIORITY.action, bus: 'sfx', dur: 5.2, maxPerSec: 1, minGap: 5, build: (s, o) => {
+    const T = s.t0, f0 = (hz: number): number => hz * o.pitch;
+    const src = s.osc('sawtooth', f0(120)), vib = s.osc('sine', 4.6), vg = s.gain(3.5 * o.pitch);
+    src.frequency.setValueAtTime(f0(118), T); src.frequency.linearRampToValueAtTime(f0(196), T + 0.8); src.frequency.linearRampToValueAtTime(f0(172), T + 1.05);
+    src.frequency.linearRampToValueAtTime(f0(184), T + 1.35); src.frequency.linearRampToValueAtTime(f0(86), T + 2.5);
+    connectChain(vib, vg); vg.connect(src.frequency as unknown as NodeLike);
+    const amp = s.gain(0), p = 0.08 * o.gain; // pre-formant level: the formants take ~ -10 dB
+    const ap = amp.gain; ap.cancelScheduledValues(T); ap.setValueAtTime(0.0001, T);
+    for (const [at, v] of [[0.55, 1], [0.95, 0.8], [1.12, 0.4], [1.45, 1], [2.1, 0.7], [2.6, 0.0001]] as const) ap.linearRampToValueAtTime(Math.max(0.0001, p * v), T + at);
+    const lp = s.filter('lowpass', 1100, 0.6), dry = s.gain(1), bus = s.gain(1);
+    connectChain(src, lp, amp);
+    const f1 = s.filter('bandpass', 330, 3), f2 = s.filter('bandpass', 760, 4), g1 = s.gain(1.5), g2 = s.gain(0.6);
+    amp.connect(f1); amp.connect(f2); f1.connect(g1); f2.connect(g2); g1.connect(dry); g2.connect(dry);
+    const breath = s.noiseSrc('pink'), bf = s.filter('bandpass', 520, 1.2), bg = s.gain(0);
+    bg.gain.setValueAtTime(0.0001, T); bg.gain.linearRampToValueAtTime(0.02 * o.gain, T + 0.7); bg.gain.linearRampToValueAtTime(0.0001, T + 2.5);
+    connectChain(breath, bf, bg); bg.connect(dry);
+    dry.connect(bus);
+    const dl = s.b.createDelay?.(1);
+    if (dl) { s.nodes.push(dl); // reverb-ish tail: a darkening feedback delay
+      const fb = s.gain(0.5), tail = s.filter('lowpass', 700, 0.5), wet = s.gain(0.55);
+      dl.delayTime.value = 0.31; dry.connect(dl); connectChain(dl, tail, fb); fb.connect(dl); tail.connect(wet); wet.connect(bus);
+    }
+    if (o.pan) connectChain(bus, s.pan(o.pan), s.out); else connectChain(bus, s.out);
   } },
   // Distant thunder in a storm (restrained, ambience bus; Ambience.update rolls it about once every 75 s): the synth twin of the thunder samples = a low brown-noise rumble that swells and rolls off.
   thunder: { priority: PRIORITY.ambience, bus: 'ambience', dur: 4.2, maxPerSec: 1, minGap: 8, build: (s, o) => {

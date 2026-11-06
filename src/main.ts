@@ -208,6 +208,7 @@ import { modalStack } from '@/ui/modal';
 import { showModal, confirmDialog } from '@/ui/components/StModal';
 import { BackcountryFlags } from '@/render/BackcountryFlags';
 import { VisitorView } from '@/render/VisitorView';
+import { VisitorCalls } from '@/audio/visitorCall';
 import { SledRunView } from '@/render/SledRunView';
 import { routeInfo, OVERRIDE_CONFIRM } from '@/ui/backcountryFormat';
 import type { StRouteInspector } from '@/ui/components/StRouteInspector';
@@ -748,6 +749,15 @@ const bcFlags = new BackcountryFlags(grid, sim.backcountry); // Phase 6 Task 32:
 renderer.scene.add(bcFlags.group);
 const visitorView = new VisitorView(grid, sim.visitor, () => game.date.year * DAYS_PER_YEAR * 1440 + game.date.day * 1440 + game.date.minute); // rare high-country visitor: one mesh + one footprint layer, nothing while no visit is on
 renderer.scene.add(visitorView.group);
+// The visitor's call (audio/visitorCall.ts): a global quiet call at the sighting (pending until the audio is unlocked), a spatial one when the camera is near, again on 'Show me'. Pan = where it is on screen.
+const visitorCalls = new VisitorCalls((o) => audioRef?.sfx.play('distantCall', o) ?? false, () => performance.now() / 1000);
+const visitorAudioFacts = (): { active: boolean; dist: number; pan: number } => {
+  const p = sim.visitor.poseAt();
+  if (!p) return { active: false, dist: Infinity, pan: 0 };
+  const c = renderer.controls.target, v = new THREE.Vector3(p.x, c.y, p.y).project(renderer.camera);
+  return { active: true, dist: Math.hypot(p.x - c.x, p.y - c.z), pan: Number.isFinite(v.x) ? v.x : 0 };
+};
+bus.on('visitor:spotted', () => visitorCalls.sighting(visitorAudioFacts().pan));
 const sledRunView = new SledRunView(grid, networks); // Phase 7 M7.3: sled runs + alpine coaster rails, one merged mesh
 renderer.scene.add(sledRunView.group);
 const landscapeTool = new LandscapeTool({
@@ -781,6 +791,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   springMarkers.update();
   bcFlags.update();
   visitorView.update(dt);
+  { const f = visitorAudioFacts(); visitorCalls.frame(f.active, f.dist, f.pan); }
   sledRunView.update();
   updateFestival(dt);
   tourVehicles.update(sim.loop.tickCount);
@@ -2137,6 +2148,7 @@ const showPanel = (p: PanelRef | null | undefined): void => {
 const goTo = (f: FocusTarget): void => {
   if (f.quiet) renderer.controls.target.y = heightAt(grid, f.x + 0.5, f.y + 0.5); // high ground: look at the ground there, not at sea level
   renderer.controls.focusOn(f.x + 0.5, f.y + 0.5);
+  if (f.quiet && f.label === 'Show me' && sim.visitor.active()) visitorCalls.showMe(visitorAudioFacts().pan);
   if (f.entityKind === 'building' && f.entityId !== undefined && buildings.get(f.entityId)) select(f.entityId);
   else if (f.entityKind === 'guest' && f.entityId !== undefined && guestSim.store.slotOf(f.entityId) >= 0) { guestSelId = f.entityId; refreshGuestInfo(); }
   const b = f.entityKind === 'building' && f.entityId !== undefined ? buildings.get(f.entityId) : undefined;
