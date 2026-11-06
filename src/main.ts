@@ -421,6 +421,7 @@ const sim = createSim({
   ...(DEMO ? { hints: false, preset: townOf(DEMO_TOWN.id)!.preset, startSeason: DEMO_TOWN.season } : {}),
   ...(DEMO ? { remoteSupply: false } : {}), // Phase 6 Task 2: +25% upkeep for sites supplied only on foot (trail / piste edge)
   ...(DEMO ? { campaignsV2: false } : {}), // Phase 6 Task 50: rail share tracking + the capped train sustainability bonus (Come by Train)
+  ...(DEMO || TUTORIAL_MODE ? { visitor: false } : {}), // rare high-country visitor: never in the title demo or the guided tutorial
   ...(DEMO ? { stories: false } : {}), // Story guests (M5.4 Task 22): about 1.5% of arrivals get a name and one wish; never in the title demo
   ...(TUTORIAL_MODE ? { rivalMarket: false } : {}), // rival market share scales arrivals; the guided tutorial resort stays exactly neutral (Task 23)
   ...(DEMO ? { autoEvents: false } : {}), // Events calendar: Almabtrieb / New Year / critic / powder day run by themselves in a real game (not in the title demo)
@@ -2132,6 +2133,7 @@ const goTo = (f: FocusTarget): void => {
   if (f.entityKind === 'building' && f.entityId !== undefined && buildings.get(f.entityId)) select(f.entityId);
   else if (f.entityKind === 'guest' && f.entityId !== undefined && guestSim.store.slotOf(f.entityId) >= 0) { guestSelId = f.entityId; refreshGuestInfo(); }
   const b = f.entityKind === 'building' && f.entityId !== undefined ? buildings.get(f.entityId) : undefined;
+  if (f.quiet) { pingMarker.set(null); return; }
   pingMarker.set(b ? { x: b.x, y: b.y, w: b.w, h: b.h, ok: false } : f.rect ? { ...f.rect, ok: true } : { x: Math.floor(f.x) - 1, y: Math.floor(f.y) - 1, w: 3, h: 3, ok: false });
   pingUntil = performance.now() + 6000;
 };

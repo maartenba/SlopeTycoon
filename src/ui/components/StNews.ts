@@ -175,7 +175,7 @@ ${SHEET_PANEL_CSS}st-sheet[data-sheet] .list{max-height:none;overflow:visible}`;
       if (f) {
         const go = (): void => { if (this.api?.goTo) this.api.goTo(f); else this.api?.focus?.(f.x, f.y); };
         el.title = 'Click to look at it'; el.addEventListener('click', go);
-        const b = document.createElement('button'); b.className = 'go'; b.textContent = '⌖ Go to'; b.title = 'Move the camera there';
+        const b = document.createElement('button'); b.className = 'go'; b.textContent = f.label ? `⌖ ${f.label}` : '⌖ Go to'; b.title = 'Move the camera there';
         b.addEventListener('click', (ev) => { ev.stopPropagation(); go(); });
         tx.append(b);
       }

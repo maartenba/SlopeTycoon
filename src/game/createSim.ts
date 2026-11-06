@@ -60,6 +60,7 @@ import { CROSSING } from '../config/crossings';
 import { FACILITY, measureFacilities } from '../sim/meta/Facilities';
 import { costumed } from '../sim/events/Costume';
 import { CARNIVAL } from '../config/festivals';
+import { Visitor } from '../sim/nature/Visitor';
 import { hasStreet } from '../sim/events/Street';
 import { resortNameOr } from '../sim/ResortName';
 import { skyClosedReason } from '../sim/attractions/SkySites';
@@ -136,6 +137,8 @@ export interface SimOptions {
   hooks?: SimHooks;
   /** Automatic events of the Events calendar (Almabtrieb, New Year, critic visits, powder days). Default ON (= the real game); pass false to opt out (title demo). Booked festivals always work. */
   autoEvents?: boolean;
+  /** Rare winter high-country visitor. Default ON (= the real game); the tutorial and the title demo pass false. Also off in scenarios and when autoEvents is false. */
+  visitor?: boolean;
   /** Rival market share scales arrivals. Default ON; the guided tutorial passes false (exactly neutral). Scenarios are always neutral. */
   rivalMarket?: boolean;
   /** Story guests (named guests with one wish; sim/guests/Stories.ts). Default ON; the title demo opts out. */
@@ -1288,6 +1291,18 @@ export function createSim(opts: SimOptions) {
       };
     },
   });
+  // Rare high-country visitor: observer state (saved in the 'visitor' module, never in stateHash); the schedule is a pure function of (seed, year).
+  const visitor = new Visitor({
+    size, grid, seed, bus, forest: terrainInfo.forestDensity,
+    now: () => absDay() * 1440 + game.date.minute,
+    blocked: (i) => grid.occupancy.flags[i] !== 0 || (networks.layers[i] ?? 0) !== 0 || (networks.kind[i] ?? 0) !== 0,
+    liftPoints: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { const a = l.bottom, b = l.top, n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2)); for (let k = 0; k <= n; k++) out.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n }); } return out; },
+    ranger: () => buildings.all().some((b) => b.active && b.type === 'rangerStation'),
+    guests: (cb) => { const st = guestSim.store; for (let i = 0; i < st.limit; i++) if (st.alive[i]) cb(st.x[i]!, st.y[i]!, st.id[i]!); },
+    nudge: (id, d) => { const st = guestSim.store, sl = st.slotOf(id); if (sl >= 0) st.happiness[sl] = Math.max(0, Math.min(1, st.happiness[sl]! + d)); },
+  });
+  visitor.enabled = opts.visitor !== false && opts.autoEvents !== false && !sdef;
+  bus.on('time:hour', () => visitor.onHour());
   const resort = { name: resortNameOr(opts.resortName, seed) };
   const sim = {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
@@ -1299,7 +1314,7 @@ export function createSim(opts: SimOptions) {
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,
     staff, staffUpgrades, events, stories, names, nature, leavers, rating, goals, progression, gate, advisor, session, stats, yearReports, loans, ticketing: ticketingRef, finance, liftOps, creditCtx, lodgeTouched, relief, closedDays,
     /** The resort name (M7.8, docs/schirmbar.md): observer state, saved in the 'resort' module (not part of the state hash). */
-    resort,
+    resort, visitor,
     setResortName(raw: unknown): string { const n = resortNameOr(raw, seed); resort.name = n; return n; },
     /** The validated new-game options this game was created with (stored in the save, 'config' module). */
     config: cfg, difficulty: diff,

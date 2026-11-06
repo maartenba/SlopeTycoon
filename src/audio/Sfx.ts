@@ -8,7 +8,7 @@ import type { AudioLog } from './audioLog';
 export const SFX_NAMES = [
   'click', 'hover', 'tick', 'blip', 'thud', 'crunch', 'scrape', 'kaching', 'clank', 'bell', 'grind', 'alarm',
   'chimeInfo', 'chimeImportant', 'chimeCritical', 'rescue', 'avalanche', 'bankruptcy', 'ratingUp', 'ratingDown', 'season',
-  'birdChirp', 'cowbell', 'churchBell', 'drip', 'creak', 'shutter',
+  'birdChirp', 'cowbell', 'churchBell', 'drip', 'creak', 'shutter', 'distantCall',
   'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'crossingBell', 'thunder',
 ] as const;
 export type SfxName = (typeof SFX_NAMES)[number];
@@ -149,6 +149,14 @@ export const RECIPES: Record<SfxName, Recipe> = {
     const t = s.osc('triangle', 150 * o.pitch), f = s.filter('bandpass', 400, 1.5), e = s.gain(0);
     t.frequency.setValueAtTime(150 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(110 * o.pitch, s.t0 + 0.7);
     swellEnv(e.gain, s.t0, 0.03 * o.gain, 0.25, 0.7, 0.3); connectChain(t, f, e); toOut(s, e, o.pan, 1);
+  } },
+  // A far-off, low call across the snow (rare event cue): a slow-swelling breathy tone that glides down, with a little wind. Quiet, ambience bus.
+  distantCall: { priority: PRIORITY.ambience, bus: 'ambience', dur: 3.4, maxPerSec: 1, minGap: 10, build: (s, o) => {
+    const t = s.osc('sawtooth', 150 * o.pitch), v = s.osc('sine', 5.2), vg = s.gain(5 * o.pitch), f = s.filter('bandpass', 420, 2.2), e = s.gain(0);
+    t.frequency.setValueAtTime(130 * o.pitch, s.t0); t.frequency.linearRampToValueAtTime(190 * o.pitch, s.t0 + 0.9); t.frequency.linearRampToValueAtTime(95 * o.pitch, s.t0 + 3.1);
+    connectChain(v, vg); vg.connect(t.frequency as unknown as NodeLike);
+    swellEnv(e.gain, s.t0, 0.035 * o.gain, 0.9, 3.2, 1.6); connectChain(t, f, e); toOut(s, e, o.pan, 1);
+    noiseHit(s, 'pink', 'bandpass', 700, 0.8, 0, 0.012 * o.gain, 2.4, o.pan);
   } },
   // Distant thunder in a storm (restrained, ambience bus; Ambience.update rolls it about once every 75 s): the synth twin of the thunder samples = a low brown-noise rumble that swells and rolls off.
   thunder: { priority: PRIORITY.ambience, bus: 'ambience', dur: 4.2, maxPerSec: 1, minGap: 8, build: (s, o) => {

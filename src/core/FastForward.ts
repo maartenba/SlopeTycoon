@@ -56,7 +56,7 @@ export const EVENT_STOPS: { [K in GameEventName]: Stopper<K> } = {
   'money:changed': never, 'loan:taken': never, 'speed:changed': never, 'season:changed': never,
   'incident:avalanche': (p) => (p.buried && p.buried > 0 && !p.controlled ? 'an avalanche caught guests' : null),
   'incident:wildlife': (p) => (p.outcome === 'attack' ? 'a wildlife attack' : null),
-  'wildlife:scare': never, 'wildlife:hazed': never, 'wildlife:relocated': never, 'ops:grooming': never,
+  'visitor:spotted': never, 'visitor:followup': never, 'wildlife:scare': never, 'wildlife:hazed': never, 'wildlife:relocated': never, 'ops:grooming': never,
   'incident:injury': never,
   'incident:created': (p) => (p.severity >= 2 ? 'a critical incident' : null),
   'incident:resolved': never,

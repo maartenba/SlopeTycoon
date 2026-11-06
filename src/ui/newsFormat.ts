@@ -19,7 +19,7 @@ export const DEFAULT_MUTED: readonly NewsCategory[] = ['weather', 'ops'];
 export type CounterId = 'arrived' | 'left' | 'rescues' | 'injuries' | 'grooming' | 'wildlife' | 'avalancheControl';
 
 /** Camera/selection target of a location-bearing message. Tile coordinates (x, y); an entity is selected when the kind supports it. */
-export interface FocusTarget { x: number; y: number; entityKind?: 'building' | 'lift' | 'guest'; entityId?: number; /** Footprint to outline (a suggested building site); default is a 3x3 ring around the point. */ rect?: { x: number; y: number; w: number; h: number } }
+export interface FocusTarget { x: number; y: number; /** Button text (default 'Go to'). */ label?: string; /** No ping marker on arrival (the camera only moves near it). */ quiet?: boolean; entityKind?: 'building' | 'lift' | 'guest'; entityId?: number; /** Footprint to outline (a suggested building site); default is a 3x3 ring around the point. */ rect?: { x: number; y: number; w: number; h: number } }
 
 export interface NewsItem {
   text: string;
@@ -126,6 +126,8 @@ export const NEWS_FORMATTERS: Table = {
   },
   'wildlife:hazed': (e) => ({ text: `Rangers hazed a ${e.animal} away from guests`, severity: 'good', tier: 'trivial', icon: '🧑‍🌾', key: 'wildlife:hazed', category: 'incident', focus: xy(e.x, e.y), counter: 'wildlife' }),
   'wildlife:relocated': (e, c) => ({ text: `Rangers relocated a ${e.animal} away from ${place(c, e.x, e.y).name} (${money(c, e.cost)})`, severity: 'good', tier: 'important', icon: '🐻', key: 'wildlife:relocated', category: 'incident', focus: xy(e.toX, e.toY) }),
+  'visitor:spotted': (e) => ({ text: e.ranger ? 'A yeti has been spotted! A ranger is investigating the area.' : 'Guests report a yeti up on the mountain. Nobody is free to investigate.', severity: 'info', tier: 'important', icon: '🐾', key: 'visitor:spotted', category: 'incident', focus: { x: e.fx - 0.5, y: e.fy - 0.5, label: 'Show me', quiet: true } }),
+  'visitor:followup': (e) => ({ text: e.tracks === 'footprints' ? 'Only footprints found.' : 'The ranger found large tracks but no yeti.', severity: 'info', tier: 'info', icon: '🐾', key: 'visitor:followup', category: 'incident', focus: xy(e.x, e.y) }),
   'ops:grooming': (e) => (e.tiles > 0 ? { text: `Grooming done: ${e.vehicles} snowcat${e.vehicles === 1 ? '' : 's'}, ${e.tiles} tiles`, severity: 'info', tier: 'trivial', icon: '🚜', key: 'grooming', category: 'ops', counter: 'grooming' } : null),
   'incident:injury': (e) => ({ text: 'A guest was injured on the slopes', severity: 'warn', tier: 'trivial', icon: '🤕', key: 'injury', category: 'incident', focus: xy(e.x, e.y, 'guest', e.guestId), counter: 'injuries' }),
   'incident:created': (e, c) => (e.severity >= 1

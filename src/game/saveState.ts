@@ -56,6 +56,8 @@ export const SAVE_MODULES: SaveModule[] = [
   { key: 'config', version: 1, serialize: (sim) => ({ ...sim.config }), load: () => { /* consumed by createSim (terrain, difficulty, radius are derived from it) */ } },
   // The resort name (M7.8): shown on the Schirmbar banner and in the menus. Observer: it never changes a simulation outcome (stateHash unchanged). Additive: old saves have none -> the seed's default name.
   { key: 'resort', version: 1, observer: true, serialize: (sim) => ({ name: sim.resort.name }), load: (sim, d) => { sim.resort.name = resortNameOr((d as { name?: unknown } | null)?.name, sim.seed); }, reset: (sim) => { sim.resort.name = defaultResortName(sim.seed); } },
+  // Rare high-country visitor: the current visit record. Observer (not in stateHash); additive: old saves have none.
+  { key: 'visitor', version: 1, observer: true, serialize: (sim) => sim.visitor.serialize(), load: (sim, d) => sim.visitor.load(d), reset: (sim) => sim.visitor.reset() },
   {
     key: 'grid', version: 1,
     serialize: (sim) => { const g = sim.grid; return { heights: g.heights.slice(), tileType: g.tileType.slice(), snow: g.snowDepth.slice(), flags: g.flags.slice(), occId: g.occupancy.entityId.slice(), occFlags: g.occupancy.flags.slice() }; },
