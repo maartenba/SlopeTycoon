@@ -1,5 +1,5 @@
 import type { SeasonId, WeatherKind } from '../core/events';
-import { BAR_PLAYLIST, FALLBACK, MENU_PLAYLIST, PLAYLISTS, SITUATION, TRACK_BY_ID, type SituationId } from '../config/audioMusic';
+import { BAR_PLAYLIST, FALLBACK, MENU_PLAYLIST, MUSIC, PLAYLISTS, SITUATION, TRACK_BY_ID, type SituationId } from '../config/audioMusic';
 
 /** Pure selection logic of the in-game music (docs/audio.md "Music"): situation from the game state, playlist rotation, hysteresis, fade envelopes, loudness trim. No audio, no DOM. */
 
@@ -100,6 +100,16 @@ export class SituationTracker {
 
 /** True for situations that cut in with a crossfade instead of waiting for the track to end. */
 export const isUrgent = (s: SituationId): boolean => (SITUATION.urgent as readonly SituationId[]).includes(s);
+
+/** True once a track has really played `MUSIC.minPlaySec` seconds (media time): until then no situation change may replace it. "Next track" and the track's own end ignore this. */
+export const playedLongEnough = (positionSec: number): boolean => positionSec >= MUSIC.minPlaySec;
+/**
+ * Pure: may a situation-driven crossfade (storm / night / festival cut-in) replace the playing track now? The situation must differ from the playing track's, be urgent,
+ * the last cut-in must be `SITUATION.minChangeGapSec` ago and the track must have played `MUSIC.minPlaySec`. A change that is refused now stays pending (the committed situation still differs) and applies later.
+ */
+export function mayCutIn(o: { situation: SituationId; playingSituation: SituationId | null; now: number; lastChangeAt: number; positionSec: number }): boolean {
+  return o.playingSituation !== o.situation && isUrgent(o.situation) && o.now - o.lastChangeAt >= SITUATION.minChangeGapSec && playedLongEnough(o.positionSec);
+}
 
 /** Equal-power fade gain at progress p (0..1): `in` rises 0 -> 1, `out` falls 1 -> 0; in^2 + out^2 = 1 for a click-free crossfade. */
 export function fadeIn(p: number): number { return Math.sin(Math.min(1, Math.max(0, p)) * Math.PI / 2); }

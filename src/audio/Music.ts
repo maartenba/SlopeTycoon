@@ -1,9 +1,9 @@
 import { Rng } from '../core/Rng';
-import { HANDOFF, MUSIC_PLAY, SITUATION, type SituationId } from '../config/audioMusic';
+import { HANDOFF, MUSIC_PLAY, type SituationId } from '../config/audioMusic';
 import type { AudioEngine } from './AudioEngine';
 import type { GainLike } from './backend';
 import { MusicHandoff, type HoldPhase } from './musicHold';
-import { isUrgent, pickNext, SituationTracker, trackTitle, type MusicInput } from './musicPlaylist';
+import { mayCutIn, pickNext, SituationTracker, trackTitle, type MusicInput } from './musicPlaylist';
 import { TrackPlayer, type PlayerDeps, type Prepared } from './TrackPlayer';
 
 export type { MusicInput };
@@ -21,7 +21,7 @@ export interface MusicOpts {
 /**
  * The in-game music: owner-provided mp3 files (docs/audio.md "Music") chosen by situation (season, time of day, weather, festival, busy resort, night alternative;
  * `musicPlaylist.ts` + the PLAYLISTS table) and played by a `TrackPlayer`. Track changes are conservative: a new situation must hold for a while (`SituationTracker`),
- * most changes wait for the playing track to end, only a storm, nightfall or a festival cut in with a crossfade (and not more often than `SITUATION.minChangeGapSec`).
+ * most changes wait for the playing track to end, only a storm, nightfall or a festival cut in with a crossfade (not more often than `SITUATION.minChangeGapSec`, and never before the track has played `MUSIC.minPlaySec` = 30 s).
  * Pause / mute / speed 0 / the hand-off to the bar music fade the gain, then pause the element (position kept); the music resumes exactly where it stopped.
  * Graph: track gain -> hold (hand-off) -> gate (pause / mute fade) -> the engine's music bus (Music slider, Master, mute, ambience-only apply).
  */
@@ -127,7 +127,7 @@ export class Music {
     }
     if (this.queuedFor !== sit) this.preloadNext(sit);
     if (this.skipRequested) { this.skipRequested = false; void this.begin(sit, P.skipCrossfade, cur.track.id); return; }
-    if (this.curSituation !== sit && isUrgent(sit) && now - this.lastChangeAt >= SITUATION.minChangeGapSec) { this.lastChangeAt = now; void this.begin(sit, P.situationCrossfade, cur.track.id); return; }
+    if (mayCutIn({ situation: sit, playingSituation: this.curSituation, now, lastChangeAt: this.lastChangeAt, positionSec: this.player.position })) { this.lastChangeAt = now; void this.begin(sit, P.situationCrossfade, cur.track.id); return; }
     if (this.player.remaining <= P.trackCrossfade + 0.1) void this.begin(sit, Math.min(P.trackCrossfade, Math.max(0.3, this.player.remaining)));
   }
 

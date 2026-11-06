@@ -221,5 +221,14 @@ export const SYNTH_KEEP: Readonly<Partial<Record<LayerId, number>>> = { wind: 0,
 /** Extra one-shot samples (rustle / lap / sleighBell) take over part of these synth beds once their pool is ready. */
 export const SYNTH_SHRINK_WITH_SHOTS: Readonly<Partial<Record<LayerId, { role: ShotRole; keep: number }>>> = { leaves: { role: 'rustle', keep: 0.4 }, water: { role: 'lap', keep: 0.6 }, sleigh: { role: 'sleighBell', keep: 0.4 } };
 
-/** Rates (per second at intensity 1) of the extra one-shot rolls in Ambience.update. */
-export const SAMPLE_RATES = { rustle: 0.45, lap: 0.35, sleighBell: 0.6, thunderStorm: 1 / 75, nightBird: 0.06 } as const;
+/** Rates (per second at intensity 1) of the extra one-shot rolls in Ambience.update. `nightBird` 0.06 -> 0.03 (owner "faint honk" report 2026-11-06: the night call is a loud-ish clip). */
+export const SAMPLE_RATES = { rustle: 0.45, lap: 0.35, sleighBell: 0.6, thunderStorm: 1 / 75, nightBird: 0.03 } as const;
+
+/**
+ * Roles whose RECORDINGS are not played (the synthesised recipe of the same name plays instead; the files stay in the repo and in `SAMPLE_DEFS`, nothing is fetched for them).
+ * `churchBell` (owner report "a beep / honk happens very often", 2026-11-06): the only recording is a 0.43 s, dense clip (rms -12 dB) that struck every game hour (6 s at 1x) near ANY building;
+ * measured 27-36 strikes per real minute at speed 3 (`npm run audio:census`). The soft synth sine bell (what 0.5.x played) is back. Remove the id here to bring the clip back.
+ */
+export const SAMPLE_RETIRED: readonly ShotRole[] = ['churchBell'];
+/** Minimum seconds between two SAMPLE plays of a role (a play inside the gap is dropped, never replaced by the synth): the chairlift squeak is a 3 s clip, it must not sound every few seconds. */
+export const SAMPLE_MIN_GAP: Readonly<Partial<Record<ShotRole, number>>> = { clank: 12 };

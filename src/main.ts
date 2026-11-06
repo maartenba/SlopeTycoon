@@ -138,6 +138,7 @@ import { onPalette } from '@/config/palette';
 import { createAudio, samplesDisabledByUrl, type AudioApi } from '@/audio';
 import { createMenuAudio } from '@/audio/menuAudio';
 import { countTrunks, hashCount } from '@/audio/worldProbe';
+import { crossingBellLevel } from '@/audio/proximity';
 import { AMB } from '@/audio/Ambience';
 import type { StSettings } from '@/ui/components/StSettings';
 import type { StSaveLoad } from '@/ui/components/StSaveLoad';
@@ -1230,7 +1231,7 @@ renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
 // Rail level crossings (Phase 6 Task 10, docs/crossings.md): barriers / lamps animate from the sim's closed state; the bell is quiet and fades with camera distance.
 const crossingsView = new RailCrossingsView(grid, sim.crossings);
 renderer.scene.add(crossingsView.group);
-crossingsView.onBell = (x, z): void => { const c = renderer.camera.position, d = Math.hypot(c.x - x, c.z - z), g = Math.max(0, 1 - d / 70); if (g > 0.04) audioRef?.sfx.play('crossingBell', { gain: g * g, pan: Math.max(-0.6, Math.min(0.6, (x - c.x) / 60)) }); };
+crossingsView.onBell = (x, z): void => { const walk = renderer.viewMode.mode === 'walk', lx = walk ? renderer.rig.pose.x : renderer.controls.target.x, lz = walk ? renderer.rig.pose.z : renderer.controls.target.z, zoom = walk ? AMB.walkZoom : renderer.controls.camera.top - renderer.controls.camera.bottom, g = crossingBellLevel(Math.hypot(lx - x, lz - z), zoom); if (g > 0.04) audioRef?.sfx.play('crossingBell', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (x - lx) / 30)) }); }; // PROX.crossing: only a bell near the looked-at spot, zoomed in
 guestRenderer.isKid = (slot) => guestSim.families.isKid(slot);
 guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.target[slot]!)?.type; return ty === 'iceRink' ? 1 : ty === 'beach' ? 2 : 0; };
 {
@@ -3093,6 +3094,8 @@ hideSplash();
   active: () => sim.events.active().map((e) => e.id), upcoming: () => sim.events.upcoming().map((u) => `${u.id}+${u.daysAway}`),
 };
 Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, {
+  /** Debug (owner 'what was that beep?'): `__slope.audio.log(true)` prints every ambient one-shot / loop start (id, sample|synth, gain); `.counts()` = per-minute table (docs/playtest-audio.md). */
+  audio: audioRef ? { log: audioRef.log, counts: audioRef.log.counts, engine: audioRef.engine } : null,
   skyActivity, festivalDressing, fx: fxApi, view: viewApi, ff, startFf,
   /** QA (touch e2e): the ToolManager and the touch wire (controller / gestures state). */
   tools, touch: touchWire, selection: () => ({ building: selectedId, piste: selectedPiste }),

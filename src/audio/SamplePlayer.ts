@@ -1,5 +1,5 @@
 import { Rng } from '../core/Rng';
-import { BED_SLOTS, EXTRA_ROLE_META, POOLS, SAMPLES, SAMPLE_BY_ID, SHOT_ROLES, sampleBytes, sampleUrl, type BedSlot, type SampleDef, type ShotRole } from '../config/audioSamples';
+import { BED_SLOTS, EXTRA_ROLE_META, POOLS, SAMPLES, SAMPLE_BY_ID, SAMPLE_MIN_GAP, SAMPLE_RETIRED, SHOT_ROLES, sampleBytes, sampleUrl, type BedSlot, type SampleDef, type ShotRole } from '../config/audioSamples';
 import type { AudioEngine, BusId } from './AudioEngine';
 import type { BufferLike, GainLike, SourceLike } from './backend';
 import { gateLevels, pickIndex, shotParams, slotTargets, synthScale } from './sampleMix';
@@ -44,6 +44,10 @@ export class SamplePlayer {
   private crossingLevel = 0; private crossingUntil = -1;
   private rng: () => number;
   private tick = 0;
+  /** File of the last sample one-shot (debug log). */
+  lastFile: string | null = null;
+  /** Debug recorder: bed starts are logged (`__slope.audio.log`). */
+  log: import('./audioLog').AudioLog | null = null;
   /** Counters for tests / debug (window.__audio.samples.stats). */
   stats = { shots: 0, fallbacks: 0, loaded: 0, failed: 0, evicted: 0, bedsStarted: 0 };
 
@@ -121,7 +125,7 @@ export class SamplePlayer {
    * `tag` restricts the pool (birdChirp: partridge / gull / night; absent = every tag but `night`).
    */
   playShot(role: ShotRole, o: { pitch?: number; gain?: number; pan?: number; delay?: number; tag?: string }, v: { name?: string; priority: number; bus: BusId }): boolean {
-    if (!this.enabled || !this.engine.running) return false;
+    if (!this.enabled || !this.engine.running || this.retired(role)) return false;
     if (!this.roleReady(role, o.tag)) { this.load(POOLS[role].map((s) => s.id)); this.stats.fallbacks++; return false; }
     let def = this.pick(role, o.tag);
     if (def && !o.tag && role === 'birdChirp' && def.tag === 'night') def = this.pick(role, 'partridge') ?? def; // night calls only when asked for
@@ -134,8 +138,15 @@ export class SamplePlayer {
       if (pan) { const pn = s.pan(pan); g.connect(pn); pn.connect(s.out); } else g.connect(s.out);
     }, o.delay ?? 0);
     if (!voice) return false;
-    this.stats.shots++;
+    this.stats.shots++; this.lastFile = def.id; this.lastPlay.set(role, this.engine.now());
     return true;
+  }
+  /** True for a role whose recording is switched off (`SAMPLE_RETIRED`): the synth recipe plays instead and nothing is fetched. */
+  retired(role: ShotRole): boolean { return SAMPLE_RETIRED.includes(role); }
+  /** True while a role's recording is ready but still inside its minimum gap (`SAMPLE_MIN_GAP`): the caller plays NOTHING (neither sample nor synth). */
+  gapBlocked(role: ShotRole): boolean {
+    const gap = SAMPLE_MIN_GAP[role];
+    return !!gap && this.enabled && this.roleReady(role) && this.engine.now() - (this.lastPlay.get(role) ?? -1e9) < gap;
   }
   /** Extra one-shots (rustle / lap / sleighBell): sample only, rate-limited, nothing plays while the pool is not ready (the synth bed carries the sound). */
   playExtra(role: 'rustle' | 'lap' | 'sleighBell', o: { pitch?: number; gain?: number; pan?: number }): boolean {
@@ -195,6 +206,7 @@ export class SamplePlayer {
       src.start(0, SAMPLES.randomOffset ? this.rng() * def.dur : 0);
       this.runs.set(sl.id, { slot: sl, def, src, gain, quietSince: -1, level: g });
       this.stats.bedsStarted++;
+      this.log?.record({ t: this.engine.now(), id: sl.id, kind: 'loop', bus: 'ambience', source: 'sample', gain: g, file: def.id });
     } catch { /* leave the synth bed in charge */ }
   }
   private stopBed(id: string): void {

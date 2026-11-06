@@ -16,11 +16,11 @@ const run = (h: MusicHandoff, level: (t: number) => number, seconds: number, dt 
 
 describe('music hand-off state machine (pure)', () => {
   it('walks main -> toApres -> apres -> toMain -> main with the configured fades', () => {
-    const h = new MusicHandoff(); const log = run(h, (t) => (t < 10 ? 0.5 : 0), 30);
+    const h = new MusicHandoff(); const log = run(h, (t) => (t < 10 ? 0.5 : 0), 60);
     const first = (p: string): number => log.find((x) => x.phase === p)!.t;
     expect(first('toApres')).toBeGreaterThanOrEqual(HANDOFF.enterDwell - 1e-9); expect(first('toApres')).toBeLessThan(1);
     expect(first('apres') - first('toApres')).toBeGreaterThanOrEqual(HANDOFF.mainFadeOut - 1e-9); expect(first('apres') - first('toApres')).toBeLessThan(HANDOFF.mainFadeOut + 0.2);
-    expect(first('toMain')).toBeGreaterThanOrEqual(10 + HANDOFF.exitDwell - 0.15);
+    expect(first('toMain')).toBeGreaterThanOrEqual(10 + HANDOFF.exitDwell - 0.15); expect(first('toMain') - first('apres')).toBeGreaterThanOrEqual(HANDOFF.minApresSec - 0.15); // a bar song keeps its minimum airtime
     expect(log.find((x) => x.t > first('toMain') && x.phase === 'main')!.t - first('toMain')).toBeGreaterThanOrEqual(HANDOFF.apresFadeOut - 1e-9);
     expect(h.phase).toBe('main'); expect(h.transitions).toBe(4);
   });
@@ -29,7 +29,7 @@ describe('music hand-off state machine (pure)', () => {
     run(h, (t) => (HANDOFF.exitLevel + HANDOFF.enterLevel) / 2 + 0.02 * Math.sin(t * 5), 30); expect(h.transitions).toBe(0);
     const g = new MusicHandoff(); run(g, (t) => (Math.floor(t / 0.3) % 2 === 0 ? 0.6 : 0), 20); expect(g.transitions).toBe(0); // in for 0.3 s, out for 0.3 s: under the enter dwell
     // once in, a dip shorter than the exit dwell (or a level inside the band) keeps the bar music
-    const k = new MusicHandoff(); const lg = run(k, (t) => (t > 8 && t < 8 + HANDOFF.exitDwell - 0.5 ? 0 : t > 15 ? 0.08 : 0.6), 40);
+    const k = new MusicHandoff(); const lg = run(k, (t) => (t > 8 && t < 8 + HANDOFF.exitDwell - 0.5 ? 0 : t > 15 ? (HANDOFF.exitLevel + HANDOFF.enterLevel) / 2 : 0.6), 40);
     expect(lg.filter((x) => x.phase === 'toMain').length).toBe(0); expect(k.phase).toBe('apres');
   });
   it('minimum dwell: no flip-flop even with a level that alternates every few seconds (at most one hand-off per min time)', () => {
@@ -112,7 +112,7 @@ describe('game music stops near the bar and resumes exactly (fake backend, fake 
     await step(10, 0);
     const hold = (music as unknown as { hold: { gain: { calls: string[] } } }).hold.gain, c0 = hold.calls.length;
     await step(6, 1); const out = hold.calls.slice(c0); expect(out).toContain('lin'); expect(out.filter((c) => c === 'set').length).toBeLessThanOrEqual(3);
-    const c1 = hold.calls.length; await step(14, 0); expect(hold.calls.slice(c1)).toContain('lin');
+    const c1 = hold.calls.length; await step(14 + HANDOFF.minApresSec, 0); expect(hold.calls.slice(c1)).toContain('lin');
   });
   it('a bar that is out of reach never stops the game music, and with no media support (offline renderer) nothing is fetched', async () => {
     const { music, step, handoff, mb } = await rig();

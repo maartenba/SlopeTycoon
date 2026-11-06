@@ -3,6 +3,7 @@ import { midiToHz, pluckEnv, swellEnv, type NodeScope } from './synth';
 import type { GainLike, NodeLike } from './backend';
 import { POOLS, type ShotRole } from '../config/audioSamples';
 import type { SamplePlayer } from './SamplePlayer';
+import type { AudioLog } from './audioLog';
 
 export const SFX_NAMES = [
   'click', 'hover', 'tick', 'blip', 'thud', 'crunch', 'scrape', 'kaching', 'clank', 'bell', 'grind', 'alarm',
@@ -13,7 +14,8 @@ export const SFX_NAMES = [
 export type SfxName = (typeof SFX_NAMES)[number];
 
 export interface PlayOpts { pitch?: number; pan?: number; gain?: number; /** kaching: extra coins coalesced into the arpeggio. */ count?: number; delay?: number;
-  /** Sample sub-pool (birdChirp: 'partridge' | 'gull' | 'night'); ignored by the synth. */ tag?: string }
+  /** Sample sub-pool (birdChirp: 'partridge' | 'gull' | 'night'); ignored by the synth. */ tag?: string;
+  /** Play the synthesised recipe even when a recording exists (event cues: the chairlift squeak must not answer every lift event). */ noSample?: boolean }
 
 interface Recipe {
   priority: number;
@@ -194,6 +196,8 @@ export class Sfx {
   private lim = new RateLimiter();
   /** Recorded samples (SamplePlayer): when set and the role's files are decoded they replace the synth recipe of the same name; the recipe stays the fallback. */
   samples: SamplePlayer | null = null;
+  /** Debug recorder (`__slope.audio.log(true)`); null = off. */
+  log: AudioLog | null = null;
   /** Coins waiting to be merged into the next ka-ching arpeggio. */
   private pendingCoins = 0;
   private pendingGain = 0;
@@ -216,7 +220,8 @@ export class Sfx {
     const opts = { ...o, pitch: o.pitch ?? 1, gain: (o.gain ?? 1) * (r.loud ? this.engine.loudScale : 1) * (name === 'kaching' && merged ? Math.max(1, this.pendingGain) : 1), count: (o.count ?? 0) + merged };
     const sp = this.samples;
     let played = false;
-    if (sp?.enabled) {
+    if (sp?.enabled && !o.noSample && name in POOLS && sp.gapBlocked(name as ShotRole)) return false; // a recording inside its minimum gap: nothing plays (no synth twin on top)
+    if (sp?.enabled && !o.noSample) {
       if (name === 'crossingBell') played = sp.ring(opts.gain);
       else if (name in POOLS && POOLS[name as ShotRole].length) played = sp.playShot(name as ShotRole, { pitch: opts.pitch, gain: opts.gain, ...(o.pan !== undefined ? { pan: o.pan } : {}), ...(o.delay ? { delay: o.delay } : {}), ...(o.tag ? { tag: o.tag } : {}) }, { name, priority: r.priority, bus: r.bus });
     }
@@ -226,6 +231,7 @@ export class Sfx {
     if (r.group) this.lim.record('g:' + r.group, now);
     if (name === 'kaching') { this.pendingCoins = 0; this.pendingGain = 0; }
     this.played[name] = (this.played[name] ?? 0) + 1;
+    if (this.log?.recording) this.log.record({ t: now, id: name, kind: name === 'crossingBell' && played ? 'ring' : 'shot', bus: r.bus, source: played ? 'sample' : 'synth', gain: opts.gain, ...(played && sp?.lastFile ? { file: sp.lastFile } : {}) });
     return true;
   }
 

@@ -11,6 +11,7 @@ import { Sfx } from './Sfx';
 import { SamplePlayer } from './SamplePlayer';
 import { PROX } from '../config/audioProximity';
 import { MUSIC_PLAY } from '../config/audioMusic';
+import { AudioLog, type AudioLogMode } from './audioLog';
 import { WorldProbe, type ProbeDeps } from './worldProbe';
 
 export interface AudioDeps {
@@ -38,6 +39,8 @@ export interface AudioApi {
   ambience: Ambience;
   music: Music;
   settings: AudioSettings;
+  /** Debug: `log(true)` prints every ambient one-shot / loop start to the console (id, source sample|synth, gain, time), `log('all')` everything, `log(false)` stops; `counts()` = per-id counts and per-minute rates. docs/playtest-audio.md. */
+  log: ((mode?: AudioLogMode) => AudioLogMode) & { counts: () => ReturnType<AudioLog['counts']>; entries: () => AudioLog['entries'] };
   /** Call every frame with the frame delta (s); work is throttled internally (~10 Hz). */
   frame(dt: number): void;
   /** News feed output: critical / important items chime. */
@@ -52,6 +55,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   const sfx = new Sfx(engine);
   const samples = new SamplePlayer(engine, d.samples);
   sfx.samples = samples;
+  const log = new AudioLog(); sfx.log = log; samples.log = log;
   const probe = new WorldProbe(d.probe);
   const handoff = new MusicHandoff(); // shared: near an open Apres-Ski Bar the game music stops, the bar music plays (and back)
   const ambience = new Ambience(engine, sfx, d.rng, handoff, d.musicPlayer ? { player: d.musicPlayer } : undefined);
@@ -87,6 +91,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   let acc = 0;
   return {
     engine, sfx, samples, ambience, music, settings,
+    log: Object.assign((mode?: AudioLogMode): AudioLogMode => { if (mode !== undefined) log.set(mode); return log.mode; }, { counts: () => log.counts(), entries: () => log.entries }),
     frame(dt: number): void {
       acc += dt;
       if (acc >= every) { const e = d.probe.env(); music.setInputs({ season: e.season, weather: e.weather, hour: e.hour, sunrise: e.sunrise, sunset: e.sunset, busy: Math.min(1, (e.guests ?? 0) / 300), festival: !!e.festival }); }

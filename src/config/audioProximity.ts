@@ -36,6 +36,12 @@ export const PROX = {
     /** Fixed composition seed used when no game seed is given (same song on every machine). */
     seed: 0x4a9e5,
   },
+  /**
+   * Rail level-crossing bell (docs/crossings.md): only the camera TARGET (the spot you look at, not the far-away ortho camera body) near the crossing hears it, and only zoomed in.
+   * Before (owner "faint beep / honk" report, 2026-11-06): gain (1 - d / 70)^2 from the camera POSITION, no zoom window: audible across most of a 128 map at any zoom, a 32 s bell loop with the sample.
+   * Now: level (1 - d / reach)^2 x zoom window (silent at zoomFar and beyond, full at zoomNear).
+   */
+  crossing: { reach: 30, zoomFar: 40, zoomNear: 14 },
   /** Update rate of the proximity sampling: AudioApi.frame() tick period (s). 0.1 = 10 Hz. */
   tickEvery: 0.1,
 } as const;

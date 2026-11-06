@@ -85,7 +85,13 @@ export const AMB = {
   /** Walk mode (Task 12): the listener is the walker, which counts as a very close view (zoom proxy). Crowd / lift / birds / water are then at their near-field levels; the probe radius shrinks to ~8 tiles around the walker. */
   walkZoom: 6,
   /** Max one-shot rates per second at intensity 1. */
-  rates: { birds: 0.8, cowbells: 0.15, clanks: 0.35, drips: 0.8, creaks: 0.1 } as const,
+  rates: { birds: 0.8, cowbells: 0.15, clanks: 0.08, drips: 0.8, creaks: 0.1 } as const,
+  /**
+   * Village hour chime (owner "faint beep / honk very often" report, 2026-11-06). A game hour is only 6.25 s at 1x, and ANY building counts as the village, so the chime used to sound 1-3 strikes every
+   * 6 s in daytime (measured 27-36 a minute at speed 3, `npm run audio:census`). Now: at most one chime every `minGapSec` (audio clock, so game speed does not change it), at most `maxStrikes`
+   * strikes, only with the camera really in the village (`minBells` of the 0..1 buildings x zoom level; was 0.15). Before: no gap, 3 strikes, 0.15.
+   */
+  church: { minGapSec: 60, maxStrikes: 2, minBells: 0.3 } as const,
   /** Per-layer ceiling (linear gain on the ambience bus). */
   layerMax: { wind: 0.2, rain: 0.245, leaves: 0.2, crickets: 0.05, insects: 0.05, crowd: 0.2, lift: 0.16, water: 0.08, stream: 0.17, rapids: 0.14, apres: PROX.apres.murmurMax, snowcat: 0.16, heli: 0.2, quad: 0.045, sleigh: 0.03, campfire: 0.035, concert: 0.04, carnival: 0.036, muffled: 0.175, cannon: 0.06 } as Record<LayerId, number>,
   /** Layer crossfade time constant (s). */
@@ -257,6 +263,8 @@ export class Ambience {
   lastState: AmbienceState | null = null;
   /** liftPan for clanks (-1..1). */
   liftPan = 0;
+  /** Audio-clock time of the last church chime (the rate cap `AMB.church.minGapSec`). */
+  private lastChime = -1e9;
   /** Bar music player (src/audio/BarMusic.ts). */
   readonly apres: BarMusic;
 
@@ -297,14 +305,17 @@ export class Ambience {
     if (s.weather === 'storm' && this.rng() < SAMPLE_RATES.thunderStorm * dt) this.sfx.play('thunder', { pitch: 0.9 + this.rng() * 0.2, pan: (this.rng() * 2 - 1) * 0.5, gain: 0.6 + this.rng() * 0.4 });
     roll('cowbells', 'cowbell', 1); roll('drips', 'drip', 1); roll('creaks', 'creak', 1);
     const cr = mix.clanks * AMB.rates.clanks;
-    if (cr > 0.001 && this.rng() < cr * dt) this.sfx.play('clank', { pitch: 0.8 + this.rng() * 0.3, pan: this.liftPan, gain: 0.3 + 0.7 * mix.clanks });
+    if (cr > 0.001 && this.rng() < cr * dt) this.sfx.play('clank', { pitch: 0.8 + this.rng() * 0.3, pan: this.liftPan, gain: 0.2 + 0.5 * mix.clanks });
     return mix;
   }
 
   /** Called on `time:hour`: the village church strikes during the day when near buildings. */
   onHour(hour: number): void {
-    if (!this.mix || this.mix.bells < 0.15) return;
-    const n = churchStrikes(hour, this.lastState?.sunrise, this.lastState?.sunset);
+    if (!this.mix || this.mix.bells < AMB.church.minBells) return;
+    const now = this.engine.now();
+    if (now - this.lastChime < AMB.church.minGapSec) return;
+    const n = Math.min(AMB.church.maxStrikes, churchStrikes(hour, this.lastState?.sunrise, this.lastState?.sunset));
+    if (n > 0) this.lastChime = now;
     for (let i = 0; i < n; i++) this.sfx.play('churchBell', { delay: i * 1.8, gain: 0.4 + 0.6 * this.mix.bells });
   }
 
