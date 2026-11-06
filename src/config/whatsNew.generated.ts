@@ -4,14 +4,14 @@ import type { WhatsNewEntry } from './whatsNew';
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
     "version": "0.6.0",
-    "date": "2026-11-03",
+    "date": "2026-11-06",
     "highlights": [
-      "The Schirmbar: a small domed bar with a striped roof that you can put right beside a piste or a lift station. Skiers stop for a drink on the way…",
-      "It opens in good weather only and only in winter; a storm, heavy snow, rain, fog or strong wind closes it (the card says why), and you can close it…",
-      "Your resort has a name: pick one in the New Game dialog (or take the suggestion), rename it any time in Settings. It is on the Schirmbar banner, in…",
-      "Smoother chairs, cabins and trees up close, and rounder shores for lakes and rivers.",
+      "The Schirmbar: a small domed bar you can put right beside a piste or a lift station. Skiers stop for a drink on the way down. It opens in winter and…",
+      "Your resort has a name: pick one in the New Game dialog (or take the suggestion) and rename it any time in Settings. It shows on the Schirmbar…",
+      "New music: the title screen and the game now play a set of songs that fit the season, the time of day and the weather. Next to an open bar the…",
+      "Recorded sounds: footsteps, bird calls, bells, wind, rain, thunder and more are now real recordings mixed with the old sounds. If one is missing…",
       "Sun shadows on the High setting now fall on buildings, trees and paths, and also work in the ride, photo and walk views.",
-      "A steadier title screen camera, and no more shimmer at the foot of lift towers."
+      "Smoother lakes, rivers, rocks and shrubs, rounder cabins and buildings, a steadier title screen camera, and no more shimmer at the foot of lift…"
     ]
   },
   {

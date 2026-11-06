@@ -86,7 +86,7 @@
   },
   "0.6.0": {
     "tagline": "a bar on the slope",
-    "lead": "This release adds the Schirmbar, a small domed bar you can put right beside a piste or a lift station. Skiers stop for a drink on the way down, and it plays some apres-ski music when you zoom in. It only opens in winter and in good weather, and you can close it yourself. Your resort also has a name now: pick one when you start a game or change it in Settings, and it is written on the banner. Lakes and rivers have softer banks, chairs and trees look rounder up close, and the sun shadows reach more of the scene. I have only tried the bar in short test runs on a software renderer, so the numbers and the look still need a real playthrough.",
+    "lead": "This release adds the Schirmbar, a small domed bar you can put right beside a piste or a lift station. Skiers stop for a drink on the way down, and it plays some apres-ski music when you zoom in. It only opens in winter and in good weather, and you can close it yourself. Your resort also has a name now: pick one when you start a game or change it in Settings. The game has new music as well, a set of songs that follow the season, the time of day and the weather, and many of the sounds are now real recordings: footsteps, birds, bells, wind and thunder. Lakes and rivers have softer banks, buildings look rounder, and the sun shadows reach more of the scene. I have only tried all this on a software renderer and measured the sound rather than listened to every part of it, so the look and the levels still need a real playthrough.",
     "shot": "schirmbar-open"
   }
 }
