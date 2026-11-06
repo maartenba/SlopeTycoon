@@ -3,6 +3,15 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.1",
+    "date": "2026-11-06",
+    "highlights": [
+      "A few small surprises up on the mountain. They are rare, they happen in winter, and no spoilers here.",
+      "Two new achievements to find. They stay hidden until you earn them.",
+      "A faint new sound now and then, far away across the snow."
+    ]
+  },
+  {
     "version": "0.6.0",
     "date": "2026-11-06",
     "highlights": [
@@ -23,17 +32,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "An open Apres-Ski Bar plays a quiet polka when you zoom in close to it.",
       "Birds are quieter and come forward when you zoom in; streams and rivers babble or rush when you are beside them.",
       "A Support page with a Ko-fi link; nothing is loaded from Ko-fi until you click."
-    ]
-  },
-  {
-    "version": "0.5.0",
-    "date": "2026-11-03",
-    "highlights": [
-      "Smoother animals: deer, ibex, foxes and the rest have rounded bodies, tapered legs, horns and ears instead of boxes and sticks.",
-      "Rounder buildings, lifts and vehicles: vaulted hotel canopies, a barn with a gambrel roof, round rails and tower tubes, curved lift station roofs…",
-      "A new set of lift icons in the Lifts drawer: each family (T-bar, fixed and detachable chairs, bubble chairs, gondola, cabin, funicular) has its own…",
-      "The edge of the map is a layered rock cliff with ledges and a grassy lip, and drawn rivers and ponds have soft, rounded shorelines instead of tile…",
-      "Real sun shadows on the High graphics setting, and a soft contact shadow under buildings, towers and forests on every setting."
     ]
   }
 ];

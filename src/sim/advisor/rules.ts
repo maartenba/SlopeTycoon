@@ -340,6 +340,8 @@ export const RULES: readonly Rule[] = [
     }
     return null;
   }, false, true),
+  // A one-line aside, only while a rare visit's tracks are still fresh (never before the first one)
+  rule('visitor.tip', 1, (c) => { const v = c.sim.visitor.visit; return c.sim.visitor.count >= 1 && v ? { id: 'visitor.tip', severity: 'info', ...TEXT.visitorTip(), target: { x: Math.floor(v.fx), y: Math.floor(v.fy) } } : null; }, true, true),
   // Tourist Office (M7.4, docs/m74-buildings.md): a settled resort (a base lodge, 15 guests, 2 stars) without one: +6 % arrivals for a few thousand dollars
   rule('tourist.office', 1, (c) => {
     const sim = c.sim;

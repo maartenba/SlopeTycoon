@@ -4,6 +4,20 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-06 (pre-release)
+
+A small update: a few surprises up on the mountain. Nothing in the economy changed.
+
+### Highlights
+
+- A few small surprises up on the mountain. They are rare, they happen in winter, and no spoilers here.
+- Two new achievements to find. They stay hidden until you earn them.
+- A faint new sound now and then, far away across the snow.
+
+### Changes
+
+- A few small surprises up on the mountain (winter only, rare, harmless; no change to the economy or the balance). Adds one small save module (older saves load as before) and two hidden achievements.
+
 ## [0.6.0] - 2026-11-06 (pre-release)
 
 The Schirmbar release: a domed bar you can put anywhere on the slope, and a name for your resort. Plus new music, recorded sounds, softer shores and shadows that reach every view. The economy and your old saves are unchanged.

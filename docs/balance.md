@@ -398,3 +398,7 @@ Nothing re-recorded by M7.4 itself: the only golden that moved is the `progressi
 
 ## M7.8 re-record (Schirmbar, resort name; `docs/schirmbar.md`)
 Only the `progression` part of the staff golden (`tests/sim/staff.test.ts`, 64 / seed 61, 200 days) moved: `424b7091` -> `4bddb238`. Reason: the new unlock row (`schirmbar`, level 2) changes the saved unlock table; nothing else in that run changed (every other part, the bot money and the balance suite are byte-identical). The plain `Bot` builds no Schirmbar, so no guest, economy or sim part moves. The resort name lives in an observer save module (`resort`), outside `stateHash`; the `barStopped` map is saved only while not empty. `npm run test:balance`: see the commit message for the run.
+
+## 0.6.1 check (small winter surprises)
+
+Observer state only (own save module, not in `stateHash`; the schedule is a pure function of seed and year) plus a tiny one-off mood nudge for guests that happen to stand within sight of a remote visit. `npm run test:balance`: 48 passed, goldens unchanged, no re-record.

@@ -341,6 +341,11 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'visitor.tip', daily: true,
+    setup: (s) => { s.visitor.count = 1; s.visitor.visit = { year: 1, startMin: 0, durMin: 600, path: [10, 10, 12, 12], fx: 20, fy: 20, ranger: false, left: true, followed: false }; },
+    fixes: [{ name: 'the tracks are gone', apply: (s) => { s.visitor.visit = null; } }],
+  },
+  {
     id: 'tourist.office', daily: true,
     setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; },
     fixes: [
