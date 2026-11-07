@@ -51,6 +51,7 @@ describe('support.js (click to load)', () => {
     expect(f).not.toBeNull();
     expect(f.getAttribute('src')).toBe(`${KOFI}/?hidefeed=true&widget=true&embed=true&preview=true`);
     expect(f.getAttribute('title')).toBeTruthy(); expect(f.getAttribute('height')).toBe('712'); expect(f.getAttribute('loading')).toBe('lazy'); expect(f.getAttribute('referrerpolicy')).toBe('no-referrer');
+    expect(f.getAttribute('sandbox')).toContain('allow-scripts'); expect(f.getAttribute('sandbox')).not.toContain('allow-top-navigation '); expect(f.getAttribute('allow')).toBe('payment');
     expect(f.getAttribute('style')).toContain('width:100%'); expect(f.getAttribute('style')).toContain('#f9f9f9');
     expect(document.querySelectorAll('iframe').length).toBe(1);
   });
