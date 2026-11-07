@@ -26,7 +26,7 @@ Statistics are kept for the retention period configured in the Google Analytics 
 
 The site and the game link to my page on **Ko-fi** (`https://ko-fi.com/slopetycoon`) if you want to support the game. These are plain links: nothing is requested from Ko-fi until you click one. On the [support page](../support/) there is also a Ko-fi widget. It is **not loaded until you click "Show the Ko-fi widget"**, and only then does your browser contact `ko-fi.com`.
 
-Once you are on Ko-fi, or the widget is loaded, Ko-fi sees your visit and may set its own cookies and process payments under its own privacy policy. This site sends nothing about you to Ko-fi, and the widget is never loaded in the game.
+Once you are on Ko-fi, or the widget is loaded, Ko-fi sees your visit and may set its own cookies, may load its own analytics inside the widget, and processes payments under its own privacy policy. This site sends nothing about you to Ko-fi, and the widget is never loaded in the game.
 
 ## Where your saves live
 
