@@ -10,6 +10,12 @@ import type { LayerId } from '../audio/Ambience';
 /** Licence keys allowed in the repo (tests/repo/sfxAssets.test.ts): public domain or CC0 only. `-collection` / `-freesound`: CC0 per the collection / Freesound page, the owner verifies on the page (public/audio/README.md). */
 export const SAMPLE_LICENCES = ['CC0', 'PD', 'CC0-collection', 'CC0-freesound'] as const;
 export type SampleLicence = (typeof SAMPLE_LICENCES)[number];
+/**
+ * The ONE file with an UNKNOWN licence (owner decision, explicit, 2026-11-07, advised against once): a groomer clip downloaded from TikTok, author unknown, no licence verified.
+ * TODO: replace `bed-groomer-01` with a CC0 recording, or remove it, before any commercial release (public/audio/README.md "Files with unknown licence", docs/audio.md).
+ * tests/repo/sfxAssets.test.ts allows exactly this id and fails for any other file without a CC0 / PD key.
+ */
+export const UNKNOWN_LICENCE_SAMPLES = ['bed-groomer-01'] as const;
 
 /** One-shot roles. The first 14 replace an existing synthesised `Sfx` recipe of the same name (the recipe stays as the fallback); `rustle`, `lap` and `sleighBell` are extra one-shots layered on top of the synth beds (no fallback needed: the beds carry it). */
 export const SHOT_ROLES = ['stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'thud', 'birdChirp', 'cowbell', 'churchBell', 'bell', 'clank', 'creak', 'avalanche', 'thunder', 'rustle', 'lap', 'sleighBell', 'towerClank', 'distantCall'] as const;
@@ -33,7 +39,7 @@ export interface SampleDef {
   gainJitter: number;
   /** +- fraction of random playback-rate (pitch) per play, on top of the caller's pitch. */
   pitchJitter: number;
-  licence: SampleLicence;
+  licence: SampleLicence | 'UNKNOWN';
   /** Measured on the shipped mp3 (ffmpeg volumedetect): duration (s), peak and mean (rms) level dBFS. */
   dur: number; peakDb: number; rmsDb: number;
 }
@@ -152,6 +158,7 @@ export const SAMPLE_DEFS: readonly SampleDef[] = [
   { id: 'mach-lifthum-02', role: 'bed', trim: 1.652, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0', dur: 2.4, peakDb: -13.1, rmsDb: -26.3 },
   { id: 'mach-heli-01', role: 'bed', trim: 1.143, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0', dur: 21.02, peakDb: -3.8, rmsDb: -23.1 },
   { id: 'mach-snowcat-01', role: 'bed', trim: 1.439, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0', dur: 18.2, peakDb: -13.2, rmsDb: -25.1 },
+  { id: 'bed-groomer-01', role: 'bed', trim: 1.238, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'UNKNOWN', dur: 13.0, peakDb: -7.5, rmsDb: -23.8 },
   { id: 'mach-cannon-01', role: 'bed', trim: 1.17, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 27.5, peakDb: -9.8, rmsDb: -23.3 },
   { id: 'thunder-01', role: 'thunder', trim: 0.681, rate: 22050, gainJitter: 0.1, pitchJitter: 0.02, licence: 'PD', dur: 30.0, peakDb: -3.6, rmsDb: -21.2 },
   { id: 'thunder-02', role: 'thunder', trim: 0.673, rate: 22050, gainJitter: 0.1, pitchJitter: 0.02, licence: 'CC0', dur: 30.0, peakDb: -3.5, rmsDb: -24.5 },
@@ -230,7 +237,9 @@ export const BED_SLOTS: readonly BedSlot[] = [
   { id: 'river-a', sample: 'bed-river-01', gate: 'stream', layer: 'stream', weight: 0.4 },
   { id: 'rapids-a', sample: 'bed-rapids-01', gate: 'rapids', layer: 'rapids', weight: 1 },
   { id: 'river-b', sample: 'bed-river-02', gate: 'rapids', layer: 'rapids', weight: 0.6 },
-  { id: 'snowcat', sample: 'mach-snowcat-01', gate: 'snowcat', layer: 'snowcat', weight: 1 },
+  { id: 'snowcat', sample: 'mach-snowcat-01', gate: 'snowcat', layer: 'snowcat', weight: 0.6 },
+  // Groomer working bed (owner decision 2026-11-07, UNKNOWN licence, see UNKNOWN_LICENCE_SAMPLES): plays together with the idle engine bed (weight 0.6 + 0.8; the layer's ceiling is shared), same gate / proximity.
+  { id: 'snowcat-groomer', sample: 'bed-groomer-01', gate: 'snowcat', layer: 'snowcat', weight: 0.8 },
   { id: 'heli', sample: 'mach-heli-01', gate: 'heli', layer: 'heli', weight: 1 },
   { id: 'campfire', sample: 'bed-campfire-01', gate: 'campfire', layer: 'campfire', weight: 1 },
   // Snow cannon: the older recording is the far / default bed; close by (gate cannonNear) one of three nearer recordings plays instead, re-picked at random on every activation (group).
