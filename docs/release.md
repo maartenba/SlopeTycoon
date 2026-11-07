@@ -19,7 +19,7 @@ A small update: a few rare winter surprises (observer state, its own additive sa
 | Mobile | `npm run mobile:audit` | all acceptance thresholds met |
 | Desktop | `npm run desktop:diff` (before = 365b8a5, after = this commit) | SAME on all six screens (0.0000 %) |
 | Flicker | `npm run flicker -- --only 64-winter-day` | rotfine 0.66 (0.6.0: 0.66), zoomfine 0.15, no pops (the same with a visit on screen via `--visit 1`; a visit draws two meshes only while it lasts) |
-| Size | `npm run verify:pwa` | 3231 kB raw / 1140 kB gzip precache (0.6.0: 1085.1 kB gzip; budget < 2048 kB gzip) |
+| Size | `npm run verify:pwa` | 3067 kB raw / 1096 kB gzip precache (0.6.0: 1085.1 kB gzip; budget < 2048 kB gzip) |
 | Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (58 pages, 5764 references checked) |
 
 Not verified by agents: how it looks and sounds by hand (SwiftShader only), real GPU fps, a phone in the hand.
