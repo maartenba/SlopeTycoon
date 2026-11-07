@@ -202,14 +202,14 @@ export function buildPose(P: PoseParams): THREE.BufferGeometry {
   const pivot = new THREE.Matrix4().makeTranslation(0, L.len + L.footH, 0), unpivot = new THREE.Matrix4().makeTranslation(0, -(L.len + L.footH), 0);
   const full = new THREE.Matrix4().makeTranslation(0, yOff, 0).multiply(pivot).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(B.hunch * 0.6, 0, P.sway, 'YXZ'))).multiply(unpivot);
   for (const g of up) parts.push(g.applyMatrix4(full));
-  parts.push(groundShade(yOff));
+  parts.push(groundShade());
   const g = mergeGeometries(parts, false)!;
   g.computeBoundingSphere();
   return g;
 }
 
 /** Soft ground shade under the figure (part of the same geometry, no extra draw): a flat two-ring disc, dark blue-grey in the middle fading to a snow tone at the rim, so the pale silhouette separates from the snow. */
-export function groundShade(_bob = 0, rx = 0.46, rz = 0.4, seg = 10): THREE.BufferGeometry {
+export function groundShade(rx = 0.46, rz = 0.4, seg = 10): THREE.BufferGeometry {
   const pos: number[] = [0, 0.012, 0], col: number[] = [0.42, 0.5, 0.62], idx: number[] = [];
   const rings: Array<[number, number, number, number]> = [[0.55, 0.52, 0.6, 0.72], [1, 0.86, 0.9, 0.95]];
   for (const [k, r, g, b] of rings) for (let i = 0; i < seg; i++) { const a = (i / seg) * Math.PI * 2; pos.push(Math.sin(a) * rx * k, 0.012, Math.cos(a) * rz * k + 0.02); col.push(r, g, b); }
