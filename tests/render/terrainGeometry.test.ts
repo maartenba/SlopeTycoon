@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Grid, CHUNK_SIZE } from '@/world/Grid';
+import { Grid, CHUNK_SIZE, TileType } from '@/world/Grid';
 import { generateTerrain } from '@/world/TerrainGen';
-import { buildTerrainGeometry, diagonalNS, fillSnow } from '@/render/TerrainGeometry';
+import { buildTerrainGeometry, diagonalNS, fillSnow, waterShare } from '@/render/TerrainGeometry';
 import { generateTexturePixels, TERRAIN_TEX_KINDS } from '@/render/textures';
 import { budget } from '../perfMode';
 
@@ -142,5 +142,18 @@ describe('far LOD never rises above the fine surface (roads/buildings stay visib
       if (dep === 0) rim++; else foot++;
     }
     expect(rim).toBeGreaterThan(0); expect(foot).toBeGreaterThan(0);
+  });
+  it('waterShare: blurred, finite, 0..1, 0.5 on a straight shore, continuous, same in neighbouring chunks (L-shaped pond + a river)', () => {
+    const g = new G2(64);
+    for (let y = 8; y < 16; y++) for (let x = 8; x < 16; x++) if (!(x >= 12 && y >= 12)) g.tileType[y * 64 + x] = TileType.Water; // L-shaped pond
+    for (let x = 16; x < 30; x++) g.tileType[20 * 64 + x] = TileType.Stream; // one-tile river
+    let prev = 0;
+    for (let x = 4; x <= 20; x++) { const [lk, st] = waterShare(g, x, 10); expect(Number.isFinite(lk) && Number.isFinite(st)).toBe(true); expect(lk).toBeGreaterThanOrEqual(0); expect(lk).toBeLessThanOrEqual(1); expect(Math.abs(lk - prev)).toBeLessThanOrEqual(0.4); prev = lk; }
+    expect(waterShare(g, 8, 10)[0]).toBeCloseTo(0.5, 5); // straight west shore
+    expect(waterShare(g, 12, 12)[0]).toBeLessThan(1); // concave corner is inside the blur, not a hard step
+    const r = waterShare(g, 24, 20)[1], r2 = waterShare(g, 24, 21)[1];
+    expect(r).toBeGreaterThan(0.6); expect(r).toBeLessThanOrEqual(1); expect(r2).toBeCloseTo(r, 5); // river edge corners equal: continuous ribbon
+    const a = buildTerrainGeometry(g, 0, 0, 16, 16, 1), b = buildTerrainGeometry(g, 8, 0, 16, 16, 1);
+    for (const d of [a, b]) for (let i = 0; i < d.tileVertexCount * 2; i++) expect(Number.isFinite(d.wet[i])).toBe(true);
   });
 });

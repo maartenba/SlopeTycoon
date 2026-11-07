@@ -29,7 +29,7 @@ describe('M8 lane G: terrain bed shader', () => {
   it('masks the lake bed by the water share and fades the rest to shore sand (drawn only, world-space noise)', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync('src/render/TerrainMesh.ts', 'utf8');
-    expect(src).toContain('bedM = smoothstep(0.7, 1.0, vWet.x');
+    expect(src).toContain('bedM = smoothstep(0.56, 0.86, vWet.x');
     expect(src).toContain('(1.0 - bedM) * 0.9');
   });
 });

@@ -224,23 +224,20 @@ void main() {
   if (vKind > 2.5 && vKind < 3.5) base = dirt;          // Dirt
   // Water bed (teal-tinted). Drawn only: the dark bed is masked by the per-vertex water share (vWet.x, 1/4 at a tile corner, 1/2 on an edge), so the square tile
   // corners round off like the water surface and the cut edge fades into a sandy / muddy band; a slow world-space wobble keeps the edge organic (flicker-safe).
-  float bedM = 1.0;
-  if (vKind > 1.5 && vKind < 2.5) {
-    bedM = smoothstep(0.7, 1.0, vWet.x + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.1);
-    base = mix(base, mix(dirt, base, 0.15) * vec3(0.55, 0.75, 0.8), bedM);
-  }
-  else if (vKind > 3.5 && vKind < 4.5) base *= 0.82;    // Forest floor
-  bool isLake = vKind > 1.5 && vKind < 2.5;
-  bool isStream = vKind > 5.5 && vKind < 6.5;
+  // M8 lane L: the water share is blurred over 4 x 4 tiles in the geometry and every tone below is a function of it alone (not of the tile kind), so bed, sand and
+  // wet bank are continuous across tile borders: no ghost diamonds at concave corners, no per-tile steps along rivers.
+  float wetN = (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.1;
+  float bedM = smoothstep(0.56, 0.86, vWet.x + wetN);
+  base = mix(base, mix(dirt, base, 0.15) * vec3(0.55, 0.75, 0.8), bedM);
+  if (vKind > 3.5 && vKind < 4.5) base *= 0.82; // forest floor
   // sandy / pebble ring around lakes (shore tiles + lake rim)
-  float shoreAmt = isLake ? (1.0 - bedM) * 0.9 : smoothstep(0.05, 0.45, vWet.x);
+  float shoreAmt = smoothstep(0.03, 0.4, vWet.x) * (1.0 - bedM) * 0.95;
   vec3 sand = mix(vec3(0.80, 0.72, 0.52), vec3(0.70, 0.64, 0.52), smoothstep(0.45, 0.85, vnoise(vWorld.xz * 1.6 + 4.0)) * 0.7); // soft pebble patches (were hard grey blobs)
   sand *= 0.92 + 0.16 * vnoise(vWorld.xz * 5.0);
   base = mix(base, sand, shoreAmt * 0.9);
   // stream bed + banks: dark wet soil and pebbles
   vec3 wetSoil = mix(dirt, rock, 0.35 + 0.3 * vnoise(vWorld.xz * 3.1)) * vec3(0.52, 0.47, 0.42);
-  if (isStream) base = mix(base, wetSoil, smoothstep(0.5, 0.9, vWet.y + (vnoise(vWorld.xz * 2.1 + 7.0) - 0.5) * 0.08)); // river bed: masked like the lake bed (bend corners round off into the wet bank)
-  else base = mix(base, wetSoil, smoothstep(0.05, 0.5, vWet.y) * 0.55);
+  base = mix(base, wetSoil, smoothstep(0.52, 0.8, vWet.y + wetN * 0.8) * 0.7 + smoothstep(0.1, 0.5, vWet.y) * 0.12); // river bed + wet bank from the blurred stream share
 
   // rock: smoothed per-vertex steepness + per-vertex rock weight (interpolated, so no per-tile sawtooth),
   // thresholded with multi-scale noise and a fine dither grain so the boundary is organic
@@ -249,7 +246,7 @@ void main() {
   float rockEdge = rn * 1.4 + grain * 0.35;
   float rockAmt = smoothstep(2.0, 3.2, vSteep + rockEdge);
   rockAmt = max(rockAmt, smoothstep(0.4, 0.75, vRock + rockEdge * 0.35));
-  if (isStream) rockAmt *= 0.3;
+  rockAmt *= 1.0 - 0.7 * smoothstep(0.1, 0.5, vWet.y);
   rockAmt *= 1.0 - shoreAmt * 0.97;
   rockAmt *= 1.0 - 0.95 * smoothstep(0.02, 0.12, max(vWet.x, vWet.y)); // banks next to water never turn into steep dark rock: the dug bank wall is sand / wet soil (no dark notch at concave corners)
   { // slope-aware richness (M8): steep ground dries out (olive / ochre), rock gets faint horizontal bedding with wavy planes (fades before it can go sub-pixel)
@@ -268,7 +265,7 @@ void main() {
   float snowAmt = max(0.4 * alt * (1.0 - 0.7 * rockAmt), smoothstep(0.02, 0.25, vSnow + thin * smoothstep(0.0, 0.08, vSnow)) * (1.0 - 0.5 * rockAmt));
   snowAmt *= 1.0 - 0.45 * shed;
   if (vKind > 4.5 && vKind < 5.5) snowAmt = 1.0;
-  if (isStream) snowAmt *= 0.3;
+  snowAmt *= 1.0 - 0.7 * smoothstep(0.1, 0.5, vWet.y);
   col = mix(col, snow, clamp(snowAmt, 0.0, 1.0));
   { // winter groomed run: corduroy stripes along the fall line, slightly brighter / cooler, soft edge; trails = packed tracks
     float groom = pisteW * snowAmt;

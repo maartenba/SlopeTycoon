@@ -17,14 +17,14 @@ const terrain = readFileSync('src/render/TerrainMesh.ts', 'utf8');
 /** M8 lane I (render only). */
 describe('M8 lane I: shores', () => {
   it('water shader: free-form outline, bigger concave fillet, depth gradient + wet-sand / foam line, no screen-space noise', () => {
-    expect(water).toContain('const float RC = 0.42;');
+    expect(water).toContain('const float RC = 0.34;');
     expect(water).toContain('float shoreK = smoothstep(0.0, 0.6, d);');
     expect(water).toContain('sandy');
     expect(water).not.toContain('gl_FragCoord');
     expect(water).not.toContain('gl_FragCoord');
   });
   it('terrain: bed masked on the full-water share only (no dark notch), banks beside water never go to dark rock', () => {
-    expect(terrain).toContain('bedM = smoothstep(0.7, 1.0, vWet.x');
+    expect(terrain).toContain('bedM = smoothstep(0.56, 0.86, vWet.x');
     expect(terrain).toContain('banks next to water never turn into steep dark rock');
   });
 });

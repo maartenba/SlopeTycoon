@@ -39,6 +39,29 @@ export const SKIRT_KIND = 7;
 /** World units the far-LOD surface is lowered below the sampled minimum, so full-res draped things (roads, decals, protected chunks) stay on top. */
 export const LOD_BIAS = 0.3;
 
+const BLUR_W = [1, 3, 3, 1] as const;
+const _ws: [number, number] = [0, 0];
+/**
+ * Smooth water share at a terrain corner (vx, vy) for the DRAWN bed / shore tone only (sim tiles untouched): the lake and stream masks blurred with a
+ * separable [1 3 3 1] / 8 kernel over the 4 x 4 tiles around the corner. 0.5 sits on a straight shoreline (as the old 4-tile share did), 1 deep in a lake;
+ * the stream share is doubled (a one-tile river peaks at 0.75 on its centre line) so a river bed reads as one continuous ribbon instead of per-tile cells. Pure, finite, in [0, 1].
+ * The result array is reused between calls.
+ */
+export function waterShare(grid: Grid, vx: number, vy: number): [number, number] {
+  const N = grid.size;
+  let lk = 0, st = 0;
+  for (let j = 0; j < 4; j++) {
+    const ty = vy - 2 + j; if (ty < 0 || ty >= N) continue;
+    for (let i = 0; i < 4; i++) {
+      const tx = vx - 2 + i; if (tx < 0 || tx >= N) continue;
+      const tt = grid.tileType[ty * N + tx], w = BLUR_W[i]! * BLUR_W[j]! / 64;
+      if (tt === TileType.Water) lk += w; else if (tt === TileType.Stream) st += w;
+    }
+  }
+  _ws[0] = Math.min(1, lk); _ws[1] = Math.min(1, st * 2);
+  return _ws;
+}
+
 export function buildTerrainGeometry(
   grid: Grid, x0: number, y0: number, tilesX: number, tilesY: number, step = 1,
 ): TerrainGeometryData {
@@ -78,13 +101,8 @@ export function buildTerrainGeometry(
       }
       const ci = j * cw + i;
       cSteep[ci] = cnt ? sum / cnt : 0;
-      let lk = 0, st = 0, rk = 0, rn = 0;
-      for (let k = 0; k < 4; k++) {
-        const tx = vx - (k & 1 ? 0 : 1), ty = vy - (k & 2 ? 0 : 1);
-        if (tx < 0 || ty < 0 || tx >= N || ty >= N) continue;
-        const tt = grid.tileType[ty * N + tx];
-        if (tt === TileType.Water) lk++; else if (tt === TileType.Stream) st++;
-      }
+      let rk = 0, rn = 0;
+      const wf = waterShare(grid, vx, vy); // water mask blurred over a 4 x 4 tile window (global grid: identical across chunk borders)
       for (let k = 0; k < 4; k++) { // rock flag of the (macro) tiles around this corner
         const tx = vx - (k & 1 ? 0 : step), ty = vy - (k & 2 ? 0 : step);
         if (tx < 0 || ty < 0 || tx + step > N || ty + step > N) continue;
@@ -92,7 +110,7 @@ export function buildTerrainGeometry(
         if (grid.tileType[(ty + (step >> 1)) * N + tx + (step >> 1)] === TileType.Rock) rk++;
       }
       cRock[ci] = rn ? rk / rn : 0;
-      cWet[ci * 2] = lk / 4; cWet[ci * 2 + 1] = st / 4;
+      cWet[ci * 2] = wf[0]!; cWet[ci * 2 + 1] = wf[1]!;
       // Sobel-weighted central differences ([1 2 1] across the other axis): a gentle blur of the vertex normal. It reads the global height grid (clamped at the
       // map edge), so neighbouring chunks compute identical normals along a shared border (no seams) and slopes shade a bit softer than with the plain difference.
       let gxs = 0, gzs = 0;

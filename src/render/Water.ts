@@ -205,7 +205,7 @@ void main() {
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dS, R - dW), 0.0)), vSides.z * vSides.w));
   dm = min(dm, mix(9.0, R - length(max(vec2(R - dW, R - dN), 0.0)), vSides.w * vSides.x));
   // concave corners (land only on the diagonal): the land pokes in as a rounded quarter disc, so a pond's staircase outline reads as a smooth curve
-  const float RC = 0.42;
+  const float RC = 0.34;
   dm = min(dm, mix(9.0, length(vLocal - vec2(0.0, 0.0)) - RC, vCorners.x));
   dm = min(dm, mix(9.0, length(vLocal - vec2(1.0, 0.0)) - RC, vCorners.y));
   dm = min(dm, mix(9.0, length(vLocal - vec2(1.0, 1.0)) - RC, vCorners.z));
