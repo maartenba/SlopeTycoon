@@ -17,7 +17,7 @@ const slugs = new Set(metas.map((m) => m.slug));
 const pages = landingPages(env, '<svg/>', metas, fake, slugs, allGenerated());
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ld = (h: string): Array<Record<string, any>> => [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]!));
-const WANTED = ['ski-resort-tycoon', 'games-like-ski-resort-tycoon', 'how-ski-lifts-work', 'browser-tycoon-games', 'summer-mountain-resort-game'];
+const WANTED = ['ski-resort-tycoon', 'games-like-ski-resort-tycoon', 'how-ski-lifts-work', 'browser-tycoon-games', 'summer-mountain-resort-game', 'play-ski-games-online', 'build-a-ski-resort'];
 
 describe('keyword landing pages', () => {
   it('has the planned pages', () => { expect(pages.map((p) => p.path)).toEqual(expect.arrayContaining(WANTED)); expect(landingFiles().length).toBe(pages.length); });
@@ -66,5 +66,17 @@ describe('keyword landing pages', () => {
   it('the landing, the footer and the guide link to the new pages', () => {
     const home = readFileSync('scripts/site/templates.ts', 'utf8');
     for (const s of WANTED) expect(home, s).toContain(`${s}/`);
+  });
+  it('round 2 keyword pages: distinct titles, the sequel question, the builder phrase, no stray competitor names', () => {
+    const by = (slug: string): string => pages.find((p) => p.path === slug)!.html;
+    const title = (h: string): string => /<title>([^<]*)<\/title>/.exec(h)![1]!;
+    expect(title(by('ski-resort-tycoon'))).toBe('Ski Resort Tycoon Online: Play Free');
+    expect(title(by('play-ski-games-online'))).toMatch(/^Play Ski Games Online/);
+    expect(title(by('build-a-ski-resort'))).toMatch(/Build a Ski Resort/);
+    expect(plainText(by('ski-resort-tycoon'))).toContain('Is there a Ski Resort Tycoon 2?');
+    expect(plainText(by('ski-resort-tycoon'))).toMatch(/not an official sequel/);
+    expect(plainText(by('ski-resort-tycoon'))).toMatch(/ski resort builder/i);
+    for (const f of landingFiles()) expect(readFileSync(`site/landing/${f}`, 'utf8'), f).not.toMatch(/powder\s*peaks/i);
+    expect(readFileSync('scripts/site/templates.ts', 'utf8')).toContain("LANDING_TITLE = 'Slope Tycoon – Ski Resort Tycoon Game in Your Browser'");
   });
 });

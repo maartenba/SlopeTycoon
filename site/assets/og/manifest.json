@@ -1,5 +1,5 @@
 {
- "inputs": "b6c18d2f41911a4f9461f3334aa1c7ae53ae674fc93d1c8a75f2493965371915",
+ "inputs": "c194743164e7cf052c32f5efbc2d8f72df7755f1c94e817400221f90358e38c5",
  "cards": [
   "landing",
   "ski-resort-tycoon",
@@ -7,6 +7,8 @@
   "ski-lifts",
   "browser-tycoon",
   "summer",
+  "play-ski-games",
+  "build-resort",
   "devlog",
   "guide",
   "privacy",

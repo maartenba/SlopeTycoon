@@ -68,6 +68,26 @@ Add Slope Tycoon as an alternative to Ski Resort Tycoon. Short text: "A free, br
 
 > Hi, I'm an indie developer. I made a free browser game where you run a ski resort, and I wrote a plain-language page about how chairlifts, gondolas and T-bars work that your readers might find useful: https://slopetycoon.com/how-ski-lifts-work/. The game is at https://slopetycoon.com/play/. No ads, no accounts. If it's of interest I can send screenshots. Thanks, Maarten
 
+## 8. Replies in threads that already rank for "ski resort tycoon" (round 2, Nov 2026)
+
+These threads are on page one of Google for the term, so a short, honest answer helps the people who land there. Reply once per thread, say you are the developer, and read the subreddit's self-promotion rules first. If a rule says no, skip it. Do not copy the same text into every thread and change it to answer the actual question.
+
+**A thread like "Is there a Ski Resort Tycoon I can play now?" (r/tycoon)**
+
+> I'm the developer of one, so take this with a grain of salt. Slope Tycoon is a free ski resort tycoon that runs in the browser, with no account. It is inspired by the old Ski Resort Tycoon, but it is not a sequel and not affiliated with it. You build lifts, paint pistes and keep a resort going through winter and summer. It's a pre-release made by one person, so it has rough edges. https://slopetycoon.com/ski-resort-tycoon/
+>
+> If you'd rather download something finished, I put a list of the other ones I know about here: https://slopetycoon.com/games-like-ski-resort-tycoon/
+
+**A thread asking for browser tycoon games (r/tycoon, r/WebGames)**
+
+> One more for the list, and I made it: Slope Tycoon, a ski resort in a tab. Free, saves stay on your device, works offline after the first visit. Best on a desktop. https://slopetycoon.com/play/ Tell me what is confusing.
+
+**A thread in r/skiing about ski games, or about how lifts work**
+
+> There is a lot of ski racing and arcade stuff out there, but if you like the resort side, I made a free browser game where you place lifts and paint pistes. I also wrote a plain page on how chairlifts, gondolas and T-bars work: https://slopetycoon.com/how-ski-lifts-work/. The game is at https://slopetycoon.com/play/. Pre-release, tell me what is wrong.
+
+Answer follow-up questions straight, including "was this made with AI?" (yes, with AI coding agents under your direction, and the about page says so).
+
 ## Do not
 
 - Edit the Wikipedia article for Ski Resort Tycoon to add the game (conflict of interest).

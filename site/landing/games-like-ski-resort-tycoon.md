@@ -12,6 +12,7 @@ related:
   - { href: "ski-resort-tycoon/", text: "Play Slope Tycoon in your browser", note: "free, no download" }
   - { href: "browser-tycoon-games/", text: "Free browser tycoon games", note: "more games you can open in a tab" }
   - { href: "guide/", text: "The Slope Tycoon player guide", note: "if you want to try it" }
+  - { href: "play-ski-games-online/", text: "Play ski games online", note: "racing, arcade and management ski games" }
 faq:
   - q: "Is there a Ski Resort Tycoon 2 or 3?"
     a: "There was a sequel in the 2000s, and people still ask for a new one. I have not seen a modern game that officially continues the series. The games on this page are independent and in the same spirit."

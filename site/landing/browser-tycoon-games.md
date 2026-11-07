@@ -12,6 +12,7 @@ related:
   - { href: "ski-resort-tycoon/", text: "Slope Tycoon in your browser", note: "the ski resort tycoon" }
   - { href: "games-like-ski-resort-tycoon/", text: "Games like Ski Resort Tycoon", note: "if you want a ski game" }
   - { href: "guide/getting-started/", text: "Getting started", note: "your first lift and piste in Slope Tycoon" }
+  - { href: "play-ski-games-online/", text: "Play ski games online", note: "the ski side of browser games" }
 faq:
   - q: "What is a tycoon game?"
     a: "A tycoon game is a business simulation where you build something and manage the money, from a theme park to a railway or a ski resort. You place things, watch customers use them and reinvest the profit."

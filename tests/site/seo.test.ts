@@ -36,7 +36,7 @@ describe('site SEO', () => {
     expect(SEO_LIMITS).toEqual({ titleMax: 59, descMin: 120, descMax: 155 });
   });
   it('titles and descriptions are unique', () => { expect(uniqueLint(pages)).toEqual([]); });
-  it('landing / guide index titles are the planned ones', () => { expect(pages[0]!.html).toContain('<title>Slope Tycoon – Free Ski Resort Tycoon Game in Your Browser</title>'); expect(GUIDE_INDEX_TITLE.length).toBeLessThan(60); expect(GUIDE_INDEX_DESC.length).toBeGreaterThanOrEqual(120); });
+  it('landing / guide index titles are the planned ones', () => { expect(pages[0]!.html).toContain('<title>Slope Tycoon – Ski Resort Tycoon Game in Your Browser</title>'); expect(GUIDE_INDEX_TITLE.length).toBeLessThan(60); expect(GUIDE_INDEX_DESC.length).toBeGreaterThanOrEqual(120); });
   it('lint catches bad pages', () => {
     const bad = pages[0]!.html.replace(/<title>[^<]*<\/title>/, `<title>${'x'.repeat(70)}</title>`).replace(/<meta name="description" content="[^"]*"/, '<meta name="description" content="short"');
     const p = lintPage('x', bad, { siteUrl }).join('\n'); expect(p).toContain('title is 70'); expect(p).toContain('meta description is 5');

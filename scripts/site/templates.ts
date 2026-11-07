@@ -10,13 +10,13 @@ const HEART = '<svg class="heart" viewBox="0 0 24 24" width="16" height="16" ari
 export const supportLink = (cls = 'btn ghost sponsor', label = 'Support on Ko-fi'): string => `<a class="${cls}" href="${SUPPORT_URL}" target="_blank" rel="noopener" data-support>${HEART}<span>${label}</span></a>`;
 export const GA_HOSTS = ['www.googletagmanager.com', 'www.google-analytics.com'] as const;
 export const DESC = 'Build your own ski and mountain resort in the browser: shape terrain, build lifts, groom pistes and run it through all four seasons. Free, plays offline.';
-export const LANDING_TITLE = 'Slope Tycoon – Free Ski Resort Tycoon Game in Your Browser';
-export const LANDING_DESC = 'A free ski resort tycoon in your browser: shape the terrain, place lifts, groom pistes and run the resort through winter and summer. No download.';
+export const LANDING_TITLE = 'Slope Tycoon – Ski Resort Tycoon Game in Your Browser';
+export const LANDING_DESC = 'Slope Tycoon is a free ski resort builder and tycoon game for your browser: shape the mountain, build lifts and pistes, run it all year. No download.';
 export const PRIVACY_CLAIM = 'No ads, no accounts, saves stay on your device, anonymous opt-in statistics.';
 export const SEO = { titleMax: 59, descMin: 120, descMax: 155 } as const;
-export type OgKey = 'landing' | 'guide' | 'privacy' | 'about' | 'support' | 'support' | 'ski-resort-tycoon' | 'games-like' | 'ski-lifts' | 'browser-tycoon' | 'summer' | 'devlog';
+export type OgKey = 'landing' | 'guide' | 'privacy' | 'about' | 'support' | 'support' | 'ski-resort-tycoon' | 'games-like' | 'ski-lifts' | 'browser-tycoon' | 'summer' | 'play-ski-games' | 'build-resort' | 'devlog';
 export const OG_ALT: Record<OgKey, string> = {
-  'ski-resort-tycoon': 'Slope Tycoon: play a ski resort tycoon in your browser', 'games-like': 'Slope Tycoon: games like Ski Resort Tycoon', 'ski-lifts': 'Slope Tycoon: how ski lifts work, chairlifts and gondolas', 'browser-tycoon': 'Slope Tycoon: free browser tycoon games', summer: 'Slope Tycoon: a mountain resort game for summer too', devlog: 'The Slope Tycoon devlog: release notes in plain words',
+  'ski-resort-tycoon': 'Slope Tycoon: play a ski resort tycoon in your browser', 'play-ski-games': 'Slope Tycoon: play ski games online, free in a browser tab', 'build-resort': 'Slope Tycoon: how to build a ski resort, lifts and pistes first', 'games-like': 'Slope Tycoon: games like Ski Resort Tycoon', 'ski-lifts': 'Slope Tycoon: how ski lifts work, chairlifts and gondolas', 'browser-tycoon': 'Slope Tycoon: free browser tycoon games', summer: 'Slope Tycoon: a mountain resort game for summer too', devlog: 'The Slope Tycoon devlog: release notes in plain words',
   landing: 'Slope Tycoon: a ski village with lifts and pistes in the mountains', guide: 'Slope Tycoon player guide over a snowy resort', privacy: 'Slope Tycoon privacy and analytics over an alpine village at night', about: 'Slope Tycoon: why I built a ski resort tycoon game', support: 'Slope Tycoon support page: the game stays free, with an optional Ko-fi coffee',
 };
 
@@ -33,7 +33,9 @@ export const RELATED: Record<string, string[]> = {
 
 /** Landing pages worth linking from a guide page (descriptive anchors; a test checks they exist). */
 export const GUIDE_TO_LANDING: Record<string, Array<{ href: string; text: string; note: string }>> = {
-  'getting-started': [{ href: 'ski-resort-tycoon/', text: 'Play a ski resort tycoon in your browser', note: 'what the game is, in one page' }],
+  'getting-started': [{ href: 'ski-resort-tycoon/', text: 'Play a ski resort tycoon in your browser', note: 'what the game is, in one page' }, { href: 'build-a-ski-resort/', text: 'How to build a ski resort', note: 'a plan for lifts, pistes, snow and village' }],
+  building: [{ href: 'build-a-ski-resort/', text: 'How to build a ski resort', note: 'the order that works for a first resort' }],
+  interface: [{ href: 'play-ski-games-online/', text: 'Play ski games online', note: 'what kinds of ski game exist, and where this one fits' }],
   'lifts-pistes': [{ href: 'how-ski-lifts-work/', text: 'How ski lifts work', note: 'the real machines behind the twelve lift types' }],
   summer: [{ href: 'summer-mountain-resort-game/', text: 'A mountain resort game for summer, too', note: 'the summer half in one page' }],
   'summer-adventures': [{ href: 'summer-mountain-resort-game/', text: 'A mountain resort game for summer, too', note: 'the summer half in one page' }],
@@ -47,9 +49,9 @@ export function personLd(): Record<string, unknown> { return { '@type': 'Person'
 export function gameLd(env: SiteEnv): Record<string, unknown> {
   const base = env.siteUrl || './';
   return {
-    '@context': 'https://schema.org', '@type': ['VideoGame', 'WebApplication'], name: SITE_NAME, url: base, description: DESC, applicationCategory: 'Game', operatingSystem: 'Any', genre: ['Simulation', 'Tycoon', 'Strategy'],
+    '@context': 'https://schema.org', '@type': ['VideoGame', 'WebApplication'], name: SITE_NAME, url: base, description: DESC, applicationCategory: 'Game', applicationSubCategory: 'Ski resort tycoon', operatingSystem: 'Any', genre: ['Simulation', 'Strategy', 'Tycoon'], alternateName: ['Slope Tycoon ski resort tycoon', 'Slope Tycoon ski resort builder'], keywords: 'ski resort tycoon, ski resort builder, ski game online, ski resort game, ski tycoon',
     gamePlatform: 'Web browser', playMode: 'SinglePlayer', inLanguage: 'en', browserRequirements: 'Requires JavaScript and WebGL', softwareVersion: env.version, isAccessibleForFree: true,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' }, image: `${base}assets/og/landing.png`, screenshot: `${base}assets/shots/hero-winter-1280.webp`,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' }, image: `${base}assets/og/landing.png`, screenshot: ['hero-winter', 'slope-guests', 'season-summer'].map((id) => `${base}assets/shots/${id}-1280.webp`),
     author: personLd(), sameAs: [env.repoUrl], potentialAction: { '@type': 'PlayAction', target: `${base}play/` },
   };
 }
@@ -92,8 +94,8 @@ export function footer(env: SiteEnv, rel: string, guide: readonly PageMeta[] = [
   const col = (label: string, title: string, links: string): string => `<nav class="fcol" aria-label="Footer: ${label}"><p class="fh">${title}</p><ul>${links}</ul></nav>`;
   const li = (h: string): string => `<li>${h}</li>`;
   return `<footer><div class="wrap"><div class="fbrand"><b>Slope Tycoon</b> <span class="fver">v${env.version} (pre-release)</span><span class="fnote">${esc(PRIVACY_CLAIM)}</span></div>
-<div class="fcols">${col('the game', 'The game', li(`<a href="${rel}play/">Play</a>`) + li(`<a href="${rel || './'}">Home</a>`) + li(`<a href="${rel}about/">About the game</a>`) + li(`<a href="${rel}support/">Support the game</a>`))}
-${col('read more', 'Read more', li(`<a href="${rel}ski-resort-tycoon/">Ski resort tycoon in your browser</a>`) + li(`<a href="${rel}how-ski-lifts-work/">How ski lifts work</a>`) + li(`<a href="${rel}games-like-ski-resort-tycoon/">Games like Ski Resort Tycoon</a>`) + li(`<a href="${rel}browser-tycoon-games/">Browser tycoon games</a>`) + li(`<a href="${rel}summer-mountain-resort-game/">A mountain resort game for summer</a>`) + li(`<a href="${rel}devlog/">Devlog</a>`))}
+<div class="fcols">${col('the game', 'The game', li(`<a href="${rel}play/">Play Slope Tycoon</a>`) + li(`<a href="${rel}ski-resort-tycoon/">Ski resort tycoon online</a>`) + li(`<a href="${rel}play-ski-games-online/">Play ski games online</a>`) + li(`<a href="${rel || './'}">Home</a>`) + li(`<a href="${rel}about/">About the game</a>`) + li(`<a href="${rel}support/">Support the game</a>`))}
+${col('read more', 'Read more', li(`<a href="${rel}build-a-ski-resort/">How to build a ski resort</a>`) + li(`<a href="${rel}how-ski-lifts-work/">How ski lifts work</a>`) + li(`<a href="${rel}games-like-ski-resort-tycoon/">Games like Ski Resort Tycoon</a>`) + li(`<a href="${rel}browser-tycoon-games/">Browser tycoon games</a>`) + li(`<a href="${rel}summer-mountain-resort-game/">A mountain resort game for summer</a>`) + li(`<a href="${rel}devlog/">Devlog</a>`))}
 ${col('guide', 'Player guide', li(`<a href="${rel}guide/">All guide pages</a>`) + top.map((p) => li(`<a href="${rel}guide/${p.slug}/">${esc(p.title)}</a>`)).join(''))}
 ${col('project', 'Project', li(`<a href="${env.repoUrl}">GitHub (${esc(env.repo)})</a>`) + li(`<a href="${rel}devlog/">Devlog</a> · <a href="${env.repoUrl}/blob/main/CHANGELOG.md">Changelog</a>`) + li(supportLink('sponsor-foot', 'Support on Ko-fi')) + li(`<a href="${env.repoUrl}/tree/main/docs">Developer docs</a>`) + li(`<a href="${env.repoUrl}/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`))}
 ${col('privacy', 'Privacy', li(`<a href="${rel}privacy/">Privacy &amp; analytics</a>`) + li(`<a href="${rel}privacy/#settings" data-consent-open>Privacy &amp; analytics settings</a>`))}</div>
@@ -140,7 +142,7 @@ ${header(rel, o.markSvg)}
 <div class="search" data-search data-root="${rel}" style="max-width:520px;margin:22px 0"><input type="search" placeholder="Search the guide ( / )" aria-label="Search the guide" autocomplete="off"><div class="results" hidden></div></div>
 <noscript><p>Search needs JavaScript. Browse the pages below instead.</p></noscript>
 <div class="gcards">${sortPages(o.pages).map((p) => `<a href="${rel}guide/${p.slug}/"><b>${esc(p.title)}</b><span>${esc(p.summary ?? '')}</span></a>`).join('')}</div>
-<p style="margin-top:28px">New here? Start with <a href="${rel}guide/getting-started/">Getting started</a>, then <a href="${rel}play/">play Slope Tycoon</a>. Curious about the project? Read <a href="${rel}about/">why I built it</a> or the <a href="${rel}privacy/">privacy &amp; analytics</a> page.</p></div></main>
+<p style="margin-top:28px">New here? Start with <a href="${rel}guide/getting-started/">Getting started</a>, then <a href="${rel}play/">play Slope Tycoon</a>. Want the overview first? Read about <a href="${rel}ski-resort-tycoon/">the ski resort tycoon</a> or <a href="${rel}build-a-ski-resort/">how to build a ski resort</a>. Curious about the project? Read <a href="${rel}about/">why I built it</a> or the <a href="${rel}privacy/">privacy &amp; analytics</a> page.</p></div></main>
 ${footer(env, rel, o.pages)}
 ${scripts(rel)}</body></html>\n`;
 }

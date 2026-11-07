@@ -12,6 +12,7 @@ related:
   - { href: "guide/lifts-pistes/", text: "Lifts & pistes in the guide", note: "build, check clearance, add mid-stations" }
   - { href: "ski-resort-tycoon/", text: "Play Slope Tycoon in your browser", note: "build every one of these lifts" }
   - { href: "guide/glossary/", text: "Glossary", note: "short definitions of the words used here" }
+  - { href: "build-a-ski-resort/", text: "How to build a ski resort", note: "where to place which lift" }
 faq:
   - q: "What is a ski lift called?"
     a: "It depends on the type. A chairlift or chair has seats on a moving rope, a gondola has closed cabins, a T-bar or drag lift pulls you uphill on your skis, and a cable car or aerial tramway has big cabins that swing back and forth. People also say ski lift for all of them."

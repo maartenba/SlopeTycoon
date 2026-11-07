@@ -6,7 +6,7 @@ summary: "Your first lift and piste: start a game, build a lift, paint a piste a
 description: "Your first lift and piste in Slope Tycoon: start a new ski resort game, build a lift, paint a piste and open for business. A friendly beginner's guide."
 screenshots: [ui-menu, ui-newgame, ui-hud]
 ---
-Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, buy tickets, ski your slopes, eat in your restaurants and tell the world what they think. Your job is to keep that loop running through every season.
+Welcome to Slope Tycoon! You run a small mountain resort. Guests arrive by car, buy tickets, ski your slopes, eat in your restaurants and tell the world what they think. Your job is to keep that loop running through every season. If you want the short version first, read [what a ski resort tycoon is like here](lp:ski-resort-tycoon), or [how to build a ski resort](lp:build-a-ski-resort) in a sensible order.
 
 ## Start a game
 

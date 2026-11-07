@@ -4,6 +4,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- Website: clearer pages for people searching for a ski resort tycoon game (a rewritten Ski Resort Tycoon page, a page on playing ski games online and a plan for building a ski resort).
+
 ## [0.6.1] - 2026-11-06 (pre-release)
 
 A small update: a few surprises up on the mountain. Nothing in the economy changed.
