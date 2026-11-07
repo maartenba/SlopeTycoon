@@ -29,8 +29,6 @@ export const VISITOR = {
    * arrival-rate hook as the Tourist Office (createSim `setAttractiveness`), so a stacked boost stays bounded by that product.
    */
   buzz: { mult: 1.1, days: 15 },
-  /** Which model is shown: 'plush' (plump storybook), 'shaggy' (tall, lean, scruffy), 'bigfoot' (broad, grey-white, apelike). `?visitorModel=` overrides it (testing). */
-  model: 'plush' as 'plush' | 'shaggy' | 'bigfoot',
   /** Fade in / out (sim minutes). */
   fadeIn: 20, fadeOut: 45,
 } as const;

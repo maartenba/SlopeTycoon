@@ -4,11 +4,11 @@ Current release: **0.6.1 (pre-release, never call it 1.0 until the owner says so
 
 ## 0.6.1 (2026-11-06, macOS, Node v22.23.4)
 
-A small update: a few rare winter surprises (observer state, its own additive save module, no economy change) and two hidden achievements. The only shipped changes since 0.6.0 are these; there is nothing else to list.
+A small update: a few rare winter surprises (observer state, its own additive save module, a one-month +10 % arrivals window, no other economy change), a call you can hear, and two hidden achievements. The only shipped changes since 0.6.0 are these; there is nothing else to list.
 
 | Check | Command | Result |
 |---|---|---|
-| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 458 files passed, 1 skipped; 4806 tests passed, 43 skipped |
+| Gate (run twice) | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` | both runs pass: 460 files passed, 1 skipped; 4828 tests passed, 43 skipped |
 | Balance | `npm run test:balance` | 48 passed (goldens unchanged, no re-record) |
 | Perf | `npm run test:perf` | 49 tests passed (alone) |
 | Shots | `npm run shot:suite` | 0 errors in all shots |
@@ -18,8 +18,8 @@ A small update: a few rare winter surprises (observer state, its own additive sa
 | Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 |
 | Mobile | `npm run mobile:audit` | all acceptance thresholds met |
 | Desktop | `npm run desktop:diff` (before = 365b8a5, after = this commit) | SAME on all six screens (0.0000 %) |
-| Flicker | `npm run flicker -- --only 64-winter-day` | rotfine 0.66 (0.6.0: 0.66), zoomfine 0.15, no pops (measured with no visit on screen; a visit draws two meshes only while it lasts) |
-| Size | `npm run verify:pwa` | 3055 kB raw / 1091 kB gzip precache (0.6.0: 1085.1 kB gzip; budget < 2048 kB gzip) |
+| Flicker | `npm run flicker -- --only 64-winter-day` | rotfine 0.66 (0.6.0: 0.66), zoomfine 0.15, no pops (the same with a visit on screen via `--visit 1`; a visit draws two meshes only while it lasts) |
+| Size | `npm run verify:pwa` | 3231 kB raw / 1140 kB gzip precache (0.6.0: 1085.1 kB gzip; budget < 2048 kB gzip) |
 | Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (58 pages, 5764 references checked) |
 
 Not verified by agents: how it looks and sounds by hand (SwiftShader only), real GPU fps, a phone in the hand.

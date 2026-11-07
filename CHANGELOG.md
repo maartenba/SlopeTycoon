@@ -4,10 +4,6 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
-### Changes
-
-- The rare winter surprise looks and moves better: a friendlier, fluffier look (three variants to choose from), a plodding walk with pauses and a wave, footprints that match its steps, and a call you can actually hear. A small visitor boost for a month afterwards (+10 % arrivals, one in-game month, no stacking). Small new save field (older saves load as before).
-
 ## [0.6.1] - 2026-11-06 (pre-release)
 
 A small update: a few surprises up on the mountain. Nothing in the economy changed.
@@ -21,6 +17,7 @@ A small update: a few surprises up on the mountain. Nothing in the economy chang
 ### Changes
 
 - A few small surprises up on the mountain (winter only, rare, harmless; no change to the economy or the balance). Adds one small save module (older saves load as before) and two hidden achievements.
+- The surprises got more life: they move, make themselves heard, and bring a small crowd boost for a month afterwards (+10 % arrivals, one in-game month, no stacking). Small new save field (older saves load as before).
 
 ## [0.6.0] - 2026-11-06 (pre-release)
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- runs inside the page against the untyped __slope debug handle */
-/** `npm run visitor:studio [-- --tag NAME]`: the three rare-visitor models rendered alone on a plain background (3/4 front, side, back, wave, idle) with the real vertex colours and a sun + sky light.
+/** `npm run visitor:studio [-- --tag NAME]`: the rare-visitor model rendered alone on a plain background (3/4 front, side, back, wave, idle) with the real vertex colours and a sun + sky light.
  * Writes .weave/shots/<tag>-studio.png (new --tag every time). Dev aid for the contact sheet. */
 import { launch, startServer } from './lib/harness';
 import fs from 'node:fs';
@@ -15,8 +15,8 @@ try {
     const M = await imp('/src/render/meshes/rareVisitor.ts');
     const W = 360, H = 400, r = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.setClearColor(0xcfe0ee);
     const out: string[][] = [];
-    for (const model of M.MODEL_IDS) {
-      const set = M.createPoseSet(model), row: string[] = [];
+    for (const _m of [0]) {
+      void _m; const set = M.createPoseSet(), row: string[] = [];
       const views: Array<[string, number, number, number]> = [['walk', 2, 0.6, 1], ['walk', 0, -1.57, 1], ['walk', 6, 2.6, 1], ['wave', 2, 0.35, 1], ['idle', 0, 0.2, 1], ['walk', 4, 0.7, 0]];
       for (const [kind, frame, yaw, look] of views) {
         const sc = new T.Scene(), mat = new T.MeshLambertMaterial({ vertexColors: true });

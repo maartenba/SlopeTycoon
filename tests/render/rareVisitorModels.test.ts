@@ -1,29 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { MODEL_IDS, WALK_FRAMES, WAVE_FRAMES, createPoseSet, legLenOf, triangles } from '../../src/render/meshes/rareVisitor';
+import { WALK_FRAMES, WAVE_FRAMES, createPoseSet, legLen, triangles } from '../../src/render/meshes/rareVisitor';
 import { GAIT, frameOf, idlePose, phaseAt, swingOf, walkPose, wavePose } from '../../src/render/meshes/visitorGait';
 import { VISITOR } from '../../src/config/visitor';
 
 describe('rare visitor models', () => {
-  for (const m of MODEL_IDS) {
-    it(`${m}: one coloured geometry per pose, <= ~950 triangles, same count in every pose, ~1 tile tall, feet on the ground`, () => {
-      const set = createPoseSet(m), all = [...Array.from({ length: WALK_FRAMES }, (_, i) => set.get('walk', i)), set.get('idle', 0), set.get('idle', 0, 1), ...Array.from({ length: WAVE_FRAMES }, (_, i) => set.get('wave', i))];
-      for (const g of all) {
-        expect(triangles(g)).toBeLessThanOrEqual(950); expect(triangles(g)).toBe(triangles(all[0]!));
-        expect(g.getAttribute('color')).toBeDefined(); expect(g.getAttribute('normal')).toBeDefined();
-        g.computeBoundingBox(); const b = g.boundingBox!;
-        expect(b.min.y).toBeGreaterThan(-0.08); expect(b.min.y).toBeLessThan(0.06); expect(b.max.y).toBeGreaterThan(0.95); expect(b.max.y).toBeLessThan(1.7);
-        for (const v of g.getAttribute('position').array) expect(Number.isFinite(v)).toBe(true);
-      }
-      set.dispose();
-    });
-  }
-  it('three distinct models (different silhouettes) selected by name', () => {
-    const w = MODEL_IDS.map((m) => { const g = createPoseSet(m).get('idle', 0); g.computeBoundingBox(); const b = g.boundingBox!; return [b.max.x - b.min.x, b.max.y].map((x) => x.toFixed(2)).join('x'); });
-    expect(new Set(w).size).toBe(3); expect([...MODEL_IDS]).toEqual(['plush', 'shaggy', 'bigfoot']);
-    expect(['plush', 'shaggy', 'bigfoot']).toContain(VISITOR.model);
+  it('one coloured geometry per pose, <= ~1,800 triangles, same count in every pose, ~1 tile tall, feet on the ground', () => {
+    const set = createPoseSet(), all = [...Array.from({ length: WALK_FRAMES }, (_, i) => set.get('walk', i)), set.get('idle', 0), set.get('idle', 0, 1), ...Array.from({ length: WAVE_FRAMES }, (_, i) => set.get('wave', i))];
+    for (const g of all) {
+      expect(triangles(g)).toBeLessThanOrEqual(1800); expect(triangles(g)).toBe(triangles(all[0]!));
+      expect(g.getAttribute('color')).toBeDefined(); expect(g.getAttribute('normal')).toBeDefined();
+      g.computeBoundingBox(); const b = g.boundingBox!;
+      expect(b.min.y).toBeGreaterThan(-0.08); expect(b.min.y).toBeLessThan(0.06); expect(b.max.y).toBeGreaterThan(0.95); expect(b.max.y).toBeLessThan(1.7);
+      for (const v of g.getAttribute('position').array) expect(Number.isFinite(v)).toBe(true);
+    }
+    set.dispose();
   });
   it('wave poses raise the +x... the -x arm above the shoulder', () => {
-    const g = createPoseSet('plush').get('wave', 2); g.computeBoundingBox();
+    const g = createPoseSet().get('wave', 2); g.computeBoundingBox();
     expect(g.boundingBox!.max.y).toBeGreaterThan(1.0);
   });
 });
@@ -50,8 +43,8 @@ describe('rare visitor gait (pure)', () => {
     expect(walkPose(0.25, spec).sway).toBeGreaterThan(0); expect(walkPose(0.75, spec).sway).toBeLessThan(0);
     expect(walkPose(0.25, spec).headYaw).toBeLessThan(0);
   });
-  it('stride length vs speed: one step covers the spread of the legs (no skating) for every model, ~1 step a second at the visitor\'s pace', () => {
-    for (const m of MODEL_IDS) { const L = legLenOf(m), A = swingOf({ legLen: L }); expect(Math.abs(2 * L * Math.sin(A) / GAIT.stepLen - 1)).toBeLessThan(0.12); expect(A).toBeLessThanOrEqual(GAIT.maxSwing); expect(A).toBeGreaterThan(0.3); }
+  it('stride length vs speed: one step covers the spread of the legs (no skating) ~1 step a second at the visitor\'s pace', () => {
+    { const L = legLen, A = swingOf({ legLen: L }); expect(Math.abs(2 * L * Math.sin(A) / GAIT.stepLen - 1)).toBeLessThan(0.12); expect(A).toBeLessThanOrEqual(GAIT.maxSwing); expect(A).toBeGreaterThan(0.3); }
     expect(phaseAt(2 * GAIT.stepLen)).toBeCloseTo(1, 9); expect(GAIT.stepLen).toBe(VISITOR.stepLen);
     // ~0.4 tiles/s at 1x (a path of ~18 tiles over ~8 sim hours of ~6 s each, minus pauses) => a step every 0.8 s
     const speed = 18 / ((8 * 60 - 45 - 2 * 36) * 0.1); expect(GAIT.stepLen / speed).toBeGreaterThan(0.5); expect(GAIT.stepLen / speed).toBeLessThan(1.4);

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- runs inside the page against the untyped __slope debug handle */
-/** `npm run visitor:models [-- --tag NAME --size 64 --seed 61]`: contact sheet of the three rare-visitor model variants in the REAL page (close walk, idle, wave, iso zoom, treeline zoom)
+/** `npm run visitor:models [-- --tag NAME --size 64 --seed 61]`: contact sheet of the rare-visitor model in the REAL page (close walk, idle, wave, iso zoom, treeline zoom)
  * -> .weave/shots/<tag>-<model>-<view>.png and .weave/shots/<tag>-sheet.png. Use a NEW --tag every time (the image read tool caches by path). */
 import { launch, startServer } from './lib/harness';
 import fs from 'node:fs';
@@ -10,11 +10,11 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 const srv = await startServer(), br = await launch();
 const files: Record<string, string[]> = {};
 try {
-  for (const model of ['plush', 'shaggy', 'bigfoot']) {
+  for (const model of ['plush']) {
     const page = await br.newPage();
     await page.setViewport({ width: 640, height: 640, deviceScaleFactor: 1 });
     const errs: string[] = []; page.on('pageerror', (e) => errs.push(String(e))); page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
-    await page.goto(`${srv.url}?size=${size}&seed=${seed}&start=winter&hints=0&starter=1&mode=career&visitorModel=${model}`, { waitUntil: 'load', timeout: 90000 });
+    await page.goto(`${srv.url}?size=${size}&seed=${seed}&start=winter&hints=0&starter=1&mode=career`, { waitUntil: 'load', timeout: 90000 });
     await page.waitForFunction(() => !!(window as any).__slope, { timeout: 90000 });
     await page.evaluate(() => { const s = (window as any).__slope; s.loop.setSpeed(0); s.setHour?.(11); const w = s.sim.weather.current; w.kind = 'clear'; w.intensity = 0; w.fog = 0; w.wind = 0; s.sim.visitor.force(60 * 10); const st = document.createElement('style'); st.textContent = '#ui{display:none!important}'; document.head.append(st); });
     files[model] = [];

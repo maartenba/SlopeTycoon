@@ -2,15 +2,8 @@ import * as THREE from 'three';
 import type { Grid } from '@/world/Grid';
 import type { Visitor, Print } from '@/sim/nature/Visitor';
 import { surfaceHeightAt } from '@/render/meshes/Paths';
-import { createPoseSet, MODEL_IDS, WALK_FRAMES, WAVE_FRAMES, type ModelId, type PoseSet } from '@/render/meshes/rareVisitor';
+import { createPoseSet, WALK_FRAMES, WAVE_FRAMES, type PoseSet } from '@/render/meshes/rareVisitor';
 import { frameOf } from '@/render/meshes/visitorGait';
-import { VISITOR } from '@/config/visitor';
-
-/** The model shown: `VISITOR.model`, or `?visitorModel=plush|shaggy|bigfoot` (testing). */
-export function chosenModel(): ModelId {
-  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('visitorModel') : null;
-  return (MODEL_IDS as readonly string[]).includes(q ?? '') ? (q as ModelId) : VISITOR.model;
-}
 
 /**
  * Rare high-country visitor view: ONE vertex-coloured mesh (four walk poses swapped on the same mesh) and ONE draped footprint mesh. Nothing is
@@ -19,8 +12,7 @@ export function chosenModel(): ModelId {
  */
 export class VisitorView {
   readonly group = new THREE.Group();
-  readonly model: ModelId = chosenModel();
-  private poses: PoseSet = createPoseSet(this.model);
+  private poses: PoseSet = createPoseSet();
   private body: THREE.Mesh;
   private bodyMat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true });
   private prints: THREE.Mesh;
