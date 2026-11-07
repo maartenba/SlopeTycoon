@@ -1237,7 +1237,7 @@ const apresNotesBars = (): BarSource[] => {
     const a = attractions.get(b.id);
     if (!a || !a.open || !attractions.servingNow(a)) continue;
     const g = buildingsView.get(b.id);
-    if (g) { _apO.set(0, (BUILDING_HEIGHT[b.type] ?? 2) + 0.1, 0); g.localToWorld(_apO); apresBarBuf.push({ id: b.id, x: _apO.x, y: _apO.y, z: _apO.z }); }
+    if (g) { _apO.set(0, (BUILDING_HEIGHT[b.type] ?? 2) + 0.1, 0); g.localToWorld(_apO); apresBarBuf.push({ id: b.id, x: _apO.x, y: _apO.y, z: _apO.z, type: b.type, yaw: g.rotation.y }); }
   }
   return apresBarBuf;
 };
@@ -1267,7 +1267,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     activity.update(game.date.tick + a, lodHeightFor(cam));
     cragClimbers.far = activity.far; cragClimbers.update(game.date.tick + a);
     skyActivity.far = activity.far; skyActivity.update(game.date.tick + a);
-    { const tg = viewCentre(); apresNotes.update(dt, lodHeightFor(cam), apresNotesBars(), getReducedMotion(), notesForQuality(QUALITY_PRESETS[quality].particles), { x: tg.x, z: tg.z }); }
+    { const tg = viewCentre(); apresNotes.update(dt, lodHeightFor(cam), apresNotesBars(), getReducedMotion(), notesForQuality(QUALITY_PRESETS[quality].particles), { x: tg.x, z: tg.z }, quality !== 'low'); }
     audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
   };
 }

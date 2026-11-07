@@ -47,3 +47,20 @@ describe('apres notes (pure animation)', () => {
     for (let i = 0; i < 40; i++) v.update(0.1, 30, [], false, 6); expect(v.drawn).toBe(0); expect(v.mesh.visible).toBe(false);
   });
 });
+
+import { pennantSway as _ps, glowPulse as _gp, coneThrob as _ct, APRES_NOTES as _AN } from '../../src/render/ApresNotes';
+describe('apres decoration extras (pure)', () => {
+  it('sway is bounded, deterministic, differs per building, zero under reduced motion', () => {
+    for (let t = 0; t < 20; t += 0.37) { const v = _ps(t, 7, 3); expect(Math.abs(v)).toBeLessThanOrEqual(_AN.pennantSway + 1e-9); expect(v).toBe(_ps(t, 7, 3)); expect(_ps(t, 7, 3, true)).toBe(0); }
+    expect(_ps(1.3, 7, 3)).not.toBe(_ps(1.3, 8, 3));
+  });
+  it('glow pulses at the bar beat within its depth and is steady when reduced', () => {
+    const beat = 60 / _AN.bpm; let lo = 9, hi = -9;
+    for (let t = 0; t < beat; t += beat / 50) { const g = _gp(t, 5); lo = Math.min(lo, g); hi = Math.max(hi, g); expect(g).toBeGreaterThan(0); expect(g).toBeLessThanOrEqual(1 + 1e-9); expect(_gp(t + beat, 5)).toBeCloseTo(g, 6); }
+    expect(hi - lo).toBeGreaterThan(_AN.glowDepth * 0.8);
+    expect(_gp(0, 5, true)).toBe(_gp(9, 5, true));
+  });
+  it('throb peaks at the beat, decays, rests at 1 when reduced; no NaN', () => {
+    for (let t = 0; t < 10; t += 0.13) { const v = _ct(t, 3); expect(Number.isFinite(v)).toBe(true); expect(v).toBeGreaterThanOrEqual(1); expect(v).toBeLessThanOrEqual(1 + _AN.coneDepth + 1e-9); expect(_ct(t, 3, true)).toBe(1); }
+  });
+});

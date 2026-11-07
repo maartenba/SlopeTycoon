@@ -28,7 +28,32 @@ export const APRES_NOTES = {
   fade: 0.8,
   /** Reduced motion: still notes at these life phases (0..1), constant alpha. */
   stillPhases: [0.3, 0.5, 0.72] as readonly number[],
+  /** Decoration extras (Medium / High only, `extras` flag): pennants on a string around the roof, a warm glow pulsing on the beat, a bass throb of its core. */
+  pennants: 8, pennantSize: 0.17, pennantSway: 0.07, swayHz: 0.55,
+  glowSize: 1.5, glowAlpha: 0.32, glowDepth: 0.22, coneDepth: 0.14,
+  /** String ring per building type: half extents (tiles, in the building's own axes) and drop below the roof anchor. */
+  rings: { apresBar: { rx: 1.75, rz: 1.25, drop: 0.55 }, schirmbar: { rx: 0.95, rz: 0.95, drop: 0.45 } } as Record<string, { rx: number; rz: number; drop: number }>,
 } as const;
+export const PENNANT_COLORS: readonly (readonly [number, number, number])[] = [[0.86, 0.22, 0.2], [0.98, 0.84, 0.3], [0.95, 0.95, 0.92], [0.25, 0.5, 0.78]];
+export const EXTRAS_PER_BAR = APRES_NOTES.pennants + 1;
+
+/** Sideways sway of pennant `i` (tiles): gentle, phase per building and pennant, none under reduced motion. */
+export function pennantSway(t: number, id: number, i: number, reduced = false): number {
+  if (reduced) return 0;
+  return APRES_NOTES.pennantSway * Math.sin((t * APRES_NOTES.swayHz + hash01(id, 401) + i * 0.37) * Math.PI * 2);
+}
+/** 0..1 glow level: a soft pulse on the ~125 bpm beat with its own phase per building; reduced motion: steady mid level. */
+export function glowPulse(t: number, id: number, reduced = false): number {
+  if (reduced) return 0.8;
+  const p = beatPhase(t, hash01(id, 501)), e = 0.5 + 0.5 * Math.cos(p * Math.PI * 2);
+  return 1 - APRES_NOTES.glowDepth + APRES_NOTES.glowDepth * e;
+}
+/** Bass throb of the glow core (1 = rest, 1 + coneDepth at the beat): fast attack, quick decay. Reduced motion: 1. */
+export function coneThrob(t: number, id: number, reduced = false): number {
+  if (reduced) return 1;
+  const p = beatPhase(t, hash01(id, 501)), k = Math.pow(1 - p, 4);
+  return 1 + APRES_NOTES.coneDepth * k;
+}
 
 const fract = (v: number): number => v - Math.floor(v);
 /** Stable 0..1 hash of two ints (no RNG). */
@@ -79,9 +104,9 @@ export function noteState(t: number, id: number, i: number, n: number, reduced =
 const VERT = `
 attribute vec4 aInfo; // xyz is the world position in aPos, aInfo = (size, alpha, shape seed, 0)
 attribute vec3 aPos;
-varying vec2 vUv; varying float vAlpha; varying float vSeed;
+varying vec2 vUv; varying float vAlpha; varying float vSeed; varying float vKind;
 void main(){
-  vAlpha = aInfo.y; vSeed = aInfo.z;
+  vAlpha = aInfo.y; vSeed = aInfo.z; vKind = aInfo.w;
   if (aInfo.y <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); vUv = vec2(0.0); return; }
   vec4 mv = modelViewMatrix * vec4(aPos, 1.0);
   mv.xy += position.xy * aInfo.x;
@@ -91,9 +116,21 @@ void main(){
 /** A note glyph from three shapes in quad space (head ellipse, stem, flag); eighth note or beamed pair by seed. */
 const FRAG = `
 uniform vec3 uColor; uniform float uNight;
-varying vec2 vUv; varying float vAlpha; varying float vSeed;
+varying vec2 vUv; varying float vAlpha; varying float vSeed; varying float vKind;
 void main(){
   vec2 p = vUv;
+  if (vKind > 0.5 && vKind < 1.5) { // warm glow: soft radial falloff, brighter core
+    float d = length(p) * 0.5; float a = smoothstep(0.5, 0.0, d);
+    gl_FragColor = vec4(mix(vec3(1.0, 0.72, 0.35), vec3(1.0, 0.9, 0.62), a * a), vAlpha * a * a);
+    return;
+  }
+  if (vKind > 1.5) { // pennant: a small triangle hanging from its string, colour from the seed
+    float tri = (p.y > -0.9 && p.y < 0.9 && abs(p.x) < (0.9 - p.y) * 0.5) ? 1.0 : 0.0;
+    if (tri < 0.5) discard;
+    vec3 c = vSeed < 0.25 ? vec3(0.86, 0.22, 0.2) : vSeed < 0.5 ? vec3(0.98, 0.84, 0.3) : vSeed < 0.75 ? vec3(0.95, 0.95, 0.92) : vec3(0.25, 0.5, 0.78);
+    gl_FragColor = vec4(c * mix(1.0, 0.8, uNight), vAlpha);
+    return;
+  }
   float head = length((p - vec2(-0.3, -0.5)) * vec2(1.0, 1.5)) < 0.32 ? 1.0 : 0.0;
   float stem = (abs(p.x - 0.0) < 0.08 && p.y > -0.5 && p.y < 0.65) ? 1.0 : 0.0;
   float flag = (p.x > 0.0 && p.x < 0.5 && p.y > 0.3 && p.y < 0.65 - p.x * 0.55 && p.y > 0.05 + p.x * 0.0 + 0.0) ? 1.0 : 0.0;
@@ -110,7 +147,7 @@ void main(){
   gl_FragColor = vec4(col, vAlpha);
 }`;
 
-export interface BarSource { id: number; x: number; y: number; z: number }
+export interface BarSource { id: number; x: number; y: number; z: number; /** Building type (string ring size) and yaw (rad) for the decoration extras. */ type?: string; yaw?: number }
 
 /** One shared layer. `update(dt, viewHeight, bars, reduced, notes)`: `bars` = the OPEN, serving bars with their roof anchor in world space (the caller supplies them; closed bars are fading out inside). */
 export class ApresNotesView {
@@ -121,8 +158,8 @@ export class ApresNotesView {
   private geo = new THREE.InstancedBufferGeometry();
   private mat: THREE.ShaderMaterial;
   private pos: Float32Array; private info: Float32Array;
-  private levels = new Map<number, { x: number; y: number; z: number; level: number }>();
-  readonly capacity = APRES_NOTES.maxBars * APRES_NOTES.perBar;
+  private levels = new Map<number, { x: number; y: number; z: number; level: number; type?: string; yaw?: number }>();
+  readonly capacity = APRES_NOTES.maxBars * (APRES_NOTES.perBar + EXTRAS_PER_BAR);
   /** Notes drawn last frame (tests / debug). */
   drawn = 0;
 
@@ -140,26 +177,41 @@ export class ApresNotesView {
     this.group.add(this.mesh);
   }
 
-  update(dt: number, viewHeight: number, bars: readonly BarSource[], reduced: boolean, notesPerBar: number, focus?: { x: number; z: number }): void {
+  update(dt: number, viewHeight: number, bars: readonly BarSource[], reduced: boolean, notesPerBar: number, focus?: { x: number; z: number }, extras = false): void {
     this.time += Math.min(dt, 0.1);
     const vf = viewFade(viewHeight);
     const open = new Set<number>();
-    for (const b of bars) { open.add(b.id); const s = this.levels.get(b.id); if (s) { s.x = b.x; s.y = b.y; s.z = b.z; } else this.levels.set(b.id, { x: b.x, y: b.y, z: b.z, level: 0 }); }
+    for (const b of bars) { open.add(b.id); const s = this.levels.get(b.id); if (s) { s.x = b.x; s.y = b.y; s.z = b.z; s.type = b.type; s.yaw = b.yaw; } else this.levels.set(b.id, { x: b.x, y: b.y, z: b.z, level: 0, type: b.type, yaw: b.yaw }); }
     for (const [id, s] of this.levels) { s.level = stepLevel(s.level, open.has(id), dt); if (s.level <= 0 && !open.has(id)) this.levels.delete(id); }
     const n = Math.min(APRES_NOTES.perBar, notesPerBar);
-    if (vf <= 0 || n <= 0 || this.levels.size === 0) { this.drawn = 0; this.mesh.visible = false; return; }
+    if (vf <= 0 || (n <= 0 && !extras) || this.levels.size === 0) { this.drawn = 0; this.mesh.visible = false; return; }
     let list = [...this.levels].sort((a, b) => a[0] - b[0]);
     if (focus && list.length > APRES_NOTES.maxBars) list = list.sort((a, b) => Math.hypot(a[1].x - focus.x, a[1].z - focus.z) - Math.hypot(b[1].x - focus.x, b[1].z - focus.z)).slice(0, APRES_NOTES.maxBars);
     else list = list.slice(0, APRES_NOTES.maxBars);
     let k = 0;
     for (const [id, s] of list) {
+      if (extras) {
+        const ring = APRES_NOTES.rings[s.type ?? ''] ?? { rx: 1.2, rz: 1.0, drop: 0.5 }, cy = Math.cos(s.yaw ?? 0), sy = Math.sin(s.yaw ?? 0);
+        const put = (x: number, y: number, z: number, size: number, a: number, seed: number, kind: number): void => {
+          if (a <= 0.01 || k >= this.capacity) return;
+          this.pos[k * 3] = x; this.pos[k * 3 + 1] = y; this.pos[k * 3 + 2] = z;
+          this.info[k * 4] = size; this.info[k * 4 + 1] = a; this.info[k * 4 + 2] = seed; this.info[k * 4 + 3] = kind; k++;
+        };
+        const glow = glowPulse(this.time, id, reduced), throb = coneThrob(this.time, id, reduced);
+        put(s.x, s.y - ring.drop * 0.5, s.z, APRES_NOTES.glowSize * Math.max(ring.rx, 1) * 0.6 * throb, APRES_NOTES.glowAlpha * glow * s.level * vf, 0, 1);
+        for (let j = 0; j < APRES_NOTES.pennants; j++) {
+          const a = (j / APRES_NOTES.pennants) * Math.PI * 2, lx = Math.sin(a) * ring.rx, lz = Math.cos(a) * ring.rz, sw = pennantSway(this.time, id, j, reduced);
+          const wx = lx * cy + lz * sy, wz = -lx * sy + lz * cy;
+          put(s.x + wx + sw * 0.7, s.y - ring.drop - 0.04 * Math.abs(Math.sin(a * 2)), s.z + wz + sw * 0.7, APRES_NOTES.pennantSize, 0.95 * s.level * vf, (j % 4) / 4 + 0.05, 2);
+        }
+      }
       for (let i = 0; i < n; i++) {
         const st = noteState(this.time, id, i, n, reduced);
         if (!st) continue;
         const a = st.alpha * s.level * vf;
         if (a <= 0.01) continue;
         this.pos[k * 3] = s.x + st.dx; this.pos[k * 3 + 1] = s.y + st.dy; this.pos[k * 3 + 2] = s.z + st.dz;
-        this.info[k * 4] = st.size; this.info[k * 4 + 1] = a; this.info[k * 4 + 2] = hash01(id, i + 301) > 0.5 ? 1 : 0; this.info[k * 4 + 3] = 0;
+        this.info[k * 4] = st.size; this.info[k * 4 + 1] = a; this.info[k * 4 + 2] = hash01(id, i + 301) > 0.5 ? 1 : 0; this.info[k * 4 + 3] = 0; // kind 0 = note
         k++;
       }
     }

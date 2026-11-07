@@ -16,7 +16,7 @@ export class VisitorView {
   private body: THREE.Mesh;
   private bodyMat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true });
   private prints: THREE.Mesh;
-  private printMat = new THREE.MeshLambertMaterial({ color: 0x7d8fa8, transparent: true, opacity: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  private printMat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   private printKey = '';
   private cx = 0; private cz = 0; private yaw = 0; private seen = false; private alpha = 0; private clock = 0; private lastY = 0;
   /** Pose chosen last frame (tests / debug). */
@@ -68,27 +68,28 @@ export class VisitorView {
 
   private updatePrints(list: Print[], alpha: number): void {
     if (!list.length || alpha <= 0) { this.prints.visible = false; return; }
-    this.prints.visible = true; this.printMat.opacity = 0.8 * alpha;
+    this.prints.visible = true; this.printMat.opacity = 0.9 * alpha;
     const key = `${list.length}|${this.grid.terrainVersion}`;
     if (key === this.printKey) return;
     this.printKey = key;
-    const pos: number[] = [], nor: number[] = [], idx: number[] = [];
-    const SEG = 10, A = 0.07, B = 0.15;
+    const pos: number[] = [], nor: number[] = [], col: number[] = [], idx: number[] = [];
+    const SEG = 10, A = 0.095, B = 0.2, RIM = 1.4;
+    const INNER = [0.3, 0.38, 0.52], RIMC = [0.62, 0.7, 0.82];
     for (const pr of list) {
-      const base = pos.length / 3, cs = Math.cos(pr.yaw), sn = Math.sin(pr.yaw);
-      const vert = (lx: number, lz: number): void => { const wx = pr.x + lx * cs + lz * sn, wz = pr.y - lx * sn + lz * cs; pos.push(wx, surfaceHeightAt(this.grid, wx, wz) + 0.012, wz); nor.push(0, 1, 0); };
-      vert(0, 0);
-      for (let k = 0; k < SEG; k++) { const a = (k / SEG) * Math.PI * 2; vert(Math.cos(a) * A, Math.sin(a) * B * (Math.sin(a) > 0 ? 1.1 : 0.9)); }
-      for (let k = 0; k < SEG; k++) idx.push(base, base + 1 + ((k + 1) % SEG), base + 1 + k);
-      for (let t = 0; t < 4; t++) { // four toes
-        const tb = pos.length / 3, tx = (t - 1.5) * 0.045, tz = B * 1.2 - Math.abs(t - 1.5) * 0.03;
-        vert(tx, tz);
-        for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; vert(tx + Math.cos(a) * 0.022, tz + Math.sin(a) * 0.03); }
-        for (let k = 0; k < 5; k++) idx.push(tb, tb + 1 + ((k + 1) % 5), tb + 1 + k);
-      }
+      const cs = Math.cos(pr.yaw), sn = Math.sin(pr.yaw);
+      const vert = (lx: number, lz: number, c: number[]): number => { const wx = pr.x + lx * cs + lz * sn, wz = pr.y - lx * sn + lz * cs; pos.push(wx, surfaceHeightAt(this.grid, wx, wz) + 0.012, wz); nor.push(0, 1, 0); col.push(c[0]!, c[1]!, c[2]!); return pos.length / 3 - 1; };
+      // sole: dark inner fan inside a soft lighter rim ring (reads as a pressed dent); toes the same, smaller
+      const blob = (cx: number, cz: number, rx: number, rz: number, n: number): void => {
+        const c0 = vert(cx, cz, INNER), inner: number[] = [], outer: number[] = [];
+        for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; inner.push(vert(cx + Math.cos(a) * rx, cz + Math.sin(a) * rz * (Math.sin(a) > 0 ? 1.1 : 0.9), INNER)); }
+        for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; outer.push(vert(cx + Math.cos(a) * rx * RIM, cz + Math.sin(a) * rz * RIM * (Math.sin(a) > 0 ? 1.1 : 0.9), RIMC)); }
+        for (let k = 0; k < n; k++) { const m = (k + 1) % n; idx.push(c0, inner[m]!, inner[k]!, inner[k]!, inner[m]!, outer[k]!, inner[m]!, outer[m]!, outer[k]!); }
+      };
+      blob(0, 0, A, B, SEG);
+      for (let t = 0; t < 4; t++) blob((t - 1.5) * 0.06, B * 1.3 - Math.abs(t - 1.5) * 0.035, 0.028, 0.04, 5);
     }
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx);
     g.computeBoundingSphere();
     this.prints.geometry.dispose(); this.prints.geometry = g;
   }

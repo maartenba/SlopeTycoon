@@ -19,7 +19,7 @@ interface Spec {
 
 // big rounded pear body in long fluffy white-blue fur, pale belly, big round grey-brown face with a darker muzzle, thick arms, big hands, short thick legs, big flat feet
 const S: Spec = {
-  fur: 0xf8fbff, furShade: 0xbcd3ec, furRoot: 0xb3cbeb, belly: 0xffffff, face: 0x9a8b7f, muzzle: 0x6a5b52, hand: 0x8e7f73, foot: 0x8e7f73, dark: 0x1c1b22,
+  fur: 0xf8fbff, furShade: 0x9db6d4, furRoot: 0xb3cbeb, belly: 0xffffff, face: 0x9a8b7f, muzzle: 0x6a5b52, hand: 0x8e7f73, foot: 0x8e7f73, dark: 0x1c1b22,
   body: { y0: 0.15, y1: 0.8, wBot: 0.33, wTop: 0.21, depth: 0.9, round: 1.2, hunch: 0 },
   head: { y: 0.96, rx: 0.25, ry: 0.215, rz: 0.225, z: 0.03, face: 1, eye: 0.05, eyeX: 0.08, ears: 0.05 },
   legs: { x: 0.125, len: 0.2, r0: 0.115, r1: 0.105, footW: 0.115, footL: 0.16, footH: 0.05, toes: 3 },
@@ -110,7 +110,7 @@ export const neutral = (): PoseParams => ({ ...idlePose(), look: 0, nod: 0, rais
 export function buildPose(P: PoseParams): THREE.BufferGeometry {
   lobeNo = 0;
   const parts: THREE.BufferGeometry[] = [], L = S.legs, A = S.arms, B = S.body, H = S.head;
-  const furCol = (base: number, shade: number): ColorFn => (_p, n) => _c.set(base).lerp(new THREE.Color(shade), Math.min(0.75, Math.max(0, 0.32 * (-n.y * 0.5 + 0.5) + (n.z < -0.3 ? 0.18 : 0))));
+  const furCol = (base: number, shade: number): ColorFn => (_p, n) => _c.set(base).lerp(new THREE.Color(shade), Math.min(0.8, Math.max(0, 0.5 * (-n.y * 0.5 + 0.5) + (n.z < -0.3 ? 0.18 : 0))));
   const fur = furCol(S.fur, S.furShade);
   const yOff = P.bob, bh = B.y1 - B.y0, breath = 1 + P.breathe;
   const wAt = (y: number): number => { const v = Math.min(1, Math.max(0, (y - B.y0) / bh)); return B.wTop + (B.wBot - B.wTop) * Math.pow(1 - v, B.round); };
@@ -202,8 +202,22 @@ export function buildPose(P: PoseParams): THREE.BufferGeometry {
   const pivot = new THREE.Matrix4().makeTranslation(0, L.len + L.footH, 0), unpivot = new THREE.Matrix4().makeTranslation(0, -(L.len + L.footH), 0);
   const full = new THREE.Matrix4().makeTranslation(0, yOff, 0).multiply(pivot).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(B.hunch * 0.6, 0, P.sway, 'YXZ'))).multiply(unpivot);
   for (const g of up) parts.push(g.applyMatrix4(full));
+  parts.push(groundShade(yOff));
   const g = mergeGeometries(parts, false)!;
   g.computeBoundingSphere();
+  return g;
+}
+
+/** Soft ground shade under the figure (part of the same geometry, no extra draw): a flat two-ring disc, dark blue-grey in the middle fading to a snow tone at the rim, so the pale silhouette separates from the snow. */
+export function groundShade(_bob = 0, rx = 0.46, rz = 0.4, seg = 10): THREE.BufferGeometry {
+  const pos: number[] = [0, 0.012, 0], col: number[] = [0.42, 0.5, 0.62], idx: number[] = [];
+  const rings: Array<[number, number, number, number]> = [[0.55, 0.52, 0.6, 0.72], [1, 0.86, 0.9, 0.95]];
+  for (const [k, r, g, b] of rings) for (let i = 0; i < seg; i++) { const a = (i / seg) * Math.PI * 2; pos.push(Math.sin(a) * rx * k, 0.012, Math.cos(a) * rz * k + 0.02); col.push(r, g, b); }
+  for (let i = 0; i < seg; i++) { const n = (i + 1) % seg; idx.push(0, 1 + n, 1 + i); const a = 1 + i, b = 1 + n, c = 1 + seg + i, d = 1 + seg + n; idx.push(a, b, c, b, d, c); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const nor: number[] = []; for (let i = 0; i < pos.length / 3; i++) nor.push(0, 1, 0);
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
   return g;
 }
 
