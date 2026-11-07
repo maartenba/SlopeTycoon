@@ -117,6 +117,9 @@ try {
     const frame = async (name: string, hour: number, state: 'open' | 'closed'): Promise<void> => {
       await page.evaluate((hour, state, id) => { const s = (window as any).__slope, sim = s.sim, w = sim.weather.current; s.loop.setSpeed(0); s.setHour?.(hour); if (state === 'open') { w.kind = 'clear'; w.wind = 0.1; w.fog = 0; sim.attractions.setSchirmbarClosed(id, false); } else sim.attractions.setSchirmbarClosed(id, true); sim.attractions.refreshOpen(id); s.buildingsView.sync(); }, hour, state, id);
       await focus(14); await sleep(1800); await page.screenshot({ path: `.weave/shots/schirmbar-${name}.png` });
+      if (state === 'open') { await page.evaluate(() => { const at = (window as any).__slope.sim.attractions; if (!at.__sv) { at.__sv = at.servingNow; at.servingNow = () => true; } }); } // QA only: the bar serves in the shot even when the harness clock says it is not serving hours
+      if (state === 'open') { await focus(4); await sleep(1500); await page.screenshot({ path: `.weave/shots/schirmbar-${name}-near.png` }); }
+      if (state === 'open') console.log(`apres layer (${name}):`, JSON.stringify(await page.evaluate(() => { const a = (window as any).__slope.apresNotes; const sim = (window as any).__slope.sim, at = sim.attractions, b = sim.buildings.all().find((q: any) => q.type === 'schirmbar'), t = at.get(b.id); return { drawn: a.drawn, visible: a.mesh.visible, levels: a.levels.size, time: a.time, active: b.active, open: t?.open, serving: t ? at.servingNow(t) : null, q: (window as any).__slope.renderer.quality }; })));
     };
     await frame('open-noon', 12, 'open'); await frame('open-dusk', 17.2, 'open'); await frame('closed', 12, 'closed');
     await page.evaluate((id) => { (window as any).__slope.sim.attractions.setSchirmbarClosed(id, false); }, id);

@@ -6,6 +6,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ### Changes
 
+- Smoother lake and river banks: the shore sand, lake bed and river bed now blend continuously instead of in tile-sized steps.
+- Apres bars sway and pulse a little: pennants on a string, a warm glow on the beat (Medium and High, still under reduced motion).
+- Clearer tracks and a softer ground shadow for a rare winter sight.
 - Website: clearer pages for people searching for a ski resort tycoon game (a rewritten Ski Resort Tycoon page, a page on playing ski games online and a plan for building a ski resort).
 
 ## [0.6.1] - 2026-11-06 (pre-release)

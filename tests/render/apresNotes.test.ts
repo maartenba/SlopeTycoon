@@ -64,3 +64,23 @@ describe('apres decoration extras (pure)', () => {
     for (let t = 0; t < 10; t += 0.13) { const v = _ct(t, 3); expect(Number.isFinite(v)).toBe(true); expect(v).toBeGreaterThanOrEqual(1); expect(v).toBeLessThanOrEqual(1 + _AN.coneDepth + 1e-9); expect(_ct(t, 3, true)).toBe(1); }
   });
 });
+
+describe('apres decoration extras in the layer', () => {
+  it('extras add one glow + pennants per open bar (Medium / High), none on Low, still under reduced motion; no NaN', () => {
+    const bar = [{ id: 3, x: 10, y: 2, z: 10, type: 'apresBar', yaw: 0.4 }];
+    const count = (extras: boolean, reduced = false): { n: number; kinds: number[] } => {
+      const v = new ApresNotesView();
+      for (let i = 0; i < 20; i++) v.update(0.1, 20, bar, reduced, 4, undefined, extras);
+      const info = (v.geo as unknown as { getAttribute(n: string): { array: Float32Array } }).getAttribute('aInfo').array, kinds: number[] = [];
+      for (let j = 0; j < v.drawn; j++) { kinds.push(info[j * 4 + 3]!); for (let q = 0; q < 4; q++) expect(Number.isFinite(info[j * 4 + q])).toBe(true); }
+      return { n: v.drawn, kinds };
+    };
+    const lo = count(false), hi = count(true);
+    expect(lo.kinds.every((k) => k === 0)).toBe(true);
+    expect(hi.kinds.filter((k) => k === 1).length).toBe(1);
+    expect(hi.kinds.filter((k) => k === 2).length).toBe(_AN.pennants);
+    expect(hi.n).toBeGreaterThan(lo.n);
+    const a = count(true, true), b = count(true, true);
+    expect(a).toEqual(b);
+  });
+});

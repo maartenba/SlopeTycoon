@@ -150,3 +150,17 @@ npx vite-node scripts/shots/m8-calls.ts low|med|high   # per-layer calls / trian
 npx vite-node scripts/shots/m8-audit.ts m8-after-final  # then: npx vite-node scripts/shots/m8-montage.ts [prefix]
 npm run flicker -- --only 64-winter-day,64-summer-day --kinds rotfine,zoomfine [--quality low|med|high] [--atmos off|low|high]
 ```
+
+
+## Lane L: water banks, apres bar extras, legibility (late pass)
+
+- **Banks (drawn only, sim tiles untouched).** The terrain's water share (`aWet`) is now a `[1 3 3 1]/8` blur of the lake and stream masks over a 4 x 4 tile window (`waterShare` in `TerrainGeometry.ts`; reads the global grid, so chunk borders agree; 0.5 on a straight shore as before; stream share doubled so a one-tile river peaks at 0.75). The terrain shader's bed, sand and wet-bank tones are functions of that share only, no longer of the per-tile kind, so the beige ghost-diamond tips at concave lake corners and the per-tile steps along rivers are gone in `m8-after-l-pond3` vs `m8-before-l-pond2`. Vertex / triangle count unchanged (colour maths only), no extra draw call; flicker 64 winter rotfine 0.659 % med / 0.693 % high (0.694 % with a visit on screen); MaterialGuard 0.
+- **Apres bars.** The notes layer also draws, per OPEN bar on Medium / High, a warm glow (pulses at ~125 bpm, phase per building, core throbs on the beat) and 8 pennants on a string around the roof that sway (pure, tested: `pennantSway`, `glowPulse`, `coneThrob`). Same single instanced draw call; Low and reduced motion draw nothing animated (reduced: still pennants, steady glow). The speaker cone itself is inside the merged building mesh and is NOT animated: the "throb" lives on the glow core.
+- **Rare visitor (neutral).** A two-ring ground shade disc is merged into the pose geometry (+30 triangles, still <= 1,800), the fur underside is darker, and tracks are ~35 % bigger with a dark inner and a lighter rim (vertex colours).
+- **Seen / not seen (SwiftShader).** The pond and river shots were compared before / after by eye. The pennants and glow were confirmed as drawn instances (13 per bar on Medium) but NOT seen on screen: in the harness shot the bar sits behind forest; the visitor's ground shade is likewise hidden by trees in the one shot taken. Tracks are clearly readable in `visitor-wide`.
+
+**What is still not great (after lane L).**
+- Concave lake corners still show a small sandy land wedge (shrunk, `RC` 0.42 to 0.34) and river bends still clip a tile-diamond at the water surface edge: a real contour-smoothed (marching-squares) shoreline mesh was not built; the fix is shader-side only.
+- The dug-bank wall itself was not remodelled (no sloped fillet geometry).
+- Shadow pops from culled off-screen tree cells were not changed: the cells are culled by the main-pass frustum, so a wider shadow margin needs a separate visibility pass (extra cost); left as is.
+- Not re-checked this pass: near rocks in walk / ride, the Altiport plane at iso zoom, cable car / funicular / near gondola in ride-along.

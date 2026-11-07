@@ -155,7 +155,7 @@ export class ApresNotesView {
   readonly mesh: THREE.Mesh;
   /** The render clock (accumulated frame seconds): the only time source. */
   time = 0;
-  private geo = new THREE.InstancedBufferGeometry();
+  readonly geo = new THREE.InstancedBufferGeometry();
   private mat: THREE.ShaderMaterial;
   private pos: Float32Array; private info: Float32Array;
   private levels = new Map<number, { x: number; y: number; z: number; level: number; type?: string; yaw?: number }>();
