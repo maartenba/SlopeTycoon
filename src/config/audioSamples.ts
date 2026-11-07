@@ -12,7 +12,7 @@ export const SAMPLE_LICENCES = ['CC0', 'PD', 'CC0-collection', 'CC0-freesound'] 
 export type SampleLicence = (typeof SAMPLE_LICENCES)[number];
 
 /** One-shot roles. The first 14 replace an existing synthesised `Sfx` recipe of the same name (the recipe stays as the fallback); `rustle`, `lap` and `sleighBell` are extra one-shots layered on top of the synth beds (no fallback needed: the beds carry it). */
-export const SHOT_ROLES = ['stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'thud', 'birdChirp', 'cowbell', 'churchBell', 'bell', 'clank', 'creak', 'avalanche', 'thunder', 'rustle', 'lap', 'sleighBell'] as const;
+export const SHOT_ROLES = ['stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'thud', 'birdChirp', 'cowbell', 'churchBell', 'bell', 'clank', 'creak', 'avalanche', 'thunder', 'rustle', 'lap', 'sleighBell', 'towerClank', 'distantCall'] as const;
 export type ShotRole = (typeof SHOT_ROLES)[number];
 /** Roles that are extras (no synth recipe of that name). */
 export const EXTRA_ROLES = ['rustle', 'lap', 'sleighBell'] as const satisfies readonly ShotRole[];
@@ -39,7 +39,7 @@ export interface SampleDef {
 }
 
 /** Level targets the trims were computed from (peak, linear, per one-shot role at gain 1; the synth's own peaks are 0.03-0.07 for the quiet roles, 0.6-0.9 for avalanche / thud) and the rms a bed reaches at its layer ceiling. */
-export const SAMPLE_TARGETS = { peak: { stepSnow: 0.08, stepGravel: 0.08, stepGrass: 0.08, stepWood: 0.08, stepRoad: 0.08, thud: 0.6, birdChirp: 0.06, cowbell: 0.06, churchBell: 0.12, bell: 0.2, clank: 0.15, creak: 0.05, avalanche: 0.7, thunder: 0.45, rustle: 0.12, lap: 0.1, sleighBell: 0.05 } as Record<ShotRole, number>, bedRms: 0.08 } as const;
+export const SAMPLE_TARGETS = { peak: { stepSnow: 0.08, stepGravel: 0.08, stepGrass: 0.08, stepWood: 0.08, stepRoad: 0.08, thud: 0.6, birdChirp: 0.06, cowbell: 0.06, churchBell: 0.12, bell: 0.2, clank: 0.15, creak: 0.05, avalanche: 0.7, thunder: 0.45, rustle: 0.12, lap: 0.1, sleighBell: 0.05, towerClank: 0.1, distantCall: 0.11 } as Record<ShotRole, number>, bedRms: 0.08 } as const;
 
 /** Global switches and limits. */
 export const SAMPLES = {
@@ -48,7 +48,7 @@ export const SAMPLES = {
   /** Relative to the page (works under `/play/` and `/slopetycoon/play/`); the service worker runtime-caches it (not precached, like the music). */
   dir: 'audio/sfx/',
   /** Decoded PCM we keep (MB): the least recently used IDLE buffers are dropped above it (buffers of playing beds are never dropped, so a busy scene may exceed it briefly). */
-  memoryCapMB: 40,
+  memoryCapMB: 48, // was 40 until the batch-2 beds: the worst realistic scene (a gondola station beside a queue, a bar and a cannon, with chairlift, wind and rain beds) holds 41.4 MB of decoded PCM
   /** At most this many fetch + decode jobs at once (never blocks a footstep: the synth plays until the buffer is ready). */
   maxJobs: 2,
   /** A failed file is retried at the earliest after this many seconds (offline -> online). */
@@ -155,6 +155,28 @@ export const SAMPLE_DEFS: readonly SampleDef[] = [
   { id: 'mach-cannon-01', role: 'bed', trim: 1.17, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 27.5, peakDb: -9.8, rmsDb: -23.3 },
   { id: 'thunder-01', role: 'thunder', trim: 0.681, rate: 22050, gainJitter: 0.1, pitchJitter: 0.02, licence: 'PD', dur: 30.0, peakDb: -3.6, rmsDb: -21.2 },
   { id: 'thunder-02', role: 'thunder', trim: 0.673, rate: 22050, gainJitter: 0.1, pitchJitter: 0.02, licence: 'CC0', dur: 30.0, peakDb: -3.5, rmsDb: -24.5 },
+  // Batch 2 (owner picks 2026-11-07; all CC0 on the Freesound pages, owner verified): per-kind lift beds, queue / bar crowd, cannon beds, tower clanks, the rare-visitor call.
+  { id: 'bed-gondola-01', role: 'bed', trim: 2.361, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 28.50, peakDb: -5.6, rmsDb: -29.4 },
+  { id: 'bed-gondola-02', role: 'bed', trim: 3.374, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 26.50, peakDb: -4.0, rmsDb: -32.5 },
+  { id: 'bed-gondola-03', role: 'bed', trim: 6.069, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 30.50, peakDb: -2.5, rmsDb: -37.6 },
+  { id: 'bed-cable-car-01', role: 'bed', trim: 1.875, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 22.50, peakDb: -5.8, rmsDb: -27.4 },
+  { id: 'bed-funicular-01', role: 'bed', trim: 1.710, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 21.50, peakDb: -12.7, rmsDb: -26.6 },
+  { id: 'bed-crowd-queue-01', role: 'bed', trim: 2.388, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 26.50, peakDb: -14.1, rmsDb: -29.5 },
+  { id: 'bed-crowd-queue-02', role: 'bed', trim: 2.388, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 26.50, peakDb: -12.3, rmsDb: -29.5 },
+  { id: 'bed-bar-crowd-01', role: 'bed', trim: 1.130, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 24.50, peakDb: -6.5, rmsDb: -23.0 },
+  { id: 'bed-bar-crowd-02', role: 'bed', trim: 1.170, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 24.50, peakDb: -8.5, rmsDb: -23.3 },
+  { id: 'bed-bar-crowd-03', role: 'bed', trim: 1.156, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 24.50, peakDb: -8.4, rmsDb: -23.2 },
+  { id: 'mach-snow-cannon-02', role: 'bed', trim: 1.225, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 29.50, peakDb: -10.3, rmsDb: -23.7 },
+  { id: 'mach-snow-cannon-03', role: 'bed', trim: 1.211, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 26.50, peakDb: -9.3, rmsDb: -23.6 },
+  { id: 'mach-snow-cannon-04', role: 'bed', trim: 1.183, loop: true, rate: 22050, gainJitter: 0, pitchJitter: 0, licence: 'CC0-freesound', dur: 28.50, peakDb: -10.1, rmsDb: -23.4 },
+  { id: 'mach-tower-clank-01', role: 'towerClank', tag: 'short', trim: 0.146, gainJitter: 0.15, pitchJitter: 0.03, licence: 'CC0-freesound', dur: 1.01, peakDb: -3.3, rmsDb: -26.6 },
+  { id: 'mach-tower-clank-02', role: 'towerClank', tag: 'short', trim: 0.143, gainJitter: 0.15, pitchJitter: 0.03, licence: 'CC0-freesound', dur: 0.35, peakDb: -3.1, rmsDb: -24.9 },
+  { id: 'mach-tower-clank-03', role: 'towerClank', tag: 'short', trim: 0.145, gainJitter: 0.15, pitchJitter: 0.03, licence: 'CC0-freesound', dur: 0.54, peakDb: -3.2, rmsDb: -26.4 },
+  { id: 'mach-tower-clank-04', role: 'towerClank', tag: 'short', trim: 0.151, gainJitter: 0.15, pitchJitter: 0.03, licence: 'CC0-freesound', dur: 0.84, peakDb: -3.6, rmsDb: -21.2 },
+  { id: 'mach-tower-pass-01', role: 'towerClank', tag: 'pass', trim: 0.146, gainJitter: 0.15, pitchJitter: 0.03, licence: 'CC0-freesound', dur: 2.80, peakDb: -3.3, rmsDb: -27.7 },
+  { id: 'creature-call-01', role: 'distantCall', trim: 0.163, gainJitter: 0.05, pitchJitter: 0.02, licence: 'CC0-freesound', dur: 3.48, peakDb: -3.4, rmsDb: -14.5 },
+  { id: 'creature-call-02', role: 'distantCall', trim: 0.163, gainJitter: 0.05, pitchJitter: 0.02, licence: 'CC0-freesound', dur: 2.60, peakDb: -3.4, rmsDb: -14.8 },
+  { id: 'creature-call-03', role: 'distantCall', trim: 0.163, gainJitter: 0.05, pitchJitter: 0.02, licence: 'CC0-freesound', dur: 4.30, peakDb: -3.4, rmsDb: -16.4 },
 ] as const;
 
 export const SAMPLE_BY_ID: ReadonlyMap<string, SampleDef> = new Map(SAMPLE_DEFS.map((s) => [s.id, s]));
@@ -166,7 +188,7 @@ export const sampleBytes = (s: SampleDef, ctxRate = 48000): number => Math.ceil(
 export const POOLS: Readonly<Record<ShotRole, readonly SampleDef[]>> = Object.fromEntries(SHOT_ROLES.map((r) => [r, SAMPLE_DEFS.filter((s) => s.role === r)])) as unknown as Record<ShotRole, readonly SampleDef[]>;
 
 /** Gates: how loud a bed slot wants to be, 0..1, from the ambience mix and state (pure: src/audio/sampleMix.ts). */
-export const GATE_IDS = ['windLight', 'windStorm', 'windGust', 'rainLight', 'rainStorm', 'crickets', 'crowd', 'lift', 'liftHum', 'stream', 'rapids', 'snowcat', 'heli', 'campfire', 'birds', 'morning', 'cowbells', 'drips', 'cannon', 'crossing'] as const;
+export const GATE_IDS = ['windLight', 'windStorm', 'windGust', 'rainLight', 'rainStorm', 'crickets', 'crowd', 'lift', 'liftHum', 'stream', 'rapids', 'snowcat', 'heli', 'campfire', 'birds', 'morning', 'cowbells', 'drips', 'cannon', 'cannonNear', 'crossing', 'gondola', 'cableCar', 'funicular', 'crowdQueue', 'barCrowd'] as const;
 export type GateId = (typeof GATE_IDS)[number];
 
 export interface BedSlot {
@@ -180,6 +202,8 @@ export interface BedSlot {
   ceil?: number;
   /** Share of the ceiling (slots of one layer sum to about 1). */
   weight: number;
+  /** Slots of one group play ONE member at a time: a member is picked at random whenever the group becomes audible again (cannon beds: a different recording per activation). */
+  group?: string;
 }
 
 /** Bed slots (the loops). Several slots of one layer play at unrelated lengths so the sum does not repeat audibly. */
@@ -192,7 +216,10 @@ export const BED_SLOTS: readonly BedSlot[] = [
   { id: 'rain-b', sample: 'bed-rain-03', gate: 'rainLight', layer: 'rain', weight: 0.5 },
   { id: 'rain-storm', sample: 'bed-rain-02', gate: 'rainStorm', layer: 'rain', weight: 1 },
   { id: 'crickets', sample: 'bed-crickets-01', gate: 'crickets', layer: 'crickets', weight: 1 },
-  { id: 'crowd', sample: 'bed-crowd-01', gate: 'crowd', layer: 'crowd', weight: 0.9 },
+  { id: 'crowd', sample: 'bed-crowd-01', gate: 'crowd', layer: 'crowd', weight: 0.6 },
+  // Queue / village crowd (JonasTisell 727501): only near a busy lift base or the village (gate crowdQueue = crowd x lift / village proximity); the synth murmur keeps its SYNTH_KEEP share.
+  { id: 'crowd-queue-a', sample: 'bed-crowd-queue-01', gate: 'crowdQueue', layer: 'crowd', weight: 0.4 },
+  { id: 'crowd-queue-b', sample: 'bed-crowd-queue-02', gate: 'crowdQueue', layer: 'crowd', weight: 0.35 },
   { id: 'lift-a', sample: 'mach-chairlift-seg1', gate: 'lift', layer: 'lift', weight: 0.6 },
   { id: 'lift-b', sample: 'mach-chairlift-seg2', gate: 'lift', layer: 'lift', weight: 0.5 },
   { id: 'lift-ski', sample: 'mach-skilift-01', gate: 'lift', layer: 'lift', weight: 0.4 },
@@ -206,7 +233,21 @@ export const BED_SLOTS: readonly BedSlot[] = [
   { id: 'snowcat', sample: 'mach-snowcat-01', gate: 'snowcat', layer: 'snowcat', weight: 1 },
   { id: 'heli', sample: 'mach-heli-01', gate: 'heli', layer: 'heli', weight: 1 },
   { id: 'campfire', sample: 'bed-campfire-01', gate: 'campfire', layer: 'campfire', weight: 1 },
+  // Snow cannon: the older recording is the far / default bed; close by (gate cannonNear) one of three nearer recordings plays instead, re-picked at random on every activation (group).
   { id: 'cannon', sample: 'mach-cannon-01', gate: 'cannon', layer: 'cannon', weight: 1 },
+  { id: 'cannon-near-a', sample: 'mach-snow-cannon-02', gate: 'cannonNear', layer: 'cannon', weight: 1, group: 'cannonNear' },
+  { id: 'cannon-near-b', sample: 'mach-snow-cannon-03', gate: 'cannonNear', layer: 'cannon', weight: 1, group: 'cannonNear' },
+  { id: 'cannon-near-c', sample: 'mach-snow-cannon-04', gate: 'cannonNear', layer: 'cannon', weight: 1, group: 'cannonNear' },
+  // Bar crowd (leaving.february 706352, impulse94 267496): the recorded murmur of the apres layer (replaces the synth murmur) near an OPEN bar; ceiling = AMB.layerMax.apres (low, the bar music stays clear).
+  { id: 'bar-crowd-a', sample: 'bed-bar-crowd-01', gate: 'barCrowd', layer: 'apres', weight: 0.5 },
+  { id: 'bar-crowd-b', sample: 'bed-bar-crowd-02', gate: 'barCrowd', layer: 'apres', weight: 0.4 },
+  { id: 'bar-crowd-c', sample: 'bed-bar-crowd-03', gate: 'barCrowd', layer: 'apres', weight: 0.35 },
+  // Per-kind lift beds near their stations / carriers (no synth twin: the lift layer's synth rumble stays; the chairlift beds step back by half there). Ceiling = the lift layer's (AMB.layerMax.lift 0.16); the loops are quiet after peak limiting, their trims lift them to the same rms.
+  { id: 'gondola-a', sample: 'bed-gondola-01', gate: 'gondola', ceil: 0.16, weight: 0.6 },
+  { id: 'gondola-b', sample: 'bed-gondola-02', gate: 'gondola', ceil: 0.16, weight: 0.5 },
+  { id: 'gondola-c', sample: 'bed-gondola-03', gate: 'gondola', ceil: 0.16, weight: 0.45 },
+  { id: 'cablecar', sample: 'bed-cable-car-01', gate: 'cableCar', ceil: 0.16, weight: 1 },
+  { id: 'funicular', sample: 'bed-funicular-01', gate: 'funicular', ceil: 0.16, weight: 1 },
   // Extra beds with no synth twin (nature, very quiet; the explicit ceilings are well under the lowest layer ceilings).
   { id: 'birds', sample: 'bed-birds-01', gate: 'birds', ceil: 0.05, weight: 1 },
   { id: 'morning', sample: 'bed-morning-01', gate: 'morning', ceil: 0.035, weight: 1 },
@@ -217,7 +258,7 @@ export const BED_SLOTS: readonly BedSlot[] = [
 ];
 
 /** Share of a synth layer that is KEPT when its samples fully cover it (0 = the synth layer is silent, the recording replaces it; the layers whose samples are one-shots keep part of the bed). */
-export const SYNTH_KEEP: Readonly<Partial<Record<LayerId, number>>> = { wind: 0, rain: 0, crickets: 0, crowd: 0.25, lift: 0, stream: 0, rapids: 0, snowcat: 0, heli: 0, campfire: 0, cannon: 0 };
+export const SYNTH_KEEP: Readonly<Partial<Record<LayerId, number>>> = { wind: 0, rain: 0, crickets: 0, crowd: 0.25, apres: 0, lift: 0, stream: 0, rapids: 0, snowcat: 0, heli: 0, campfire: 0, cannon: 0 };
 /** Extra one-shot samples (rustle / lap / sleighBell) take over part of these synth beds once their pool is ready. */
 export const SYNTH_SHRINK_WITH_SHOTS: Readonly<Partial<Record<LayerId, { role: ShotRole; keep: number }>>> = { leaves: { role: 'rustle', keep: 0.4 }, water: { role: 'lap', keep: 0.6 }, sleigh: { role: 'sleighBell', keep: 0.4 } };
 
@@ -232,3 +273,26 @@ export const SAMPLE_RATES = { rustle: 0.45, lap: 0.35, sleighBell: 0.6, thunderS
 export const SAMPLE_RETIRED: readonly ShotRole[] = ['churchBell'];
 /** Minimum seconds between two SAMPLE plays of a role (a play inside the gap is dropped, never replaced by the synth): the chairlift squeak is a 3 s clip, it must not sound every few seconds. */
 export const SAMPLE_MIN_GAP: Readonly<Partial<Record<ShotRole, number>>> = { clank: 12 };
+
+/**
+ * Tower clanks (batch 2, Freesound 519459): a carrier passing a lift tower near the camera. Pure detection in `src/audio/towerPass.ts`; fed by `main.ts` through `ProbeDeps.towerLifts`.
+ * Tune HERE. Measured on the demo resort: `npm run audio:census` (docs/audio.md "Samples").
+ */
+export const TOWER_CLANK = {
+  /** At most this many lifts (the nearest to the camera) are checked each tick. */
+  maxLifts: 3,
+  /** A carrier enters a tower's pass zone within this many tiles (strand offset is 0.3); it leaves it at `exitR` (hysteresis: one clank per pass). */
+  enterR: 0.9, exitR: 1.6,
+  /** Only towers within this many tiles of the camera target count, with a level falling as (1 - d / reach)^2 x zoom window. */
+  reach: 18, zoomFar: 28, zoomNear: 12,
+  /** Passes below this level are ignored. */
+  minLevel: 0.12,
+  /** Seconds between two clanks anywhere (audio clock). */
+  globalGap: 5,
+  /** Chance that an allowed pass actually clanks (variety; a busy chairlift passes a tower every second or two). */
+  chance: 0.4,
+  /** Share of clanks that play the whole 2.8 s passage instead of a short one-shot (1 in 8). */
+  passShare: 0.125,
+  /** Playback gain at level 1 / 0 (x the file trim). */
+  gainNear: 1, gainFar: 0.35,
+} as const;

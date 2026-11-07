@@ -1369,6 +1369,13 @@ try {
       grid, maxHeight: maxH, heightAt: (x, y) => heightAt(grid, x, y),
       guests: { count: (x, y, r) => hashCount(guestSim.hash, x, y, r) },
       lifts: () => lifts.all().filter((l) => l.open).map((l) => ({ x: (l.bottom.x + l.top.x) / 2, y: (l.bottom.y + l.top.y) / 2 })),
+      stationSources: () => lifts.all().filter((l) => l.open).flatMap((l) => {
+        const fam = LIFTS[l.kind]?.family;
+        if (fam !== 'gondola' && fam !== 'cablecar' && fam !== 'funicular') return [];
+        const st = (l.stations && l.stations.length ? l.stations : [l.bottom, l.top]).map((p) => ({ x: p.x + 1, y: p.y + 1, family: fam }));
+        return [...st, { x: (l.bottom.x + l.top.x) / 2 + 1, y: (l.bottom.y + l.top.y) / 2 + 1, family: fam }];
+      }),
+      towerLifts: () => lifts.all().filter((l) => l.open && l.towers.length).map((l) => ({ id: l.id, towers: l.towers, carriers: () => (liftToolsRef ? carrierStates(l, liftToolsRef.view.phaseOf(l.id)) : []) })),
       buildings: () => buildings.all(),
       cows: () => sim.nature.livestock.animals.filter((a) => a.species === 'cow' && !a.hidden),
       cats: () => (opsRef?.grooming.nightActive ? opsRef.grooming.cats : []),

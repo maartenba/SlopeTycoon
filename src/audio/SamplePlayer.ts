@@ -1,5 +1,5 @@
 import { Rng } from '../core/Rng';
-import { BED_SLOTS, EXTRA_ROLE_META, POOLS, SAMPLES, SAMPLE_BY_ID, SAMPLE_MIN_GAP, SAMPLE_RETIRED, SHOT_ROLES, sampleBytes, sampleUrl, type BedSlot, type SampleDef, type ShotRole } from '../config/audioSamples';
+import { BED_SLOTS, EXTRA_ROLE_META, POOLS, SAMPLES, SAMPLE_BY_ID, SAMPLE_MIN_GAP, SAMPLE_RETIRED, SHOT_ROLES, sampleBytes, sampleUrl, type BedSlot, type GateId, type SampleDef, type ShotRole } from '../config/audioSamples';
 import type { AudioEngine, BusId } from './AudioEngine';
 import type { BufferLike, GainLike, SourceLike } from './backend';
 import { gateLevels, pickIndex, shotParams, slotTargets, synthScale } from './sampleMix';
@@ -41,6 +41,7 @@ export class SamplePlayer {
   private warned = false;
   private lastPlay = new Map<ShotRole, number>();
   private runs = new Map<string, BedRun>();
+  private groupPick = new Map<string, string>();
   private crossingLevel = 0; private crossingUntil = -1;
   private rng: () => number;
   private tick = 0;
@@ -173,10 +174,19 @@ export class SamplePlayer {
    * Drive the loops from the ambience mix (called by Ambience.update ~10 Hz). Returns the sample coverage per synth layer (the caller scales the synth beds by `synthScale`).
    * Starts a slot when its gain exceeds the silence threshold (loading its file first), stops it after `silentSec` of silence.
    */
-  updateBeds(mix: AmbienceMix, s: Pick<AmbienceState, 'weather'>, layerMax: Record<LayerId, number>, fadeTc = 0.9): Partial<Record<LayerId, number>> {
+  updateBeds(mix: AmbienceMix, s: Pick<AmbienceState, 'weather'>, layerMax: Record<LayerId, number>, fadeTc = 0.9, extra: Partial<Record<GateId, number>> = {}): Partial<Record<LayerId, number>> {
     if (!this.bedsEnabled || !this.engine.running) { if (this.runs.size) this.stopAll(); return {}; }
     const now = this.engine.now(), cross = now < this.crossingUntil ? this.crossingLevel : 0;
-    const { gains, coverage } = slotTargets(gateLevels(mix, s, cross), layerMax, (id) => SAMPLE_BY_ID.get(id)!.trim, (id) => this.cache.has(id));
+    const gates = gateLevels(mix, s, cross, extra);
+    // Slot groups play ONE member (cannon beds): picked at random when the group becomes audible, forgotten when its gate is back at zero (the next activation picks again).
+    const groups = new Map<string, BedSlot[]>();
+    for (const sl of BED_SLOTS) if (sl.group) groups.set(sl.group, [...(groups.get(sl.group) ?? []), sl]);
+    for (const [g, members] of groups) {
+      const lvl = Math.max(...members.map((m) => gates[m.gate] * m.weight));
+      if (lvl <= SAMPLES.silentBelow) this.groupPick.delete(g);
+      else if (!this.groupPick.has(g)) this.groupPick.set(g, members[Math.min(members.length - 1, Math.floor(this.rng() * members.length))]!.id);
+    }
+    const { gains, coverage } = slotTargets(gates, layerMax, (id) => SAMPLE_BY_ID.get(id)!.trim, (id) => this.cache.has(id), BED_SLOTS, (id) => { const g = BED_SLOTS.find((x) => x.id === id)?.group; return !!g && this.groupPick.get(g) !== id; });
     const busNode = this.engine.busNode('ambience'), be = this.engine.backend;
     for (const sl of BED_SLOTS) {
       const g = gains[sl.id]!, run = this.runs.get(sl.id);

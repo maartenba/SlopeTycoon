@@ -6,6 +6,10 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ### Changes
 
+- Sounds near gondolas, cable cars and funiculars: a soft machinery hum when you zoom in beside a station of a running one.
+- Queue and bar crowd sounds: a crowd murmur at busy lift bases and in the village, and a bar chatter under the music next to an open Apres-Ski Bar or Schirmbar.
+- Tower clanks as carriers pass: a quiet rattle when a chair or cabin goes by a lift tower close to the camera (rare, never twice within five seconds).
+- Snow cannons sound closer: three more recordings play right beside a running cannon, a different one each time it starts.
 - Smoother lake and river banks: the shore sand, lake bed and river bed now blend continuously instead of in tile-sized steps.
 - Apres bars sway and pulse a little: pennants on a string, a warm glow on the beat (Medium and High, still under reduced motion).
 - Clearer tracks and a softer ground shadow for a rare winter sight.

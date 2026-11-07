@@ -11,6 +11,10 @@ export interface ProbeDeps {
   /** Guest positions (tile coords) + the SpatialHash for density queries. */
   guests: { count(x: number, y: number, r: number): number };
   lifts: () => Array<{ x: number; y: number }>;
+  /** Open lifts that have towers + their carriers (tower clanks, towerPass.ts). Optional: absent = no clanks. */
+  towerLifts?: () => import('./towerPass').TowerLift[];
+  /** Station centres (and the line midpoint) of the OPEN gondola / cable car / funicular lifts, tagged with the family (per-kind recorded beds). Optional: absent = none. */
+  stationSources?: () => Array<{ x: number; y: number; family: 'gondola' | 'cablecar' | 'funicular' }>;
   buildings: () => Array<{ x: number; y: number }>;
   cows: () => Array<{ x: number; y: number }>;
   cats: () => Array<{ x: number; y: number }>;
@@ -81,6 +85,8 @@ export class WorldProbe {
     const lift = nearestSource(l, d.lifts());
     o.lifts = lift ? proximity(lift.dist, 40) : 0;
     this.liftPan = lift ? spatialParams(l, lift.item.x, lift.item.y, 14).pan : 0;
+    o.gondola = 0; o.cablecar = 0; o.funicular = 0;
+    if (d.stationSources) for (const st of d.stationSources()) { const p = proximity(Math.hypot(st.x - l.x, st.y - l.z), PROX.stations.reach); if (p > o[st.family]!) o[st.family] = p; }
     const b = nearestSource(l, d.buildings()); o.buildings = b ? proximity(b.dist, 35) : 0;
     let cows = 0;
     for (const c of d.cows()) if (Math.hypot(c.x - l.x, c.y - l.z) < 30) cows++;

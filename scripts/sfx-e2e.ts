@@ -65,6 +65,17 @@ try {
   ok(beds.eng === 'running' && beds.mem > 0 && beds.mem < SAMPLES.memoryCapMB * 1048576, `beds play (${beds.beds.join(', ')}); decoded memory ${(beds.mem / 1048576).toFixed(1)} MB < ${SAMPLES.memoryCapMB} MB cap`);
   await page.evaluate(`window.__st.lifts = 1`);
   await page.waitForFunction(`${A}.samples.activeBeds.includes('lift-a')`, { timeout: 90000 });
+  // 2b. batch 2: the per-kind lift beds, queue / bar crowd and the cannon near beds start from forced proximity (the real probe feeds the same fields), requested only after the gesture
+  await page.evaluate(`Object.assign(window.__st, { gondola: 1, cablecar: 1, funicular: 1, buildings: 1, apres: 0.9, cannon: 1, lifts: 1, crowd: 80 })`);
+  await page.waitForFunction(`['gondola-a', 'cablecar', 'funicular', 'crowd-queue-a', 'bar-crowd-a'].every((id) => ${A}.samples.activeBeds.includes(id)) && ${A}.samples.activeBeds.some((id) => id.startsWith('cannon-near'))`, { timeout: 120000 });
+  const b2 = await page.evaluate(`({ beds: ${A}.samples.activeBeds, mem: ${A}.samples.memoryBytes })`) as { beds: string[]; mem: number };
+  ok(b2.beds.filter((id) => id.startsWith('cannon-near')).length === 1, `a forced gondola / cable car / funicular / queue / bar / cannon scene plays the new beds, ONE cannon near bed (${b2.beds.join(', ')}); decoded ${(b2.mem / 1048576).toFixed(1)} MB`);
+  await page.evaluate(`Object.assign(window.__st, { gondola: 0, cablecar: 0, funicular: 0, apres: 0, cannon: 0, buildings: 0, crowd: 60 })`);
+  // 2c. tower clanks (short one-shots + the whole passage) and the rare-visitor call: synth first, recordings once decoded
+  await page.evaluate(`${A}.sfx.play('towerClank', { tag: 'short' }); ${A}.sfx.play('distantCall', { gain: 0.5 })`);
+  await page.waitForFunction(`${A}.samples.roleReady('towerClank', 'short') && ${A}.samples.roleReady('towerClank', 'pass') && ${A}.samples.roleReady('distantCall')`, { timeout: 90000 });
+  const tc = await page.evaluate(`(async () => { const a = ${A}, files = []; for (const tag of ['short', 'pass']) { await new Promise((r) => setTimeout(r, 1200)); a.sfx.play('towerClank', { tag, gain: 0.5 }); files.push(a.samples.lastFile); } await new Promise((r) => setTimeout(r, 6000)); a.sfx.play('distantCall', { gain: 0.5 }); files.push(a.samples.lastFile); return files; })()`) as string[];
+  ok(/^mach-tower-clank-0[1-4]$/.test(tc[0]!) && tc[1] === 'mach-tower-pass-01' && /^creature-call-0[1-3]$/.test(tc[2]!), `tower clank (short / whole passage) and the visitor call play recordings (${tc.join(', ')})`);
   // 3. seam measurement of the decoded loops in Chrome (gapless decode: the length equals the table, the wrap-around jump is small next to the typical sample step)
   const seams = await page.evaluate(`(async (defs) => {
     const out = [];
@@ -77,7 +88,7 @@ try {
     return out;
   })(${JSON.stringify(SAMPLE_DEFS.filter((s) => s.role === 'bed').map((s) => ({ id: s.id, rate: s.rate, dur: s.dur })))})`) as Array<{ id: string; sec: number; want: number; ratio: number }>;
   const badLen = seams.filter((s) => Math.abs(s.sec - s.want) > 0.06), badSeam = seams.filter((s) => s.ratio > 4);
-  ok(seams.length >= 25 && badLen.length === 0, `${seams.length} loops decode to their table length in Chrome (gapless)${badLen.length ? ': ' + JSON.stringify(badLen) : ''}`);
+  ok(seams.length >= 38 && badLen.length === 0, `${seams.length} loops decode to their table length in Chrome (gapless)${badLen.length ? ': ' + JSON.stringify(badLen) : ''}`);
   ok(badSeam.length === 0, `loop wrap-around jump <= 4x the typical sample step (worst ${Math.max(...seams.map((s) => s.ratio)).toFixed(2)})${badSeam.length ? ': ' + JSON.stringify(badSeam) : ''}`);
   // 4. a storm: thunder (forced rng so the roll hits), the sample plays once decoded
   await page.evaluate(`(() => { const a = ${A}; a.ambience.rng = () => 0; window.__st.weather = 'storm'; })()`);

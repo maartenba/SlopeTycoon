@@ -26,7 +26,7 @@ export class VisitorCalls {
   private tryGlobal(pan: number): void {
     const t = this.now();
     if (t - this.lastAuto < CALL.minGapSec) { this.pending = false; return; } // inside the rate limit: skipped (the spatial / 'Show me' call can still come)
-    if (this.play({ gain: CALL.globalGain, pan: clampPan(pan), delay: CALL.startDelaySec, noSample: true })) { this.lastAuto = this.lastAny = t; this.pending = false; this.played.global++; }
+    if (this.play({ gain: CALL.globalGain, pan: clampPan(pan), delay: CALL.startDelaySec })) { this.lastAuto = this.lastAny = t; this.pending = false; this.played.global++; }
   }
   /** Every frame (cheap) while a visit may be on. `dist` = tiles from the camera target to the visitor; `pan` as in `sighting`. */
   frame(active: boolean, dist: number, pan: number): void {
@@ -36,13 +36,13 @@ export class VisitorCalls {
     const t = this.now();
     if (t - this.lastAuto < CALL.minGapSec) return; // wait: tried again each frame once the limit has passed, while it stays near
     const k = Math.max(0, Math.min(1, dist / CALL.spatialR)), gain = CALL.spatialNear + (CALL.spatialFar - CALL.spatialNear) * k;
-    if (this.play({ gain, pan: clampPan(pan), noSample: true })) { this.lastAuto = this.lastAny = t; this.spatialDone = true; this.played.spatial++; }
+    if (this.play({ gain, pan: clampPan(pan) })) { this.lastAuto = this.lastAny = t; this.spatialDone = true; this.played.spatial++; }
   }
   /** 'Show me' pressed. */
   showMe(pan: number): void {
     const t = this.now();
     if (t - this.lastAny < CALL.showMeGapSec) return;
-    if (this.play({ gain: CALL.showMeGain, pan: clampPan(pan), noSample: true })) { this.lastAny = t; this.played.showMe++; }
+    if (this.play({ gain: CALL.showMeGain, pan: clampPan(pan) })) { this.lastAny = t; this.played.showMe++; }
   }
 }
 const clampPan = (p: number): number => Math.max(-CALL.maxPan, Math.min(CALL.maxPan, p));

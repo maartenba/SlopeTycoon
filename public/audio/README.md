@@ -34,13 +34,15 @@ Encoding (done once; the files are committed as they are): the owner's originals
 
 Credit line (About dialog, `THIRD_PARTY_NOTICES.md`): "Sound recordings: CC0, mostly from Freesound (see the audio README)." Where the exact source page of a file is not recorded, the table says `Freesound (CC0)`; the rows that name OpenGameArt or Wikimedia Commons are the ones whose page is known.
 
-`sfx/` holds the recorded sound effects and ambience loops (88 mono mp3 files, about 7.5 MB). Owner decision, 2026-11-06: a second exception to "everything but the music is generated in code". Every file is a CC0 or public-domain recording the owner picked; the game still synthesises the same sounds and plays those whenever a recording is not loaded (offline before the first cache, a failed download, `?nosamples=1`). Nothing from the unclear-provenance folder of the staging library (the Public Domain Mark radio recordings) is shipped.
+`sfx/` holds the recorded sound effects and ambience loops (109 mono mp3 files, about 10.7 MB). Owner decision, 2026-11-06: a second exception to "everything but the music is generated in code". Every file is a CC0 or public-domain recording the owner picked; the game still synthesises the same sounds and plays those whenever a recording is not loaded (offline before the first cache, a failed download, `?nosamples=1`). Nothing from the unclear-provenance folder of the staging library (the Public Domain Mark radio recordings) is shipped.
 
 Licence keys (the same strings as `src/config/audioSamples.ts`, tested in `tests/repo/sfxAssets.test.ts`): `CC0` = CC0 1.0 on the source page, `PD` = public domain on the source page, `CC0-freesound` = CC0 per the Freesound page (the owner downloaded these logged in; the owner still verifies each page, see below), `CC0-collection` = CC0 per the collection the file came from, no per-file page recorded (the Source column then says `Freesound (CC0)`; owner to verify). Only these keys are allowed; no attribution is required, the credit is given here and in the About dialog.
 
 Encoding (done once, the files are committed as they are): mono mp3 from the cleaned staging clips. One-shots 44.1 kHz 96 kbps with 15 ms fade-in / 30 ms fade-out; long clips (avalanche, thunder) 22.05 kHz 64 kbps with a short fade-in and a 0.3 s fade-out; loops ("beds") 22.05 kHz (32 kHz for the bright ones: birds, crickets, bells) 80 kbps, no fades (the loops were crossfaded when they were cleaned). The player decodes them to PCM at the same rate, so a loop stays seamless (the encoder delay and padding are in the Xing / LAME header, which the browsers' decoders honour) and big beds cost half the memory. No tags, no cover art.
 
 Cut notes: `mach-chairlift-squeak-01` / `-02` are two segments of Freesound 180942 (jc144940, chairlift): the real lift only starts at about 25 s of the original (squeaky wheel), so everything before is cut. `step-gravel-snowcove-01..03` come from the original flacs `Corsica_S-Walking_on_snow_covered_gravel_01..03`.
+
+Batch 2 (2026-11-07: gondola / cable car / funicular / queue + bar crowd / cannon / tower clank / call files, source pages `https://freesound.org/s/<id>/`): the owner verified CC0 on each Freesound page; the key stays `CC0-freesound`. `mach-tower-pass-01` and `mach-tower-clank-01..04` are one 11.5 s recording (the clank passage only), `bed-cable-car-01` is built from two windows of one recording, the call files are three calls of one four-call recording. Encoded once: mono, beds 22.05 kHz 64 kbps, one-shots 44.1 kHz 96 kbps (the 64 kbps keeps the folder under 12 MB).
 
 Owner to verify on the page (the manifest says "owner to verify"): all `CC0-freesound` rows (Freesound), the three `CC0-collection` rows (`thud-dull-01`, `bed-morning-01`, `avalanche-03`: the original file names are in the table) and the rows of the OpenGameArt collection "30 CC0 sfx loops" if any file of it is ever shipped (none is now).
 
@@ -134,5 +136,26 @@ Owner to verify on the page (the manifest says "owner to verify"): all `CC0-free
 | `mach-cannon-01.mp3` | Freesound | https://freesound.org/people/inspire153/sounds/843392/ | inspire153 | CC0-freesound | snow-cannon__fs843392-inspire153-snow-cannon-at-tall-seg1 |
 | `thunder-01.mp3` | Wikimedia Commons | https://commons.wikimedia.org/wiki/File%3ARain_and_thunder.ogg | User:Caesar | PD | thunder__cm-Rain-and-thunde-1 |
 | `thunder-02.mp3` | OpenGameArt | https://opengameart.org/content/rain-long-thunder | WuxiaScrub | CC0 | thunder__rain-long-thunder-rain-thunder |
+| `bed-gondola-01.mp3` | Freesound | https://freesound.org/s/676548/ | rthijs | CC0-freesound | ski-lift field recording, loop 203-233 s of the cleaned file (peak-limited, quiet: raised by its trim) |
+| `bed-gondola-02.mp3` | Freesound | https://freesound.org/s/676548/ | rthijs | CC0-freesound | ski-lift field recording, loop 7.5-35.5 s of the cleaned file (peak-limited, quiet: raised by its trim) |
+| `bed-gondola-03.mp3` | Freesound | https://freesound.org/s/676548/ | rthijs | CC0-freesound | ski-lift field recording, loop 165-197 s of the cleaned file (peak-limited, quiet: raised by its trim) |
+| `bed-cable-car-01.mp3` | Freesound | https://freesound.org/s/571480/ | Junikaefer | CC0-freesound | cable cars on tracks: the louder passes (5.5-17 s and 77-92 s of the original) crossfade-joined into a 22.5 s loop (seam score 99.9) |
+| `bed-funicular-01.mp3` | Freesound | https://freesound.org/s/442493/ | BonnyOrbit | CC0-freesound | funicular cable car, loop 22-45 s |
+| `bed-crowd-queue-01.mp3` | Freesound | https://freesound.org/s/727501/ | JonasTisell | CC0-freesound | large crowd talking, loop 24.5-52.5 s |
+| `bed-crowd-queue-02.mp3` | Freesound | https://freesound.org/s/727501/ | JonasTisell | CC0-freesound | large crowd talking, loop 72.5-100.5 s |
+| `bed-bar-crowd-01.mp3` | Freesound | https://freesound.org/s/706352/ | leaving.february | CC0-freesound | crowded bar chatter, loop 35-61 s |
+| `bed-bar-crowd-02.mp3` | Freesound | https://freesound.org/s/267496/ | impulse94 | CC0-freesound | crowd indoors at a bar, loop 2.5-28.5 s |
+| `bed-bar-crowd-03.mp3` | Freesound | https://freesound.org/s/267496/ | impulse94 | CC0-freesound | crowd indoors at a bar, loop 28.5-54.5 s |
+| `mach-snow-cannon-02.mp3` | Freesound | https://freesound.org/s/842656/ | inspire153 | CC0-freesound | snow cannon (lumekahur), loop 14.5-45.5 s |
+| `mach-snow-cannon-03.mp3` | Freesound | https://freesound.org/s/842656/ | inspire153 | CC0-freesound | snow cannon (lumekahur), loop 51-79 s |
+| `mach-snow-cannon-04.mp3` | Freesound | https://freesound.org/s/842656/ | inspire153 | CC0-freesound | snow cannon (lumekahur), loop 111-141 s |
+| `mach-tower-clank-01.mp3` | Freesound | https://freesound.org/s/519459/ | andriiperevodchyk | CC0-freesound | passing chairlift tower, one-shot 8.07-9.08 s of the original |
+| `mach-tower-clank-02.mp3` | Freesound | https://freesound.org/s/519459/ | andriiperevodchyk | CC0-freesound | passing chairlift tower, one-shot 8.38-8.73 s of the original |
+| `mach-tower-clank-03.mp3` | Freesound | https://freesound.org/s/519459/ | andriiperevodchyk | CC0-freesound | passing chairlift tower, one-shot 9.28-9.82 s of the original |
+| `mach-tower-clank-04.mp3` | Freesound | https://freesound.org/s/519459/ | andriiperevodchyk | CC0-freesound | passing chairlift tower, one-shot 10.06-10.90 s of the original |
+| `mach-tower-pass-01.mp3` | Freesound | https://freesound.org/s/519459/ | andriiperevodchyk | CC0-freesound | passing chairlift tower, the whole passage 8.07-10.87 s (2.8 s) |
+| `creature-call-01.mp3` | Freesound | https://freesound.org/s/554031/ | BaDoink | CC0-freesound | one call of a four-call recording, 0-3.5 s of the original |
+| `creature-call-02.mp3` | Freesound | https://freesound.org/s/554031/ | BaDoink | CC0-freesound | one call of a four-call recording, 3.9-6.5 s of the original |
+| `creature-call-03.mp3` | Freesound | https://freesound.org/s/554031/ | BaDoink | CC0-freesound | one call of a four-call recording, 6.7-11.0 s of the original |
 
 Which file plays when, the trim of each file and how to swap, add or switch off samples: `src/config/audioSamples.ts`, `docs/audio.md` ("Samples").

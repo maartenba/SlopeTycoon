@@ -9,7 +9,7 @@ export const SFX_NAMES = [
   'click', 'hover', 'tick', 'blip', 'thud', 'crunch', 'scrape', 'kaching', 'clank', 'bell', 'grind', 'alarm',
   'chimeInfo', 'chimeImportant', 'chimeCritical', 'rescue', 'avalanche', 'bankruptcy', 'ratingUp', 'ratingDown', 'season',
   'birdChirp', 'cowbell', 'churchBell', 'drip', 'creak', 'shutter', 'distantCall',
-  'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'crossingBell', 'thunder',
+  'stepSnow', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoad', 'crossingBell', 'thunder', 'towerClank',
 ] as const;
 export type SfxName = (typeof SFX_NAMES)[number];
 
@@ -88,6 +88,12 @@ export const RECIPES: Record<SfxName, Recipe> = {
     tone(s, 'triangle', 150 * o.pitch, 0, 0.1 * o.gain, 0.08, o.pan, 0.004);
     tone(s, 'sine', 360 * o.pitch, 0, 0.04 * o.gain, 0.15, o.pan, 0.004);
     noiseHit(s, 'pink', 'bandpass', 1400, 0.8, 0, 0.05 * o.gain, 0.05, o.pan);
+  } },
+  // A carrier passing a lift tower (towerPass.ts; the recorded sheave-train rattles replace it): a softer, shorter version of the lift clank. Ambience bus, lowest priority.
+  towerClank: { priority: PRIORITY.ambience, bus: 'ambience', dur: 0.35, maxPerSec: 2, minGap: 1, build: (s, o) => {
+    tone(s, 'triangle', 170 * o.pitch, 0, 0.07 * o.gain, 0.07, o.pan, 0.004);
+    tone(s, 'sine', 420 * o.pitch, 0, 0.025 * o.gain, 0.12, o.pan, 0.004);
+    noiseHit(s, 'pink', 'bandpass', 1500, 0.8, 0, 0.035 * o.gain, 0.05, o.pan);
   } },
   bell: { priority: PRIORITY.action, bus: 'sfx', dur: 1.6, maxPerSec: 2, minGap: 0.3, build: (s, o) => bell(s, 660 * o.pitch, 0, 0.18 * o.gain, 1.2, o.pan) },
   grind: { priority: PRIORITY.alert, bus: 'sfx', dur: 1.1, maxPerSec: 2, minGap: 0.5, loud: true, build: (s, o) => {

@@ -49,6 +49,12 @@ Use `?size=64&seed=61`, headphones, ambience slider at the default (28 %), effec
 - [ ] **Mute / sliders**: M mutes samples and beds immediately; the effects slider scales footsteps / bells / avalanche, the ambience slider scales beds, thunder, birds, bells.
 - [ ] **Offline** (after one session online): airplane mode, reload, play: recordings still play (cached); a sound that was never played online is the synth.
 
+- [ ] **Gondola, cable car, funicular** (batch 2, 2026-11-07: nobody has heard any of it): zoom in beside a station of a running gondola / cable car / funicular. A soft machinery bed fades in within about 26 tiles (at the lift level, not louder than the chairlift beds; the chairlift recordings step back by half there). Check: the gondola loops (they were very quiet and are raised a lot) must not hiss or pump; the funicular and gondola hum (a tonal machine hum) must not sound like a musical note; the cable car bed (the louder passes) must not have an audible join every 22 s. If too loud / quiet: the `ceil` of the slot in `BED_SLOTS` or the file `trim`.
+- [ ] **Queue crowd**: zoomed in on a busy lift base or the village, a murmur of a crowd (no word may be understandable: listen for one) under the old crowd bed; silent with nobody around. If it is too much: lower the `crowd-queue-*` weights.
+- [ ] **Bar crowd**: next to an OPEN Apres-Ski Bar or Schirmbar the bar music plays over a low chatter that replaces the old synth murmur; the music must stay clearly in front. Closed bar / zoomed out: no chatter. Too loud: `PROX.apres.murmurMax` (0.05).
+- [ ] **Snow cannon, close**: stand beside a running cannon: a nearer hiss than before (one of three recordings, a different one each time the cannon starts); far away the old distant recording. No audible jump while zooming in.
+- [ ] **Tower clanks**: zoomed in on a chairlift, a quiet rattle as a chair passes a tower, rarely (about 3-5 a minute at most, never two within 5 s); every 8th or so one is a longer 3 s rattle. If it reads as a honk or too frequent: raise `TOWER_CLANK.globalGap`, lower `chance`, or set `passShare` 0. With `?nosamples=1` the synth clank plays instead (a soft thunk).
+- [ ] **A rare winter visitor's call** (use the debug controls you already have): the call now is a recording (three variants, never the same twice in a row), at about the old loudness; the first call of a session may still be the synth one (the recordings load on first use).
 
 ## F. The faint beep / honk (owner report after 0.6.0, 2026-11-06; nothing here was heard by the agent)
 

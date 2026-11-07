@@ -58,6 +58,8 @@ export interface AmbienceState {
   streamCls?: number;
   /** River / stream / pond ice (global freeze): water goes silent. */
   iceFrozen?: boolean;
+  /** Proximity 0..1 (PROX.stations) to the stations / line of the nearest running gondola / cable car / funicular. Optional: absent = 0 (the per-kind recorded beds stay silent). */
+  gondola?: number; cablecar?: number; funicular?: number;
   /** Sum of the OPEN Apres-Ski bars' proximity levels 0..1, already capped (0 = no open bar in reach; the zoom window is applied in the mix). */
   apres?: number;
 }
@@ -149,6 +151,19 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const drips = spring ? close * nat * clamp01(0.3 + day) * (1 - wet * 0.5) * 0.6 : 0;
   const creaks = winter ? close * (0.3 + 0.5 * night) * quiet : 0;
   return { wind, rain: rainL, leaves, crickets, insects, crowd, lift, water, stream, rapids, apres, snowcat, heli, quad, sleigh, campfire, concert, carnival, muffled, cannon, birds, cowbells, bells, clanks, drips, creaks };
+}
+
+/** Extra bed gates that are not layers of the synth mix (per-kind lift beds near stations, the queue crowd near a busy lift base / the village, the bar crowd). Pure; `SamplePlayer.updateBeds` turns them into slot gains. */
+export function bedExtras(s: AmbienceState, mix: AmbienceMix): Partial<Record<'gondola' | 'cableCar' | 'funicular' | 'crowdQueue' | 'barCrowd', number>> {
+  const close = clamp01((AMB.farZoom - s.zoom) / (AMB.farZoom - AMB.closeZoom));
+  const h = ((s.hour % 24) + 24) % 24, sr = s.sunrise ?? 6.5, ss = s.sunset ?? 18.5;
+  const night = 1 - window(h, sr - 1, ss + 3, 1.5);
+  const shape = (0.2 + 0.8 * close) * (1 - 0.5 * night); // the lift layer's zoom / night shaping
+  return {
+    gondola: clamp01(s.gondola ?? 0) * shape, cableCar: clamp01(s.cablecar ?? 0) * shape, funicular: clamp01(s.funicular ?? 0) * shape,
+    crowdQueue: mix.crowd * clamp01(1.5 * Math.max(clamp01(s.lifts), clamp01(s.buildings))),
+    barCrowd: mix.apres,
+  };
 }
 
 type Builder = (s: NodeScope) => void;
@@ -286,7 +301,7 @@ export class Ambience {
     this.ensureBuilt();
     const t = this.engine.now();
     // Recorded beds (SamplePlayer) take over from the synthesised layers as far as their buffers are ready (coverage); with no samples every scale is 1 (the synth alone, as before).
-    const sp = this.sfx.samples, cov = sp ? sp.updateBeds(mix, s, AMB.layerMax, AMB.fadeTc) : {};
+    const sp = this.sfx.samples, cov = sp ? sp.updateBeds(mix, s, AMB.layerMax, AMB.fadeTc, bedExtras(s, mix)) : {};
     for (const id of LAYER_IDS) this.layers[id]?.out.gain.setTargetAtTime(mix[id] * AMB.layerMax[id] * (sp ? sp.synthScale(id, cov) : 1), t, AMB.fadeTc);
     this.apres.update(mix.apres); // bar-music groove while an open bar is near and the camera is close; the game music is STOPPED meanwhile (MusicHandoff, hysteresis)
     const roll = (id: keyof typeof AMB.rates, sfx: SfxName, base: number, tag?: string): void => {

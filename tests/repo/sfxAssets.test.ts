@@ -13,7 +13,7 @@ const TOTAL_BUDGET = 12 * 1024 * 1024, PER_FILE_BUDGET = 400 * 1024;
 describe('sfx assets', () => {
   it('the folder holds exactly the files of the sample table (clean ASCII kebab-case names, category prefixes)', () => {
     expect(readdirSync(DIR).sort()).toEqual(SAMPLE_DEFS.map((s) => `${s.id}.mp3`).sort());
-    for (const s of SAMPLE_DEFS) expect(s.id).toMatch(/^(step|thud|bird|bell|bed|leaves|lap|creak|avalanche|mach|thunder)(-[a-z0-9]+)+$/);
+    for (const s of SAMPLE_DEFS) expect(s.id).toMatch(/^(step|thud|bird|bell|bed|leaves|lap|creak|avalanche|mach|thunder|creature)(-[a-z0-9]+)+$/);
   });
   it('size guard: the folder stays under the budget, no single file is large', () => {
     let total = 0;

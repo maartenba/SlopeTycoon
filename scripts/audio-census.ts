@@ -45,9 +45,15 @@ try {
     { name: 'default view (camera untouched)', js: "1" },
     { name: 'zoomed in on a running lift', js: "(() => { const s = window.__slope, c = s.renderer.controls, l = s.sim.lifts.all().find((l) => l.open) ?? s.sim.lifts.all()[0]; c.focusOn((l.bottom.x + l.top.x) / 2, (l.bottom.y + l.top.y) / 2, { zoom: 14, duration: 0 }); return 1; })()" },
     { name: 'zoomed in on the village', js: "(() => { const s = window.__slope, c = s.renderer.controls, b = s.buildings.all().find((b) => b.type === 'chalet') ?? s.buildings.all()[0]; c.focusOn(b.x + b.w / 2, b.y + b.h / 2, { zoom: 14, duration: 0 }); return 1; })()" },
+    // batch 2 (per-kind lift beds, tower clanks, bar crowd, cannon beds): each phase only when the demo resort has the thing (else it repeats the default view)
+    { name: 'zoomed in on a gondola / cable car / funicular station', js: "(() => { const s = window.__slope, c = s.renderer.controls, l = s.sim.lifts.all().find((l) => l.open && /gondola|cablecar|funicular/.test(l.kind)); if (!l) return 0; c.focusOn(l.bottom.x + 1, l.bottom.y + 1, { zoom: 14, duration: 0 }); return 1; })()" },
+    { name: 'zoomed in on an Apres-Ski Bar / Schirmbar', js: "(() => { const s = window.__slope, c = s.renderer.controls, b = s.buildings.all().find((b) => b.type === 'apresBar' || b.type === 'schirmbar'); if (!b) return 0; c.focusOn(b.x + b.w / 2, b.y + b.h / 2, { zoom: 12, duration: 0 }); return 1; })()" },
+    { name: 'zoomed in on a snowmaking cannon', js: "(() => { const s = window.__slope, c = s.renderer.controls, b = s.buildings.all().find((b) => /cannon|snowmak/i.test(b.type)); if (!b) return 0; c.focusOn(b.x + b.w / 2, b.y + b.h / 2, { zoom: 12, duration: 0 }); return 1; })()" },
   ];
   for (const ph of phases) {
-    await page.evaluate(ph.js);
+    const found = await page.evaluate(ph.js);
+    if (!found) { console.log(`\n== ${ph.name}: not in this resort, skipped`); continue; }
+    await page.evaluate("window.__slope.audio.log(false)"); await page.evaluate("window.__slope.audio.log('all')");
     await page.evaluate("window.__slope.setHour(10)");
     await page.evaluate("window.__slope.audio.log('all'); window.__slope.loop.setSpeed(" + SPEED + ")");
     const t0 = await page.evaluate("window.__slope.loop.tickCount") as number;

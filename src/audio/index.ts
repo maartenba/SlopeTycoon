@@ -13,6 +13,7 @@ import { PROX } from '../config/audioProximity';
 import { MUSIC_PLAY } from '../config/audioMusic';
 import { AudioLog, type AudioLogMode } from './audioLog';
 import { WorldProbe, type ProbeDeps } from './worldProbe';
+import { TowerClanker, TowerPassDetector } from './towerPass';
 
 export interface AudioDeps {
   bus: GameBus;
@@ -39,6 +40,8 @@ export interface AudioApi {
   ambience: Ambience;
   music: Music;
   settings: AudioSettings;
+  /** Tower-clank counts since start (census / debug). */
+  towerClanks: TowerClanker['played'];
   /** Debug: `log(true)` prints every ambient one-shot / loop start to the console (id, source sample|synth, gain, time), `log('all')` everything, `log(false)` stops; `counts()` = per-id counts and per-minute rates. docs/playtest-audio.md. */
   log: ((mode?: AudioLogMode) => AudioLogMode) & { counts: () => ReturnType<AudioLog['counts']>; entries: () => AudioLog['entries'] };
   /** Call every frame with the frame delta (s); work is throttled internally (~10 Hz). */
@@ -60,6 +63,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   const handoff = new MusicHandoff(); // shared: near an open Apres-Ski Bar the game music stops, the bar music plays (and back)
   const ambience = new Ambience(engine, sfx, d.rng, handoff, d.musicPlayer ? { player: d.musicPlayer } : undefined);
   const music = new Music(engine, { handoff, ...(d.musicPlayer ? { player: d.musicPlayer } : {}) });
+  const towerDet = new TowerPassDetector(), clanker = new TowerClanker(d.rng ?? ((): (() => number) => { let a = (Date.now() ^ 0x1f3d5b79) >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })()); // cosmetic only
   const offs: Array<() => void> = [];
   const win = d.win ?? (typeof window !== 'undefined' ? window : undefined);
   const doc = d.doc ?? (typeof document !== 'undefined' ? document : undefined);
@@ -90,7 +94,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   const every = d.tickEvery ?? PROX.tickEvery;
   let acc = 0;
   return {
-    engine, sfx, samples, ambience, music, settings,
+    engine, sfx, samples, ambience, music, settings, towerClanks: clanker.played,
     log: Object.assign((mode?: AudioLogMode): AudioLogMode => { if (mode !== undefined) log.set(mode); return log.mode; }, { counts: () => log.counts(), entries: () => log.entries }),
     frame(dt: number): void {
       acc += dt;
@@ -102,6 +106,11 @@ export function createAudio(d: AudioDeps): AudioApi {
       const st = probe.sample({ x: c.x, z: c.z, yaw: c.yaw }, c.zoom);
       ambience.liftPan = probe.liftPan;
       ambience.update(st, Math.min(step, 0.5));
+      const tl = d.probe.towerLifts?.();
+      if (tl) { // a carrier passing a lift tower near the camera: a quiet clank (towerPass.ts)
+        const l = { x: c.x, z: c.z, yaw: c.yaw }, hit = clanker.pick(towerDet.step(tl, l, c.zoom), l, engine.now());
+        if (hit) sfx.play('towerClank', { gain: hit.gain, pan: hit.pan, tag: hit.tag });
+      }
       sfx.update();
     },
     news(it): void { const c = cueForNews(it); if (c) sfx.play(c.sfx, c.opts); },

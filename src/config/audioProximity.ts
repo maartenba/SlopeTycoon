@@ -42,6 +42,8 @@ export const PROX = {
    * Now: level (1 - d / reach)^2 x zoom window (silent at zoomFar and beyond, full at zoomNear).
    */
   crossing: { reach: 30, zoomFar: 40, zoomNear: 14 },
+  /** Per-kind lift beds (gondola / cable car / funicular recordings): tiles from the camera target to a station (or the line midpoint) of a running lift of that kind at which the bed is silent (linear); the lift layer's zoom / night shaping is applied in the mix. */
+  stations: { reach: 26 },
   /** Update rate of the proximity sampling: AudioApi.frame() tick period (s). 0.1 = 10 Hz. */
   tickEvery: 0.1,
 } as const;
