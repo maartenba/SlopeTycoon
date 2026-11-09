@@ -1,0 +1,787 @@
+{
+  "_doc": "Slope Tycoon promo video storyboard manifest (M7.6, docs/promo-video.md). `scenes` = every staged scene (one real-game boot each); `cuts` = which edit uses which scene and where. camera.keys = keyframes (t = 0..1 of the scene's duration; 'at' = anchor name resolved in the page: a building type, 'bottom:<liftKindPrefix>', 'top:<prefix>', 'mid:<prefix>', 'map', 'pos:x,z'; dx/dz = tile offset; zoom = multiple of the minimum zoom; yaw = degrees from the default iso yaw). view: iso | ride (skier POV) | lift (chair POV) | walk. Dates are real calendar months (0 = Jan .. 11 = Dec, simDayOf), hour = 0..24. No voiceover.",
+  "video": {
+    "fps": 30,
+    "width": 2560,
+    "height": 1440,
+    "quality": "high",
+    "atmosphere": "high",
+    "shadows": "on (High)",
+    "resortName": "Alpenglow"
+  },
+  "music": {
+    "cut90": {
+      "track": "Seasons of Management",
+      "alt": "Seasonal Menu",
+      "note": "full song, fades in under the dawn, the apres section lands on scene 05, the quiet bar under the night pull-back, final chord on the end card"
+    },
+    "cut30": {
+      "track": "Seasons of Management",
+      "note": "the strongest 30 s of the same song, cut at the bar line, hits on the cuts"
+    }
+  },
+  "scenes": [
+    {
+      "n": "01",
+      "id": "dawn-valley",
+      "title": "Dawn valley in fog, a lift line drawing itself",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 0,
+        "dom": 10,
+        "hour": 7.7
+      },
+      "atmos": {
+        "fog": 1,
+        "special": 0,
+        "mist": 1,
+        "frost": 1,
+        "inversion": true,
+        "stars": 0.2
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.05
+      },
+      "setups": [
+        "base-large",
+        "guests:60:skiers",
+        "lift-draw"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:60,92",
+            "zoom": 1.8,
+            "yaw": -50
+          },
+          {
+            "t": 1,
+            "at": "mid:chair",
+            "dx": 0,
+            "dz": 2,
+            "zoom": 3.6,
+            "yaw": -55
+          }
+        ]
+      },
+      "duration": 5,
+      "caption": "I wanted a ski holiday that never ended.",
+      "music": "intro: soft pad, first melody note on the lift draw",
+      "note": "The lift line 'draws itself' in the final video by frame-stepping the real lift builder (towers rising one by one); the stills show the finished line. Needs the 7.6.1 frame-step hook plus a staged-build mode.",
+      "cuts": {
+        "c90": [
+          0,
+          5
+        ],
+        "c30": [
+          0,
+          3
+        ],
+        "c30Keys": [
+          "a"
+        ]
+      },
+      "captionC30": "I wanted a ski holiday that never ended."
+    },
+    {
+      "n": "02",
+      "id": "building-montage",
+      "title": "Building montage: gondola, a run painted, village street",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 0,
+        "dom": 12,
+        "hour": 10.8
+      },
+      "atmos": {
+        "fog": 0.15,
+        "special": 0
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.1
+      },
+      "setups": [
+        "base-large",
+        "guests:120:mixed",
+        "run-paint"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "mid:chair8",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 5,
+            "yaw": -20
+          },
+          {
+            "t": 0.5,
+            "at": "piste:1",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 4,
+            "yaw": -15
+          },
+          {
+            "t": 1,
+            "at": "baseLodge",
+            "dx": 0,
+            "dz": 6,
+            "zoom": 7,
+            "yaw": 35
+          }
+        ]
+      },
+      "duration": 7,
+      "caption": "",
+      "music": "verse: pizzicato build, a hit on each cut",
+      "note": "Three quick beats of ~2.3 s: gondola going up, a run being painted (real Piste tool strokes, frame-stepped), village street with the lodge, shop and cafe.",
+      "cuts": {
+        "c90": [
+          5,
+          12
+        ],
+        "c30": [
+          3,
+          8
+        ],
+        "c30Keys": [
+          "a",
+          "b",
+          "c"
+        ]
+      }
+    },
+    {
+      "n": "03",
+      "id": "busy-slopes",
+      "title": "Busy slopes: gondola queue, skiers on a red run, chairlift ride-along",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 0,
+        "dom": 14,
+        "hour": 11.5
+      },
+      "atmos": {
+        "fog": 0,
+        "special": 0
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.1
+      },
+      "setups": [
+        "base-large",
+        "guests:260:skiers",
+        "run-in:2"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "bottom:gondola",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 8,
+            "yaw": 25
+          },
+          {
+            "t": 0.4,
+            "at": "mid:chair",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 5,
+            "yaw": -20
+          },
+          {
+            "t": 0.7,
+            "view": "lift",
+            "family": "chair"
+          }
+        ]
+      },
+      "duration": 10,
+      "caption": "",
+      "music": "chorus: full band, drums in",
+      "cuts": {
+        "c90": [
+          12,
+          22
+        ],
+        "c30": [
+          8,
+          14
+        ],
+        "c30Keys": [
+          "a",
+          "c"
+        ]
+      }
+    },
+    {
+      "n": "04",
+      "id": "golden-hour",
+      "title": "Golden hour, alpenglow and long shadows",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 0,
+        "dom": 14,
+        "hour": 16.95
+      },
+      "atmos": {
+        "special": 1,
+        "fog": 0.1,
+        "stars": 0
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.05
+      },
+      "setups": [
+        "base-large",
+        "guests:180:skiers",
+        "run-in:2"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:62,95",
+            "zoom": 2.2,
+            "yaw": -45
+          },
+          {
+            "t": 1,
+            "at": "pos:60,108",
+            "zoom": 4,
+            "yaw": -20
+          }
+        ]
+      },
+      "duration": 6,
+      "caption": "",
+      "music": "bridge: warm strings, the tempo relaxes",
+      "cuts": {
+        "c90": [
+          22,
+          28
+        ],
+        "c30": [
+          14,
+          19
+        ],
+        "c30Keys": [
+          "a"
+        ]
+      }
+    },
+    {
+      "n": "05",
+      "id": "apres-dusk",
+      "title": "Apres at dusk: bar + Schirmbar 'Alpenglow', glow, notes, bunting",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 1,
+        "dom": 3,
+        "hour": 17.4
+      },
+      "atmos": {
+        "special": 1,
+        "stars": 0.3
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.05
+      },
+      "setups": [
+        "base-large",
+        "guests:200:mixed",
+        "apres"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "apresBar",
+            "dz": 3,
+            "zoom": 9,
+            "yaw": 15
+          },
+          {
+            "t": 0.55,
+            "at": "schirmbar",
+            "dz": 0,
+            "zoom": 14,
+            "yaw": -20
+          },
+          {
+            "t": 1,
+            "at": "schirmbar",
+            "dz": 0,
+            "zoom": 14,
+            "yaw": 35
+          }
+        ]
+      },
+      "duration": 8,
+      "caption": "",
+      "music": "drop: the polka-adjacent groove, loudest section",
+      "note": "Bunting = festival dressing (a carnival / market string) if available; otherwise the lamp posts and window glow carry the scene.",
+      "cuts": {
+        "c90": [
+          28,
+          36
+        ],
+        "c30": [
+          19,
+          24
+        ],
+        "c30Keys": [
+          "b"
+        ]
+      }
+    },
+    {
+      "n": "06",
+      "id": "storm-groom",
+      "title": "Storm, then snowcats grooming at night",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 1,
+        "dom": 8,
+        "hour": 15.2
+      },
+      "atmos": {
+        "special": 0,
+        "fog": 0.5
+      },
+      "weather": {
+        "kind": "heavySnow",
+        "intensity": 1,
+        "wind": 0.6
+      },
+      "setups": [
+        "base-large",
+        "guests:60:skiers",
+        "grooming-night"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "baseLodge",
+            "dx": 0,
+            "dz": 4,
+            "zoom": 5,
+            "yaw": 20
+          },
+          {
+            "t": 1,
+            "at": "snowcat",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 10,
+            "yaw": -30,
+            "hour": 17.7,
+            "weather": "clear",
+            "advance": 14,
+            "worn": true,
+            "visualHour": 21.5
+          }
+        ]
+      },
+      "duration": 6,
+      "caption": "",
+      "music": "break: filtered, tension then calm",
+      "note": "Second keyframe is a time jump to 22:30 (night, clear, snowcats on the runs).",
+      "cuts": {
+        "c90": [
+          36,
+          42
+        ]
+      }
+    },
+    {
+      "n": "07",
+      "id": "spring-to-summer",
+      "title": "Spring melt to summer: blossom slopes, hikers, alpine coaster",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "spring",
+        "month": 4,
+        "dom": 6,
+        "hour": 11
+      },
+      "atmos": {
+        "special": 0,
+        "fog": 0
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.1
+      },
+      "setups": [
+        "base-large",
+        "guests:120:hikers",
+        "coaster"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:55,88",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 2.5,
+            "yaw": -20,
+            "month": 4,
+            "dom": 6
+          },
+          {
+            "t": 0.5,
+            "at": "baseLodge",
+            "dx": 0,
+            "dz": 10,
+            "zoom": 3.5,
+            "yaw": -10,
+            "month": 6,
+            "dom": 6
+          },
+          {
+            "t": 1,
+            "at": "alpineCoaster",
+            "dx": 0,
+            "dz": 3,
+            "zoom": 8,
+            "yaw": 25,
+            "month": 6,
+            "dom": 6
+          }
+        ]
+      },
+      "duration": 10,
+      "caption": "",
+      "music": "verse 2: lighter, mallets",
+      "note": "Keyframes carry their own date: the real video steps days (frame-step hook) so the melt is seen; the stills jump dates. The 'river' in the brief is dropped here: a river from a natural spring only reaches the map edge on seed 5 (8 tiles); see scene 08 note.",
+      "cuts": {
+        "c90": [
+          42,
+          52
+        ]
+      }
+    },
+    {
+      "n": "07b",
+      "id": "sled-cut",
+      "title": "Quick winter sled-run cut",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 0,
+        "dom": 12,
+        "hour": 12
+      },
+      "atmos": {
+        "special": 0
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.1
+      },
+      "setups": [
+        "base-large",
+        "sled"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "sledRental",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 7,
+            "yaw": 25
+          }
+        ]
+      },
+      "duration": 1.5,
+      "caption": "",
+      "music": "a one-bar fill",
+      "cuts": {
+        "c90": [
+          49.5,
+          51
+        ]
+      }
+    },
+    {
+      "n": "08",
+      "id": "summer-fun",
+      "title": "Summer fun: sky strip with skydiver + glider, concert stage (rafting blocked)",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "summer",
+        "month": 6,
+        "dom": 6,
+        "hour": 13.5
+      },
+      "atmos": {
+        "special": 0,
+        "fog": 0
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.15
+      },
+      "setups": [
+        "base-large",
+        "skystrip",
+        "concert",
+        "crowd:160:mixed"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "baseLodge",
+            "dx": 0,
+            "dz": 8,
+            "zoom": 6,
+            "yaw": 20,
+            "placeholder": "rafting (blocked)"
+          },
+          {
+            "t": 0.4,
+            "at": "skyact",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 6,
+            "yaw": 10
+          },
+          {
+            "t": 0.75,
+            "at": "concertStage",
+            "dx": 0,
+            "dz": 3,
+            "zoom": 6,
+            "yaw": 15
+          }
+        ]
+      },
+      "duration": 8,
+      "caption": "",
+      "music": "chorus 2: the same hook, brighter",
+      "cuts": {
+        "c90": [
+          52,
+          60
+        ],
+        "c30": [
+          24,
+          27
+        ],
+        "c30Keys": [
+          "b"
+        ]
+      },
+      "note": "Rafting (a Rafting Base on brisk water) is BLOCKED on the title/demo map: no seed 1-16 has a brisk stream within 30 tiles of the village (nearest 32-109), the base ends up ~50 tiles away under forest canopy at the map edge (setup id 'rafting' + 'river' exist in scripts/promo/setups.ts but are not used). Still 08a is a placeholder summer village shot. Sky strip = plane + canopies + gliders drawn at a chosen sim tick; the centres report forced users for the still (QA override)."
+    },
+    {
+      "n": "09",
+      "id": "autumn-drift",
+      "title": "Autumn drift: orange trees, cows, first snow",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "autumn",
+        "month": 9,
+        "dom": 12,
+        "hour": 10
+      },
+      "atmos": {
+        "special": 0,
+        "fog": 0.1,
+        "mist": 1
+      },
+      "weather": {
+        "kind": "clear",
+        "wind": 0.1
+      },
+      "setups": [
+        "base-large",
+        "guests:60:hikers",
+        "almabtrieb"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:50,96",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 3,
+            "yaw": -30
+          },
+          {
+            "t": 1,
+            "at": "top:chair",
+            "dx": 0,
+            "dz": 4,
+            "zoom": 3,
+            "yaw": -10,
+            "month": 10,
+            "dom": 12,
+            "weather": "snow"
+          }
+        ]
+      },
+      "duration": 8,
+      "caption": "",
+      "music": "outro verse: sparse, wistful",
+      "cuts": {
+        "c90": [
+          60,
+          68
+        ]
+      }
+    },
+    {
+      "n": "10",
+      "id": "night-pullback",
+      "title": "Night resort pull-back: lit lifts, stars, moon, snowfall",
+      "map": {
+        "size": 128,
+        "seed": 5
+      },
+      "start": {
+        "season": "winter",
+        "month": 0,
+        "dom": 20,
+        "hour": 20.8
+      },
+      "atmos": {
+        "special": 0,
+        "stars": 1,
+        "moonPhase": 0.5,
+        "fog": 0,
+        "mist": 0
+      },
+      "weather": {
+        "kind": "snow",
+        "intensity": 0.5,
+        "wind": 0.05
+      },
+      "setups": [
+        "base-large",
+        "guests:80:mixed"
+      ],
+      "camera": {
+        "view": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "baseLodge",
+            "dx": 0,
+            "dz": 3,
+            "zoom": 8,
+            "yaw": 20
+          },
+          {
+            "t": 1,
+            "at": "pos:62,92",
+            "dx": 0,
+            "dz": 0,
+            "zoom": 1.8,
+            "yaw": -30
+          }
+        ]
+      },
+      "duration": 14,
+      "caption": "",
+      "music": "final chorus -> quiet bar, then the last chord",
+      "note": "The slow pull-back is the longest camera move of the film (14 s); lamp posts, window glow and lift lights carry it. Stills show the start and the end of the move.",
+      "cuts": {
+        "c90": [
+          68,
+          82
+        ]
+      }
+    },
+    {
+      "n": "11",
+      "id": "end-card",
+      "title": "End card",
+      "endCard": {
+        "logo": "logo-full",
+        "line1": "Free in your browser",
+        "line2": "slopetycoon.com"
+      },
+      "duration": 8,
+      "caption": "Free in your browser",
+      "music": "last chord rings out",
+      "note": "Procedural card (the real logo page /?uikit=logo-full + plain type), not a game scene.",
+      "cuts": {
+        "c90": [
+          82,
+          90
+        ],
+        "c30": [
+          27,
+          30
+        ],
+        "c30Keys": [
+          "a"
+        ]
+      }
+    }
+  ]
+}
