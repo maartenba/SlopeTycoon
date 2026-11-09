@@ -103,23 +103,35 @@ export class Renderer {
     this.rig.setAspect(w / h);
   }
 
+  /** QA frame-step (`__slope.frameStep`): while true the rAF loop only reschedules itself; `stepFrame` draws instead. */
+  stepping = false;
+  /** Runs first in every `stepFrame` (the promo camera path sets the pose here from the virtual clock). */
+  stepHook: ((dt: number) => void) | null = null;
+
+  private frame(dt: number): void {
+    if (!(this.preSim?.(dt) ?? false)) {
+      this.controls.update(dt);
+      this.preFrame?.(dt);
+      this.onFrame?.(dt);
+      if (this.shadows.enabled && this.shadowFeed) {
+        const iso = this.viewMode.isIso, fx = iso ? this.controls.target.x : this.rig.camera.position.x, fz = iso ? this.controls.target.z : this.rig.camera.position.z;
+        const f = this.shadowFeed(fx, fz);
+        this.shadowFocus.set(fx, f.groundY, fz);
+        try { this.shadows.update(dt, true, this.camera, this.shadowFocus, f.sunDir, f.night, f.overcast, f.heights); }
+        catch (e) { console.error('[shadows] disabled after an error', e); this.shadows.setEnabled(false); } // never let the optional pass take the frame loop down
+      }
+      this.webgl.render(this.scene, this.camera);
+    }
+  }
+
+  /** QA only: one frame with an exact `dt` (no clamp), independent of requestAnimationFrame. */
+  stepFrame(dt: number): void { this.stepHook?.(dt); this.frame(dt); }
+
   start(): void {
     const loop = (t: number): void => {
       const dt = this.last ? Math.min(0.1, (t - this.last) / 1000) : 0;
       this.last = t;
-      if (!(this.preSim?.(dt) ?? false)) {
-        this.controls.update(dt);
-        this.preFrame?.(dt);
-        this.onFrame?.(dt);
-        if (this.shadows.enabled && this.shadowFeed) {
-          const iso = this.viewMode.isIso, fx = iso ? this.controls.target.x : this.rig.camera.position.x, fz = iso ? this.controls.target.z : this.rig.camera.position.z;
-          const f = this.shadowFeed(fx, fz);
-          this.shadowFocus.set(fx, f.groundY, fz);
-          try { this.shadows.update(dt, true, this.camera, this.shadowFocus, f.sunDir, f.night, f.overcast, f.heights); }
-          catch (e) { console.error('[shadows] disabled after an error', e); this.shadows.setEnabled(false); } // never let the optional pass take the frame loop down
-        }
-        this.webgl.render(this.scene, this.camera);
-      }
+      if (!this.stepping) this.frame(dt);
       this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);

@@ -183,6 +183,8 @@ import { ATMOS_LEVELS, LEVEL_FEATURES, type AtmosLevel } from '@/config/atmosphe
 import { Lighting } from '@/render/Lighting';
 import { speedKeyAction } from '@/ui/shortcuts';
 import { GAME_EVENT_NAMES } from '@/core/events';
+import { FrameClock, installVirtualNow } from '@/core/frameStep';
+import { stateHash } from '@/game/saveState';
 import { FastForward, FF_KINDS, FF_LABELS, FF_STOP_TEXT, type FfKind } from '@/core/FastForward';
 import type { StDebug } from '@/ui/components/StDebug';
 import { nextFps } from '@/ui/format';
@@ -1533,7 +1535,7 @@ renderer.preFrame = (dt): void => {
   }
   if (!rideAlong.sample(a, rideSample)) return;
   const pose = renderer.rig.update(dt, rideSample);
-  if (debugFreeCam) { const c = renderer.camera; c.position.set(debugFreeCam[0]!, debugFreeCam[1]!, debugFreeCam[2]!); c.rotation.set(debugFreeCam[4]!, debugFreeCam[3]!, 0, 'YXZ'); c.updateMatrixWorld(true); } // QA only (__slope.view.freeCam)
+  if (debugFreeCam) { const c = renderer.camera; c.position.set(debugFreeCam[0]!, debugFreeCam[1]!, debugFreeCam[2]!); c.rotation.set(debugFreeCam[4]!, debugFreeCam[3]!, 0, 'YXZ'); const fv = debugFreeCam[5], pc = c as THREE.PerspectiveCamera; if (fv && Math.abs(pc.fov - fv) > 1e-3) { pc.fov = fv; pc.updateProjectionMatrix(); renderer.rig.fov = fv; } c.updateMatrixWorld(true); } // QA only (__slope.view.freeCam)
   const hf = horizonFraction(pose.pitch, renderer.rig.fov);
   if (Math.abs(hf - rideHorizon) > 0.004) { rideHorizon = hf; lighting.horizonAt = hf; lighting.refreshSky(); }
   const now = performance.now();
@@ -2104,7 +2106,7 @@ const viewApi = {
   /** Ride along with a guest picked automatically (skier > lift rider > anyone). Returns the guest id (0 = nobody to follow). */
   rideAuto: (): number => startRide(),
   /** QA: place the ride camera at (x, y, z) looking along yaw / pitch (radians); call with no args to release. Needs an active ride. */
-  freeCam: (x?: number, y?: number, z?: number, yaw = 0, pitch = 0): void => { debugFreeCam = x === undefined ? null : [x, y!, z!, yaw, pitch]; },
+  freeCam: (x?: number, y?: number, z?: number, yaw = 0, pitch = 0, fov?: number): void => { debugFreeCam = x === undefined ? null : fov ? [x, y!, z!, yaw, pitch, fov] : [x, y!, z!, yaw, pitch]; },
   ride: (id: number): number => startRide(id),
   /** Ride along with a guest sitting on a lift of `family` ('chair' by default, then any lift). Returns the guest id (0 = nobody riding). */
   rideLift: (family = 'chair'): number => {
@@ -3114,6 +3116,40 @@ const atmosDebug = {
 (window as unknown as { __slope: unknown }).__slope = { ...(import.meta.env.DEV ? { THREE } : {}), visitorView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
+
+/** QA / promo capture only (docs/promo-video.md, no shipping UI): `__slope.frameStep(dt, n)` pauses the rAF loop, owns a virtual clock (`performance.now()` returns it while stepping)
+ * and draws n frames of exactly `dt` seconds; the sim runs through the real TickLoop at `rate` x speed 1 (`frameStepRate`). `frameStepEnd()` resumes the real loop. Audio is untouched.
+ * `__slope.frameCam = (t, dt) => void` (optional) runs first in every step: the camera path as a pure function of the virtual time. */
+{
+  const clock = new FrameClock();
+  let restore: (() => void) | null = null;
+  let savedScale = 1;
+  const api = {
+    frameClock: clock, frameStepRate: 1, frameCam: null as ((t: number, dt: number) => void) | null,
+    isFrameStepping: (): boolean => restore !== null,
+    frameStep: (dt: number, n = 1): { t: number; frame: number; tick: number } => {
+      if (!restore) {
+        renderer.stepping = true; clock.begin(performance.now()); restore = installVirtualNow(clock, performance);
+        savedScale = loop.timeScale; if (loop.paused) loop.setSpeed(1);
+        renderer.stepHook = (d): void => { (api.frameCam)?.(clock.t, d); };
+        loop.timeScale = api.frameStepRate;
+        renderer.stepFrame(0); // warm-up frame: tree cross-fade clock etc. pick up the virtual time (no sim time passes)
+      }
+      loop.timeScale = api.frameStepRate;
+      for (let i = 0; i < n; i++) { clock.step(dt); renderer.stepFrame(dt); }
+      return { t: clock.t, frame: clock.frame, tick: loop.tickCount };
+    },
+    frameStepEnd: (): void => {
+      if (!restore) return;
+      restore(); restore = null; renderer.stepping = false; renderer.stepHook = null; loop.timeScale = savedScale;
+    },
+    /** Deterministic hash of the sim state (observer modules skipped), for the frame-step determinism check. */
+    frameHash: (): string => stateHash(sim).hash,
+  };
+  Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, api);
+  Object.defineProperty((window as unknown as { __slope: Record<string, unknown> }).__slope, 'frameCam', { get: () => api.frameCam, set: (v) => { api.frameCam = v; }, configurable: true });
+  Object.defineProperty((window as unknown as { __slope: Record<string, unknown> }).__slope, 'frameStepRate', { get: () => api.frameStepRate, set: (v) => { api.frameStepRate = v; }, configurable: true });
+}
 
 /** Debug / QA (docs/festivals.md): `__slope.events.start('almabtrieb')` runs an event from today (news + dressing); `.jump()` jumps the date to 3 days before the Almabtrieb (announcement), `.jump(0)` to its first day. */
 (window as unknown as { __slope: Record<string, unknown> }).__slope.events = {

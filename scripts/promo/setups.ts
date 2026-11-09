@@ -125,11 +125,20 @@ export async function runSetups(page: Page, sc: any): Promise<StageInfo> {
                 }
               }
               const line = Array.from({ length: len }, (_, j) => ({ x: best.sx + best.vx * j, y: best.sy + best.vy * j }));
-              out.natural = !!best.nat; out.painted = sim.networks.paint(W.Layer[t.layer], line).painted;
+              P.sledLine = { sx: best.sx, sy: best.sy, vx: best.vx, vy: best.vy, len }; out.natural = !!best.nat; out.painted = sim.networks.paint(W.Layer[t.layer], line).painted;
               P.refresh(); sim.tick(1); out.active = b.active; out.at = { x: b.x, y: b.y };
               s.spawnGuests(150, 'mixed'); s.spawnGuests(60, 'adventure'); P.adv(8);
             }
           }
+        } else if (kind2 === 'qa-serving') {
+          const at = sim.attractions; if (!at.__sv) { at.__sv = at.servingNow; at.servingNow = () => true; } // QA only: the bars serve in the shot whatever the clock says
+        } else if (kind2 === 'qa-sky') {
+          // QA only (render side): the sky centres and ramps report a few users so plane, canopies and gliders are drawn
+          const sa = s.skyActivity; if (!sa.__c) { sa.__c = sa.centres; sa.__r = sa.ramps; sa.centres = () => Array.from(sa.__c()).map((c: any) => ({ ...c, users: Math.max(c.users, 4), open: true })); sa.ramps = () => Array.from(sa.__r()).map((r: any) => ({ ...r, users: Math.max(r.users, 3), open: true })); }
+          s.skyActivity.far = false;
+        } else if (kind2 === 'worn') {
+          const q = sim.ops.quality; for (let i = 0; i < sim.size * sim.size; i++) if (sim.networks.pisteAt(i % sim.size, (i / sim.size) | 0)) q.state[i] = 5; // a hard day of skiing: the snowcats have work
+        } else if (kind2 === 'advance') { P.adv(Number(a));
         } else out.log.push(`unknown setup ${kind2}`);
         return out;
       }, kind!, a1, a2);

@@ -1,5 +1,5 @@
 {
-  "_doc": "Slope Tycoon promo video storyboard manifest (M7.6, docs/promo-video.md). `scenes` = every staged scene (one real-game boot each); `cuts` = which edit uses which scene and where. camera.keys = keyframes (t = 0..1 of the scene's duration; 'at' = anchor name resolved in the page: a building type, 'bottom:<liftKindPrefix>', 'top:<prefix>', 'mid:<prefix>', 'map', 'pos:x,z'; dx/dz = tile offset; zoom = multiple of the minimum zoom; yaw = degrees from the default iso yaw). view: iso | ride (skier POV) | lift (chair POV) | walk. Dates are real calendar months (0 = Jan .. 11 = Dec, simDayOf), hour = 0..24. No voiceover.",
+  "_doc": "Slope Tycoon promo video storyboard manifest (M7.6, docs/promo-video.md). `scenes` = every staged scene (one real-game boot each); `cuts` = which edit uses which scene and where. camera.keys = keyframes (t = 0..1 of the scene's duration; 'at' = anchor name resolved in the page: a building type, 'bottom:<liftKindPrefix>', 'top:<prefix>', 'mid:<prefix>', 'map', 'pos:x,z'; dx/dz = tile offset; zoom = multiple of the minimum zoom; yaw = degrees from the default iso yaw). view: iso | ride (skier POV) | lift (chair POV) | walk. Dates are real calendar months (0 = Jan .. 11 = Dec, simDayOf), hour = 0..24. No voiceover. `film` = the video plan (7.6.2): towns (saved states), shots (camera path keys in SECONDS, hour / weather / date timelines, sim rate), and the cut tables.",
   "video": {
     "fps": 30,
     "width": 2560,
@@ -24,7 +24,7 @@
     {
       "n": "01",
       "id": "dawn-valley",
-      "title": "Dawn valley in fog, a lift line drawing itself",
+      "title": "Blue hour: lit village over fog banks, slow rise over the finished lift line, the sun clears the ridge",
       "map": {
         "size": 128,
         "seed": 5
@@ -33,7 +33,7 @@
         "season": "winter",
         "month": 0,
         "dom": 10,
-        "hour": 7.7
+        "hour": 6.6
       },
       "atmos": {
         "fog": 1,
@@ -74,7 +74,7 @@
       "duration": 5,
       "caption": "I wanted a ski holiday that never ended.",
       "music": "intro: soft pad, first melody note on the lift draw",
-      "note": "The lift line 'draws itself' in the final video by frame-stepping the real lift builder (towers rising one by one); the stills show the finished line. Needs the 7.6.1 frame-step hook plus a staged-build mode.",
+      "note": "OWNER DECISION: blue-hour opening (lit village, fog banks below, chair lights on, narrow FOV free camera rising slowly); the sun clears the ridge near the end. The video shot is `film.shots[blue-hour-rise]`; the lift line is the finished build (a time-lapse of towers needs a staged-build mode: not built).",
       "cuts": {
         "c90": [
           0,
@@ -511,7 +511,7 @@
     {
       "n": "07b",
       "id": "sled-cut",
-      "title": "Quick winter sled-run cut",
+      "title": "Sled run: low camera following the sledders down the track",
       "map": {
         "size": 128,
         "seed": 5
@@ -559,7 +559,7 @@
     {
       "n": "08",
       "id": "summer-fun",
-      "title": "Summer fun: sky strip with skydiver + glider, concert stage (rafting blocked)",
+      "title": "Summer fun: sky strip (low look-up at the plane, glider leaving the ramp), concert stage; rafting SKIPPED (owner decision)",
       "map": {
         "size": 128,
         "seed": 5
@@ -593,8 +593,7 @@
             "dx": 0,
             "dz": 8,
             "zoom": 6,
-            "yaw": 20,
-            "placeholder": "rafting (blocked)"
+            "yaw": 20
           },
           {
             "t": 0.4,
@@ -783,5 +782,990 @@
         ]
       }
     }
-  ]
+  ],
+  "film": {
+    "fps": 30,
+    "draftFps": 12,
+    "towns": {
+      "winter": {
+        "setups": [
+          "base-large"
+        ],
+        "season": "winter",
+        "month": 0,
+        "dom": 10,
+        "hour": 10
+      },
+      "apres": {
+        "setups": [
+          "base-large",
+          "apres"
+        ],
+        "season": "winter",
+        "month": 1,
+        "dom": 3,
+        "hour": 14
+      },
+      "spring": {
+        "setups": [
+          "base-large",
+          "coaster"
+        ],
+        "season": "spring",
+        "month": 4,
+        "dom": 6,
+        "hour": 11
+      },
+      "sled": {
+        "setups": [
+          "base-large",
+          "sled"
+        ],
+        "season": "winter",
+        "month": 0,
+        "dom": 12,
+        "hour": 10
+      },
+      "summer": {
+        "setups": [
+          "base-large",
+          "skystrip"
+        ],
+        "season": "summer",
+        "month": 6,
+        "dom": 6,
+        "hour": 13
+      },
+      "autumn": {
+        "setups": [
+          "base-large"
+        ],
+        "season": "autumn",
+        "month": 9,
+        "dom": 12,
+        "hour": 10
+      }
+    },
+    "shots": [
+      {
+        "id": "s01-blue-hour",
+        "town": "winter",
+        "len": 9,
+        "mode": "free",
+        "start": {
+          "month": 0,
+          "dom": 10,
+          "hour": 6.4
+        },
+        "atmos": {
+          "fog": 1,
+          "special": 0,
+          "mist": 1,
+          "frost": 1,
+          "inversion": true,
+          "stars": 0.3
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.05
+          }
+        ],
+        "hour": [
+          [
+            0,
+            6.3
+          ],
+          [
+            6,
+            7.2
+          ],
+          [
+            9,
+            8.1
+          ]
+        ],
+        "after": [
+          "guests:60:skiers"
+        ],
+        "rate": 2,
+        "keys": [
+          {
+            "t": 0,
+            "at": "bottom:chair",
+            "dx": -6,
+            "dz": 10,
+            "h": 2.5,
+            "look": {
+              "at": "mid:chair",
+              "h": 8
+            },
+            "fov": 36,
+            "ease": "smooth"
+          },
+          {
+            "t": 5,
+            "at": "bottom:chair",
+            "dx": -8,
+            "dz": 6,
+            "h": 9,
+            "look": {
+              "at": "mid:chair",
+              "h": 6
+            },
+            "fov": 36,
+            "ease": "smooth"
+          },
+          {
+            "t": 9,
+            "at": "mid:chair",
+            "dx": -10,
+            "dz": 4,
+            "h": 20,
+            "look": {
+              "at": "top:chair",
+              "h": 2
+            },
+            "fov": 36
+          }
+        ],
+        "caption": "I wanted a ski holiday that never ended.",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 4
+          }
+        }
+      },
+      {
+        "id": "s02-build",
+        "town": "winter",
+        "len": 6,
+        "start": {
+          "month": 0,
+          "dom": 12,
+          "hour": 10.8
+        },
+        "atmos": {
+          "fog": 0.15,
+          "special": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:120:mixed"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "mid:chair8",
+            "zoom": 5,
+            "yaw": -20,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "piste:1",
+            "zoom": 4,
+            "yaw": -15,
+            "ease": "inout"
+          },
+          {
+            "t": 6,
+            "at": "baseLodge",
+            "dz": 6,
+            "zoom": 7,
+            "yaw": 35
+          }
+        ],
+        "caption": "Build the lifts. Cut the runs.",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 4
+          }
+        }
+      },
+      {
+        "id": "s03-busy",
+        "town": "winter",
+        "len": 7,
+        "start": {
+          "month": 0,
+          "dom": 14,
+          "hour": 11.5
+        },
+        "atmos": {
+          "fog": 0,
+          "special": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:260:skiers",
+          "run-in:2"
+        ],
+        "rate": 3,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "bottom:gondola",
+            "zoom": 8,
+            "yaw": 25,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "mid:chair",
+            "zoom": 5,
+            "yaw": -20,
+            "ease": "inout"
+          },
+          {
+            "t": 7,
+            "at": "mid:chair",
+            "dz": -6,
+            "zoom": 4,
+            "yaw": -30
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3
+          }
+        }
+      },
+      {
+        "id": "s03b-ride",
+        "town": "winter",
+        "len": 4,
+        "mode": "ride",
+        "ride": {
+          "family": "chair"
+        },
+        "start": {
+          "month": 0,
+          "dom": 14,
+          "hour": 11.5
+        },
+        "atmos": {
+          "fog": 0,
+          "special": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:260:skiers",
+          "run-in:2"
+        ],
+        "rate": 1,
+        "keys": [],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s04-golden",
+        "town": "winter",
+        "len": 6,
+        "start": {
+          "month": 0,
+          "dom": 14,
+          "hour": 16.2
+        },
+        "atmos": {
+          "special": 1,
+          "fog": 0.1,
+          "stars": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.05
+          }
+        ],
+        "hour": [
+          [
+            0,
+            16.3
+          ],
+          [
+            6,
+            17.1
+          ]
+        ],
+        "after": [
+          "guests:180:skiers",
+          "run-in:2"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:62,95",
+            "zoom": 2.2,
+            "yaw": -45,
+            "ease": "inout"
+          },
+          {
+            "t": 6,
+            "at": "pos:60,108",
+            "zoom": 4,
+            "yaw": -20
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3
+          }
+        }
+      },
+      {
+        "id": "s05-apres",
+        "town": "apres",
+        "len": 7,
+        "start": {
+          "month": 1,
+          "dom": 3,
+          "hour": 17.4
+        },
+        "atmos": {
+          "special": 1,
+          "stars": 0.3
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.05
+          }
+        ],
+        "after": [
+          "guests:200:mixed",
+          "qa-serving"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "apresBar",
+            "dz": 3,
+            "zoom": 9,
+            "yaw": 15,
+            "ease": "inout"
+          },
+          {
+            "t": 4,
+            "at": "schirmbar",
+            "zoom": 14,
+            "yaw": -20,
+            "ease": "inout"
+          },
+          {
+            "t": 7,
+            "at": "schirmbar",
+            "zoom": 14,
+            "yaw": 35
+          }
+        ],
+        "caption": "Apres-ski, on your terms.",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3
+          }
+        }
+      },
+      {
+        "id": "s06a-storm",
+        "town": "winter",
+        "len": 3,
+        "start": {
+          "month": 1,
+          "dom": 8,
+          "hour": 15.2
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0.5
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "heavySnow",
+            "intensity": 1,
+            "wind": 0.6,
+            "fog": 0.3
+          }
+        ],
+        "after": [
+          "guests:60:skiers"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "baseLodge",
+            "dz": 4,
+            "zoom": 5,
+            "yaw": 20,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "baseLodge",
+            "dz": 2,
+            "zoom": 6,
+            "yaw": 30
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s06b-groom",
+        "town": "winter",
+        "len": 3,
+        "start": {
+          "month": 1,
+          "dom": 8,
+          "hour": 17.7
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0.1,
+          "stars": 0.8
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.05
+          }
+        ],
+        "hour": [
+          [
+            0,
+            21.5
+          ]
+        ],
+        "after": [
+          "guests:40:skiers",
+          "worn",
+          "advance:14"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "snowcat",
+            "zoom": 10,
+            "yaw": -30,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "snowcat",
+            "zoom": 8,
+            "yaw": -10
+          }
+        ],
+        "caption": "Even at night, the snowcats are out.",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s07-seasons",
+        "town": "spring",
+        "len": 7,
+        "start": {
+          "month": 4,
+          "dom": 6,
+          "hour": 11
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "days": [
+          {
+            "t": 0,
+            "month": 4,
+            "dom": 6
+          },
+          {
+            "t": 7,
+            "month": 6,
+            "dom": 6
+          }
+        ],
+        "dayStep": 3,
+        "after": [
+          "guests:120:hikers"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:55,88",
+            "zoom": 2.5,
+            "yaw": -20,
+            "ease": "inout"
+          },
+          {
+            "t": 3.5,
+            "at": "baseLodge",
+            "dz": 10,
+            "zoom": 3.5,
+            "yaw": -10,
+            "ease": "inout"
+          },
+          {
+            "t": 7,
+            "at": "alpineCoaster",
+            "dz": 3,
+            "zoom": 8,
+            "yaw": 25
+          }
+        ],
+        "caption": "And when the snow melts, summer begins.",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s07b-sled",
+        "town": "sled",
+        "len": 8,
+        "mode": "free",
+        "start": {
+          "month": 0,
+          "dom": 12,
+          "hour": 9.5
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.05
+          }
+        ],
+        "after": [
+          "guests:90:mixed"
+        ],
+        "rate": 1,
+        "keys": [
+          {
+            "t": 0,
+            "at": "sled:0.0",
+            "h": 1.4,
+            "dx": 0,
+            "dz": 0,
+            "look": {
+              "at": "sled:0.3",
+              "h": 0.6
+            },
+            "fov": 50,
+            "ease": "smooth"
+          },
+          {
+            "t": 6,
+            "at": "sled:0.7",
+            "h": 1.4,
+            "look": {
+              "at": "sled:1.0",
+              "h": 0.6
+            },
+            "fov": 50
+          },
+          {
+            "t": 8,
+            "at": "sled:0.75",
+            "h": 1.4,
+            "look": {
+              "at": "sled:1.0",
+              "h": 0.6
+            },
+            "fov": 50
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3
+          }
+        }
+      },
+      {
+        "id": "s08a-plane",
+        "town": "summer",
+        "len": 4,
+        "mode": "free",
+        "start": {
+          "month": 6,
+          "dom": 6,
+          "hour": 13.5
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:160:mixed",
+          "qa-sky"
+        ],
+        "rate": 4,
+        "cue": {
+          "sky": "plane",
+          "u": 0.2
+        },
+        "keys": [
+          {
+            "t": 0,
+            "at": "skyact",
+            "dx": -6,
+            "dz": 4,
+            "h": 1.2,
+            "look": {
+              "track": "plane"
+            },
+            "fov": 46,
+            "ease": "smooth"
+          },
+          {
+            "t": 4,
+            "at": "skyact",
+            "dx": -6,
+            "dz": 4,
+            "h": 1.2,
+            "look": {
+              "track": "plane"
+            },
+            "fov": 46
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s08b-glider",
+        "town": "summer",
+        "len": 4,
+        "mode": "free",
+        "start": {
+          "month": 6,
+          "dom": 6,
+          "hour": 13.5
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:160:mixed",
+          "qa-sky"
+        ],
+        "rate": 4,
+        "cue": {
+          "sky": "glider",
+          "u": 0.04
+        },
+        "keys": [
+          {
+            "t": 0,
+            "at": "skyact",
+            "dx": 0,
+            "dz": 6,
+            "h": 2,
+            "look": {
+              "track": "glider"
+            },
+            "fov": 46
+          },
+          {
+            "t": 4,
+            "at": "skyact",
+            "dx": 0,
+            "dz": 6,
+            "h": 2,
+            "look": {
+              "track": "glider"
+            },
+            "fov": 46
+          }
+        ],
+        "caption": "Skydive. Paraglide. Whatever you build.",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3
+          }
+        }
+      },
+      {
+        "id": "s08c-canopies",
+        "town": "summer",
+        "len": 3,
+        "start": {
+          "month": 6,
+          "dom": 6,
+          "hour": 13.5
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:160:mixed",
+          "qa-sky"
+        ],
+        "rate": 4,
+        "cue": {
+          "sky": "plane",
+          "u": 0.58
+        },
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "skyact",
+            "zoom": 9,
+            "yaw": 10,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "skyact",
+            "dz": 2,
+            "zoom": 11,
+            "yaw": 30
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s09-autumn",
+        "town": "autumn",
+        "len": 5,
+        "start": {
+          "month": 9,
+          "dom": 12,
+          "hour": 10
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0.1,
+          "mist": 1
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "days": [
+          {
+            "t": 0,
+            "month": 9,
+            "dom": 12
+          },
+          {
+            "t": 5,
+            "month": 10,
+            "dom": 12
+          }
+        ],
+        "dayStep": 4,
+        "after": [
+          "guests:60:hikers",
+          "almabtrieb"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:50,96",
+            "zoom": 3,
+            "yaw": -30,
+            "ease": "inout"
+          },
+          {
+            "t": 5,
+            "at": "top:chair",
+            "dz": 4,
+            "zoom": 3,
+            "yaw": -10
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s10-night",
+        "town": "winter",
+        "len": 8,
+        "start": {
+          "month": 0,
+          "dom": 20,
+          "hour": 20.8
+        },
+        "atmos": {
+          "special": 0,
+          "stars": 1,
+          "moonPhase": 0.5,
+          "fog": 0,
+          "mist": 0
+        },
+        "weather": [
+          {
+            "t": 0,
+            "kind": "snow",
+            "intensity": 0.5,
+            "wind": 0.05
+          }
+        ],
+        "after": [
+          "guests:80:mixed"
+        ],
+        "rate": 2,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "baseLodge",
+            "dz": 3,
+            "zoom": 8,
+            "yaw": 20,
+            "ease": "inout"
+          },
+          {
+            "t": 8,
+            "at": "pos:62,92",
+            "zoom": 1.8,
+            "yaw": -30
+          }
+        ],
+        "caption": "Your resort. Your seasons.",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3,
+            "from": 5
+          }
+        }
+      }
+    ],
+    "endCard": {
+      "len": 6,
+      "line1": "Free in your browser",
+      "line2": "slopetycoon.com",
+      "cuts": {
+        "c90": true,
+        "c30": {
+          "len": 4
+        }
+      }
+    },
+    "cuts": {
+      "c90": {
+        "order": [
+          "s01-blue-hour",
+          "s02-build",
+          "s03-busy",
+          "s03b-ride",
+          "s04-golden",
+          "s05-apres",
+          "s06a-storm",
+          "s06b-groom",
+          "s07-seasons",
+          "s07b-sled",
+          "s08a-plane",
+          "s08b-glider",
+          "s08c-canopies",
+          "s09-autumn",
+          "s10-night",
+          "end-card"
+        ],
+        "xfade": 0.4
+      },
+      "c30": {
+        "xfade": 0.25
+      }
+    }
+  }
 }

@@ -25,6 +25,7 @@ export function installLib(): void {
     if (name.startsWith('pos:')) { const [x, z] = name.slice(4).split(',').map(Number); return { x: x!, z: z! }; }
     if (name === 'skyact') { const b = P.bld('grassStrip') ?? P.bld('skydiveCentre'); return b ? P.centre(b) : null; }
     if (name === 'snowcat') { const cs = s.sim.ops.grooming.cats; const c = cs.find((q: any) => !q.done) ?? cs[0]; return c ? { x: c.x, z: c.y } : null; }
+    { const m3 = /^sled:([\d.]+)$/.exec(name); if (m3 && P.sledLine) { const q = P.sledLine, f = Number(m3[1]) * (q.len - 1); return { x: q.sx + q.vx * f + 0.5, z: q.sy + q.vy * f + 0.5 }; } }
     if (name === 'river') { const r = P.river; if (!r || !r.length) return null; const m2 = r[0]; return { x: m2.x, z: m2.y }; }
     if (name === 'concertStage' || name === 'dressing') {
       const g = s.festivalDressing.group, box = new s.THREE.Box3().setFromObject(g); if (box.isEmpty()) return null;
