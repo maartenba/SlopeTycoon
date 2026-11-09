@@ -65,7 +65,7 @@ try {
   // ---- clips ----
   for (let i = 0; i < used.length; i++) {
     const s = used[i]!; const last = i === used.length - 1; const c = s.cuts[`c${cut}`]; const len: number = (typeof c === 'object' && c.len) || s.len; const from: number = (typeof c === 'object' && c.from) || 0;
-    const pad = last ? 0 : xf; const file = `${TMP}/${s.id}.mp4`; const frames = Math.round(len * fps);
+    const pad = last ? 0 : xf; const file = `${TMP}/${s.id}.mp4`;
     const enc = ['-c:v', 'libx264', '-preset', final ? 'slow' : 'veryfast', '-crf', final ? '12' : '16', '-pix_fmt', 'yuv420p', '-r', String(fps), '-an'];
     const stages: string[] = []; const ins: string[] = [];
     if (s.endCard) ins.push('-loop', '1', '-framerate', String(fps), '-i', ec); else ins.push('-framerate', String(fps), '-start_number', String(Math.round(from * fps) + 1), '-i', `.weave/promo/frames/${RES}/${s.id}/%05d.jpg`);
