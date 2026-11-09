@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { buildAircraft } from './aircraft';
+import { mergeParts, xformParts } from './sweepGeo';
 
 /**
  * Procedural vehicle models: lofted (rounded cross-section) bodies with window bands, wheels, lights and roof gear, each merged into ONE
@@ -241,22 +243,10 @@ export function buildTrain(): ModelParts {
   return { body: merge(parts), lights };
 }
 
-const PLANE_RING: Ring = [[0.5, 0, 'white'], [0.9, 0.18, 'white'], [1, 0.4, 'white'], [1, 0.62, 'glass'], [0.8, 0.88, 'white'], [0.4, 1, 'white']];
+/** The Altiport arrival plane: the shared lofted high-wing utility plane (meshes/aircraft.ts), forward = +z; the spinner + propeller blades spin as the `prop` part. */
 export function buildPlane(): ModelParts {
-  const pal: Palette = { ...BASE_PAL(0xf4f4f4), stripe: rgb(0x2f6fd0) };
-  const fus = loft([{ z: -0.95, w: 0.025, y0: 0.4, y1: 0.46 }, { z: -0.6, w: 0.06, y0: 0.33, y1: 0.47 }, { z: -0.1, w: 0.14, y0: 0.2, y1: 0.46 }, { z: 0.35, w: 0.14, y0: 0.2, y1: 0.46 }, { z: 0.62, w: 0.11, y0: 0.24, y1: 0.43 }, { z: 0.74, w: 0.05, y0: 0.29, y1: 0.4 }], PLANE_RING, pal, 'body', 'body');
-  const blue = rgb(0x2f6fd0), white = rgb(0xf4f4f4);
-  const parts: THREE.BufferGeometry[] = [fus,
-    box(1.0, 0.035, 0.34, white, 0.5, 0.42, 0.12, 0), box(1.0, 0.035, 0.34, white, -0.5, 0.42, 0.12, 0),
-    box(0.12, 0.036, 0.35, blue, 1.0, 0.425, 0.12), box(0.12, 0.036, 0.35, blue, -1.0, 0.425, 0.12),
-    box(0.03, 0.3, 0.22, blue, 0, 0.58, -0.78), box(0.55, 0.03, 0.17, white, 0, 0.44, -0.8),
-    box(0.285, 0.04, 0.5, blue, 0, 0.32, 0.1), // belly stripe
-  ];
-  for (const sx of [1, -1]) parts.push(...wheel(0.05, 0.03, sx * 0.14, 0.05, 0.38, rgb(0x151618), rgb(0xb8bec6), 8), box(0.02, 0.17, 0.02, rgb(0x2c2f34), sx * 0.12, 0.13, 0.36));
-  parts.push(...wheel(0.035, 0.025, 0, 0.035, -0.72, rgb(0x151618), rgb(0xb8bec6), 8));
-  const lights = lightGeo([[0.04, 0.03, 0.02, 1.07, 0.43, 0.12, TAIL], [0.04, 0.03, 0.02, -1.07, 0.43, 0.12, [0.1, 0.9, 0.2]], [0.05, 0.03, 0.02, 0, 0.62, -0.9, [1, 1, 1]]]);
-  const prop = merge([box(0.07, 0.5, 0.012, rgb(0x1c1d20), 0, 0, 0), box(0.5, 0.07, 0.012, rgb(0x1c1d20), 0, 0, 0)]);
-  prop.rotateZ(Math.PI / 4);
-  const spin = paint(new THREE.ConeGeometry(0.045, 0.1, 8).rotateX(Math.PI / 2).translate(0, 0, 0.05), rgb(0x2f6fd0));
-  return { body: merge(parts), lights, prop: merge([prop, spin]), propPivot: [0, 0.33, 0.76] };
+  const a = buildAircraft('full');
+  const pv = new THREE.Matrix4().makeTranslation(-a.propPivot[0], -a.propPivot[1], -a.propPivot[2]);
+  const lights = lightGeo(a.lights.map((l) => [l.s[0], l.s[1], l.s[2], l.c[0], l.c[1], l.c[2], l.rgb] as [number, number, number, number, number, number, Rgb]));
+  return { body: mergeParts(a.body), lights, prop: mergeParts([...xformParts(a.spinner, pv), ...a.blades]), propPivot: a.propPivot };
 }

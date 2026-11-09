@@ -197,7 +197,7 @@ describe('vehicles', () => {
     }
     expect(tris(buildBus(false, 0x3a78c2).body)).toBeLessThan(2000);
     expect(tris(buildTrain().body)).toBeLessThan(3500); // was 3300: wheels 10 -> 12 radial segments, hubs 6 -> 8 (soft look pass)
-    expect(tris(buildPlane().body)).toBeLessThan(900);
+    expect(tris(buildPlane().body)).toBeLessThan(1200); // M8 smooth pass: the lofted high-wing plane (was < 900)
     for (const k of [VehicleKind.Car, VehicleKind.Bus, VehicleKind.Train, VehicleKind.Plane]) {
       const v = createVehicleMesh(k, 3, false, false);
       expect(v.group.children.length).toBeLessThanOrEqual(3);

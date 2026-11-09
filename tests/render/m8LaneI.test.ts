@@ -61,6 +61,6 @@ describe('M8 lane I: shrubs, rocks, plane', () => {
     const d = BUILDINGS['altiport' as never]!;
     const gs = Object.values(buildParts(d.id, d.w, d.h) as unknown as Record<string, THREE.BufferGeometry | undefined>).filter((g): g is THREE.BufferGeometry => g instanceof THREE.BufferGeometry);
     for (const g of gs) expect(finite(g)).toBe(true);
-    expect(gs.reduce((s, g) => s + tris(g), 0)).toBeLessThanOrEqual(2396 + 150 + 40);
+    expect(gs.reduce((s, g) => s + tris(g), 0)).toBeLessThanOrEqual(3400); // smooth plane pass: the parked plane is the shared 'lite' aircraft (about 800 triangles; was 2586 with the box-and-ball plane)
   });
 });

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { SKY_VIEW } from '../config/sky';
+import { buildAircraft } from './meshes/aircraft';
+import { buildHangGlider, buildSquareCanopy } from './meshes/canopies';
+import { mergeParts } from './meshes/sweepGeo';
 
 /**
  * Sky activities (M7.4, docs/m74-buildings.md): the jump plane of every open Skydive Centre (circles over the Grass Strip, jumpers leave it and canopies spiral down to the
@@ -55,13 +57,8 @@ export function gliderPose(u: number, ramp: { x: number; y: number }, land: { x:
   out.heading = Math.atan2(dy, dx) + ang; return out;
 }
 
-const col = (g: THREE.BufferGeometry, c: number): THREE.BufferGeometry => {
-  const n = g.attributes.position!.count, a = new Float32Array(n * 3), k = new THREE.Color(c);
-  for (let i = 0; i < n; i++) { a[i * 3] = k.r; a[i * 3 + 1] = k.g; a[i * 3 + 2] = k.b; }
-  g.setAttribute('color', new THREE.BufferAttribute(a, 3));
-  return g.index ? g.toNonIndexed() : g;
-};
-const bx = (w: number, h: number, d: number, c: number, x = 0, y = 0, z = 0): THREE.BufferGeometry => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); return col(g, c); };
+/** The jump plane model is ~1.8 long; at this scale (x the 1.5 instance scale) it is about as long as the old box plane (0.62 x 1.5). */
+export const SKY_PLANE_SCALE = 0.4;
 
 export class SkyActivity {
   readonly group = new THREE.Group();
@@ -77,12 +74,12 @@ export class SkyActivity {
 
   constructor(private ground: (x: number, z: number) => number, private centres: () => Iterable<SkyCentre>, private ramps: () => Iterable<SkyRamp>) {
     this.group.name = 'skyActivity';
-    // small high-wing plane (forward = +x): fuselage, wing, tail, tail fin, propeller disc (~60 triangles)
-    const plane = mergeGeometries([bx(0.62, 0.11, 0.11, 0xf4f1ea), bx(0.13, 0.025, 0.86, 0xd9453a, 0.02, 0.07, 0), bx(0.1, 0.02, 0.3, 0xf4f1ea, -0.28, 0.02, 0), bx(0.09, 0.15, 0.02, 0xd9453a, -0.28, 0.1, 0), bx(0.02, 0.2, 0.03, 0x555555, 0.32, 0, 0)])!;
-    // canopy (forward = +x): a flat arched wing of three panels + a hanging jumper
-    const can = mergeGeometries([bx(0.2, 0.012, 0.16, 0xffffff, 0, 0.26, 0), bx(0.2, 0.012, 0.1, 0xffffff, 0, 0.245, 0.12), bx(0.2, 0.012, 0.1, 0xffffff, 0, 0.245, -0.12), bx(0.03, 0.14, 0.03, 0x2f3b52, 0, 0.1, 0)])!;
-    // glider (forward = +x): a delta wing with a pilot below
-    const gl = mergeGeometries([bx(0.16, 0.01, 0.62, 0xffffff, 0, 0.2, 0), bx(0.12, 0.01, 0.4, 0xffffff, 0.1, 0.2, 0), bx(0.03, 0.14, 0.03, 0x2f3b52, 0, 0.1, 0)])!;
+    // M8 smooth pass (docs/graphics-m8.md "Planes, paragliders and gliders"): the shared lofted high-wing plane (meshes/aircraft.ts, 'full', ~1,170 triangles incl. spinner + prop blur),
+    // the square ram-air canopy with its jumper (~480) and the hang glider (~380). Forward = +x, one InstancedMesh each, same three draw calls as before.
+    const air = buildAircraft('full');
+    const planeMat = new THREE.Matrix4().makeRotationY(Math.PI / 2).multiply(new THREE.Matrix4().makeScale(SKY_PLANE_SCALE, SKY_PLANE_SCALE, SKY_PLANE_SCALE));
+    const plane = mergeParts([...air.body, ...air.spinner, ...air.disc], planeMat);
+    const can = mergeParts(buildSquareCanopy().parts), gl = mergeParts(buildHangGlider().parts);
     const mk = (g: THREE.BufferGeometry, n: number, tint: boolean): THREE.InstancedMesh => {
       const m = new THREE.InstancedMesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }), n);
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0;
@@ -106,7 +103,7 @@ export class SkyActivity {
     if (this.far || tick === this.lastTick) return;
     this.lastTick = tick;
     let np = 0, nc = 0, ng = 0;
-    const palette = [0xd9453a, 0x2f6fd0, 0xf2c14e, 0x3fa34d, 0xd63fa0, 0xf08a24] as const;
+    const palette = [0xf08a24, 0x1fa7a0, 0xf2c14e, 0xd9453a, 0x2f6fd0, 0xd63fa0] as const; // orange, teal, yellow, red, blue, pink
     for (const v of this.centres()) {
       if (!v.open || v.users <= 0 || !v.strip || np >= SKY_VIEW.planes) continue;
       const s = v.strip, cx = s.x + s.w / 2, cy = s.y + s.h / 2, ax = s.w >= s.h ? 0 : Math.PI / 2, u = ((tick + v.id * 17) % SKY_CYCLE) / SKY_CYCLE;

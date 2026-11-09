@@ -1,4 +1,5 @@
-import { C, PartBuilder, barrelRoof, car, chimney, domeCap, doorway, drum, flagPole, frameWin, lampPost, tube, tyre, windsock } from '../common';
+import { buildAircraft, PLANE_COL } from '../aircraft';
+import { C, PartBuilder, barrelRoof, car, chimney, domeCap, doorway, drum, flagPole, frameWin, lampPost, windsock } from '../common';
 
 /** Train Station (4x2): station hall with clock tower, long platform canopy on posts, benches, signal and track bed. */
 export function trainStation(b: PartBuilder, w: number, h: number): void {
@@ -50,32 +51,13 @@ export function altiport(b: PartBuilder, w: number, h: number): void {
   barrelRoof(b, 1.5, 0.55, h / 2 - 0.5, 0.8, 1.7, 0.3, C.roofBlue, true, 'roof', 7); // arched hangar roof
   b.box(1.5, 0.05, h / 2 - 0.14, 1.2, 0.4, 0.04, C.dark);
   b.sign('ALTIPORT', -0.5, 0.45, h / 2 - 0.12, 1.1, 0.3, 0, '#1f3f7a');
-  // parked plane (M8 lane I: 1.5x larger, dark apron pad for contrast, red wing tips + tail so the wing / tail silhouette reads at gallery zoom): ellipsoid fuselage,
-  // tapered tail boom, cowling + spinner + propeller, wing with struts, wheels on stubs, livery stripe, cabin windows (<= ~190 triangles)
-  const S = 1.5, px = -1.25, pz = h / 2 - 0.62;
+  // parked plane (M8 smooth pass): the shared lofted high-wing plane (meshes/aircraft.ts 'lite', ~800 triangles) at 0.6 x, nose pointing +x, on a dark apron pad
+  const PS = 0.6, px = -1.2, pz = h / 2 - 0.62;
   b.box(px, 0, pz, 1.7, 0.02, 1.05, C.asphalt, 'stone'); // dark pad under the plane
-  b.ball(px, 0.02 * S, pz, 0.1 * S, C.white, 'wood', 10, { sx: 2.3, sy: 0.95, sz: 0.95 });
-  b.cone(px - 0.42 * S, (0.11 - 0.16) * S + 0.03, pz, 0.065 * S, 0.32 * S, C.white, 'wood', 8, { rz: Math.PI / 2 }); // tail boom
-  b.cone(px + 0.3 * S, (0.11 - 0.05) * S, pz, 0.075 * S, 0.1 * S, C.red, 'roof', 8, { rz: -Math.PI / 2 }); // cowling
-  b.ball(px + 0.37 * S, 0.09 * S, pz, 0.03 * S, C.dark, 'wood', 6);
-  b.box(px + 0.39 * S, 0.01 * S, pz, 0.015 * S, 0.22 * S, 0.04 * S, C.black, 'wood'); // propeller
-  b.ball(px + 0.08 * S, 0.16 * S, pz, 0.07 * S, C.glass, 'wood', 8, { sx: 1.6, sy: 0.7 }); // canopy
-  b.ball(px + 0.05 * S, 0.17 * S, pz, 0.04 * S, C.white, 'wood', 8, { sx: 2.5, sy: 0.35, sz: 11 }); // rounded wing (flattened ellipsoid across)
-  for (const sz of [-1, 1]) {
-    tube(b, px + 0.02 * S, 0.13 * S, pz + sz * 0.07 * S, px + 0.02 * S, 0.19 * S, pz + sz * 0.3 * S, 0.008 * S, C.grey, 'stone', 4); // wing struts
-    b.box(px + 0.05 * S, 0.17 * S, pz + sz * 0.42 * S, 0.1 * S, 0.012 * S, 0.1 * S, C.red, 'roof'); // red wing tips
+  const air = buildAircraft('lite');
+  for (const p of [...air.body, ...air.spinner, ...air.disc]) {
+    b.add(p.geo, p.color === PLANE_COL.glass ? 'glass' : p.color === PLANE_COL.red ? 'roof' : 'wood', p.color, px, 0.02, pz, { ry: Math.PI / 2, sx: PS, sy: PS, sz: PS });
   }
-  b.box(px - 0.4 * S, 0.17 * S, pz, 0.1 * S, 0.12 * S, 0.02 * S, C.red); b.box(px - 0.4 * S, 0.15 * S, pz, 0.1 * S, 0.02 * S, 0.26 * S, C.white); // tail fin + stabiliser
-  tyre(b, px + 0.12 * S, 0.0, pz + 0.12 * S, 0.04 * S, 0.02 * S, 0, C.black, C.grey, 6); tyre(b, px + 0.12 * S, 0.0, pz - 0.12 * S, 0.04 * S, 0.02 * S, 0, C.black, C.grey, 6);
-  tyre(b, px - 0.3 * S, 0.0, pz, 0.025 * S, 0.015 * S, 0, C.black, C.grey, 6);
-  b.cyl(px + 0.395 * S, 0.01 * S, pz, 0.11 * S, 0.004, C.grey, 'wood', 10, { rz: Math.PI / 2 }); // prop disc (grey blur)
-  for (const sz of [-1, 1]) {
-    b.box(px + 0.05 * S, 0.035 * S, pz + sz * 0.094 * S, 0.3 * S, 0.018 * S, 0.008 * S, C.red, 'roof'); // livery stripe along both sides
-    b.box(px + 0.1 * S, 0.06 * S, pz + sz * 0.088 * S, 0.1 * S, 0.03 * S, 0.008 * S, C.glass, 'glass'); // cabin window (both sides)
-    tube(b, px + 0.12 * S, 0.0, pz + sz * 0.12 * S, px + 0.1 * S, 0.07 * S, pz + sz * 0.05 * S, 0.007 * S, C.grey, 'stone', 4); // main gear leg
-  }
-  tube(b, px - 0.3 * S, 0.0, pz, px - 0.3 * S, 0.07 * S, pz, 0.006 * S, C.grey, 'stone', 4); // tail-wheel leg
-  b.box(px - 0.4 * S, 0.26 * S, pz, 0.1 * S, 0.06 * S, 0.02 * S, C.white); // taller tail fin
   // fuel drums + windsock
   for (const dz of [0, 0.2]) drum(b, w / 2 - 1.0, 0.05, h / 2 - 0.35 - dz, 0.08, 0.22, C.red);
   windsock(b, w / 2 - 0.3, 0.0, h / 2 - 0.4, 0.8);
