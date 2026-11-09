@@ -83,6 +83,14 @@ Per-shot overhead (page boot, load town, staging) is 10-15 s. SwiftShader is CPU
 
 **Projected FINAL render** (2560x1440, 30 fps, 2715 frames for the 90 s cut; the 30 s teaser reuses those shots, so it costs nothing extra): about 0.6 s/frame/shot-overhead-included at `--jobs 3` => about **30-40 min**; at `--jobs 2` about 45-50 min; at `--jobs 1` about 1.5-2 h. The assembler (libx264 `-preset slow -crf 14`) adds a few minutes. The draft of both cuts (1023 frames) is about 7-10 min at `--jobs 2`.
 
+## Draft scene notes (2026-11-09, 720p / 12 fps; look at `.weave/promo/sheets/` contact sheets)
+
+* **s01 blue hour (10 s)**: lit village (windows, lamps, chair lights) under a violet pre-dawn sky; narrow 36 deg lens rising from ground level over the finished lift line; hour 6.8 -> 7.95 so the light grows into the montage. The "fog banks below the village" are only the game's valley-fog haze, not distinct banks. A free camera needs the horizon fraction from the camera pitch (`preFrame` uses `debugFreeCam` pitch), otherwise the sky gradient is black above the horizon.
+* **s07b sled (6 s)**: `follow` camera behind the last carrier of the sled group, looking at the leader (`film.shots[].follow`); the ride is cued on the way down (`cue: { tour: 'sled' }` pushes a cosmetic ride; carriers are view-only); family group in the foreground, pennant stakes pass; carriers glide between ticks while stepping (`main.ts`). The last second holds the final pose at the hut. The track runs in a carved trench, so the banks fill the frame.
+* **s08a plane / s08b glider (4 s each)**: sky tracks and cues use `game.date.tick + alpha` (what `SkyActivity` draws with), not `loop.tickCount`. The plane scene starts at the strip's south end at ground level (the plane rolls, climbs and circles over the chalets); the glider is shot from above beside the ramp (a glider wing is a 0.01 thick slab: it is invisible edge-on, shoot it from above or below). If the followed guest leaves, the film re-acquires another ride rig so the free camera never drops to the guest view.
+* `--jobs 2` gave about 1.7x (draft 90 s cut: 993 frames in 431 s = 0.43 s/frame wall vs 754 s = 0.74 s/frame at 1 job).
+* Frames are keyed by shot id: do not run two captures (or a capture and an assemble) at the same time on the same `.weave/promo/frames/<res>` tree.
+
 ## Hooks that are still missing
 
 * A staged-build mode (the lift line drawing itself / a run being painted): the shots show the finished build.
