@@ -20,7 +20,7 @@ const MUSIC = 'public/audio/menu-seasons-of-management.mp3';
 const run = (cmd: string, args: string[], opt: any = {}): string => { const r = spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 1 << 28, ...opt }); if (r.status !== 0) throw new Error(`${cmd} failed: ${String(r.stderr).slice(-1500)}`); return String(r.stdout); };
 const ff = (args: string[]): string => run('ffmpeg', ['-v', 'error', '-y', ...args]);
 const xf: number = FILM.cuts[`c${cut}`].xfade;
-const order: string[] = FILM.cuts[`c${cut}`].order;
+const order: string[] = FILM.cuts[`c${cut}`].order ?? [...FILM.shots.filter((x: any) => x.cuts[`c${cut}`]).map((x: any) => x.id), 'end-card']; // the teaser reuses the 90 s shots (first `len` seconds from `from`)
 
 /** Strongest 30 s window of the song: mean RMS + onset density (positive spectral-flux proxy: rises of the 0.1 s RMS envelope). */
 function analyseMusic(len: number): { start: number; score: number; table: Array<{ start: number; score: number }> } {
@@ -66,7 +66,7 @@ try {
   for (let i = 0; i < used.length; i++) {
     const s = used[i]!; const last = i === used.length - 1; const c = s.cuts[`c${cut}`]; const len: number = (typeof c === 'object' && c.len) || s.len; const from: number = (typeof c === 'object' && c.from) || 0;
     const pad = last ? 0 : xf; const file = `${TMP}/${s.id}.mp4`;
-    const enc = ['-c:v', 'libx264', '-preset', final ? 'slow' : 'veryfast', '-crf', final ? '12' : '16', '-pix_fmt', 'yuv420p', '-r', String(fps), '-an'];
+    const enc = ['-c:v', 'libx264', '-preset', final ? 'slow' : 'veryfast', '-crf', final ? '12' : '20', '-pix_fmt', 'yuv420p', '-r', String(fps), '-an'];
     const stages: string[] = []; const ins: string[] = [];
     if (s.endCard) ins.push('-loop', '1', '-framerate', String(fps), '-i', ec); else ins.push('-framerate', String(fps), '-start_number', String(Math.round(from * fps) + 1), '-i', `.weave/promo/frames/${RES}/${s.id}/%05d.jpg`);
     stages.push(`[0:v]scale=${W}:${H}:flags=lanczos,format=yuv420p,tpad=stop_mode=clone:stop_duration=${pad},trim=duration=${len + pad},setpts=PTS-STARTPTS${s.endCard ? `,fade=in:st=0:d=0.001,fade=out:st=${Math.max(0, len - 1)}:d=1` : ''}[v]`);

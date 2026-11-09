@@ -850,7 +850,7 @@
       {
         "id": "s01-blue-hour",
         "town": "winter",
-        "len": 9,
+        "len": 10,
         "mode": "free",
         "start": {
           "month": 0,
@@ -878,11 +878,11 @@
             6.8
           ],
           [
-            5,
+            5.5,
             7.25
           ],
           [
-            9,
+            10,
             7.95
           ]
         ],
@@ -903,7 +903,7 @@
             "ease": "smooth"
           },
           {
-            "t": 5,
+            "t": 5.5,
             "at": "pos:66,121",
             "h": 7,
             "look": {
@@ -914,7 +914,7 @@
             "ease": "smooth"
           },
           {
-            "t": 9,
+            "t": 10,
             "at": "pos:61,113",
             "h": 17,
             "look": {
@@ -1370,7 +1370,7 @@
       {
         "id": "s07b-sled",
         "town": "sled",
-        "len": 5.5,
+        "len": 6,
         "mode": "free",
         "start": {
           "month": 0,
@@ -1730,7 +1730,7 @@
       }
     ],
     "endCard": {
-      "len": 6,
+      "len": 7,
       "line1": "Free in your browser",
       "line2": "slopetycoon.com",
       "cuts": {
