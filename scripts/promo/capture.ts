@@ -139,6 +139,12 @@ async function renderShot(br: any, shot: any, fps: number): Promise<{ frames: nu
     bytes += await page.evaluate((n: string, f: string, qq: number, p: number, st: [number, number]) => (window as any).__promo.grab(n, f, qq, p, st), name, fmt, quality, sinkPort, [i === 0 ? 0 : dt, 1]);
   }
   if (fmt === 'webcodecs') await page.evaluate(() => (window as any).__promo.encEnd());
+  if (shot.follow) { // a follow shot must run DOWNHILL: the leading carrier's terrain height falls over the shot (promo/scenes.json cue p0 < 0.5 = outbound leg)
+    const log: Array<[number, number]> = await page.evaluate(() => (window as any).__promo.followLog ?? []);
+    const h0 = log[0]?.[1] ?? 0, h1 = log[log.length - 1]?.[1] ?? 0; const bad = log.length < 2 || h1 >= h0 - 0.5;
+    console.log(`[${ts()}] ${shot.id} follow heights ${log.length ? `${h0.toFixed(2)} -> ${h1.toFixed(2)}` : 'none'}${bad ? ' ERROR: the follow shot does not go downhill' : ' ok (downhill)'}`);
+    if (bad) process.exitCode = 3;
+  }
   if (arg('evalend')) console.log('[evalend]', JSON.stringify(await page.evaluate(arg('evalend'))));
   const res = await page.evaluate(() => { const s = (window as any).__slope; s.frameStepEnd(); return { hash: s.frameHash(), tick: s.loop.tickCount }; });
   const errs = [...new Set<string>((page as any).__errs)];

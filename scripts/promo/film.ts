@@ -60,7 +60,7 @@ export function installFilm(): void {
           list.sort((a: any, b: any) => a.back - b.back); const lead = list[0], tail = list[list.length - 1];
           const hd = lead.heading, dx = Math.cos(hd), dz = Math.sin(hd);
           const px = tail.x - dx * f.back - dz * (f.side ?? 0), pz = tail.y - dz * f.back + dx * (f.side ?? 0), lx = lead.x + dx * (f.ahead ?? 2), lz = lead.y + dz * (f.ahead ?? 2);
-          const py = H.heightAt(s.grid, px, pz) + (f.h ?? 1.3), ly = H.heightAt(s.grid, lx, lz) + (f.lookH ?? 0.5);
+          (P.followLog ??= []).push([t, H.heightAt(s.grid, lead.x, lead.y)]); const py = H.heightAt(s.grid, px, pz) + (f.h ?? 1.3), ly = H.heightAt(s.grid, lx, lz) + (f.lookH ?? 0.5);
           const a = C.lookAngles([px, py, pz], [lx, ly, lz]); P.lastFollow = [px, py, pz, a.yaw, a.pitch, f.fov ?? 55]; s.view.freeCam(...P.lastFollow); return;
         }
         if (P.lastFollow) { s.view.freeCam(...P.lastFollow); return; } // ride over: hold the last pose

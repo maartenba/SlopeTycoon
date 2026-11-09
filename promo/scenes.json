@@ -1391,7 +1391,7 @@
         "after": [
           "guests:90:mixed"
         ],
-        "rate": 1,
+        "rate": 0.75,
         "keys": [
           {
             "t": 0,
@@ -1437,7 +1437,7 @@
         "cue": {
           "tour": "sled",
           "ticks": 26,
-          "p0": 0.74
+          "p0": 0.08
         },
         "follow": {
           "kind": "sled",
