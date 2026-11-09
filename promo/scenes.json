@@ -875,15 +875,15 @@
         "hour": [
           [
             0,
-            7
+            6.8
           ],
           [
             5,
-            7.5
+            7.25
           ],
           [
             9,
-            8.3
+            7.95
           ]
         ],
         "after": [
@@ -893,35 +893,35 @@
         "keys": [
           {
             "t": 0,
-            "at": "pos:64,123",
-            "h": 2.4,
+            "at": "pos:70,127",
+            "h": 2.6,
             "look": {
-              "at": "pos:63,92",
-              "h": 11
+              "at": "pos:62,103",
+              "h": 5
             },
-            "fov": 34,
+            "fov": 36,
             "ease": "smooth"
           },
           {
             "t": 5,
-            "at": "pos:60,123",
-            "h": 8,
+            "at": "pos:66,121",
+            "h": 7,
             "look": {
-              "at": "pos:62,88",
-              "h": 9
+              "at": "pos:61,95",
+              "h": 8
             },
-            "fov": 34,
+            "fov": 36,
             "ease": "smooth"
           },
           {
             "t": 9,
-            "at": "pos:54,121",
+            "at": "pos:61,113",
             "h": 17,
             "look": {
-              "at": "pos:60,86",
-              "h": 5
+              "at": "pos:60,82",
+              "h": 6
             },
-            "fov": 34
+            "fov": 36
           }
         ],
         "caption": "I wanted a ski holiday that never ended.",
@@ -1436,8 +1436,8 @@
         },
         "cue": {
           "tour": "sled",
-          "ticks": 22,
-          "p0": 0.68
+          "ticks": 26,
+          "p0": 0.74
         },
         "follow": {
           "kind": "sled",
@@ -1482,21 +1482,21 @@
         "keys": [
           {
             "t": 0,
-            "at": "pos:69.5,124.5",
-            "h": 0.5,
+            "at": "pos:69.5,120.6",
+            "h": 0.3,
             "look": {
               "track": "plane"
             },
-            "fov": 58
+            "fov": 40
           },
           {
             "t": 4,
-            "at": "pos:69.5,124.5",
-            "h": 0.5,
+            "at": "pos:69.5,120.6",
+            "h": 0.3,
             "look": {
               "track": "plane"
             },
-            "fov": 58
+            "fov": 40
           }
         ],
         "caption": "",
@@ -1529,29 +1529,29 @@
           "guests:160:mixed",
           "qa-sky"
         ],
-        "rate": 4,
+        "rate": 3,
         "cue": {
           "sky": "glider",
-          "u": 0.04
+          "u": 0.045
         },
         "keys": [
           {
             "t": 0,
-            "at": "pos:37,114",
-            "h": 0.7,
+            "at": "pos:31,114",
+            "h": 5.5,
             "look": {
               "track": "glider"
             },
-            "fov": 55
+            "fov": 50
           },
           {
             "t": 4,
-            "at": "pos:37,114",
-            "h": 0.7,
+            "at": "pos:31,114",
+            "h": 5.5,
             "look": {
               "track": "glider"
             },
-            "fov": 55
+            "fov": 50
           }
         ],
         "caption": "Skydive. Paraglide. Whatever you build.",
