@@ -796,7 +796,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   { const f = visitorAudioFacts(); visitorCalls.frame(f.active, f.dist, f.pan); }
   sledRunView.update();
   updateFestival(dt);
-  tourVehicles.update(sim.loop.tickCount);
+  tourVehicles.update(renderer.stepping ? sim.loop.tickCount + sim.loop.alpha : sim.loop.tickCount); // frame-step capture only: carriers glide between ticks
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
   { // petting zoo animals (4 instanced draw calls; only open pens during the day)
     const zoos = buildings.all().filter((b) => b.type === 'pettingZoo');

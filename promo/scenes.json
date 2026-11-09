@@ -855,7 +855,7 @@
         "start": {
           "month": 0,
           "dom": 10,
-          "hour": 6.4
+          "hour": 7
         },
         "atmos": {
           "fog": 1,
@@ -875,15 +875,15 @@
         "hour": [
           [
             0,
-            6.3
+            7
           ],
           [
-            6,
-            7.2
+            5,
+            7.5
           ],
           [
             9,
-            8.1
+            8.3
           ]
         ],
         "after": [
@@ -893,41 +893,35 @@
         "keys": [
           {
             "t": 0,
-            "at": "bottom:chair",
-            "dx": -6,
-            "dz": 10,
-            "h": 2.5,
+            "at": "pos:64,123",
+            "h": 2.4,
             "look": {
-              "at": "mid:chair",
-              "h": 8
+              "at": "pos:63,92",
+              "h": 11
             },
-            "fov": 36,
+            "fov": 34,
             "ease": "smooth"
           },
           {
             "t": 5,
-            "at": "bottom:chair",
-            "dx": -8,
-            "dz": 6,
-            "h": 9,
+            "at": "pos:60,123",
+            "h": 8,
             "look": {
-              "at": "mid:chair",
-              "h": 6
+              "at": "pos:62,88",
+              "h": 9
             },
-            "fov": 36,
+            "fov": 34,
             "ease": "smooth"
           },
           {
             "t": 9,
-            "at": "mid:chair",
-            "dx": -10,
-            "dz": 4,
-            "h": 20,
+            "at": "pos:54,121",
+            "h": 17,
             "look": {
-              "at": "top:chair",
-              "h": 2
+              "at": "pos:60,86",
+              "h": 5
             },
-            "fov": 36
+            "fov": 34
           }
         ],
         "caption": "I wanted a ski holiday that never ended.",
@@ -1376,7 +1370,7 @@
       {
         "id": "s07b-sled",
         "town": "sled",
-        "len": 8,
+        "len": 5.5,
         "mode": "free",
         "start": {
           "month": 0,
@@ -1439,6 +1433,20 @@
           "c30": {
             "len": 3
           }
+        },
+        "cue": {
+          "tour": "sled",
+          "ticks": 22,
+          "p0": 0.68
+        },
+        "follow": {
+          "kind": "sled",
+          "back": 2.4,
+          "h": 1.15,
+          "side": 0.5,
+          "ahead": 2.5,
+          "lookH": 0.5,
+          "fov": 58
         }
       },
       {
@@ -1469,31 +1477,26 @@
         "rate": 4,
         "cue": {
           "sky": "plane",
-          "u": 0.2
+          "u": 0.06
         },
         "keys": [
           {
             "t": 0,
-            "at": "skyact",
-            "dx": -6,
-            "dz": 4,
-            "h": 1.2,
+            "at": "pos:69.5,124.5",
+            "h": 0.5,
             "look": {
               "track": "plane"
             },
-            "fov": 46,
-            "ease": "smooth"
+            "fov": 58
           },
           {
             "t": 4,
-            "at": "skyact",
-            "dx": -6,
-            "dz": 4,
-            "h": 1.2,
+            "at": "pos:69.5,124.5",
+            "h": 0.5,
             "look": {
               "track": "plane"
             },
-            "fov": 46
+            "fov": 58
           }
         ],
         "caption": "",
@@ -1534,25 +1537,21 @@
         "keys": [
           {
             "t": 0,
-            "at": "skyact",
-            "dx": 0,
-            "dz": 6,
-            "h": 2,
+            "at": "pos:37,114",
+            "h": 0.7,
             "look": {
               "track": "glider"
             },
-            "fov": 46
+            "fov": 55
           },
           {
             "t": 4,
-            "at": "skyact",
-            "dx": 0,
-            "dz": 6,
-            "h": 2,
+            "at": "pos:37,114",
+            "h": 0.7,
             "look": {
               "track": "glider"
             },
-            "fov": 46
+            "fov": 55
           }
         ],
         "caption": "Skydive. Paraglide. Whatever you build.",

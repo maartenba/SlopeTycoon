@@ -139,6 +139,7 @@ async function renderShot(br: any, shot: any, fps: number): Promise<{ frames: nu
     bytes += await page.evaluate((n: string, f: string, qq: number, p: number, st: [number, number]) => (window as any).__promo.grab(n, f, qq, p, st), name, fmt, quality, sinkPort, [i === 0 ? 0 : dt, 1]);
   }
   if (fmt === 'webcodecs') await page.evaluate(() => (window as any).__promo.encEnd());
+  if (arg('evalend')) console.log('[evalend]', JSON.stringify(await page.evaluate(arg('evalend'))));
   const res = await page.evaluate(() => { const s = (window as any).__slope; s.frameStepEnd(); return { hash: s.frameHash(), tick: s.loop.tickCount }; });
   const errs = [...new Set<string>((page as any).__errs)];
   if (errs.length) console.log(`[${ts()}] ${shot.id} page errors: ${errs.slice(0, 3).join(' | ')}`);

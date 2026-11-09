@@ -27,7 +27,7 @@ export function installFilm(): void {
     }
     // the sky tracks: a strip / ramp pose as a function of the sim tick (SkyActivity's own pure functions)
     const track = (name: string): number[] | null => {
-      const sa = s.skyActivity; const tick = s.loop.tickCount + (s.loop.paused ? 1 : s.loop.alpha);
+      const sa = s.skyActivity; const tick = s.sim.game.date.tick + s.loop.alpha; // the sky draws with game.date.tick + alpha (main.ts)
       if (name === 'plane') { const v = Array.from(sa.centres()).find((c: any) => c.open && c.strip) as any; if (!v) return null; const st = v.strip, u = ((tick + v.id * 17) % Sky.SKY_CYCLE) / Sky.SKY_CYCLE; const q = Sky.planePose(u, st.x + st.w / 2, st.y + st.h / 2, st.w >= st.h ? 0 : Math.PI / 2); return [q.x, q.z + H.heightAt(s.grid, q.x, q.y), q.y]; }
       if (name === 'canopy') { const v = Array.from(sa.centres()).find((c: any) => c.open && c.strip) as any; if (!v) return null; const st = v.strip, cx = st.x + st.w / 2, cy = st.y + st.h / 2, ax = st.w >= st.h ? 0 : Math.PI / 2, u0 = ((tick + v.id * 17) % Sky.SKY_CYCLE) / Sky.SKY_CYCLE; const q = Sky.canopyPose(u0, 0, cx, cy, ax); if (!q) { const e = Sky.planePose(Sky.JUMP_AT, cx, cy, ax); return [e.x, e.z + H.heightAt(s.grid, e.x, e.y), e.y]; } return [q.x, q.z + H.heightAt(s.grid, q.x, q.y), q.y]; }
       if (name === 'glider') { const r = Array.from(sa.ramps()).find((c: any) => c.open && c.landing) as any; if (!r) return null; const rx = r.x + r.w / 2, ry = r.y + r.h / 2, rz = H.heightAt(s.grid, rx, ry), lz = H.heightAt(s.grid, r.landing.x, r.landing.y); const u = ((tick + r.id * 29) % Sky.GLIDE_CYCLE) / Sky.GLIDE_CYCLE; const q = Sky.gliderPose(u, { x: rx, y: ry }, r.landing, rz, lz); return [q.x, q.z, q.y]; }
@@ -50,6 +50,21 @@ export function installFilm(): void {
       if (Math.abs(hour - lastHour) > 1e-4) { lastHour = hour; s.setHour(hour); s.atmos.force({ ...atmos0, hour }); }
       for (let i = wxTl.length - 1; i >= 0; i--) if (t >= wxTl[i].t) { if (i !== wxIdx) { wxIdx = i; const q = wxTl[i]; P.weather(q.kind, q.kind === 'clear' ? 0 : (q.intensity ?? 1), q.wind ?? 0.1, q.fog ?? 0); } break; }
       const v = C.samplePath(keys, t, shot.spline !== false);
+      if (free && s.renderer.viewMode.mode !== 'ride') { // the followed guest left (a ride rig must stay active for the free camera): take any other one, keep the sim running at the shot's rate
+        const st = s.guestSim.store; let pick = 0; for (let i = 0; i < st.limit && !pick; i++) if (st.alive[i]) pick = st.id[i];
+        if (pick) { s.view.ride(pick); s.loop.setSpeed(1); s.loop.timeScale = s.frameStepRate; }
+      }
+      if (free && shot.follow) { // follow the sled group from behind: camera behind the tail carrier, looking at the leader (carriers read at the fractional tick, see main.ts tourVehicles.update)
+        const f = shot.follow, tick = s.loop.tickCount + s.loop.alpha; const list: any[] = Array.from(s.sim.tours.carriers(tick, [], 64)).filter((c: any) => c.kind === f.kind);
+        if (list.length) {
+          list.sort((a: any, b: any) => a.back - b.back); const lead = list[0], tail = list[list.length - 1];
+          const hd = lead.heading, dx = Math.cos(hd), dz = Math.sin(hd);
+          const px = tail.x - dx * f.back - dz * (f.side ?? 0), pz = tail.y - dz * f.back + dx * (f.side ?? 0), lx = lead.x + dx * (f.ahead ?? 2), lz = lead.y + dz * (f.ahead ?? 2);
+          const py = H.heightAt(s.grid, px, pz) + (f.h ?? 1.3), ly = H.heightAt(s.grid, lx, lz) + (f.lookH ?? 0.5);
+          const a = C.lookAngles([px, py, pz], [lx, ly, lz]); P.lastFollow = [px, py, pz, a.yaw, a.pitch, f.fov ?? 55]; s.view.freeCam(...P.lastFollow); return;
+        }
+        if (P.lastFollow) { s.view.freeCam(...P.lastFollow); return; } // ride over: hold the last pose
+      }
       if (free) {
         const p = [v[0], v[1], v[2]]; const g = H.heightAt(s.grid, p[0], p[2]) + 0.7; if (p[1] < g) p[1] = g;
         let l = [v[3], v[4], v[5]];
@@ -68,7 +83,11 @@ export function installFilm(): void {
     const s = S(), sa = s.skyActivity; let n = 0; const loop = s.loop;
     for (let i = 0; i < 400; i++) {
       const tick = loop.tickCount;
-      if (c.sky === 'plane') { const v: any = Array.from(sa.centres()).find((q: any) => q.strip); if (!v) return { ok: false }; const u = ((tick + v.id * 17) % 80) / 80; if (Math.abs(u - c.u) < 0.013) return { ok: true, n, u }; }
+      if (c.tour) { // a sled group leaves on cue (carriers are view-only: nothing in the sim reads the ride list): p0 = share of the out-and-back already done, so the whole group is on the way down
+      const st: any = Array.from(s.sim.tours.st.values()).find((q: any) => q.def.vehicle === c.tour && q.plan.ok); if (!st) return { ok: false };
+      const D = c.ticks ?? 10, tick = loop.tickCount; st.rides.push({ start: tick - (c.p0 ?? 0.6) * D, end: tick - (c.p0 ?? 0.6) * D + D, riders: 8 }); return { ok: true, tiles: st.plan.tiles.length };
+    }
+    if (c.sky === 'plane') { const v: any = Array.from(sa.centres()).find((q: any) => q.strip); if (!v) return { ok: false }; const u = ((tick + v.id * 17) % 80) / 80; if (Math.abs(u - c.u) < 0.013) return { ok: true, n, u }; }
       else { const r: any = Array.from(sa.ramps()).find((q: any) => q.landing); if (!r) return { ok: false }; const u = ((tick + r.id * 29) % 120) / 120; if (Math.abs(u - c.u) < 0.013) return { ok: true, n, u }; }
       P.adv(1); n++;
     }
