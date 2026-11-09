@@ -50,9 +50,9 @@ export function altiport(b: PartBuilder, w: number, h: number): void {
   b.box(1.5, 0.05, h / 2 - 0.5, 1.6, 0.5, 0.7, C.blue);
   barrelRoof(b, 1.5, 0.55, h / 2 - 0.5, 0.8, 1.7, 0.3, C.roofBlue, true, 'roof', 7); // arched hangar roof
   b.box(1.5, 0.05, h / 2 - 0.14, 1.2, 0.4, 0.04, C.dark);
-  b.sign('ALTIPORT', -0.5, 0.45, h / 2 - 0.12, 1.1, 0.3, 0, '#1f3f7a');
+  b.sign('ALTIPORT', 0.1, 0.45, h / 2 - 0.12, 1.1, 0.3, 0, '#1f3f7a');
   // parked plane (M8 smooth pass): the shared lofted high-wing plane (meshes/aircraft.ts 'lite', ~800 triangles) at 0.6 x, nose pointing +x, on a dark apron pad
-  const PS = 0.6, px = -1.2, pz = h / 2 - 0.62;
+  const PS = 0.6, px = -1.5, pz = h / 2 - 0.6;
   b.box(px, 0, pz, 1.7, 0.02, 1.05, C.asphalt, 'stone'); // dark pad under the plane
   const air = buildAircraft('lite');
   for (const p of [...air.body, ...air.spinner, ...air.disc]) {

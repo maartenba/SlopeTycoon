@@ -164,3 +164,23 @@ npm run flicker -- --only 64-winter-day,64-summer-day --kinds rotfine,zoomfine [
 - The dug-bank wall itself was not remodelled (no sloped fillet geometry).
 - Shadow pops from culled off-screen tree cells were not changed: the cells are culled by the main-pass frustum, so a wider shadow margin needs a separate visibility pass (extra cost); left as is.
 - Not re-checked this pass: near rocks in walk / ride, the Altiport plane at iso zoom, cable car / funicular / near gondola in ride-along.
+
+
+## Planes, paragliders and gliders (smooth pass; render only)
+
+The jump plane, the Altiport planes, the skydiver canopies and the Launch Ramp gliders were boxes and flat panels. They now come from one small geometry kit (`src/render/meshes/sweepGeo.ts`: `sweep` lofts rings into a rounded surface with smooth normals and crisp per-face colour bands, plus `tube`, `blob`, `wingRings`) and two model files: `aircraft.ts` (the plane) and `canopies.ts` (canopy + hang glider). No new draw calls: `SkyActivity` still draws 3 instanced meshes, the Altiport arrival plane is still body + lights + spinning prop, the parked plane is still merged into the Altiport layers. Pose functions, attachment points (prop pivot, canopy / glider origin at the pilot's feet, forward = +x for the sky meshes, +z for the vehicle) and the camera tracks of the promo films are unchanged.
+
+| model | before (triangles) | after |
+|---|---|---|
+| Altiport arrival plane (body + lights + prop) | 500 | 1,226 (cap 1,200 + 36 light triangles) |
+| Skydive jump plane (instanced) | 60 | 1,170 (body + spinner + prop blur) |
+| Skydiver canopy + jumper (instanced, tinted) | 48 | 476 |
+| Hang glider (instanced, tinted) | 36 | 380 |
+| Parked Altiport plane (inside the Altiport mesh, 'lite' variant) | about 750 (the ball-and-box plane) | about 800 (Altiport 2,580 -> 2,632 in all, +52; cap 3,400) |
+
+* **Plane**: a light high-wing utility plane: lofted rounded fuselage with a tapered tail boom, red cowling + spinner, windows, the right-hand jump door standing open (a dark recess), tapered wing with a curved leading edge and rounded red tips, a strut each side, tailplane and fin with rounded tips, tricycle gear with wheel pants, red / white livery stripe, a blade antenna, pitot and a beacon.
+* **Canopy**: an arched ram-air wing of 14 rib bays (one stripe per rib pair: the cell pattern; a darker leading-edge band), rounded tapered tips, a fan of 10 lines (thin triangular tubes, radius 0.011) to a jumper with legs, torso, arms and helmet. The tint palette is now orange / teal / yellow / red / blue / pink.
+* **Hang glider**: a delta wing with a curved leading edge and a drooping rounded sail (tri-panel), leading-edge spars, keel, control frame and a prone pilot.
+* **Checks**: `tests/render/m8Aircraft.test.ts` (finite, unit normals, triangle caps, determinism, bounds / attachment points, 3 draw calls); MaterialGuard READ 0 on Low and High (`scripts/shots/m8-sky-ingame-m.ts`); flicker 64 winter rotfine 0.6945 % (High), 0 pops, unchanged; `npm run m74:sanity` passes.
+* **Shots** (`scripts/shots/m8-sky-m.ts` line-up on a plain background / meadow, `m8-sky-ingame-m.ts` the real class over the village at iso zoom 6 and close, `m8-closeup-e.ts` for the Altiport): prefix `m8-after-m-`.
+* **Not great yet**: the sky meshes have no quality tier, so the worst case (2 planes, 12 canopies, 6 gliders) is about 10k triangles on every setting (it was 0.4k) when a Skydive Centre and a Launch Ramp are busy at once; the prop blur on the jump and parked planes is an opaque grey disc (no transparency in the instanced layers), the arrival plane spins two thin blades instead; the pilots are small and tinted dark by the instance colour; the tail of the parked plane takes the building's 'wood' texture tint (slightly cream); the Altiport sign moved 0.6 tiles east so it no longer hides the parked plane; paragliders are not a separate model (the ramp draws one hang glider type).
