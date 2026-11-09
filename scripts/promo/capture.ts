@@ -102,7 +102,7 @@ async function renderShot(br: any, shot: any, fps: number): Promise<{ frames: nu
     }
     loadedIn.add(br);
   }
-  await page.goto(`${srv.url}?load=promo-${town}&hints=0&mode=career&name=Alpenglow`, { waitUntil: 'load', timeout: 120000 });
+  await page.goto(`${srv.url}?load=promo-${town}&hints=0&mode=career&name=Alpenglow&stepmode=1`, { waitUntil: 'load', timeout: 120000 });
   await page.waitForFunction(() => !!(window as any).__slope, { timeout: 120000 });
   await page.evaluate(installLib); await page.evaluate(installFilm);
   await page.evaluate((i: any) => { const P = (window as any).__promo; P.pistes = i.pistes; P.sledLine = i.sledLine; }, info);
@@ -131,6 +131,7 @@ async function renderShot(br: any, shot: any, fps: number): Promise<{ frames: nu
   if (arg('eval')) console.log('[eval]', JSON.stringify(await page.evaluate(arg('eval'))));
   await page.evaluate((r: number) => { (window as any).__slope.frameStepRate = r; }, shot.rate ?? 1);
   if (fmt === 'webcodecs') await page.evaluate((p: number, f: string, w: number, h: number, fp: number) => (window as any).__promo.encStart(p, f, w, h, fp, w * h * 12), sinkPort, `${shot.id}/video.h264`, W, H, fps);
+  await page.evaluate(() => (window as any).__slope.frameStep(0, 8)); // preroll: terrain / prop builds settle, no sim time passes (then every clock restarts from the same state)
   const dt = 1 / fps; const ext = fmt === 'png' ? 'png' : 'jpg';
   let bytes = 0;
   for (let i = 0; i < nFrames; i++) {

@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const srv = await startServer(); const br = await launch();
 // tiny local frame sink for the POST method
-let posted = 0; const sink = createServer((rq, rs) => { const ch: Buffer[] = []; rq.on('data', (c) => ch.push(c)); rq.on('end', () => { posted += Buffer.concat(ch).length; rs.setHeader('Access-Control-Allow-Origin', '*'); rs.setHeader('Access-Control-Allow-Headers', '*'); rs.end('ok'); }); });
+const sink = createServer((rq, rs) => { const ch: Buffer[] = []; rq.on('data', (c) => ch.push(c)); rq.on('end', () => { rs.setHeader('Access-Control-Allow-Origin', '*'); rs.setHeader('Access-Control-Allow-Headers', '*'); rs.end('ok'); }); });
 await new Promise<void>((r) => sink.listen(0, '127.0.0.1', r)); const sinkPort = (sink.address() as any).port;
 const rows: any[] = [];
 try {

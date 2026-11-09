@@ -1536,7 +1536,7 @@ renderer.preFrame = (dt): void => {
   if (!rideAlong.sample(a, rideSample)) return;
   const pose = renderer.rig.update(dt, rideSample);
   if (debugFreeCam) { const c = renderer.camera; c.position.set(debugFreeCam[0]!, debugFreeCam[1]!, debugFreeCam[2]!); c.rotation.set(debugFreeCam[4]!, debugFreeCam[3]!, 0, 'YXZ'); const fv = debugFreeCam[5], pc = c as THREE.PerspectiveCamera; if (fv && Math.abs(pc.fov - fv) > 1e-3) { pc.fov = fv; pc.updateProjectionMatrix(); renderer.rig.fov = fv; } c.updateMatrixWorld(true); } // QA only (__slope.view.freeCam)
-  const hf = horizonFraction(pose.pitch, renderer.rig.fov);
+  const hf = horizonFraction(debugFreeCam ? debugFreeCam[4]! : pose.pitch, renderer.rig.fov);
   if (Math.abs(hf - rideHorizon) > 0.004) { rideHorizon = hf; lighting.horizonAt = hf; lighting.refreshSky(); }
   const now = performance.now();
   if (now >= rideHudAt && viewHudEl) {
@@ -3271,5 +3271,6 @@ if (DEMO) {
   Object.assign((window as unknown as { __slope: Record<string, unknown> }).__slope, { demo: scene, demoPois: pois });
 }
 
+if (import.meta.env.DEV && params.has('stepmode')) renderer.stepping = true; // QA / promo capture (docs/promo-video.md): no real-time frame ever runs, so every render clock starts at 0 and only `__slope.frameStep` advances it (deterministic frames)
 renderer.start();
 }

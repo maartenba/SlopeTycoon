@@ -26,7 +26,7 @@ export function installFilm(): void {
       looks.push(k.look);
     }
     // the sky tracks: a strip / ramp pose as a function of the sim tick (SkyActivity's own pure functions)
-    const track = (name: string, t: number): number[] | null => {
+    const track = (name: string): number[] | null => {
       const sa = s.skyActivity; const tick = s.loop.tickCount + (s.loop.paused ? 1 : s.loop.alpha);
       if (name === 'plane') { const v = Array.from(sa.centres()).find((c: any) => c.open && c.strip) as any; if (!v) return null; const st = v.strip, u = ((tick + v.id * 17) % Sky.SKY_CYCLE) / Sky.SKY_CYCLE; const q = Sky.planePose(u, st.x + st.w / 2, st.y + st.h / 2, st.w >= st.h ? 0 : Math.PI / 2); return [q.x, q.z + H.heightAt(s.grid, q.x, q.y), q.y]; }
       if (name === 'canopy') { const v = Array.from(sa.centres()).find((c: any) => c.open && c.strip) as any; if (!v) return null; const st = v.strip, cx = st.x + st.w / 2, cy = st.y + st.h / 2, ax = st.w >= st.h ? 0 : Math.PI / 2, u0 = ((tick + v.id * 17) % Sky.SKY_CYCLE) / Sky.SKY_CYCLE; const q = Sky.canopyPose(u0, 0, cx, cy, ax); if (!q) { const e = Sky.planePose(Sky.JUMP_AT, cx, cy, ax); return [e.x, e.z + H.heightAt(s.grid, e.x, e.y), e.y]; } return [q.x, q.z + H.heightAt(s.grid, q.x, q.y), q.y]; }
@@ -53,7 +53,7 @@ export function installFilm(): void {
       if (free) {
         const p = [v[0], v[1], v[2]]; const g = H.heightAt(s.grid, p[0], p[2]) + 0.7; if (p[1] < g) p[1] = g;
         let l = [v[3], v[4], v[5]];
-        const trk = looks.map((k) => k?.track).find(Boolean); if (trk) { const q = track(trk, t); if (q) l = q; }
+        const trk = looks.map((k) => k?.track).find(Boolean); if (trk) { const q = track(trk); if (q) l = q; }
         const a = C.lookAngles(p, l);
         s.view.freeCam(p[0], p[1], p[2], a.yaw, a.pitch, v[6]);
       } else {
@@ -75,9 +75,19 @@ export function installFilm(): void {
     return { ok: false, n };
   };
   // ---- capture paths (page side). `port` = the Node frame sink. Called in the same task as the render, so no preserveDrawingBuffer is needed. ----
+  /** The game's sky is a CSS gradient BEHIND the transparent WebGL canvas (Lighting.skyElement): composite it into a 2D canvas so the capture has the sky (same task as the render). */
+  P.comp = (gl: HTMLCanvasElement): HTMLCanvasElement => {
+    if (!P.cc || P.cc.width !== gl.width || P.cc.height !== gl.height) { P.cc = document.createElement('canvas'); P.cc.width = gl.width; P.cc.height = gl.height; P.cx = P.cc.getContext('2d', { alpha: false }); }
+    const cx: CanvasRenderingContext2D = P.cx; const g = cx.createLinearGradient(0, 0, 0, gl.height); const bg = gl.parentElement!.style.background;
+    const re = /rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)\s*([\d.]+)%/g; let m: RegExpExecArray | null, n = 0;
+    while ((m = re.exec(bg))) { g.addColorStop(Math.min(1, Number(m[4]) / 100), `rgb(${m[1]},${m[2]},${m[3]})`); n++; }
+    if (!n) { g.addColorStop(0, '#1b2a44'); g.addColorStop(1, '#1b2a44'); }
+    cx.fillStyle = g; cx.fillRect(0, 0, gl.width, gl.height); cx.drawImage(gl, 0, 0);
+    return P.cc;
+  };
   P.grab = async (file: string, fmt: string, q: number, port: number, step: [number, number]): Promise<number> => {
     const s = S(); s.frameStep(step[0], step[1]);
-    const c: HTMLCanvasElement = s.renderer.webgl.domElement;
+    const c: HTMLCanvasElement = P.comp(s.renderer.webgl.domElement);
     if (fmt === 'webcodecs') {
       const E = P.enc; const vf = new (w as any).VideoFrame(c, { timestamp: Math.round(E.n * 1e6 / E.fps) }); E.enc.encode(vf, { keyFrame: E.n % 60 === 0 }); vf.close(); E.n++;
       if (E.n % 8 === 0) await E.enc.flush();
