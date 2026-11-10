@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
-const MIME: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.webp': 'image/webp', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg' };
+const MIME: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.webp': 'image/webp', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.vtt': 'text/vtt; charset=utf-8' };
 
 export const normalizeBase = (b: string): string => { let s = b.trim(); if (!s.startsWith('/')) s = `/${s}`; if (!s.endsWith('/')) s += '/'; return s; };
 
@@ -23,7 +23,13 @@ export function createPagesServer(dist: string, base: string): Server {
     if (!f.startsWith(dist)) { notFound(res); return; }
     if (existsSync(f) && statSync(f).isDirectory()) f = join(f, 'index.html');
     if (!existsSync(f)) { notFound(res); return; }
-    res.writeHead(200, { 'content-type': MIME[extname(f)] ?? 'application/octet-stream', 'cache-control': 'max-age=600' });
-    res.end(readFileSync(f));
+    const type = MIME[extname(f)] ?? 'application/octet-stream', buf = readFileSync(f), range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
+    if (range && (range[1] || range[2])) { // byte ranges, so a video can seek
+      const start = range[1] ? Number(range[1]) : Math.max(0, buf.length - Number(range[2])), end = range[1] && range[2] ? Math.min(Number(range[2]), buf.length - 1) : buf.length - 1;
+      if (start > end || start >= buf.length) { res.writeHead(416, { 'content-range': `bytes */${buf.length}` }); res.end(); return; }
+      res.writeHead(206, { 'content-type': type, 'accept-ranges': 'bytes', 'content-range': `bytes ${start}-${end}/${buf.length}`, 'content-length': end - start + 1 }); res.end(buf.subarray(start, end + 1)); return;
+    }
+    res.writeHead(200, { 'content-type': type, 'accept-ranges': 'bytes', 'cache-control': 'max-age=600' });
+    res.end(buf);
   });
 }

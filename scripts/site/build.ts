@@ -12,6 +12,7 @@ import { devlogPages, landingPages, landingSlugs, lastmodOf, type GenPage } from
 import { landingFaq } from './faq';
 import { writeIcons } from './icons';
 import { figureHtml } from './md';
+import { VIDEO_DIR, videoLd, watchSection } from './video';
 
 export const OUT = 'dist-site';
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
@@ -31,9 +32,9 @@ export function buildLanding(tpl: string, env: SiteEnv, shots: Record<string, Sh
   const hero = need('hero-winter');
   const heroHtml = `<figure class="hero2-pic"><img src="assets/shots/${[...hero.files].sort((a, b) => a.w - b.w)[0]!.file}" srcset="${[...hero.files].sort((a, b) => a.w - b.w).map((x) => `assets/shots/${x.file} ${x.w}w`).join(', ')}" sizes="(min-width: 900px) 720px, 100vw" width="${hero.w}" height="${hero.h}" alt="${esc(hero.alt)}" fetchpriority="high" decoding="async"><figcaption>Winter, with more guests than I planned for.</figcaption></figure>`;
   let html = tpl
-    .replace('{{head}}', head(env, { rel: '', title: LANDING_TITLE, description: LANDING_DESC, path: '', og: 'landing', ld: [gameLd(env), websiteLd(env), faq.ld], feed: true }))
+    .replace('{{head}}', head(env, { rel: '', title: LANDING_TITLE, description: LANDING_DESC, path: '', og: 'landing', ld: [gameLd(env), websiteLd(env), ...videoLd(env), faq.ld], feed: true }))
     .replace('{{header}}', header('', markSvg)).replace('{{footer}}', footer(env, '', guide))
-    .replace('{{scripts}}', scripts('')).replace(/\{\{repo\}\}/g, env.repoUrl).replace('{{hero}}', heroHtml).replace('{{faq}}', faq.html)
+    .replace('{{scripts}}', scripts('')).replace(/\{\{repo\}\}/g, env.repoUrl).replace('{{hero}}', heroHtml).replace('{{watch}}', watchSection()).replace('{{faq}}', faq.html)
     .replace(/\{\{pic:([\w-]+)(?:\|([^|}]*))?(?:\|(\d+))?\}\}/g, (_m, id: string, cap?: string, w?: string) => {
       const s = need(id);
       return figureHtml(s, '').replace('class="shot"', 'class="pic"').replace('sizes="(min-width: 900px) 760px, 100vw"', `sizes="(min-width: 900px) ${w ?? 640}px, 100vw"`).replace(/<figcaption>[\s\S]*?<\/figcaption>/, `<figcaption>${esc(cap ?? s.caption ?? s.alt)}</figcaption>`);
@@ -61,6 +62,7 @@ export async function buildSite(env: SiteEnv = siteEnv()): Promise<{ pages: numb
   cpSync('public/fonts', join(OUT, 'assets', 'fonts'), { recursive: true });
   await writeIcons(OUT);
   cpSync('site/assets/site.css', join(OUT, 'assets', 'site.css')); cpSync('site/assets/site.js', join(OUT, 'assets', 'site.js')); cpSync('site/assets/consent.js', join(OUT, 'assets', 'consent.js')); cpSync('site/assets/support.js', join(OUT, 'assets', 'support.js'));
+  if (existsSync(VIDEO_DIR)) cpSync(VIDEO_DIR, join(OUT, 'assets', 'video'), { recursive: true }); // optional media: absent in a checkout without it
   cpSync('site/assets/og', join(OUT, 'assets', 'og'), { recursive: true });
   if (existsSync(SHOTS_DIR)) cpSync(SHOTS_DIR, join(OUT, 'assets', 'shots'), { recursive: true, filter: (s) => !s.endsWith('index.json') });
   writeFileSync(join(OUT, 'assets', 'logo.svg'), logoSvg({ variant: 'full' })); writeFileSync(join(OUT, 'assets', 'logo-mark.svg'), logoSvg({ variant: 'mark' }));

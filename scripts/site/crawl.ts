@@ -135,6 +135,8 @@ export function checkSite(dir: string, opts: { siteUrl?: string; budgets?: Budge
   let shotBytes = 0;
   for (const f of all) if (f.startsWith('assets/shots/') && f.endsWith('.webp')) { const n = statSync(join(dir, f)).size; shotBytes += n; if (n > b.shotMaxBytes) bad(`${f}: ${(n / 1024).toFixed(0)} kB exceeds the per-image budget`); }
   if (shotBytes > b.shotsTotalBytes) bad(`screenshots total ${(shotBytes / 1048576).toFixed(1)} MB exceeds the budget`);
+  // optional promo video (site/assets/video, docs/promo-video.md "Website embed"): each file capped so a re-encode cannot quietly balloon the repo and the Pages artifact
+  for (const f of all) if (f.startsWith('assets/video/')) { const n = statSync(join(dir, f)).size; if (n > 30 * 1024 * 1024) bad(`${f}: ${(n / 1048576).toFixed(0)} MB exceeds the 30 MB video cap`); }
   const cssjs = ['assets/site.css', 'assets/site.js'].reduce((n, f) => n + (all.has(f) ? statSync(join(dir, f)).size : 0), 0);
   if (cssjs > b.cssJsMaxBytes) bad(`site css+js ${(cssjs / 1024).toFixed(0)} kB exceeds the budget`);
   for (const f of ['404.html', '.nojekyll', 'sitemap.xml', 'robots.txt', 'play/index.html', 'play/sw.js', 'play/manifest.webmanifest', 'assets/og/landing.png', 'assets/search-index.json']) if (!all.has(f)) bad(`missing ${f}`);

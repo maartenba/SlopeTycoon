@@ -36,3 +36,29 @@
     document.addEventListener('keydown', function (e) { if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); input.focus(); } });
   }
 })();
+
+/* Watch it: the poster button starts the video (sound on, after the click); the second button swaps the source to the full film. Nothing loads before a click. */
+(function () {
+  var fig = document.querySelector('[data-video]'); if (!fig) return;
+  var v = fig.querySelector('video'), btn = fig.querySelector('.vid-play'), sw = fig.querySelector('[data-vid-switch]'), title = fig.querySelector('[data-vid-title]'), desc = document.getElementById('vid-desc');
+  var film = null; try { film = JSON.parse(fig.getAttribute('data-film') || 'null'); } catch (e) { film = null; }
+  var main = { title: title.textContent, src: v.getAttribute('src'), poster: v.getAttribute('poster'), vtt: v.querySelector('track').getAttribute('src'), desc: desc.textContent, label: v.getAttribute('aria-label') };
+  var play = function () { var p = v.play(); if (p && p.catch) p.catch(function () { btn.hidden = false; v.controls = false; }); };
+  v.controls = false; btn.hidden = false; // with JS the poster stays clean until the visitor plays; without JS the native controls are there
+  btn.addEventListener('click', function () { btn.hidden = true; v.controls = true; play(); v.focus(); });
+  v.addEventListener('play', function () { btn.hidden = true; v.controls = true; });
+  v.addEventListener('ended', function () { btn.setAttribute('aria-label', 'Play again'); btn.hidden = false; v.controls = false; });
+  if (sw && film) {
+    var showing = 'trailer', switchLabel = sw.textContent;
+    var load = function (m, label) {
+      v.pause(); var old = v.querySelector('track'), t = document.createElement('track');
+      t.kind = 'captions'; t.srclang = 'en'; t.label = 'English'; t.src = m.vtt; if (old) old.parentNode.removeChild(old);
+      v.poster = m.poster; v.src = m.src; v.appendChild(t);
+      title.textContent = m.title; desc.textContent = m.desc; v.setAttribute('aria-label', label); btn.setAttribute('aria-label', 'Play the ' + (showing === 'film' ? 'film' : 'trailer'));
+    };
+    sw.addEventListener('click', function () {
+      if (showing === 'trailer') { showing = 'film'; load(film, film.title); sw.textContent = film.back; } else { showing = 'trailer'; load(main, main.label); sw.textContent = switchLabel; }
+      btn.hidden = true; play();
+    });
+  }
+})();

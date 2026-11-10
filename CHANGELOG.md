@@ -6,6 +6,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ### Changes
 
+- A 30 second trailer on the website: a click-to-play card on the home page (no autoplay, nothing is requested until you press play, captions included).
 - Planes take off clear of buildings: the jump plane now picks the end of the Grass Strip with the clearest climb-out, climbs steeply and lands back the way it took off, so it no longer flies through a roof beside the strip.
 - Sounds near gondolas, cable cars and funiculars: a soft machinery hum when you zoom in beside a station of a running one.
 - Queue and bar crowd sounds: a crowd murmur at busy lift bases and in the village, and a bar chatter under the music next to an open Apres-Ski Bar or Schirmbar.
