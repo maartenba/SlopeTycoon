@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { launch, startServer } from '../lib/harness';
 import { cutClips, parseCuts, type Cut } from './cuts';
-import { envelope, planSplice } from './music';
+import { buildMusic, loadSong } from './musicRender';
 
 const arg = (k: string, d = ''): string => { const i = process.argv.indexOf(`--${k}`); return i > 0 && process.argv[i + 1] && !process.argv[i + 1]!.startsWith('--') ? process.argv[i + 1]! : i > 0 ? '1' : d; };
 const final = arg('final') === '1';
@@ -22,7 +22,7 @@ mkdirSync(OUT, { recursive: true }); mkdirSync(WORK, { recursive: true }); mkdir
 const manifest = JSON.parse(readFileSync(arg('manifest', 'promo/scenes.json'), 'utf8')); const FILM = manifest.film;
 const E = FILM.endCard;
 const fps: number = final ? FILM.fps : FILM.draftFps;
-const MUSIC = 'public/audio/menu-seasons-of-management.mp3';
+const SONG = arg('song', 'seasons-of-management'); // or 'seasonal-menu' (the alternative; docs/promo-video.md Round 3)
 const run = (cmd: string, args: string[], opt: any = {}): string => { const r = spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 1 << 28, ...opt }); if (r.status !== 0) throw new Error(`${cmd} failed: ${String(r.stderr).slice(-1500)}`); return String(r.stdout); };
 const ff = (args: string[]): string => run('ffmpeg', ['-v', 'error', '-y', ...args]);
 
@@ -31,20 +31,6 @@ if (arg('no-capture') !== '1') {
   const need = CUTS.includes('90') ? '90' : '30';
   const r = spawnSync('npx', ['vite-node', 'scripts/promo/capture.ts', ...(final ? ['--final', '--quality', '97'] : ['--draft']), '--cut', need, '--jobs', arg('jobs', '3')], { stdio: 'inherit' });
   if (r.status !== 0) throw new Error(`capture failed (exit ${r.status})`);
-}
-
-/** Decode the song once (8 kHz mono): its 100 Hz envelope + duration, for the splice plan. */
-function songInfo(): { env: Float32Array; dur: number } {
-  const r = spawnSync('ffmpeg', ['-v', 'error', '-i', MUSIC, '-ac', '1', '-ar', '8000', '-f', 'f32le', '-'], { maxBuffer: 1 << 28 });
-  const s = new Float32Array(r.stdout.buffer.slice(r.stdout.byteOffset, r.stdout.byteOffset + Math.floor(r.stdout.length / 4) * 4));
-  return { env: envelope(s, 8000), dur: s.length / 8000 };
-}
-/** Strongest `len` s window of the body of the song (mean envelope + onset density), bar-free: the teaser start. */
-function strongestWindow(env: Float32Array, dur: number, len: number): number {
-  const n = Math.round(len * 100); const mx = Math.max(...env), on = new Float32Array(env.length); for (let i = 1; i < env.length; i++) on[i] = Math.max(0, env[i]! - env[i - 1]!); const mo = Math.max(...on, 1e-9);
-  let best = 20, bs = -1;
-  for (let st = 200; st + n <= Math.min(env.length, (dur - 20) * 100); st += 50) { let a = 0, o = 0; for (let i = st; i < st + n; i++) { a += env[i]!; o += on[i]!; } const sc = (a / n / mx) * 0.6 + (o / n / mo) * 0.4; if (sc > bs) { bs = sc; best = st / 100; } }
-  return best;
 }
 
 const fontB64 = (f: string): string => readFileSync(`public/fonts/${f}`).toString('base64');
@@ -93,13 +79,15 @@ try {
     <div style="font:800 ${H * 0.052}px/1.1 Nunito,sans-serif;letter-spacing:.01em;text-shadow:0 ${H * 0.004}px ${H * 0.016}px rgba(0,0,0,.6);${show === 'verb' ? '' : 'visibility:hidden'}">${E.verb}</div>
     <div style="font:700 ${H * 0.036}px/1.1 Nunito,sans-serif;color:#cfe3fb;opacity:.9;text-shadow:0 ${H * 0.004}px ${H * 0.014}px rgba(0,0,0,.6);${show === 'small' ? '' : 'visibility:hidden'}">${E.small}</div></div>`;
   for (const k of ['logo', 'url', 'verb', 'small']) await layer(`${WORK}/ec-${k}.png`, stack(k));
+  // the end-card scrim: ONLY where the text sits (a soft dark ellipse around the centred stack) plus a top-to-bottom vignette; the rest of the (lightly blurred) night frame stays recognisably the game
+  await layer(`${WORK}/ec-scrim.png`, `<div style="position:fixed;inset:0;background:radial-gradient(ellipse ${W * 0.36}px ${H * 0.46}px at 50% 52%,rgba(4,9,22,.74) 0%,rgba(4,9,22,.62) 55%,rgba(4,9,22,0) 100%),linear-gradient(180deg,rgba(4,9,22,.42) 0%,rgba(4,9,22,0) 28%,rgba(4,9,22,0) 70%,rgba(4,9,22,.50) 100%)"></div>`);
   await page.close();
-  const song = songInfo();
+  const song = loadSong(SONG);
 
   for (const cut of CUTS) await buildCut(cut, song);
 } finally { await br.close(); srv.stop(); }
 
-async function buildCut(cut: Cut, song: { env: Float32Array; dur: number }): Promise<void> {
+async function buildCut(cut: Cut, song: ReturnType<typeof loadSong>): Promise<void> {
   const TMP = `${WORK}/${cut}`; mkdirSync(TMP, { recursive: true });
   const xf: number = FILM.cuts[`c${cut}`].xfade; const lr = FILM.logoReveal[`c${cut}`];
   const plan = cutClips(FILM, cut); // the teaser reuses the 90 s shots (first `len` seconds from `from`)
@@ -109,16 +97,17 @@ async function buildCut(cut: Cut, song: { env: Float32Array; dur: number }): Pro
   const ES = (a: number, b: number): string => { const s = `clip((t-${a})/${(b - a).toFixed(3)},0,1)`; return `(${s}*${s}*(3-2*${s}))`; }; // smoothstep expression for ffmpeg
   timed(`${cut}: clips`, () => {
     for (let i = 0; i < plan.length; i++) {
+      if (arg('endcard-only') === '1' && !plan[i]!.shot.endCard) continue;
       const s = plan[i]!.shot; const last = i === plan.length - 1; const { len, from } = plan[i]!;
       const pad = last ? 0 : xf; const file = `${TMP}/${s.id}.mp4`; const stages: string[] = []; const ins: string[] = []; const nF = Math.round((len + pad) * fps);
       if (s.endCard) {
         // dimmed, softly blurred, slowly pushing-in (about 1.8x, centred on the village so the map edge never shows) last frame of the night pull-back behind the card; four layers fade in 0.4 s apart
         const bgShot = plan.find((q) => q.id === E.bgFrom)!; const lastFrame = Math.round((bgShot.from + bgShot.len) * fps) + 1;
         ins.push('-i', `.weave/promo/frames/${RES}/${E.bgFrom}/${String(lastFrame).padStart(5, '0')}.jpg`);
-        const lay = ['logo', 'url', 'verb', 'small']; lay.forEach((k) => ins.push('-loop', '1', '-framerate', String(fps), '-i', `${WORK}/ec-${k}.png`));
-        stages.push(`[0:v]scale=${W * 2}:${H * 2}:${SCALE_IN},gblur=sigma=${H * 0.012},eq=brightness=-0.26:saturation=0.82:contrast=0.95,zoompan=z='1.75+0.1*on/${nF}':x='iw*0.45-(iw/zoom/2)':y='ih*0.38-(ih/zoom/2)':d=${nF}:s=${W}x${H}:fps=${fps},format=yuv420p,fade=in:st=0:d=0.001[bg]`);
+        const lay = ['scrim', 'logo', 'url', 'verb', 'small']; lay.forEach((k) => ins.push('-loop', '1', '-framerate', String(fps), '-i', `${WORK}/ec-${k}.png`));
+        stages.push(`[0:v]scale=${W * 2}:${H * 2}:${SCALE_IN},gblur=sigma=${H * 0.0042},eq=brightness=-0.06:saturation=0.95:contrast=1.0,zoompan=z='1.75+0.1*on/${nF}':x='iw*0.45-(iw/zoom/2)':y='ih*0.38-(ih/zoom/2)':d=${nF}:s=${W}x${H}:fps=${fps},format=yuv420p,fade=in:st=0:d=0.001[bg]`);
         let prev = '[bg]'; const st0 = 0.35;
-        lay.forEach((k, j) => { const t0 = st0 + j * (E.stagger ?? 0.4); stages.push(`[${j + 1}:v]format=rgba,fade=in:st=${t0.toFixed(2)}:d=0.6:alpha=1[l${j}]`, `${prev}[l${j}]overlay=0:0:shortest=1:format=auto[o${j}]`); prev = `[o${j}]`; });
+        lay.forEach((k, j) => { const t0 = k === 'scrim' ? 0 : st0 + (j - 1) * (E.stagger ?? 0.4); stages.push(`[${j + 1}:v]format=rgba,fade=in:st=${t0.toFixed(2)}:d=${k === 'scrim' ? 0.35 : 0.6}:alpha=1[l${j}]`, `${prev}[l${j}]overlay=0:0:shortest=1:format=auto[o${j}]`); prev = `[o${j}]`; });
         stages.push(`${prev}fade=out:st=${Math.max(0, len - 1)}:d=1,format=yuv420p,trim=duration=${len + pad},setpts=PTS-STARTPTS[o]`);
         if (!reuse) ff([...ins, '-filter_complex', stages.join(';'), '-map', '[o]', '-frames:v', String(nF), ...enc, file]);
         clips.push({ id: s.id, file, len }); continue;
@@ -137,6 +126,7 @@ async function buildCut(cut: Cut, song: { env: Float32Array; dur: number }): Pro
       clips.push({ id: s.id, file, len });
     }
   });
+  if (arg('endcard-only') === '1') { for (const t of [0.5, 1.2, 3.5, 5.5]) ff(['-ss', String(t), '-i', clips[0]!.file, '-frames:v', '1', `${OUT}/endcard-${cut}-t${t}.png`]); return; }
   // ---- crossfade chain: the picture master (silent), 4:2:0 BT.709 limited, the ONE video encode ----
   const total = clips.reduce((a, c) => a + c.len, 0);
   const inArgs = clips.flatMap((c) => ['-i', c.file]); const parts: string[] = []; let acc = 0; let prev = '[0:v]';
@@ -147,12 +137,7 @@ async function buildCut(cut: Cut, song: { env: Float32Array; dur: number }): Pro
   const outFile = final ? `${OUT}/slope-tycoon-${cut}.mp4` : `${OUT}/draft-${cut}.mp4`; const info: any = { cut, res: RES, W, H, fps, total, clips: clips.map((c) => ({ id: c.id, len: c.len })) };
   const wav = `${TMP}/music.wav`;
   if (arg('no-music') !== '1') {
-    const tail = cut === '30' ? [6, 10] : [10, 16]; const xfa = cut === '30' ? 1.0 : 1.5;
-    const start = cut === '30' ? strongestWindow(song.env, song.dur, total - tail[0]!) : 0;
-    const sp = planSplice(song.env, song.dur, start, total, xfa, tail[0]!, tail[1]!); info.splice = sp;
-    const fin = cut === '30' ? 0.5 : 1.5;
-    const mk = (gain: number): void => { ff(['-i', MUSIC, '-filter_complex', `[0:a]asplit=2[a1][a2];[a1]atrim=start=${sp.start.toFixed(3)}:end=${sp.p.toFixed(3)},asetpts=PTS-STARTPTS[A];[a2]atrim=start=${sp.q.toFixed(3)},asetpts=PTS-STARTPTS[B];[A][B]acrossfade=d=${xfa}:c1=qsin:c2=qsin,volume=${gain.toFixed(2)}dB,alimiter=limit=0.89,afade=t=in:st=0:d=${fin},afade=t=out:st=${(total - 1).toFixed(2)}:d=1,atrim=duration=${total.toFixed(3)}[m]`, '-map', '[m]', '-ar', '48000', '-ac', '2', wav]); };
-    mk(0); const l0 = ebur(wav); const gain = Number.isFinite(l0) ? -18 - l0 : 0; if (Math.abs(gain) > 0.1) mk(gain); info.audioTrimDb = Number(gain.toFixed(2));
+    info.edit = buildMusic(cut, total, cut === '30' ? 4 : 7, SONG, wav, song); info.audioTrimDb = info.edit.gainDb; // the clean edit (music.ts planEdit, musicRender.ts)
     ff(['-i', silent, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', ...(final ? COL : []), '-t', total.toFixed(3), '-movflags', '+faststart', outFile]);
     info.lufs = ebur(outFile);
   } else ff(['-i', silent, '-c', 'copy', '-movflags', '+faststart', outFile]);
