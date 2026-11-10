@@ -203,3 +203,7 @@ The blur sigma went from 0.012 x height (17.3 px at 1440p, about 15.6 px in the 
 * A staged-build mode (the lift line drawing itself / a run being painted): the shots show the finished build.
 * Per-frame sim-date motion is a coarse `jumpSimToDay` every few days (`days` timeline), not a real month of simulated sim time.
 * `?stepmode=1` works on the dev server only (`import.meta.env.DEV`); `__slope.frameStep` is a QA handle like the rest of `__slope` (no UI, nothing runs unless called).
+
+## Round 4: the plane no longer flies through a roof (2026-11-10)
+
+Owner report: the jump plane in `s08a-plane` flew through a roof in the first seconds. Cause (a game defect, not staging): the old flight path ignored buildings: after a 6-tile roll it jumped to a circle of radius 5 flown at 0.35 -> 5.5 units, which crossed two houses beside the strip of the `summer` town (24 of the shot's 120 frames inside a roof; 181 of 2000 frames over the whole cycle). Fix in `src/render/SkyActivity.ts` (render only, no stateHash change): `choosePlanePlan` picks the strip end and turn side with the clearest corridor, one continuous circuit (steep climb-out, the way out is the way back), a 1-unit safety floor over any roof. `npx vite-node scripts/promo/planeScan.ts [town]` scans a saved town (after: 0 / 2000 and 0 / 120). `s08a` / `s08b` / `s08c` re-shot (`--shot s08 --force`), both cuts re-assembled.

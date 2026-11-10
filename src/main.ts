@@ -35,7 +35,7 @@ import { FestivalDressing } from '@/render/festival/FestivalDressing';
 import { TourVehicles } from '@/render/TourVehicles';
 import type { Carrier } from '@/sim/attractions/Tour';
 import { CragClimbers } from '@/render/CragClimbers';
-import { SkyActivity } from '@/render/SkyActivity';
+import { SkyActivity, type SkyObstacle } from '@/render/SkyActivity';
 import { landingFor } from '@/sim/attractions/SkySites';
 import type { DressingWorld } from '@/render/festival/placeDressing';
 import { dressingWorldOf } from '@/render/festival/dressingWorld';
@@ -491,9 +491,11 @@ const cragClimbers = new CragClimbers(grid, () => attractions.all().filter((a) =
 renderer.scene.add(cragClimbers.group);
 
 // Sky activities (M7.4, docs/m74-buildings.md): the jump plane + canopies of open Skydive Centres and the gliders of open Launch Ramps (3 instanced draws, view only).
+const SKY_FLAT = new Set(['grassStrip', 'landingField', 'launchRamp']); // the aircraft's own ground gear is not an obstacle
+const skyObstacles = (): SkyObstacle[] => buildings.all().filter((b) => b.active && !SKY_FLAT.has(b.type)).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h, top: BUILDING_HEIGHT[b.type] ?? 2.5 }));
 const skyActivity = new SkyActivity((x, z) => surfaceHeight(grid, x, z),
-  () => attractions.all().filter((a) => a.b.type === 'skydiveCentre').map((a) => { const s = buildings.all().find((b) => b.type === 'grassStrip' && b.active); return { id: a.id, users: a.usersNow, open: a.open, strip: s ? { x: s.x, y: s.y, w: s.w, h: s.h } : null }; }),
-  () => attractions.all().filter((a) => a.b.type === 'launchRamp').map((a) => { const l = landingFor(a.b, buildings.all(), (x, y) => surfaceHeight(grid, x, y)); return { id: a.id, users: a.usersNow, open: a.open, x: a.b.x, y: a.b.y, w: a.b.w, h: a.b.h, landing: l ? { x: l.x + l.w / 2, y: l.y + l.h / 2 } : null }; }));
+  () => attractions.all().filter((a) => a.b.type === 'skydiveCentre').map((a) => { const s = buildings.all().find((b) => b.type === 'grassStrip' && b.active); return { id: a.id, users: a.usersNow, open: a.open, strip: s ? { x: s.x, y: s.y, w: s.w, h: s.h } : null, obstacles: skyObstacles() }; }),
+  () => attractions.all().filter((a) => a.b.type === 'launchRamp').map((a) => { const l = landingFor(a.b, buildings.all(), (x, y) => surfaceHeight(grid, x, y)); return { id: a.id, users: a.usersNow, open: a.open, x: a.b.x, y: a.b.y, w: a.b.w, h: a.b.h, landing: l ? { x: l.x + l.w / 2, y: l.y + l.h / 2 } : null, obstacles: skyObstacles() }; }));
 renderer.scene.add(skyActivity.group);
 
 // Festival set dressing (M5.4 Task 21): bunting, flags, banners, stalls, grandstand + a procession for the running events. View only (no Occupancy / pathing); 3 draw calls in total.
