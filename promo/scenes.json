@@ -926,7 +926,9 @@
         ],
         "caption": "I wanted a ski holiday that never ended.",
         "cuts": {
-          "c90": true,
+          "c90": {
+            "len": 8
+          },
           "c30": {
             "len": 4
           }
@@ -982,7 +984,9 @@
         ],
         "caption": "Build the lifts. Cut the runs.",
         "cuts": {
-          "c90": true,
+          "c90": {
+            "len": 5
+          },
           "c30": {
             "len": 4
           }
@@ -1039,7 +1043,10 @@
         ],
         "caption": "",
         "cuts": {
-          "c90": true,
+          "c90": {
+            "len": 5,
+            "from": 1
+          },
           "c30": {
             "len": 3
           }
@@ -1049,10 +1056,7 @@
         "id": "s03b-ride",
         "town": "winter",
         "len": 4,
-        "mode": "ride",
-        "ride": {
-          "family": "chair"
-        },
+        "mode": "free",
         "start": {
           "month": 0,
           "dom": 14,
@@ -1073,12 +1077,46 @@
           "guests:260:skiers",
           "run-in:2"
         ],
-        "rate": 1,
-        "keys": [],
+        "rate": 0.5,
+        "keys": [
+          {
+            "t": 0,
+            "at": "map",
+            "h": 0,
+            "look": {
+              "at": "map",
+              "h": 0
+            },
+            "fov": 55
+          },
+          {
+            "t": 4,
+            "at": "map",
+            "h": 0,
+            "look": {
+              "at": "map",
+              "h": 0
+            },
+            "fov": 55
+          }
+        ],
         "caption": "",
         "cuts": {
           "c90": true
-        }
+        },
+        "chase": {
+          "p": [
+            0.5,
+            0.75
+          ],
+          "side": 3.0,
+          "h": 1.2,
+          "back": 5,
+          "ahead": 8,
+          "lookH": 0,
+          "fov": 55
+        },
+        "_note": "free camera chasing a chair rider from beside the line (the lift ride camera sits between the cables: oncoming chairs flash across the frame)"
       },
       {
         "id": "s04-golden",
@@ -1134,7 +1172,9 @@
         ],
         "caption": "",
         "cuts": {
-          "c90": true,
+          "c90": {
+            "len": 5
+          },
           "c30": {
             "len": 3
           }
@@ -1191,7 +1231,9 @@
         ],
         "caption": "Apres-ski, on your terms.",
         "cuts": {
-          "c90": true,
+          "c90": {
+            "len": 6
+          },
           "c30": {
             "len": 3
           }
@@ -1364,7 +1406,10 @@
         ],
         "caption": "And when the snow melts, summer begins.",
         "cuts": {
-          "c90": true
+          "c90": {
+            "len": 5,
+            "from": 1
+          }
         }
       },
       {
@@ -1429,7 +1474,9 @@
         ],
         "caption": "",
         "cuts": {
-          "c90": true,
+          "c90": {
+            "len": 5
+          },
           "c30": {
             "len": 3
           }
@@ -1482,21 +1529,21 @@
         "keys": [
           {
             "t": 0,
-            "at": "pos:69.5,120.6",
-            "h": 0.3,
+            "at": "pos:62,126",
+            "h": 3,
             "look": {
               "track": "plane"
             },
-            "fov": 40
+            "fov": 34
           },
           {
             "t": 4,
-            "at": "pos:69.5,120.6",
-            "h": 0.3,
+            "at": "pos:62,126",
+            "h": 3,
             "look": {
               "track": "plane"
             },
-            "fov": 40
+            "fov": 34
           }
         ],
         "caption": "",
@@ -1556,10 +1603,7 @@
         ],
         "caption": "Skydive. Paraglide. Whatever you build.",
         "cuts": {
-          "c90": true,
-          "c30": {
-            "len": 3
-          }
+          "c90": true
         }
       },
       {
@@ -1610,23 +1654,35 @@
         ],
         "caption": "",
         "cuts": {
-          "c90": true
+          "c90": {
+            "len": 2
+          }
         }
       },
       {
-        "id": "s09-autumn",
+        "id": "s09a-larch",
         "town": "autumn",
-        "len": 5,
+        "len": 3,
         "start": {
           "month": 9,
-          "dom": 12,
-          "hour": 10
+          "dom": 3,
+          "hour": 16.0
         },
         "atmos": {
-          "special": 0,
-          "fog": 0.1,
-          "mist": 1
+          "special": 1,
+          "fog": 0.15,
+          "mist": 0
         },
+        "hour": [
+          [
+            0,
+            16.0
+          ],
+          [
+            3,
+            16.5
+          ]
+        ],
         "weather": [
           {
             "t": 0,
@@ -1634,19 +1690,6 @@
             "wind": 0.1
           }
         ],
-        "days": [
-          {
-            "t": 0,
-            "month": 9,
-            "dom": 12
-          },
-          {
-            "t": 5,
-            "month": 10,
-            "dom": 12
-          }
-        ],
-        "dayStep": 4,
         "after": [
           "guests:60:hikers",
           "almabtrieb"
@@ -1656,17 +1699,344 @@
         "keys": [
           {
             "t": 0,
-            "at": "pos:50,96",
-            "zoom": 3,
+            "at": "pos:60,90",
+            "zoom": 2.5,
             "yaw": -30,
             "ease": "inout"
           },
           {
-            "t": 5,
-            "at": "top:chair",
-            "dz": 4,
-            "zoom": 3,
-            "yaw": -10
+            "t": 3,
+            "at": "pos:60,90",
+            "dx": 6,
+            "zoom": 2.8,
+            "yaw": -12
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true,
+          "c30": {
+            "len": 3
+          }
+        }
+      },
+      {
+        "id": "s09b-village",
+        "town": "autumn",
+        "len": 3,
+        "start": {
+          "month": 9,
+          "dom": 4,
+          "hour": 15.6
+        },
+        "atmos": {
+          "special": 0.7,
+          "fog": 0.1,
+          "mist": 0
+        },
+        "hour": [
+          [
+            0,
+            15.6
+          ],
+          [
+            3,
+            16.0
+          ]
+        ],
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:60:hikers",
+          "almabtrieb"
+        ],
+        "rate": 2,
+        "mode": "free",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:84,106",
+            "h": 4,
+            "look": {
+              "at": "pos:62,114",
+              "h": 2
+            },
+            "fov": 42,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "pos:76,102",
+            "h": 3.5,
+            "look": {
+              "at": "pos:62,114",
+              "h": 2
+            },
+            "fov": 42
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s09c-pond",
+        "town": "autumn",
+        "len": 3,
+        "start": {
+          "month": 9,
+          "dom": 5,
+          "hour": 15.2
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0.05,
+          "mist": 1
+        },
+        "hour": [
+          [
+            0,
+            15.2
+          ],
+          [
+            3,
+            15.7
+          ]
+        ],
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:60:hikers",
+          "almabtrieb"
+        ],
+        "rate": 2,
+        "mode": "free",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:108,86",
+            "h": 6,
+            "look": {
+              "at": "pos:101,79",
+              "h": 0
+            },
+            "fov": 45,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "pos:106,89",
+            "h": 8.5,
+            "look": {
+              "at": "pos:101,79",
+              "h": 0
+            },
+            "fov": 45
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s09d-walk",
+        "town": "autumn",
+        "len": 3,
+        "start": {
+          "month": 9,
+          "dom": 6,
+          "hour": 16.6
+        },
+        "atmos": {
+          "special": 0.8,
+          "fog": 0.05,
+          "mist": 0
+        },
+        "hour": [
+          [
+            0,
+            16.6
+          ],
+          [
+            3,
+            17.0
+          ]
+        ],
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          }
+        ],
+        "after": [
+          "guests:60:hikers",
+          "almabtrieb"
+        ],
+        "rate": 2,
+        "mode": "free",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:66,96",
+            "h": 3,
+            "look": {
+              "at": "pos:60,86",
+              "h": 3
+            },
+            "fov": 50,
+            "ease": "inout"
+          },
+          {
+            "t": 3,
+            "at": "pos:63,92",
+            "h": 2.6,
+            "look": {
+              "at": "pos:58,82",
+              "h": 3
+            },
+            "fov": 50
+          }
+        ],
+        "caption": "",
+        "cuts": {
+          "c90": true
+        }
+      },
+      {
+        "id": "s09e-first-snow",
+        "town": "autumn",
+        "len": 4,
+        "start": {
+          "month": 9,
+          "dom": 18,
+          "hour": 7.0
+        },
+        "atmos": {
+          "special": 0,
+          "fog": 0.45,
+          "mist": 1,
+          "frost": 1
+        },
+        "hour": [
+          [
+            0,
+            7.0
+          ],
+          [
+            4,
+            7.7
+          ]
+        ],
+        "weather": [
+          {
+            "t": 0,
+            "kind": "clear",
+            "wind": 0.1
+          },
+          {
+            "t": 0.4,
+            "kind": "snow",
+            "intensity": 0.05,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 0.8,
+            "kind": "snow",
+            "intensity": 0.15,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 1.2,
+            "kind": "snow",
+            "intensity": 0.25,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 1.6,
+            "kind": "snow",
+            "intensity": 0.35,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 2.0,
+            "kind": "snow",
+            "intensity": 0.45,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 2.4,
+            "kind": "snow",
+            "intensity": 0.55,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 2.8,
+            "kind": "snow",
+            "intensity": 0.65,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 3.2,
+            "kind": "snow",
+            "intensity": 0.75,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 3.6,
+            "kind": "snow",
+            "intensity": 0.85,
+            "wind": 0.08,
+            "valleyT": -3
+          },
+          {
+            "t": 4.0,
+            "kind": "snow",
+            "intensity": 0.95,
+            "wind": 0.08,
+            "valleyT": -3
+          }
+        ],
+        "after": [
+          "guests:60:hikers",
+          "almabtrieb"
+        ],
+        "rate": 1.5,
+        "mode": "iso",
+        "keys": [
+          {
+            "t": 0,
+            "at": "pos:60,92",
+            "zoom": 3.6,
+            "yaw": -20,
+            "ease": "inout"
+          },
+          {
+            "t": 4,
+            "at": "pos:60,92",
+            "dz": -4,
+            "zoom": 4.4,
+            "yaw": -5
           }
         ],
         "caption": "",
@@ -1756,7 +2126,11 @@
           "s08a-plane",
           "s08b-glider",
           "s08c-canopies",
-          "s09-autumn",
+          "s09a-larch",
+          "s09b-village",
+          "s09c-pond",
+          "s09d-walk",
+          "s09e-first-snow",
           "s10-night",
           "end-card"
         ],

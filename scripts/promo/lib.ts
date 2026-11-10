@@ -11,7 +11,8 @@ export function installLib(): void {
   P.freeze = (): void => S().loop.setSpeed(0);
   P.refresh = (): void => { const s = S(); s.sim.buildings.reevaluate(); s.sim.refreshCoverage(undefined, true); s.buildingsView.sync?.(); s.refreshProps(Array.from({ length: s.grid.chunksPerRow ** 2 }, (_, i) => i)); };
   P.clearWeather = (): void => { const wx = S().sim.weather.current; wx.kind = 'clear'; wx.intensity = 0; wx.fog = 0; wx.wind = 0.1; };
-  P.weather = (k: string, intensity = 1, wind = 0.1, fog = 0): void => { const wx = S().sim.weather.current; wx.kind = k; wx.intensity = intensity; wx.wind = wind; wx.fog = fog; };
+  /** `valleyT` (deg C) is optional: precipitation draws as SNOW only when the ground under the view is <= 0.5 deg C (src/main.ts updatePrecip), so an autumn first-snow shot sets it; render + weather state only. */
+  P.weather = (k: string, intensity = 1, wind = 0.1, fog = 0, valleyT?: number): void => { const wx = S().sim.weather.current; wx.kind = k; wx.intensity = intensity; wx.wind = wind; wx.fog = fog; if (valleyT !== undefined) wx.valleyT = valleyT; };
   P.lift = (kindPrefix: string): any => S().sim.lifts.all().find((l: any) => String(l.kind).startsWith(kindPrefix));
   P.bld = (type: string): any => S().sim.buildings.all().find((b: any) => b.type === type);
   P.centre = (b: any): { x: number; z: number } => ({ x: b.x + b.w / 2, z: b.y + b.h / 2 });

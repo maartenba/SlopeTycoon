@@ -13,7 +13,7 @@ export function installFilm(): void {
   P.prepShot = async (shot: any, scene: any): Promise<any> => {
     const s = S(); const C = await P.imp('/src/render/PromoCamera.ts'), H = await P.imp('/src/render/Picking.ts'), Sky = await P.imp('/src/render/SkyActivity.ts'), Cal = await P.imp('/src/sim/calendar.ts');
     const keys: any[] = []; const ctl = s.renderer.controls; ctl.focusTween = null; if (ctl.yaw0 === undefined) ctl.yaw0 = ctl.yaw;
-    const free = shot.mode === 'free';
+    const free = shot.mode === 'free'; P.needRig = free;
     const looks: any[] = [];
     for (const k of shot.keys) {
       if (free) {
@@ -39,6 +39,7 @@ export function installFilm(): void {
     let lastHour = NaN, wxIdx = -1, lastDay = -1;
     const atmos0 = { ...(scene.atmos ?? {}), ...(shot.atmos ?? {}) };
     s.lighting.disableNight = false;
+    { const m = s.precip?.snowMat?.uniforms?.uSize; if (m) { if (m.__base === undefined) m.__base = m.value; m.value = m.__base * Math.max(1, window.innerWidth / 1280 * 1.6); } } // snow points are a constant SCREEN size (Precipitation.ts, orthographic comment): at 3840 px they shrink to 1-2 px dots, so the film scales them with the frame width (promo only; the 1280 px look is unchanged)
     P.shotState = { track, keys };
     s.frameCam = (t: number): void => {
       const hour = C.sampleScalar(hourTl, t);
@@ -48,11 +49,23 @@ export function installFilm(): void {
         if (day !== lastDay && (lastDay < 0 || day - lastDay >= (shot.dayStep ?? 3))) { lastDay = day; s.jumpSimToDay(day, hour); P.clearWeather?.(); }
       }
       if (Math.abs(hour - lastHour) > 1e-4) { lastHour = hour; s.setHour(hour); s.atmos.force({ ...atmos0, hour }); }
-      for (let i = wxTl.length - 1; i >= 0; i--) if (t >= wxTl[i].t) { if (i !== wxIdx) { wxIdx = i; const q = wxTl[i]; P.weather(q.kind, q.kind === 'clear' ? 0 : (q.intensity ?? 1), q.wind ?? 0.1, q.fog ?? 0); } break; }
-      const v = C.samplePath(keys, t, shot.spline !== false);
+      for (let i = wxTl.length - 1; i >= 0; i--) if (t >= wxTl[i].t) { if (i !== wxIdx) { wxIdx = i; const q = wxTl[i]; P.weather(q.kind, q.kind === 'clear' ? 0 : (q.intensity ?? 1), q.wind ?? 0.1, q.fog ?? 0, q.valleyT); } break; }
+      const v = C.samplePath(keys, P.freezeCam ? 0 : t, shot.spline !== false);
       if (free && s.renderer.viewMode.mode !== 'ride') { // the followed guest left (a ride rig must stay active for the free camera): take any other one, keep the sim running at the shot's rate
         const st = s.guestSim.store; let pick = 0; for (let i = 0; i < st.limit && !pick; i++) if (st.alive[i]) pick = st.id[i];
-        if (pick) { s.view.ride(pick); s.loop.setSpeed(1); s.loop.timeScale = s.frameStepRate; }
+        if (pick) { P.reacq = true; s.view.ride(pick); s.loop.setSpeed(1); s.loop.timeScale = s.frameStepRate; }
+      }
+      if (free && shot.chase && P.chaseId) { // chase a lift rider: beside the line (side), behind (back), up; looks ahead of the rider along the line. Holds the last pose when the ride is over.
+        const c = shot.chase, st = s.guestSim.store, i = st.slotOf(P.chaseId);
+        if (i >= 0 && st.state[i] === 5) {
+          const l = s.view.liftOf?.(P.chaseId); const lf = l ?? Array.from(s.sim.lifts.all()).find((q: any) => q.id === st.liftId[i]);
+          if (lf) {
+            let dx = lf.top.x - lf.bottom.x, dz = lf.top.y - lf.bottom.y; const n = Math.hypot(dx, dz) || 1; dx /= n; dz /= n; const x = st.x[i], z = st.y[i], y = st.z[i];
+            const px = x - dx * c.back - dz * c.side, pz = z - dz * c.back + dx * c.side, py = y + c.h, lx = x + dx * c.ahead, lz = z + dz * c.ahead, ly = y + (c.lookH ?? 0);
+            const a = C.lookAngles([px, py, pz], [lx, ly, lz]); P.lastChase = [px, py, pz, a.yaw, a.pitch, c.fov ?? 55];
+          }
+        }
+        if (P.lastChase) { s.view.freeCam(...P.lastChase); return; }
       }
       if (free && shot.follow) { // follow the sled group from behind: camera behind the tail carrier, looking at the leader (carriers read at the fractional tick, see main.ts tourVehicles.update)
         const f = shot.follow, tick = s.loop.tickCount + s.loop.alpha; const list: any[] = Array.from(s.sim.tours.carriers(tick, [], 64)).filter((c: any) => c.kind === f.kind);
@@ -106,6 +119,7 @@ export function installFilm(): void {
   };
   P.grab = async (file: string, fmt: string, q: number, port: number, step: [number, number]): Promise<number> => {
     const s = S(); s.frameStep(step[0], step[1]);
+    for (let g = 0; g < 3 && (P.reacq || (P.needRig && s.renderer.viewMode.mode !== 'ride')); g++) { P.reacq = false; s.frameStep(0, 1); } // the followed guest left during this step (the rig ended after frameCam ran, or frameCam re-acquired one): that frame shows the plain iso camera / the rig's own camera, draw it again at the same virtual time (dt 0) with the free camera
     const c: HTMLCanvasElement = P.comp(s.renderer.webgl.domElement);
     if (fmt === 'webcodecs') {
       const E = P.enc; const vf = new (w as any).VideoFrame(c, { timestamp: Math.round(E.n * 1e6 / E.fps) }); E.enc.encode(vf, { keyFrame: E.n % 60 === 0 }); vf.close(); E.n++;

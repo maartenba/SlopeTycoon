@@ -16,8 +16,10 @@ import { runSetups } from './setups';
 
 const arg = (k: string, d = ''): string => { const i = process.argv.indexOf(`--${k}`); return i > 0 && process.argv[i + 1] && !process.argv[i + 1]!.startsWith('--') ? process.argv[i + 1]! : i > 0 ? '1' : d; };
 const final = arg('final') === '1';
-const RES = final ? 'final' : 'draft';
+const RES = (final ? 'final' : 'draft') + (arg('tag') ? `-${arg('tag')}` : ''); // --tag 4k -> frames/final-4k (never mixes resolutions)
 const W = Number(arg('w', final ? '2560' : '1280')), H = Number(arg('h', final ? '1440' : '720'));
+const fpsArg = Number(arg('fps', '0')); // probing: override the film fps
+const freezeCam = arg('freezecam') === '1'; // flicker probe: the camera stays at its first pose while time (sim, sun, atmosphere, water) runs
 const fmt = arg('format', 'jpg') as 'jpg' | 'png' | 'webcodecs';
 const quality = Number(arg('quality', final ? '95' : '88')) / 100;
 const jobs = Math.max(1, Number(arg('jobs', '1')));
@@ -116,7 +118,18 @@ async function renderShot(br: any, shot: any, fps: number): Promise<{ frames: nu
     s.atmos.force({ ...(sc.atmos ?? {}), hour: sh.hour?.[0]?.[1] ?? sc.start.hour });
     const wx = sh.weather?.[0]; if (wx) P.weather(wx.kind, wx.kind === 'clear' ? 0 : (wx.intensity ?? 1), wx.wind ?? 0.1, wx.fog ?? 0); else P.clearWeather();
     if (sh.cue) out.cue = P.cue(sh.cue);
-    if (sh.mode === 'ride') { s.loop.setSpeed(1); let g = 0, id = 0; while (!s.view.liftRiders(sh.ride.family) && g++ < 600) P.adv(5); id = s.view.rideLift(sh.ride.family); let g2 = 0; while (id && g2++ < 300) { const p = s.view.liftProgress(id); if (p > 0.3 && p < 0.6) break; P.adv(2); id = s.view.rideLift(sh.ride.family); } out.ride = id; s.loop.setSpeed(0); }
+    if (sh.mode === 'ride') { // a rider early on the line (p in [lo, hi], default 0.03..0.22; the film uses 0.5..0.75: below ~0.5 the rider is still in the station hall (progress is per tick, 0.07 -> 0.58 in one step)): the ride has to last the whole shot (the camera follows the guest to the top station and past it)
+      s.loop.setSpeed(1); const lo = sh.ride.p?.[0] ?? 0.03, hi = sh.ride.p?.[1] ?? 0.22; let g = 0, id = 0;
+      const pick2 = (): number => { const st = s.guestSim.store; let best = 0, bp = 9; for (let i = 0; i < st.limit; i++) { if (!st.alive[i] || st.state[i] !== 5 /* GState.Riding */) continue; const q = s.view.liftProgress(st.id[i]); if (q >= lo && q <= hi && q < bp) { bp = q; best = st.id[i]; } } return best; };
+      while (!(id = pick2()) && g++ < 600) P.adv(1);
+      if (id) id = s.view.ride(id); out.ride = id; s.loop.setSpeed(0);
+    }
+    else if (sh.mode === 'free' && sh.chase) { // a free camera that chases a lift rider from beside the line (the ride camera itself sits between the two cables: every oncoming chair fills the frame for 2-5 frames, which reads as flicker)
+      s.loop.setSpeed(1); const lo = sh.chase.p?.[0] ?? 0.5, hi = sh.chase.p?.[1] ?? 0.75; let g = 0, id = 0;
+      const pickC = (): number => { const st = s.guestSim.store; let best = 0, bp = 9; for (let i = 0; i < st.limit; i++) { if (!st.alive[i] || st.state[i] !== 5 /* GState.Riding */) continue; const q = s.view.liftProgress(st.id[i]); if (q >= lo && q <= hi && q < bp) { bp = q; best = st.id[i]; } } return best; };
+      while (!(id = pickC()) && g++ < 600) P.adv(1);
+      if (id) { out.follow = s.view.ride(id); P.chaseId = id; } s.loop.setSpeed(0);
+    }
     else if (sh.mode === 'free') {
       // a ride rig has to be active for the free camera: follow a guest far from the first camera position (its figure is hidden by the rig)
       const st = s.guestSim.store; let best = 0, bd = -1; const a = P.anchor(sh.keys[0].at); for (let i = 0; i < st.limit; i++) if (st.alive[i]) { const d = a ? Math.hypot(st.x[i] - a.x, st.y[i] - a.z) : 0; if (d > bd) { bd = d; best = st.id[i]; } }
@@ -130,15 +143,18 @@ async function renderShot(br: any, shot: any, fps: number): Promise<{ frames: nu
   if (prep.cue && !prep.cue.ok) console.log(`[${ts()}] ${shot.id} WARNING sky cue not found ${JSON.stringify(prep.cue)}`);
   if (arg('eval')) console.log('[eval]', JSON.stringify(await page.evaluate(arg('eval'))));
   await page.evaluate((r: number) => { (window as any).__slope.frameStepRate = r; }, shot.rate ?? 1);
+  if (freezeCam) await page.evaluate(() => { (window as any).__promo.freezeCam = true; });
   if (fmt === 'webcodecs') await page.evaluate((p: number, f: string, w: number, h: number, fp: number) => (window as any).__promo.encStart(p, f, w, h, fp, w * h * 12), sinkPort, `${shot.id}/video.h264`, W, H, fps);
   await page.evaluate(() => (window as any).__slope.frameStep(0, 8)); // preroll: terrain / prop builds settle, no sim time passes (then every clock restarts from the same state)
   const dt = 1 / fps; const ext = fmt === 'png' ? 'png' : 'jpg';
-  let bytes = 0;
+  let bytes = 0; const rideLog: string[] = [];
   for (let i = 0; i < nFrames; i++) {
     const name = `${shot.id}/${String(i + 1).padStart(5, '0')}.${ext}`;
+    if (shot.mode === 'ride' && prep.ride && i % Math.round(fps / 2) === 0) rideLog.push(`${(i / fps).toFixed(1)}s ${(await page.evaluate((id: number) => (window as any).__slope.view.liftProgress(id), prep.ride)).toFixed(2)}`);
     bytes += await page.evaluate((n: string, f: string, qq: number, p: number, st: [number, number]) => (window as any).__promo.grab(n, f, qq, p, st), name, fmt, quality, sinkPort, [i === 0 ? 0 : dt, 1]);
   }
   if (fmt === 'webcodecs') await page.evaluate(() => (window as any).__promo.encEnd());
+  if (rideLog.length) console.log(`[${ts()}] ${shot.id} ride progress: ${rideLog.join(', ')} (must stay < 1: the camera follows the guest to the top station and past it)`);
   if (shot.follow) { // a follow shot must run DOWNHILL: the leading carrier's terrain height falls over the shot (promo/scenes.json cue p0 < 0.5 = outbound leg)
     const log: Array<[number, number]> = await page.evaluate(() => (window as any).__promo.followLog ?? []);
     const h0 = log[0]?.[1] ?? 0, h1 = log[log.length - 1]?.[1] ?? 0; const bad = log.length < 2 || h1 >= h0 - 0.5;
@@ -163,7 +179,7 @@ try {
     const ids = (arg('town') ? arg('town').split(',') : Object.keys(FILM.towns));
     for (const id of ids) await buildTown(brs[0], id);
   } else {
-    const fps = final ? FILM.fps : FILM.draftFps;
+    const fps = fpsArg || (final ? FILM.fps : FILM.draftFps);
     let shots: any[] = FILM.shots;
     if (cut === '30') shots = shots.filter((s) => s.cuts.c30);
     if (only.length) shots = shots.filter((s) => only.some((o) => s.id.startsWith(o)));

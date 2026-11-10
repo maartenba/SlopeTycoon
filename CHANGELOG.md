@@ -15,6 +15,7 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - Apres bars sway and pulse a little: pennants on a string, a warm glow on the beat (Medium and High, still under reduced motion).
 - Clearer tracks and a softer ground shadow for a rare winter sight.
 - Smoother planes, paragliders and gliders: a rounded high-wing plane with a spinner, windows, wing struts and wheel pants (jump plane, Altiport), arched striped canopies with lines and a jumper, and a curved hang glider.
+- Steadier first-person and free-camera views: the fade between tree detail levels no longer shimmers as you move (a per-tree fade replaces the screen-space dot pattern).
 - Website: clearer pages for people searching for a ski resort tycoon game (a rewritten Ski Resort Tycoon page, a page on playing ski games online and a plan for building a ski resort).
 
 ## [0.6.1] - 2026-11-06 (pre-release)
