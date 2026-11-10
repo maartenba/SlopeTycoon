@@ -849,6 +849,7 @@
     "shots": [
       {
         "id": "s01-blue-hour",
+        "path": "c2",
         "town": "winter",
         "len": 10,
         "mode": "free",
@@ -936,6 +937,7 @@
       },
       {
         "id": "s02-build",
+        "path": "c2",
         "town": "winter",
         "len": 6,
         "start": {
@@ -994,6 +996,7 @@
       },
       {
         "id": "s03-busy",
+        "path": "c2",
         "town": "winter",
         "len": 7,
         "start": {
@@ -1077,7 +1080,7 @@
           "guests:260:skiers",
           "run-in:2"
         ],
-        "rate": 0.5,
+        "rate": 0.3,
         "keys": [
           {
             "t": 0,
@@ -1106,8 +1109,8 @@
         },
         "chase": {
           "p": [
-            0.5,
-            0.75
+            0.05,
+            0.35
           ],
           "side": 3.0,
           "h": 1.2,
@@ -1290,6 +1293,8 @@
       },
       {
         "id": "s06b-groom",
+        "path": "c2",
+        "trackCat": { "omega": 3.2 },
         "town": "winter",
         "len": 3,
         "start": {
@@ -1320,7 +1325,7 @@
           "worn",
           "advance:14"
         ],
-        "rate": 2,
+        "rate": 1.2,
         "mode": "iso",
         "keys": [
           {
@@ -2046,6 +2051,7 @@
       },
       {
         "id": "s10-night",
+        "path": "c2",
         "town": "winter",
         "len": 8,
         "start": {
@@ -2101,14 +2107,21 @@
     ],
     "endCard": {
       "len": 7,
-      "line1": "Free in your browser",
-      "line2": "slopetycoon.com",
+      "url": "slopetycoon.com",
+      "verb": "Play it now. No download, no account.",
+      "small": "Desktop, tablet and phone.",
+      "stagger": 0.4,
+      "bgFrom": "s10-night",
       "cuts": {
         "c90": true,
         "c30": {
           "len": 4
         }
       }
+    },
+    "logoReveal": {
+      "c90": { "fadeIn": 0.6, "centreUntil": 1.0, "settleEnd": 1.7, "markUntil": 7.0, "markFade": 1.0, "captionAt": 1.9 },
+      "c30": { "fadeIn": 0.4, "centreUntil": 0.6, "settleEnd": 1.1, "markUntil": 3.0, "markFade": 0.8, "captionAt": 1.4 }
     },
     "cuts": {
       "c90": {

@@ -39,7 +39,7 @@ export function installFilm(): void {
     let lastHour = NaN, wxIdx = -1, lastDay = -1;
     const atmos0 = { ...(scene.atmos ?? {}), ...(shot.atmos ?? {}) };
     s.lighting.disableNight = false;
-    { const m = s.precip?.snowMat?.uniforms?.uSize; if (m) { if (m.__base === undefined) m.__base = m.value; m.value = m.__base * Math.max(1, window.innerWidth / 1280 * 1.6); } } // snow points are a constant SCREEN size (Precipitation.ts, orthographic comment): at 3840 px they shrink to 1-2 px dots, so the film scales them with the frame width (promo only; the 1280 px look is unchanged)
+    s.precip.sizeScale = 2.2; // the game scales snow with the render height (Precipitation.ts, precipPixelScale: 1080p-tall frames keep 3.15 px flakes); the film wants a bolder fall at 1440p, about the share of the frame the old 4K hack gave (2.2 x 3.15 x 1.33 = 9 px of 1440)
     P.shotState = { track, keys };
     s.frameCam = (t: number): void => {
       const hour = C.sampleScalar(hourTl, t);
@@ -50,7 +50,7 @@ export function installFilm(): void {
       }
       if (Math.abs(hour - lastHour) > 1e-4) { lastHour = hour; s.setHour(hour); s.atmos.force({ ...atmos0, hour }); }
       for (let i = wxTl.length - 1; i >= 0; i--) if (t >= wxTl[i].t) { if (i !== wxIdx) { wxIdx = i; const q = wxTl[i]; P.weather(q.kind, q.kind === 'clear' ? 0 : (q.intensity ?? 1), q.wind ?? 0.1, q.fog ?? 0, q.valleyT); } break; }
-      const v = C.samplePath(keys, P.freezeCam ? 0 : t, shot.spline !== false);
+      const v = shot.path === 'c2' ? C.sampleC2(keys, P.freezeCam ? 0 : t) : C.samplePath(keys, P.freezeCam ? 0 : t, shot.spline !== false);
       if (free && s.renderer.viewMode.mode !== 'ride') { // the followed guest left (a ride rig must stay active for the free camera): take any other one, keep the sim running at the shot's rate
         const st = s.guestSim.store; let pick = 0; for (let i = 0; i < st.limit && !pick; i++) if (st.alive[i]) pick = st.id[i];
         if (pick) { P.reacq = true; s.view.ride(pick); s.loop.setSpeed(1); s.loop.timeScale = s.frameStepRate; }
@@ -60,10 +60,16 @@ export function installFilm(): void {
         if (i >= 0 && st.state[i] === 5) {
           const l = s.view.liftOf?.(P.chaseId); const lf = l ?? Array.from(s.sim.lifts.all()).find((q: any) => q.id === st.liftId[i]);
           if (lf) {
-            let dx = lf.top.x - lf.bottom.x, dz = lf.top.y - lf.bottom.y; const n = Math.hypot(dx, dz) || 1; dx /= n; dz /= n; const x = st.x[i], z = st.y[i], y = st.z[i];
-            const px = x - dx * c.back - dz * c.side, pz = z - dz * c.back + dx * c.side, py = y + c.h, lx = x + dx * c.ahead, lz = z + dz * c.ahead, ly = y + (c.lookH ?? 0);
-            const a = C.lookAngles([px, py, pz], [lx, ly, lz]); P.lastChase = [px, py, pz, a.yaw, a.pitch, c.fov ?? 55];
+            let dx = lf.top.x - lf.bottom.x, dz = lf.top.y - lf.bottom.y; const n = Math.hypot(dx, dz) || 1; dx /= n; dz /= n; P.chaseDir = [dx, dz];
+            const al = s.loop.alpha; P.chaseTarget = [st.px[i] + (st.x[i] - st.px[i]) * al, st.pz[i] + (st.z[i] - st.pz[i]) * al, st.py[i] + (st.y[i] - st.py[i]) * al]; // positions are per sim tick: interpolate with the frame alpha like the ride rig does (RideAlong.sample), else the camera lurches once per tick
           }
+        }
+        if (P.chaseTarget && P.chaseDir) { // the tracked point is low-passed by a critically damped spring (omega 2.5 rad/s): the rider's speed jumps when it boards the chair and the camera must not lurch with it; holds (and keeps settling) when the ride is over
+          const g = P.chaseSpring ??= { t: t, p: P.chaseTarget.slice(), v: [0, 0, 0] }; const dtc = t - g.t; g.t = t;
+          if (dtc > 1e-6) { const om = 2.5, e = Math.exp(-om * dtc); for (let k = 0; k < 3; k++) { const a = g.p[k] - P.chaseTarget[k], b = g.v[k] + om * a; g.p[k] = P.chaseTarget[k] + (a + b * dtc) * e; g.v[k] = (g.v[k] - om * b * dtc) * e; } }
+          const [dx, dz] = P.chaseDir; const [x, y, z] = g.p;
+          const px = x - dx * c.back - dz * c.side, pz = z - dz * c.back + dx * c.side, py = y + c.h, lx = x + dx * c.ahead, lz = z + dz * c.ahead, ly = y + (c.lookH ?? 0);
+          const a = C.lookAngles([px, py, pz], [lx, ly, lz]); P.lastChase = [px, py, pz, a.yaw, a.pitch, c.fov ?? 55];
         }
         if (P.lastChase) { s.view.freeCam(...P.lastChase); return; }
       }
@@ -85,7 +91,12 @@ export function installFilm(): void {
         const a = C.lookAngles(p, l);
         s.view.freeCam(p[0], p[1], p[2], a.yaw, a.pitch, v[6]);
       } else {
-        const c = s.renderer.controls; const gy = H.heightAt(s.grid, v[0], v[1]);
+        if (shot.trackCat) { // the camera follows a snowcat (its drawn, per-frame smoothed position) through a critically damped spring; the keys' x / z are offsets from the first key
+          const gv = s.groomingView, cats = s.sim.ops.grooming.cats; let bi = -1, bl = -1; cats.forEach((q: any, i: number) => { if (!q.done && q.route.length > bl) { bl = q.route.length; bi = i; } });
+          const sm = bi >= 0 ? gv.sm[bi] : null; if (sm) P.catTarget = [sm.x, sm.y];
+          if (P.catTarget) { const g = P.catSpring ??= { t, p: P.catTarget.slice(), v: [0, 0] }; const dtc = t - g.t; g.t = t; if (dtc > 1e-6) { const om = shot.trackCat.omega ?? 1.6, e = Math.exp(-om * dtc); for (let k = 0; k < 2; k++) { const a = g.p[k] - P.catTarget[k], b = g.v[k] + om * a; g.p[k] = P.catTarget[k] + (a + b * dtc) * e; g.v[k] = (g.v[k] - om * b * dtc) * e; } } v[0] = g.p[0] + (v[0] - keys[0].v[0]); v[1] = g.p[1] + (v[1] - keys[0].v[1]); }
+        }
+        const c = s.renderer.controls; const gy = C.smoothGround((x: number, z: number) => H.heightAt(s.grid, x, z), v[0], v[1]); // smoothed ground: the raw height jitters at tile edges
         c.focusTween = null; c.target.set(v[0], gy, v[1]); c.zoom = 1; c.zoomBy(Math.exp(v[2])); c.yaw = c.yaw0 + v[3] * Math.PI / 180; c.updateProjection?.();
       }
     };
