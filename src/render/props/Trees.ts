@@ -109,12 +109,15 @@ vec3 seasonColor(vec3 base, float h) {
 
 /**
  * Cross-fade between LOD bands (perspective views): uLodFade = (lo, hi, w). A level draws in [lo - w, hi + w); the incoming side (around lo) keeps a pixel
- * when its dither value n >= 1 - wIn, the outgoing side (around hi) when n < wOut, so the two levels have complementary stipple masks and never pop.
+ * when its dither value n >= 1 - wIn, the outgoing side (around hi) when n < wOut, so the two levels have complementary masks and never pop. n is a stable PER-INSTANCE hash
+ * of aSeed (each tree swaps exactly once, nothing crawls under camera motion); it used to be a screen-space stipple (gl_FragCoord), docs/flicker.md.
  * Iso: w = 0 and lo/hi = 0..1e9, so vLodW = (1, 1) and nothing is ever discarded.
  */
 export const LODFADE_VERT_PARS = /* glsl */ `
 uniform vec3 uLodFade;
 varying vec2 vLodW;
+varying float vLodN; // stable per-instance dither value (NOT screen space: a screen-door stipple crawls under camera motion and read as flicker in ride / free-camera shots)
+float lodHash(float seed) { return fract(sin(seed * 57.3 + 11.7) * 24634.6345); }
 vec2 lodFadeW(float d) {
   float w = max(uLodFade.z, 1e-4);
   float wi = uLodFade.x > 0.0 ? smoothstep(uLodFade.x - w, uLodFade.x + w, d) : 1.0;
@@ -123,9 +126,9 @@ vec2 lodFadeW(float d) {
 }`;
 export const LODFADE_FRAG_PARS = /* glsl */ `
 varying vec2 vLodW;
+varying float vLodN;
 void lodFadeDiscard() {
-  float n = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-  if (n < 1.0 - vLodW.x || n >= vLodW.y) discard;
+  if (vLodN < 1.0 - vLodW.x || vLodN >= vLodW.y) discard;
 }`;
 
 /**
@@ -195,7 +198,7 @@ void main() {
   gl_Position = projectionMatrix * vp;
   float dCam = distance(shCam(), wp.xyz);
   if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed) || shDropTree(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-  vLodW = lodFadeW(dCam);
+  vLodW = lodFadeW(dCam); vLodN = lodHash(aSeed);
 }`;
 
 const MESH_FRAG = /* glsl */ `
@@ -253,7 +256,7 @@ void main() {
   gl_Position = projectionMatrix * vp;
   float dCam = distance(shCam(), wp);
   if (dCam < uLodRange.x || dCam >= uLodRange.y || xfadeDrop(aSeed) || shDropTree(aSeed)) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-  vLodW = lodFadeW(dCam);
+  vLodW = lodFadeW(dCam); vLodN = lodHash(aSeed);
 }`;
 
 const BB_FRAG = /* glsl */ `
