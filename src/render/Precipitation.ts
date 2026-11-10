@@ -9,6 +9,7 @@ uniform vec3 uBox;
 uniform vec2 uFall;   // x: fall speed, y: wind drift speed (world units / s)
 uniform float uDensity;
 uniform float uSize;
+uniform float uPx;    // drawing-buffer pixels per reference pixel (precipPixelScale): flakes keep their apparent size on big / high-DPI screens
 attribute float aRand;
 attribute float aEnd; // line segments: 0 = head, 1 = tail
 varying float vAlpha;
@@ -22,7 +23,7 @@ void main() {
   float edge = 1.0 - smoothstep(0.8, 1.0, max(max(q.x, q.y), q.z));
   vAlpha = edge * step(aRand, uDensity);
   gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
-  gl_PointSize = uSize * 9.0; // orthographic camera: constant screen size
+  gl_PointSize = uSize * 9.0 * uPx; // orthographic camera: constant screen size, scaled with the render height (world-space size would flicker)
 }`;
 
 const FRAG_SNOW = /* glsl */ `
@@ -40,7 +41,15 @@ void main() {
   gl_FragColor = vec4(0.65, 0.75, 0.9, vAlpha * 0.55);
 }`;
 
-export interface PrecipState { precip: Precip; /** 0..1 */ intensity: number; /** 0..1 wind */ wind: number }
+/** Reference drawing-buffer height (px) of the snow look: the flake size (3.15 px) was tuned for 720-1080 px tall frames. Smaller frames keep it; taller ones grow it in proportion. */
+export const PRECIP_REF_HEIGHT = 1080;
+/** Point-size multiplier for a drawing buffer `heightPx` tall (device pixels): 1 up to the reference height, then linear (1440 -> 1.33, 2160 -> 2, DPR 2 at 720 CSS px = 1440). Capped at 4. */
+export function precipPixelScale(heightPx: number): number {
+  if (!Number.isFinite(heightPx) || heightPx <= 0) return 1;
+  return Math.min(4, Math.max(1, heightPx / PRECIP_REF_HEIGHT));
+}
+
+export interface PrecipState { precip: Precip; /** 0..1 */ intensity: number; /** 0..1 wind */ wind: number; /** drawing-buffer height in device pixels (default: the reference height) */ viewHeight?: number }
 
 /**
  * Camera-following precipitation: ONE fixed pool of particles whose positions are computed in the vertex shader from time
@@ -56,6 +65,8 @@ export class Precipitation {
   private time = 0;
   /** Graphics-quality multiplier on the visible particle fraction. */
   densityScale = 1;
+  /** Extra point-size multiplier on top of the resolution scale (1 = the game; the promo film raises it for a bolder snowfall in a 1440p frame). */
+  sizeScale = 1;
 
   constructor(count = PRECIP_PARTICLES) {
     const box = new THREE.Vector3(...PRECIP_BOX);
@@ -66,7 +77,7 @@ export class Precipitation {
     for (let i = 0; i < count; i++) { pos[i * 3] = rnd(); pos[i * 3 + 1] = rnd(); pos[i * 3 + 2] = rnd(); rand[i] = rnd(); }
     const mkUniforms = (size: number, speed: number): Record<string, THREE.IUniform> => ({
       uTime: { value: 0 }, uCenter: { value: new THREE.Vector3() }, uBox: { value: box.clone() },
-      uFall: { value: new THREE.Vector2(speed, 0) }, uDensity: { value: 0 }, uSize: { value: size },
+      uFall: { value: new THREE.Vector2(speed, 0) }, uDensity: { value: 0 }, uSize: { value: size }, uPx: { value: 1 },
     });
 
     const sg = new THREE.BufferGeometry();
@@ -107,6 +118,7 @@ export class Precipitation {
     (u.uTime as THREE.IUniform<number>).value = this.time;
     (u.uCenter as THREE.IUniform<THREE.Vector3>).value.set(target.x, target.y + PRECIP_BOX[1] * 0.25, target.z);
     (u.uDensity as THREE.IUniform<number>).value = Math.min(1, st.intensity) * this.densityScale;
+    (u.uPx as THREE.IUniform<number>).value = precipPixelScale(st.viewHeight ?? PRECIP_REF_HEIGHT) * this.sizeScale;
     const speed = (u.uFall as THREE.IUniform<THREE.Vector2>).value;
     speed.y = st.wind * (st.precip === 'rain' ? 5 : 3);
   }

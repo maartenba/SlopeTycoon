@@ -23,6 +23,7 @@ export class GroomingView {
         if (dx * dx + dy * dy > 1e-4) { const target = Math.atan2(dx, dy); let d = target - s.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); s.yaw += d * Math.max(0.3, kc); }
         s.x += dx * kc; s.y += dy * kc;
       }
+      const out = this.grooming.keepOutOfBuildings(s.x, s.y, c.station); if (out) { s.x = out[0]; s.y = out[1]; } // the smoothed cat never shows inside a building
       this.fleet.set(i, s.x, this.groundAt(s.x, s.y) + 0.03, s.y, s.yaw);
     }
     this.sm.length = Math.min(this.sm.length, cats.length);

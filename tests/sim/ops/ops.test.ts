@@ -172,6 +172,43 @@ describe('Grooming', () => {
   });
 });
 
+describe('Grooming avoids buildings', () => {
+  it('pushOut moves a drawn position out of a foreign footprint (nearest free edge) and leaves free / own tiles alone', async () => {
+    const { buildOwner, pushOut } = await import('../../../src/sim/ops/groomPath');
+    const o = buildOwner(N, [{ id: 7, x: 10, y: 10, w: 3, h: 2 }, { id: 8, x: 20, y: 20, w: 1, h: 1 }]);
+    expect(pushOut(o, N, 5.5, 5.5, 1)).toBeNull(); expect(pushOut(o, N, 11, 10.5, 7)).toBeNull(); // free / own garage
+    const p = pushOut(o, N, 12.8, 10.5, 1)!; expect(p[0]).toBeGreaterThan(13); expect(p[1]).toBeCloseTo(10.5, 6); // nearest edge = the east side
+    const q = pushOut(o, N, 20.4, 20.9, 1)!; expect(q[1]).toBeGreaterThan(21); // a 1 x 1 cannon: out through the south edge
+  });
+  it('snowcats drive around building footprints (never through) and still groom the piste', () => {
+    const tiles: Array<[number, number, number]> = [];
+    for (let x = 10; x < 30; x++) tiles.push([x, 24, 1]);
+    const { w, pq } = qWorld(tiles, 1);
+    for (let i = 0; i < N * N; i++) if (pq.isPiste(i)) pq.state[i] = Q.Icy;
+    const cov = new Coverage(N);
+    const outpost = mk('snowcatOutpost', 20, 14);
+    const wall = [mk('lodge', 15, 18), mk('lodge', 19, 18), mk('lodge', 23, 18), mk('lodge', 11, 18), mk('lodge', 27, 18)]; // a row of buildings between the outpost and the piste
+    cov.refresh([outpost]);
+    const g = new Grooming({ size: N, quality: pq, coverage: cov, snowDepth: w.grid.snowDepth, buildings: () => [outpost, ...wall] });
+    const inside: string[] = []; let steps = 0;
+    for (let t = 0; t < 140; t++) {
+      const h = 22 + t / 10; g.update(h >= 24 ? 6 : 5, h % 24);
+      for (const c of g.cats) { steps++; for (const b of wall) if (c.x > b.x && c.x < b.x + b.w && c.y > b.y && c.y < b.y + b.h) inside.push(`${t}:${b.type}@${c.x.toFixed(1)},${c.y.toFixed(1)}`); }
+    }
+    expect(steps).toBeGreaterThan(20);
+    expect(inside).toEqual([]);
+    for (let x = 10; x < 30; x++) expect(pq.at(x + 24 * N)).toBe(Q.Groomed);
+  });
+  it('a piste tile under a building (a snow cannon) is groomed from the tile beside it, never from inside it', () => {
+    const tiles: Array<[number, number, number]> = []; for (let x = 10; x < 30; x++) tiles.push([x, 24, 1]);
+    const { w, pq } = qWorld(tiles, 1); for (let i = 0; i < N * N; i++) if (pq.isPiste(i)) pq.state[i] = Q.Icy;
+    const cov = new Coverage(N); const outpost = mk('snowcatOutpost', 20, 14); const cannon = mk('snowCannon', 18, 24); cov.refresh([outpost]);
+    const g = new Grooming({ size: N, quality: pq, coverage: cov, snowDepth: w.grid.snowDepth, buildings: () => [outpost, cannon] });
+    let inside = 0; for (let t = 0; t < 140; t++) { const h = 22 + t / 10; g.update(h >= 24 ? 6 : 5, h % 24); for (const c of g.cats) if (c.x > cannon.x && c.x < cannon.x + cannon.w && c.y > cannon.y && c.y < cannon.y + cannon.h) inside++; }
+    expect(inside).toBe(0); expect(pq.at(18 + 24 * N)).toBe(Q.Groomed);
+  });
+});
+
 describe('Reservoirs + Snowmaking', () => {
   it('reservoir consume / refill / summer rate', () => {
     const r = new Reservoirs(1000, 0.5);

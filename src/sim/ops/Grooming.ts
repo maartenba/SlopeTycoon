@@ -1,6 +1,7 @@
 import type { Coverage, CoverageBuilding } from '../Coverage';
 import { Q, type PisteQuality } from './PisteQuality';
 import type { OpsCostCategory } from './Snowmaking';
+import { buildOwner, legWaypoints, pushOut, standPoint } from './groomPath';
 
 export const GROOM = {
   nightStart: 22,
@@ -32,6 +33,10 @@ export interface Cat {
   groomed: number;
   returning: boolean;
   done: boolean;
+  /** Detour waypoints (x, y pairs) for the current leg around building footprints; undefined = leg not planned yet (older saves too). */
+  wp?: number[];
+  /** The target tile lies under a building: the last waypoint is the free tile it is groomed from. */
+  hold?: boolean;
 }
 
 export interface GroomingEnv {
@@ -61,6 +66,8 @@ export class Grooming {
   private nightTiles = 0;
   /** Bumped when cats are (re)planned or removed (renderer rebuild hint). */
   planVersion = 0;
+  /** Building footprints (id + 1 per tile) the cats drive around; rebuilt each night plan, lazily after a load. */
+  private owner: Int32Array | null = null;
   /** Staff hooks (Task 19 / 20): crew cap (null = none), per-cat tile capacity and fuel multipliers (1 = untouched). */
   crewLimit: () => number | null = () => null;
   capacityMod: () => number = () => 1;
@@ -71,6 +78,11 @@ export class Grooming {
   constructor(private env: GroomingEnv) {}
 
   get nightActive(): boolean { return this.active; }
+
+  /** Render helper: a drawn position (the view lags the sim and can clip a corner) moved out of any foreign building footprint; null = fine as it is. */
+  keepOutOfBuildings(x: number, y: number, station: number): [number, number] | null {
+    this.owner ??= buildOwner(this.env.size, this.env.buildings()); return pushOut(this.owner, this.env.size, x, y, station);
+  }
 
   /** Vehicles configured for a garage/outpost (defaults by type). */
   vehiclesOf(id: number, type?: string): number {
@@ -119,7 +131,7 @@ export class Grooming {
   /** Assign tiles to vehicles (priority: worst surface first, within coverage + station range, capacity-limited). */
   plan(): void {
     const e = this.env, N = e.size, q = e.quality;
-    this.cats.length = 0; this.lastByStation.clear(); this.nightTiles = 0;
+    this.cats.length = 0; this.lastByStation.clear(); this.nightTiles = 0; this.owner = null;
     const stations = this.stations();
     this.active = false;
     this.planVersion++;
@@ -172,10 +184,17 @@ export class Grooming {
         let tx: number, ty: number;
         if (c.returning) { tx = c.sx; ty = c.sy; }
         else { const t = c.route[c.k]!; tx = (t % N) + 0.5; ty = ((t / N) | 0) + 0.5; }
+        if (!c.wp) { // the cats never drive through a building (the garage they start in excepted), and groom a tile under a building (cannon) from the free tile beside it
+          this.owner ??= buildOwner(N, this.env.buildings()); const sp = c.returning ? null : standPoint(this.owner, N, tx, ty, c.x, c.y, c.station);
+          c.wp = legWaypoints(this.owner, N, c.x, c.y, sp ? sp[0] : tx, sp ? sp[1] : ty, c.station); c.hold = !!sp; if (sp) c.wp.push(sp[0], sp[1]);
+        }
+        const detour = c.wp.length >= 2; if (detour) { tx = c.wp[0]!; ty = c.wp[1]!; }
         const d = Math.hypot(tx - c.x, ty - c.y);
-        const v = c.returning || d > 1.5 ? GROOM.driveSpeed : GROOM.groomSpeed;
+        const v = c.returning || detour || d > 1.5 ? GROOM.driveSpeed : GROOM.groomSpeed;
         if (d / v <= budget) {
           budget -= d / v; c.x = tx; c.y = ty;
+          if (detour) { c.wp.splice(0, 2); if (!(c.hold && c.wp.length === 0)) continue; }
+          c.wp = undefined; c.hold = false;
           if (c.returning) { c.done = true; break; }
           this.env.quality.groom(c.route[c.k]!); c.groomed++; this.nightTiles++;
           if (++c.k >= c.route.length) c.returning = true;

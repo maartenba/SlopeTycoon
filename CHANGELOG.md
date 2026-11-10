@@ -16,6 +16,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - Clearer tracks and a softer ground shadow for a rare winter sight.
 - Smoother planes, paragliders and gliders: a rounded high-wing plane with a spinner, windows, wing struts and wheel pants (jump plane, Altiport), arched striped canopies with lines and a jumper, and a curved hang glider.
 - Steadier first-person and free-camera views: the fade between tree detail levels no longer shimmers as you move (a per-tree fade replaces the screen-space dot pattern).
+- Snow keeps its size on high-resolution screens: falling snowflakes scale with the render height (large monitors and high-DPI displays) instead of shrinking to 1-2 pixel dots; nothing changes at 1080p or below.
+- Snowcats drive around buildings: a night grooming route no longer cuts through lodges, ice rinks or lift stations; tiles under a snow cannon are groomed from the tile beside it.
 - Website: clearer pages for people searching for a ski resort tycoon game (a rewritten Ski Resort Tycoon page, a page on playing ski games online and a plan for building a ski resort).
 
 ## [0.6.1] - 2026-11-06 (pre-release)
