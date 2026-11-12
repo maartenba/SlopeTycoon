@@ -4,9 +4,22 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-10 (pre-release)
+
+A small update about how things look and sound: new planes and canopies, groomers that go around buildings, steadier snow on big screens, and a trailer and a 90 second film on the website. The economy and your old saves are unchanged.
+
+### Highlights
+
+- New **planes, paraglider canopies and hang gliders**: rounder shapes, a spinner and windows on the plane, striped arched canopies with lines and a jumper. The jump plane also takes off clear of buildings.
+- **Groomers drive around buildings** instead of through them, and you can hear them working when you zoom in on one.
+- **Snow keeps its size** on big monitors and high-resolution screens instead of shrinking to tiny dots.
+- Steadier first-person, ride and photo views: far trees no longer shimmer as you move.
+- The website has a **30 second trailer** and a **90 second film** (click to play, captions included), plus new pages on playing ski games online and building a ski resort.
+
 ### Changes
 
-- A 30 second trailer on the website: a click-to-play card on the home page (no autoplay, nothing is requested until you press play, captions included).
+- A 30 second trailer and the 90 second film on the website: a click-to-play card on the home page with a button for the full film (no autoplay, nothing is requested until you press play, captions included, self-hosted).
+- Website: the privacy page says plainly that the Ko-fi widget on the support page (loaded only after you click) may use its own analytics inside its frame; the widget frame is sandboxed. The About and notices wording for the music is clearer (generated with Suno, provided by the project owner).
 - Planes take off clear of buildings: the jump plane now picks the end of the Grass Strip with the clearest climb-out, climbs steeply and lands back the way it took off, so it no longer flies through a roof beside the strip.
 - Sounds near gondolas, cable cars and funiculars: a soft machinery hum when you zoom in beside a station of a running one.
 - Queue and bar crowd sounds: a crowd murmur at busy lift bases and in the village, and a bar chatter under the music next to an open Apres-Ski Bar or Schirmbar.

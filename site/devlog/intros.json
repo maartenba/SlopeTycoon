@@ -93,5 +93,10 @@
     "tagline": "a few small surprises",
     "lead": "A small update this time. There are a couple of surprises up on the mountain now, rare ones, in winter, and I am not going to spoil them. There are two new achievements to find as well, and they stay hidden until you earn them. The surprises got more life as well: they are easier to notice, and they bring a small crowd boost for a month. Nothing in the economy changed. As before, I have only tried it on a software renderer, so how it looks and sounds in a real playthrough is still open.",
     "shot": "schirmbar-open"
+  },
+  "0.6.2": {
+    "tagline": "new planes and a trailer",
+    "lead": "A small update about how things look and sound. The planes, paraglider canopies and hang gliders got new rounder shapes, and the jump plane now takes off clear of the buildings next to the strip. The groomers drive around buildings instead of through them and you can hear them at work, and snow keeps its size on big screens. I also made a 30 second trailer and a 90 second film, and you can watch both on the home page. Nothing in the economy changed. I have only tried it on a software renderer, so how it looks on a real screen is still open.",
+    "shot": "schirmbar-open"
   }
 }

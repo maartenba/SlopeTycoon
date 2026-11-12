@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.2",
+    "date": "2026-11-10",
+    "highlights": [
+      "New planes, paraglider canopies and hang gliders: rounder shapes, a spinner and windows on the plane, striped arched canopies with lines and a…",
+      "Groomers drive around buildings instead of through them, and you can hear them working when you zoom in on one.",
+      "Snow keeps its size on big monitors and high-resolution screens instead of shrinking to tiny dots.",
+      "Steadier first-person, ride and photo views: far trees no longer shimmer as you move.",
+      "The website has a 30 second trailer and a 90 second film (click to play, captions included), plus new pages on playing ski games online and building…"
+    ]
+  },
+  {
     "version": "0.6.1",
     "date": "2026-11-06",
     "highlights": [
@@ -21,17 +32,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Recorded sounds: footsteps, bird calls, bells, wind, rain, thunder and more are now real recordings mixed with the old sounds. If one is missing…",
       "Sun shadows on the High setting now fall on buildings, trees and paths, and also work in the ride, photo and walk views.",
       "Smoother lakes, rivers, rocks and shrubs, rounder cabins and buildings, a steadier title screen camera, and no more shimmer at the foot of lift…"
-    ]
-  },
-  {
-    "version": "0.5.1",
-    "date": "2026-11-03",
-    "highlights": [
-      "Smoother bubble chairs and gondolas: rounded hoods and cabins, curved glass and one-piece hangers.",
-      "Rounder Altiport, Beach, Kids Ground, Reservoir, Ice Rink and Tourist Office, plus a hood over the chair bullwheels and a turned village fountain.",
-      "An open Apres-Ski Bar plays a quiet polka when you zoom in close to it.",
-      "Birds are quieter and come forward when you zoom in; streams and rivers babble or rush when you are beside them.",
-      "A Support page with a Ko-fi link; nothing is loaded from Ko-fi until you click."
     ]
   }
 ];

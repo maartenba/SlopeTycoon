@@ -1,6 +1,30 @@
 # Release notes and checklist
 
-Current release: **0.6.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.6.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.6.2 (2026-11-10, macOS, Node v22.23.4)
+
+A look-and-sound update: new plane / canopy / glider models, planes that take off clear of buildings, snowcats that route around buildings, snow that keeps its size on high-resolution screens, steadier far trees in the ride / walk / photo views, a groomer sound, and the website trailer (30 s) and film (90 s). Sim change: only the snowcat route (`src/sim/ops/groomPath.ts`); goldens unchanged. No save change.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa && npm run size` | pass: 470 files passed, 1 skipped; 4915 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed (goldens unchanged, no re-record) |
+| Perf | `npm run test:perf` | 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors in all shots |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Audio in a real page | `npm run music:e2e`, `npm run menu-music:e2e`, `npm run sfx:e2e` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `sled`, `m74`, `schirmbar`, `visitor` | all OK (0 console errors) |
+| Backcountry | `npm run backcountry:sanity` | seed 5 (default): every check passes EXCEPT "Ski tourers arrived" (0 tourers; they are a rare conversion, 3-4 per run elsewhere). Seeds 6 and 7: all pass (3 and 4 tourers). The snowcat route changed the piste surface and so the random draws; not a regression in the tourer code (v0.6.1 saw some on seed 5). |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 |
+| Mobile | `npm run mobile:audit` | all acceptance thresholds met |
+| Desktop | `npm run desktop:diff` (before = e594437, after = this tree) | SAME on all six screens (0.0000 %) |
+| Flicker | `npm run flicker -- --only 64-winter-day` | rotfine 0.66 (0.6.1: 0.66), zoomfine 0.15, no pops |
+| Size | `npm run size` | 3102.1 kB raw / 1105.0 kB gzip precache (0.6.1: 1096 kB; budget < 2048 kB gzip) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (61 pages, 6122 references, both base paths, 279 URLs each) |
+| Site video | headless request log on the home page | before a click only `trailer-poster.jpg` is requested (no mp4, no vtt), `preload=none`, no autoplay, "Watch the full film (90 s)" shown, film VideoObject (PT1M30S) present |
+
+Media in git: `trailer-30.mp4` 8.0 MB, `film-90.mp4` 26.3 MB (cap 30 MB), posters and captions. Not verified by agents: playing the film in a real browser, how it looks and sounds by hand, real GPU fps, a phone in the hand.
 
 ## 0.6.1 (2026-11-06, macOS, Node v22.23.4)
 
