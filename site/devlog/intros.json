@@ -103,5 +103,10 @@
     "tagline": "photographers",
     "lead": "A small update with one new kind of guest. Photographers turn up once you have a Viewpoint or a Treehouse. They like the golden hour and a beautiful sky, they walk to the best spot, take their pictures and have a hot drink. Good shots bring a little word of mouth, there is a new trophy called Golden hour, and Rudi has a tip about them. If you zoom in close you can hear the shutter. I have only tried it on a software renderer, so how it looks and sounds on a real screen is still open.",
     "shot": "schirmbar-open"
+  },
+  "0.6.4": {
+    "tagline": "falling leaves",
+    "lead": "A small update about autumn. Leaves now drift down from the deciduous trees and the larches near the camera, in gold, orange and red, and they thin out when the snow arrives or it rains. They follow the Atmosphere setting, and with reduced motion they just lie still. I also re-made the trailer and the 90 second film on the website so they show the leaves. You press play to start them, nothing loads before that. I have only seen it on a software renderer, so how it looks on a real screen is still open.",
+    "shot": "schirmbar-open"
   }
 }

@@ -3,6 +3,15 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.4",
+    "date": "2026-11-12",
+    "highlights": [
+      "Leaves fall in autumn: golds, oranges and reds drift down from the deciduous trees and larches near the camera, and thin out as the snow arrives and…",
+      "The leaves follow the Atmosphere setting and the graphics quality, and lie still with reduced motion.",
+      "The website's 30 second trailer and 90 second film are re-made with the falling leaves (click to play, no autoplay, nothing loads until you press…"
+    ]
+  },
+  {
     "version": "0.6.3",
     "date": "2026-11-12",
     "highlights": [
@@ -21,15 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Snow keeps its size on big monitors and high-resolution screens instead of shrinking to tiny dots.",
       "Steadier first-person, ride and photo views: far trees no longer shimmer as you move.",
       "The website has a 30 second trailer and a 90 second film (click to play, captions included), plus new pages on playing ski games online and building…"
-    ]
-  },
-  {
-    "version": "0.6.1",
-    "date": "2026-11-06",
-    "highlights": [
-      "A few small surprises up on the mountain. They are rare, they happen in winter, and no spoilers here.",
-      "Two new achievements to find. They stay hidden until you earn them.",
-      "A faint new sound now and then, far away across the snow."
     ]
   }
 ];

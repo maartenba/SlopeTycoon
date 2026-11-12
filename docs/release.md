@@ -1,6 +1,28 @@
 # Release notes and checklist
 
-Current release: **0.6.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.6.4 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.6.4 (2026-11-12, macOS, Node v22.23.4)
+
+Falling autumn leaves (render-only: one instanced layer, follows Atmosphere and the quality tier, still with reduced motion; `docs/atmosphere.md`) and the website trailer and film re-encoded with the leaves (trailer-30.mp4 8.0 MB, film-90.mp4 26.2 MB, film-poster.jpg 97 kB; self-hosted, click to play, no autoplay). No sim, save or golden change.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa && npm run size` | pass: 472 files passed, 1 skipped; 4941 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed (goldens unchanged) |
+| Perf | `npm run test:perf` | 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors in all shots |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Audio in a real page | `npm run music:e2e`, `npm run menu-music:e2e`, `npm run sfx:e2e` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74`, `schirmbar`, `visitor`, `photographer` | all exit 0 |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 |
+| Mobile | `npm run mobile:audit` | all acceptance thresholds met |
+| Desktop | `npm run desktop:diff` (before = 6f4c56a worktree, after = this tree) | SAME on all six screens (0.0000 %); the leaves only render in the 3D canvas, which the diff hides |
+| Flicker | `npm run flicker -- --only 64-winter-day` | rotfine 0.66 (0.6.3: 0.66), no pops |
+| Size | `npm run size` | 3118.4 kB raw / 1110.4 kB gzip (0.6.3: 1107.5 kB; budget < 2048 kB gzip) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (all pass) |
+
+Not verified by agents: how the leaves look by hand (SwiftShader only), real GPU fps, a phone in the hand.
 
 ## 0.6.3 (2026-11-12, macOS, Node v22.23.4)
 

@@ -4,6 +4,16 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-11-12 (pre-release)
+
+A small update about autumn and the website video. The economy and your old saves are unchanged.
+
+### Highlights
+
+- **Leaves fall in autumn**: golds, oranges and reds drift down from the deciduous trees and larches near the camera, and thin out as the snow arrives and in rain.
+- The leaves follow the **Atmosphere** setting and the graphics quality, and lie still with reduced motion.
+- The website's **30 second trailer** and **90 second film** are re-made with the falling leaves (click to play, no autoplay, nothing loads until you press play).
+
 ### Changes
 
 - Leaves fall in autumn: golds, oranges and reds drift down from the deciduous trees and larches near the camera, thinning as the snow arrives and in rain. They follow the Atmosphere setting and the graphics quality (Low shows a few), and with reduced motion they lie still on the ground. The trailer and film show them too.
