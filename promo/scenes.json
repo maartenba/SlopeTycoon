@@ -1112,7 +1112,7 @@
             0.05,
             0.35
           ],
-          "side": 3.0,
+          "side": 3,
           "h": 1.2,
           "back": 5,
           "ahead": 8,
@@ -1294,7 +1294,9 @@
       {
         "id": "s06b-groom",
         "path": "c2",
-        "trackCat": { "omega": 3.2 },
+        "trackCat": {
+          "omega": 3.2
+        },
         "town": "winter",
         "len": 3,
         "start": {
@@ -1671,17 +1673,18 @@
         "start": {
           "month": 9,
           "dom": 3,
-          "hour": 16.0
+          "hour": 16
         },
         "atmos": {
           "special": 1,
           "fog": 0.15,
-          "mist": 0
+          "mist": 0,
+          "leaves": 260
         },
         "hour": [
           [
             0,
-            16.0
+            16
           ],
           [
             3,
@@ -1737,7 +1740,8 @@
         "atmos": {
           "special": 0.7,
           "fog": 0.1,
-          "mist": 0
+          "mist": 0,
+          "leaves": 260
         },
         "hour": [
           [
@@ -1746,7 +1750,7 @@
           ],
           [
             3,
-            16.0
+            16
           ]
         ],
         "weather": [
@@ -1802,7 +1806,8 @@
         "atmos": {
           "special": 0,
           "fog": 0.05,
-          "mist": 1
+          "mist": 1,
+          "leaves": 260
         },
         "hour": [
           [
@@ -1867,7 +1872,8 @@
         "atmos": {
           "special": 0.8,
           "fog": 0.05,
-          "mist": 0
+          "mist": 0,
+          "leaves": 260
         },
         "hour": [
           [
@@ -1876,7 +1882,7 @@
           ],
           [
             3,
-            17.0
+            17
           ]
         ],
         "weather": [
@@ -1927,18 +1933,19 @@
         "start": {
           "month": 9,
           "dom": 18,
-          "hour": 7.0
+          "hour": 7
         },
         "atmos": {
           "special": 0,
           "fog": 0.45,
           "mist": 1,
-          "frost": 1
+          "frost": 1,
+          "leaves": 50
         },
         "hour": [
           [
             0,
-            7.0
+            7
           ],
           [
             4,
@@ -1980,7 +1987,7 @@
             "valleyT": -3
           },
           {
-            "t": 2.0,
+            "t": 2,
             "kind": "snow",
             "intensity": 0.45,
             "wind": 0.08,
@@ -2015,7 +2022,7 @@
             "valleyT": -3
           },
           {
-            "t": 4.0,
+            "t": 4,
             "kind": "snow",
             "intensity": 0.95,
             "wind": 0.08,
@@ -2120,8 +2127,22 @@
       }
     },
     "logoReveal": {
-      "c90": { "fadeIn": 0.6, "centreUntil": 1.0, "settleEnd": 1.7, "markUntil": 7.0, "markFade": 1.0, "captionAt": 1.9 },
-      "c30": { "fadeIn": 0.4, "centreUntil": 0.6, "settleEnd": 1.1, "markUntil": 3.0, "markFade": 0.8, "captionAt": 1.4 }
+      "c90": {
+        "fadeIn": 0.6,
+        "centreUntil": 1,
+        "settleEnd": 1.7,
+        "markUntil": 7,
+        "markFade": 1,
+        "captionAt": 1.9
+      },
+      "c30": {
+        "fadeIn": 0.4,
+        "centreUntil": 0.6,
+        "settleEnd": 1.1,
+        "markUntil": 3,
+        "markFade": 0.8,
+        "captionAt": 1.4
+      }
     },
     "cuts": {
       "c90": {

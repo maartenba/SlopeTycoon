@@ -40,6 +40,7 @@ export function installFilm(): void {
     const atmos0 = { ...(scene.atmos ?? {}), ...(shot.atmos ?? {}) };
     s.lighting.disableNight = false;
     s.precip.sizeScale = 2.2; // the game scales snow with the render height (Precipitation.ts, precipPixelScale: 1080p-tall frames keep 3.15 px flakes); the film wants a bolder fall at 1440p, about the share of the frame the old 4K hack gave (2.2 x 3.15 x 1.33 = 9 px of 1440)
+    s.fallingLeaves.sizeScale = 2.2; // capture-only, like the snow boost: the iso leaf is tuned for the game's zoom; the film reads it from further and 2560 px wide
     P.shotState = { track, keys };
     s.frameCam = (t: number): void => {
       const hour = C.sampleScalar(hourTl, t);

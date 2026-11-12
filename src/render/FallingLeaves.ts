@@ -163,6 +163,8 @@ export class FallingLeaves {
   time = 0;
   /** Leaves drawn last frame (tests / debug). */
   drawn = 0;
+  /** Capture-only size multiplier (the promo film sets it like `Precipitation.sizeScale`); 1 in the game. */
+  sizeScale = 1;
   private mat: THREE.ShaderMaterial;
   private pos: Float32Array; private info: Float32Array; private col: Float32Array;
   private slots: Slot[] = [];
@@ -209,7 +211,7 @@ export class FallingLeaves {
     const src = this.sources;
     if (src.length === 0) { this.hide(); return; }
     const gl = this.mat.uniforms.uMin as THREE.IUniform<number>;
-    gl.value = c.perspective ? 0 : LEAVES.minPx * precipPixelScale(c.bufferHeight) * (c.viewHeight / Math.max(1, c.bufferHeight));
+    gl.value = c.perspective ? 0 : this.sizeScale * LEAVES.minPx * precipPixelScale(c.bufferHeight) * (c.viewHeight / Math.max(1, c.bufferHeight));
     let k = 0;
     for (let i = 0; i < n; i++) {
       const alive = smooth(0, 0.08, dens - hash01(i, 41));
@@ -236,7 +238,7 @@ export class FallingLeaves {
       const a = pose.alpha * alive * vf;
       if (a <= 0.01) continue;
       this.pos[k * 3] = x; this.pos[k * 3 + 1] = gy + pose.up + 0.04; this.pos[k * 3 + 2] = z;
-      this.info[k * 4] = pose.size * (c.perspective ? LEAVES.perspectiveScale : 1); this.info[k * 4 + 1] = a; this.info[k * 4 + 2] = pose.rot; this.info[k * 4 + 3] = pose.squash;
+      this.info[k * 4] = pose.size * this.sizeScale * (c.perspective ? LEAVES.perspectiveScale : 1); this.info[k * 4 + 1] = a; this.info[k * 4 + 2] = pose.rot; this.info[k * 4 + 3] = pose.squash;
       this.col[k] = Math.floor(hash01(i, 31) * LEAVES.palette.length) % LEAVES.palette.length;
       k++;
     }
