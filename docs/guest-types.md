@@ -75,6 +75,11 @@ Finding: **school classes cause no injuries at all**. Children (and the teacher 
 |---|---|---|---|---|
 | 12 | `sledder` Sledder | winter 0.06, summer 0.04 | level 2; `requiresIn`: winter `@sledRun` (an OPEN Sled Rental), summer `@coaster` (an OPEN Alpine Coaster); both pseudo ids come from `Spawner.flagsFn` | segment budget, fallback couple; group 2-5, budget $90-190, beginners (`maxSkill` 1), overnight 25 %; appeal sled hut / coaster 1.5, terrace / cafe .8, restaurant .7, no ski rental; orange jackets + bobble hats. An ADDITION to the arrival mix (not a conversion): the plain bot builds no hut, so the golden hashes do not move. Skiers, boarders, families, seniors and school groups ride the sled run through the tour appeal columns (`docs/sled-runs.md`). |
 
+## Photographer
+| Index | Id | Seasons | Gate | Notes |
+|---|---|---|---|---|
+| 13 | `photographer` Photographer | winter 0.05, spring 0.05, summer 0.05, autumn 0.06, times the light factor | level 2; `requires: ['viewpoint', 'treehouse']` | segment solo; beret + camera look (`HairStyle.Beret`); design and numbers in `docs/photographers.md` |
+
 ## Snowboarder and Ski tourer (Phase 6 Tasks 33 + 34)
 | Index | Id | Seasons | Gate | Notes |
 |---|---|---|---|---|

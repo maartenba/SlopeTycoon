@@ -19,6 +19,8 @@ Two **winter types** round out the slope. **Snowboarders** (purple jackets, bean
 
 A third winter type, the **Sledder** (bright orange jackets, bobble hats, from level 2), comes for the toboggan run: it arrives in winter while a **Sled Rental** with a safe run is open, and in summer for an open **Alpine Coaster**. Sledders are beginners at best, spend little and love a hot drink afterwards; families, couples, seniors and school groups ride too (see [Sled runs & the alpine coaster](page:sled-runs)).
 
+**Photographers** (sage jackets, a beret and a camera on a strap, from level 2) come for the light, not the skiing. They only turn up once you have a **Viewpoint** or a **Treehouse**, in every season, and they like the golden hour: about three hours before sunset, or around sunrise. On a day with a beautiful sunrise or sunset, or a fog morning with clear summits, more of them come. They walk the trail or footpath to the best viewpoint (the higher and more open the view, the better), take their pictures for half an hour to an hour, then have a hot drink at a terrace, café or hut. Storms, rain and heavy snow keep them away. They spend little, but a happy crowd of photographers adds a small, fading bonus (up to 4 %) to arrivals over the next days, and twenty of them on one beautiful evening earns the **Golden hour** trophy. In winter a photographer needs a footpath to the viewpoint, because the snowed-in hiking trail is closed.
+
 {{fig:guests-boarders-tourers}}
 
 Guests have needs: they queue for lifts, get hungry, tire, get cold and sometimes get hurt, and sooner or later they need a toilet. When they leave they judge the resort, and the average becomes your **star rating**.

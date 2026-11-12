@@ -98,6 +98,7 @@
     "winter:sanity": "vite-node scripts/winter-sanity.ts",
     "m74:sanity": "vite-node scripts/m74-sanity.ts",
     "schirmbar:sanity": "vite-node scripts/schirmbar-sanity.ts",
+    "photographer:sanity": "vite-node scripts/photographer-sanity.ts",
     "visitor:models": "vite-node scripts/visitor-models.ts",
     "visitor:studio": "vite-node scripts/visitor-studio.ts",
     "visitor:sanity": "vite-node scripts/visitor-sanity.ts",
