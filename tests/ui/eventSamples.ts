@@ -2,7 +2,7 @@ import type { GameEventName, GameEvents } from '@/core/events';
 
 /** One realistic payload per event (raw ids / lowercase names on purpose: the formatters must humanise them). */
 export const EVENT_SAMPLES: { [K in GameEventName]: GameEvents[K] } = {
-  'guest:arrived': { id: 1 }, 'guest:left': { id: 1, reason: 'satisfied' }, 'guest:review': { guestId: 1, stars: 4, text: 'Great runs on Blue Run 3.', tone: 'plain', driver: 'piste', x: 10, y: 12 },
+  'guest:arrived': { id: 1 }, 'photo:taken': { id: 1, x: 5, y: 5, spot: 2, q: 0.8, shots: 4 }, 'photo:golden': { day: 12 }, 'guest:left': { id: 1, reason: 'satisfied' }, 'guest:review': { guestId: 1, stars: 4, text: 'Great runs on Blue Run 3.', tone: 'plain', driver: 'piste', x: 10, y: 12 },
   'building:placed': { id: 3, type: 'mountainHut', x: 10, y: 12 }, 'building:removed': { id: 3, type: 'mountainHut' },
   'path:drawn': { kind: 'path', tiles: 4, erase: false }, 'piste:painted': { layer: 'ski', tiles: 4, erase: false },
   'lift:built': { id: 2, kind: 'chair4d' }, 'lift:opened': { id: 2, open: true }, 'lift:closed': { id: 2, reason: 'Closed: no snow at the top station (1,450 m)' },

@@ -349,6 +349,13 @@ export const RULES: readonly Rule[] = [
     if (sim.buildings.all().some((b) => b.type === 'touristOffice') || sim.progression.locked('building', 'touristOffice') || sim.game.money < BUILDINGS.touristOffice!.cost + (c.shown ? 1_000 : 2_000)) return null;
     return { id: 'tourist.office', severity: 'info', ...TEXT.touristOffice(), panel: { drawer: 'buildings', item: 'touristOffice' } };
   }),
+  // Photographers (docs/photographers.md): a Viewpoint or Treehouse stands, but no photographer has come yet: a clear evening and a good viewpoint draw them.
+  rule('photo.viewpoint', 1, (c) => {
+    const sim = c.sim;
+    if (sim.guestSim.store.count < (c.shown ? 10 : 15) || sim.rating.stars < 2 || sim.photoBuzz.serialize()) return null;
+    const vp = sim.buildings.all().find((b) => b.active && (b.type === 'viewpoint' || b.type === 'treehouse'));
+    return vp ? { id: 'photo.viewpoint', severity: 'info', ...TEXT.photoViewpoint(), target: { x: Math.floor(vp.x + vp.w / 2), y: Math.floor(vp.y + vp.h / 2) } } : null;
+  }, true, true),
   // Schirmbar (M7.8, docs/schirmbar.md): a winter resort with a lift and a settled crowd, none built yet: a cheap slope bar. Quiet outside winter and until it is unlocked.
   rule('schirmbar.suggest', 1, (c) => {
     const sim = c.sim;

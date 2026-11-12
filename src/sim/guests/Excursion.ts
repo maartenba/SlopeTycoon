@@ -44,7 +44,7 @@ export interface ExcHost {
   groundAt(x: number, y: number): number;
   moveSlot(slot: number, x: number, y: number, z: number): void;
   hour(): number;
-  leaveHour(): number;
+  leaveHour(slot?: number): number;
   avoid(tile: number): number;
   /** Guest reached the goal (trail fee, visits). */
   reachedGoal(slot: number, kind: 0 | 1): void;
@@ -52,7 +52,9 @@ export interface ExcHost {
   foodNear(x: number, y: number): boolean;
   lunch(slot: number): void;
   /** Viewpoint building next to this goal tile: extra stop in hours (0 / absent = none). Phase 6 Task 6. */
-  viewDwellH?(goal: number): number;
+  viewDwellH?(goal: number, slot?: number): number;
+  /** This guest always sets out with food (a photographer: a flask and a sandwich; no hunger refusal for the walk). */
+  packsLunch?(slot: number): boolean;
   /** Guest reached the goal tile of a viewpoint (happiness, photo, visit counter). */
   viewed?(slot: number, goal: number): void;
   /** Excursion over: guest is idle at its final position. */
@@ -116,10 +118,10 @@ export class Excursions {
     let route = tiles;
     const fit = 0.85 + 0.1 * Math.min(3, s.skill[slot]!) + 0.15 * (((Math.imul(s.id[slot]!, 2654435761) >>> 0) % 100) / 100) - 0.2 * s.fatigue[slot]!;
     let lunch = false, fa = -1;
-    const rate = NEEDS.hungerHike / EXC.hourPerTick, hunger0 = s.hunger[slot]!, packed = this.packedFor(slot);
+    const rate = NEEDS.hungerHike / EXC.hourPerTick, hunger0 = s.hunger[slot]!, packed = this.packedFor(slot) || (this.h.packsLunch?.(slot) ?? false);
     const outH = (d: number): number => (oneWay ? d : d / 2);
     let D = plannedHours(route.length * (oneWay ? 1 : 2), mapSize, kind, fit);
-    const stopFor = (r: Int32Array): number => { fa = this.foodAlong(r, mapSize); lunch = fa >= 0 && hunger0 + rate * fa * outH(D) > 0.3; if (!lunch) fa = -1; return EXC.stopH + (lunch ? EXC.lunchH : 0) + (this.h.viewDwellH?.(r[r.length - 1]!) ?? 0); };
+    const stopFor = (r: Int32Array): number => { fa = this.foodAlong(r, mapSize); lunch = fa >= 0 && hunger0 + rate * fa * outH(D) > 0.3; if (!lunch) fa = -1; return EXC.stopH + (lunch ? EXC.lunchH : 0) + (this.h.viewDwellH?.(r[r.length - 1]!, slot) ?? 0); };
     let S = stopFor(route);
     // food check: no food stop on the way and no packed lunch -> keep the predicted hunger at the goal below maxGoalHunger (shorten, or refuse so the guest eats first)
     if (!trek && !lunch && !packed && hunger0 + rate * outH(D) > EXC.maxGoalHunger) {
@@ -127,7 +129,7 @@ export class Excursions {
       if (keep < EXC.minTiles) { this.plannerRefused++; return false; }
       route = route.slice(0, keep); D = plannedHours(route.length * (oneWay ? 1 : 2), mapSize, kind, fit); S = stopFor(route); this.plannerShort++;
     }
-    const allowed = this.h.leaveHour() - EXC.duskMargin - hour - S;
+    const allowed = this.h.leaveHour(slot) - EXC.duskMargin - hour - S;
     if (fixed) { /* trek legs are never truncated */ if (trek && D > allowed) return false; } else if (D > allowed) {
       if (allowed < EXC.minH * 0.8) return false;
       const frac = allowed / D;
@@ -210,7 +212,7 @@ export class Excursions {
     const g = this.h.graph();
     if (!g) return;
     // dusk: still heading out when the day guests leave -> turn back
-    if (ph === 0 && !x.turned && this.h.hour() >= this.h.leaveHour() - EXC.duskMargin - (x.tOut - x.e) - 0.1 && !x.oneWay) { this.why.dusk = (this.why.dusk ?? 0) + 1; this.turnBack(slot); return; }
+    if (ph === 0 && !x.turned && this.h.hour() >= this.h.leaveHour(slot) - EXC.duskMargin - (x.tOut - x.e) - 0.1 && !x.oneWay) { this.why.dusk = (this.why.dusk ?? 0) + 1; this.turnBack(slot); return; }
     // bear / closure look-ahead along the direction of travel
     const r = x.route, pos = f * (r.length - 1), dir = ph === 0 ? 1 : -1;
     const w = g.world, base = Math.floor(pos);

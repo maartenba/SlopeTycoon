@@ -128,6 +128,9 @@ function figure(b: Builder, c: Cfg): { hand: (side: 1 | -1) => THREE.Vector3; po
   dome(0.07, 0.9, 0.48, -0.006, [Part.Hat, Joint.Head, 1, HairStyle.Helmet]); hb(0.12, 0.03, 0.02, 0, 0.466, 0.06, [Part.Dark, Joint.Head, 1, HairStyle.Helmet]);
   dome(0.064, 0.7, 0.494, 0, [Part.Hat, Joint.Head, 1, HairStyle.Cap]); hb(0.1, 0.01, 0.06, 0, 0.49, 0.075, [Part.Hat, Joint.Head, 1, HairStyle.Cap]);
   hb(0.21, 0.012, 0.21, 0, 0.5, 0, [Part.Hat, Joint.Head, 1, HairStyle.SunHat]); dome(0.062, 0.7, 0.505, 0, [Part.Hat, Joint.Head, 1, HairStyle.SunHat]);
+  // Photographer (docs/photographers.md): a flat beret and a camera at the chest (the body part rides on the head-wear id, so it shows for this style only; the strap is the jacket's own accent)
+  dome(0.074, 0.42, 0.494, 0.006, [Part.Hat, Joint.Head, 1, HairStyle.Beret]);
+  b.box(0.08, 0.052, 0.046, 0.012, 0.28, 0.072, [Part.Dark, Joint.Body, 1, HairStyle.Beret], up, false);
   if (c.near) {
     if (!c.lite) hb(0.108, 0.014, 0.108, 0, 0.468, -0.004, [Part.Dark, Joint.Head]); // goggles strap (not on the bike: near budget)
     hb(0.092, 0.03, 0.02, 0, 0.466, 0.06, [Part.Metal, Joint.Head, 1, HairStyle.Short]); // goggles pushed on the forehead / lens
@@ -137,6 +140,7 @@ function figure(b: Builder, c: Cfg): { hand: (side: 1 | -1) => THREE.Vector3; po
     dome(0.066, 0.8, 0.486, -0.012, [Part.Hair, Joint.Head, 1, HairStyle.Ponytail], 1.08);
     hb(0.07, 0.016, 0.07, 0, 0.5, 0, [Part.Hat, Joint.Head, 1, HairStyle.Beanie]); // beanie cuff
     hb(0.1, 0.008, 0.012, 0, 0.5, 0.06, [Part.Dark, Joint.Head, 1, HairStyle.Cap]); // cap seam
+    b.box(0.034, 0.034, 0.03, 0.012, 0.28, 0.1, [Part.Metal, Joint.Body, 1, HairStyle.Beret], up, false); // camera lens
   }
   if (c.pack !== false) b.box(0.13, 0.15, 0.07, 0, 0.31, -0.08, [Part.Hat, Joint.Body, 2, 1], up, false);
   if (c.near && c.pack !== false) b.box(0.11, 0.17, 0.012, 0, 0.31, 0.046, [Part.Dark, Joint.Body, 2, 1], up, false); // pack straps (shoulder yoke)

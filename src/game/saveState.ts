@@ -58,6 +58,8 @@ export const SAVE_MODULES: SaveModule[] = [
   { key: 'resort', version: 1, observer: true, serialize: (sim) => ({ name: sim.resort.name }), load: (sim, d) => { sim.resort.name = resortNameOr((d as { name?: unknown } | null)?.name, sim.seed); }, reset: (sim) => { sim.resort.name = defaultResortName(sim.seed); } },
   // Rare high-country visitor: the current visit record. Observer (not in stateHash); additive: old saves have none.
   { key: 'visitor', version: 1, observer: true, serialize: (sim) => sim.visitor.serialize(), load: (sim, d) => sim.visitor.load(d), reset: (sim) => sim.visitor.reset() },
+  // Photo buzz (docs/photographers.md): a small decaying arrival bonus earned by photographers. Observer (not in stateHash); omitted while pristine so a world without a photographer saves as before.
+  { key: 'photoBuzz', version: 1, observer: true, omitWhenNull: true, serialize: (sim) => sim.photoBuzz.serialize(), load: (sim, d) => sim.photoBuzz.load(d), reset: (sim) => sim.photoBuzz.reset() },
   {
     key: 'grid', version: 1,
     serialize: (sim) => { const g = sim.grid; return { heights: g.heights.slice(), tileType: g.tileType.slice(), snow: g.snowDepth.slice(), flags: g.flags.slice(), occId: g.occupancy.entityId.slice(), occFlags: g.occupancy.flags.slice() }; },

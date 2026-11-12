@@ -65,6 +65,7 @@ import { hasStreet } from '../sim/events/Street';
 import { resortNameOr } from '../sim/ResortName';
 import { skyClosedReason } from '../sim/attractions/SkySites';
 import { TOURIST_OFFICE, BAKERY } from '../config/visitorServices';
+import { PhotoBuzz } from '../sim/guests/PhotoBuzz';
 import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
 import { Rating, createRatingSystem } from '../sim/Rating';
 import { LeaverTracker, gatherRatingInput } from '../sim/RatingInputs';
@@ -795,9 +796,14 @@ export function createSim(opts: SimOptions) {
     news: (title, id) => bus.emit('milestone', { id, title, major: false }),
   });
   bus.on('day:changed', () => rivals.newDay());
+  // Photographers (docs/photographers.md): the light roll's seed, the session hook, the small photo buzz (observer state, saved while non-pristine) and its day tick.
+  const photoBuzz = new PhotoBuzz(bus);
+  guestSim.photoSeed = seed; guestSim.spawner.photoSeed = seed;
+  guestSim.onPhotoSession = (info) => photoBuzz.session(info);
+  bus.on('day:changed', () => photoBuzz.newDay(game.date.year * DAYS_PER_YEAR + game.date.day));
   let visitorRef: Visitor | null = null; // rare visitor (built further down): its sighting buzz is one more arrival factor
   let eventsRef: EventCalendar | null = null; // Events calendar (festival / critic / powder arrival effects), built further down
-  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * (visitorRef?.buzzMult() ?? 1) * rivals.arrivalMult() * eco.arrivalMult());
+  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * (visitorRef?.buzzMult() ?? 1) * photoBuzz.mult() * rivals.arrivalMult() * eco.arrivalMult());
   pricing.bind({
     date: () => game.date,
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
@@ -1316,7 +1322,7 @@ export function createSim(opts: SimOptions) {
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,
     staff, staffUpgrades, events, stories, names, nature, leavers, rating, goals, progression, gate, advisor, session, stats, yearReports, loans, ticketing: ticketingRef, finance, liftOps, creditCtx, lodgeTouched, relief, closedDays,
     /** The resort name (M7.8, docs/schirmbar.md): observer state, saved in the 'resort' module (not part of the state hash). */
-    resort, visitor,
+    resort, visitor, photoBuzz,
     setResortName(raw: unknown): string { const n = resortNameOr(raw, seed); resort.name = n; return n; },
     /** The validated new-game options this game was created with (stored in the save, 'config' module). */
     config: cfg, difficulty: diff,

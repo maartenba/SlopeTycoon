@@ -354,6 +354,14 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'photo.viewpoint', daily: true,
+    setup: (s) => { guests(s, 20); buildAt(s, 'viewpoint', lodge(s), { rmax: 14, connect: false }); s.tick(1); },
+    fixes: [
+      { name: 'the viewpoint is gone', apply: (s) => { for (const b of s.buildings.all().slice()) if (b.type === 'viewpoint') s.buildings.remove(b.id); } },
+      { name: 'a photographer has been (the buzz is saved)', apply: (s) => { s.photoBuzz.session({ q: 0.8, day: 1 }); } },
+    ],
+  },
+  {
     id: 'schirmbar.suggest', daily: true,
     setup: (s) => { s.progression.unlockAll = true; guests(s, 30); s.game.date.day = seasonStartDay('winter') + 5; s.game.money = 50_000; },
     fixes: [

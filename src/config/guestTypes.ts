@@ -107,6 +107,8 @@ export interface GuestTypeDef {
   flats?: { flatHit: number; flatPick: number; widePick: number };
   /** Ski tourer (Task 34): skins up along a backcountry route (or one lift, then up), never at danger >= `TOURER_MAX_DANGER`. */
   tourer?: boolean;
+  /** Photographer (docs/photographers.md): comes for the light, goes to the best viewpoint in the golden hour / on a special-sky day; arrival weight follows `PhotoLight.arrivalMult`. */
+  photographer?: boolean;
 }
 
 /**
@@ -130,7 +132,7 @@ export const SENIOR_WALK = 0.82;
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer.
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -202,8 +204,17 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     group: [2, 5], budget: [90, 190], overnight: 0.25, skill: [0.85, 0.15, 0, 0], maxSkill: 1, pref: [10, 0],
     look: { top: 8, topShare: 0.7, colour: 0xff7043, beanie: 0.85 }, // bright orange jackets, bobble hats
   },
+  {
+    // Photographer (docs/photographers.md): comes for the light, not the skiing. Needs a Viewpoint or a Treehouse; arrives with a bias to the golden hour and flocks to a viewpoint on a special-sky day or an inversion morning,
+    // stays for the light window (30-60 game minutes), takes photos, then a hot drink. Avoids storms, rain and heavy snow. Small spend, a camera on a strap and a beret.
+    id: 'photographer', label: 'Photographer', seasons: { winter: 0.05, spring: 0.05, summer: 0.05, autumn: 0.06 }, minLevel: 2, requires: ['viewpoint', 'treehouse'], fallback: 'solo', segment: 'solo', photographer: true,
+    weather: { rain: 0.15, storm: 0, heavySnow: 0.2, snow: 0.8, cloudy: 0.8 },
+    appeal: { heatedTerrace: 1.3, terrace: 1.2, cafe: 1.2, mountainHut: 1.3, hut: 1.3, restaurant: 0.5, coffeeStand: 1.0, bar: 0.4, rental: 0.2, shop: 0.4, stunt: 0.2, adventure: 0.1, rink: 0.1, kidsGround: 0.05, playground: 0.05, carpet: 0.05 },
+    group: [1, 2], budget: [90, 170], overnight: 0.3, skill: [0.45, 0.4, 0.15, 0], maxSkill: 2, pref: [0, 0],
+    foodPrefer: ['heatedTerrace', 'cafe', 'mountainHut'], eatBonus: 0.5,
+    look: { top: 6, topShare: 0.8, colour: 0x6a8f7b, hat: 9, noHelmet: true }, // sage jackets, a beret and a camera on a strap
+  },
 ];
-
 /** Extra types, in index order (index = CORE_TYPE_COUNT + position). Starts as the shipped list; tests may reset / register more. */
 export const GUEST_TYPE_DEFS: GuestTypeDef[] = [...SHIPPED_TYPES];
 

@@ -267,6 +267,6 @@ describe('School look + the Families path', () => {
 
 describe('framework hygiene', () => {
   it('shipped list has the extras in order and nothing else', () => {
-    expect(GUEST_TYPE_DEFS.map((d) => d.id)).toEqual(['mtb', 'angler', 'senior', 'school', 'snowboarder', 'tourer', 'sledder']);
+    expect(GUEST_TYPE_DEFS.map((d) => d.id)).toEqual(['mtb', 'angler', 'senior', 'school', 'snowboarder', 'tourer', 'sledder', 'photographer']);
   });
 });

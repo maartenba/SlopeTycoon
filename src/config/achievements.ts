@@ -113,6 +113,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'scenic-route', title: 'Scenic route', description: 'Have hikers reach three different viewpoints, treehouses or suspension bridges.', tier: 2, icon: 'eye', scope: 'any', tracker: { kind: 'fact', fact: 'viewsSeen', op: '>=', v: 3 } },
   { id: 'green-travel', title: 'Green travel', description: 'A quarter of the guests in your resort (30 or more) came by train.', tier: 2, icon: 'guests', scope: 'any', tracker: { kind: 'fact', fact: 'railShare', op: '>=', v: 25 } },
   { id: 'powder-day', title: 'Powder day', description: 'Run Powder Hounds on a powder day.', tier: 2, icon: 'flake', scope: 'any', tracker: { kind: 'fact', fact: 'powderHounds', op: '>=', v: 1 } },
+  { id: 'golden-hour', title: 'Golden hour', description: 'Have twenty photographers shoot from your viewpoints on one special-sky day.', tier: 2, icon: 'sun', scope: 'any', tracker: { kind: 'event', event: 'photo:golden', n: 1, per: 'game' } },
   { id: 'luxury-suite', title: 'Suite life', description: 'Fill ten suites of your Luxury Hotel at once.', tier: 2, icon: 'star', scope: 'any', tracker: { kind: 'fact', fact: 'suites', op: '>=', v: 10 } },
   { id: 'summer-share', title: 'Summer share', description: 'Earn a quarter of a full year\'s income in summer.', tier: 3, icon: 'sun', scope: 'career', tracker: { kind: 'fact', fact: 'summerShare', op: '>=', v: 25 } },
   // ---- tier 3: rare

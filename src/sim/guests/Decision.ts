@@ -1,3 +1,5 @@
+import { PHOTO } from '../../config/photographers';
+import { lightAt, NO_PHOTO_DAY, type PhotoDay } from './PhotoLight';
 import { BUILDINGS } from '../../config/buildings';
 import { LIFTS } from '../../config/lifts';
 import { Layer } from '../../world/Networks';
@@ -21,7 +23,7 @@ export const Act = { None: 0, ToBuilding: 1, ToLift: 2, Queue: 3, Ride: 4, SkiDo
 /** Activity preference (GuestStore.pref). */
 export const Pref = { Ski: 0, Hike: 1, Bike: 2 } as const;
 
-export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike' | 'relief';
+export type IntentKind = 'eat' | 'rest' | 'ski' | 'lesson' | 'activity' | 'shop' | 'home' | 'hike' | 'bike' | 'relief' | 'photo';
 
 export const FOOD = new Set(['baseLodge', 'lodge', 'cafe', 'mountainHut', 'heatedTerrace', 'smallHotel', 'pizzeria']);
 /** Quick-service kiosks (Phase 6 Task 28, docs/coffee-stand.md): a cup and a bite on the way, never the real meal. Not in FOOD: they only compete as a nearby snack (see `SNACK`). */
@@ -131,6 +133,10 @@ export class Decider {
   huts: WorldBuilding[] = [];
   /** Buildings with `def.viewpoint` (Phase 6 Task 6): hiker goals with a view score. */
   viewSites: ViewpointSite[] = [];
+  /** The viewpoint buildings themselves (photographers walk to them; same order as `viewSites`). */
+  viewB: WorldBuilding[] = [];
+  /** Today's light for photographers (set by GuestSim each tick; docs/photographers.md). */
+  photoDay: PhotoDay = NO_PHOTO_DAY;
   /** Extra viewpoint sites that are not buildings (suspension bridges, Phase 6 Task 46); ids are negative. Wired by createSim. */
   bridgeViews: (() => ViewpointSite[]) | null = null;
   rest: WorldBuilding[] = [];
@@ -203,14 +209,14 @@ export class Decider {
   reset(): void { this.goals.reset(); this.descent.clear(); this.descentEpoch = -1; this.scanEpoch = -1; this.lifts = []; this.hikeTiles = []; this.mtbTiles = []; this.skiOpenTiles = 0; }
 
   refresh(buildings: Iterable<WorldBuilding>): void {
-    this.food = []; this.snacks = []; this.stops = []; this.bars = []; this.huts = []; this.viewSites = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
+    this.food = []; this.snacks = []; this.stops = []; this.bars = []; this.huts = []; this.viewSites = []; this.viewB = []; this.rest = []; this.shop = []; this.activity = []; this.other = []; this.lessons = []; this.toilets = [];
     for (const b of buildings) {
       if (!b.active) continue;
       if (this.port && !this.port.accepts(b.id)) continue;
       if (LESSON.has(b.type)) this.lessons.push(b);
       if (RELIEF.has(b.type)) { this.toilets.push(b); continue; } // never a wandering target
       if (b.type === 'mountainHut') this.huts.push(b); // trek goals do not depend on serving hours
-      const vp = BUILDINGS[b.type]?.viewpoint; if (vp) this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); // viewpoint buildings (config-driven)
+      const vp = BUILDINGS[b.type]?.viewpoint; if (vp) { this.viewSites.push({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, spec: vp }); this.viewB.push(b); } // viewpoint buildings (config-driven)
       const serving = this.port?.serving?.(b.id) ?? true; // venues are only candidates while serving (08:00 - 23:00)
       if (FOOD.has(b.type) && serving) this.food.push(b);
       if (SLOPE_STOPS.has(b.type)) { if (serving) this.stops.push(b); continue; } // never a wandering target
@@ -397,6 +403,27 @@ export class Decider {
     return { kind: 'relief', building: best!, score: 1.4 + 2.5 * (s.urge[i]! - NEEDS.urgeSeek) - 0.02 * Math.sqrt(bd) };
   }
 
+  /**
+   * Photographer (docs/photographers.md): inside a usable light window with a session still open (`eve` bit), walk to the best viewpoint by view score x light - distance.
+   * null = nothing worth the walk (no light, session done, no viewpoint with a view): the guest carries on as a plain solo guest.
+   */
+  private choosePhoto(s: GuestStore, i: number, rng: { next(): number }, hour: number): Intent | null {
+    let L = lightAt(this.photoDay, hour + PHOTO.walkLead);
+    if (L.q <= 0) L = lightAt(this.photoDay, hour); // set out early enough to arrive inside the window
+    if (L.q < PHOTO.minLight || (s.eve[i]! & L.bit) || !this.viewB.length) return null;
+    const infos = this.goals.viewpoints.all;
+    let best: WorldBuilding | undefined, bs = -Infinity;
+    for (const b of this.viewB) {
+      const v = infos.find((q) => q.id === b.id);
+      if (!v || v.score < PHOTO.minView) continue;
+      const sc = v.score * (v.spec.weight ?? 1) * (0.5 + 0.5 * L.q) - PHOTO.distPenalty * Math.sqrt(dist2(b, s.x[i]!, s.y[i]!)) + rng.next() * 0.05;
+      if (sc > bs || (sc === bs && best && b.id < best.id)) { bs = sc; best = b; }
+    }
+    if (!best) return null;
+    for (const [tile, id] of this.goals.viewTiles) if (id === best.id) return { kind: 'hike', tile, score: 9 }; // a snow-free trail leads to it: the compressed-time hike (Excursion), the session at the goal
+    return { kind: 'photo', building: best, score: 9 }; // otherwise only a footpath beside it: walk up to the building
+  }
+
   choose(s: GuestStore, i: number, rng: { next(): number; chance(p: number): boolean; pick<T>(a: readonly T[]): T }, hour: number): Intent {
     const skill = Math.min(s.skill[i]!, this.skillCap(i)), pref = prefFor(s.id[i]!, s.type[i]!), hunger = s.hunger[i]!, fatigue = s.fatigue[i]!;
     const x = s.x[i]!, y = s.y[i]!;
@@ -404,6 +431,7 @@ export class Decider {
     const out: Intent[] = [];
     const noise = (): number => rng.next() * 0.25;
     const rel = this.relief(s, i);
+    if (s.type[i]! >= 6 && extraDef(s.type[i]!)?.photographer && !(rel && rel.score > 3)) { const ph = this.choosePhoto(s, i, rng, hour); if (ph) return ph; } // the light comes first
     if (hour >= this.eveningStart && (s.overnight[i] || isApres(s.id[i]!, s.type[i]!, this.day))) { const ev = this.chooseEvening(s, i, rng, hour); return rel && rel.score > ev.score ? rel : ev; }
     if (rel) out.push(rel);
 

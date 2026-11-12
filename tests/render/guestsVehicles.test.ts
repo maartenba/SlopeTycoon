@@ -125,7 +125,7 @@ describe('figure geometry budget', () => {
       expect(geo.getAttribute('aTag').itemSize).toBe(4);
       expect(geo.getAttribute('normal').count).toBe(geo.getAttribute('position').count);
       let worst = 0;
-      for (let st = 0; st <= HairStyle.SunHat; st++) worst = Math.max(worst, visibleTriangles(geo, st, true));
+      for (let st = 0; st <= HairStyle.Beret; st++) worst = Math.max(worst, visibleTriangles(geo, st, true));
       const best = visibleTriangles(geo, HairStyle.Bald, false);
       expect(best).toBeGreaterThanOrEqual(90);
       expect(worst).toBeLessThanOrEqual(g === Gear.Bike ? 340 : 260);

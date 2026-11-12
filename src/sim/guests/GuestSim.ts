@@ -2,7 +2,7 @@ import type { GameState } from '../../core/GameState';
 import type { GameBus } from '../../core/events';
 import { BUILDINGS } from '../../config/buildings';
 import { DAYS_PER_YEAR, EXPLORE, GUEST_CAP, LIFT_PATIENCE_TICKS } from '../../config/balance';
-import { hourOfDay } from '../Clock';
+import { hourOfDay, seasonOf } from '../Clock';
 import { dayGuestLeaveHour } from '../Daylight';
 import { apresEnd, eveningStart, isApres, sleepHour } from '../Evening';
 import { Exploration } from './Exploration';
@@ -27,6 +27,8 @@ import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
 import { Layer } from '../../world/Networks';
 import { VIEWPOINT } from '../../config/viewpoints';
+import { PHOTO } from '../../config/photographers';
+import { lightAt, photoDay, type PhotoDay } from './PhotoLight';
 import type { SafetyGuestPort } from '../ops/Incidents';
 import { Families, buildingKidsProvider, type KidsAreaProvider } from './Families';
 
@@ -111,12 +113,13 @@ export class GuestSim {
       groundAt: (x, y) => world.groundAt(x, y),
       moveSlot: (slot, x, y, z) => this.moveSlot(slot, x, y, z),
       hour: () => this.hour,
-      leaveHour: () => this.decider.leaveHour,
+      leaveHour: (slot) => (slot !== undefined && this.isPhotog(slot) && this.curPhotoLeave > this.decider.leaveHour ? this.decider.photoDay.sunset + PHOTO.planUntil : this.decider.leaveHour),
       avoid: (t) => this.decider.avoidTile(t),
       reachedGoal: (slot, kind) => { const s = this.store; this.attractions?.trail(slot, kind === 1 ? 'bike' : 'hike', this.tick); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); },
       foodNear: (x, y) => { const r2 = EXC.foodRadius * EXC.foodRadius; for (const b of this.byId.values()) if ((FOOD.has(b.type) ? b.type !== 'baseLodge' : b.type === 'alpineFarm' || SNACKS.has(b.type)) && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= r2) return true; return false; },
-      viewDwellH: (goal) => this.decider.viewDwell(goal),
-      viewed: (slot, goal) => { const v = this.decider.viewAt(goal); if (!v) return; const s = this.store; s.happiness[slot] = Math.min(1, s.happiness[slot]! + VIEWPOINT.happiness * v.score); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); this.decider.goals.viewpoints.record(v.id); },
+      packsLunch: (slot) => this.isPhotog(slot),
+      viewDwellH: (goal, slot) => (slot !== undefined && this.isPhotog(slot) && this.decider.viewAt(goal) ? this.photoDwellH(slot, goal) : this.decider.viewDwell(goal)),
+      viewed: (slot, goal) => { const v = this.decider.viewAt(goal); if (!v) return; if (this.isPhotog(slot)) this.photoShoot(slot, v.id, v.score); const s = this.store; s.happiness[slot] = Math.min(1, s.happiness[slot]! + VIEWPOINT.happiness * v.score); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); this.decider.goals.viewpoints.record(v.id); },
       lunch: (slot) => {
         const s = this.store;
         // a coffee stand is the only food in reach: a cup and a bite (Phase 6 Task 28), not a lunch
@@ -407,6 +410,9 @@ export class GuestSim {
     env.comfort = this.comfortNeed; this.decider.comfort = this.comfortNeed;
     this.decider.day = state.date.day; this.decider.eveningStart = eveningStart(state.date.day);
     const venuesOpen = this.decider.food.length + this.decider.bars.length > 0;
+    this.decider.photoDay = this.photoToday(state, w.weather().kind);
+    const photoLeave = this.decider.photoDay.sunset + PHOTO.photoStay; // photographers stay for the evening light (when there is some)
+    this.curPhotoLeave = photoLeave;
     this.decider.leaveHour = leaveHour; this.decider.stormy = w.weather().kind === 'storm';
 
     for (let i = 0; i < s.limit; i++) {
@@ -432,8 +438,9 @@ export class GuestSim {
           if (absDay > tr.arriveDay && hour >= 6.5) this.trekWake(i, tr);
           continue;
         }
-        if (!s.overnight[i] && hour >= leaveHour && this.exc.has(i) && hour < leaveHour + 2) { if (this.exc.map.get(i)!.e < this.exc.map.get(i)!.tOut) this.exc.turnBack(i); }
-        else if (!s.overnight[i] && hour >= leaveHour) {
+        const lh = this.photoLeaves(i, leaveHour, photoLeave);
+        if (!s.overnight[i] && hour >= lh && this.exc.has(i) && hour < lh + 2) { if (!this.isPhotog(i) && this.exc.map.get(i)!.e < this.exc.map.get(i)!.tOut) this.exc.turnBack(i); } // a photographer on the way out keeps walking: the light is the point
+        else if (!s.overnight[i] && hour >= lh) {
           // après-ski share of day guests stays for a drink until ~19:00-20:00 (winter) when a venue is serving
           if (!(venuesOpen && hour < apresEnd(s.id[i]!, state.date.day) && isApres(s.id[i]!, s.type[i]!, state.date.day))) { this.startLeaving(i, Leave.Closing); st = GState.Leaving; }
         }
@@ -443,7 +450,7 @@ export class GuestSim {
           else if (!night && st === GState.Sleeping) { s.state[i] = st = GState.Idle; s.timer[i] = 0; }
         }
       }
-      if (hour < 12 && s.eve[i]) s.eve[i] = 0;
+      if (hour < 12 && s.eve[i] && !this.isPhotog(i)) s.eve[i] = 0; else if (hour < 4 && s.eve[i]) s.eve[i] = 0; // photographers keep their two session bits until the small hours
       if (st === GState.Sleeping || st === GState.Riding || st === GState.Queueing || st === GState.Using) continue;
 
       if (st === GState.Leaving) {
@@ -465,7 +472,13 @@ export class GuestSim {
   }
 
   /** Hikers and bikers do not linger after a stop (the excursion model makes a trail goal worth the day). */
-  private eager(i: number): boolean { const p = this.store.pref[i]; return this.decider.useGoals && (p === 1 || p === 2) && this.decider.hikeTiles.length > 0; }
+  private eager(i: number): boolean { if (this.isPhotog(i)) return true; const p = this.store.pref[i]; return this.decider.useGoals && (p === 1 || p === 2) && this.decider.hikeTiles.length > 0; }
+
+  /** Day-guest leave hour: a photographer waits for the evening light when today has one (and the sun has not set on a storm). */
+  private photoLeaves(i: number, leaveHour: number, photoLeave: number): number {
+    if (photoLeave <= leaveHour || !this.isPhotog(i)) return leaveHour;
+    return lightAt(this.decider.photoDay, this.decider.photoDay.sunset - 0.5).q > 0 ? photoLeave : leaveHour;
+  }
 
   private after(i: number): void {
     const s = this.store;
@@ -543,7 +556,7 @@ export class GuestSim {
     const s = this.store;
     if (s.act[i] === Act.None) { this.decide(i, rng); return; }
     if (s.act[i] === Act.Excursion) { this.exc.step(i); return; }
-    if (this.tick - s.actTick[i]! > ACT_TIMEOUT) { this.abort(i, 5); return; }
+    if (this.tick - s.actTick[i]! > ACT_TIMEOUT) { if (s.act[i] === Act.ToBuilding && this.isPhotog(i)) this.photoGiveUp(i); this.abort(i, 5); return; }
     const goal = this.goalFor(i);
     if (!goal) { this.abort(i); return; }
     const res = this.movement.moveTo(s, i, goal);
@@ -560,6 +573,7 @@ export class GuestSim {
           this.startLeaving(i, Leave.Satisfied);
           return;
         }
+        if (s.act[i] === Act.ToBuilding && this.isPhotog(i)) { this.photoGiveUp(i); }
         if (s.act[i] === Act.ToTrail) this.decider.goals.markBad(Math.floor(s.goalY[i]!) * (this.graph()?.size ?? 1) + Math.floor(s.goalX[i]!));
         this.abort(i, 20);
     }
@@ -580,6 +594,54 @@ export class GuestSim {
     this.nm?.reset(i);
   }
   coffeeStops = 0;
+
+  /** World seed of the photographers' light roll (createSim sets it; 0 in bare tests) and the observer hook a finished photo session reports to (PhotoBuzz). */
+  photoSeed = 0;
+  onPhotoSession?: (info: { id: number; q: number; spot: number; shots: number; day: number }) => void;
+  private photoCache: { key: number; kind: string; day: PhotoDay } | null = null;
+  private photoToday(state: GameState, kind: Parameters<typeof photoDay>[4]): PhotoDay {
+    const key = state.date.year * DAYS_PER_YEAR + state.date.day;
+    const c = this.photoCache;
+    if (c && c.key === key && c.kind === kind) return c.day;
+    const day = photoDay(this.photoSeed, key, state.date.day, seasonOf(state.date), kind);
+    this.photoCache = { key, kind, day };
+    return day;
+  }
+  private isPhotog(i: number): boolean { const t = this.store.type[i]!; return t >= CORE_TYPE_COUNT && !!extraDef(t)?.photographer; }
+  /** A photographer who cannot reach a viewpoint (or gave up) skips this light window instead of trying again every few ticks. */
+  private photoGiveUp(i: number): void { const L = lightAt(this.decider.photoDay, this.hour); if (L.q > 0) this.store.eve[i] = this.store.eve[i]! | L.bit; }
+  private curPhotoLeave = 0;
+  /** Stop at a photo spot, in hours (a session of PHOTO.sessionTicks game ticks, longer for a better view). */
+  private photoDwellH(i: number, goal: number): number {
+    const v = this.decider.viewAt(goal); const L = lightAt(this.decider.photoDay, this.hour);
+    const q = v ? Math.min(1, v.score * (0.4 + 0.6 * Math.max(L.q, 0.3)) * 1.6) : 0;
+    void i;
+    return (PHOTO.sessionTicks[0] + (PHOTO.sessionTicks[1] - PHOTO.sessionTicks[0]) * q) * 0.1; // 0.1 h per tick
+  }
+  /** The shots of a session at viewpoint `spot` (score `score`): bits, happiness, the event, the buzz. false = no usable light right now (an ordinary visit). */
+  private photoShoot(i: number, spot: number, score: number): boolean {
+    const s = this.store;
+    const L = lightAt(this.decider.photoDay, this.hour);
+    if (L.q <= 0 || (s.eve[i]! & L.bit)) { this.photoGiveUp(i); return false; } // late for the light (or this window is done): an ordinary visit
+    const q = Math.min(1, score * (0.4 + 0.6 * L.q) * 1.6);
+    s.eve[i] = s.eve[i]! | L.bit;
+    s.happiness[i] = Math.min(1, s.happiness[i]! + PHOTO.happiness * q);
+    const shots = PHOTO.shotsBase + Math.round(q * PHOTO.shotsMore);
+    this.bus?.emit('photo:taken', { id: s.id[i]!, x: s.x[i]!, y: s.y[i]!, spot, q: L.q, shots });
+    this.onPhotoSession?.({ id: s.id[i]!, q: L.q, spot, shots, day: this.absDay });
+    return true;
+  }
+  /** Arrived at a viewpoint on foot (no excursion): the session in place. */
+  private photoSession(i: number, b: WorldBuilding): boolean {
+    const s = this.store;
+    const v = this.decider.goals.viewpoints.all.find((q) => q.id === b.id);
+    if (!v || !this.photoShoot(i, b.id, v.score * (v.spec.weight ?? 1))) return false;
+    s.visits[i] = Math.min(255, s.visits[i]! + 1);
+    s.state[i] = GState.Idle; s.act[i] = Act.None; s.target[i] = 0;
+    s.timer[i] = Math.round(this.photoDwellH(i, v.tile) * 10);
+    return true;
+  }
+
 
   /** Mid-run Schirmbar stop (docs/schirmbar.md): a skier within SCHIRMBAR.passRadius of an open bar takes a drink on 1 pass in SCHIRMBAR.oneIn, then carries on (the next decision). Stateless, no RNG. */
   private slopeStop(i: number): void {
@@ -611,7 +673,7 @@ export class GuestSim {
     if (rest.length < EXC.minTiles) return;
     const bike = s.moveMode[i] === NavMode.Bike;
     const tk = this.trek.get(s.id[i]!), isTrek = !!tk && tk.day === 0;
-    const oneWay = isTrek || (bike && g.tileAltitude(rest[rest.length - 1]!) < g.tileAltitude(rest[0]!) - 0.2);
+    const oneWay = isTrek || this.isPhotog(i) || (bike && g.tileAltitude(rest[rest.length - 1]!) < g.tileAltitude(rest[0]!) - 0.2);
     if (this.exc.begin(i, rest, bike ? 1 : 0, this.world.networkVersion(), n, oneWay, isTrek, isTrek)) {
       if (isTrek) {
         if (!this.attractions?.reserveBed?.(s.id[i]!, tk!.hut)) { this.exc.drop(i); this.trek.delete(s.id[i]!); this.abort(i, 12); return; }
@@ -670,6 +732,7 @@ export class GuestSim {
         const b = this.byId.get(s.target[i]!);
         const res = b && this.attractions ? this.attractions.arrive(i, b, this.tick) : 'unhandled';
         if (res === 'using') return;
+        if (b && res === 'unhandled' && this.isPhotog(i) && BUILDINGS[b.type]?.viewpoint && this.photoSession(i, b)) return;
         if (b && res === 'unhandled') this.visit(i, b);
         s.state[i] = GState.Idle; s.timer[i] = this.eager(i) ? rng.int(3, 10) : rng.int(EXPLORE.visitPause[0], EXPLORE.visitPause[1]); s.act[i] = Act.None; s.target[i] = 0;
         return;
@@ -692,6 +755,7 @@ export class GuestSim {
         this.attractions?.trail(i, s.moveMode[i] === NavMode.Bike ? 'bike' : 'hike', this.tick);
         s.visits[i] = Math.min(255, s.visits[i]! + 1);
         s.state[i] = GState.Idle; s.timer[i] = rng.int(20, 50); s.act[i] = Act.None;
+        if (this.isPhotog(i)) { const vi = this.decider.viewAt(Math.floor(s.goalY[i]!) * (this.graph()?.size ?? 1) + Math.floor(s.goalX[i]!)); if (vi && this.photoShoot(i, vi.id, vi.score)) s.timer[i] = Math.round(this.photoDwellH(i, 0) * 10) || 6; } // a short walk to the spot (no excursion): the session in place
         return;
       }
       default: this.abort(i, 10);
@@ -754,15 +818,15 @@ export class GuestSim {
   }
 
   private start(i: number, it: Intent): void {
-    const s = this.store;
+    const s = this.store; 
     s.actTick[i] = this.tick; s.target[i] = 0; s.rideRun[i] = 0;
     this.exc.drop(i);
     this.nm?.reset(i);
     switch (it.kind) {
-      case 'eat': case 'rest': case 'shop': case 'activity': case 'lesson': case 'relief':
+      case 'eat': case 'rest': case 'shop': case 'activity': case 'lesson': case 'relief': case 'photo':
         if (it.building && (it.kind === 'eat' || it.kind === 'activity') && this.hour >= this.decider.eveningStart && s.eve[i]! < 255 && (s.overnight[i] || isApres(s.id[i]!, s.type[i]!, this.decider.day))) s.eve[i] = s.eve[i]! + 1;
         if (!it.building) { s.state[i] = GState.Idle; s.timer[i] = 10; return; }
-        s.target[i] = it.building.id; s.act[i] = Act.ToBuilding; s.state[i] = GState.Walking; s.moveMode[i] = this.contextMode(i);
+        s.target[i] = it.building.id; s.act[i] = Act.ToBuilding; s.state[i] = GState.Walking; s.moveMode[i] = it.kind === 'photo' ? NavMode.Hike : this.contextMode(i); // a photographer takes a footpath or a snow-free trail to the spot
         return;
       case 'ski':
         if (!it.lift) { s.state[i] = GState.Idle; s.timer[i] = 10; return; }

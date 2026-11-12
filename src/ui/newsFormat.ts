@@ -75,6 +75,7 @@ const INCIDENT_KIND_TEXT: Record<string, string> = { buried: 'guest trapped in t
 export const NEWS_FORMATTERS: Table = {
   'guest:arrived': (): NewsItem => ({ text: 'Guest arrived', severity: 'info', tier: 'trivial', icon: '🎿', key: 'guest:arrived', category: 'milestone', counter: 'arrived' }), // rows only via MilestoneTracker
   'guest:left': () => ({ text: 'Guest left', severity: 'info', tier: 'trivial', icon: '🚶', key: 'guest:left', category: 'milestone', counter: 'left' }),
+  'photo:taken': 'ignored', 'photo:golden': 'ignored', // the first session is a milestone (PhotoBuzz); the achievement toast covers Golden Hour
   'guest:review': 'ignored', // shown in the News 'Reviews' tab (StNews), not in the main feed
   'story:resolved': (e) => ({ text: e.text, severity: e.outcome === 'granted' ? 'good' : 'info', tier: 'info', icon: '🎿', key: `story:${e.guestId}`, category: 'milestone', focus: xy(e.x, e.y) }),
   'building:placed': 'ignored', 'building:removed': 'ignored', 'path:drawn': 'ignored', 'piste:painted': 'ignored', 'lift:built': 'ignored',
@@ -188,7 +189,7 @@ export function formatEvent<K extends GameEventName>(name: K, payload: GameEvent
 
 /** Events whose message carries no single place to look at (explicit, enforced by tests; everything else must give a `focus`). */
 export const NON_SPATIAL_EVENTS: ReadonlySet<GameEventName> = new Set<GameEventName>([
-  'guest:arrived', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened', 'piste:opened', 'backcountry:opened', 'backcountry:closed',
+  'guest:arrived', 'photo:taken', 'photo:golden', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened', 'piste:opened', 'backcountry:opened', 'backcountry:closed',
   'weather:changed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'ops:grooming', 'incident:resolved', 'incident:escalated',
   'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'ops:schedule', 'ops:serviceSoon', 'lift:serviceStarted', 'finance:monthClosed', 'rating:changed',
   'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished',

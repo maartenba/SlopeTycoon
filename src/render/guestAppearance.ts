@@ -23,8 +23,8 @@ export function setGuestDistrict(seed: number | null): void {
   const idx = Array.from({ length: 16 }, (_, i) => i).sort((a, b) => mix32(seed * 7 + a, 99) - mix32(seed * 7 + b, 99));
   DISTRICT_TOPS = idx.slice(0, 5);
 }
-export const HairStyle = { Bald: 0, Short: 1, Long: 2, Ponytail: 3, Bun: 4, Beanie: 5, Helmet: 6, Cap: 7, SunHat: 8 } as const;
-export const HAIR_STYLE_NAMES = ['bald', 'short hair', 'long hair', 'a ponytail', 'a bun', 'a beanie', 'a helmet and goggles', 'a cap', 'a wide-brim hat'] as const;
+export const HairStyle = { Bald: 0, Short: 1, Long: 2, Ponytail: 3, Bun: 4, Beanie: 5, Helmet: 6, Cap: 7, SunHat: 8, Beret: 9 } as const;
+export const HAIR_STYLE_NAMES = ['bald', 'short hair', 'long hair', 'a ponytail', 'a bun', 'a beanie', 'a helmet and goggles', 'a cap', 'a wide-brim hat', 'a beret and a camera'] as const;
 export const Age = { Child: 0, Teen: 1, Adult: 2, Senior: 3 } as const;
 export const AGE_NAMES = ['child', 'teen', 'adult', 'senior'] as const;
 export const AGE_SCALE = [0.65, 0.88, 1, 0.97] as const;

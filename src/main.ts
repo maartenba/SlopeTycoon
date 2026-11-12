@@ -1253,6 +1253,14 @@ renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
 const crossingsView = new RailCrossingsView(grid, sim.crossings);
 renderer.scene.add(crossingsView.group);
 crossingsView.onBell = (x, z): void => { const walk = renderer.viewMode.mode === 'walk', lx = walk ? renderer.rig.pose.x : renderer.controls.target.x, lz = walk ? renderer.rig.pose.z : renderer.controls.target.z, zoom = walk ? AMB.walkZoom : renderer.controls.camera.top - renderer.controls.camera.bottom, g = crossingBellLevel(Math.hypot(lx - x, lz - z), zoom); if (g > 0.04) audioRef?.sfx.play('crossingBell', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (x - lx) / 30)) }); }; // PROX.crossing: only a bell near the looked-at spot, zoomed in
+// Photographers (docs/photographers.md): a quiet shutter click, only when the camera is close to the spot; the loud end of the range is the Photo mode click's level, never above it (the Sfx limiter keeps it to a few a second).
+sim.bus.on('photo:taken', (e) => {
+  if (DEMO) return;
+  const walk = renderer.viewMode.mode === 'walk', lx = walk ? renderer.rig.pose.x : renderer.controls.target.x, lz = walk ? renderer.rig.pose.z : renderer.controls.target.z;
+  const span = walk ? AMB.walkZoom : renderer.controls.camera.top - renderer.controls.camera.bottom, d = Math.hypot(lx - e.x, lz - e.y);
+  const g = Math.max(0, 1 - d / (span * 0.45)) * 0.45;
+  if (g > 0.04) { audioRef?.sfx.play('shutter', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (e.x - lx) / 30)) }); (window as unknown as { __shutters?: number }).__shutters = ((window as unknown as { __shutters?: number }).__shutters ?? 0) + 1; }
+});
 guestRenderer.isKid = (slot) => guestSim.families.isKid(slot);
 guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.target[slot]!)?.type; return ty === 'iceRink' ? 1 : ty === 'beach' ? 2 : 0; };
 {

@@ -13,6 +13,7 @@ import {
   evaluateArrivals, makeCum, tripPlan, VEHICLE_SPEED, VehicleKind, centre, vehiclePose, type ArrivalPoint, type ArrivalReport, type Vehicle,
 } from './Arrivals';
 import { GUEST_TYPE_DEFS, CORE_TYPE_COUNT, CORE_TYPE_NAMES, convertShare, extraDef, extraWeight, segmentIndex } from '../../config/guestTypes';
+import { arrivalLight, arrivalMult, photoDay, type PhotoDay } from './PhotoLight';
 import { GUEST_TYPE_NAMES, GuestType, Mode, Skill, type GuestStore, type GuestTypeName } from './Guest';
 import type { GuestWorld, Pt, ResortStats } from './GuestWorld';
 import type { SpatialHash } from './SpatialHash';
@@ -220,6 +221,18 @@ export class Spawner {
    * arrival is an extra type instead. P(extra i) = w_i / (core total + sum w): season share x weather x mix bias x marketing segment x price, gated by
    * level + required buildings. No eligible type = the core type is returned untouched.
    */
+  /** World seed for the photographers' light roll (set by createSim; 0 in bare tests). */
+  photoSeed = 0;
+  private photoCache: { key: number; kind: string; day: PhotoDay } | null = null;
+  private photoDayFor(state: GameState, season: SeasonId, kind: Parameters<typeof photoDay>[4]): PhotoDay {
+    const key = state.date.year * DAYS_PER_YEAR + state.date.day;
+    const c = this.photoCache;
+    if (c && c.key === key && c.kind === kind) return c.day;
+    const day = photoDay(this.photoSeed, key, state.date.day, season, kind);
+    this.photoCache = { key, kind, day };
+    return day;
+  }
+
   private maybeExtra(state: GameState, season: SeasonId, coreTotal: number, mk: MarketingState, core: number): number {
     const ctx = {
       season, level: this.levelFn(), hasBuilding: (id: string) => this.placed.has(id), weather: this.world.weather().kind,
@@ -230,6 +243,7 @@ export class Spawner {
     for (let j = 0; j < GUEST_TYPE_DEFS.length; j++) {
       const t = CORE_TYPE_COUNT + j, d = GUEST_TYPE_DEFS[j]!, seg = segmentIndex(t);
       let w = extraWeight(d, ctx);
+      if (w > 0 && d.photographer) w *= arrivalMult(arrivalLight(this.photoDayFor(state, season, ctx.weather), hourOfDay(state.date))); // the golden hour / a special sky draws them
       if (w > 0) w *= (this.mixBias?.[t] ?? 1) * (mk.weights[GUEST_TYPE_NAMES[seg]!] ?? 1) * (mk.types?.[d.id] ?? 1) * (this.pricingDemand?.typeWeight(seg) ?? 1);
       ws.push(w); sum += w;
     }
