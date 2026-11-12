@@ -3,6 +3,16 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.3",
+    "date": "2026-11-12",
+    "highlights": [
+      "Photographers are a new kind of guest. They turn up once you have a Viewpoint or a Treehouse, and they like the golden hour and beautiful skies.",
+      "They walk to the best viewpoint, take their pictures and have a hot drink. Good shots bring a small word-of-mouth bonus.",
+      "A new Golden hour trophy and a new tip from Rudi go with them.",
+      "You can hear a quiet camera shutter when you zoom in on one at work."
+    ]
+  },
+  {
     "version": "0.6.2",
     "date": "2026-11-10",
     "highlights": [
@@ -20,18 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "A few small surprises up on the mountain. They are rare, they happen in winter, and no spoilers here.",
       "Two new achievements to find. They stay hidden until you earn them.",
       "A faint new sound now and then, far away across the snow."
-    ]
-  },
-  {
-    "version": "0.6.0",
-    "date": "2026-11-06",
-    "highlights": [
-      "The Schirmbar: a small domed bar you can put right beside a piste or a lift station. Skiers stop for a drink on the way down. It opens in winter and…",
-      "Your resort has a name: pick one in the New Game dialog (or take the suggestion) and rename it any time in Settings. It shows on the Schirmbar…",
-      "New music: the title screen and the game now play a set of songs that fit the season, the time of day and the weather. Next to an open bar the…",
-      "Recorded sounds: footsteps, bird calls, bells, wind, rain, thunder and more are now real recordings mixed with the old sounds. If one is missing…",
-      "Sun shadows on the High setting now fall on buildings, trees and paths, and also work in the ride, photo and walk views.",
-      "Smoother lakes, rivers, rocks and shrubs, rounder cabins and buildings, a steadier title screen camera, and no more shimmer at the foot of lift…"
     ]
   }
 ];

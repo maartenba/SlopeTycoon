@@ -5,9 +5,9 @@ through winter *and* summer. Three.js + TypeScript, no backend, no external asse
 
 [![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/slopetycoon)
 
-**Version 0.6.2** (pre-release)
+**Version 0.6.3** (pre-release)
 
-Status: pre-release (0.6.2). Playtest feedback is welcome.
+Status: pre-release (0.6.3). Playtest feedback is welcome.
 
 ## Features
 

@@ -4,6 +4,17 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-12 (pre-release)
+
+A small update with one new kind of visitor: photographers who come for the light. The economy only moves a little (a small word-of-mouth bonus) and your old saves load as before.
+
+### Highlights
+
+- **Photographers** are a new kind of guest. They turn up once you have a Viewpoint or a Treehouse, and they like the golden hour and beautiful skies.
+- They walk to the best viewpoint, take their pictures and have a hot drink. Good shots bring a small word-of-mouth bonus.
+- A new **Golden hour** trophy and a new tip from Rudi go with them.
+- You can hear a quiet camera shutter when you zoom in on one at work.
+
 ### Changes
 
 - Photographers come for the light: a new guest type that turns up once you have a Viewpoint or a Treehouse, favours the golden hour and beautiful skies, walks to the best viewpoint, takes pictures and has a hot drink. A new Golden hour trophy and a Rudi tip go with them.

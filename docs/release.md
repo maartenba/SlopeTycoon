@@ -1,6 +1,30 @@
 # Release notes and checklist
 
-Current release: **0.6.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.6.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.6.3 (2026-11-12, macOS, Node v22.23.4)
+
+One new guest type: **Photographers** (come for the golden hour and special skies, drawn by a Viewpoint or Treehouse, a small fading word-of-mouth bonus, the Golden hour trophy, a Rudi tip, a quiet shutter; `docs/guest-types.md`). Also test / tooling only: the backcountry sanity keeps spawning until a rare tourer arrives, the `window.__shutters` counter is dev-only, and the 256 heap check now reads the live heap after a forced GC. No save format bump; the photographer buzz is observer state.
+
+**Heap flake finding**: `benchRegression` failed once at 527 / 502 MB (`heapMB < 450`) and passed on rerun. `heapUsed` was read without a GC, after best-of-3 runs, so it counted uncollected garbage. After a forced GC the live heap at 256 is 52-54 MB (3 runs), so the bound is now `< 150` MB on the post-GC reading (stricter than before); 3 repeat runs alone all passed.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa && npm run size` | pass: 471 files passed, 1 skipped; 4930 tests passed, 43 skipped |
+| Balance | `npm run test:balance` | 48 passed (goldens unchanged) |
+| Perf | `npm run test:perf` | 49 tests passed (alone) |
+| Shots | `npm run shot:suite` | 0 errors in all shots |
+| Analytics / Offline | `npm run analytics:e2e`, `npm run offline:splash` | OK |
+| Audio in a real page | `npm run music:e2e`, `npm run menu-music:e2e`, `npm run sfx:e2e` | OK |
+| Sanity | `play`, `phase6`, `summer`, `winter`, `winter:tours`, `backcountry`, `sled`, `m74`, `schirmbar`, `visitor`, `photographer` | all OK (0 console errors) |
+| Touch | `npm run touch:e2e -- --only camera,placement,drawers --viewport phone` | camera 11/11, placement 13/13, drawers 15/15 |
+| Mobile | `npm run mobile:audit` | all acceptance thresholds met |
+| Desktop | `npm run desktop:diff` (before = 67c9518, after = this tree) | SAME on all six screens (0.0000 %) |
+| Flicker | `npm run flicker -- --only 64-winter-day` | rotfine 0.66 (0.6.2: 0.66), zoomfine 0.15, no pops |
+| Size | `npm run size` | 3110.2 kB raw / 1107.5 kB gzip (0.6.2: 1105.0 kB; budget < 2048 kB gzip) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK (62 pages, 6181 references) |
+
+Not verified by agents: how photographers look and sound by hand (SwiftShader only), real GPU fps, a phone in the hand.
 
 ## 0.6.2 (2026-11-10, macOS, Node v22.23.4)
 
