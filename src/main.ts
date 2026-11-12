@@ -21,6 +21,7 @@ import { SnowFlush } from '@/render/SnowFlush';
 import { seasonTerrain, seasonTerrainSim, freezeFromSnowline, seasonWeights } from '@/render/Season';
 import { collectProtectedChunks } from '@/render/ProtectedChunks';
 import { Precipitation } from '@/render/Precipitation';
+import { FallingLeaves } from '@/render/FallingLeaves';
 import { NatureView } from '@/render/NatureView';
 import { PettingZooView } from '@/render/PettingZooView';
 import { VillageDecor } from '@/render/VillageDecor';
@@ -2186,12 +2187,17 @@ const flushSnow = (dt: number): void => {
   if (snowFlush.step(dt) && overlayMode === 'snow') covOverlay.invalidate();
 };
 const precipSize = new THREE.Vector2();
+const fallingLeaves = new FallingLeaves(props, lighting.nightUniform);
+fallingLeaves.group.userData.noShadow = true;
+renderer.scene.add(fallingLeaves.group);
+let leavesForce: number | undefined;
 const updatePrecip = (dt: number): void => {
   const tg = viewCentre();
   const tx = Math.max(0, Math.min(MAP_SIZE, Math.round(tg.x))), ty = Math.max(0, Math.min(MAP_SIZE, Math.round(tg.z)));
   const groundY = grid.getCorner(tx, ty) * HEIGHT_UNIT;
   const w = weather.current;
   const kind = weather.temperatureAt(groundY) <= 0.5 ? 'snow' : 'rain';
+  fallingLeaves.update(dt, { season: seasonYear(game.date), precip: w.intensity > 0 ? kind : 'none', intensity: w.intensity, wind: w.wind, enabled: !DEMO && atmosSettings.level !== 'off', reduced: getReducedMotion(), viewHeight: lodHeightFor(renderer.camera), perspective: !renderer.viewMode.isIso, focus: { x: tg.x, z: tg.z }, bufferHeight: renderer.webgl.getDrawingBufferSize(precipSize).y, quality, ...(leavesForce !== undefined ? { force: leavesForce } : {}) });
   precip.update(dt, tg, { precip: w.intensity > 0 ? kind : 'none', intensity: Math.min(1, 0.1 + w.intensity * 0.8), wind: w.wind, viewHeight: renderer.webgl.getDrawingBufferSize(precipSize).y });
 };
 let lastSimT = -1;
@@ -2354,7 +2360,7 @@ const focusMarker = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.15, 28), new TH
 focusMarker.rotation.x = -Math.PI / 2; focusMarker.renderOrder = 12; focusMarker.visible = false;
 renderer.scene.add(focusMarker);
 // High-tier sun shadows (M8, docs/shadows.md): terrain receives, everything opaque casts except these flat / transient / overlay roots; the feed is read only while High is on.
-for (const o of [terrain.group, water.group, overlays.group, covOverlay.group, pisteHl.mesh, precip.group, smoke.group, snowSpray.group, rapidsSplash.group, springMarkers.group, atmos.mist.group, skyActivity.group, fx.particles.mesh, emotes.mesh, selRing, focusMarker, dropRing.group, sledRunView.group] as THREE.Object3D[]) o.userData.noShadow = true;
+for (const o of [terrain.group, water.group, overlays.group, covOverlay.group, pisteHl.mesh, precip.group, fallingLeaves.group, smoke.group, snowSpray.group, rapidsSplash.group, springMarkers.group, atmos.mist.group, skyActivity.group, fx.particles.mesh, emotes.mesh, selRing, focusMarker, dropRing.group, sledRunView.group] as THREE.Object3D[]) o.userData.noShadow = true;
 for (const o of [guestRenderer.group, vehicleRenderer.group, natureView.group, zooView.group, tourVehicles.group, cragClimbers.group, activity.group, groomingView?.group, incidentView?.group] as Array<THREE.Object3D | undefined>) if (o) o.userData.shadowDynamic = true; // moving casters: the shadow rig draws them every frame on top of the cached static depth (lift carriers flag themselves)
 trees.group.userData.shadowHeavy = true; // the tree layers are the bulk of the triangles: they stop casting when a pass gets too heavy (ShadowRig.heavyTriBudget)
 renderer.shadows.addReceiver(terrain.material);
@@ -3113,10 +3119,11 @@ window.addEventListener('keydown', (e) => {
 
 /** Visual-QA handle: `__slope.atmos.force({fog:1, hour:8, special:1, frost:1, rainbow:1, mist:1, moonPhase:0.5, stars:1, inversion:true})`, `.level('off'|'low'|'high')`, `.state()`. Render-only. */
 const atmosDebug = {
-  force: (o: (AtmosForce & { hour?: number | null; day?: number }) | null): unknown => {
+  force: (o: (AtmosForce & { hour?: number | null; day?: number; leaves?: number }) | null): unknown => {
     if (o && o.hour !== undefined) { timeOverride = o.hour; lastHour = -1; }
     if (o && o.day !== undefined) jumpSimToDay(o.day, o.hour ?? undefined);
-    if (o) { const f: AtmosForce = { ...o }; delete (f as { hour?: unknown }).hour; delete (f as { day?: unknown }).day; atmos.force(f); } else atmos.force(null);
+    leavesForce = o && (o as { leaves?: number }).leaves !== undefined ? (o as { leaves?: number }).leaves : undefined;
+    if (o) { const f: AtmosForce = { ...o }; delete (f as { leaves?: unknown }).leaves; delete (f as { hour?: unknown }).hour; delete (f as { day?: unknown }).day; atmos.force(f); } else atmos.force(null);
     lastHour = -1; return atmos.last;
   },
   level: (l?: AtmosLevel): string => { if (l && (ATMOS_LEVELS as readonly string[]).includes(l)) atmosSettings.set(l); return atmosSettings.level; },
@@ -3124,7 +3131,7 @@ const atmosDebug = {
   suggestions: () => atmos.suggestions(atmosSample(currentHour())),
   settings: atmosSettings,
 };
-(window as unknown as { __slope: unknown }).__slope = { ...(import.meta.env.DEV ? { THREE } : {}), get groomingView() { return groomingView; }, visitorView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { ...(import.meta.env.DEV ? { THREE } : {}), get groomingView() { return groomingView; }, visitorView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, fallingLeaves, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 bootStage('frame');
 hideSplash();
 

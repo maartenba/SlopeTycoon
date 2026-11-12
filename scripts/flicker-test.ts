@@ -8,7 +8,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { launch, startServer } from './lib/harness';
 
-interface Scenario { id: string; size: number; start: 'winter' | 'summer'; hour: number; seed: number; /** Phase 6: `river` digs a river from the best natural spring, `mid` rebuilds the first lift with a mid-station, `summer` adds the M6.3 buildings (campground, petting zoo, viewpoint, treehouse, quad base, crag, tackle hut, pier); the camera then looks at it. */ extra?: 'river' | 'mid' | 'summer' }
+interface Scenario { id: string; size: number; start: 'winter' | 'summer'; hour: number; seed: number; /** Phase 6: `river` digs a river from the best natural spring, `mid` rebuilds the first lift with a mid-station, `autumn` jumps to 1 Nov and forces the falling-leaves layer to its full pool (the worst case of the leaves), `summer` adds the M6.3 buildings (campground, petting zoo, viewpoint, treehouse, quad base, crag, tackle hut, pier); the camera then looks at it. */ extra?: 'river' | 'mid' | 'summer' | 'autumn' | 'autumn0' }
 const SCENARIOS: Scenario[] = [
   { id: '64-winter-day', size: 64, start: 'winter', hour: 12, seed: 61 },
   { id: '64-summer-day', size: 64, start: 'summer', hour: 12, seed: 61 },
@@ -18,6 +18,8 @@ const SCENARIOS: Scenario[] = [
   { id: '256-summer-day', size: 256, start: 'summer', hour: 14, seed: 5 },
   { id: '64-summer-river', size: 64, start: 'summer', hour: 12, seed: 61, extra: 'river' },
   { id: '64-winter-mid', size: 64, start: 'winter', hour: 12, seed: 5, extra: 'mid' },
+  { id: '64-autumn-leaves', size: 64, start: 'summer', hour: 12, seed: 61, extra: 'autumn' },
+  { id: '64-autumn-bare', size: 64, start: 'summer', hour: 12, seed: 61, extra: 'autumn0' }, // the same scene with the leaves forced to 0: the baseline for 64-autumn-leaves
   { id: '64-summer-content', size: 64, start: 'summer', hour: 21, seed: 61, extra: 'summer' },
 ];
 
@@ -183,6 +185,7 @@ try {
       const s = (window as any).__slope;
       s.populateDemo(o.extra === 'mid' ? 'starter' : 'medium'); s.spawnGuests(150, 'skiers');
       let focus: { x: number; y: number } | null = null;
+      if (o.extra === 'autumn' || o.extra === 'autumn0') { s.sim.jumpToDay(105, 12); s.loop.setSpeed(0); s.setHour(12); s.view.setQuality('high'); s.atmos.force({ leaves: o.extra === 'autumn' ? 260 : 0 }); }
       if (o.extra === 'river') { // the best natural spring, dug through the real tool path (level gate bypassed)
         const sim = s.sim; sim.progression.bypass++;
         const sites = sim.rivers.natural as Array<{ x: number; y: number }>;
