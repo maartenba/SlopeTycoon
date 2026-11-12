@@ -1,3 +1,5 @@
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { createSim } from '../../src/game/createSim';
 import { buildStarterResort } from '../../src/game/starterResort';
 import { GUEST_CAP } from '../../src/config/balance';
@@ -62,6 +64,7 @@ export function runBench(o: BenchOpts): BenchResult {
   for (let i = 0; i < (o.warmupTicks ?? 60); i++) step(false);
   const n = Math.round(days * 240);
   for (let i = 0; i < n; i++) step(true);
+  forceGc(); // heapUsed otherwise counts garbage from earlier runs (best-of-3 in benchRegression): GC noise, not a leak
   const mem = process.memoryUsage();
   const save = JSON.stringify(sim.registry.serialize()).length + JSON.stringify(sim.buildings.serialize()).length + JSON.stringify(sim.lifts.serialize()).length;
   return {
@@ -77,3 +80,12 @@ export const fmt = (r: BenchResult): string => {
   const sys = Object.entries(r.systems).sort((a, b) => b[1].avg - a[1].avg).map(([k, v]) => `${k} ${f(v.avg)}/${f(v.p95)}/${f(v.max)}`).join('  ');
   return `size ${r.size}: gen ${r.genMs.toFixed(0)} ms (+starter ${r.starterMs.toFixed(0)}) | guests peak ${r.guestsPeak}/${r.guestCap} (${r.ticksAtCap}/${r.ticksMeasured} ticks at cap) | tick all avg ${f(r.tick.avg)} p95 ${f(r.tick.p95)} max ${f(r.tick.max)} | at-cap avg ${f(r.tickAtCap.avg)} p95 ${f(r.tickAtCap.p95)} max ${f(r.tickAtCap.max)} | heap ${r.heapMB.toFixed(0)} MB rss ${r.rssMB.toFixed(0)} | save ${r.saveKB.toFixed(0)} KB\n   systems avg/p95/max ms: ${sys}`;
 };
+
+/** Full GC before reading heapUsed: uses --expose-gc when present, else turns the flag on at runtime (flaky 256 heap check: 527 / 502 MB of uncollected garbage vs ~300 MB live). */
+function forceGc(): void {
+  try {
+    let g = (globalThis as { gc?: () => void }).gc;
+    if (!g) { v8.setFlagsFromString('--expose-gc'); g = vm.runInNewContext('gc') as () => void; }
+    g(); g();
+  } catch { /* no gc available: measure as before */ }
+}

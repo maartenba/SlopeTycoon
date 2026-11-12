@@ -27,7 +27,7 @@ describe('perf regression (guests at cap)', () => {
       expect(r.tickAtCap.avg).toBeLessThan(budget(TARGETS[size].tickAvg));
       expect(r.tickAtCap.p95).toBeLessThan(budget(TARGETS[size].tickP95));
       if (size === 256) expect(r.genMs).toBeLessThan(budget(1500));
-      expect(r.heapMB).toBeLessThan(450);
+      expect(r.heapMB, "live heap after a forced GC (~52 MB at 256; the old un-collected reading hit 500+ MB as garbage)").toBeLessThan(150);
     }, 120000);
   }
 });

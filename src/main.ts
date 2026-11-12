@@ -1259,7 +1259,7 @@ sim.bus.on('photo:taken', (e) => {
   const walk = renderer.viewMode.mode === 'walk', lx = walk ? renderer.rig.pose.x : renderer.controls.target.x, lz = walk ? renderer.rig.pose.z : renderer.controls.target.z;
   const span = walk ? AMB.walkZoom : renderer.controls.camera.top - renderer.controls.camera.bottom, d = Math.hypot(lx - e.x, lz - e.y);
   const g = Math.max(0, 1 - d / (span * 0.45)) * 0.45;
-  if (g > 0.04) { audioRef?.sfx.play('shutter', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (e.x - lx) / 30)) }); (window as unknown as { __shutters?: number }).__shutters = ((window as unknown as { __shutters?: number }).__shutters ?? 0) + 1; }
+  if (g > 0.04) { audioRef?.sfx.play('shutter', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (e.x - lx) / 30)) }); if (import.meta.env.DEV) (window as unknown as { __shutters?: number }).__shutters = ((window as unknown as { __shutters?: number }).__shutters ?? 0) + 1; } // __shutters: dev-only counter read by photographer:sanity
 });
 guestRenderer.isKid = (slot) => guestSim.families.isKid(slot);
 guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.target[slot]!)?.type; return ty === 'iceRink' ? 1 : ty === 'beach' ? 2 : 0; };
