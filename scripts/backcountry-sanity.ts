@@ -74,8 +74,9 @@ try {
     const arrived: Record<number, number> = {}; sim.bus.on('guest:arrived', (e: any) => { const k = s.guestSim.store.slotOf(e.id); if (k >= 0) { const t = s.guestSim.store.type[k]; arrived[t] = (arrived[t] ?? 0) + 1; } });
     (window as any).__arrived = arrived;
     let onRouteMax = 0, dangerMax = 1;
-    for (let day = 0; day < 8; day++) {
-      if (day < 4) { s.spawnGuests(120, 'mixed'); s.spawnGuests(80, 'skiers'); }
+    // Tourers are a rare conversion (0.6.1 seed 5 drew 1 in ~1000 arrivals, 0.6.2 drew 0: random drift, not a regression), so keep going up to 16 days until one has arrived.
+    for (let day = 0; day < 16 && (day < 8 || (arrived[11] ?? 0) === 0); day++) {
+      if (day < 4 || day >= 8) { s.spawnGuests(120, 'mixed'); s.spawnGuests(80, 'skiers'); }
       for (let q = 0; q < 24; q++) { (window as any).__adv(10); const t = (window as any).__tourers(); onRouteMax = Math.max(onRouteMax, t.onRoute); dangerMax = Math.max(dangerMax, (window as any).__route().danger); }
     }
     return { arrived: { ...arrived }, onRouteMax, dangerMax, route: (window as any).__route(), boarders: arrived[10] ?? 0, tourers: arrived[11] ?? 0 };
