@@ -32,6 +32,7 @@ After dark a clear sky has stars and a moon. The moon goes through its phases ov
 - **Cloud shadows** drift slowly over the slopes on partly cloudy days.
 - **Dawn mist** hangs low over lakes, ponds and rivers in the early morning (High only).
 - **Frost** sparkles on the snow on cold clear mornings (High only).
+- In autumn, **leaves fall** from the larches and the broadleaf trees near where you are looking, and fewer fall in rain or once the snow arrives (Low and High; with reduced motion they lie still on the ground).
 - A **rainbow** can appear in the first clear spell after rain. It is rare, around one or two days in a hundred (High only).
 
 {{fig:atmos-lake-mist}}
