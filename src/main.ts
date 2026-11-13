@@ -1250,7 +1250,6 @@ const apresNotesBars = (): BarSource[] => {
   }
   return apresBarBuf;
 };
-const guestRenderer = new GuestRenderer(guestSim.store);
 // Summer farm vehicles (docs/farm-work.md): tractors + hay trailers work the pastures around every Alpine Farm (Jun-Sep). Render-only, nothing saved, no sim Rng; instanced layers, hidden unless the camera is close.
 const farmLocal = new THREE.Vector3();
 const farmSources = (): FarmSource[] => {
@@ -1267,6 +1266,7 @@ const farmSources = (): FarmSource[] => {
 const farmWork = new FarmWorkView((x, z) => surfaceHeight(grid, x, z), farmSources, () => buildWorkWorld(grid, buildings.all(), props), SEED, lighting.nightUniform);
 renderer.scene.add(farmWork.group, farmWork.fx);
 farmWork.group.userData.shadowDynamic = true; farmWork.fx.userData.noShadow = true;
+const guestRenderer = new GuestRenderer(guestSim.store);
 guestRenderer.legacyBoarderBelow = () => guestSim.spawner.legacyBoarderBelow;
 const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => { const g = heightAt(grid, x, y), d = sim.networks.deckY(x, y); return d !== null && d > g ? d : g; }); // cars cross road bridges on the deck
 renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
@@ -1303,8 +1303,8 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     cragClimbers.far = activity.far; cragClimbers.update(game.date.tick + a);
     skyActivity.far = activity.far; skyActivity.update(game.date.tick + a);
     { const tg = viewCentre(); apresNotes.update(dt, lodHeightFor(cam), apresNotesBars(), getReducedMotion(), notesForQuality(QUALITY_PRESETS[quality].particles), { x: tg.x, z: tg.z }, quality !== 'low'); }
-    audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
     { const tg = viewCentre(); farmWork.update(dt, { day: game.date.day, hour: currentHour(), weather: weather.current.kind, cap: DEMO ? 0 : tractorCap(quality, atmosSettings.level), reduced: getReducedMotion(), fast: ff.active || SPEED_MULTIPLIERS[loop.speed]! >= 10, viewHeight: lodHeightFor(cam), focus: { x: tg.x, z: tg.z }, exhaust: quality !== 'low' }); }
+    audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
   };
 }
 // Feedback (M5.1): restrained +$ popups / build puffs / rare confetti (src/render/fx). Render-only: reads the bus, never touches the sim.
@@ -1420,8 +1420,8 @@ try {
       concerts: () => festivalDressing.layouts.filter((l) => l.stage).map((l) => ({ x: l.stage!.x, y: l.stage!.z })),
       carnivals: () => festivalDressing.layouts.filter((l) => l.festival === 'carnival').map((l) => ({ x: l.anchor.x, y: l.anchor.y })),
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad' || c.kind === 'scooter')),
-      sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
       tractors: () => (quality === 'low' || DEMO ? [] : farmWork.working()),
+      sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
       cannons: () => (opsRef?.snowmaking.runningIds() ?? []).map((id) => buildings.get(id)).filter((b): b is NonNullable<typeof b> => !!b).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
       apresBars: () => buildings.all().filter((b) => (b.type === 'apresBar' || b.type === 'schirmbar') && b.active).filter((b) => { const a = attractions.get(b.id); return !!a && attractions.servingNow(a) && a.open; }).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
@@ -3161,13 +3161,13 @@ const atmosDebug = {
   settings: atmosSettings,
 };
 (window as unknown as { __slope: unknown }).__slope = { ...(import.meta.env.DEV ? { THREE } : {}), get groomingView() { return groomingView; }, visitorView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, fallingLeaves, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+// Farm vehicles QA hook (docs/farm-work.md, docs/promo-video.md): __slope.farmWork.force({ day, hour, weather, at }) puts the tractors mid-trip for a shot (at: "mowA" | "mowB" | "home" | "gate" | "unload" | 0..1, one per tractor as an array); force(null) releases.
+Object.assign((window as unknown as { __slope: object }).__slope, { farmWork: { view: farmWork, force: (o: Parameters<typeof farmWork.force>[0]) => farmWork.force(o), snapshot: () => farmWork.snapshot(), stats: () => ({ ...farmWork.stats }), working: () => farmWork.working() } });
 bootStage('frame');
 hideSplash();
 
 /** QA / promo capture only (docs/promo-video.md, no shipping UI): `__slope.frameStep(dt, n)` pauses the rAF loop, owns a virtual clock (`performance.now()` returns it while stepping)
  * and draws n frames of exactly `dt` seconds; the sim runs through the real TickLoop at `rate` x speed 1 (`frameStepRate`). `frameStepEnd()` resumes the real loop. Audio is untouched.
-// Farm vehicles QA hook (docs/farm-work.md, docs/promo-video.md): __slope.farmWork.force({ day, hour, weather, at }) puts the tractors mid-trip for a shot (at: "mowA" | "mowB" | "home" | "gate" | "unload" | 0..1, one per tractor as an array); force(null) releases.
-Object.assign((window as unknown as { __slope: object }).__slope, { farmWork: { view: farmWork, force: (o: Parameters<typeof farmWork.force>[0]) => farmWork.force(o), snapshot: () => farmWork.snapshot(), stats: () => ({ ...farmWork.stats }), working: () => farmWork.working() } });
  * `__slope.frameCam = (t, dt) => void` (optional) runs first in every step: the camera path as a pure function of the virtual time. */
 {
   const clock = new FrameClock();
