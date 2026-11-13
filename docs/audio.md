@@ -292,6 +292,7 @@ Rules: **noise beds only** (no oscillator tones, no resonant filters: every Q <=
 | lift | brown rumble (low-pass 220) + soft 650 Hz band, slight 0.8 Hz drift; no oscillators (the 48 Hz saw hum is gone) |
 | water | three drifting noise bands (450 / 1300 / 3000 Hz), unrelated rates 0.55 / 0.93 / 1.7 Hz |
 | snowcat / heli | brown rumble + band throb (6.5 Hz, +-10 %) / low-passed pink with soft 8.5 Hz chop; no saw / square / sine |
+| tractor (summer farm vehicles, `docs/farm-work.md`) | low-passed brown noise (210 Hz) + a 330 Hz pink band, amplitude pulsed at 6.1 / 3.05 / 0.37 Hz (a diesel putt-putt, sub-audible LFOs, no oscillator tone); ceiling 0.04; only near a WORKING tractor (`WorldProbe.tractors`, reach 16 tiles), zoomed in (close^1.4), by day, damped by rain; off on Low quality; no recording used |
 One-shots: **birdChirp** = pure sine with a short up-down glide (+ faint 2nd harmonic), smooth attack, 2-4 syllables, peak .035, max 3/s and `AMB.rates.birds` 0.8/s (was 2.2); only daytime spring/summer, quiet by weather (unchanged formulas); **cowbell** = two soft low sines (400/600 Hz), rate .15/s; **churchBell** = harmonic partials only (1/2/3), peak .07 (was an inharmonic ring at .16); **clank** = triangle thunk + soft noise, .35/s; drip / creak quieter and softer. The UI `bell` and `kaching` sfx are unchanged (not background). The **jingle** on rating-up is three soft harp notes (pentatonic) at most every 12 s.
 
 ## Proximity audio (nature, streams, Apres-Ski Bar; Nov 2026)

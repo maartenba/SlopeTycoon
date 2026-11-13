@@ -7,7 +7,7 @@ screenshots: [summer-campground-night, summer-petting-zoo, summer-treehouse]
 ---
 {{fig:summer-campground-night}}
 
-Summer is the second half of the year, and it pays if you give people something to do. **Hikers and bikers** use the trails and the lifts that carry bikes; the buildings below give them somewhere to sleep, play, climb, paddle and fish. All of them sit in the **Recreation** tab of the Buildings drawer (the campground is listed there too) and wear a small summer tag. In Career each has a resort level: the *Campground*, *Petting Zoo* and *Viewpoint* are open from level 1, the *Tackle & Bait Hut*, *Treehouse*, *Quad Base* and *Climbing Crag* from level 2, and the *Rafting* and *Canyoning* bases from level 3 (the full table is in [Career & scenarios](page:career)).
+Summer is the second half of the year, and it pays if you give people something to do. **Hikers and bikers** use the trails and the lifts that carry bikes; the buildings below give them somewhere to sleep, play, climb, paddle and fish. All of them sit in the **Recreation** tab of the Buildings drawer (the campground is listed there too) and wear a small summer tag. In Career each has a resort level: the *Campground*, *Petting Zoo* and *Viewpoint* are open from level 1, the *Tackle & Bait Hut*, *Treehouse*, *Quad Base* and *Climbing Crag* from level 2, and the *Rafting* and *Canyoning* bases from level 3 (the full table is in [Career & scenarios](page:career)). From June to September your Alpine Farms also send tractors out to mow the pastures and bring hay home; this is only scenery, and it stays off when Atmosphere is set to Off.
 
 ## What to build
 
