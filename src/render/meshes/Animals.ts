@@ -169,7 +169,9 @@ export const cowIsCalf = (id: number): boolean => { let h = (id * 40503 + 7) >>>
 
 /** Alpine cow (forward = +z, ~0.5 tiles long, <= ~900 triangles): barrel torso with shoulder and hip, jointed legs with hooves, broad head with muzzle / nostrils / eyes, curved horns,
  * dewlap, udder, tufted tail and (`bell`) a brass cowbell on a leather strap. */
-export function createCowGeometry(bell = true): THREE.BufferGeometry {
+export function createCowGeometry(bell = true, animated = false): THREE.BufferGeometry {
+  const tags = new Map<THREE.BufferGeometry, number>();
+  const T = (g: THREE.BufferGeometry, id: number): THREE.BufferGeometry => { tags.set(g, id); return g; };
   const hide = 0xf2efe8, patch = 0x3a2c25, pink = 0xe8a8a0, horn = 0xe8d8a0, hoof = 0x2e2622, nose = 0xd98f8a, dark = 0x1a1412, leather = 0x6a4527, brass = 0xd4a838;
   const body = [
     ell(0.105, 0.135, 0.2, hide, 0, 0.26, 0.1, {}, 10, 6), // chest + shoulder
@@ -193,19 +195,20 @@ export function createCowGeometry(bell = true): THREE.BufferGeometry {
     ell(0.05, 0.042, 0.05, nose, 0, 0.315, 0.44, { rx: 0.1 }, 6, 4), ell(0.012, 0.01, 0.01, dark, 0.02, 0.32, 0.485, {}, 4, 3), ell(0.012, 0.01, 0.01, dark, -0.02, 0.32, 0.485, {}, 4, 3), // muzzle + nostrils
     ell(0.011, 0.014, 0.012, dark, 0.056, 0.37, 0.4, {}, 4, 3), ell(0.011, 0.014, 0.012, dark, -0.056, 0.37, 0.4, {}, 4, 3), // eyes
     ell(0.003, 0.004, 0.004, 0xffffff, 0.063, 0.375, 0.408, {}, 3, 2), ell(0.003, 0.004, 0.004, 0xffffff, -0.063, 0.375, 0.408, {}, 3, 2), // eye highlights
-    ell(0.045, 0.014, 0.025, hide, 0.095, 0.385, 0.35, { rz: -0.25 }, 5, 3), ell(0.03, 0.009, 0.016, pink, 0.099, 0.384, 0.352, { rz: -0.25 }, 4, 3), // ears out to the sides + inner tone
-    ell(0.045, 0.014, 0.025, hide, -0.095, 0.385, 0.35, { rz: 0.25 }, 5, 3), ell(0.03, 0.009, 0.016, pink, -0.099, 0.384, 0.352, { rz: 0.25 }, 4, 3),
+    T(ell(0.045, 0.014, 0.025, hide, 0.095, 0.385, 0.35, { rz: -0.25 }, 5, 3), 2), T(ell(0.03, 0.009, 0.016, pink, 0.099, 0.384, 0.352, { rz: -0.25 }, 4, 3), 2), // ears out to the sides + inner tone (animated: parts 2 / 3)
+    T(ell(0.045, 0.014, 0.025, hide, -0.095, 0.385, 0.35, { rz: 0.25 }, 5, 3), 3), T(ell(0.03, 0.009, 0.016, pink, -0.099, 0.384, 0.352, { rz: 0.25 }, 4, 3), 3),
     tube(0.014, 0.01, 0.05, horn, 0.045, 0.4, 0.34, { rz: -1.1 }, 4), tube(0.01, 0.003, 0.05, horn, 0.085, 0.425, 0.34, { rz: -0.2 }, 4), // curved horns: base then upturned tip
     tube(0.014, 0.01, 0.05, horn, -0.045, 0.4, 0.34, { rz: 1.1 }, 4), tube(0.01, 0.003, 0.05, horn, -0.085, 0.425, 0.34, { rz: 0.2 }, 4),
     ell(0.04, 0.05, 0.05, hide, 0, 0.26, 0.28, { rx: 0.4 }, 6, 3), // dewlap
     ell(0.05, 0.04, 0.055, pink, 0, 0.115, -0.11, {}, 8, 4), // udder
     tube(0.01, 0.008, 0.03, pink, 0.02, 0.085, -0.1, {}, 4), tube(0.01, 0.008, 0.03, pink, -0.02, 0.085, -0.1, {}, 4),
-    tube(0.014, 0.009, 0.22, hide, 0, 0.36, -0.29, { rx: Math.PI + 0.12 }, 5), ell(0.022, 0.04, 0.022, patch, 0, 0.14, -0.31, {}, 5, 3), // tail + tuft
+    T(tube(0.014, 0.009, 0.22, hide, 0, 0.36, -0.29, { rx: Math.PI + 0.12 }, 5), 1), T(ell(0.022, 0.04, 0.022, patch, 0, 0.14, -0.31, {}, 5, 3), 1), // tail + tuft (animated: part 1)
   );
   if (bell) parts.push(
     tube(0.075, 0.075, 0.025, leather, 0, 0.2, 0.28, { rx: 0.9 }, 8), // leather strap round the neck
-    tube(0.026, 0.04, 0.06, brass, 0, 0.14, 0.33, { rx: 0.15 }, 7), ell(0.01, 0.01, 0.01, dark, 0, 0.138, 0.335, {}, 4, 3), // brass cowbell + clapper
+    T(tube(0.026, 0.04, 0.06, brass, 0, 0.14, 0.33, { rx: 0.15 }, 7), 4), T(ell(0.01, 0.01, 0.01, dark, 0, 0.138, 0.335, {}, 4, 3), 4), // brass cowbell + clapper (animated: part 4, a pendulum)
   );
+  if (animated) for (const g of parts) { const n = g.getAttribute('position').count; g.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(n).fill(tags.get(g) ?? 0), 1)); }
   return finish(parts);
 }
 export function createSheepGeometry(): THREE.BufferGeometry {
@@ -306,7 +309,7 @@ export function createDonkeyGeometry(): THREE.BufferGeometry {
 
 export type NatureSpecies = 'cow' | 'sheep' | 'goat' | 'deer' | 'ibex' | 'chamois' | 'marmot' | 'fox' | 'eagle';
 export const NATURE_GEOMETRY: Record<NatureSpecies, () => THREE.BufferGeometry> = {
-  cow: () => createCowGeometry(), sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,
+  cow: () => createCowGeometry(true, true), sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,
   chamois: createChamoisGeometry, marmot: createMarmotGeometry, fox: createFoxGeometry, eagle: createEagleGeometry,
 };
 

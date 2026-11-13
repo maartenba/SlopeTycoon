@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MODE, type Critter } from '../sim/nature/Fauna';
+import { COW_MOTION_GLSL, cowPhase } from './cowMotion';
 import { COW_TINTS, cowIsCalf, cowVariantOf, NATURE_GEOMETRY, type NatureSpecies } from './meshes/Animals';
 
 /** Instanced per-species rendering of livestock + wild fauna (one draw call per species, <= 9). Positions ease towards the sim positions
@@ -51,13 +52,27 @@ export class NatureView {
   private fo = { x: 0, z: 0 }; private readonly fo0 = { x: 0, z: 0 };
   private winterColor = new THREE.Color(1, 1, 1);
   drawn = 0;
+  /** Reduced motion: the cow's tail / ears / bell stay still (render-only). */
+  reduced = false;
+  private cowUniforms = { uCowT: { value: 0 }, uCowMotion: { value: 1 } };
+  private cowPhase: THREE.InstancedBufferAttribute | null = null;
 
   /** `ground(x, y)` = terrain surface height at tile coords. */
   constructor(private ground: (x: number, y: number) => number) {
     for (const sp of Object.keys(NATURE_GEOMETRY) as NatureSpecies[]) {
       const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
       const mesh = new THREE.InstancedMesh(NATURE_GEOMETRY[sp](), mat, NATURE_VIEW.capPerSpecies);
-      if (sp === 'cow') mesh.setColorAt(0, new THREE.Color(1, 1, 1)); // coat variants (Holstein / Simmental / Brown Swiss) = a per-instance tint
+      if (sp === 'cow') {
+        mesh.setColorAt(0, new THREE.Color(1, 1, 1)); // coat variants (Holstein / Simmental / Brown Swiss) = a per-instance tint
+        // tail / ear / bell swing in the vertex shader (cowMotion.ts): a stable per-animal phase, the frame clock, 0 extra draw calls
+        this.cowPhase = new THREE.InstancedBufferAttribute(new Float32Array(NATURE_VIEW.capPerSpecies), 1).setUsage(THREE.DynamicDrawUsage);
+        mesh.geometry.setAttribute('aPhase', this.cowPhase);
+        mat.onBeforeCompile = (s): void => {
+          Object.assign(s.uniforms, this.cowUniforms);
+          s.vertexShader = s.vertexShader.replace('void main() {', `${COW_MOTION_GLSL.decl}\nvoid main() {`).replace('#include <begin_vertex>', `#include <begin_vertex>\n${COW_MOTION_GLSL.apply}`);
+        };
+        mat.customProgramCacheKey = (): string => 'cowMotion';
+      }
       mesh.count = 0; mesh.frustumCulled = false; mesh.name = `nature:${sp}`;
       this.group.add(mesh); this.meshes.set(sp, mesh); this.mats.set(sp, mat);
     }
@@ -73,6 +88,7 @@ export class NatureView {
   /** Draw `animals` (hidden ones skipped). centre/radius = camera target + view radius in tiles for off-screen culling. */
   update(dt: number, animals: Iterable<Critter>, cx: number, cz: number, viewHeight: number, disturb: { x: number; z: number } | null = null): void {
     this.time += dt;
+    this.cowUniforms.uCowT.value = this.time; this.cowUniforms.uCowMotion.value = this.reduced ? 0 : 1;
     const counts = new Map<NatureSpecies, number>();
     const R = viewHeight * 1.3 + 8, R2 = R * R;
     let drawn = 0;
@@ -113,13 +129,13 @@ export class NatureView {
       this.e.set(pitch, 0, roll, 'YXZ');
       this.q.setFromAxisAngle(this.up, d.yaw); this.q.multiply(this.q2.setFromEuler(this.e));
       const k = NATURE_VIEW.scale[sp] * (sp === 'cow' && cowIsCalf(a.id) ? 0.7 : 1); this.sc.set(k, k, k);
-      if (sp === 'cow') { const t = COW_TINTS[cowVariantOf(a.id)]!; mesh.setColorAt(i, this.tint.setRGB(t[0], t[1], t[2])); }
+      if (sp === 'cow') { const t = COW_TINTS[cowVariantOf(a.id)]!; mesh.setColorAt(i, this.tint.setRGB(t[0], t[1], t[2])); this.cowPhase!.setX(i, cowPhase(a.id)); }
       this.m.compose(this.p.set(d.x, gy + bob, d.y), this.q, this.sc);
       mesh.setMatrixAt(i, this.m);
       drawn++;
     }
     this.drawn = drawn;
-    for (const [sp, mesh] of this.meshes) { mesh.count = counts.get(sp) ?? 0; mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; mesh.visible = mesh.count > 0; }
+    for (const [sp, mesh] of this.meshes) { mesh.count = counts.get(sp) ?? 0; mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; if (this.cowPhase && sp === 'cow') this.cowPhase.needsUpdate = true; mesh.visible = mesh.count > 0; }
     if (this.disp.size > 4000) this.disp.clear();
   }
 
