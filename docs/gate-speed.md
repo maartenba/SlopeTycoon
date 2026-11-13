@@ -1,6 +1,6 @@
 # Implemented (2026-11-13): `npm run gate`
 
-Local only (owner decision: no new workflows). `scripts/gate.ts` + `scripts/lib/gateRunner.ts` (pure DAG scheduler, unit-tested in `tests/scripts/gate.test.ts`) + `scripts/lib/gateStages.ts` (stage table and path mapping). `gate:fast`, `gate:full`, `gate -- --since <ref>`, `--only`, `--skip`, `--jobs N` (default 4 slots), `--dry`, `--list`.
+Local only (owner decision: no new workflows). `scripts/gate.ts` + `scripts/lib/gateRunner.ts` (pure DAG scheduler, unit-tested in `tests/scripts/gate.test.ts`) + `scripts/lib/gateStages.ts` (stage table and path mapping). `gate:fast`, `gate:full`, `gate -- --since <ref>`, `--only`, `--skip`, `--jobs N` (default 6 slots), `--dry`, `--list`.
 
 - **Slots**: unit tests 4, heavy browser stages (e2e, shot:suite, touch, mobile:audit, desktop:diff) 3, sanity scripts 2, balance shards and light stages 1. `test:perf` and `flicker` are exclusive: they run alone after everything else. Ready stages start longest-estimate first (estimates from the previous run, `.weave/gate/estimates.json`).
 - **Order**: build -> verify:pwa -> the five dist e2e scripts; site:og -> docs:img -> build:site -> site:check -> verify:site. `dist/` is built once and only read afterwards. Every browser script uses its own temp Chrome profile and an ephemeral port, so nothing clashes.
@@ -21,7 +21,7 @@ Not Chrome 157, Node 24 or load. vite-node exports `NODE_ENV=development` to chi
 | `gate:full`, 36 stages, 0 flaky, 0 failed | **30.3 min** (sum of stage walls 46.5 min) |
 | `gate:fast` (site/docs changed) | 3.7 min |
 
-Slot rule limits the full gate: heavy browser stages take 3 of 4 slots, so they run one at a time; raising `--jobs` or lowering their weight is the next lever (CPU is the real limit).
+That 30.3 min run used 4 slots with browser stages at weight 3, so they ran one at a time (see "Retune" below for the new defaults: 6 slots, browser weight 2).
 
 # Gate speed: measurements and plan
 
@@ -143,3 +143,11 @@ Current CI (pull requests, ubuntu-latest): typecheck, lint, test, build, verify:
 ## Recommended first step
 
 Fix the four dist e2e failures first (they block any trustworthy gate, probably one cause: service worker activation on the fake host with this Chrome or Node), then build `npm run gate` with the DAG, concurrency 2 to 4, retry-once and the summary, and split `summer.test.ts` and `test:balance` as separate small changes. Re-run `npm run gate:timings` after each to confirm.
+
+## Retune (14 Nov 2026): 6 slots, browser weight 2
+
+Source: the per-stage walls of the 13 Nov full run (`.weave/gate/20261113-091159/summary.json`, 36 stages, 1817 s, 0 flaky). Changes: default `--jobs` 4 to **6** (`DEFAULT_JOBS` in `scripts/lib/gateStages.ts`), heavy browser stages (e2e, shot:suite, touch:e2e, mobile:audit, desktop:diff) 3 to **2** slots (sanity scripts were already 2). Unchanged: `test` 4 slots (vitest already runs 14 threads), balance shards 1 slot each, `test:perf` and `flicker` exclusive and last (timing-sensitive, never next to anything).
+
+Schedule simulation (`tests/scripts/gate.test.ts`, no contention model, recorded walls; `npm run gate -- --full --dry` prints the same estimate): old table at 4 slots **29.4 min on paper** (30.3 measured), new table at 6 slots **16.7 min**, 8 slots 14.2 min. The paper numbers ignore CPU: the stages need about 18 000 CPU seconds, which is 21.7 min on 14 cores even when perfectly packed, so **expect about 22 to 25 min for `gate:full`**, not 17. Under higher concurrency the stage walls grow (SwiftShader stages already use about 10 cores each); three browsers at once is the new normal.
+
+Not measured yet (the real full gate was deliberately not run during this change): check the first full run's `summary.md` for FLAKY / retried stages and for stage walls far above the table above. If a browser stage times out or flakes: `npm run gate:full -- --jobs 5`, and if that is not enough `--jobs 4` (browser weight 2 then still lets two run next to the `test` stage, as before). Re-record `.weave/gate/estimates.json` happens automatically from the run.

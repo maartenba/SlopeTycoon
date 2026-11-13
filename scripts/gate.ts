@@ -8,7 +8,7 @@ import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync }
 import { cpus, loadavg } from 'node:os';
 import { join } from 'node:path';
 import { estimate, exitCode, failedFilesFromVitestJson, runGate, withDeps, type ExecResult, type StageDef, type StageResult } from './lib/gateRunner';
-import { ALL, FULL, STAGES, fastSelection, stagesForPaths } from './lib/gateStages';
+import { ALL, DEFAULT_JOBS, FULL, STAGES, fastSelection, stagesForPaths } from './lib/gateStages';
 
 const args = process.argv.slice(2);
 const flag = (k: string): boolean => args.includes(k);
@@ -16,7 +16,7 @@ const val = (k: string): string | undefined => { const i = args.indexOf(k); retu
 const list = (k: string): string[] => (val(k) ?? '').split(',').filter(Boolean);
 const root = process.cwd(), stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
 const sh = (cmd: string, ...a: string[]): string => { try { return execFileSync(cmd, a, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { return ''; } };
-const jobs = Number(val('--jobs') ?? 4);
+const jobs = Number(val('--jobs') ?? DEFAULT_JOBS);
 
 function changedFiles(since?: string): { files: string[]; ref: string } {
   let ref = since ?? 'HEAD';

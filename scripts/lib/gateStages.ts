@@ -1,7 +1,9 @@
 /** Stage table + path selection of `npm run gate` (docs/gate-speed.md). Pure data and functions, unit-tested in tests/scripts/gate.test.ts. */
 import type { StageDef } from './gateRunner';
 
-const HEAVY = 3, SAN = 2, LIGHT = 1;
+/** Browser (SwiftShader) stages weigh 2 slots; the default cap is 6 (docs/gate-speed.md "Retune"). */
+export const DEFAULT_JOBS = 6;
+const HEAVY = 2, SAN = 2, LIGHT = 1;
 const vt = (base: string, env = ''): StageDef['vitest'] => ({ retryCmd: (files) => `${env}${base} ${files.join(' ')}` });
 const VT = 'npx vitest run';
 const san = (id: string, script: string, est: number): StageDef => ({ id, cmd: `npm run ${script}`, slots: SAN, est });

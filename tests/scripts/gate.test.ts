@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { estimate, exitCode, failedFilesFromVitestJson, runGate, validate, withDeps, type Exec, type GateEvent, type StageDef } from '../../scripts/lib/gateRunner';
-import { ALL, BALANCE, E2E, FULL, STAGES, fastSelection, stagesForPaths } from '../../scripts/lib/gateStages';
+import { ALL, BALANCE, DEFAULT_JOBS, E2E, FULL, STAGES, fastSelection, stagesForPaths } from '../../scripts/lib/gateStages';
 import { distProblem } from '../../scripts/lib/dist-guard';
 import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -109,7 +109,7 @@ describe('gate stage table and --since path mapping', () => {
     for (const id of E2E) expect(by.get(id)!.needs).toEqual(['verify:pwa']);
     expect(by.get('verify:pwa')!.needs).toEqual(['build']);
     expect(by.get('verify:site')!.needs).toEqual(['site:check']); expect(by.get('site:check')!.needs).toEqual(['build:site']);
-    expect(by.get('test')!.slots).toBe(4); expect(by.get('analytics:e2e')!.slots).toBe(3); expect(by.get('typecheck')!.slots).toBe(1);
+    expect(by.get('test')!.slots).toBe(4); expect(by.get('analytics:e2e')!.slots).toBe(2); expect(by.get('typecheck')!.slots).toBe(1);
     expect(FULL.every((i) => ALL.includes(i))).toBe(true);
     for (const id of [...E2E, 'shot:suite', 'mobile:audit', 'touch:e2e', 'desktop:diff', 'flicker', 'test:perf', ...BALANCE]) expect(FULL).toContain(id);
   });
@@ -167,5 +167,19 @@ describe('dev-build detection', () => {
     expect(devBuildProblem(d)).toMatch(/DEVELOPMENT build/);
     writeFileSync(join(d, 'assets/index-abc.js'), 'registerSW({prod:!0,navigator:n})');
     expect(devBuildProblem(d)).toBe('');
+  });
+});
+
+/** Schedule simulation (no contention model) from the walls of the recorded 13 Nov 2026 gate:full (36 stages, 1817 s at 4 slots, browser weight 3). */
+describe('gate schedule simulation (docs/gate-speed.md "Retune")', () => {
+  const walls: Record<string, number> = { typecheck: 6.6, lint: 8.4, test: 201.3, 'test:balance': 280.3, 'test:balance.b': 262.4, 'test:balance.c': 251.7, 'test:balance.d': 257.4, 'test:perf': 59.2, build: 9.5, 'verify:pwa': 0.5, 'analytics:e2e': 47.6, 'offline:splash': 16.3, 'menu-music:e2e': 44.4, 'sfx:e2e': 58.6, 'music:e2e': 80.5, 'play:sanity': 35.5, 'phase6:sanity': 18.3, 'summer:sanity': 28.1, 'winter:sanity': 32.2, 'winter-tours:sanity': 13.6, 'backcountry:sanity': 26.2, 'sled:sanity': 22.8, 'm74:sanity': 20.4, 'schirmbar:sanity': 18.1, 'visitor:sanity': 70.9, 'photographer:sanity': 18, 'shot:suite': 192.9, 'touch:e2e': 220.7, 'mobile:audit': 267.9, 'desktop:diff': 72.7, flicker: 125.5, 'site:og': 10.4, 'docs:img': 0.3, 'build:site': 10.8, 'site:check': 0.5, 'verify:site': 1.8 };
+  const plan = withDeps(STAGES, FULL);
+  const wall = (s: StageDef): number => walls[s.id] ?? s.est;
+  const old = plan.map((s) => (s.slots === 2 && !s.id.startsWith('test:') ? { ...s, slots: 3 } : s)); // the previous table: browser stages (not the san ones) were 3; sanity 2
+  it('has recorded walls for every full-gate stage', () => { for (const s of plan) expect(walls[s.id], s.id).toBeDefined(); });
+  it('defaults to 6 slots and the new table packs the full gate shorter than the old 4-slot one', () => {
+    expect(DEFAULT_JOBS).toBe(6);
+    const before = estimate(old, 4, wall), after = estimate(plan, DEFAULT_JOBS, wall);
+    expect(before).toBeGreaterThan(25 * 60); expect(after).toBeLessThan(before * 0.75); // about 29.4 min -> 17 min on paper (the CPU floor is about 22 min)
   });
 });
