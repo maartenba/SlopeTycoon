@@ -4,6 +4,12 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changes
+
+- Smaller falling leaves: about two thirds of the old size, still easy to see between the trees.
+- Photographers raise their cameras and flash: while they shoot at a viewpoint the camera comes up to the face and each shot gives a brief glint (nothing under reduced motion).
+- Lighter sky objects on low settings: the jump plane, canopies and hang gliders use simpler models and fewer at a time on Low and Medium (High looks as before).
+
 ## [0.6.4] - 2026-11-12 (pre-release)
 
 A small update about autumn and the website video. The economy and your old saves are unchanged.
