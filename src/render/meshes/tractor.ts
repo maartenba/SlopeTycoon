@@ -98,6 +98,16 @@ export function baleGeometry(): THREE.BufferGeometry {
     return Math.floor(((Math.atan2(cy, cx) + Math.PI) / (Math.PI * 2)) * 12) % 2 ? 0xdcbc5a : 0xe6c868;
   });
 }
+/** A unit square bale (box 1 x 1 x 1, long axis z, 6 segments along z: 52 triangles): straw colour, two darker twine bands, darker cut ends. Scale per instance (`FARM_WORK.bales.square`). */
+export function squareBaleGeometry(): THREE.BufferGeometry {
+  const g = new THREE.BoxGeometry(1, 1, 1, 1, 1, 6).toNonIndexed();
+  return setColors(g, (cx, cy, cz) => {
+    const seg = Math.min(5, Math.max(0, Math.floor((cz + 0.5) * 6)));
+    if (Math.abs(cz) > 0.499 && Math.abs(cx) < 0.499 && Math.abs(cy) < 0.499) return 0xc29a3c; // cut end
+    if (seg === 1 || seg === 4) return 0x7a5e2c; // twine
+    return (Math.floor((cx + 0.5) * 3) + seg) % 2 ? 0xdcbc5a : 0xe6c868;
+  });
+}
 /** The hay heap on the trailer: a unit dome (radius 1, base on y = 0, length along z) with straw strand stripes (84 triangles at most). */
 export function loafGeometry(): THREE.BufferGeometry {
   const g = new THREE.SphereGeometry(1, 12, 4, 0, Math.PI * 2, 0, Math.PI / 2).toNonIndexed();

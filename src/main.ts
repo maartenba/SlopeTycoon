@@ -803,6 +803,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   sledRunView.update();
   updateFestival(dt);
   tourVehicles.update(renderer.stepping ? sim.loop.tickCount + sim.loop.alpha : sim.loop.tickCount); // frame-step capture only: carriers glide between ticks
+  natureView.reduced = getReducedMotion();
   natureView.update(dt, [...sim.nature.fauna.animals, ...sim.nature.livestock.animals], tg.x, tg.z, vh, renderer.viewMode.mode === 'walk' && walk.active && !walk.riding ? { x: walk.state.x, z: walk.state.z } : null);
   { // petting zoo animals (4 instanced draw calls; only open pens during the day)
     const zoos = buildings.all().filter((b) => b.type === 'pettingZoo');
@@ -1259,7 +1260,7 @@ const farmSources = (): FarmSource[] => {
     const g = buildingsView.get(b.id); if (!g) continue;
     g.updateMatrixWorld(true);
     const at = (lx: number, lz: number): { x: number; y: number } => { farmLocal.set(lx, 0, lz); g.localToWorld(farmLocal); return { x: farmLocal.x, y: farmLocal.z }; };
-    out.push({ id: b.id, site: { id: b.id, gates: [at(0, b.h / 2 + 0.9), at(-2.2, b.h / 2 + 0.9), at(2.2, b.h / 2 + 0.9)], park: [at(-1.7, 0.45), at(1.9, 0.45)] } });
+    out.push({ id: b.id, site: { id: b.id, gates: [at(0, b.h / 2 + 0.9), at(-2.2, b.h / 2 + 0.9), at(2.2, b.h / 2 + 0.9)], park: [at(-1.7, 0.45), at(1.9, 0.45)], gap: at(0, b.h / 2 - 0.15) } });
   }
   return out;
 };
@@ -1293,7 +1294,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     const a = loop.paused || loop.isHidden ? 1 : loop.alpha;
     const cam = renderer.camera;
     const wnt = seasonWeights(seasonYear(game.date)).winter > 0.35;
-    guestRenderer.carnival = sim.events.carnivalOn(); guestRenderer.winter = wnt; vehicleRenderer.winter = wnt; vehicleRenderer.night = lighting.nightUniform.value;
+    guestRenderer.carnival = sim.events.carnivalOn(); guestRenderer.winter = wnt; vehicleRenderer.winter = wnt; vehicleRenderer.snowTarget = wnt ? 1 : 0; vehicleRenderer.low = quality === 'low'; vehicleRenderer.night = lighting.nightUniform.value;
     guestRenderer.hideSlot = rideAlong.active && renderer.viewMode.mode === 'ride' ? rideAlong.slot : -1;
     guestRenderer.speedMul = ff.active ? 1000 : loop.paused ? 0 : SPEED_MULTIPLIERS[loop.speed]!; guestRenderer.frameSeconds = dt;
     guestRenderer.update(a, lodHeightFor(cam), cam, loop.tickCount);
@@ -1303,7 +1304,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     cragClimbers.far = activity.far; cragClimbers.update(game.date.tick + a);
     skyActivity.far = activity.far; skyActivity.update(game.date.tick + a);
     { const tg = viewCentre(); apresNotes.update(dt, lodHeightFor(cam), apresNotesBars(), getReducedMotion(), notesForQuality(QUALITY_PRESETS[quality].particles), { x: tg.x, z: tg.z }, quality !== 'low'); }
-    { const tg = viewCentre(); farmWork.update(dt, { day: game.date.day, hour: currentHour(), weather: weather.current.kind, cap: DEMO ? 0 : tractorCap(quality, atmosSettings.level), reduced: getReducedMotion(), fast: ff.active || SPEED_MULTIPLIERS[loop.speed]! >= 10, viewHeight: lodHeightFor(cam), focus: { x: tg.x, z: tg.z }, exhaust: quality !== 'low' }); }
+    { const tg = viewCentre(); farmWork.update(dt, { day: game.date.day, hour: currentHour(), weather: weather.current.kind, cap: DEMO ? 0 : tractorCap(quality, atmosSettings.level), reduced: getReducedMotion(), fast: ff.active || SPEED_MULTIPLIERS[loop.speed]! >= 10, speed: Math.max(1, SPEED_MULTIPLIERS[loop.speed]!), viewHeight: lodHeightFor(cam), focus: { x: tg.x, z: tg.z }, exhaust: quality !== 'low' }); }
     audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
   };
 }

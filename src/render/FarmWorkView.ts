@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FARM_WORK as F } from '../config/farmWork';
 import type { WeatherKind } from '../core/events';
 import { farmPhase, headingAt, hk, lerpAngle, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, rowProgress, stepRunner, type FarmSite, type Runner, type TripPlan, type WorkWorld } from './farmWorkPlan';
-import { baleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, trailerGeometry } from './meshes/tractor';
+import { baleGeometry, squareBaleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, trailerGeometry } from './meshes/tractor';
 import { SMOKE_FRAG, SMOKE_VERT } from './Smoke';
 
 /**
@@ -14,13 +14,13 @@ export interface FarmSource { id: number; site: FarmSite }
 export interface FarmWorkCtx {
   day: number; hour: number; weather: WeatherKind;
   /** Tractors per farm (`tractorCap`); 0 = none. */
-  cap: number; reduced: boolean; /** Game speed 10x / fast-forward: no new trips. */ fast: boolean;
+  cap: number; reduced: boolean; /** Game speed 10x / fast-forward: no new trips. */ fast: boolean; /** Game speed multiplier (1 / 3; default 1): trips run in game time, see `paceRate`. */ speed?: number;
   viewHeight: number; focus: { x: number; z: number }; exhaust: boolean; night?: number;
 }
 export type ForceAt = number | 'mowA' | 'mowB' | 'home' | 'gate' | 'unload';
 export interface ForceOpts { day?: number; hour?: number; weather?: WeatherKind; at?: ForceAt | ForceAt[] }
 
-interface Patch { id: number; plan: TripPlan; runner: Runner | null; mown: [number, number]; bales: number[]; doneAt: number; born: number }
+interface Patch { id: number; plan: TripPlan; runner: Runner | null; mown: [number, number]; bales: number[]; squares: number[]; doneAt: number; born: number }
 interface TState {
   farm: number; idx: number; presence: number; runner: Runner | null; wait: number; trips: number; day: number; parkYaw: number; patch: Patch | null;
   x: number; y: number; yaw: number; trYaw: number; trX: number; trY: number; load: number; moving: boolean; nextPuff: number; ring: number; site: FarmSite; forceDone: boolean;
@@ -47,7 +47,7 @@ export class FarmWorkView {
   /** No shadows: mown stripes + exhaust. */
   readonly fx = new THREE.Group();
   /** `tractors` = livery 0 (red); `liveries` = all three meshes (red, green, blue: one per farm hash). */
-  readonly tractors: THREE.InstancedMesh; readonly liveries: THREE.InstancedMesh[]; readonly loaves: THREE.InstancedMesh; readonly trailers: THREE.InstancedMesh; readonly bales: THREE.InstancedMesh; readonly stripes: THREE.InstancedMesh; readonly exhaust: THREE.Mesh;
+  readonly tractors: THREE.InstancedMesh; readonly liveries: THREE.InstancedMesh[]; readonly loaves: THREE.InstancedMesh; readonly squares: THREE.InstancedMesh; readonly trailers: THREE.InstancedMesh; readonly bales: THREE.InstancedMesh; readonly stripes: THREE.InstancedMesh; readonly exhaust: THREE.Mesh;
   /** Render clock: the accumulated frame seconds, the only time source. */
   clock = 0;
   private states = new Map<string, TState>();
@@ -58,13 +58,14 @@ export class FarmWorkView {
   private world: WorkWorld | null = null; private worldAt = -99;
   private forced: ForceOpts | null = null;
   private shown = false;
+  private qI = new THREE.Quaternion(); private sv2 = new THREE.Vector3();
   private o = new THREE.Object3D(); private m4 = new THREE.Matrix4(); private m5 = new THREE.Matrix4();
   private alpha: Float32Array;
   private puffO: Float32Array; private puffB: Float32Array; private puffS: Float32Array; private puffW: Float32Array;
   private puffGeo = new THREE.InstancedBufferGeometry();
   private puffMat: THREE.ShaderMaterial; private stripeMat: THREE.ShaderMaterial;
   /** Counts of the last frame (tests / debug). */
-  stats = { tractors: 0, trailers: 0, bales: 0, stripes: 0, puffs: 0, trips: 0, noSpot: 0 };
+  stats = { tractors: 0, trailers: 0, bales: 0, squares: 0, stripes: 0, puffs: 0, trips: 0, noSpot: 0 };
 
   constructor(private ground: (x: number, z: number) => number, private farms: () => FarmSource[], private worldOf: () => WorkWorld | null, private seed: number, nightUniform: { value: number } = { value: 0 }) {
     const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -74,6 +75,7 @@ export class FarmWorkView {
     this.tractors = this.liveries[0]!;
     this.loaves = mk(loafGeometry(), cap, 'farm:loaves');
     this.trailers = mk(trailerGeometry(), cap, 'farm:trailers');
+    this.squares = mk(squareBaleGeometry(), F.bales.square.cap, 'farm:squares');
     this.bales = mk(baleGeometry(), F.caps.patches * F.bales.perPatch + cap, 'farm:bales');
     const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     this.alpha = new Float32Array(F.caps.stripes);
@@ -122,7 +124,7 @@ export class FarmWorkView {
     const plan = planTrip(w, st.site, st.idx, Math.floor(hk(this.seed, ctx.day, st.farm, st.idx, tag) * 1e9), avoid);
     if (!plan) { this.stats.noSpot++; return false; }
     const r = newRunner(plan);
-    const patch: Patch = { id: this.nextPatch++, plan, runner: r, mown: [0, 0], bales: plan.bales.map(() => 0), doneAt: -1, born: this.clock };
+    const patch: Patch = { id: this.nextPatch++, plan, runner: r, mown: [0, 0], bales: plan.bales.map(() => 0), squares: plan.squares.map(() => 0), doneAt: -1, born: this.clock };
     this.patches.push(patch);
     if (this.patches.length > F.caps.patches) { const old = this.patches.findIndex((p) => p.doneAt >= 0); this.patches.splice(old >= 0 ? old : 0, 1); }
     this.detach(st); st.patch = patch; st.runner = r; st.trips++; this.stats.trips++;
@@ -161,7 +163,7 @@ export class FarmWorkView {
       if (st.day !== day) { st.day = day; st.trips = 0; }
       if (st.runner) {
         if (!st.runner.plan.home && home && !fo) { const w = this.getWorld(); if (w) { const keep = st.runner; this.detach(st); st.runner = newRunner(planHome(w, st.site, st.idx, { x: st.x, y: st.y }, loadOf(keep))); } }
-        stepRunner(st.runner, dt > 0.1 ? 0.1 : dt);
+        { const k = st.runner.rate * (c.speed ?? 1); let left = Math.min(dt, 0.1) * k; while (left > 1e-9 && !st.runner.done) { const d = Math.min(left, 0.25); stepRunner(st.runner, d); left -= d; } } // game time: rate x speed, in small steps so a dwell is never skipped
         if (st.runner.done) { st.parkYaw = headingAt(st.runner.plan, st.runner.plan.total); this.detach(st); st.runner = null; st.wait = F.rest + hk(this.seed, st.farm, st.idx, st.trips) * F.jitter; st.load = 0; }
       } else if (wanted && st.presence >= 1) {
         if (fo && !st.forceDone) {
@@ -169,7 +171,7 @@ export class FarmWorkView {
           const at = Array.isArray(fo.at) ? fo.at[st.idx % fo.at.length] : fo.at;
           if (at !== undefined || fo.hour !== undefined || fo.day !== undefined) this.startTrip(st, c, 100 + st.idx, at ?? (['mowA', 'mowB'] as const)[st.idx % 2]);
         } else if (!fo) {
-          st.wait -= dt;
+          st.wait -= dt * (c.speed ?? 1);
           if (st.wait <= 0 && phase === 'work' && !c.fast && !c.reduced && !home && mayDepart(hour, st.idx, hk(this.seed, st.farm, st.idx, day)) && near) { if (!this.startTrip(st, c, st.trips)) st.wait = 40; }
         }
       }
@@ -180,12 +182,12 @@ export class FarmWorkView {
     this.stats.tractors = tn;
     this.shown = near && this.states.size > 0;
     this.group.visible = this.shown; this.fx.visible = this.shown;
-    if (!this.shown) { for (const m of this.liveries) m.count = 0; this.loaves.count = this.trailers.count = this.bales.count = this.stripes.count = 0; this.stats.trailers = this.stats.bales = this.stats.stripes = this.stats.puffs = 0; this.exhaust.visible = false; return; }
+    if (!this.shown) { for (const m of this.liveries) m.count = 0; this.loaves.count = this.trailers.count = this.bales.count = this.squares.count = this.stripes.count = 0; this.stats.trailers = this.stats.bales = this.stats.squares = this.stats.stripes = this.stats.puffs = 0; this.exhaust.visible = false; return; }
     this.write(c);
   }
 
   private write(c: FarmWorkCtx): void {
-    const o = this.o; let nt = 0, nb = 0, nl = 0; const vn = this.liveries.map(() => 0);
+    const o = this.o; let nt = 0, nb = 0, nl = 0, ns2 = 0; const vn = this.liveries.map(() => 0);
     o.rotation.order = 'YZX';
     const A = TRACTOR.trailerAxle, H = TRACTOR.hitch;
     for (const st of this.states.values()) {
@@ -201,7 +203,7 @@ export class FarmWorkView {
         if (r.s >= H + A) { const h = posAt(r.plan, r.s - H), b = posAt(r.plan, r.s - H - A); trx = h.x; try_ = h.y; tryaw = Math.atan2(h.y - b.y, h.x - b.x); }
         else { trx = x - Math.cos(yaw) * H; try_ = y - Math.sin(yaw) * H; tryaw = yaw; }
         // patch progress
-        const pa = st.patch; if (pa) { pa.mown[0] = rowProgress(r.plan, r.s, 0); pa.mown[1] = rowProgress(r.plan, r.s, 1); r.plan.bales.forEach((b, i) => { pa.bales[i] = clamp01((r.s - b.s) / (F.speed.mow * F.bales.popSec)); }); }
+        const pa = st.patch; if (pa) { pa.mown[0] = rowProgress(r.plan, r.s, 0); pa.mown[1] = rowProgress(r.plan, r.s, 1); r.plan.bales.forEach((b, i) => { pa.bales[i] = clamp01((r.s - b.s) / (F.speed.mow * F.bales.popSec)); }); r.plan.squares.forEach((b, i) => { pa.squares[i] = clamp01((r.s - b.s) / (F.speed.mow * F.bales.popSec)); }); }
       } else { const pk = st.site.park[st.idx % st.site.park.length]!; x = pk.x; y = pk.y; yaw = st.parkYaw; trx = x - Math.cos(yaw) * H; try_ = y - Math.sin(yaw) * H; tryaw = yaw; }
       st.x = x; st.y = y; st.yaw = yaw; st.load = load; st.moving = moving; st.trX = trx; st.trY = try_; st.trYaw = tryaw;
       const sc = ease(st.presence); if (sc <= 0.001) continue;
@@ -222,7 +224,14 @@ export class FarmWorkView {
       o.position.set(trx, Math.max(tg, (tf + tb) / 2), try_); o.rotation.set(0, -tryaw, Math.atan2(tf - tb, 0.9)); o.updateMatrix();
       this.trailers.setMatrixAt(nt, o.matrix);
       // hay load: a long loaf on the deck that grows with the load
-      if (load > 0.02 && nl < this.loaves.instanceMatrix.count) {
+      if (load > 0.02 && hk(this.seed, st.farm, 91) < 0.5) { // square-bale trailer: a pyramid of up to `stack` bales that fills with the load (3 / 2 / 1 per layer)
+        const Q = F.bales.square, n = Math.min(Q.stack, Math.ceil((load / F.load.max) * Q.stack - 1e-6)), layers = [3, 2, 1];
+        let k = 0;
+        for (let li = 0; li < layers.length && k < n; li++) for (let bi = 0; bi < layers[li]! && k < n; bi++, k++) {
+          if (ns2 >= this.squares.instanceMatrix.count) break;
+          this.m5.compose(V.set(-A + (bi - (layers[li]! - 1) / 2) * (Q.wid + 0.02), 0.15 + li * Q.hgt, 0), this.qI, this.sv2.set(Q.wid, Q.hgt, Q.len)); this.m5.premultiply(o.matrix); this.squares.setMatrixAt(ns2++, this.m5);
+        }
+      } else if (load > 0.02 && nl < this.loaves.instanceMatrix.count) {
         const f = load / F.load.max, hh = F.load.height * (0.25 + 0.75 * f) * 0.5;
         this.m5.compose(V.set(-A, 0.15, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)), new THREE.Vector3(F.load.width * (0.4 + 0.6 * f) * 0.5, hh * 1.6, F.load.length * 0.5));
         this.m5.premultiply(o.matrix); this.loaves.setMatrixAt(nl++, this.m5);
@@ -242,6 +251,12 @@ export class FarmWorkView {
         e.set(0, hk(p.id, i) * Math.PI, 0); q.setFromEuler(e);
         this.m5.compose(pv.set(b.x, this.ground(b.x, b.y) + rr * 0.95, b.y), q, sv.set(rr, rr, ww)); this.bales.setMatrixAt(nb++, this.m5);
       });
+      p.plan.squares.forEach((b, i) => {
+        const pop = p.squares[i]!; if (pop <= 0.01 || ns2 >= this.squares.instanceMatrix.count) return;
+        const Q = F.bales.square, k = ease(pop) * lvl;
+        e.set(0, b.yaw, 0); q.setFromEuler(e);
+        this.m5.compose(pv.set(b.x, this.ground(b.x, b.y) + Q.hgt * 0.5 * k * 0.95, b.y), q, sv.set(Q.wid * k, Q.hgt * k, Q.len * k)); this.squares.setMatrixAt(ns2++, this.m5);
+      });
       for (let ri = 0; ri < 2; ri++) {
         const row = p.plan.rows[ri]!, mown = p.mown[ri]!; if (mown <= 0.01) continue;
         const dx = row.x1 - row.x0, dy = row.y1 - row.y0, len = Math.hypot(dx, dy), pieces = Math.ceil(len), step = len / pieces, yaw = Math.atan2(dy, dx);
@@ -255,10 +270,10 @@ export class FarmWorkView {
         }
       }
     }
-    this.liveries.forEach((m, i) => { m.count = vn[i]!; m.visible = m.count > 0; m.instanceMatrix.needsUpdate = true; }); this.loaves.count = nl; this.loaves.instanceMatrix.needsUpdate = true; this.trailers.count = nt; this.bales.count = nb; this.stripes.count = ns;
+    this.liveries.forEach((m, i) => { m.count = vn[i]!; m.visible = m.count > 0; m.instanceMatrix.needsUpdate = true; }); this.loaves.count = nl; this.loaves.instanceMatrix.needsUpdate = true; this.trailers.count = nt; this.bales.count = nb; this.squares.count = ns2; this.squares.instanceMatrix.needsUpdate = true; this.stripes.count = ns;
     this.trailers.instanceMatrix.needsUpdate = this.bales.instanceMatrix.needsUpdate = this.stripes.instanceMatrix.needsUpdate = true;
     (this.stripes.geometry.getAttribute('aAlpha') as THREE.BufferAttribute).needsUpdate = true;
-    this.stats.trailers = nt; this.stats.bales = nb; this.stats.stripes = ns;
+    this.stats.trailers = nt; this.stats.bales = nb; this.stats.squares = ns2; this.stats.stripes = ns;
     // exhaust uniforms
     this.puffMat.uniforms.uTime!.value = this.clock;
     this.puffMat.uniforms.uScale!.value = Math.max(0.5, Math.min(1.5, c.viewHeight / 50)) * 0.27;
@@ -267,5 +282,5 @@ export class FarmWorkView {
     let puffs = 0; for (let i = 0; i < this.puffB.length; i++) if (this.puffB[i]! >= 0 && this.clock - this.puffB[i]! < F.exhaust.life) puffs++;
     this.stats.puffs = puffs;
   }
-  dispose(): void { for (const m of [...this.liveries, this.loaves, this.trailers, this.bales, this.stripes]) m.geometry.dispose(); this.puffGeo.dispose(); this.puffMat.dispose(); this.stripeMat.dispose(); }
+  dispose(): void { for (const m of [...this.liveries, this.loaves, this.trailers, this.bales, this.squares, this.stripes]) m.geometry.dispose(); this.puffGeo.dispose(); this.puffMat.dispose(); this.stripeMat.dispose(); }
 }

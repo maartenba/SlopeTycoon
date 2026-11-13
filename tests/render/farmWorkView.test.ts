@@ -61,7 +61,7 @@ describe('FarmWorkView', () => {
     run(a, 6, ctx({ exhaust: true })); run(b, 6, ctx({ exhaust: false }));
     expect(a.stats.puffs).toBeGreaterThan(0); expect(b.stats.puffs).toBe(0); expect(b.exhaust.visible).toBe(false);
     expect(a.liveries.reduce((n, m) => n + m.count, 0)).toBeLessThanOrEqual(F.caps.tractors); expect(a.stripes.count).toBeLessThanOrEqual(F.caps.stripes);
-    expect(a.group.children.length + a.fx.children.length).toBe(8); // 3 livery meshes (empty ones are not drawn), hay loaves, trailers, bales, stripes, exhaust
+    expect(a.group.children.length + a.fx.children.length).toBe(9); // 3 livery meshes (empty ones are not drawn), hay loaves, trailers, square bales, round bales, stripes, exhaust
   });
   it('patches fade after the tractors leave', () => {
     const v = mk(); v.force({ day: JUN, hour: 10, at: ['mowB', 'mowB'] }); run(v, 1, ctx());
@@ -69,5 +69,18 @@ describe('FarmWorkView', () => {
     v.force(null); run(v, 3, ctx({ cap: 0, day: WINTER })); // everything gets sent home and removed
     run(v, F.patchHold + F.patchFade + 5, ctx({ cap: 0, day: WINTER }), 0.1);
     expect(v.stripes.count).toBe(0); expect(v.bales.count).toBe(0);
+  });
+  it('runs trips in game time: 3x covers the same trip in a third of the real seconds, 10x stays parked', () => {
+    const a = mk(), b = mk();
+    for (const v of [a, b]) v.force({ day: JUN, hour: 10, at: [0.05, 0.05] });
+    run(a, 12, ctx({ speed: 1 }), 0.05); run(b, 4, ctx({ speed: 3 }), 0.05);
+    const sa = a.snapshot(), sb = b.snapshot();
+    sa.forEach((s, i) => { expect(sb[i]!.x).toBeCloseTo(s.x, 0); expect(sb[i]!.y).toBeCloseTo(s.y, 0); });
+    const f = mk(); run(f, 40, ctx({ speed: 10, fast: true })); expect(f.stats.trips).toBe(0);
+  });
+  it('square bales fill the pyramid on half of the farms and drop in the field', () => {
+    const v = mk(); v.force({ day: JUN, hour: 10, at: ['mowB', 'mowB'] }); run(v, 2, ctx());
+    expect(v.squares.count).toBeGreaterThan(0); expect(v.squares.count).toBeLessThanOrEqual(F.bales.square.cap);
+    expect(v.stats.squares).toBe(v.squares.count);
   });
 });

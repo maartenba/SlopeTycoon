@@ -53,7 +53,8 @@ export function alpineFarm(b: PartBuilder, w: number, h: number): void {
     for (const yy of [0.22, 0.12]) tube(b, ax, yy, az, bx2, yy, bz2, 0.014, C.dark, 'wood', 5);
     for (let i = 0; i <= posts; i++) b.box(ax + (bx2 - ax) * i / posts, 0, az + (bz2 - az) * i / posts, 0.05, 0.3, 0.05, C.dark);
   };
-  pasture(x0, z0, x1, z0, 10); pasture(x0, z1, x1, z1, 10); pasture(x0, z0, x0, z1, 4); pasture(x1, z0, x1, z1, 4);
+  pasture(x0, z0, x1, z0, 10); pasture(x0, z1, -0.9, z1, 4); pasture(0.9, z1, x1, z1, 4); // front rail with a 1.8 tile gap in the middle: the tractors drive through it (farmWorkPlan `gap`)
+  pasture(x0, z0, x0, z1, 4); pasture(x1, z0, x1, z1, 4);
   b.box(0, 0.01, (z0 + z1) / 2, x1 - x0 - 0.3, 0.02, z1 - z0 - 0.3, C.green, 'wood');
   b.cyl(0.6, 0.02, z1 - 0.6, 0.18, 0.12, C.stone, 'stone', 12); b.cyl(0.6, 0.12, z1 - 0.6, 0.15, 0.02, C.water, 'stone', 12); // water trough with water
   flagPole(b, bx + 1.0, bz + 1.2, 0.8, C.red, C.white);

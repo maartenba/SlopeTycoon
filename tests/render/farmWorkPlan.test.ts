@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FARM_WORK as F } from '../../src/config/farmWork';
-import { BLOCK, buildWorkWorld, farmPhase, hayLoadAt, headingAt, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, stepRunner, tractorCap, type FarmSite, type TripPlan } from '../../src/render/farmWorkPlan';
+import { paceRate, planDuration, tripGameHours, BLOCK, buildWorkWorld, farmPhase, hayLoadAt, headingAt, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, stepRunner, tractorCap, type FarmSite, type TripPlan } from '../../src/render/farmWorkPlan';
 import { simDayOf } from '../../src/sim/calendar';
 import { Grid, TileType } from '../../src/world/Grid';
 import { OccFlag } from '../../src/world/Occupancy';
@@ -120,5 +120,31 @@ describe('farm work trip timeline', () => {
     for (const [x, y] of samples(h)) { const o = world.owner[Math.floor(y) * 64 + Math.floor(x)]!; expect(o === 0 || o === farm.id + 1).toBe(true); }
     let g = 0; while (!hr.done && g++ < 5000) stepRunner(hr, 0.1);
     expect(hr.done).toBe(true); expect(posAt(h, h.total)).toEqual({ x: s.park[1]!.x, y: s.park[1]!.y });
+  });
+});
+
+describe('farm work pace and gap', () => {
+  const { world } = stage();
+  it('a trip lasts ~2-3 game hours at any speed: the pace rate is clamped and stable', () => {
+    for (let k = 0; k < 6; k++) {
+      const plan = planTrip(world, site(), 0, 500 + k); if (!plan) continue;
+      const r = paceRate(plan); expect(r).toBeGreaterThanOrEqual(1); expect(r).toBeLessThanOrEqual(F.pace.maxRate);
+      const gh = tripGameHours(plan); expect(gh).toBeGreaterThan(1.5); expect(gh).toBeLessThan(F.pace.tripHours * 1.6 + 6);
+      if (r < F.pace.maxRate && r > 1) expect(gh).toBeCloseTo(F.pace.tripHours, 5);
+      expect(newRunner(plan).rate).toBe(r); expect(planDuration(plan)).toBeGreaterThan(20);
+    }
+  });
+  it('2-3 trips fit a working day: the last departure + a trip ends before the evening rule', () => {
+    expect(F.hours.lastDepart + F.pace.tripHours).toBeLessThan(F.hours.home);
+    expect(mayDepart(14.4, 0)).toBe(true); expect(mayDepart(15.5, 0)).toBe(false);
+    const day = F.hours.home - F.hours.earliest; expect(day / (F.pace.tripHours + 1.2)).toBeGreaterThanOrEqual(2);
+  });
+  it('trips pass the fence gap on the way out and back, and the square bales are a pure function of the key', () => {
+    const s: FarmSite = { ...site(), gap: { x: 23, y: 24.8 } };
+    const a = planTrip(world, s, 0, 11), b = planTrip(world, s, 0, 11); expect(a).not.toBeNull(); expect(b!.pts).toEqual(a!.pts);
+    const near = (p: TripPlan): number => { let n = 0; for (let i = 0; i < p.pts.length; i += 2) if (Math.hypot(p.pts[i]! - 23, p.pts[i + 1]! - 24.8) < 1e-6) n++; return n; };
+    expect(near(a!)).toBe(2); expect(a!.squares.length).toBe(F.bales.square.perPatch); expect(a!.squares).toEqual(b!.squares);
+    for (const q of a!.squares) { expect(Number.isFinite(q.x + q.y + q.yaw)).toBe(true); }
+    const home = planHome(world, s, 0, { x: 30, y: 40 }, 0.5); expect(near(home)).toBe(1);
   });
 });

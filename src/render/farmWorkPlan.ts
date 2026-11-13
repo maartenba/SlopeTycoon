@@ -48,6 +48,17 @@ export const hayLoadAt = (p: number): number => F.load.max * ease(clamp01(p));
 /** Patch visibility 0..1 `age` seconds after the tractor left it: held, then faded. */
 export const patchLevel = (age: number): number => (age <= F.patchHold ? 1 : clamp01(1 - (age - F.patchHold) / F.patchFade));
 
+/** Natural (1x real-time, base speeds) duration of a plan in seconds: every segment at its speed, the dwells and the unload stop. */
+export function planDuration(plan: TripPlan): number {
+  let t = F.unloadSec; for (let i = 0; i < plan.spd.length; i++) t += (plan.cum[i + 1]! - plan.cum[i]!) / (plan.spd[i] || F.speed.drive);
+  for (const d of plan.dwells) t += d.dur;
+  return t;
+}
+/** Time scale that makes a trip last about `pace.tripHours` game hours at 1x: clamped to [1, maxRate] so short trips stay unhurried and long ones are not absurd. Multiply by the game speed (1 / 3). */
+export const paceRate = (plan: TripPlan): number => Math.min(F.pace.maxRate, Math.max(1, planDuration(plan) / (F.pace.tripHours * F.pace.secPerHour)));
+/** Game hours a trip lasts (independent of the game speed: the runner advances at `rate * speed`). */
+export const tripGameHours = (plan: TripPlan): number => planDuration(plan) / (paceRate(plan) * F.pace.secPerHour);
+
 export interface WorkWorld { size: number; owner: Int32Array; flat: Uint8Array; /** Average corner height of each tile (grid units): pastures stay near the farm's own altitude. */ hgt: Int16Array }
 const TREEISH = new Set<number>([PropKind.Conifer, PropKind.Deciduous, PropKind.Pine, PropKind.Larch, PropKind.Birch, PropKind.Oak, PropKind.Shrub, PropKind.Snag, PropKind.Rock]);
 /** Occupancy / terrain snapshot for the planner: `owner` = building id + 1 on footprints, BLOCK on water, forest, rock, ice, steep ground, pistes, lifts, decor and tiles with trees / rocks; `flat` = gentle enough to mow. */
@@ -65,11 +76,12 @@ export function buildWorkWorld(grid: Grid, buildings: Iterable<{ id: number; x: 
   return { size: N, owner, flat, hgt };
 }
 
-export interface FarmSite { id: number; /** Where tractors leave the farm / come back to (outside the footprint, on its front side): the planner tries them in turn when one is walled in. */ gates: ReadonlyArray<{ x: number; y: number }>; /** Parking spots inside the farm (one per tractor). */ park: ReadonlyArray<{ x: number; y: number }> }
+export interface FarmSite { id: number; /** Where tractors leave the farm / come back to (outside the footprint, on its front side): the planner tries them in turn when one is walled in. */ gates: ReadonlyArray<{ x: number; y: number }>; /** Parking spots inside the farm (one per tractor). */ park: ReadonlyArray<{ x: number; y: number }>;
+  /** Where the pasture fence has its gap (the tractors pass it on the way out and back); omitted = straight lines. */ gap?: { x: number; y: number } }
 export interface MowRow { x0: number; y0: number; x1: number; y1: number; s0: number; s1: number }
 export interface TripPlan {
   pts: number[]; cum: number[]; spd: number[]; total: number;
-  rows: MowRow[]; bales: Array<{ x: number; y: number; s: number }>; dwells: Array<{ s: number; dur: number }>;
+  rows: MowRow[]; bales: Array<{ x: number; y: number; s: number }>; /** Square bales dropped beside the round ones. */ squares: Array<{ x: number; y: number; s: number; yaw: number }>; dwells: Array<{ s: number; dur: number }>;
   /** Carried load of a "go home" plan (an aborted trip); undefined for a work trip. */
   loadStart?: number; home?: boolean;
   /** Patch centre (work trips) for the avoid-list. */
@@ -125,7 +137,7 @@ export function patchOk(w: WorkWorld, cx: number, cy: number, ax: number, ay: nu
 function finish(pts: Array<[number, number]>, spd: number[], extra: Partial<TripPlan> & { cx: number; cy: number }): TripPlan {
   const flat: number[] = [], cum = [0];
   pts.forEach((p, i) => { flat.push(p[0], p[1]); if (i) cum.push(cum[i - 1]! + Math.hypot(p[0] - pts[i - 1]![0], p[1] - pts[i - 1]![1])); });
-  return { pts: flat, cum, spd, total: cum[cum.length - 1]!, rows: [], bales: [], dwells: [], ...extra };
+  return { pts: flat, cum, spd, total: cum[cum.length - 1]!, rows: [], bales: [], squares: [], dwells: [], ...extra };
 }
 
 /** Work trip of tractor `idx` from `site`: leave by the gate, drive to a hashed pasture patch within F.patch.maxDist, mow a row, U-turn, mow back (bales dropped behind), drive home, unload. null = no valid spot / route. */
@@ -145,19 +157,25 @@ export function planTrip(w: WorkWorld, site: FarmSite, idx: number, key: number,
     const SB: [number, number] = [cx + ax * L + nx * q, cy + ay * L + ny * q], EB: [number, number] = [cx - ax * L + nx * q, cy - ay * L + ny * q];
     const out = driveRoute(w, g, SA, own), back = driveRoute(w, EB, g, own);
     if (!out || !back) continue;
-    const pts: Array<[number, number]> = [pk], spd: number[] = [];
+    const gapPt: [number, number] | null = site.gap ? [site.gap.x, site.gap.y] : null;
+    const pts: Array<[number, number]> = gapPt ? [pk, gapPt] : [pk], spd: number[] = gapPt ? [F.speed.drive] : [];
     const push = (p: Array<[number, number]>, s: number): void => { for (const q2 of p) { pts.push(q2); spd.push(s); } };
     push(out, F.speed.drive); // park -> gate (first point of `out` is the gate) -> ... -> SA
     const iSA = pts.length - 1;
     push([EA], F.speed.mow); const iEA = pts.length - 1;
     push(arc(cx + ax * L, cy + ay * L, ax, ay, nx, ny, q), F.speed.turn); push([SB], F.speed.turn); const iSB = pts.length - 1;
     push([EB], F.speed.mow); const iEB = pts.length - 1;
-    push(back.slice(1), F.speed.drive); push([pk], F.speed.turn);
+    push(back.slice(1), F.speed.drive); if (gapPt) push([gapPt], F.speed.drive); push([pk], F.speed.turn);
     const plan = finish(pts, spd, { cx, cy }), cum = plan.cum;
     if (plan.total > P.maxPath * 2) continue;
     plan.rows = [{ x0: SA[0], y0: SA[1], x1: EA[0], y1: EA[1], s0: cum[iSA]!, s1: cum[iEA]! }, { x0: SB[0], y0: SB[1], x1: EB[0], y1: EB[1], s0: cum[iSB]!, s1: cum[iEB]! }];
     const rb = plan.rows[1]!;
     for (let k = 1; k <= F.bales.perPatch; k++) { const f = k / (F.bales.perPatch + 1); plan.bales.push({ x: rb.x0 + (rb.x1 - rb.x0) * f + (hk(key, i, 10 + k) - 0.5) * 0.12, y: rb.y0 + (rb.y1 - rb.y0) * f + (hk(key, i, 20 + k) - 0.5) * 0.12, s: rb.s0 + (rb.s1 - rb.s0) * f + 0.85 }); }
+    const rl = Math.hypot(rb.x1 - rb.x0, rb.y1 - rb.y0) || 1, px = -(rb.y1 - rb.y0) / rl, py = (rb.x1 - rb.x0) / rl; // unit normal of row B
+    for (let k = 1; k <= F.bales.square.perPatch; k++) {
+      const f = (k - 0.5) / F.bales.square.perPatch, off = (k % 2 ? 1 : -1) * (0.34 + hk(key, i, 40 + k) * 0.1);
+      plan.squares.push({ x: rb.x0 + (rb.x1 - rb.x0) * f + px * off, y: rb.y0 + (rb.y1 - rb.y0) * f + py * off, s: rb.s0 + (rb.s1 - rb.s0) * f + 0.85, yaw: hk(key, i, 50 + k) * Math.PI });
+    }
     plan.dwells = [{ s: 0, dur: F.turnSec }, { s: plan.rows[0]!.s0, dur: F.patchStop }, { s: rb.s1, dur: F.patchStop }];
     return plan;
   }
@@ -170,12 +188,12 @@ export function planHome(w: WorkWorld, site: FarmSite, idx: number, from: { x: n
   let route: Array<[number, number]> | null = null, g: [number, number] = [site.gates[0]!.x, site.gates[0]!.y];
   for (const gp of [...site.gates].sort((u, v) => Math.hypot(u.x - from.x, u.y - from.y) - Math.hypot(v.x - from.x, v.y - from.y))) { route = driveRoute(w, a, [gp.x, gp.y], site.id); if (route) { g = [gp.x, gp.y]; break; } }
   route ??= [a, g];
-  const pts = [...route, [park.x, park.y] as [number, number]], spd = pts.slice(1).map((_, i) => (i === pts.length - 2 ? F.speed.turn : F.speed.drive));
+  const pts = [...route, ...(site.gap ? [[site.gap.x, site.gap.y] as [number, number]] : []), [park.x, park.y] as [number, number]], spd = pts.slice(1).map((_, i) => (i === pts.length - 2 ? F.speed.turn : F.speed.drive));
   return finish(pts, spd, { cx: from.x, cy: from.y, home: true, loadStart: load });
 }
 
-export interface Runner { plan: TripPlan; s: number; dwellIdx: number; dwellLeft: number; dwellTotal: number; unloading: boolean; unloadT: number; done: boolean; t: number }
-export const newRunner = (plan: TripPlan): Runner => ({ plan, s: 0, dwellIdx: 0, dwellLeft: 0, dwellTotal: 0, unloading: false, unloadT: 0, done: false, t: 0 });
+export interface Runner { /** Time scale applied on top of the game speed (see `paceRate`). */ rate: number; plan: TripPlan; s: number; dwellIdx: number; dwellLeft: number; dwellTotal: number; unloading: boolean; unloadT: number; done: boolean; t: number }
+export const newRunner = (plan: TripPlan): Runner => ({ rate: paceRate(plan), plan, s: 0, dwellIdx: 0, dwellLeft: 0, dwellTotal: 0, unloading: false, unloadT: 0, done: false, t: 0 });
 
 function segAt(plan: TripPlan, s: number): number {
   const c = plan.cum; let lo = 0, hi = c.length - 2;

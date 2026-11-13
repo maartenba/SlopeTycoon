@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { baleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, tractorParts, tractorTris, trailerGeometry, trailerTris } from '../../src/render/meshes/tractor';
+import { squareBaleGeometry, baleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, tractorParts, tractorTris, trailerGeometry, trailerTris } from '../../src/render/meshes/tractor';
 
 describe('tractor meshes', () => {
   it('stay inside the triangle budget (every livery)', () => {
@@ -28,5 +28,11 @@ describe('tractor meshes', () => {
     expect(TRACTOR.hitch).toBe(0.3); expect(TRACTOR.trailerAxle).toBe(0.58); expect(TRACTOR.stack).toEqual([0.2, 0.46, 0.09]);
     const t = trailerGeometry(); t.computeBoundingBox(); expect(t.boundingBox!.min.x).toBeLessThan(-0.58 - 0.3);
     expect(tractorParts().length).toBeGreaterThan(20);
+  });
+  it('the square bale is cheap, finite, straw coloured with twine bands', () => {
+    const g = squareBaleGeometry(); expect(g.getAttribute('position').count / 3).toBeLessThanOrEqual(60);
+    for (const v of g.getAttribute('position').array as Float32Array) expect(Number.isFinite(v)).toBe(true);
+    const col = g.getAttribute('color'), set = new Set<string>(); for (let i = 0; i < col.count; i++) set.add(col.getX(i).toFixed(2) + col.getY(i).toFixed(2));
+    expect(set.size).toBeGreaterThanOrEqual(3);
   });
 });
