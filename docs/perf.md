@@ -59,6 +59,16 @@ Reviewed by reading; fixes below are covered by unit tests in `tests/render/rend
 | Thumbnails prewarm | already deferred (500 ms after start, idle batches, dock refresh coalesced to one rAF) | none needed |
 | Shadows | `Renderer.setShadows` existed but nothing used it; terrain/props use custom shaders that do not sample a shadow map | **M8 (8.6)**: `high` only runs a real sun shadow map (`ShadowRig`, own depth pass; terrain, buildings, props, trees receive; iso + ride / photo / walk; see `docs/shadows.md`); its draw calls / triangles are counted separately from the main pass. Contact shadows (ground mask A channel) are on every tier at no draw-call cost |
 
+### Lane N (water banks, reflections, hill shadows; render only)
+
+| Item | Cost |
+|---|---|
+| Contour water mesh (Med / High) | water triangles 232 -> 1,056 (64 / 61), 188 -> 928 (128 / 5), 668 -> 3,448 (256 / 5): +0.05 .. 0.2 % of the main pass, +0 draw calls, Low unchanged (legacy mesh + program) |
+| Lake reflections (Med / High) | shader only: 0 draw calls, 0 targets, 0 MB; one extra vertex attribute (`aTree`) refreshed every 200 ticks (water vertices only) |
+| Hill shadows (High) | one R8 texture (V x V), time-sliced CPU: 8 rows / frame, only on sun steps > 0.75 degrees or terrain edits; +0 draw calls |
+| Off-screen tree casters (High) | shadow pass only, <= 3 extra cell meshes, only below 60 % of the heavy budget; main pass +0 |
+| `test:perf` | not run by the lane N worker (shared machine): run it in the final gate |
+
 ### Graphics quality (top bar "Graphics: low / med / high", stored in `localStorage["slope.quality"]`)
 
 | preset | pixel ratio cap | shadows | LOD scale | tree density | particles | impostor/hide zoom |

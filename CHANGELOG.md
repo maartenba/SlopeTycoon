@@ -10,6 +10,9 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - Photographers raise their cameras and flash: while they shoot at a viewpoint the camera comes up to the face and each shot gives a brief glint (nothing under reduced motion).
 - Lighter sky objects on low settings: the jump plane, canopies and hang gliders use simpler models and fewer at a time on Low and Medium (High looks as before).
 - Tractors work the pastures in summer: from June to September every Alpine Farm sends one or two tractors with a hay trailer to a flat patch of pasture. They mow two rows, leave round bales, drive home with a growing load and unload; rain and night keep them in the farm. A quiet engine sound is audible only when you are close, and there are none with Atmosphere Off.
+- Smoother lake and river banks: on Medium and High the water's edge follows one smooth curve, so lake corners are round, rivers bend without square notches and the bed no longer changes shade tile by tile (Low keeps the simpler look).
+- Lakes reflect the sky and trees: Medium and High add a soft sky reflection, a gentle sun glint and a broken reflection of the tree line (orange in autumn); frozen lakes show no reflection.
+- Hill shadows at dawn and dusk: on High, hills now shade the ground behind them when the sun is low, and long tree shadows reach into the view from trees just off screen.
 
 ## [0.6.4] - 2026-11-12 (pre-release)
 

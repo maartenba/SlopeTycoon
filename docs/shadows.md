@@ -135,6 +135,12 @@ Shadow-pass refresh rates are unchanged (max 10 Hz, 6 / 3 Hz under load, immedia
 * **Ride / photo**: the 128 demo resort at 17:00 winter (`m8-after-f-r-demo-ride-high`, `...-photo-high`): no GL errors, no artefacts; the sun is low and the strength 0.27, so the shadows are faint. The photo **export** goes through the same scene and the same shadow uniforms (`photo-export-m8-after-f-s-photo-high.png` is a real export; in that orientation the sun is behind the camera, so the shadows are hidden behind the objects: I did not capture an export with a shadow in view).
 * A first walk shot looked shadowless: it was looking along the cast direction from the sun side. Shadows fall away from the sun; the camera has to look toward the sun to see them.
 
+## Hill shadows and off-screen casters (lane N)
+
+* **Hill shadows (terrain on terrain).** Terrain is not a caster in the depth pass, so `src/render/hillShade.ts` precomputes a heightfield sun visibility (ray march toward the lowered shadow sun, 72 tiles, penumbra grows with distance) into one R8 texture over the whole map; the terrain shader multiplies its sun term by `mix(1, hill, strength)` (uniforms `tHill`, `uHillP` are shared through `ShadowRig.uniforms`; `renderer.shadows.setTerrain(grid, HEIGHT_UNIT)` in `main.ts`). Refreshed only when the quantised sun moved > 0.75 degrees or `grid.terrainVersion` changed, 8 rows per frame, swapped whole. High only: off frees the texture. QA: `renderer.shadows.hill.flush()`.
+* **Off-screen casters.** `userData.shadowExtras(sunDir, camera)` on a root (the trees) returns hidden meshes that should cast; `ShadowRig.scan` collects them (<= 20 Hz, only at cast density 1 and under 60 % of the heavy budget, max 3), shows them for the static pass only and hashes them into the static signature. `renderer.shadows.extraCasters = false` switches it off; `stats.extraCells` reports the count. Cells are 64 .. 128 tiles, so it matters in perspective views and 256 close zooms.
+* Window ladder crossfade: not done (needs a third 8 MB depth target).
+
 ## Known gaps
 
 * Sun steps (0.25 degrees, ~10 per second at speed 1) still move long shadow tips in small jumps; no crossfade between ladder sizes; dropped trees still cost vertex work (see Cast density); the depth copy and per-pass cost on a CPU rasteriser make the SwiftShader cost +80 % (see Cost).
