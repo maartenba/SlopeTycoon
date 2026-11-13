@@ -1,5 +1,7 @@
 # M6.3 human playtest checklist (Phase 6, Task 26 STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.2.7. Summer content: campground, petting zoo, viewpoint, treehouse, quad base, climbing crag, rafting and canyoning bases, tackle hut + piers + fish stock + ice fishing, mountain biker and angler guests, Family Summer Camp and Angler's Paradise. Play a normal Career game (`npm run dev`, or the build) for 40-60 minutes on a 128 map (for example `?size=128&seed=5`, where the natural spring makes a good river) and go through one full year, so you see a winter, a summer and an autumn. Use F3 > debug (`__slope.sim.jumpToDay(...)`) to reach summer, and `?scenario=` is not needed. Nothing here is automated: agents cannot judge look, sound or feel. The owner decides whether M6.3 passes.
 
 Numbers from the agents' checks (`docs/balance.md` "M6.3 STOP check"): the bot economy is unchanged, a bot with the summer buildings earns 21-25 % of its year-two income in summer (the plan's target was at least 25 %: this is the open balance question below).

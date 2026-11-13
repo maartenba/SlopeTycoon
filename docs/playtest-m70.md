@@ -1,5 +1,7 @@
 # Playtest M7.0: Atmosphere (owner STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Agents only saw SwiftShader (software GL) screenshots. Please judge on a real GPU:
 
 1. Settings > Graphics > **Atmosphere**: Off / Low / High. Off should look exactly like 0.3.1. Default should be High on your desktop.

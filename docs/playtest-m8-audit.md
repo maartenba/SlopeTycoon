@@ -1,5 +1,7 @@
 # M8 audit: owner check (5 minutes, before any model work)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Source: [`docs/graphics-audit.md`](graphics-audit.md) (task 8.0). Nothing was changed in the game; this is the list the agents want your eyes and wishes on **before** 8.2-8.7 start. Contact sheets: [categories](img/graphics-audit-categories.webp), [all buildings](img/graphics-audit-buildings.webp). The agent's view came from software-rendered stills (SwiftShader), so **your real-GPU opinion beats mine**.
 
 ## 1. Rate the ranked list (agree / disagree / skip)

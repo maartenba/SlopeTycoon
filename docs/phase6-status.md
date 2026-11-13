@@ -21,20 +21,20 @@ Version 0.3.0 (pre-release, never 1.0 until the owner says so). The plan is loca
 |---|---|
 | 1 splash loader | built |
 | 2-11 trail access, lodging v2, tours, viewpoints, comfort, facet, guest-type framework, crossings, footbridge | built |
-| 12 M6.1 STOP | agent batch done (0.2.3); owner playtest pending |
+| 12 M6.1 STOP | agent batch done (0.2.3); owner playtest done (2026-11-14) |
 | 13-17 rivers (model, tool, flow, render, ice) | built |
-| 18 M6.2 STOP | agent batch done (0.2.6); owner playtest pending |
+| 18 M6.2 STOP | agent batch done (0.2.6); owner playtest done (2026-11-14) |
 | 19-25 campground, petting zoo, viewpoint/treehouse, quads, climbing, water tours, MTB type | built |
-| 26 M6.3 STOP | agent batch done (0.2.7); owner playtest pending |
+| 26 M6.3 STOP | agent batch done (0.2.7); owner playtest done (2026-11-14) |
 | 27-29 hotels, coffee stand, Senior + School | built |
-| 30 M6.4 STOP | agent batch done (0.2.8); owner playtest pending |
+| 30 M6.4 STOP | agent batch done (0.2.8); owner playtest done (2026-11-14) |
 | 31-34 winter tours, backcountry + avalanche, Snowboarder, Ski tourer | built |
-| 35 M6.5 STOP | agent batch done (0.2.9); owner playtest pending |
+| 35 M6.5 STOP | agent batch done (0.2.9); owner playtest done (2026-11-14) |
 | 36-39 lift stations model, validation, capacity + NavGraph, mid-station UX | built |
-| 40 M6.6 STOP | agent batch done (0.2.6); owner playtest pending |
+| 40 M6.6 STOP | agent batch done (0.2.6); owner playtest done (2026-11-14) |
 | 41 mountain concerts | built |
 | 42 angler type, 44 spring sites, 45-46 bridges, 47 `chair6d`, 48 date chip, 49 tackle hut, 50-53 campaigns | built |
-| 43 M6.7 STOP | prep done (this batch, `docs/playtest-m66.md`); the owner's playtest and approval remain |
+| 43 M6.7 STOP | prep done (this batch, `docs/playtest-m66.md`); owner playtest done (2026-11-14) |
 
 ## Deferred / not built (and why)
 

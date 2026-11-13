@@ -1,5 +1,7 @@
 # Playtest checklist M7.3: sled runs, Alpine Coaster, Sledder
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Build: see `docs/sled-runs.md`. Needs Career level 2 (Sled Rental) / 3 (Alpine Coaster), or Sandbox.
 1. **Winter**: build a Sled Rental (Recreation) beside a footpath at the foot of a gentle slope. Pistes drawer > Sled run: drag a track up the slope from the hut.
    - A start far from the hut / a path says "Start the run next to ...". Across a piste or a trail: "A sled run cannot cross a piste or a trail".

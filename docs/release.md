@@ -597,7 +597,7 @@ Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts
 - `NavWorld.terrainVersion` not wired in `main.ts`; impact unverified.
 - The app JS chunk (1.7 MB raw) exceeds Vite's 500 kB warning; not split further. Total 887 kB gzip is under the 2 MB budget.
 - `muteMusicInMenus` audio setting exists in `AudioSettings` but is unused.
-- Human playtest STOP of Task 32 still open.
+- Human playtest STOP of Task 32: done (2026-11-14).
 
 
 ## Music (unreleased, Nov 2026)

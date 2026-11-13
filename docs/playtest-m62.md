@@ -1,5 +1,7 @@
 # M6.2 + M6.6 human playtest checklist (Phase 6, Tasks 18 and 40 STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.2.6. Rivers, springs, flow, ice, the suspension footbridge, mid-stations and the six-seat chair. Play a normal Career game (`npm run dev`, or the build) for 30-40 minutes on a 128 map (for example `?size=128&seed=5`, where the first natural spring makes real rapids); tick what you see. Anything that feels wrong: note the seed, what you did and a screenshot. What the agent already checked (headless, SwiftShader, no GPU): `npm run phase6:sanity` (river + bridges + mid-station gondola + ride-along + save / reload, identical state), the standard gate, `test:balance`, `test:perf`, `shot:suite`, `analytics:e2e`, `offline:splash`, the touch subset, and `npm run flicker` on a river and a mid-station scene. What it cannot judge: how it looks and feels on a real GPU, real frame rate, audio, pointer lock, a real finger.
 
 ## Rivers and springs (level 2 in Career)

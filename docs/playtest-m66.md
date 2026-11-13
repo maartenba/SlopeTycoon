@@ -1,5 +1,7 @@
 # M6.7 / Phase 6 final human playtest checklist (Task 43 STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.3.0. The last Phase 6 milestone: **Mountain Concert** (1-10 September) and **Snow Concert** (1-15 March), both next to the Summer Music Festival, plus the whole Phase 6 content set (`docs/phase6-status.md`). Agents verified everything headless (gate, balance, perf, shot suite, sanity stories, touch subset; numbers in `docs/release.md`). They cannot judge a real GPU, sound by ear or a real touch device: that is this list. Version stays pre-release (never 1.0).
 
 ## A full Career year (the main test)

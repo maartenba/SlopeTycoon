@@ -1,5 +1,7 @@
 # Playtest checklist: M7.4 (village services, sky, Carnival)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Things agents cannot judge. Details: `docs/m74-buildings.md`, `docs/festivals.md`.
 
 - Pizzeria: do families and budget guests stop for pizza, and does the $9 price feel right? Is the oven smoke too much?

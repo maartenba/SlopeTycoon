@@ -1,5 +1,7 @@
 # M8 graphics pass: owner playtest (real GPU and phone)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Everything in M8 was judged from software-rendered stills (SwiftShader, no GPU), so **only you can sign off the look and the speed**. Details and numbers: [`graphics-m8.md`](graphics-m8.md) (before / after), [`shadows.md`](shadows.md), [`graphics-audit.md`](graphics-audit.md) (the baseline). M7.6 (scene films) starts after this sign-off.
 
 ## 1. Speed (F3 shows fps / draw calls)

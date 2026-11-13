@@ -1,5 +1,7 @@
 # Playtest checklist: Milestone M5.3 (Career, scenarios, year report, achievements)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Build: `npm run dev` (or `npm run build && npm run preview`). Use **8x** for anything slow (a game day is 150 s at 1x, 50 s at 3x, 18.75 s at 8x). Everything below was verified headless (bots, unit tests, screenshots); **nothing was played by a human yet**.
 
 ## Time model at the three speeds

@@ -1,5 +1,7 @@
 # M6.5 human playtest checklist (Phase 6, Task 35 STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.2.9. Winter adventures and the backcountry: Sleigh Stable, Snowshoe Hut, Snowscooter Base, paintable **Backcountry routes** with an avalanche danger from 1 to 5, the **Snowboarder** and **Ski tourer** guest types, the **Powder Hounds** campaign and the retargeted **Snowboard Park Jam**. Play a normal Career game (`npm run dev`, or the built game) on 128 in winter, aim for resort level 3 so everything is unlocked (the sleigh and the snowshoe hut at level 2, the scooter base and backcountry at level 3), with a Ski Patrol Hub and a Mountain Hut or restaurant. Try one 64 map as well. All of it is ON, no flag.
 
 Numbers from the agents' checks (`docs/balance.md` "M6.5 STOP check"): the bot paints no route and builds no tour base, so it draws no tourers; the Snowboarder carve-out moved the bot economy by -5.0 % (64 / 61, 360 d), +1.1 % (128 / 7) and +1.3 % (64 / 5); boarders are injured at 4.8 per 1000 guests, the same as budget / couple guests. `npm run backcountry:sanity`, `winter:tours`, `winter:sanity`, `summer:sanity`, `phase6:sanity` and `play:sanity` all pass.

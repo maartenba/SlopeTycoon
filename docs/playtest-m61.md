@@ -1,5 +1,7 @@
 # M6.1 human playtest checklist (Phase 6, Task 12 STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.2.5. Play a normal Career game (`npm run dev`, or the build) for 20-30 minutes; tick what you see. Anything that feels wrong: note the seed, what you did and a screenshot.
 
 ## Toilets and urges

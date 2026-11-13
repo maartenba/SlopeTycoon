@@ -1,5 +1,7 @@
 # M5.2 playtest checklist (ground-level views, about 20 minutes)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Start a **new 128 Normal game** (or Continue a save with a built resort, a chairlift and a gondola; in summer for the bike). Settings (gear icon): check Graphics (default med) and **Gameplay > Ride-along slow motion**.
 
 **Decision needed from you**: ride mode currently slows the game to 15 % ("slow-mo") so a ski run lasts a few seconds instead of half a second. It is now a setting, **Ride-along slow motion: On/Off, default On**. Should On stay the default? (Please also say whether 15 % feels right.)

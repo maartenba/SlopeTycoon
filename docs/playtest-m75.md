@@ -1,5 +1,7 @@
 # M7.5 playtest: phones show the map (real-device checklist)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Everything below was built and checked with Chrome's touch emulation on SwiftShader (`npm run mobile:audit`, `npm run touch:e2e`). That cannot tell you how it **feels**: finger size, thumb reach, slop, rubber-banding, the notch, the keyboard, real frame rate. This checklist is for an iPhone (Safari, and the installed PWA) and an Android phone (Chrome). The code is `src/ui/components/StSheet.ts` and the phone rules in the components; the design and numbers are in `docs/mobile-ui.md`.
 
 Open the game on the phone (`https://slopetycoon.com/play/`), start a **new game**, and keep the default (Career, size 64 or 128).

@@ -1,5 +1,7 @@
 # M6.4 human playtest checklist (Phase 6, Task 30 STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.2.8. Hotels and calmer guests: Small Hotel, Luxury Hotel with a steaming heated pool, Coffee Stand, Senior and School group guests, Wellness & Views and School Trips campaigns. Play a normal Career game (`npm run dev`, or the built game) on 64 or 128, aim for resort level 4 so both hotels are unlocked, and tick the boxes. Agents verified only what a headless browser can see (`npm run winter:sanity`, screenshots); feel, pacing and "does this read well" are yours.
 
 Numbers from the agents' checks (`docs/balance.md` "M6.4 STOP check"): a bot that builds no hotel earns the same as before; the two new guest types move the bot's money by +8.7 % / +1.4 % / -3.2 % on three seeds (average +2.3 %).

@@ -1,5 +1,7 @@
 # M7.1 human playtest checklist (STOP)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Version 0.3.1. The consistency pass: the building contract test, the access / placement audit, the per-building ROI table and four economy fixes (Shop, Shuttle Bus Depot, Après-Ski Bar, Wind Turbine). The report is [economy-audit.md](economy-audit.md); the re-recorded goldens are in [balance.md](balance.md) "M7.1 re-record". Agents cannot judge feel, pacing or real-GPU behaviour: this is the list for the owner.
 
 ## One year on each difficulty (the main test)

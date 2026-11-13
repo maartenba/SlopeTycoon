@@ -1,5 +1,7 @@
 # Playtest M7.8: Schirmbar and the resort name (0.6.0)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Nobody has played the Schirmbar by hand: everything below was checked headless and on the real page with a software renderer (SwiftShader), which cannot judge the look at real frame rates, the sound, or how it feels. Please check on a real machine and a phone.
 
 ## Schirmbar

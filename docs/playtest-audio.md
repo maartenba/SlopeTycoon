@@ -1,5 +1,7 @@
 # Playtest: music (owner mp3 files) + proximity audio (nature, streams, bar music) + recorded samples
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 **Nothing here was heard by the agent that wrote it** (no audio device): the logic is tested with fake media elements and `npm run music:e2e` reads the audio graph in Chrome, but nobody listened. Please check by ear, with the Music slider at its default (50 %) and the ambience slider at its default (28 %) and again at 60 %. **All music tables (track trims, playlists, situation rules, hand-off, bar level) live in `src/config/audioMusic.ts`; all proximity constants in `src/config/audioProximity.ts` (`PROX`).** The track table, the mapping and how to swap a track: `docs/audio.md` "Music".
 
 ## A. Level (the owner said the music is a bit loud: the default is now 3 dB lower)

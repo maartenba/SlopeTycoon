@@ -1,5 +1,7 @@
 # M7.2 review checklist: website SEO and a less AI-looking site
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Site-only milestone: no game code changed, the version stays 0.3.1. Build and look at it with `npm run build:site && npm run site:dev` (http://localhost:4190/) or read the screenshots in `.weave/shots/seo-*.png` (`seo-before-*` is the old landing page, `seo-after-*` the new one).
 
 ## What changed

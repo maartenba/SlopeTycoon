@@ -1,5 +1,7 @@
 # M5.1 playtest checklist (about 15 minutes)
 
+Status: completed by the owner on 2026-11-14 (no open items recorded).
+
 Start a **new 128 Normal game** (`npm run dev` or the built game). Settings are in the gear icon.
 
 1. **Version**: Menu > About shows the current version (0.2.2).
