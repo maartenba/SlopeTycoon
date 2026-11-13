@@ -20,7 +20,9 @@ export function softDiscPixels(n = 32): Uint8Array {
   return px;
 }
 
-export interface Burst { x: number; y: number; z: number; count: number; kind: 'puff' | 'confetti' | 'spark'; /** puff colour (snow / dust) */ color?: number; scale?: number; /** Test/QA only: stretch the lifetime. */ lifeScale?: number }
+/** Life (s) of a camera-flash particle (photographers); mirrors `PHOTO_SHOOT.flashS`. */
+export const PHOTO_FLASH_S = 0.12;
+export interface Burst { x: number; y: number; z: number; count: number; kind: 'puff' | 'confetti' | 'spark' | 'flash'; /** puff colour (snow / dust) */ color?: number; scale?: number; /** Test/QA only: stretch the lifetime. */ lifeScale?: number }
 
 /**
  * Pooled instanced quads: ONE draw call for every puff and confetti piece. Billboarded towards the camera, fixed pool (no allocation per
@@ -57,7 +59,11 @@ export class Particles {
       const i = this.head; this.head = (this.head + 1) % this.n;
       this.alive[i] = 1; this.age[i] = 0; this.isSpark[i] = b.kind === 'spark' ? 1 : 0;
       const a = r() * Math.PI * 2;
-      if (b.kind === 'spark') { // firework spark: even burst over a sphere, short life, falls gently
+      if (b.kind === 'flash') { // camera flash (photographers): a still, brief glint that shrinks out in ~0.12 s; no velocity, no gravity
+        this.px[i] = b.x; this.py[i] = b.y; this.pz[i] = b.z; this.vx[i] = 0; this.vy[i] = 0; this.vz[i] = 0;
+        this.life[i] = PHOTO_FLASH_S * (b.lifeScale ?? 1); this.size[i] = 0.34 * sc; this.grav[i] = 0; this.isSpark[i] = 1;
+        this.mesh.setColorAt(i, this.col.set(b.color ?? 0xfffbe6));
+      } else if (b.kind === 'spark') { // firework spark: even burst over a sphere, short life, falls gently
         const u = r() * 2 - 1, ring = Math.sqrt(1 - u * u), sp = (2.4 + r() * 1.2) * sc;
         this.px[i] = b.x; this.py[i] = b.y; this.pz[i] = b.z;
         this.vx[i] = Math.cos(a) * ring * sp; this.vz[i] = Math.sin(a) * ring * sp; this.vy[i] = u * sp;

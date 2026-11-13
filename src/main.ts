@@ -64,6 +64,7 @@ import { cosmeticUnlockedBy } from '@/config/achievements';
 import { setGroundCaps } from '@/render/lod/nearLod';
 import { RideAlong, rideActivityLabel, rideTimeFactor, easeRideFactor } from '@/render/view/RideAlong';
 import type { RideSample } from '@/render/view/ViewCameraRig';
+import { PHOTO_SHOOT } from '@/render/photoShoot';
 import { RIDE_NEAR_TERRAIN_TILES, horizonFraction, isPerspective, lodHeightFor, projectToScreen, terrainLodHeightFor } from '@/render/view/cameraMath';
 import type { StViewHud } from '@/ui/components/StViewHud';
 import type { StPhoto } from '@/ui/components/StPhoto';
@@ -1257,12 +1258,14 @@ crossingsView.onBell = (x, z): void => { const walk = renderer.viewMode.mode ===
 // Photographers (docs/photographers.md): a quiet shutter click, only when the camera is close to the spot; the loud end of the range is the Photo mode click's level, never above it (the Sfx limiter keeps it to a few a second).
 sim.bus.on('photo:taken', (e) => {
   if (DEMO) return;
+  guestRenderer.startShoot(e.id, e.shots); // the camera comes up and each shot glints (render only, src/render/photoShoot.ts)
   const walk = renderer.viewMode.mode === 'walk', lx = walk ? renderer.rig.pose.x : renderer.controls.target.x, lz = walk ? renderer.rig.pose.z : renderer.controls.target.z;
   const span = walk ? AMB.walkZoom : renderer.controls.camera.top - renderer.controls.camera.bottom, d = Math.hypot(lx - e.x, lz - e.y);
   const g = Math.max(0, 1 - d / (span * 0.45)) * 0.45;
   if (g > 0.04) { audioRef?.sfx.play('shutter', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (e.x - lx) / 30)) }); if (import.meta.env.DEV) (window as unknown as { __shutters?: number }).__shutters = ((window as unknown as { __shutters?: number }).__shutters ?? 0) + 1; } // __shutters: dev-only counter read by photographer:sanity
 });
 guestRenderer.isKid = (slot) => guestSim.families.isKid(slot);
+guestRenderer.onFlash = (x, y, z, k): void => { if (DEMO || getReducedMotion() || !renderer.viewMode.isIso || lodHeightFor(renderer.camera) > PHOTO_SHOOT.nearView) return; fx.particles.emit({ x, y, z, count: 1, kind: 'flash', scale: k }); }; // a brief glint, near iso views only, never under reduced motion
 guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.target[slot]!)?.type; return ty === 'iceRink' ? 1 : ty === 'beach' ? 2 : 0; };
 {
   const prev = renderer.onFrame;

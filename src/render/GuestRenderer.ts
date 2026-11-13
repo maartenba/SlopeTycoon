@@ -1,3 +1,4 @@
+import { PHOTO_SHOOT, PhotoShoots } from './photoShoot';
 import * as THREE from 'three';
 import { isPerspective } from './view/cameraMath';
 import { GROUND_CAPS, NEAR_CAPS, nearLod } from './lod/nearLod';
@@ -207,6 +208,14 @@ export class GuestRenderer {
   /** Guests with an id below this keep the old cosmetic boarders (a save from before Snowboarder was a type); `main.ts` wires `Spawner.legacyBoarderBelow`. */
   legacyBoarderBelow: () => number = () => 0;
 
+  /** Photographers' raised-camera sessions (started by `photo:taken`, docs/photographers.md "Camera and flash") and the renderer's own clock (real seconds, only while the sim clock runs). */
+  readonly shoots = new PhotoShoots();
+  shootClock = 0;
+  /** Called once per shot of a posing photographer with the flash position (x, up, z) and the figure scale; main.ts turns it into a glint near the camera. */
+  onFlash: ((x: number, y: number, z: number, scale: number) => void) | null = null;
+  /** The guest with this id raises the camera for a session of `shots` shots (render only). */
+  startShoot(id: number, shots: number): void { this.shoots.start(id, this.shootClock, shots); }
+
   constructor(private store: GuestStore) {
     const n = store.capacity;
     const pal = makePalette();
@@ -301,6 +310,7 @@ export class GuestRenderer {
     const adv = this.lastTime < 0 ? 0 : now - this.lastTime;
     const dt = adv > 1e-9 ? Math.min(0.1, Math.max(0, this.frameSeconds)) : 0;
     this.lastTime = now;
+    this.shootClock += dt;
     let pathN = 0;
     let skipped = 0;
     const far = this.far, winter = this._winter, B = this.batches;
@@ -344,7 +354,11 @@ export class GuestRenderer {
       }
       const state = s.state[i]!;
       const uk = state === GState.Using && this.usingKind ? this.usingKind(i) : UsingKind.Other;
-      const gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!) ?? (s.id[i]! >= this.legacyBoarderBelow() ? 'ski' : undefined)); // Snowboarder is a type now: only guests of a pre-0.2.9 save keep the cosmetic boarders
+      let gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!) ?? (s.id[i]! >= this.legacyBoarderBelow() ? 'ski' : undefined)); // Snowboarder is a type now: only guests of a pre-0.2.9 save keep the cosmetic boarders
+      if (gear === Gear.Walk && spd === 0 && this.shoots.size > 0 && this.shoots.isPosing(s.id[i]!, this.shootClock)) { // a photographer standing at the spot: the camera comes up, and each shot glints
+        gear = Gear.Shoot;
+        if (this.onFlash && this.shoots.dueShots(s.id[i]!, this.shootClock) > 0) { const k = this.app[i * 12 + 10]!; this.onFlash(x + this.hs[i]! * PHOTO_SHOOT.flashForward * k, z + PHOTO_SHOOT.flashUp * k, y + this.hc[i]! * PHOTO_SHOOT.flashForward * k, k); }
+      }
       const P = POSE[gear]!;
       this.dist[i] = this.dist[i]! + (spd * GAIT_RATE + (P.still ? STILL_RATE : 0)) * dt;
       let bt = B[gear]!;

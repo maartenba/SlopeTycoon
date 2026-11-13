@@ -12,7 +12,7 @@ The sim rolls the same `specialSky` (dawn / dusk quality 0.6..1) and `fogDay` (i
 2. In a shoot window with an unused session bit (`GuestStore.eve`: 1 morning, 2 evening; photographers keep the bits until 04:00), it sets out `walkLead` (1.5 h) before the light for the best spot: score = view x spec weight x (0.5 + 0.5 light) - 0.012 x distance. A trail goal tile exists (snow-free trail): a one-way Excursion hike (planning allowed until sunset + 2.5 h, never turned back, always packs a lunch). Otherwise the building is reached by foot (footpath beside it); winter needs that footpath.
 3. At the spot (`photoShoot`): the `photo:taken` event (light, shots = 3 + round(4 x quality)), happiness + 0.1 x quality, the view's own `viewed` effect, the stop lasts 0.5-1.0 h by quality. Late (no light) = an ordinary visit, no photo.
 4. Then the normal day: a hot drink (`foodPrefer` terrace / café / hut, `eatBonus` 0.5). Photographers leave at sunset + 1 h on a day with an evening light, else with the day guests.
-5. Look: `HairStyle.Beret` (flat beret) and a camera body + lens at the chest. No raised-camera pose and no flash animation (not done).
+5. Look: `HairStyle.Beret` (flat beret) and a camera body + lens at the chest. While shooting: see "Camera and flash" below.
 
 ## Effects
 * Spend: only what they buy (a coffee, lift tickets): budget 90-170, no ticket of their own. Small on purpose.
@@ -20,6 +20,9 @@ The sim rolls the same `specialSky` (dawn / dusk quality 0.6..1) and `fogDay` (i
 * News: a milestone the first time ("Photographers have arrived for the light"); the achievement **Golden hour** (20 sessions on one special-sky day, `photo:golden`); the Rudi tip `photo.viewpoint` (a viewpoint stands, no photographer yet).
 * Sound: the Photo-mode `shutter` role, quiet, only when the camera is near the spot (`main.ts`).
 * No campaign ("Photo Weekend" skipped: the campaigns table needs prerequisites and a price model for little gain).
+
+## Camera and flash (render only)
+`src/render/photoShoot.ts` (pure timing, `tests/render/photoShoot.test.ts`) + `Gear.Shoot` (`guestAppearance.ts`, `meshes/Figures.ts`). The `photo:taken` event (the same instant as the shutter click) starts a session in `GuestRenderer` (`startShoot`): while the guest stands still the figure is drawn with the **Shoot gear** (both arms raised, the camera body and lens moved from the chest to the face; same triangle count as the walking figure, one more gear batch that is only drawn while someone shoots) and each of the session's shots (up to 8; first after 0.45 s, then 1.1-2.3 s apart, per-shot hash) fires a **brief glint** (0.12 s, a `flash` particle in the existing `fx.particles` pool = no new draw call, a few pixels wide, in front of the lens). The camera comes down 0.7 s after the last shot. Times are render seconds of the guest renderer's own clock (it freezes while the sim is paused); nothing reaches the sim or `stateHash`. The glint only shows in iso views closer than 45 tiles of view height and never under reduced motion (the pose stays). A walking photographer is never swapped (the pose needs the guest to stand still). Not done: a tripod prop, and a flash in ride / walk views (the effect pool is an iso-view layer).
 
 ## Balance
 No viewpoint = no photographer, and the balance bot builds none, so goldens are unchanged. `npm run analysis:roi` has no row for them (the type has no building of its own).

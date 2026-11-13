@@ -131,9 +131,10 @@ export function describeAppearance(id: number, type: number, winter = false, kid
 }
 
 /* ---------------------------------------------------------------- gear */
-export const Gear = { Walk: 0, Hike: 1, Ski: 2, Board: 3, Bike: 4, Sit: 5, Skate: 6, Lie: 7 } as const;
-export const GEAR_COUNT = 8;
-export const GEAR_NAMES = ['walk', 'hike', 'ski', 'board', 'bike', 'sit', 'skate', 'lie'] as const;
+/** `Shoot` = a photographer with the camera raised to the face (never chosen by `gearFor`: the guest renderer swaps a standing walker to it during a photo session, docs/photographers.md). */
+export const Gear = { Walk: 0, Hike: 1, Ski: 2, Board: 3, Bike: 4, Sit: 5, Skate: 6, Lie: 7, Shoot: 8 } as const;
+export const GEAR_COUNT = 9;
+export const GEAR_NAMES = ['walk', 'hike', 'ski', 'board', 'bike', 'sit', 'skate', 'lie', 'shoot'] as const;
 /** Outfit: 0 warm (jacket, trousers, gloves), 1 summer (t-shirt, shorts), 2 swimwear. */
 export const Outfit = { Warm: 0, Summer: 1, Swim: 2 } as const;
 /** What a guest in the 'Using' state is doing (resolved by the host from the target building). */
@@ -184,6 +185,7 @@ export const POSE: Record<number, PoseParams> = {
   [Gear.Sit]: { leg: 0.25, arm: 0, sway: 0.03, bob: 0, wheel: 0, freq: 1.2, still: 1 },
   [Gear.Skate]: { leg: 0.45, arm: 0.5, sway: 0.1, bob: 0.004, wheel: 0, freq: 9, still: 0 },
   [Gear.Lie]: { leg: 0, arm: 0, sway: 0, bob: 0, wheel: 0, freq: 0, still: 0 },
+  [Gear.Shoot]: { leg: 0, arm: 0, sway: 0, bob: 0, wheel: 0, freq: 0, still: 0 },
 };
 /** Animation phase (radians) of a guest: per-guest offset + time x speed x frequency. */
 export const animPhase = (phase0: number, time: number, speed: number, freq: number): number => phase0 + time * speed * freq;
