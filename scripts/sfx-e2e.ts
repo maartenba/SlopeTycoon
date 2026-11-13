@@ -15,9 +15,10 @@ import puppeteer from 'puppeteer-core';
 import { SAMPLES, SAMPLE_DEFS } from '../src/config/audioSamples';
 import { createPagesServer } from './lib/static-server';
 import { CHROME_ARGS } from './lib/harness';
+import { requireFreshDist } from './lib/dist-guard';
 
 const dist = join(process.cwd(), 'dist');
-if (!existsSync(join(dist, 'index.html'))) { console.error('dist/ missing: run `npm run build` first'); process.exit(1); }
+requireFreshDist();
 const exe = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((c) => existsSync(c));
 if (!exe) { console.error('No Chrome found'); process.exit(1); }
 const tmp = mkdtempSync(join(tmpdir(), 'slope-sfx-'));

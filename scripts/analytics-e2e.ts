@@ -11,9 +11,10 @@ import type { AddressInfo } from 'node:net';
 import puppeteer, { type Browser, type Page } from 'puppeteer-core';
 import { createPagesServer } from './lib/static-server';
 import { CHROME_ARGS } from './lib/harness';
+import { requireFreshDist } from './lib/dist-guard';
 
 const dist = join(process.cwd(), 'dist');
-if (!existsSync(join(dist, 'sw.js'))) { console.error('dist/ missing: run `npm run build` first'); process.exit(1); }
+requireFreshDist();
 const CHROMES = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'];
 const exe = CHROMES.find((c) => existsSync(c));
 if (!exe) { console.error('No Chrome found'); process.exit(1); }
