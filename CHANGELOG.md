@@ -4,6 +4,12 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+- Nicer cars and buses: seven body styles (hatchback, sedan, SUV, van, pickup, estate, camper), more colours and two-tone roofs, ski boxes, pillars between the windows, snow on the roofs in winter, brake lights, a gentle lean in turns, a driver at the wheel of the bus and a simpler look on Low.
+- Cows swish their tails and ring their bells, and twitch an ear now and then (still under reduced motion).
+- Square hay bales on some trailers and in the fields, beside the round ones.
+- Smoother river meets lake: no more visible seam or doubled foam where a river enters a lake.
+- Tractors work at a steadier pace: trips follow the game speed (about 2-3 game hours each, two or three a day) and they drive through a gap in the pasture fence.
+
 ## [0.6.5] - 2026-11-13 (pre-release)
 
 A look-and-atmosphere update. The economy and your old saves are unchanged.
