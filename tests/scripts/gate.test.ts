@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimate, exitCode, failedFilesFromVitestJson, runGate, validate, withDeps, type Exec, type GateEvent, type StageDef } from '../../scripts/lib/gateRunner';
+import { stageTimeoutSec, estimate, exitCode, failedFilesFromVitestJson, runGate, validate, withDeps, type Exec, type GateEvent, type StageDef } from '../../scripts/lib/gateRunner';
 import { ALL, BALANCE, DEFAULT_JOBS, E2E, FULL, STAGES, fastSelection, stagesForPaths } from '../../scripts/lib/gateStages';
 import { distProblem } from '../../scripts/lib/dist-guard';
 import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
@@ -181,5 +181,31 @@ describe('gate schedule simulation (docs/gate-speed.md "Retune")', () => {
     expect(DEFAULT_JOBS).toBe(6);
     const before = estimate(old, 4, wall), after = estimate(plan, DEFAULT_JOBS, wall);
     expect(before).toBeGreaterThan(25 * 60); expect(after).toBeLessThan(before * 0.75); // about 29.4 min -> 17 min on paper (the CPU floor is about 22 min)
+  });
+});
+
+describe('gate hang guard (per-stage timeout)', () => {
+  it('stageTimeoutSec is last wall x 4 with a floor', () => {
+    expect(stageTimeoutSec(50, 10)).toBe(200);
+    expect(stageTimeoutSec(5, 10)).toBe(120);
+    expect(stageTimeoutSec(undefined, 60)).toBe(240);
+  });
+  it('a hanging stage is killed by the runner, retried, and reported HANG (not flaky)', async () => {
+    const killed: string[] = [];
+    const stages: StageDef[] = [{ id: 'e2e', cmd: 'x', slots: 1, est: 1 }, { id: 'after', cmd: 'y', slots: 1, est: 1, needs: ['e2e'] }];
+    const exec: Exec = (s, attempt) => (s.id === 'e2e' && attempt === 1 ? new Promise(() => { /* never settles */ }) : Promise.resolve({ code: 0 }));
+    const r = await runGate(stages, { jobs: 2, exec, timeoutFor: () => 0.05, kill: (s) => killed.push(s.id) });
+    expect(killed).toEqual(['e2e']);
+    const e = r.find((x) => x.id === 'e2e')!;
+    expect(e.hang).toBe(true); expect(e.flaky).toBe(false); expect(e.attempts).toBe(2); expect(e.note).toMatch(/HANG/);
+    expect(r.find((x) => x.id === 'after')!.status).toBe('pass');
+  });
+  it('a stage that always hangs fails', async () => {
+    const r = await runGate([{ id: 'h', cmd: 'x', slots: 1, est: 1 }], { jobs: 1, exec: () => new Promise(() => undefined), timeoutFor: () => 0.02 });
+    expect(r[0]!.status).toBe('fail'); expect(r[0]!.hang).toBe(true);
+  });
+  it('a hang reported by the exec itself (process outlived its done marker) passes flagged HANG', async () => {
+    const r = await runGate([{ id: 'h', cmd: 'x', slots: 1, est: 1 }], { jobs: 1, exec: () => Promise.resolve({ code: 0, hang: true }) });
+    expect(r[0]!.status).toBe('pass'); expect(r[0]!.hang).toBe(true); expect(r[0]!.flaky).toBe(false);
   });
 });

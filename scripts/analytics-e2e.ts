@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import type { AddressInfo } from 'node:net';
 import puppeteer, { type Browser, type Page } from 'puppeteer-core';
 import { createPagesServer } from './lib/static-server';
+import { finishE2e } from './lib/e2eTeardown';
 import { CHROME_ARGS } from './lib/harness';
 import { requireFreshDist } from './lib/dist-guard';
 
@@ -123,6 +124,8 @@ try {
   ok(pe7.length === 0, `offline: no page errors (${pe7.join('|')})`);
   console.log(`  console errors while offline: ${JSON.stringify(r.errors)}`);
   await r.page.close();
-} finally { await browser.close(); if (server.listening) server.close(); }
-if (problems.length) { console.error(`\n${problems.length} problem(s)`); process.exit(1); }
+} catch (e) { ok(false, `exception: ${String(e)}`); }
+const code = problems.length ? 1 : 0;
+if (code) console.error(`\n${problems.length} problem(s)`);
+await finishE2e(code, browser, server); // marker, bounded browser close (SIGKILL own PID), server close, process.exit
 console.log('\nanalytics e2e OK');

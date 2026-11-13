@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import type { AddressInfo } from 'node:net';
 import puppeteer from 'puppeteer-core';
 import { createPagesServer } from './lib/static-server';
+import { finishE2e } from './lib/e2eTeardown';
 import { CHROME_ARGS } from './lib/harness';
 import { requireFreshDist } from './lib/dist-guard';
 
@@ -69,6 +70,8 @@ try {
   ok(errors.length === 0, `no page errors (${errors.join('|')})`);
   ok(failed.length === 0, `no failed requests while offline (${failed.slice(0, 3).join(', ')})`);
   await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
-} finally { await browser.close(); server.close(); }
-if (problems.length) { console.error(`offline splash FAILED: ${problems.length}`); process.exit(1); }
+} catch (e) { problems.push(`exception: ${String(e)}`); }
+const code = problems.length ? 1 : 0;
+if (code) console.error(`offline splash FAILED: ${problems.length}`);
+await finishE2e(code, browser, server); // marker, bounded browser close (SIGKILL own PID), server close, process.exit
 console.log('offline splash OK');

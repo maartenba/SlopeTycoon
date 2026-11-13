@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import type { AddressInfo } from 'node:net';
 import puppeteer from 'puppeteer-core';
 import { createPagesServer } from './lib/static-server';
+import { finishE2e } from './lib/e2eTeardown';
 import { CHROME_ARGS } from './lib/harness';
 import { requireFreshDist } from './lib/dist-guard';
 
@@ -90,6 +91,7 @@ try {
   ok(errors.length === 0, `no console / page errors in the whole run (${errors.slice(0, 3).join(' | ')})`);
   await page.screenshot({ path: '.weave/shots/music-e2e.png' });
 } catch (e) { ok(false, `exception: ${String(e)}`); }
-finally { await browser.close(); server.close(); }
-if (problems.length) { console.error('music e2e FAILED'); process.exit(1); }
+const code = problems.length ? 1 : 0;
+if (code) console.error('music e2e FAILED');
+await finishE2e(code, browser, server); // marker, bounded browser close (SIGKILL own PID), server close, process.exit
 console.log('music e2e OK');

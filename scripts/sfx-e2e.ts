@@ -14,6 +14,7 @@ import type { AddressInfo } from 'node:net';
 import puppeteer from 'puppeteer-core';
 import { SAMPLES, SAMPLE_DEFS } from '../src/config/audioSamples';
 import { createPagesServer } from './lib/static-server';
+import { finishE2e } from './lib/e2eTeardown';
 import { CHROME_ARGS } from './lib/harness';
 import { requireFreshDist } from './lib/dist-guard';
 
@@ -121,6 +122,7 @@ try {
   ok(off.played && off.eng === 'running' && off.errs >= 1 && !(await page.evaluate(`${A}.samples.isReady('${uncached}')`)), `offline: a file that was never cached fails quietly (the synth stays), a footstep still plays, the engine keeps running (${JSON.stringify(off)})`);
   ok(errors.length === 0, `offline: no page errors (${errors.slice(0, 3).join(' | ')})`);
 } catch (e) { ok(false, `exception: ${String(e)}`); }
-finally { await browser.close(); try { server.close(); } catch { /* already closed */ } }
-if (problems.length) { console.error('sfx e2e FAILED'); process.exit(1); }
-console.log('sfx e2e OK');
+const code = problems.length ? 1 : 0;
+if (code) console.error('sfx e2e FAILED');
+if (!code) console.log('sfx e2e OK');
+await finishE2e(code, browser, server); // marker, bounded browser close (SIGKILL own PID), server close, process.exit

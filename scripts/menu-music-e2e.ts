@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import type { AddressInfo } from 'node:net';
 import puppeteer from 'puppeteer-core';
 import { createPagesServer } from './lib/static-server';
+import { finishE2e } from './lib/e2eTeardown';
 import { CHROME_ARGS } from './lib/harness';
 import { requireFreshDist } from './lib/dist-guard';
 
@@ -70,6 +71,7 @@ try {
   mkdirSync('.weave/shots', { recursive: true });
   await page.screenshot({ path: '.weave/shots/menu-music-title.png' });
 } catch (e) { ok(false, `exception: ${String(e)}`); try { const pg = (await browser.pages())[1]!; console.log(await pg.evaluate(`JSON.stringify({ a: !!window.__menuAudio, st: window.__menuAudio && window.__menuAudio.engine.state, ms: window.__menuAudio && window.__menuAudio.music.stats })`)); } catch { /* ignore */ } }
-finally { await browser.close(); server.close(); }
-if (problems.length) { console.error('menu music e2e FAILED'); process.exit(1); }
+const code = problems.length ? 1 : 0;
+if (code) console.error('menu music e2e FAILED');
+await finishE2e(code, browser, server); // marker, bounded browser close (SIGKILL own PID), server close, process.exit
 console.log('menu music e2e OK');

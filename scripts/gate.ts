@@ -7,8 +7,8 @@ import { spawn, execFileSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus, loadavg } from 'node:os';
 import { join } from 'node:path';
-import { estimate, exitCode, failedFilesFromVitestJson, runGate, withDeps, type ExecResult, type StageDef, type StageResult } from './lib/gateRunner';
-import { ALL, DEFAULT_JOBS, FULL, STAGES, fastSelection, stagesForPaths } from './lib/gateStages';
+import { estimate, exitCode, stageTimeoutSec, failedFilesFromVitestJson, runGate, withDeps, type ExecResult, type StageDef, type StageResult } from './lib/gateRunner';
+import { ALL, DEFAULT_JOBS, E2E, FULL, STAGES, fastSelection, stagesForPaths } from './lib/gateStages';
 
 const args = process.argv.slice(2);
 const flag = (k: string): boolean => args.includes(k);
@@ -60,6 +60,9 @@ if (!plan.length) { console.log(`gate: nothing to run (${why.join('; ')})`); pro
 const dir = join('.weave/gate', stamp);
 mkdirSync(dir, { recursive: true });
 const procs = new Set<number>();
+const stagePid = new Map<string, number>();
+const DONE_RE = /\[e2e-done\] code=\d+/, DONE_GRACE_S = 60; // printed by scripts/lib/e2eTeardown.ts before it closes the browser
+const HANG_WATCH = new Set(E2E);
 const killAll = (): void => { for (const pid of procs) { try { process.kill(-pid, 'SIGTERM'); } catch { /* gone */ } } };
 process.on('SIGINT', () => { killAll(); process.exit(130); });
 process.on('SIGTERM', () => { killAll(); process.exit(143); });
@@ -79,16 +82,22 @@ function exec(s: StageDef, attempt: 1 | 2, override?: string): Promise<ExecResul
     else if (s.vitest && override) cmd += ' --reporter=default --reporter=json --outputFile.json=' + jsonOut;
     const log = createWriteStream(logName(s.id, attempt));
     log.write(`$ ${cmd}\n`);
-    const timeoutMs = 90 * 60 * 1000;
     const p = spawn('sh', ['-c', cmd], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'], detached: true, env: stageEnv() });
     if (p.pid) procs.add(p.pid);
     p.stdout?.pipe(log, { end: false }); p.stderr?.pipe(log, { end: false });
-    const timer = setTimeout(() => { log.write('\n[gate] timeout, killing the stage process group\n'); try { if (p.pid) process.kill(-p.pid, 'SIGTERM'); } catch { /* gone */ } }, timeoutMs);
+    if (p.pid) stagePid.set(s.id, p.pid);
+    // HANG guard: the script printed its final OK / summary but the process lives on (a leaked handle): terminate it by PID after DONE_GRACE_S and report HANG
+    let tail = '', hang = false, graceTimer: ReturnType<typeof setTimeout> | undefined;
+    const watch = (d: Buffer): void => {
+      tail = (tail + String(d)).slice(-600);
+      if (!graceTimer && DONE_RE.test(tail)) graceTimer = setTimeout(() => { hang = true; log.write(`\n[gate] HANG: final output seen ${DONE_GRACE_S} s ago but the process is still alive, terminating it\n`); try { if (p.pid) process.kill(-p.pid, 'SIGKILL'); } catch { /* gone */ } }, DONE_GRACE_S * 1000);
+    };
+    if (HANG_WATCH.has(s.id)) { p.stdout?.on('data', watch); p.stderr?.on('data', watch); }
     p.on('close', (code) => {
-      clearTimeout(timer); if (p.pid) procs.delete(p.pid); log.end();
+      if (graceTimer) clearTimeout(graceTimer); if (p.pid) { procs.delete(p.pid); stagePid.delete(s.id); } log.end();
       let failedFiles: string[] | undefined;
       if (s.vitest && (code ?? 1) !== 0 && existsSync(jsonOut)) failedFiles = failedFilesFromVitestJson(readFileSync(jsonOut, 'utf8'), root);
-      resolve({ code: code ?? 1, failedFiles });
+      resolve(hang ? { code: 0, hang: true } : { code: code ?? 1, failedFiles });
     });
   });
 }
@@ -101,6 +110,8 @@ console.log(`gate ${stamp}: ${plan.length} stage(s), ${jobs} slots, logs ${dir}/
 
 const results: StageResult[] = await runGate(plan, {
   jobs, exec,
+  timeoutFor: (s) => s.timeoutSec ?? stageTimeoutSec(last[s.id], s.est, 300),
+  kill: (s) => { const pid = stagePid.get(s.id); if (pid) { try { process.kill(-pid, 'SIGKILL'); } catch { /* gone */ } } },
   onEvent: (e) => {
     if (e.type === 'start') { active.set(e.id, Date.now()); say(`start ${e.id}${e.attempt > 1 ? ' (retry)' : ''}  [${e.used}/${jobs} slots]`); }
     else if (e.type === 'end') { active.delete(e.id); say(`${e.ok ? 'ok   ' : 'FAIL '} ${e.id}${e.attempt > 1 ? ' (retry)' : ''}  ${e.wallS.toFixed(1)}s${e.ok ? '' : `  log ${logName(e.id, e.attempt)}`}`); }
@@ -112,7 +123,7 @@ if (tick) clearInterval(tick);
 // ---- summary
 const wall = (Date.now() - t0) / 1000, serial = results.reduce((a, r) => a + r.wallS, 0);
 const rows = [...results].sort((a, b) => b.wallS - a.wallS);
-const mark = (r: StageResult): string => (r.status === 'pass' ? (r.flaky ? 'PASS (flaky)' : 'pass') : r.status === 'skipped' ? 'SKIPPED' : 'FAIL');
+const mark = (r: StageResult): string => (r.status === 'pass' ? (r.hang ? 'PASS (HANG)' : r.flaky ? 'PASS (flaky)' : 'pass') : r.status === 'skipped' ? 'SKIPPED' : 'FAIL');
 const md = [`# Gate ${stamp}`, '', `Tier: ${why.join('; ')}. ${plan.length} stages, ${jobs} slots, node ${process.version}, ${cpus().length} cores.`, `Wall **${fmt(wall)}**, sum of stage walls ${fmt(serial)}. Flaky: ${results.filter((r) => r.flaky).map((r) => r.id).join(', ') || 'none'}. Failed: ${results.filter((r) => r.status !== 'pass').map((r) => r.id).join(', ') || 'none'}.`, '',
   '| Stage | Wall s | Status | Attempts | Note |', '|---|---:|---|---:|---|', ...rows.map((r) => `| ${r.id} | ${r.wallS} | ${mark(r)} | ${r.attempts} | ${r.note ?? ''} |`), ''].join('\n');
 writeFileSync(join(dir, 'summary.md'), md);

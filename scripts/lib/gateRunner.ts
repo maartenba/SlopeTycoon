@@ -15,12 +15,17 @@ export interface StageDef {
   est: number;
   /** Vitest stage: the runner reads the JSON report and retries only the failing files with `retryCmd(files)`. */
   vitest?: { retryCmd: (files: string[]) => string };
+  /** Hard wall limit of one attempt in seconds (the runner flags HANG and kills the stage by PID); default via `stageTimeoutSec` from the last measured wall. */
+  timeoutSec?: number;
 }
+/** Per-stage hang limit: last measured wall x 4, never below `floor` seconds. */
+export function stageTimeoutSec(lastWallS: number | undefined, estS: number, floor = 120, mult = 4): number { return Math.max(floor, Math.ceil((lastWallS ?? estS) * mult)); }
 export type Status = 'pass' | 'fail' | 'skipped';
-export interface ExecResult { code: number; failedFiles?: string[] }
+/** `hang`: the process printed its final OK but stayed alive (gate.ts terminated it) or hit the stage timeout. */
+export interface ExecResult { code: number; failedFiles?: string[]; hang?: boolean }
 export type Exec = (stage: StageDef, attempt: 1 | 2, cmdOverride?: string) => Promise<ExecResult>;
-export interface StageResult { id: string; status: Status; flaky: boolean; wallS: number; attempts: number; startedAt: number; note?: string }
-export interface RunOpts { jobs: number; exec: Exec; now?: () => number; onEvent?: (e: GateEvent) => void }
+export interface StageResult { id: string; status: Status; flaky: boolean; /** a hung process had to be terminated (reported HANG, never FLAKY) */ hang?: boolean; wallS: number; attempts: number; startedAt: number; note?: string }
+export interface RunOpts { jobs: number; exec: Exec; /** Timeout in seconds for a stage (default `s.timeoutSec`; undefined = none). */ timeoutFor?: (s: StageDef) => number | undefined; /** Called when the timeout fires: terminate the stage's process by PID. */ kill?: (s: StageDef) => void; now?: () => number; onEvent?: (e: GateEvent) => void }
 export type GateEvent =
   | { type: 'start'; id: string; attempt: 1 | 2; used: number; running: string[] }
   | { type: 'end'; id: string; attempt: 1 | 2; ok: boolean; wallS: number }
@@ -65,10 +70,15 @@ export async function runGate(stages: StageDef[], o: RunOpts): Promise<StageResu
   const ready = (s: StageDef): boolean => (s.needs ?? []).every((n) => done.has(n) && !failed.has(n));
 
   const runStage = async (s: StageDef): Promise<void> => {
-    const t0 = now(); let attempts = 1, res: ExecResult;
+    const t0 = now(); let attempts = 1, res: ExecResult, hung = false;
     const go = async (attempt: 1 | 2, cmd?: string): Promise<ExecResult> => {
       const a0 = now(); o.onEvent?.({ type: 'start', id: s.id, attempt, used, running: [...running.keys()] });
-      const r = await o.exec(s, attempt, cmd);
+      const limit = o.timeoutFor ? o.timeoutFor(s) : s.timeoutSec;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const work = o.exec(s, attempt, cmd);
+      const r: ExecResult = limit === undefined ? await work : await Promise.race([work, new Promise<ExecResult>((res) => { timer = setTimeout(() => { try { o.kill?.(s); } catch { /* gone */ } res({ code: 124, hang: true }); }, limit * 1000); })]);
+      if (timer) clearTimeout(timer);
+      if (r.hang) hung = true;
       o.onEvent?.({ type: 'end', id: s.id, attempt, ok: r.code === 0, wallS: (now() - a0) / 1000 }); return r;
     };
     res = await go(1);
@@ -81,7 +91,7 @@ export async function runGate(stages: StageDef[], o: RunOpts): Promise<StageResu
       if (r2.code === 0) { flaky = true; note = narrowed ? `retry of ${files.length} failing file(s) passed` : 'retry passed'; res = r2; } else { res = r2; note = files.length ? `still failing: ${(r2.failedFiles?.length ? r2.failedFiles : files).join(', ')}` : undefined; }
     }
     const ok = res.code === 0;
-    results.set(s.id, { id: s.id, status: ok ? 'pass' : 'fail', flaky, wallS: +((now() - t0) / 1000).toFixed(1), attempts, startedAt: t0, note });
+    results.set(s.id, { id: s.id, status: ok ? 'pass' : 'fail', flaky: flaky && !hung, ...(hung ? { hang: true } : {}), wallS: +((now() - t0) / 1000).toFixed(1), attempts, startedAt: t0, note: hung ? `HANG: process hung or hit the stage timeout and was terminated${note ? `; ${note}` : ''}` : note });
     if (!ok) failed.add(s.id);
     done.add(s.id);
   };
