@@ -19,3 +19,13 @@ export const GLIDE = {
 
 /** The view draws at most this many aircraft: planes (1 per open centre, max 2), canopies (6 per plane), gliders. */
 export const SKY_VIEW = { planes: 2, canopiesPerPlane: 6, gliders: 6 } as const;
+
+/**
+ * Sky objects per Graphics quality (render only, `SkyActivity.setQuality`): instance caps and the mesh detail tier. High == `SKY_VIEW` and the original models; the triangle
+ * totals at the caps are tested in tests/render/skyActivity.test.ts (High about 10,300, Med about 4,500, Low about 800).
+ */
+export const SKY_TIERS = {
+  high: { planes: 2, canopiesPerPlane: 6, gliders: 6, plane: 'full', craft: 'full' },
+  med: { planes: 2, canopiesPerPlane: 3, gliders: 4, plane: 'lite', craft: 'med' },
+  low: { planes: 1, canopiesPerPlane: 2, gliders: 2, plane: 'min', craft: 'low' },
+} as const;

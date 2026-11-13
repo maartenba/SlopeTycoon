@@ -2260,6 +2260,7 @@ let quality: GraphicsQuality = storedQuality ?? defaultQuality(MAP_SIZE, window.
     renderer.setGroundFogScale(p.ground.fogRangeScale); groundDetail = p.ground.detailTexture;
     guestRenderer.farScale = p.guestFarScale;
     activity.farScale = p.guestFarScale;
+    skyActivity.setQuality(q); // fewer / simpler plane, canopies and gliders on Low and Med (render only)
     precip.densityScale = p.particles;
     try { window.localStorage.setItem('slope.quality', q); } catch { /* storage unavailable */ }
   };

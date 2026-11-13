@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { SKY_VIEW } from '../config/sky';
+import { SKY_TIERS } from '../config/sky';
+import type { GraphicsQuality } from '../config/balance';
 import { buildAircraft } from './meshes/aircraft';
 import { buildHangGlider, buildSquareCanopy } from './meshes/canopies';
 import { mergeParts } from './meshes/sweepGeo';
@@ -7,7 +8,7 @@ import { mergeParts } from './meshes/sweepGeo';
 /**
  * Sky activities (M7.4, docs/m74-buildings.md): the jump plane of every open Skydive Centre (circles over the Grass Strip, jumpers leave it and canopies spiral down to the
  * strip) and the gliders of every open Launch Ramp (glide from the ramp to the Landing Field with a thermal-lite circle). View only: reads the attractions, writes nothing,
- * draws 3 instanced meshes (plane, canopies, gliders), capped by SKY_VIEW. Deterministic in the tick: no RNG at all.
+ * draws 3 instanced meshes (plane, canopies, gliders), capped per Graphics quality by SKY_TIERS (High = SKY_VIEW). Deterministic in the tick: no RNG at all.
  */
 export interface SkyCentre { id: number; users: number; open: boolean; /** The Grass Strip it flies from: footprint in tiles. */ strip: { x: number; y: number; w: number; h: number } | null; /** Buildings to clear (not the strip itself). */ obstacles?: readonly SkyObstacle[] }
 export interface SkyRamp { id: number; users: number; open: boolean; x: number; y: number; w: number; h: number; /** Landing Field centre (tiles) or null. */ landing: { x: number; y: number } | null; obstacles?: readonly SkyObstacle[] }
@@ -119,6 +120,13 @@ export function gliderPose(u: number, ramp: { x: number; y: number }, land: { x:
 /** The jump plane model is ~1.8 long; at this scale (x the 1.5 instance scale) it is about as long as the old box plane (0.62 x 1.5). */
 export const SKY_PLANE_SCALE = 0.4;
 
+/** The three merged geometries of a quality tier (High = the original models). */
+export function skyGeometries(q: GraphicsQuality): { plane: THREE.BufferGeometry; can: THREE.BufferGeometry; gl: THREE.BufferGeometry } {
+  const t = SKY_TIERS[q], air = buildAircraft(t.plane);
+  const planeMat = new THREE.Matrix4().makeRotationY(Math.PI / 2).multiply(new THREE.Matrix4().makeScale(SKY_PLANE_SCALE, SKY_PLANE_SCALE, SKY_PLANE_SCALE));
+  return { plane: mergeParts([...air.body, ...air.spinner, ...air.disc], planeMat), can: mergeParts(buildSquareCanopy(t.craft).parts), gl: mergeParts(buildHangGlider(t.craft).parts) };
+}
+
 export class SkyActivity {
   readonly group = new THREE.Group();
   readonly planes: THREE.InstancedMesh;
@@ -147,26 +155,34 @@ export class SkyActivity {
     return canopyPose(((tick + v.id * 17) % SKY_CYCLE) / SKY_CYCLE, 0, cx, cy, ax, out, this.planFor(v.id, cx, cy, ax, ob), ob);
   }
   far = false;
+  /** Graphics quality tier: instance caps (`SKY_TIERS`) and the mesh detail. High = the original models and caps. */
+  quality: GraphicsQuality = 'high';
+  /** Switch tier (Settings > Graphics): swaps the three geometries and the caps; the instance buffers keep the High capacity. */
+  setQuality(q: GraphicsQuality): void {
+    if (q === this.quality) return;
+    this.quality = q;
+    const { plane, can, gl } = skyGeometries(q);
+    for (const [m, g] of [[this.planes, plane], [this.canopies, can], [this.gliders, gl]] as const) { m.geometry.dispose(); m.geometry = g; }
+    this.lastTick = NaN; // redraw with the new caps on the next update
+  }
   /** Aircraft drawn last update (tests / harness). */
   drawn = { planes: 0, canopies: 0, gliders: 0 };
 
-  constructor(private ground: (x: number, z: number) => number, private centres: () => Iterable<SkyCentre>, private ramps: () => Iterable<SkyRamp>) {
+  constructor(private ground: (x: number, z: number) => number, private centres: () => Iterable<SkyCentre>, private ramps: () => Iterable<SkyRamp>, quality: GraphicsQuality = 'high') {
+    this.quality = quality;
     this.group.name = 'skyActivity';
     // M8 smooth pass (docs/graphics-m8.md "Planes, paragliders and gliders"): the shared lofted high-wing plane (meshes/aircraft.ts, 'full', ~1,170 triangles incl. spinner + prop blur),
     // the square ram-air canopy with its jumper (~480) and the hang glider (~380). Forward = +x, one InstancedMesh each, same three draw calls as before.
-    const air = buildAircraft('full');
-    const planeMat = new THREE.Matrix4().makeRotationY(Math.PI / 2).multiply(new THREE.Matrix4().makeScale(SKY_PLANE_SCALE, SKY_PLANE_SCALE, SKY_PLANE_SCALE));
-    const plane = mergeParts([...air.body, ...air.spinner, ...air.disc], planeMat);
-    const can = mergeParts(buildSquareCanopy().parts), gl = mergeParts(buildHangGlider().parts);
+    const { plane, can, gl } = skyGeometries(quality);
     const mk = (g: THREE.BufferGeometry, n: number, tint: boolean): THREE.InstancedMesh => {
       const m = new THREE.InstancedMesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }), n);
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0;
       if (tint) m.setColorAt(0, this.c.set(0xffffff));
       this.group.add(m); return m;
     };
-    this.planes = mk(plane, SKY_VIEW.planes, false);
-    this.canopies = mk(can, SKY_VIEW.planes * SKY_VIEW.canopiesPerPlane, true);
-    this.gliders = mk(gl, SKY_VIEW.gliders, true);
+    this.planes = mk(plane, SKY_TIERS.high.planes, false);
+    this.canopies = mk(can, SKY_TIERS.high.planes * SKY_TIERS.high.canopiesPerPlane, true);
+    this.gliders = mk(gl, SKY_TIERS.high.gliders, true);
   }
 
   private put(mesh: THREE.InstancedMesh, i: number, pose: Pose, scale: number): void {
@@ -180,15 +196,16 @@ export class SkyActivity {
     this.group.visible = !this.far;
     if (this.far || tick === this.lastTick) return;
     this.lastTick = tick;
+    const cap = SKY_TIERS[this.quality], maxC = cap.planes * cap.canopiesPerPlane;
     let np = 0, nc = 0, ng = 0;
     const palette = [0xf08a24, 0x1fa7a0, 0xf2c14e, 0xd9453a, 0x2f6fd0, 0xd63fa0] as const; // orange, teal, yellow, red, blue, pink
     for (const v of this.centres()) {
-      if (!v.open || v.users <= 0 || !v.strip || np >= SKY_VIEW.planes) continue;
+      if (!v.open || v.users <= 0 || !v.strip || np >= cap.planes) continue;
       const s = v.strip, cx = s.x + s.w / 2, cy = s.y + s.h / 2, ax = s.w >= s.h ? 0 : Math.PI / 2, u = ((tick + v.id * 17) % SKY_CYCLE) / SKY_CYCLE;
       const ob = v.obstacles ?? [], plan = this.planFor(v.id, cx, cy, ax, ob);
       this.put(this.planes, np++, planePose(u, cx, cy, ax, this.pose, plan, ob), 1.5);
-      const k = Math.min(SKY_VIEW.canopiesPerPlane, v.users);
-      for (let j = 0; j < k && nc < SKY_VIEW.canopiesPerPlane * SKY_VIEW.planes; j++) {
+      const k = Math.min(cap.canopiesPerPlane, v.users);
+      for (let j = 0; j < k && nc < maxC; j++) {
         const cp = canopyPose(u, j, cx, cy, ax, this.pose, plan, ob);
         if (!cp) continue;
         this.put(this.canopies, nc, cp, 1.5); this.canopies.setColorAt(nc, this.c.set(palette[(v.id + j) % palette.length]!)); nc++;
@@ -197,7 +214,7 @@ export class SkyActivity {
     for (const r of this.ramps()) {
       if (!r.open || r.users <= 0 || !r.landing) continue;
       const rx = r.x + r.w / 2, ry = r.y + r.h / 2, rz = this.ground(rx, ry), lz = this.ground(r.landing.x, r.landing.y);
-      for (let j = 0; j < Math.min(r.users, 3) && ng < SKY_VIEW.gliders; j++) {
+      for (let j = 0; j < Math.min(r.users, 3) && ng < cap.gliders; j++) {
         const u = ((tick + r.id * 29 + j * 37) % GLIDE_CYCLE) / GLIDE_CYCLE;
         const gp = gliderPose(u, { x: rx, y: ry }, r.landing, rz, lz, this.pose);
         gp.z = Math.max(0.4, gp.z - this.ground(gp.x, gp.y), obstacleTop(gp.x, gp.y, r.obstacles, 0.3) > 0 ? obstacleTop(gp.x, gp.y, r.obstacles, 0.3) + SKY_CLEAR : 0); this.put(this.gliders, ng, gp, 1.6);

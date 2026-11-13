@@ -75,3 +75,48 @@ describe('SkyActivity view', () => {
     const far = new SkyActivity(() => 0, () => centres(1), () => ramps(1)); far.far = true; far.update(7); expect(far.group.visible).toBe(false);
   });
 });
+
+import { GRAPHICS_QUALITIES, type GraphicsQuality } from '../../src/config/balance';
+import { SKY_TIERS } from '../../src/config/sky';
+
+describe('sky objects per Graphics quality (Low / Med / High)', () => {
+  const tri = (g: { index: { count: number } | null; getAttribute: (n: string) => { count: number } }): number => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
+  const busy = (q: GraphicsQuality): SkyActivity => new SkyActivity(() => 0, () => Array.from({ length: 4 }, (_, i) => ({ id: i + 1, users: 6, open: true, strip: { x: 10 + i * 12, y: 10, w: 7, h: 2 } })), () => Array.from({ length: 6 }, (_, i) => ({ id: 50 + i, users: 3, open: true, x: 5 + i * 8, y: 5, w: 2, h: 2, landing: { x: 30, y: 30 } })), q);
+  /** The most triangles on screen at once: every instance cap filled. */
+  const worst = (v: SkyActivity): number => { const t = SKY_TIERS[v.quality]; return t.planes * tri(v.planes.geometry) + t.planes * t.canopiesPerPlane * tri(v.canopies.geometry) + t.gliders * tri(v.gliders.geometry); };
+  const CAP: Record<GraphicsQuality, number> = { low: 1000, med: 5000, high: 11000 };
+  it('High keeps the original caps and models (identical to SKY_VIEW)', () => {
+    expect(SKY_TIERS.high.planes).toBe(SKY_VIEW.planes); expect(SKY_TIERS.high.canopiesPerPlane).toBe(SKY_VIEW.canopiesPerPlane); expect(SKY_TIERS.high.gliders).toBe(SKY_VIEW.gliders);
+    expect(SKY_TIERS.high.plane).toBe('full'); expect(SKY_TIERS.high.craft).toBe('full');
+    const v = busy('high'); expect([tri(v.planes.geometry), tri(v.canopies.geometry), tri(v.gliders.geometry)]).toEqual([1170, 476, 380]); // exactly today's models
+    expect(tri(v.planes.geometry)).toBeGreaterThan(1100); expect(tri(v.canopies.geometry)).toBeGreaterThan(450); expect(tri(v.gliders.geometry)).toBeGreaterThan(350);
+  });
+  it('worst-case triangles stay under a cap per tier and drop with the tier (about 10.3k / 4.5k / 0.8k)', () => {
+    const w = Object.fromEntries(GRAPHICS_QUALITIES.map((q) => [q, worst(busy(q))])) as Record<GraphicsQuality, number>;
+    for (const q of GRAPHICS_QUALITIES) expect(w[q]).toBeLessThan(CAP[q]);
+    expect(w.low).toBeLessThan(w.med); expect(w.med).toBeLessThan(w.high); expect(w.low).toBeLessThan(w.high * 0.1);
+  });
+  it('instance caps per tier (Low 1 plane, 2 canopies, 2 gliders; Med 2 / 6 / 4; High 2 / 12 / 6) are respected by the view', () => {
+    const want: Record<GraphicsQuality, [number, number, number]> = { low: [1, 2, 2], med: [2, 6, 4], high: [2, 12, 6] };
+    for (const q of GRAPHICS_QUALITIES) {
+      const v = busy(q); let c = 0, g = 0;
+      for (let t = 1; t < SKY_CYCLE * 2; t += 3) { v.update(t); expect(v.drawn.planes).toBeLessThanOrEqual(want[q][0]); expect(v.drawn.canopies).toBeLessThanOrEqual(want[q][1]); expect(v.drawn.gliders).toBeLessThanOrEqual(want[q][2]); c = Math.max(c, v.drawn.canopies); g = Math.max(g, v.drawn.gliders); }
+      expect(c).toBeGreaterThan(0); expect(g).toBe(want[q][2]);
+    }
+  });
+  it('setQuality swaps the geometry and the caps on the live view and back to High exactly', () => {
+    const v = busy('high'), hi = tri(v.canopies.geometry), hp = tri(v.planes.geometry);
+    v.setQuality('low'); expect(tri(v.canopies.geometry)).toBeLessThan(hi * 0.3); expect(tri(v.planes.geometry)).toBeLessThan(hp * 0.5);
+    v.update(SKY_CYCLE * 0.5); expect(v.drawn.planes).toBeLessThanOrEqual(1);
+    v.setQuality('high'); expect(tri(v.canopies.geometry)).toBe(hi); expect(tri(v.planes.geometry)).toBe(hp);
+    expect(v.group.children.length).toBe(3); // still three draw calls on every tier
+  });
+  it('the promo tracks (planeOf / canopyOf) do not depend on the tier', () => {
+    const c = { id: 1, users: 6, open: true, strip: { x: 10, y: 10, w: 7, h: 2 } };
+    const a = busy('high'), b = busy('low');
+    for (const t of [10, 60, 140, 200]) { expect(b.planeOf(c, t)).toEqual(a.planeOf(c, t)); expect(b.canopyOf(c, t)).toEqual(a.canopyOf(c, t)); }
+  });
+  it('every tier keeps finite vertices, vertex colours and normals in all three models', () => {
+    for (const q of GRAPHICS_QUALITIES) for (const m of [busy(q).planes, busy(q).canopies, busy(q).gliders]) for (const a of ['position', 'normal', 'color']) { const arr = m.geometry.getAttribute(a).array as Float32Array; for (let i = 0; i < arr.length; i++) if (!Number.isFinite(arr[i]!)) throw new Error(`${q} ${a}[${i}]`); }
+  });
+});

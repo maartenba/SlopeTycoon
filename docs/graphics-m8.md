@@ -184,3 +184,15 @@ The jump plane, the Altiport planes, the skydiver canopies and the Launch Ramp g
 * **Checks**: `tests/render/m8Aircraft.test.ts` (finite, unit normals, triangle caps, determinism, bounds / attachment points, 3 draw calls); MaterialGuard READ 0 on Low and High (`scripts/shots/m8-sky-ingame-m.ts`); flicker 64 winter rotfine 0.6945 % (High), 0 pops, unchanged; `npm run m74:sanity` passes.
 * **Shots** (`scripts/shots/m8-sky-m.ts` line-up on a plain background / meadow, `m8-sky-ingame-m.ts` the real class over the village at iso zoom 6 and close, `m8-closeup-e.ts` for the Altiport): prefix `m8-after-m-`.
 * **Not great yet**: the sky meshes have no quality tier, so the worst case (2 planes, 12 canopies, 6 gliders) is about 10k triangles on every setting (it was 0.4k) when a Skydive Centre and a Launch Ramp are busy at once; the prop blur on the jump and parked planes is an opaque grey disc (no transparency in the instanced layers), the arrival plane spins two thin blades instead; the pilots are small and tinted dark by the instance colour; the tail of the parked plane takes the building's 'wood' texture tint (slightly cream); the Altiport sign moved 0.6 tiles east so it no longer hides the parked plane; paragliders are not a separate model (the ramp draws one hang glider type).
+
+## Sky objects per quality tier (14 Nov 2026, render only)
+
+The redesigned jump plane (1,170 triangles incl. spinner and prop blur), square canopy with jumper (476) and hang glider (380) add up to about 10,300 triangles at the old caps (2 planes, 12 canopies, 6 gliders) on every quality. `SKY_TIERS` (`src/config/sky.ts`) now sets the caps and a mesh detail tier per Graphics quality, `SkyActivity.setQuality` swaps the three geometries live (still three draw calls, buffers keep the High capacity):
+
+| Tier | Planes / canopies / gliders | Plane | Canopy | Glider | Worst-case triangles |
+|---|---|---|---|---|---|
+| High | 2 / 12 / 6 | `full` (1,170) | full (476) | full (380) | 10,332 (identical to before) |
+| Med | 2 / 6 / 4 | `lite` (804) | 5 rings, 3 lines a side (302) | 5 ribs, no hang lines or frame (268) | 4,492 |
+| Low | 1 / 2 / 2 | `min` (414: no struts, gear, pitot, antenna, beacon) | 4 rings, no lines, one-blob jumper (106) | 3 ribs, no spars, one-blob pilot (96) | 818 |
+
+Poses, attachment points and the promo `look.track` (`planeOf` / `canopyOf`) do not depend on the tier (tested); the promo capture stores `high`. Tests: `tests/render/skyActivity.test.ts` ("per Graphics quality"). Low / Med were not compared by eye side by side (only `npm run m74:sanity`, which runs at the default Med tier, MaterialGuard 0).
