@@ -1135,6 +1135,7 @@ renderer.onFrame = (dt): void => {
   if (opsRef && overlayMode === 'quality' && opsRef.quality.version !== lastQualityVersion) { lastQualityVersion = opsRef.quality.version; covOverlay.invalidate(); }
   if (netTools && netTools.networks.version !== lastNetVersion) { lastNetVersion = netTools.networks.version; covOverlay.invalidate(); }
   water.update(performance.now() / 1000);
+  if (game.date.tick % 200 === 0) water.setTreeCover(sim.nature.cover.cover); // reflected tree line follows planting / felling (cheap: water vertices only)
   updateRiverView(dt, cam, vh);
   flushSnow(dt);
   updatePrecip(dt);
@@ -2230,7 +2231,7 @@ const applySimSeason = (dt: number): void => {
   renderLine += (weather.current.snowline - renderLine) * k;
   renderFreeze += (freezeFromTemp(weather.current.valleyT) - renderFreeze) * k;
   const st = seasonTerrainSim(t, renderLine);
-  terrain.autumn = st.autumn; terrain.springBloom = st.springBloom; terrain.snowline = st.snowline;
+  terrain.autumn = st.autumn; water.autumn = st.autumn; terrain.springBloom = st.springBloom; terrain.snowline = st.snowline;
   water.freeze = renderFreeze;
   applyBuildingSnow(st.snowline);
   if (lastSimT < 0 || Math.abs(t - lastSimT) > 0.0005) { lastSimT = t; trees.setSeasonYear(t); debugRef?.setSeason(t, { autumn: st.autumn, bloom: st.springBloom, snowline: st.snowline }); }
@@ -2240,7 +2241,7 @@ trees.setSeasonYear(SEASON_START);
 const applySeason = (t: number): { autumn: number; bloom: number; snowline: number } => {
   trees.setSeasonYear(t);
   const st = seasonTerrain(t, maxWorld);
-  terrain.autumn = st.autumn; terrain.springBloom = st.springBloom; terrain.snowline = st.snowline; water.freeze = freezeFromSnowline(st.snowline, maxWorld);
+  terrain.autumn = st.autumn; terrain.springBloom = st.springBloom; terrain.snowline = st.snowline; water.autumn = st.autumn; water.freeze = freezeFromSnowline(st.snowline, maxWorld);
   applyBuildingSnow(st.snowline);
   return { autumn: st.autumn, bloom: st.springBloom, snowline: st.snowline };
 };
@@ -2275,6 +2276,8 @@ let quality: GraphicsQuality = storedQuality ?? defaultQuality(MAP_SIZE, window.
     renderer.setQuality(q);
     trees.setQuality(p.lodScale, p.treeDensity);
     rocks.setQuality(p.lodScale);
+    water.setContour(q !== 'low'); // smooth contour shoreline on Med / High (Low keeps the shader-only outline)
+    water.setTreeCover(sim.nature.cover.cover);
     setGroundCaps({ nearTiles: p.ground.nearTiles, figures: p.ground.nearFigures });
     trees.setNearCap(p.ground.nearTreesPerCell); rocks.setNearCap(p.ground.nearRocksPerCell);
     renderer.setGroundFogScale(p.ground.fogRangeScale); groundDetail = p.ground.detailTexture;
