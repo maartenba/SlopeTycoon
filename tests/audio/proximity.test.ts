@@ -183,3 +183,13 @@ describe('rendered (offline)', () => {
     expect(statsOf(m.l.subarray(SR * 4)).peak).toBeLessThan(1e-4);
   }, 120000);
 });
+
+describe('farm tractor bed (summer farm vehicles, docs/farm-work.md)', () => {
+  const base: AmbienceState = { season: 'summer', weather: 'clear', hour: 11, zoom: 10, altitude: 0.3, wind: 0.1, water: 0, crowd: 0, lifts: 0, buildings: 0, cows: 0, snowcat: 0, heli: 0, tractor: 1 };
+  it('is audible only close, by day, dry, and very quiet', () => {
+    expect(AMB.layerMax.tractor).toBeLessThanOrEqual(0.04);
+    const near = ambienceMix(base).tractor, far = ambienceMix({ ...base, zoom: 60 }).tractor, night = ambienceMix({ ...base, hour: 2 }).tractor, rain = ambienceMix({ ...base, weather: 'rain' }).tractor, none = ambienceMix({ ...base, tractor: 0 }).tractor;
+    expect(near).toBeGreaterThan(0.5); expect(far).toBe(0); expect(night).toBe(0); expect(rain).toBeLessThan(near * 0.4); expect(ambienceMix({ ...base, weather: "storm" }).tractor).toBe(0); expect(none).toBe(0);
+    expect(ambienceMix({ ...base, zoom: 30 }).tractor).toBeLessThan(near);
+  });
+});

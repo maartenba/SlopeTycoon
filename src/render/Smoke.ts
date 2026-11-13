@@ -100,7 +100,7 @@ export function smokeCapForZoom(viewHeight: number, max: number = SMOKE.maxEmitt
   return max;
 }
 
-const VERT = `
+export const SMOKE_VERT = `
 attribute vec3 aOrigin; attribute float aBirth; attribute float aSeed; attribute float aWide;
 uniform float uTime; uniform vec2 uWind; uniform float uLife; uniform float uScale;
 varying vec2 vUv; varying float vAlpha; varying float vWide;
@@ -120,7 +120,7 @@ void main(){
   vUv = position.xy * 2.0;
   vAlpha = smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.35, 1.0, t)) * (0.55 + 0.4 * st);
 }`;
-const FRAG = `
+export const SMOKE_FRAG = `
 uniform vec3 uColor; uniform float uNight;
 varying vec2 vUv; varying float vAlpha; varying float vWide;
 void main(){
@@ -168,7 +168,7 @@ export class SmokeView {
     this.geo.setAttribute('aWide', new THREE.InstancedBufferAttribute(this.wide, 1).setUsage(THREE.DynamicDrawUsage));
     this.geo.instanceCount = this.capacity;
     this.mat = new THREE.ShaderMaterial({
-      vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,
+      vertexShader: SMOKE_VERT, fragmentShader: SMOKE_FRAG, transparent: true, depthWrite: false,
       uniforms: {
         uTime: { value: 0 }, uWind: { value: new THREE.Vector2(0.4, 0.2) }, uLife: { value: SMOKE.life }, uScale: { value: 1 },
         uColor: { value: new THREE.Color(0.86, 0.88, 0.92) }, uNight: nightUniform,
@@ -273,7 +273,7 @@ export class RapidsSplash {
     this.geo.setAttribute('aWide', new THREE.InstancedBufferAttribute(new Float32Array(SPLASH.cap), 1)); // plain puffs
     this.geo.instanceCount = SPLASH.cap;
     this.mat = new THREE.ShaderMaterial({
-      vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,
+      vertexShader: SMOKE_VERT, fragmentShader: SMOKE_FRAG, transparent: true, depthWrite: false,
       uniforms: { uTime: { value: 0 }, uWind: { value: new THREE.Vector2(0, 0) }, uLife: { value: SPLASH.life }, uScale: { value: 0.28 }, uColor: { value: new THREE.Color(0.96, 0.98, 1) }, uNight: { value: 0 } },
     });
     this.mesh = new THREE.Mesh(this.geo, this.mat);

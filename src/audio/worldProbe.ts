@@ -3,6 +3,7 @@ import { PropKind, type PropStore } from '../world/Props';
 import { nearestSource, proximity, spatialParams, type Listener } from './spatial';
 import { CHUNK_SIZE, isWaterType, TileType, type Grid } from '../world/Grid';
 import { PROX } from '../config/audioProximity';
+import { FARM_WORK } from '../config/farmWork';
 import { apresProximity } from './proximity';
 import type { SeasonId, WeatherKind } from '../core/events';
 
@@ -23,6 +24,8 @@ export interface ProbeDeps {
   quads?: () => Array<{ x: number; y: number }>;
   /** Horse sleigh carriers out on their ride (optional: absent = none). */
   sleighs?: () => Array<{ x: number; y: number }>;
+  /** Farm tractors out working (optional: absent = none; summer farm vehicles). */
+  tractors?: () => Array<{ x: number; y: number }>;
   /** Open campgrounds (centre tile; the fire crackles in the evening). Optional: absent = none. */
   campfires?: () => Array<{ x: number; y: number }>;
   /** Mountain concert stages while an event runs (centre tile). Optional: absent = none. */
@@ -100,6 +103,7 @@ export class WorldProbe {
     const cannon = d.cannons ? nearestSource(l, d.cannons()) : null; o.cannon = cannon ? proximity(cannon.dist, 14) : 0;
     const quad = d.quads ? nearestSource(l, d.quads()) : null; o.quad = quad ? 0.3 + 0.7 * proximity(quad.dist, 40) : 0;
     const sleigh = d.sleighs ? nearestSource(l, d.sleighs()) : null; o.sleigh = sleigh ? 0.3 + 0.7 * proximity(sleigh.dist, 30) : 0;
+    const tr = d.tractors ? nearestSource(l, d.tractors()) : null; o.tractor = tr ? proximity(tr.dist, FARM_WORK.audioReach) : 0;
     return o;
   }
 }

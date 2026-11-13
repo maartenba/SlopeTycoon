@@ -47,6 +47,8 @@ import { waterways } from '@/world/Streams';
 import { RapidsSplash, SmokeView, type SmokeSource } from '@/render/Smoke';
 import { BUILDING_HEIGHT } from '@/config/buildingHeights';
 import { ApresNotesView, notesForQuality, type BarSource } from '@/render/ApresNotes';
+import { FarmWorkView, type FarmSource } from '@/render/FarmWorkView';
+import { buildWorkWorld, tractorCap } from '@/render/farmWorkPlan';
 import { SnowSprayView } from '@/render/SnowSpray';
 import { modalPause } from '@/ui/modalPauseGate';
 import { PlantTool } from '@/build/PlantTool';
@@ -1248,6 +1250,22 @@ const apresNotesBars = (): BarSource[] => {
   return apresBarBuf;
 };
 const guestRenderer = new GuestRenderer(guestSim.store);
+// Summer farm vehicles (docs/farm-work.md): tractors + hay trailers work the pastures around every Alpine Farm (Jun-Sep). Render-only, nothing saved, no sim Rng; instanced layers, hidden unless the camera is close.
+const farmLocal = new THREE.Vector3();
+const farmSources = (): FarmSource[] => {
+  const out: FarmSource[] = [];
+  for (const b of buildings.all()) {
+    if (b.type !== 'alpineFarm' || !b.active) continue;
+    const g = buildingsView.get(b.id); if (!g) continue;
+    g.updateMatrixWorld(true);
+    const at = (lx: number, lz: number): { x: number; y: number } => { farmLocal.set(lx, 0, lz); g.localToWorld(farmLocal); return { x: farmLocal.x, y: farmLocal.z }; };
+    out.push({ id: b.id, site: { id: b.id, gates: [at(0, b.h / 2 + 0.9), at(-2.2, b.h / 2 + 0.9), at(2.2, b.h / 2 + 0.9)], park: [at(-1.7, 0.45), at(1.9, 0.45)] } });
+  }
+  return out;
+};
+const farmWork = new FarmWorkView((x, z) => surfaceHeight(grid, x, z), farmSources, () => buildWorkWorld(grid, buildings.all(), props), SEED, lighting.nightUniform);
+renderer.scene.add(farmWork.group, farmWork.fx);
+farmWork.group.userData.shadowDynamic = true; farmWork.fx.userData.noShadow = true;
 guestRenderer.legacyBoarderBelow = () => guestSim.spawner.legacyBoarderBelow;
 const vehicleRenderer = new VehicleRenderer(() => guestSim.spawner.vehicles, (x, y) => { const g = heightAt(grid, x, y), d = sim.networks.deckY(x, y); return d !== null && d > g ? d : g; }); // cars cross road bridges on the deck
 renderer.scene.add(guestRenderer.group, vehicleRenderer.group);
@@ -1285,6 +1303,7 @@ guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.ta
     skyActivity.far = activity.far; skyActivity.update(game.date.tick + a);
     { const tg = viewCentre(); apresNotes.update(dt, lodHeightFor(cam), apresNotesBars(), getReducedMotion(), notesForQuality(QUALITY_PRESETS[quality].particles), { x: tg.x, z: tg.z }, quality !== 'low'); }
     audioRef?.frame(dt); // throttled to ~10 Hz inside; no-op until the first user gesture unlocks audio
+    { const tg = viewCentre(); farmWork.update(dt, { day: game.date.day, hour: currentHour(), weather: weather.current.kind, cap: DEMO ? 0 : tractorCap(quality, atmosSettings.level), reduced: getReducedMotion(), fast: ff.active || SPEED_MULTIPLIERS[loop.speed]! >= 10, viewHeight: lodHeightFor(cam), focus: { x: tg.x, z: tg.z }, exhaust: quality !== 'low' }); }
   };
 }
 // Feedback (M5.1): restrained +$ popups / build puffs / rare confetti (src/render/fx). Render-only: reads the bus, never touches the sim.
@@ -1401,6 +1420,7 @@ try {
       carnivals: () => festivalDressing.layouts.filter((l) => l.festival === 'carnival').map((l) => ({ x: l.anchor.x, y: l.anchor.y })),
       quads: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'quad' || c.kind === 'scooter')),
       sleighs: () => (sim.tours.isEmpty ? [] : sim.tours.carriers(sim.loop.tickCount, quadBuf).filter((c) => c.kind === 'sleigh')),
+      tractors: () => (quality === 'low' || DEMO ? [] : farmWork.working()),
       trunks: (x, z, r) => countTrunks(props, x, z, r),
       cannons: () => (opsRef?.snowmaking.runningIds() ?? []).map((id) => buildings.get(id)).filter((b): b is NonNullable<typeof b> => !!b).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
       apresBars: () => buildings.all().filter((b) => (b.type === 'apresBar' || b.type === 'schirmbar') && b.active).filter((b) => { const a = attractions.get(b.id); return !!a && attractions.servingNow(a) && a.open; }).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
@@ -3141,6 +3161,8 @@ hideSplash();
 
 /** QA / promo capture only (docs/promo-video.md, no shipping UI): `__slope.frameStep(dt, n)` pauses the rAF loop, owns a virtual clock (`performance.now()` returns it while stepping)
  * and draws n frames of exactly `dt` seconds; the sim runs through the real TickLoop at `rate` x speed 1 (`frameStepRate`). `frameStepEnd()` resumes the real loop. Audio is untouched.
+// Farm vehicles QA hook (docs/farm-work.md, docs/promo-video.md): __slope.farmWork.force({ day, hour, weather, at }) puts the tractors mid-trip for a shot (at: "mowA" | "mowB" | "home" | "gate" | "unload" | 0..1, one per tractor as an array); force(null) releases.
+Object.assign((window as unknown as { __slope: object }).__slope, { farmWork: { view: farmWork, force: (o: Parameters<typeof farmWork.force>[0]) => farmWork.force(o), snapshot: () => farmWork.snapshot(), stats: () => ({ ...farmWork.stats }), working: () => farmWork.working() } });
  * `__slope.frameCam = (t, dt) => void` (optional) runs first in every step: the camera path as a pure function of the virtual time. */
 {
   const clock = new FrameClock();
