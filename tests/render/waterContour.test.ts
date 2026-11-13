@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Grid, TileType } from '../../src/world/Grid';
-import { CONTOUR_LEVEL, CONTOUR_SUB, cornerField, kernel, makeField, tileCells, triangleHeight } from '../../src/render/waterContour';
+import { junctionWeight, lakeFieldAt, CONTOUR_LEVEL, CONTOUR_SUB, cornerField, kernel, makeField, tileCells, triangleHeight } from '../../src/render/waterContour';
 import { buildWaterData } from '../../src/render/Water';
 import { diagonalNS } from '../../src/render/TerrainGeometry';
 
@@ -74,5 +74,34 @@ describe('contour water geometry', () => {
   it('water-free grids build nothing in either mode', () => {
     const g = new Grid(64);
     expect(buildWaterData(g, [], [], [], { contour: true }).vertexCount).toBe(0);
+  });
+});
+
+describe('river / lake junction (seam fix)', () => {
+  const stage = (): { g: Grid; lakes: Array<{ level: number; tileIdx: number[] }>; streams: Array<{ path: Array<{ x: number; y: number }> }> } => {
+    const g = new Grid(64), idx: number[] = [], path: Array<{ x: number; y: number }> = [];
+    for (let y = 20; y < 28; y++) for (let x = 20; x < 28; x++) { g.tileType[y * 64 + x] = TileType.Water; idx.push(y * 64 + x); }
+    for (let x = 8; x < 20; x++) { g.tileType[24 * 64 + x] = TileType.Stream; path.push({ x, y: 24 }); }
+    return { g, lakes: [{ level: 0, tileIdx: idx }], streams: [{ path }] };
+  };
+  it('junctionWeight is 0 far from a lake, 1 at the shared edge, monotone and bounded', () => {
+    expect(junctionWeight(0)).toBe(0); expect(junctionWeight(0.5)).toBe(1); expect(junctionWeight(1)).toBe(1);
+    let prev = -1; for (let f = 0; f <= 1; f += 0.02) { const w = junctionWeight(f); expect(w).toBeGreaterThanOrEqual(prev); prev = w; }
+    const { g } = stage(); expect(lakeFieldAt(g, 12, 24.5)).toBe(0); expect(lakeFieldAt(g, 20, 24.5)).toBeCloseTo(0.5, 1);
+  });
+  it('emits every fringe tile once (no doubled wedge) and keeps vertices finite', () => {
+    const { g, lakes, streams } = stage();
+    const d = buildWaterData(g, lakes as never, streams as never, [], { contour: true });
+    for (const v of d.positions) expect(Number.isFinite(v)).toBe(true);
+    const tiles = new Map<string, number>();
+    for (let i = 0; i < d.vertexCount; i += 24) { const k = `${Math.floor(d.positions[i * 3]! - d.local[i * 2]!)},${Math.floor(d.positions[i * 3 + 2]! - d.local[i * 2 + 1]!)}`; tiles.set(k, (tiles.get(k) ?? 0) + 1); }
+    for (const [k, n] of tiles) expect(n, k).toBe(1);
+  });
+  it('river vertices next to the lake follow the lake surface and bed depth (no step at the join)', () => {
+    const { g, lakes, streams } = stage();
+    const d = buildWaterData(g, lakes as never, streams as never, [], { contour: true });
+    let lakeTop = -1; const lakeY = d.positions[1]!; // lake level 0 -> LIFT only
+    for (let i = 0; i < d.vertexCount; i++) { const x = d.positions[i * 3]!; if (x > 18.9 && x < 20.01 && Math.abs(d.positions[i * 3 + 2]! - 24.5) < 0.01) lakeTop = Math.max(lakeTop, Math.abs(d.positions[i * 3 + 1]! - lakeY)); }
+    expect(lakeTop).toBeGreaterThanOrEqual(0); expect(lakeTop).toBeLessThan(1e-4);
   });
 });

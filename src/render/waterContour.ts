@@ -27,7 +27,7 @@ export function kernel(t: number): number {
  * is a smooth curve), exactly 0.5 on a straight shore and on both banks of a one-tile river (its centre line reads 0.75), 0.25 at a convex square corner,
  * ~1 deep in a lake. Reads the global tile grid only: identical at every chunk border. Pure, finite, in [0, 1].
  */
-export function fieldAt(grid: Grid, px: number, py: number): number {
+export function fieldAt(grid: Grid, px: number, py: number, lakeOnly = false): number {
   const N = grid.size, bx = Math.floor(px), by = Math.floor(py);
   let f = 0;
   for (let ty = by - 1; ty <= by + 1; ty++) {
@@ -36,11 +36,16 @@ export function fieldAt(grid: Grid, px: number, py: number): number {
     for (let tx = bx - 1; tx <= bx + 1; tx++) {
       if (tx < 0 || tx >= N) continue;
       const tt = grid.tileType[ty * N + tx];
-      if (tt === TileType.Water || tt === TileType.Stream) f += ky * kernel(px - (tx + 0.5));
+      if (tt === TileType.Water || (!lakeOnly && tt === TileType.Stream)) f += ky * kernel(px - (tx + 0.5));
     }
   }
   return Math.min(1, Math.max(0, f));
 }
+
+/** How much of the water around (px, py) is LAKE (the same blurred mask, lake tiles only): 0 on a river far from a lake, ~0.5 on the edge between a river and a lake tile, ~1 in the lake. */
+export const lakeFieldAt = (grid: Grid, px: number, py: number): number => fieldAt(grid, px, py, true);
+/** River / lake junction blend 0..1 from the lake-only field: 0 below 0.05, 1 from 0.5 on (the shared edge), smooth. The river surface height and bed depth follow the lake by this weight, so no step shows at the join. */
+export function junctionWeight(lakeField: number): number { const t = Math.min(1, Math.max(0, (lakeField - 0.05) / 0.45)); return t * t * (3 - 2 * t); }
 
 /** The field at a tile corner (integer position). */
 export function cornerField(grid: Grid, vx: number, vy: number): number { return fieldAt(grid, vx, vy); }

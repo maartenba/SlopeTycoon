@@ -7,7 +7,7 @@ import { HEIGHT_UNIT, TEXTURE_SEED } from '@/config/balance';
 import { diagonalNS } from './TerrainGeometry';
 import { riverEdges } from '@/world/RiverPlanner';
 import { createWaterNormalTexture } from './textures';
-import { treeNear, treeReflectTint, FRINGE_MIN, STREAM_FRINGE_MIN, makeField, tileCells, triangleHeight } from './waterContour';
+import { treeNear, treeReflectTint, FRINGE_MIN, STREAM_FRINGE_MIN, junctionWeight, lakeFieldAt, makeField, tileCells, triangleHeight } from './waterContour';
 
 const LIFT = 0.04;
 
@@ -77,6 +77,10 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
     return t === TileType.Water || t === TileType.Stream;
   };
   const isLakeT = (x: number, y: number): boolean => grid.inBounds(x, y) && T[y * N + x] === TileType.Water;
+  // lake level per lake tile: a river vertex next to a lake follows the lake's surface height and bed depth (`junctionWeight`), so the join has no step / colour seam
+  const lakeLevelOf = new Map<number, number>();
+  if (fld) for (const lake of lakes) for (const ti of lake.tileIdx) if (isLakeT(ti % N, (ti - (ti % N)) / N)) lakeLevelOf.set(ti, lake.level);
+  const lakeBeside = (x: number, y: number): number | null => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const L = lakeLevelOf.get((y + dy) * N + x + dx); if (L !== undefined && grid.inBounds(x + dx, y + dy)) return L; } return null; };
   const pos: number[] = [], loc: number[] = [], sid: number[] = [], cor: number[] = [], flw: number[] = [], dep: number[] = [], inf: number[] = [];
   const ranges: WaterRange[] = [];
   // quad corner order n(0,0) w(0,1) e(1,0) s(1,1) -> two triangles
@@ -85,10 +89,16 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
   ): void => {
     if (fld) { // contour mode: 2 x 2 cells per tile (24 vertices), the field per vertex drives the drawn waterline
       const ns = diagonalNS(hs[0], hs[1], hs[2], hs[3]);
+      const jl = lake ? null : lakeBeside(x, y), cs = jl === null ? null : grid.getCorners(x, y);
       for (const [u, v] of tileCells(ns)) {
-        pos.push(x + u, triangleHeight(hs, u, v) * HEIGHT_UNIT + LIFT, y + v);
+        let h = triangleHeight(hs, u, v), bd0 = lake && bed ? Math.min(1, Math.max(0, (bed[0]! * (1 - u) * (1 - v) + bed[1]! * u * (1 - v) + bed[2]! * u * v + bed[3]! * (1 - u) * v) / 2)) : 0.4;
+        if (jl !== null && cs) { // river vertex beside a lake: height and bed depth blend to the lake's (the same bilinear bed formula the lake tiles use)
+          const w = junctionWeight(lakeFieldAt(grid, x + u, y + v));
+          if (w > 0) { const t = (cs[0] * (1 - u) * (1 - v) + cs[1] * u * (1 - v) + cs[2] * u * v + cs[3] * (1 - u) * v); h += (jl - h) * w; bd0 += (Math.min(1, Math.max(0, (jl - t) / 2)) - bd0) * w; }
+        }
+        pos.push(x + u, h * HEIGHT_UNIT + LIFT, y + v);
         loc.push(u, v); sid.push(0, 0, 0, 0); cor.push(0, 0, 0, 0); flw.push(fx, fz);
-        const bd = lake && bed ? Math.min(1, Math.max(0, (bed[0]! * (1 - u) * (1 - v) + bed[1]! * u * (1 - v) + bed[2]! * u * v + bed[3]! * (1 - u) * v) / 2)) : 0.4;
+        const bd = bd0;
         dep.push(bd); inf.push(1, 0, -1); fieldOut.push(fld.at(x + u, y + v));
       }
       return;
@@ -120,8 +130,10 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
       emit(tx, ty, [lake.level, lake.level, lake.level, lake.level], 0, 0, true, c.map((h) => lake.level - h));
     }
   }
+  // one patch per land tile across lakes AND ways: a wedge at a river / lake junction used to be emitted twice (translucent overlap = two pale foam wedges)
+  const fringeSeen = new Set<number>();
   if (fld) { // concave wedges: land tiles beside a lake whose corner field is well above the waterline get a patch (the terrain hides it where it is higher), so the lake outline has no square notch
-    const seen = new Set<number>();
+    const seen = fringeSeen;
     for (const lake of lakes) for (const ti of lake.tileIdx) {
       const tx = ti % N, ty = (ti - tx) / N;
       if (!isLakeT(tx, ty)) continue;
@@ -146,7 +158,7 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
       emit(p.x, p.y, hs, fx, fz, false);
     }
     if (fld) { // fringe: land tiles beside a bend whose corner field is above the waterline (the contour leaves the tile there): drawn on the terrain, owned by the way (flow + ice)
-      const seen = new Set<number>();
+      const seen = fringeSeen;
       path.forEach((p, i) => {
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const ax = p.x + dx, ay = p.y + dy, k = ay * N + ax;
