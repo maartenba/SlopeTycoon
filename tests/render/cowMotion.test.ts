@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { COW_MOTION_GLSL, COW_PART, COW_PIVOT, bellAngle, cowPhase, earAngle, tailAngle } from '../../src/render/cowMotion';
-import { createCowGeometry } from '../../src/render/meshes/Animals';
+import { COW_MOTION_GLSL, COW_PART, COW_PIVOT, GOAT_PIVOT, MOTION_SCALE, SHEEP_PIVOT, bellAngle, cowPhase, earAngle, motionGlsl, tailAngle } from '../../src/render/cowMotion';
+import { createCowGeometry, createGoatGeometry, createSheepGeometry } from '../../src/render/meshes/Animals';
 import { NatureView } from '../../src/render/NatureView';
 
 describe('cow micro-animation', () => {
@@ -49,5 +49,30 @@ describe('cow micro-animation', () => {
     expect((v as unknown as { cowUniforms: { uCowMotion: { value: number } } }).cowUniforms.uCowMotion.value).toBe(0);
     v.reduced = false; v.update(0.1, [], 5, 5, 30);
     expect((v as unknown as { cowUniforms: { uCowMotion: { value: number } } }).cowUniforms.uCowMotion.value).toBe(1);
+  });
+  it('the normals rotate with the moving parts (same angle function, pivot-free) and the depth pass shares the material', () => {
+    const g = motionGlsl(COW_PIVOT);
+    expect(g.normal).toContain('objectNormal'); expect(g.normal).toContain('cmAngle()'); expect(g.apply).toContain('cmAngle()');
+    expect(g.normal).toContain('cmRotX(objectNormal, vec3(0.0)'); expect(g.normal).toContain('cmRotZ(objectNormal, vec3(0.0)');
+    const v = new NatureView(() => 0), mat = v.meshes.get('cow')!.material as THREE.MeshLambertMaterial;
+    const sh = { uniforms: {} as Record<string, unknown>, vertexShader: '#include <beginnormal_vertex>\n#include <begin_vertex>\nvoid main() {' };
+    (mat.onBeforeCompile as (s: unknown) => void)(sh);
+    expect(sh.vertexShader).toContain('objectNormal = '); expect(sh.vertexShader.indexOf('cmAngle')).toBeGreaterThan(-1);
+    expect(sh.uniforms.uCowT).toBeTruthy(); // the shadow depth pass draws this very material: the cast shadow follows the animated pose
+  });
+  it('sheep (ears) and goats (tail) share the builder, keep their budgets, are one draw each, and move subtly', () => {
+    const sheep = createSheepGeometry(true), goat = createGoatGeometry(true);
+    for (const [g, parts] of [[sheep, [2, 3]], [goat, [1]]] as const) {
+      const part = g.getAttribute('aPart'); const seen = new Set<number>(); for (let i = 0; i < part.count; i++) seen.add(part.getX(i));
+      for (const p of parts) expect(seen.has(p)).toBe(true);
+      expect(g.getAttribute('position').count / 3).toBeLessThanOrEqual(900);
+    }
+    expect(createSheepGeometry().getAttribute('position').count).toBe(sheep.getAttribute('position').count);
+    expect(SHEEP_PIVOT.earL[0]).toBeGreaterThan(0); expect(GOAT_PIVOT.tail[2]).toBeLessThan(0); expect(MOTION_SCALE.sheep).toBeLessThanOrEqual(1);
+    const v = new NatureView(() => 0); for (const sp of ['cow', 'sheep', 'goat'] as const) expect(v.meshes.get(sp)!.geometry.getAttribute('aPhase')).toBeTruthy();
+  });
+  it('close-zoom amplitude is visible but subtle: the tail tip swings 2-12 cm-equivalents (0.04-0.13 tiles) and the bell tip under 0.02 tiles', () => {
+    let tip = 0, bell = 0; for (let t = 0; t < 60; t += 0.05) { tip = Math.max(tip, Math.abs(tailAngle(t, 1.1)) * 0.22); bell = Math.max(bell, Math.abs(bellAngle(t, 1.1)) * 0.06); }
+    expect(tip).toBeGreaterThan(0.04); expect(tip).toBeLessThan(0.13); expect(bell).toBeLessThan(0.02);
   });
 });

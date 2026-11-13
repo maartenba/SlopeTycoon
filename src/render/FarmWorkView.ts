@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { FARM_WORK as F } from '../config/farmWork';
 import type { WeatherKind } from '../core/events';
-import { farmPhase, headingAt, hk, lerpAngle, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, rowProgress, stepRunner, type FarmSite, type Runner, type TripPlan, type WorkWorld } from './farmWorkPlan';
+import { farmPhase, headingAt, hk, lerpAngle, loadOf, mayDepart, mustBeHome, newRunner, paceSpeed, patchLevel, planHome, planTrip, posAt, rowProgress, stepRunner, type FarmSite, type Runner, type TripPlan, type WorkWorld } from './farmWorkPlan';
 import { baleGeometry, squareBaleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, trailerGeometry } from './meshes/tractor';
 import { SMOKE_FRAG, SMOKE_VERT } from './Smoke';
 
@@ -163,7 +163,7 @@ export class FarmWorkView {
       if (st.day !== day) { st.day = day; st.trips = 0; }
       if (st.runner) {
         if (!st.runner.plan.home && home && !fo) { const w = this.getWorld(); if (w) { const keep = st.runner; this.detach(st); st.runner = newRunner(planHome(w, st.site, st.idx, { x: st.x, y: st.y }, loadOf(keep))); } }
-        { const k = st.runner.rate * (c.speed ?? 1); let left = Math.min(dt, 0.1) * k; while (left > 1e-9 && !st.runner.done) { const d = Math.min(left, 0.25); stepRunner(st.runner, d); left -= d; } } // game time: rate x speed, in small steps so a dwell is never skipped
+        { const k = st.runner.rate * paceSpeed(c.speed ?? 1); let left = Math.min(dt, 0.1) * k; while (left > 1e-9 && !st.runner.done) { const d = Math.min(left, 0.25); stepRunner(st.runner, d); left -= d; } } // game time: rate x speed, in small steps so a dwell is never skipped
         if (st.runner.done) { st.parkYaw = headingAt(st.runner.plan, st.runner.plan.total); this.detach(st); st.runner = null; st.wait = F.rest + hk(this.seed, st.farm, st.idx, st.trips) * F.jitter; st.load = 0; }
       } else if (wanted && st.presence >= 1) {
         if (fo && !st.forceDone) {
@@ -171,7 +171,7 @@ export class FarmWorkView {
           const at = Array.isArray(fo.at) ? fo.at[st.idx % fo.at.length] : fo.at;
           if (at !== undefined || fo.hour !== undefined || fo.day !== undefined) this.startTrip(st, c, 100 + st.idx, at ?? (['mowA', 'mowB'] as const)[st.idx % 2]);
         } else if (!fo) {
-          st.wait -= dt * (c.speed ?? 1);
+          st.wait -= dt * paceSpeed(c.speed ?? 1);
           if (st.wait <= 0 && phase === 'work' && !c.fast && !c.reduced && !home && mayDepart(hour, st.idx, hk(this.seed, st.farm, st.idx, day)) && near) { if (!this.startTrip(st, c, st.trips)) st.wait = 40; }
         }
       }

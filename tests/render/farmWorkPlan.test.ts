@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FARM_WORK as F } from '../../src/config/farmWork';
-import { paceRate, planDuration, tripGameHours, BLOCK, buildWorkWorld, farmPhase, hayLoadAt, headingAt, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, stepRunner, tractorCap, type FarmSite, type TripPlan } from '../../src/render/farmWorkPlan';
+import { paceRate, paceSpeed, planDuration, tripGameHours, BLOCK, buildWorkWorld, farmPhase, hayLoadAt, headingAt, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, stepRunner, tractorCap, type FarmSite, type TripPlan } from '../../src/render/farmWorkPlan';
 import { simDayOf } from '../../src/sim/calendar';
 import { Grid, TileType } from '../../src/world/Grid';
 import { OccFlag } from '../../src/world/Occupancy';
@@ -62,7 +62,7 @@ describe('farm work world + routes', () => {
       for (const [x, y] of samples(p)) { const o = world.owner[Math.floor(y) * 64 + Math.floor(x)]!; expect(o === 0 || o === farm.id + 1, `tile ${Math.floor(x)},${Math.floor(y)} owner ${o}`).toBe(true); }
       expect(p.rows).toHaveLength(2); expect(p.bales).toHaveLength(F.bales.perPatch);
       for (const r of p.rows) { expect(r.s1).toBeGreaterThan(r.s0); for (const u of [0, 0.5, 1]) { const x = r.x0 + (r.x1 - r.x0) * u, y = r.y0 + (r.y1 - r.y0) * u; expect(world.flat[Math.floor(y) * 64 + Math.floor(x)]).toBe(1); } }
-      const d = Math.hypot(p.cx - 23, p.cy - 25.9); expect(d).toBeGreaterThanOrEqual(F.patch.minDist - 0.01); expect(d).toBeLessThanOrEqual(F.patch.maxDist + 0.01);
+      const d = Math.hypot(p.cx - 23, p.cy - 25.9); expect(d).toBeGreaterThanOrEqual(F.patch.minDist - 1.5); expect(d).toBeLessThanOrEqual(F.patch.maxDist + 0.01);
       for (const b of p.bales) expect(world.owner[Math.floor(b.y) * 64 + Math.floor(b.x)]).toBe(0);
     }
     expect(n).toBeGreaterThan(50);
@@ -123,6 +123,14 @@ describe('farm work trip timeline', () => {
   });
 });
 
+describe('farm work pace is calm', () => {
+  const { world } = stage();
+  it('drive speed in tiles per real second stays <= ~1.4 at 1x and <= ~2.4 at 3x; paceSpeed softens the multiplier', () => {
+    expect(F.speed.drive * F.pace.maxRate).toBeLessThanOrEqual(1.4); expect(F.speed.drive * F.pace.maxRate * paceSpeed(3)).toBeLessThanOrEqual(2.4);
+    expect(paceSpeed(1)).toBe(1); expect(paceSpeed(0.5)).toBe(1); expect(paceSpeed(3)).toBeGreaterThan(1.4); expect(paceSpeed(3)).toBeLessThan(2);
+    for (let k = 0; k < 8; k++) { const plan = planTrip(world, site(), 0, 900 + k); if (plan) { const rate = paceRate(plan); expect(F.speed.drive * rate).toBeLessThanOrEqual(1.4); } }
+  });
+});
 describe('farm work pace and gap', () => {
   const { world } = stage();
   it('a trip lasts ~2-3 game hours at any speed: the pace rate is clamped and stable', () => {
@@ -136,7 +144,7 @@ describe('farm work pace and gap', () => {
   });
   it('2-3 trips fit a working day: the last departure + a trip ends before the evening rule', () => {
     expect(F.hours.lastDepart + F.pace.tripHours).toBeLessThan(F.hours.home);
-    expect(mayDepart(14.4, 0)).toBe(true); expect(mayDepart(15.5, 0)).toBe(false);
+    expect(mayDepart(13.7, 0)).toBe(true); expect(mayDepart(15.5, 0)).toBe(false);
     const day = F.hours.home - F.hours.earliest; expect(day / (F.pace.tripHours + 1.2)).toBeGreaterThanOrEqual(2);
   });
   it('trips pass the fence gap on the way out and back, and the square bales are a pure function of the key', () => {

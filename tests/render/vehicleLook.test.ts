@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBus, buildCar, buildTrain, pillarize, GROUND_BLOB_Y, type Sec } from '../../src/render/meshes/VehicleModels';
+import { buildBus, buildCar, buildTrain, pillarize, type Sec } from '../../src/render/meshes/VehicleModels';
 import { createVehicleMesh, vehicleLook } from '../../src/render/meshes/Vehicles';
 import { angleDelta, bumpBob, newSuspension, stepSuspension, SUSP } from '../../src/render/vehicleMotion';
 
@@ -11,7 +11,7 @@ describe('vehicle look pass', () => {
       expect(tris(f.body)).toBeLessThanOrEqual(900); expect(tris(l.body)).toBeLessThan(tris(f.body)); expect(tris(l.body)).toBeLessThanOrEqual(672 + 100);
       for (const v of f.body.getAttribute('position').array as Float32Array) expect(Number.isFinite(v)).toBe(true);
       expect(f.body.getAttribute('color').count).toBe(f.body.getAttribute('position').count); expect(tris(f.lights)).toBe(48);
-      f.body.computeBoundingBox(); expect(f.body.boundingBox!.min.y).toBeCloseTo(GROUND_BLOB_Y, 3);
+      f.body.computeBoundingBox(); expect(f.body.boundingBox!.min.y).toBeGreaterThanOrEqual(-0.001); expect(f.body.getAttribute('aSnow').count).toBe(f.body.getAttribute('position').count);
     }
   });
   it('bus / coach / train stay in budget and Low buses are lighter', () => {

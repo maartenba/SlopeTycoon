@@ -56,6 +56,8 @@ export function planDuration(plan: TripPlan): number {
 }
 /** Time scale that makes a trip last about `pace.tripHours` game hours at 1x: clamped to [1, maxRate] so short trips stay unhurried and long ones are not absurd. Multiply by the game speed (1 / 3). */
 export const paceRate = (plan: TripPlan): number => Math.min(F.pace.maxRate, Math.max(1, planDuration(plan) / (F.pace.tripHours * F.pace.secPerHour)));
+/** Softened game-speed multiplier for the tractors: 1x = 1, 3x = 1.7 (a tractor never looks frantic); below 1 stays 1. */
+export const paceSpeed = (speed: number): number => 1 + Math.max(0, speed - 1) * F.pace.speedShare;
 /** Game hours a trip lasts (independent of the game speed: the runner advances at `rate * speed`). */
 export const tripGameHours = (plan: TripPlan): number => planDuration(plan) / (paceRate(plan) * F.pace.secPerHour);
 

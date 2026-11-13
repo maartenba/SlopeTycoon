@@ -208,26 +208,34 @@ export function createCowGeometry(bell = true, animated = false): THREE.BufferGe
     tube(0.075, 0.075, 0.025, leather, 0, 0.2, 0.28, { rx: 0.9 }, 8), // leather strap round the neck
     T(tube(0.026, 0.04, 0.06, brass, 0, 0.14, 0.33, { rx: 0.15 }, 7), 4), T(ell(0.01, 0.01, 0.01, dark, 0, 0.138, 0.335, {}, 4, 3), 4), // brass cowbell + clapper (animated: part 4, a pendulum)
   );
-  if (animated) for (const g of parts) { const n = g.getAttribute('position').count; g.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(n).fill(tags.get(g) ?? 0), 1)); }
+  if (animated) tagParts(parts, tags);
   return finish(parts);
 }
-export function createSheepGeometry(): THREE.BufferGeometry {
-  const wool = 0xf4f1e8, face = 0x2b2b2b;
-  return finish([
+/** Tags moving parts (1 tail, 2 / 3 ears, 4 bell) with an `aPart` vertex attribute for the vertex-shader micro-animation (cowMotion.ts); untagged parts stay 0. */
+function tagParts(parts: THREE.BufferGeometry[], tags: Map<THREE.BufferGeometry, number>): void {
+  for (const g of parts) { const n = g.getAttribute('position').count; g.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(n).fill(tags.get(g) ?? 0), 1)); }
+}
+export function createSheepGeometry(animated = false): THREE.BufferGeometry {
+  const wool = 0xf4f1e8, face = 0x2b2b2b, tags = new Map<THREE.BufferGeometry, number>(), T = (g: THREE.BufferGeometry, id: number): THREE.BufferGeometry => { tags.set(g, id); return g; };
+  const parts = [
     ...torso({ L: 0.3, H: 0.2, W: 0.18, legH: 0.09, c: wool, leg: 0x4a4540, legR: 1.25 }),
     ell(0.07, 0.05, 0.08, wool, 0.02, 0.29, 0.0, {}, 6, 3), ell(0.06, 0.05, 0.07, wool, -0.03, 0.28, -0.11, {}, 6, 3), // fluffy lumps
     ell(0.055, 0.06, 0.08, face, 0, 0.25, 0.2, { rx: 0.4 }, 6, 4), ell(0.04, 0.025, 0.04, wool, 0, 0.305, 0.17, {}, 4, 3), // face, forelock
-    ell(0.035, 0.014, 0.02, face, 0.065, 0.27, 0.185, { rz: -0.5 }, 4, 3), ell(0.035, 0.014, 0.02, face, -0.065, 0.27, 0.185, { rz: 0.5 }, 4, 3),
-  ]);
+    T(ell(0.035, 0.014, 0.02, face, 0.065, 0.27, 0.185, { rz: -0.5 }, 4, 3), 2), T(ell(0.035, 0.014, 0.02, face, -0.065, 0.27, 0.185, { rz: 0.5 }, 4, 3), 3), // ears (animated: parts 2 / 3)
+  ];
+  if (animated) tagParts(parts, tags);
+  return finish(parts);
 }
-export function createGoatGeometry(): THREE.BufferGeometry {
-  const c = 0xd8c9ac, dk = 0x6b5a44;
-  return finish([
+export function createGoatGeometry(animated = false): THREE.BufferGeometry {
+  const c = 0xd8c9ac, dk = 0x6b5a44, tags = new Map<THREE.BufferGeometry, number>(), T = (g: THREE.BufferGeometry, id: number): THREE.BufferGeometry => { tags.set(g, id); return g; };
+  const parts = [
     ...torso({ L: 0.3, H: 0.14, W: 0.12, legH: 0.12, c, leg: dk, legR: 1.1 }),
     ell(0.04, 0.07, 0.04, c, 0, 0.27, 0.15, { rx: 0.6 }, 6, 3), ell(0.035, 0.04, 0.06, c, 0, 0.3, 0.21, { rx: 0.5 }, 6, 4),
     tube(0.012, 0.004, 0.08, dk, 0.025, 0.31, 0.2, { rx: -0.5, rz: -0.25 }, 4), tube(0.012, 0.004, 0.08, dk, -0.025, 0.31, 0.2, { rx: -0.5, rz: 0.25 }, 4), // swept-back horns
-    cone(0.012, 0.045, c, 0, 0.23, 0.245, { rx: Math.PI }, 3), tube(0.012, 0.006, 0.05, dk, 0, 0.2, -0.16, { rx: 0.9 }, 4), // beard, tail
-  ]);
+    cone(0.012, 0.045, c, 0, 0.23, 0.245, { rx: Math.PI }, 3), T(tube(0.012, 0.006, 0.05, dk, 0, 0.2, -0.16, { rx: 0.9 }, 4), 1), // beard, tail (animated: part 1)
+  ];
+  if (animated) tagParts(parts, tags);
+  return finish(parts);
 }
 export function createDeerGeometry(): THREE.BufferGeometry {
   const c = 0x9a6b43, light = 0xe3cfae, ant = 0x6b5a44;
@@ -309,7 +317,7 @@ export function createDonkeyGeometry(): THREE.BufferGeometry {
 
 export type NatureSpecies = 'cow' | 'sheep' | 'goat' | 'deer' | 'ibex' | 'chamois' | 'marmot' | 'fox' | 'eagle';
 export const NATURE_GEOMETRY: Record<NatureSpecies, () => THREE.BufferGeometry> = {
-  cow: () => createCowGeometry(true, true), sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,
+  cow: () => createCowGeometry(true, true), sheep: () => createSheepGeometry(true), goat: () => createGoatGeometry(true), deer: createDeerGeometry, ibex: createIbexGeometry,
   chamois: createChamoisGeometry, marmot: createMarmotGeometry, fox: createFoxGeometry, eagle: createEagleGeometry,
 };
 

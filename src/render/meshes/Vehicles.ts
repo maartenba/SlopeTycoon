@@ -1,19 +1,28 @@
 import * as THREE from 'three';
 import { VEHICLE_SPEED, VehicleKind, vehiclePose, type Vehicle } from '@/sim/guests/Arrivals';
 import { buildBus, buildCar, buildPlane, buildTrain, CAR_COLORS, SPORT_COLORS, TWO_TONE_ROOFS, type ModelParts } from './VehicleModels';
-import { bumpBob, newSuspension, stepSuspension, type Suspension } from '../vehicleMotion';
+import { bumpBob, meltFactor, newSuspension, snowLevel, SNOW_COVER, startCover, stepSnowCover, stepSuspension, type Suspension } from '../vehicleMotion';
+import { nearestN, poolStrength, shadowStrength, VehicleFxLayer, VEHICLE_FX } from '../vehicleFx';
+import { GROUND_BLOB_Y } from './VehicleModels';
 
 /** Shared snow cover 0..1 of the vehicle roofs (set by `VehicleRenderer`): up-facing vertices above the wheels blend to snow white in the vertex shader (no extra draw call, no texture). */
 const SNOW = { value: 0 };
 /** Direct control of the roof snow (visual QA and tests): 0..1. */
 export const setVehicleSnow = (v: number): void => { SNOW.value = v; };
-const BODY_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
-BODY_MAT.onBeforeCompile = (sh): void => {
-  sh.uniforms.uCarSnow = SNOW;
-  sh.vertexShader = sh.vertexShader.replace('void main() {', 'uniform float uCarSnow;\nvoid main() {')
-    .replace('#include <color_vertex>', '#include <color_vertex>\n#ifdef USE_COLOR\n  vColor.rgb = mix(vColor.rgb, vec3(0.93, 0.95, 0.98), uCarSnow * smoothstep(0.6, 0.85, normal.y) * step(0.19, position.y));\n#endif');
-};
-BODY_MAT.customProgramCacheKey = (): string => 'vehicleSnow';
+/** One shared body material per snow level (0..SNOW_COVER.levels): a vehicle swaps its body material as its roof snow melts or is shed (no per-vehicle uniform, no extra draw call). The snow only sits where the model's `aSnow` mask says (roof, roof gear, boot lid; never the bonnet). */
+const BODY_MATS: THREE.MeshLambertMaterial[] = Array.from({ length: SNOW_COVER.levels + 1 }, (_, lv) => {
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true }), u = { value: 0 };
+  m.onBeforeCompile = (sh): void => {
+    sh.uniforms.uCarSnow = u;
+    sh.vertexShader = sh.vertexShader.replace('void main() {', 'attribute float aSnow;\nuniform float uCarSnow;\nvoid main() {')
+      .replace('#include <color_vertex>', '#include <color_vertex>\n#ifdef USE_COLOR\n  vColor.rgb = mix(vColor.rgb, vec3(0.93, 0.95, 0.98), uCarSnow * aSnow * smoothstep(0.6, 0.85, normal.y));\n#endif');
+  };
+  m.customProgramCacheKey = (): string => 'vehicleSnow2';
+  m.userData.snowLevel = lv; m.userData.snowU = u;
+  return m;
+});
+const BODY_MAT = BODY_MATS[SNOW_COVER.levels]!;
+const syncSnow = (): void => { for (const m of BODY_MATS) (m.userData.snowU as { value: number }).value = SNOW.value * (m.userData.snowLevel as number) / SNOW_COVER.levels; };
 const LIGHT_MAT = new THREE.MeshBasicMaterial({ vertexColors: true });
 /** Same unlit lights, with the red tail lights pushed to a hot brake glow (the material is swapped per vehicle: still the same draw count). */
 const BRAKE_MAT = new THREE.MeshBasicMaterial({ vertexColors: true });
@@ -42,6 +51,8 @@ function parts(key: string, make: () => ModelParts): ModelParts {
   if (!p) { p = make(); cache.set(key, p); }
   return p;
 }
+/** Soft-shadow footprint (half extents x, z) of the model a vehicle kind uses; the cache key shares the body geometry. */
+const FOOT = new WeakMap<THREE.BufferGeometry, [number, number]>();
 export interface VehicleModel { group: THREE.Group; prop: THREE.Object3D | null }
 
 /** Vehicle model (forward = +z, origin at ground level). Geometries are shared/cached per look; materials are shared. */
@@ -61,6 +72,7 @@ export function createVehicleMesh(kind: number, variant = 0, winter = false, vip
       p = parts(`car${l.style}-${l.color}-${rack}-${l.roof}-${low}`, () => buildCar(l.style, l.color, rack, { roof: l.roof || undefined, low }));
     }
   }
+  if (p.foot) FOOT.set(p.body, p.foot);
   g.add(new THREE.Mesh(p.body, BODY_MAT), new THREE.Mesh(p.lights, LIGHT_MAT));
   if (p.prop && p.propPivot) {
     const pm = new THREE.Mesh(p.prop, PROP_MAT);
@@ -71,33 +83,45 @@ export function createVehicleMesh(kind: number, variant = 0, winter = false, vip
 }
 
 /** Pools one model per live vehicle; positions interpolated by the tick alpha, pitched to the terrain with a gentle suspension bob. */
+interface Live extends VehicleModel { kind: number; susp: Suspension; lights: THREE.Mesh; body: THREE.Mesh; brake: boolean; cover: number; level: number; melt: number; pool: number; foot: [number, number] }
 export class VehicleRenderer {
   readonly group = new THREE.Group();
-  private meshes = new Map<number, VehicleModel & { kind: number; susp: Suspension; lights: THREE.Mesh; brake: boolean }>();
+  /** Soft contact shadows + night headlight pools: ONE instanced draw call, not a shadow caster (add it to the scene next to `group`). */
+  readonly fx = new THREE.Group();
+  private fxLayer = new VehicleFxLayer();
+  private meshes = new Map<number, Live>();
   private pose = { x: 0, y: 0, heading: 0 };
+  private q = new THREE.Quaternion(); private pos = new THREE.Vector3();
   /** Roof gear season (skis in winter, bikes in summer) for newly appearing cars. */
   winter = false;
   /** 0..1 night factor: head/tail lights glow. */
   night = 0;
   /** Snow on the roofs: 0 = none, 1 = winter (eased toward the target a little every frame). */
   snowTarget = 0;
-  /** Low quality: simpler car / bus variants for newly appearing vehicles. */
+  /** Low quality: simpler car / bus variants for newly appearing vehicles; no headlight pools. */
   low = false;
+  /** Reduced motion: the roof snow stays as it is (no melting / shedding). */
+  reduced = false;
+  /** Camera focus (tile x, z): the headlight pools go to the nearest vehicles only. */
+  focus = { x: 0, z: 0 };
   private time = 0;
 
-  constructor(private vehicles: () => readonly Vehicle[], private groundAt: (x: number, y: number) => number) {}
+  constructor(private vehicles: () => readonly Vehicle[], private groundAt: (x: number, y: number) => number) { this.fx.add(this.fxLayer.mesh); }
 
   update(alpha: number): void {
     this.time += 1;
-    const live = new Set<number>();
+    const live = new Set<number>(), dt = 1 / 60, sun = Math.max(0, 1 - this.night * 1.4);
     LIGHT_MAT.color.setScalar(0.62 + 1.1 * this.night); BRAKE_MAT.color.setScalar(0.62 + 1.1 * this.night);
-    SNOW.value += (this.snowTarget - SNOW.value) * 0.05;
+    SNOW.value += (this.snowTarget - SNOW.value) * 0.05; syncSnow();
+    const fxl = this.fxLayer; fxl.begin();
+    const sStr = shadowStrength(this.night), pStr = this.low ? 0 : poolStrength(this.night);
+    const roadCars: Live[] = [], rx: number[] = [], rz: number[] = [];
     for (const v of this.vehicles()) {
       live.add(v.id);
       let m = this.meshes.get(v.id);
       if (!m) {
-        const mod = createVehicleMesh(v.kind, v.id, this.winter, v.riders.includes(3), this.low);
-        m = { ...mod, kind: v.kind, susp: newSuspension(), lights: mod.group.children[1] as THREE.Mesh, brake: false };
+        const mod = createVehicleMesh(v.kind, v.id, this.winter, v.riders.includes(3), this.low), bodyM = mod.group.children[0] as THREE.Mesh;
+        m = { ...mod, kind: v.kind, susp: newSuspension(), lights: mod.group.children[1] as THREE.Mesh, body: bodyM, brake: false, cover: this.snowTarget > 0.5 ? startCover(v.id) : 0, level: SNOW_COVER.levels, melt: meltFactor(v.id), pool: 0, foot: FOOT.get(bodyM.geometry) ?? [0.3, 0.5] };
         this.meshes.set(v.id, m); this.group.add(m.group);
       }
       const d = v.dist + v.speed * alpha;
@@ -113,14 +137,30 @@ export class VehicleRenderer {
         const half = v.kind === VehicleKind.Train ? 1.2 : 0.4, sx = Math.sin(h) * half, cz = Math.cos(h) * half;
         const rise = this.groundAt(x + sx, y + cz) - this.groundAt(x - sx, y - cz);
         m.group.rotation.x = -Math.atan2(rise, half * 2);
-        if (v.kind === VehicleKind.Car || v.kind === VehicleKind.Bus) { // suspension: lean in turns, nose dive when braking; brake lights from the same signal
+        if (v.kind === VehicleKind.Car || v.kind === VehicleKind.Bus) { // suspension: lean in turns, nose dive when braking; brake lights from the speed drop (smoothed, with hold)
           const sp = stepSuspension(m.susp, h, v.speed, VEHICLE_SPEED[v.kind]!);
           m.group.rotation.x += sp.pitch; m.group.rotation.z = sp.roll; m.group.position.y += bumpBob(d, v.id, v.speed);
           if (sp.braking !== m.brake) { m.brake = sp.braking; m.lights.material = sp.braking ? BRAKE_MAT : LIGHT_MAT; }
         }
+        // roof snow: shed while driving, melts slowly while parked in the sun (render clock only); material swap per quantised level
+        if (!this.reduced) m.cover = stepSnowCover(m.cover, dt, v.speed / Math.max(0.001, VEHICLE_SPEED[v.kind]!), sun, m.melt);
+        const lv = snowLevel(m.cover);
+        if (lv !== m.level) { m.level = lv; m.body.material = BODY_MATS[lv]!; }
+        // soft contact shadow (not under planes)
+        this.q.setFromEuler(m.group.rotation); this.pos.copy(m.group.position);
+        fxl.add(0, this.pos, this.q, GROUND_BLOB_Y, 0, m.foot[0] * 2, m.foot[1] * 2, sStr);
+        if (v.kind !== VehicleKind.Train) { roadCars.push(m); rx.push(x); rz.push(y); }
       } else m.group.rotation.x = lift > 0.05 ? -0.06 : 0;
       if (m.prop) m.prop.rotation.z = this.time * 0.9;
     }
+    // headlight pools: nearest N road vehicles at night; each one fades in / out (no popping when the selection changes)
+    const want = new Set<Live>();
+    if (pStr > 0) for (const i of nearestN(rx, rz, this.focus.x, this.focus.z, VEHICLE_FX.pool.cap)) want.add(roadCars[i]!);
+    for (const m of roadCars) {
+      m.pool += ((want.has(m) ? 1 : 0) - m.pool) * VEHICLE_FX.pool.ease; if (m.pool < 0.01 && !want.has(m)) m.pool = 0;
+      if (m.pool > 0) { this.q.setFromEuler(m.group.rotation); this.pos.copy(m.group.position); fxl.add(1, this.pos, this.q, GROUND_BLOB_Y + 0.002, m.foot[1] + VEHICLE_FX.pool.length / 2 - 0.3, VEHICLE_FX.pool.width, VEHICLE_FX.pool.length, m.pool * pStr); }
+    }
+    fxl.end();
     for (const [id, m] of this.meshes) {
       if (live.has(id)) continue;
       this.group.remove(m.group); // geometries + materials are shared (cached): nothing to dispose per vehicle

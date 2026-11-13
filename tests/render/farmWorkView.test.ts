@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FARM_WORK as F } from '../../src/config/farmWork';
 import { FarmWorkView, type FarmWorkCtx } from '../../src/render/FarmWorkView';
-import { buildWorkWorld, type FarmSite } from '../../src/render/farmWorkPlan';
+import { buildWorkWorld, paceSpeed, type FarmSite } from '../../src/render/farmWorkPlan';
 import { simDayOf } from '../../src/sim/calendar';
 import { Grid } from '../../src/world/Grid';
 
@@ -70,10 +70,10 @@ describe('FarmWorkView', () => {
     run(v, F.patchHold + F.patchFade + 5, ctx({ cap: 0, day: WINTER }), 0.1);
     expect(v.stripes.count).toBe(0); expect(v.bales.count).toBe(0);
   });
-  it('runs trips in game time: 3x covers the same trip in a third of the real seconds, 10x stays parked', () => {
+  it('runs trips in game time: 3x (softened) covers the same trip in fewer real seconds, 10x stays parked', () => {
     const a = mk(), b = mk();
     for (const v of [a, b]) v.force({ day: JUN, hour: 10, at: [0.05, 0.05] });
-    run(a, 12, ctx({ speed: 1 }), 0.05); run(b, 4, ctx({ speed: 3 }), 0.05);
+    run(a, 12, ctx({ speed: 1 }), 0.05); run(b, 12 / paceSpeed(3), ctx({ speed: 3 }), 0.05);
     const sa = a.snapshot(), sb = b.snapshot();
     sa.forEach((s, i) => { expect(sb[i]!.x).toBeCloseTo(s.x, 0); expect(sb[i]!.y).toBeCloseTo(s.y, 0); });
     const f = mk(); run(f, 40, ctx({ speed: 10, fast: true })); expect(f.stats.trips).toBe(0);
@@ -82,5 +82,13 @@ describe('FarmWorkView', () => {
     const v = mk(); v.force({ day: JUN, hour: 10, at: ['mowB', 'mowB'] }); run(v, 2, ctx());
     expect(v.squares.count).toBeGreaterThan(0); expect(v.squares.count).toBeLessThanOrEqual(F.bales.square.cap);
     expect(v.stats.squares).toBe(v.squares.count);
+  });
+  it('tractors move calmly: <= 1.5 tiles per real second at 1x, <= 2.6 at 3x (speed measured over 0.1 s steps while driving)', () => {
+    for (const [speed, cap] of [[1, 1.5], [3, 2.6]] as const) {
+      const v = mk(), c = ctx({ speed }); v.force({ day: JUN, hour: 10, at: [0.02, 0.02] }); run(v, 0.5, c, 0.05);
+      let prev = v.snapshot().map((q) => [q.x, q.y]), top = 0;
+      for (let i = 0; i < 400; i++) { v.update(0.1, c); const cur = v.snapshot().map((q) => [q.x, q.y]); cur.forEach((p, k) => { top = Math.max(top, Math.hypot(p[0]! - prev[k]![0]!, p[1]! - prev[k]![1]!) / 0.1); }); prev = cur; }
+      expect(top, `speed ${speed}`).toBeLessThanOrEqual(cap); expect(top).toBeGreaterThan(0.2);
+    }
   });
 });

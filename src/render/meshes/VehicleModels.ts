@@ -169,24 +169,32 @@ export function pillarize(secs: Sec[], z: number, half = 0.014): Sec[] {
   return out;
 }
 
-export interface ModelParts { body: THREE.BufferGeometry; lights: THREE.BufferGeometry; prop?: THREE.BufferGeometry; propPivot?: [number, number, number] }
+export interface ModelParts { /** Half extents (x, z) of the soft contact shadow (tiles) and of the headlight reach: the nose z. */ foot?: [number, number]; body: THREE.BufferGeometry; lights: THREE.BufferGeometry; prop?: THREE.BufferGeometry; propPivot?: [number, number, number] }
 const merge = (gs: THREE.BufferGeometry[]): THREE.BufferGeometry => {
   const m = mergeGeometries(gs, false)!;
   gs.forEach((g) => g.dispose());
   return m;
 };
+/**
+ * Roof-snow mask (`aSnow` 0 / 1 per vertex, read by the vehicle body shader): up-facing surfaces above `roofY` (roof, roof gear) and, when `trunkZ` is given, the rear deck behind it
+ * (boot lid); never the bonnet. Baked once per cached model: no per-frame cost.
+ */
+export function snowMask(g: THREE.BufferGeometry, roofY: number, trunkZ = -Infinity): THREE.BufferGeometry {
+  const pos = g.getAttribute('position'), nor = g.getAttribute('normal'), a = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) {
+    const up = nor.getY(i) > 0.6, y = pos.getY(i), z = pos.getZ(i);
+    a[i] = up && (y > roofY || (z < trunkZ && y > 0.13)) ? 1 : 0;
+  }
+  g.setAttribute('aSnow', new THREE.BufferAttribute(a, 1));
+  return g;
+}
 const lightGeo = (items: Array<[number, number, number, number, number, number, Rgb]>): THREE.BufferGeometry => merge(items.map(([w, h, d, x, y, z, c]) => box(w, h, d, c, x, y, z)));
 const HEAD: Rgb = [1, 0.96, 0.8], TAIL: Rgb = [0.9, 0.08, 0.06], WHITE_GLOW: Rgb = [1, 1, 1];
 void WHITE_GLOW;
 
 /** Options of `buildCar`: `roof` = a two-tone roof colour (hex), `low` = the simpler Low-quality variant (no pillars, arches, seams or mirrors: fewer triangles than the full car). */
 export interface CarOpts { roof?: number; low?: boolean }
-/** A flat dark blob under a vehicle (baked into the body geometry, vertex coloured: the cheapest 'contact shadow', no extra draw call): an ellipse of `n` triangles at local y = `y`. */
-function blob(hx: number, hz: number, y: number, c: Rgb, n = 8): THREE.BufferGeometry {
-  const g = new THREE.CircleGeometry(1, n).rotateX(-Math.PI / 2).scale(hx, 1, hz).translate(0, y, 0);
-  return paint(g, c);
-}
-/** Local y of the contact blob: the vehicle group floats 0.05 above the ground (VehicleRenderer). */
+/** Local y of the soft contact shadow quad (`vehicleFx.ts`): the vehicle group floats 0.05 above the ground (VehicleRenderer). */
 export const GROUND_BLOB_Y = -0.046;
 
 /** rack: 0 none, 1 skis (winter), 2 bike (summer), 3 ski box. style: 0..7 (`CAR_STYLES`), colour index into CAR_COLORS / SPORT_COLORS. */
@@ -198,7 +206,6 @@ export function buildCar(style: number, colorHex: number, rack: number, opts: Ca
   const tire = rgb(0x151618), hub = rgb(0x9aa0a8);
   for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(...wheel(st.wheelR, 0.055, sx * st.wheelX, st.wheelR, sz * st.wheelZ, tire, hub, low ? 8 : 10));
   const hw = st.body[st.body.length - 1]!.w, bw = st.body[2]!.w;
-  parts.push(blob(bw + 0.03, st.len / 2 + 0.01, GROUND_BLOB_Y, rgb(0x34373d), low ? 6 : 8)); // contact shadow
   if (!low) {
     // wheel arches (dark half discs on the body side, behind the wheel), door mirrors, door seams, antenna
     for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(disc(st.wheelR * 1.3, 10, sx * (bw + 0.003), st.wheelR + 0.005, sz * st.wheelZ, sx as 1 | -1, rgb(0x1c1d20), 0, true));
@@ -235,7 +242,7 @@ export function buildCar(style: number, colorHex: number, rack: number, opts: Ca
     [0.07, 0.035, 0.012, lw * 0.62, ly, z0, HEAD], [0.07, 0.035, 0.012, -lw * 0.62, ly, z0, HEAD],
     [0.06, 0.03, 0.012, lw * 0.62, ly + 0.0, -z0, TAIL], [0.06, 0.03, 0.012, -lw * 0.62, ly + 0.0, -z0, TAIL],
   ]);
-  return { body: merge(parts), lights };
+  return { body: snowMask(merge(parts), Math.max(...st.body.map((b) => b.y1)) + 0.012, st.cabin[1]!.z), lights, foot: [bw + 0.05, st.len / 2 + 0.06] };
 }
 
 const BUS_RING: Ring = [[0.88, 0, 'dark'], [1, 0.07, 'stripe'], [1, 0.36, 'stripe'], [1, 0.4, 'glass'], [1, 0.82, 'glass'], [1, 0.86, 'body'], [0.88, 1, 'body'], [0.5, 1, 'body']];
@@ -249,12 +256,46 @@ function windowSecs(z0: number, z1: number, w: number, y0: number, y1: number, n
   out.push({ z: z1, w, y0, y1, pillar: true });
   return out;
 }
+/** Drops the side window triangles (glass colour, facing sideways) so the cabin can be seen through the windows; the windscreen and the pillars stay solid. */
+export function openWindows(g: THREE.BufferGeometry, glass: Rgb): THREE.BufferGeometry {
+  const pos = g.getAttribute('position'), col = g.getAttribute('color'), nor = g.getAttribute('normal');
+  const keep: number[] = [];
+  const isGlass = (i: number): boolean => Math.abs(col.getX(i) - glass[0]) < 0.02 && Math.abs(col.getY(i) - glass[1]) < 0.02 && Math.abs(col.getZ(i) - glass[2]) < 0.02;
+  for (let t = 0; t < pos.count; t += 3) {
+    if (isGlass(t) && isGlass(t + 1) && isGlass(t + 2) && Math.abs(nor.getX(t) + nor.getX(t + 1) + nor.getX(t + 2)) / 3 > 0.7) continue;
+    keep.push(t, t + 1, t + 2);
+  }
+  const out = new THREE.BufferGeometry();
+  for (const name of ['position', 'normal', 'color']) {
+    const a = g.getAttribute(name), arr = new Float32Array(keep.length * 3);
+    keep.forEach((v, k) => { arr[k * 3] = a.getX(v); arr[k * 3 + 1] = a.getY(v); arr[k * 3 + 2] = a.getZ(v); });
+    out.setAttribute(name, new THREE.BufferAttribute(arr, 3));
+  }
+  g.dispose();
+  return out;
+}
+/** Bus cabin seen through the open windows: an inward-facing liner (floor, walls, ceiling), seat rows each side of a centre aisle and two hand rails. ~180-260 triangles. */
+export function busInterior(L: number, H: number, w: number, y0: number, mini: boolean): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = [], iw = w - 0.015, z0 = -L / 2 + 0.03, z1 = L / 2 - 0.13, yb = y0 + 0.05, yt = y0 + H * 0.93;
+  const liner = new THREE.BoxGeometry(iw * 2, yt - yb, z1 - z0).translate(0, (yt + yb) / 2, (z0 + z1) / 2);
+  const ix = liner.getIndex()!; for (let i = 0; i < ix.count; i += 3) { const a = ix.getX(i + 1); ix.setX(i + 1, ix.getX(i + 2)); ix.setX(i + 2, a); } // faces point inwards
+  liner.computeVertexNormals();
+  out.push(paint(liner, rgb(0x8d96a2)));
+  out.push(box(iw * 2 - 0.01, 0.01, z1 - z0 - 0.01, rgb(0x2c2f34), 0, yb + 0.006, (z0 + z1) / 2)); // aisle floor
+  const seat = rgb(0x35496b), rail = rgb(0xc9ced4), n = mini ? 4 : 7, step = (z1 - z0 - 0.14) / n;
+  for (let k = 0; k < n; k++) for (const sx of [1, -1]) out.push(box(0.1, 0.13, 0.07, seat, sx * (iw - 0.07), yb + 0.08, z0 + 0.1 + k * step));
+  for (const sx of [1, -1]) out.push(box(0.008, 0.008, z1 - z0 - 0.1, rail, sx * 0.045, yt - 0.03, (z0 + z1) / 2));
+  return out;
+}
 /** Coach / shuttle minibus. */
 export function buildBus(mini: boolean, colorHex: number, low = false): ModelParts {
   const L = mini ? 1.0 : 1.55, H = mini ? 0.42 : 0.52, w = mini ? 0.21 : 0.24, y0 = 0.08;
   const pal: Palette = { ...BASE_PAL(0xf4f4f4), stripe: rgb(colorHex), body: rgb(0xf4f4f4) };
   const secs: Sec[] = [{ z: -L / 2, w: w * 0.9, y0: y0 + 0.01, y1: y0 + H * 0.97 }, ...windowSecs(-L / 2 + 0.01, L / 2 - 0.12, w, y0, y0 + H, low ? (mini ? 4 : 6) : mini ? 6 : 10), { z: L / 2 - 0.04, w: w * 0.98, y0, y1: y0 + H * 0.96 }, { z: L / 2, w: w * 0.88, y0: y0 + 0.02, y1: y0 + H * 0.78 }];
-  const parts = [loft(secs, BUS_RING, pal, 'glass', 'body'), blob(w + 0.03, L / 2 + 0.01, GROUND_BLOB_Y, rgb(0x34373d), low ? 6 : 10)];
+  let shell = loft(secs, BUS_RING, pal, 'glass', 'body');
+  const parts: THREE.BufferGeometry[] = [];
+  if (!low) { shell = openWindows(shell, pal.glass!); parts.push(...busInterior(L, H, w, y0, mini)); }
+  parts.unshift(shell);
   if (!low) { // a driver at the wheel: head + shoulders painted on the windscreen (the loft is opaque), on the right-hand side of the nose
     const dx = w * 0.45;
     parts.push(box(0.07, 0.05, 0.004, rgb(0x35609a), dx, y0 + H * 0.5, L / 2 + 0.003), box(0.04, 0.04, 0.004, rgb(0xe3b896), dx, y0 + H * 0.5 + 0.045, L / 2 + 0.004), box(0.045, 0.014, 0.005, rgb(0x2c2f34), dx, y0 + H * 0.5 + 0.083, L / 2 + 0.004));
@@ -273,7 +314,7 @@ export function buildBus(mini: boolean, colorHex: number, low = false): ModelPar
   for (const zz of mini ? [0.0] : [0.2, -0.25]) parts.push(box(0.16, 0.012, 0.14, rgb(0xc9ced4), 0, y0 + H + 0.004, zz)); // roof hatch
   parts.push(box(w * 1.7, 0.04, 0.03, rgb(0x2c2f34), 0, y0 + 0.03, L / 2 + 0.002), box(w * 1.0, 0.04, 0.012, rgb(0x1c1d20), 0, y0 + 0.14, L / 2 - 0.0), box(w * 1.2, 0.05, 0.015, rgb(0x1c1d20), 0, y0 + 0.2, -L / 2 - 0.002));
   const lights = lightGeo([[0.07, 0.04, 0.012, 0.13, y0 + 0.1, L / 2 - 0.0, HEAD], [0.07, 0.04, 0.012, -0.13, y0 + 0.1, L / 2 - 0.0, HEAD], [0.06, 0.04, 0.012, 0.14, y0 + 0.14, -L / 2 - 0.0, TAIL], [0.06, 0.04, 0.012, -0.14, y0 + 0.14, -L / 2 - 0.0, TAIL]]);
-  return { body: merge(parts), lights };
+  return { body: snowMask(merge(parts), y0 + H * 0.9), lights, foot: [w + 0.06, L / 2 + 0.06] };
 }
 
 const TRAIN_RING: Ring = [[0.9, 0, 'dark'], [1, 0.1, 'body'], [1, 0.3, 'body'], [1, 0.34, 'glass'], [1, 0.74, 'glass'], [1, 0.78, 'body'], [0.84, 0.96, 'roofc'], [0.45, 1, 'roofc']];
@@ -297,10 +338,10 @@ function carriage(zc: number, len: number, loco: boolean): THREE.BufferGeometry[
   return out;
 }
 export function buildTrain(): ModelParts {
-  const parts = [...carriage(1.55, 1.4, true), ...carriage(0, 1.4, false), ...carriage(-1.55, 1.4, false), blob(0.3, 2.3, GROUND_BLOB_Y - 0.0, rgb(0x34373d), 8)];
+  const parts = [...carriage(1.55, 1.4, true), ...carriage(0, 1.4, false), ...carriage(-1.55, 1.4, false)];
   parts.push(box(0.04, 0.03, 0.16, rgb(0x2c2f34), 0, 0.14, 0.775), box(0.04, 0.03, 0.15, rgb(0x2c2f34), 0, 0.14, -0.775));
   const lights = lightGeo([[0.08, 0.05, 0.012, 0.1, 0.3, 2.26, HEAD], [0.08, 0.05, 0.012, -0.1, 0.3, 2.26, HEAD], [0.08, 0.04, 0.012, 0.1, 0.3, -2.26, TAIL], [0.08, 0.04, 0.012, -0.1, 0.3, -2.26, TAIL]]);
-  return { body: merge(parts), lights };
+  return { body: snowMask(merge(parts), 0.19), lights, foot: [0.38, 2.4] };
 }
 
 /** The Altiport arrival plane: the shared lofted high-wing utility plane (meshes/aircraft.ts), forward = +z; the spinner + propeller blades spin as the `prop` part. */
