@@ -71,6 +71,9 @@ float sunShadow(vec3 wp, vec3 n) {
   s += texture(tShadow, vec3(p.xy + vec2(-t, -t), z)) * 0.18;
   return mix(1.0, 1.0 - uShadowP.x * (1.0 - s), inside);
 }
+uniform sampler2D tHill; // hill shadows (hillShade.ts): sun visibility of the terrain itself over the whole map, world-space, bilinear
+uniform vec2 uHillP;     // x 1 / (V - 1), y 1 once the first map is complete
+float hillShade(vec3 wp) { return mix(1.0, texture2D(tHill, (wp.xz + 0.0) * uHillP.x).r, uHillP.y * uShadowP.x); }
 #endif
 ${FOG_PARS_FRAG}
 varying vec3 vWorld;
@@ -331,7 +334,7 @@ void main() {
   col *= 1.0 + 0.015 * dayK * (sin(vWorld.y * 2.2) - 1.0);   // faint contour tone variation
   float sunSh = 1.0;
 #ifdef USE_SHADOWS
-  sunSh = sunShadow(vWorld, nf);
+  sunSh = sunShadow(vWorld, nf) * hillShade(vWorld);
   amb *= mix(1.0, 0.9, 1.0 - sunSh); // shade is slightly deeper than the plain ambient (a little bounce is lost under a canopy)
   col *= mix(vec3(1.0), vec3(0.95, 0.98, 1.05), 1.0 - sunSh);
 #endif

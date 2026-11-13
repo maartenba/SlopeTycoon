@@ -3,6 +3,7 @@ import {
   SHADOW_MAP_SIZE, fitShadowWindow, quantiseHalf, quantiseSun, shadowSunDir, shadowDepthRange, shadowStrength, windowCovers, perspectiveRadius, type ShadowWindow,
 } from './shadowFit';
 import { patchLambertReceiver, shadowPassUniforms } from './shadowChunk';
+import { HillShade, type HeightSource, type HillUniforms } from './hillShade';
 import { PERSP_CAMERA_SLACK, SIG_SEED, castDensityTarget, mixSig, needsStaticRender, quantiseDensity, slewDensity, staticLoadScale } from './shadowSchedule';
 
 type V3 = [number, number, number];
@@ -34,6 +35,12 @@ export class ShadowRig {
   private age = 99; // seconds since the last static render
   private sig = SIG_SEED; private staticSig = -1; private sinceScan = 99;
   private readonly dyn: THREE.Object3D[] = [];
+  /** Off-screen caster meshes (tree cells outside the view whose shadow falls into it): shown for the static pass only. Providers = roots flagged `userData.shadowExtras`. */
+  private readonly extraProviders: Array<(sun: V3, camera: THREE.Camera) => THREE.Object3D[]> = [];
+  private extras: THREE.Object3D[] = [];
+  private activeCamera: THREE.Camera | null = null;
+  /** Master switch for the off-screen casters (benchmark / bisect). */
+  extraCasters = true;
   private readonly lights: THREE.Object3D[] = [];
   private finalDirty = false;
   private density = 1; private densityQ = 1;
@@ -54,14 +61,19 @@ export class ShadowRig {
     uShadowM: { value: new THREE.Matrix4() },
     /** x strength 0..1, y depth bias, z 1 / map size, w normal offset (world units). */
     uShadowP: { value: new THREE.Vector4(0, 0, 1 / SHADOW_MAP_SIZE, 0) },
+    /** Hill shadow map (terrain on terrain, hillShade.ts): shared with the receivers like the rest. */
+    tHill: { value: null } as HillUniforms['tHill'], uHillP: { value: new THREE.Vector2(0, 0) } as HillUniforms['uHillP'],
   };
+  hill: HillShade | null = null;
+  /** Terrain heights for the hill-shadow term (High only; call once). */
+  setTerrain(src: HeightSource, unit: number): void { this.hill?.dispose(); this.hill = new HillShade(src, unit, this.uniforms); }
   /** Triangle budget of the last main pass (a proxy for the shadow pass): between 50 % and 100 % of it roots marked `userData.shadowHeavy` (the tree layers) cast with a falling density (a stable per-tree hash, slewed and quantised: no pop), 0 at the budget (the old hard cut-off). */
   heavyTriBudget = 1_200_000;
   private smoothDt = 1 / 60;
   /** Benchmark switch (scripts/shadow-cost.ts): a 1-pixel `readPixels` ends every pass so `stats.*Ms` are real GPU / rasteriser times instead of submit times. Never on in the game. */
   measureSync = false;
   /** Last measured shadow pass: draw calls, triangles, ms, passes so far (docs/perf.md "Shadow pass"). */
-  readonly stats = { calls: 0, triangles: 0, ms: 0, passes: 0, strength: 0, half: 0, totalMs: 0, staticPasses: 0, dynPasses: 0, dynCalls: 0, dynTriangles: 0, dynMs: 0, copyMs: 0, staticMsTotal: 0, dynMsTotal: 0, copyMsTotal: 0, density: 1, dynRoots: 0, memMB: 0,
+  readonly stats = { calls: 0, triangles: 0, ms: 0, passes: 0, strength: 0, half: 0, totalMs: 0, staticPasses: 0, dynPasses: 0, dynCalls: 0, dynTriangles: 0, dynMs: 0, copyMs: 0, staticMsTotal: 0, dynMsTotal: 0, copyMsTotal: 0, density: 1, dynRoots: 0, memMB: 0, extraCells: 0,
     /** Why the static map was re-rendered (bisecting hitches: docs/flicker.md "Title camera"): a sun step (re-fit), a view re-fit (camera left the window / zoom ladder), a changed static set, a cast density step, a perspective camera move, the first render. */
     why: { sun: 0, view: 0, set: 0, density: 0, camera: 0, first: 0 } };
   /** Debug / bisect switch (`__slope.renderer.shadows.freezeStatic`): never re-render the static map after the first time (shadows of new casters and the sun stop updating, nothing else changes). */
@@ -102,7 +114,7 @@ export class ShadowRig {
     for (const m of this.receivers) this.applyDefine(m);
     if (on) { this.ensureTarget(); this.adopt(); }
     else {
-      this.release(); this.freeTargets(); this.uniforms.tShadow.value = null; this.dummy?.dispose(); this.dummy = null; this.uniforms.uShadowP.value.x = 0; this.win = null; this.camWin = null; this.hasStatic = false; this.stats.strength = 0; this.stats.memMB = 0; shadowPassUniforms.uShDens.value = 1; }
+      this.release(); this.freeTargets(); this.uniforms.tShadow.value = null; this.dummy?.dispose(); this.dummy = null; this.uniforms.uShadowP.value.x = 0; this.win = null; this.camWin = null; this.hasStatic = false; this.stats.strength = 0; this.stats.memMB = 0; shadowPassUniforms.uShDens.value = 1; this.hill?.dispose(); }
   }
 
   /**
@@ -198,6 +210,7 @@ export class ShadowRig {
     const strength = active ? shadowStrength(night, overcast, sunDir[1] / Math.hypot(sunDir[0], sunDir[1], sunDir[2])) : 0;
     this.stats.strength = strength;
     if (strength < 0.02) { this.uniforms.uShadowP.value.x = 0; return; }
+    this.hill?.step(q, strength); // hill shadows (terrain on terrain): refreshed only when the sun / terrain changed, sliced over frames
     this.sinceAdopt += dt;
     if (this.sinceAdopt >= 1) { this.sinceAdopt = 0; this.adopt(); }
     this.age += dt; this.sinceScan += dt;
@@ -212,7 +225,7 @@ export class ShadowRig {
     // Perspective views (ride / photo / walk): one window around the CAMERA (not its look direction), so a yaw never moves it; radius grows with the eye height (docs/shadows.md)
     const f: V3 = persp ? [camera.position.x, focus.y, camera.position.z] : [focus.x, focus.y, focus.z];
     const radius = persp ? perspectiveRadius(Math.max(0, camera.position.y - focus.y)) : this.viewRadius(camera, focus) + 4;
-    this.realCam.copy(camera.position);
+    this.realCam.copy(camera.position); this.activeCamera = camera;
     const need = quantiseHalf(radius * 1.2 + 2);
     const sunChanged = !!this.win && (this.win.sunDir[0] !== q[0] || this.win.sunDir[1] !== q[1] || this.win.sunDir[2] !== q[2]);
     const sunDue = sunChanged && !spike && this.age >= 1 / (20 * load); // a pure sun step is rate limited (STATIC only); every re-fit adopts the newest sun
@@ -248,8 +261,14 @@ export class ShadowRig {
 
   /** Walks the visible scene (cheap, <= 20 Hz): collects the dynamic roots and the lights, and a signature of everything static that would land in the depth map (mesh / geometry ids, instance counts and matrix versions, visibility). */
   private scan(): void {
-    this.dyn.length = 0; this.lights.length = 0; this.sig = SIG_SEED;
+    this.dyn.length = 0; this.lights.length = 0; this.sig = SIG_SEED; this.extraProviders.length = 0;
     this.scanObj(this.scene);
+    this.extras = [];
+    // off-screen casters: only while the main pass is light (below ~60 % of the heavy budget: each extra cell is a whole instanced mesh in the depth pass only)
+    if (this.extraCasters && this.win && this.activeCamera && this.densityQ >= 1 && this.webgl.info.render.triangles < this.heavyTriBudget * 0.6) {
+      for (const p of this.extraProviders) for (const m of p(this.win.sunDir, this.activeCamera)) { this.extras.push(m); this.sig = mixSig(this.sig, m.id); }
+    }
+    this.stats.extraCells = this.extras.length;
   }
 
   private scanObj(o: THREE.Object3D): void {
@@ -257,6 +276,7 @@ export class ShadowRig {
     if ((o as THREE.Light).isLight) this.lights.push(o);
     const ud = o.userData;
     if (ud.shadowDynamic) { this.dyn.push(o); return; }
+    if (typeof ud.shadowExtras === 'function') this.extraProviders.push(ud.shadowExtras as (sun: V3, camera: THREE.Camera) => THREE.Object3D[]);
     if (this.excluded.has(o) || ud.noShadow || NO_CAST_NAMES.has(o.name)) return;
     if (ud.shadowHeavy && this.densityQ <= 0) return;
     const m = o as THREE.InstancedMesh;
@@ -333,9 +353,10 @@ export class ShadowRig {
     const rt = this.rtStatic!;
     this.sync();
     const t0 = performance.now();
+    for (const m of this.extras) m.visible = true; // off-screen tree cells: drawn into the static depth only (restored below)
     this.hide(this.scene);
     try { this.pass(rt, true); }
-    finally { for (const o of this.hidden) o.visible = true; this.hidden.length = 0; }
+    finally { for (const o of this.hidden) o.visible = true; this.hidden.length = 0; for (const m of this.extras) m.visible = false; }
     const info = this.webgl.info.render, ms = performance.now() - t0;
     this.stats.calls = info.calls; this.stats.triangles = info.triangles; this.stats.ms = ms; this.stats.totalMs += ms; this.stats.staticMsTotal += ms; this.stats.passes++; this.stats.staticPasses++;
   }

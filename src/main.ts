@@ -2389,8 +2389,10 @@ renderer.scene.add(focusMarker);
 // High-tier sun shadows (M8, docs/shadows.md): terrain receives, everything opaque casts except these flat / transient / overlay roots; the feed is read only while High is on.
 for (const o of [terrain.group, water.group, overlays.group, covOverlay.group, pisteHl.mesh, precip.group, fallingLeaves.group, smoke.group, snowSpray.group, rapidsSplash.group, springMarkers.group, atmos.mist.group, skyActivity.group, fx.particles.mesh, emotes.mesh, selRing, focusMarker, dropRing.group, sledRunView.group] as THREE.Object3D[]) o.userData.noShadow = true;
 for (const o of [guestRenderer.group, vehicleRenderer.group, natureView.group, zooView.group, tourVehicles.group, cragClimbers.group, activity.group, groomingView?.group, incidentView?.group] as Array<THREE.Object3D | undefined>) if (o) o.userData.shadowDynamic = true; // moving casters: the shadow rig draws them every frame on top of the cached static depth (lift carriers flag themselves)
+trees.group.userData.shadowExtras = (sun: [number, number, number], cam: THREE.Camera) => trees.shadowExtras(sun, cam); // off-screen tree cells whose shadow reaches the view cast in the depth pass only
 trees.group.userData.shadowHeavy = true; // the tree layers are the bulk of the triangles: they stop casting when a pass gets too heavy (ShadowRig.heavyTriBudget)
 renderer.shadows.addReceiver(terrain.material);
+renderer.shadows.setTerrain(grid, HEIGHT_UNIT); // hill shadows (High): the terrain's own heightfield shadow
 renderer.shadowFeed = (fx, fz) => {
   const L = lighting.last, k = weather.current.kind;
   return { sunDir: L?.sunDir ?? [0.4, 0.8, 0.3], night: L?.night ?? 0, overcast: k === 'clear' ? 0 : k === 'cloudy' ? 0.5 : k === 'storm' ? 1 : 0.8, groundY: heightAt(grid, fx, fz), heights: [-3, maxWorld + 6] };

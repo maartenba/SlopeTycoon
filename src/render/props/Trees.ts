@@ -986,6 +986,40 @@ export class InstancedLayer {
     }
   }
 
+  /**
+   * Shadow-pass-only extra casters (docs/shadows.md "Off-screen casters"): built cells whose box is outside the view but whose shadow (the box swept away from the
+   * sun by `SHADOW_REACH` world units) reaches into it. Their meshes stay `visible = false` in the main pass (no main-pass draw calls); `ShadowRig` shows them for
+   * its own static pass only. Cells that were never built (outside the build pad) cannot cast: documented. At most `max` meshes are returned.
+   */
+  shadowExtras(sun: [number, number, number], camera: THREE.Camera, out: THREE.Object3D[], max: number): void {
+    const hz = Math.max(1e-3, Math.hypot(sun[0], sun[2])), sy = Math.max(0.2, sun[1]);
+    const len = Math.min(InstancedLayer.SHADOW_REACH_MAX, InstancedLayer.SHADOW_REACH_H * hz / sy);
+    const ox = -sun[0] / hz * len, oz = -sun[2] / hz * len; // the shadow falls away from the sun
+    const persp = this.perspective, cp = camera.position;
+    const lvls: number[] = [];
+    if (persp) this.levels.forEach((l, i) => { if (!l.spec.skipInPerspective) lvls.push(i); });
+    else if (this.xf) lvls.push(this.xf.to, this.xf.from); else lvls.push(this.shown);
+    const sw = new THREE.Box3();
+    for (const li of lvls) {
+      const lv = this.levels[li];
+      if (!lv) continue;
+      const band = lv.spec.band ?? [0, Infinity];
+      for (const cell of lv.cells) {
+        if (out.length >= max) return;
+        const m = cell.mesh;
+        if (!m || m.visible || m.count === 0) continue;
+        if (persp && cell.box.distanceToPoint(cp) >= band[1] + TREE_FADE_W) continue;
+        sw.copy(cell.box);
+        sw.min.x = Math.min(sw.min.x, cell.box.min.x + ox); sw.max.x = Math.max(sw.max.x, cell.box.max.x + ox);
+        sw.min.z = Math.min(sw.min.z, cell.box.min.z + oz); sw.max.z = Math.max(sw.max.z, cell.box.max.z + oz);
+        if (this.frustum.intersectsBox(sw)) out.push(m);
+      }
+    }
+  }
+  /** Assumed tree height (world units) and the longest shadow reach used for the sweep. */
+  static readonly SHADOW_REACH_H = 12;
+  static readonly SHADOW_REACH_MAX = 30;
+
   /** Number of meshes (= draw calls) that would be drawn for this camera/zoom. */
   countDraws(camera: THREE.Camera, viewHeight: number): number {
     this.setFrustum(camera);
@@ -1189,6 +1223,13 @@ export class TreeLayer {
 
   /** Ground-level cap on near (high-poly) tree instances per cell (0 = off). */
   setNearCap(n: number): void { for (const l of this.layers) l.setNearCap(n); }
+
+  /** Shadow-pass extra casters of every species layer (see `InstancedLayer.shadowExtras`); the camera the layers were last updated with. */
+  shadowExtras(sun: [number, number, number], camera: THREE.Camera, max = 3): THREE.Object3D[] {
+    const out: THREE.Object3D[] = [];
+    for (const l of this.layers) l.shadowExtras(sun, camera, out, max);
+    return out;
+  }
 
   countDraws(camera: THREE.Camera, viewHeight: number): number {
     return this.layers.reduce((a, l) => a + l.countDraws(camera, viewHeight), 0);
