@@ -91,13 +91,14 @@ export function buildWaterData(grid: Grid, lakes: Lake[], streams: Stream[], dug
       const ns = diagonalNS(hs[0], hs[1], hs[2], hs[3]);
       const jl = lake ? null : lakeBeside(x, y), cs = jl === null ? null : grid.getCorners(x, y);
       for (const [u, v] of tileCells(ns)) {
-        let h = triangleHeight(hs, u, v), bd0 = lake && bed ? Math.min(1, Math.max(0, (bed[0]! * (1 - u) * (1 - v) + bed[1]! * u * (1 - v) + bed[2]! * u * v + bed[3]! * (1 - u) * v) / 2)) : 0.4;
+        let h = triangleHeight(hs, u, v), fw = 1, bd0 = lake && bed ? Math.min(1, Math.max(0, (bed[0]! * (1 - u) * (1 - v) + bed[1]! * u * (1 - v) + bed[2]! * u * v + bed[3]! * (1 - u) * v) / 2)) : 0.4;
         if (jl !== null && cs) { // river vertex beside a lake: height and bed depth blend to the lake's (the same bilinear bed formula the lake tiles use)
           const w = junctionWeight(lakeFieldAt(grid, x + u, y + v));
+          fw = 1 - w; // the current also eases out towards the lake (flow vector -> 0): no scroll / foam step at the mouth
           if (w > 0) { const t = (cs[0] * (1 - u) * (1 - v) + cs[1] * u * (1 - v) + cs[2] * u * v + cs[3] * (1 - u) * v); h += (jl - h) * w; bd0 += (Math.min(1, Math.max(0, (jl - t) / 2)) - bd0) * w; }
         }
         pos.push(x + u, h * HEIGHT_UNIT + LIFT, y + v);
-        loc.push(u, v); sid.push(0, 0, 0, 0); cor.push(0, 0, 0, 0); flw.push(fx, fz);
+        loc.push(u, v); sid.push(0, 0, 0, 0); cor.push(0, 0, 0, 0); flw.push(fx * fw, fz * fw);
         const bd = bd0;
         dep.push(bd); inf.push(1, 0, -1); fieldOut.push(fld.at(x + u, y + v));
       }
