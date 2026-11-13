@@ -2,6 +2,9 @@
 
 Current release: **0.6.4 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
 
+## Unreleased gate run (2026-11-13, macOS, Node v24.22.3, HEAD 73e7269)
+`npm run gate:full` with the retuned defaults (6 slots, browser stages weigh 2): wall 19.2 min (30.3 min before), 36 stages, none failed, `desktop:diff` flaky (first attempt hit by a load spike, retry SAME). Goldens/balance unchanged, `test:perf` 49 passed, touch 39/39, mobile:audit pass, flicker 64 winter rotfine 0.6577 % (default) / 0.6938 % High. Numbers in `docs/gate-speed.md` "Retune". Nothing pushed or tagged.
+
 ## 0.6.4 (2026-11-12, macOS, Node v22.23.4)
 
 Falling autumn leaves (render-only: one instanced layer, follows Atmosphere and the quality tier, still with reduced motion; `docs/atmosphere.md`) and the website trailer and film re-encoded with the leaves (trailer-30.mp4 8.0 MB, film-90.mp4 26.2 MB, film-poster.jpg 97 kB; self-hosted, click to play, no autoplay). No sim, save or golden change.
