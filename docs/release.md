@@ -536,7 +536,7 @@ Version flows: `package.json` -> `__APP_VERSION__` (About via `src/ui/version.ts
 2. Write the `CHANGELOG.md` entry; update README, docs, AGENTS.md version lines.
 3. `npm run licenses` (refreshes `THIRD_PARTY_NOTICES.md`).
 4. Site rule (any site/guide/screenshot change): `npm run site:og` (cards are committed; CI does not build them), `npm run docs:img`, then `npm run build:site && npm run site:check && npm run verify:site`.
-5. Standard gate: `npm run typecheck && npm run lint && npm test && npm run build && npm run verify:pwa` (plus `test:perf` alone and `test:balance`).
+5. Release gate: **`npm run gate:full`** (`scripts/gate.ts`, `docs/gate-speed.md`; local only, no CI): typecheck, lint, the unit suite (no second run: failing files are retried once, a pass on retry is reported FLAKY), the four `test:balance` shards, build, verify:pwa, the five dist e2e scripts (analytics, offline splash, menu-music, sfx, music), the eleven sanity scripts, shot:suite, touch subset, mobile:audit, desktop:diff against the previous commit, the site gate, then `test:perf` and `flicker` alone. The summary is `.weave/gate/<run>/summary.md`; paste its table into the release notes. For smaller changes `npm run gate:fast` or `npm run gate -- --since <ref>`.
 6. Tag: `git tag vX.Y.Z` (done by the release script); push with `git push origin main vX.Y.Z`.
 7. Pages deploy: `.github/workflows/pages.yml` (canonical domain https://slopetycoon.com/, game `/play/`); see `docs/deploy.md`.
 8. Analytics/consent: GA4 `G-NX37ERE0S9` loads only after `localStorage['slope.consent.analytics'] === 'granted'`; if anything changes, update `site/pages/privacy.md` and run `npm run analytics:e2e`.

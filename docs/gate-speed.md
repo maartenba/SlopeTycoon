@@ -1,3 +1,28 @@
+# Implemented (2026-11-13): `npm run gate`
+
+Local only (owner decision: no new workflows). `scripts/gate.ts` + `scripts/lib/gateRunner.ts` (pure DAG scheduler, unit-tested in `tests/scripts/gate.test.ts`) + `scripts/lib/gateStages.ts` (stage table and path mapping). `gate:fast`, `gate:full`, `gate -- --since <ref>`, `--only`, `--skip`, `--jobs N` (default 4 slots), `--dry`, `--list`.
+
+- **Slots**: unit tests 4, heavy browser stages (e2e, shot:suite, touch, mobile:audit, desktop:diff) 3, sanity scripts 2, balance shards and light stages 1. `test:perf` and `flicker` are exclusive: they run alone after everything else. Ready stages start longest-estimate first (estimates from the previous run, `.weave/gate/estimates.json`).
+- **Order**: build -> verify:pwa -> the five dist e2e scripts; site:og -> docs:img -> build:site -> site:check -> verify:site. `dist/` is built once and only read afterwards. Every browser script uses its own temp Chrome profile and an ephemeral port, so nothing clashes.
+- **Retry**: a failed stage runs once more (vitest stages: only the failing files, parsed from the JSON reporter output); pass on retry = FLAKY in the summary, exit code 0 only if nothing failed or was skipped. No second `npm test`.
+- **Output**: `.weave/gate/<run>/<stage>.log`, `summary.md`, `summary.json`.
+- **Tiers**: `--fast` (typecheck, lint, tests, build, verify:pwa, site stages when site/docs changed, mapped sanities), `--full` (everything), `--since` (the path table above, `stagesForPaths`). `desktop:diff` builds a throw-away worktree of the before commit in the opencode temp folder and removes it.
+- **Balance / summer split**: `test:balance` is four shard files over `tests/game/balanceSuite.ts` (assignment by measured durations). 48 tests, same assertions, the 266 printed `[balance]` / month-table lines are identical to the single-file run; 955 s -> 280 s. `summer.test.ts` 208 s -> 3 files, longest 95 s.
+
+## Root cause of the four failing e2e stages
+
+Not Chrome 157, Node 24 or load. vite-node exports `NODE_ENV=development` to child processes, so `npm run build` started by the gate-timings runner emitted a development bundle (`import.meta.env.PROD === false`). That bundle never registers the service worker, so analytics, offline-splash, menu-music and sfx e2e (all need an active worker) timed out; music:e2e does not. Fixes: `build` / `build:site` force `NODE_ENV=production`, the runners strip `NODE_ENV`, `verify:pwa` and the e2e scripts fail fast on a dev bundle or a missing / stale `dist/` (`scripts/lib/dist-guard.ts`). All five passed 3 rounds alone and in sequence, and 3 times through the gate.
+
+## Measured (this machine, 14 cores)
+
+| Run | Wall |
+|---|---:|
+| Serial baseline (gate-timings, with the 2nd `npm test` and 4 failing stages) | 52.6 min |
+| `gate:full`, 36 stages, 0 flaky, 0 failed | **30.3 min** (sum of stage walls 46.5 min) |
+| `gate:fast` (site/docs changed) | 3.7 min |
+
+Slot rule limits the full gate: heavy browser stages take 3 of 4 slots, so they run one at a time; raising `--jobs` or lowering their weight is the next lever (CPU is the real limit).
+
 # Gate speed: measurements and plan
 
 Step one of the "speed up the release quality gate" item: **measure only**. Nothing in the gate changed. `npm run gate:timings` (`scripts/gate-timings.ts`, `--only a,b`, `--skip x`, `--dry`) runs every stage of the full release gate once, serially, and writes `.weave/gate/timings-<date>.{json,md}` plus a log per stage in `.weave/gate/logs/` (wall, user+sys CPU and peak RSS via `/usr/bin/time -l`, exit code, output tail).
