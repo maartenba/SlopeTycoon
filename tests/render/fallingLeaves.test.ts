@@ -99,3 +99,13 @@ describe('falling leaves: sources + layer', () => {
     expect(l.group.children).toHaveLength(1); expect(l.capacity).toBe(260); expect(l.geo.instanceCount).toBe(260);
   });
 });
+
+describe('leaf size (owner: leaves read too large, 13 Nov 2026)', () => {
+  it('base size is about 65 % of the old 0.3-0.44 tiles and still has a visible pixel floor', () => {
+    expect(LEAVES.size[0]).toBeCloseTo(0.2, 5); expect(LEAVES.size[1]).toBeCloseTo(0.29, 5);
+    expect(LEAVES.size[1] / 0.44).toBeGreaterThan(0.6); expect(LEAVES.size[1] / 0.44).toBeLessThan(0.7);
+    expect(LEAVES.minPx).toBeGreaterThanOrEqual(7);
+    // perspective views keep the 0.3 factor: ride / walk leaves are 0.06-0.087 tiles
+    expect(LEAVES.size[0] * LEAVES.perspectiveScale).toBeGreaterThan(0.05);
+  });
+});

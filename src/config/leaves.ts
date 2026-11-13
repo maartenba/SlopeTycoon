@@ -18,7 +18,7 @@ export const LEAVES = {
   /** Tumble: screen-plane spin (rad / s range) and flip rate (Hz range); the flip squashes the leaf to a sliver and back. */
   spin: [0.6, 2.4] as readonly [number, number], flipHz: [0.5, 1.1] as readonly [number, number],
   /** Leaf size (tiles) range; a floor in device pixels keeps it readable zoomed out (scaled like the snow: `precipPixelScale`). */
-  size: [0.3, 0.44] as readonly [number, number], minPx: 9,
+  size: [0.2, 0.29] as readonly [number, number], minPx: 8,
   /** Perspective views (ride / walk / photo): world size multiplier (the iso size is tuned for a far camera; up close it would be huge). */
   perspectiveScale: 0.3,
   /** Peak alpha. */
