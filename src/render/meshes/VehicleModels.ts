@@ -100,40 +100,74 @@ function wheel(r: number, w: number, x: number, y: number, z: number, tire: Rgb,
 const BASE_PAL = (body: number): Palette => ({
   body: rgb(body), glass: rgb(0x2b3d52), dark: rgb(0x1c1d20), trim: rgb(0x2c2f34), white: rgb(0xf0f2f4), stripe: rgb(0x3a78c2), roof: rgb(body),
 });
-export const CAR_COLORS = [0xf2f2f2, 0xb8bec6, 0x2a2d32, 0xc93a32, 0x2f5fa8, 0x3a7d4a, 0xe8b93a, 0xe0762c] as const;
+export const CAR_COLORS = [0xf2f2f2, 0xb8bec6, 0x2a2d32, 0xc93a32, 0x2f5fa8, 0x3a7d4a, 0xe8b93a, 0xe0762c, 0x1f3b6e, 0x7a2330, 0x2f8f8a, 0xd8c9a8] as const;
+/** Roof colours of the two-tone cars (about one in four): dark, white or red roof over the body colour. */
+export const TWO_TONE_ROOFS = [0x2a2d32, 0xf2f2f2, 0xc93a32] as const;
 export const SPORT_COLORS = [0xc93a32, 0xe8b93a, 0x2a2d32, 0xf2f2f2] as const;
-export const CAR_STYLES = ['hatchback', 'sedan', 'suv', 'van', 'sports'] as const;
+export const CAR_STYLES = ['hatchback', 'sedan', 'suv', 'van', 'sports', 'pickup', 'estate', 'camper'] as const;
 const CAR_RING_BODY: Ring = [[0.8, 0, 'trim'], [1, 0.28, 'body'], [1, 0.7, 'body'], [0.86, 1, 'body']];
 const CAR_RING_CABIN: Ring = [[0.9, 0, 'glass'], [1, 0.2, 'glass'], [1, 0.82, 'glass'], [0.82, 0.95, 'roof'], [0.55, 1, 'roof']];
 
-interface CarStyle { body: Sec[]; cabin: Sec[]; wheelR: number; wheelZ: number; wheelX: number; len: number; roofY: number }
+interface CarStyle { body: Sec[]; cabin: Sec[]; wheelR: number; wheelZ: number; wheelX: number; len: number; roofY: number; /** z of the B-pillar (a body-coloured band across the glasshouse). */ pillarZ: number }
 const STYLES: CarStyle[] = [
   { // hatchback
     body: [{ z: -0.38, w: 0.17, y0: 0.07, y1: 0.16 }, { z: -0.32, w: 0.2, y0: 0.05, y1: 0.2 }, { z: 0.0, w: 0.2, y0: 0.05, y1: 0.215 }, { z: 0.3, w: 0.2, y0: 0.05, y1: 0.19 }, { z: 0.39, w: 0.17, y0: 0.07, y1: 0.14 }],
     cabin: [{ z: -0.31, w: 0.14, y0: 0.19, y1: 0.28 }, { z: -0.25, w: 0.175, y0: 0.2, y1: 0.33 }, { z: 0.03, w: 0.175, y0: 0.2, y1: 0.33 }, { z: 0.16, w: 0.15, y0: 0.2, y1: 0.27 }],
-    wheelR: 0.072, wheelZ: 0.25, wheelX: 0.19, len: 0.78, roofY: 0.33,
+    wheelR: 0.072, wheelZ: 0.25, wheelX: 0.19, len: 0.78, roofY: 0.33, pillarZ: -0.08,
   },
   { // sedan
     body: [{ z: -0.44, w: 0.17, y0: 0.07, y1: 0.17 }, { z: -0.38, w: 0.2, y0: 0.05, y1: 0.21 }, { z: 0.0, w: 0.205, y0: 0.05, y1: 0.215 }, { z: 0.34, w: 0.2, y0: 0.05, y1: 0.19 }, { z: 0.44, w: 0.17, y0: 0.07, y1: 0.14 }],
     cabin: [{ z: -0.26, w: 0.15, y0: 0.2, y1: 0.28 }, { z: -0.18, w: 0.178, y0: 0.2, y1: 0.325 }, { z: 0.08, w: 0.178, y0: 0.2, y1: 0.325 }, { z: 0.2, w: 0.15, y0: 0.2, y1: 0.265 }],
-    wheelR: 0.074, wheelZ: 0.28, wheelX: 0.19, len: 0.88, roofY: 0.325,
+    wheelR: 0.074, wheelZ: 0.28, wheelX: 0.19, len: 0.88, roofY: 0.325, pillarZ: -0.04,
   },
   { // SUV
     body: [{ z: -0.42, w: 0.2, y0: 0.09, y1: 0.24 }, { z: -0.38, w: 0.225, y0: 0.07, y1: 0.28 }, { z: 0.0, w: 0.225, y0: 0.07, y1: 0.29 }, { z: 0.34, w: 0.225, y0: 0.07, y1: 0.27 }, { z: 0.42, w: 0.2, y0: 0.09, y1: 0.22 }],
     cabin: [{ z: -0.38, w: 0.2, y0: 0.27, y1: 0.4 }, { z: -0.34, w: 0.21, y0: 0.28, y1: 0.43 }, { z: 0.14, w: 0.21, y0: 0.28, y1: 0.43 }, { z: 0.24, w: 0.185, y0: 0.28, y1: 0.36 }],
-    wheelR: 0.09, wheelZ: 0.27, wheelX: 0.21, len: 0.84, roofY: 0.43,
+    wheelR: 0.09, wheelZ: 0.27, wheelX: 0.21, len: 0.84, roofY: 0.43, pillarZ: -0.1,
   },
   { // van
     body: [{ z: -0.44, w: 0.2, y0: 0.08, y1: 0.28 }, { z: -0.4, w: 0.215, y0: 0.06, y1: 0.33 }, { z: 0.1, w: 0.215, y0: 0.06, y1: 0.34 }, { z: 0.36, w: 0.2, y0: 0.07, y1: 0.28 }, { z: 0.45, w: 0.18, y0: 0.08, y1: 0.2 }],
     cabin: [{ z: -0.42, w: 0.2, y0: 0.31, y1: 0.43 }, { z: -0.38, w: 0.208, y0: 0.32, y1: 0.46 }, { z: 0.22, w: 0.208, y0: 0.32, y1: 0.46 }, { z: 0.36, w: 0.19, y0: 0.31, y1: 0.36 }],
-    wheelR: 0.078, wheelZ: 0.28, wheelX: 0.2, len: 0.9, roofY: 0.46,
+    wheelR: 0.078, wheelZ: 0.28, wheelX: 0.2, len: 0.9, roofY: 0.46, pillarZ: -0.12,
   },
   { // sports
     body: [{ z: -0.43, w: 0.18, y0: 0.06, y1: 0.14 }, { z: -0.37, w: 0.21, y0: 0.045, y1: 0.17 }, { z: 0.0, w: 0.215, y0: 0.045, y1: 0.165 }, { z: 0.3, w: 0.21, y0: 0.045, y1: 0.15 }, { z: 0.44, w: 0.17, y0: 0.055, y1: 0.1 }],
     cabin: [{ z: -0.24, w: 0.15, y0: 0.15, y1: 0.21 }, { z: -0.12, w: 0.18, y0: 0.155, y1: 0.255 }, { z: 0.08, w: 0.18, y0: 0.155, y1: 0.255 }, { z: 0.22, w: 0.15, y0: 0.15, y1: 0.19 }],
-    wheelR: 0.068, wheelZ: 0.29, wheelX: 0.2, len: 0.88, roofY: 0.255,
+    wheelR: 0.068, wheelZ: 0.29, wheelX: 0.2, len: 0.88, roofY: 0.255, pillarZ: -0.02,
+  },
+  { // pickup: short cab over a low open bed (the bed is added in buildCar)
+    body: [{ z: -0.46, w: 0.18, y0: 0.08, y1: 0.2 }, { z: -0.4, w: 0.21, y0: 0.06, y1: 0.25 }, { z: -0.02, w: 0.215, y0: 0.06, y1: 0.25 }, { z: 0.12, w: 0.215, y0: 0.06, y1: 0.27 }, { z: 0.4, w: 0.2, y0: 0.07, y1: 0.21 }, { z: 0.46, w: 0.17, y0: 0.08, y1: 0.17 }],
+    cabin: [{ z: 0.02, w: 0.16, y0: 0.25, y1: 0.33 }, { z: 0.07, w: 0.18, y0: 0.26, y1: 0.4 }, { z: 0.24, w: 0.18, y0: 0.26, y1: 0.4 }, { z: 0.35, w: 0.15, y0: 0.26, y1: 0.31 }],
+    wheelR: 0.085, wheelZ: 0.3, wheelX: 0.21, len: 0.92, roofY: 0.4, pillarZ: 0.155,
+  },
+  { // estate: long glasshouse down to a near-vertical tailgate
+    body: [{ z: -0.44, w: 0.17, y0: 0.07, y1: 0.2 }, { z: -0.38, w: 0.2, y0: 0.05, y1: 0.215 }, { z: 0.0, w: 0.205, y0: 0.05, y1: 0.215 }, { z: 0.34, w: 0.2, y0: 0.05, y1: 0.19 }, { z: 0.44, w: 0.17, y0: 0.07, y1: 0.14 }],
+    cabin: [{ z: -0.41, w: 0.15, y0: 0.2, y1: 0.28 }, { z: -0.36, w: 0.178, y0: 0.2, y1: 0.335 }, { z: 0.06, w: 0.178, y0: 0.2, y1: 0.335 }, { z: 0.2, w: 0.15, y0: 0.2, y1: 0.265 }],
+    wheelR: 0.074, wheelZ: 0.28, wheelX: 0.19, len: 0.9, roofY: 0.335, pillarZ: -0.12,
+  },
+  { // camper: tall box habitat, a window band along the side, cab-over nose
+    body: [{ z: -0.47, w: 0.2, y0: 0.09, y1: 0.4 }, { z: -0.43, w: 0.22, y0: 0.07, y1: 0.46 }, { z: 0.12, w: 0.22, y0: 0.07, y1: 0.47 }, { z: 0.2, w: 0.21, y0: 0.07, y1: 0.4 }, { z: 0.38, w: 0.2, y0: 0.08, y1: 0.27 }, { z: 0.46, w: 0.17, y0: 0.09, y1: 0.2 }],
+    cabin: [{ z: -0.36, w: 0.225, y0: 0.31, y1: 0.42 }, { z: -0.3, w: 0.226, y0: 0.31, y1: 0.43 }, { z: 0.08, w: 0.226, y0: 0.31, y1: 0.43 }, { z: 0.3, w: 0.19, y0: 0.28, y1: 0.33 }],
+    wheelR: 0.085, wheelZ: 0.3, wheelX: 0.215, len: 0.94, roofY: 0.47, pillarZ: -0.12,
   },
 ];
+
+/** Inserts a body-coloured pillar band (`half` each side of `z`) into a section list: the sections at the band edges are interpolated, so the glasshouse shape does not change. */
+export function pillarize(secs: Sec[], z: number, half = 0.014): Sec[] {
+  const at = (zz: number): Sec => {
+    for (let i = 0; i < secs.length - 1; i++) { const a = secs[i]!, b = secs[i + 1]!; if (zz >= a.z && zz <= b.z) { const t = b.z > a.z ? (zz - a.z) / (b.z - a.z) : 0; return { z: zz, w: a.w + (b.w - a.w) * t, y0: a.y0 + (b.y0 - a.y0) * t, y1: a.y1 + (b.y1 - a.y1) * t }; } }
+    return secs[zz < secs[0]!.z ? 0 : secs.length - 1]!;
+  };
+  if (z - half <= secs[0]!.z || z + half >= secs[secs.length - 1]!.z) return secs;
+  const out: Sec[] = [], lo = at(z - half), hi = at(z + half);
+  let done = false;
+  for (const s of secs) {
+    if (!done && s.z > z - half) { out.push({ ...lo }, { ...lo, pillar: true }, { ...hi, pillar: true }, { ...hi }); done = true; }
+    if (s.z > z - half && s.z < z + half) continue;
+    out.push(s);
+  }
+  return out;
+}
 
 export interface ModelParts { body: THREE.BufferGeometry; lights: THREE.BufferGeometry; prop?: THREE.BufferGeometry; propPivot?: [number, number, number] }
 const merge = (gs: THREE.BufferGeometry[]): THREE.BufferGeometry => {
@@ -145,34 +179,56 @@ const lightGeo = (items: Array<[number, number, number, number, number, number, 
 const HEAD: Rgb = [1, 0.96, 0.8], TAIL: Rgb = [0.9, 0.08, 0.06], WHITE_GLOW: Rgb = [1, 1, 1];
 void WHITE_GLOW;
 
-/** rack: 0 none, 1 skis (winter), 2 bike (summer). style: 0..4, colour index into CAR_COLORS / SPORT_COLORS. */
-export function buildCar(style: number, colorHex: number, rack: number): ModelParts {
-  const st = STYLES[style % STYLES.length]!;
-  const pal = BASE_PAL(colorHex);
-  const parts: THREE.BufferGeometry[] = [loft(smoothSecs(st.body), CAR_RING_BODY, pal, 'body', 'body'), loft(smoothSecs(st.cabin), CAR_RING_CABIN, pal, 'glass', 'glass')];
+/** Options of `buildCar`: `roof` = a two-tone roof colour (hex), `low` = the simpler Low-quality variant (no pillars, arches, seams or mirrors: fewer triangles than the full car). */
+export interface CarOpts { roof?: number; low?: boolean }
+/** A flat dark blob under a vehicle (baked into the body geometry, vertex coloured: the cheapest 'contact shadow', no extra draw call): an ellipse of `n` triangles at local y = `y`. */
+function blob(hx: number, hz: number, y: number, c: Rgb, n = 8): THREE.BufferGeometry {
+  const g = new THREE.CircleGeometry(1, n).rotateX(-Math.PI / 2).scale(hx, 1, hz).translate(0, y, 0);
+  return paint(g, c);
+}
+/** Local y of the contact blob: the vehicle group floats 0.05 above the ground (VehicleRenderer). */
+export const GROUND_BLOB_Y = -0.046;
+
+/** rack: 0 none, 1 skis (winter), 2 bike (summer), 3 ski box. style: 0..7 (`CAR_STYLES`), colour index into CAR_COLORS / SPORT_COLORS. */
+export function buildCar(style: number, colorHex: number, rack: number, opts: CarOpts = {}): ModelParts {
+  const st = STYLES[style % STYLES.length]!, low = opts.low === true;
+  const pal: Palette = { ...BASE_PAL(colorHex), roof: rgb(opts.roof ?? colorHex) };
+  const cabin = smoothSecs(st.cabin);
+  const parts: THREE.BufferGeometry[] = [loft(smoothSecs(st.body), CAR_RING_BODY, pal, 'body', 'body'), loft(low ? cabin : pillarize(cabin, st.pillarZ), CAR_RING_CABIN, pal, 'glass', 'glass')];
   const tire = rgb(0x151618), hub = rgb(0x9aa0a8);
-  for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(...wheel(st.wheelR, 0.055, sx * st.wheelX, st.wheelR, sz * st.wheelZ, tire, hub));
-  // wheel arches (dark discs just outside each wheel, reads as a recess) and door mirrors (M8)
-  for (const sx of [1, -1]) for (const sz of [1, -1]) {
-    parts.push(disc(st.wheelR * 1.3, 10, sx * (st.body[2]!.w + 0.003), st.wheelR + 0.005, sz * st.wheelZ, sx as 1 | -1, rgb(0x1c1d20), 0, true)); // dark arch (upper half only: a full disc would hang below the body) flush on the body side, behind the wheel
+  for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(...wheel(st.wheelR, 0.055, sx * st.wheelX, st.wheelR, sz * st.wheelZ, tire, hub, low ? 8 : 10));
+  const hw = st.body[st.body.length - 1]!.w, bw = st.body[2]!.w;
+  parts.push(blob(bw + 0.03, st.len / 2 + 0.01, GROUND_BLOB_Y, rgb(0x34373d), low ? 6 : 8)); // contact shadow
+  if (!low) {
+    // wheel arches (dark half discs on the body side, behind the wheel), door mirrors, door seams, antenna
+    for (const sx of [1, -1]) for (const sz of [1, -1]) parts.push(disc(st.wheelR * 1.3, 10, sx * (bw + 0.003), st.wheelR + 0.005, sz * st.wheelZ, sx as 1 | -1, rgb(0x1c1d20), 0, true));
+    for (const sx of [1, -1]) parts.push(box(0.03, 0.025, 0.04, rgb(0x2c2f34), sx * (st.cabin[1]!.w + 0.02), st.cabin[1]!.y0 + 0.03, st.cabin[1]!.z + 0.04));
+    for (const sx of [1, -1]) parts.push(box(0.006, 0.09, 0.012, rgb(0x1c1d20), sx * (bw + 0.002), st.body[2]!.y0 + 0.09, st.cabin[1]!.z + 0.12), box(0.006, 0.09, 0.012, rgb(0x1c1d20), sx * (bw + 0.002), st.body[2]!.y0 + 0.09, st.cabin[2]!.z));
+    if (rack === 0) parts.push(paint(new THREE.CylinderGeometry(0.004, 0.004, 0.14, 4).translate(0.1, st.roofY + 0.06, -0.12), rgb(0x2c2f34)));
+    parts.push(box(hw * 1.1, 0.03, 0.012, rgb(0x1c1d20), 0, st.body[0]!.y0 + 0.07, st.len / 2 + 0.0)); // grille
   }
-  for (const sx of [1, -1]) parts.push(box(0.03, 0.025, 0.04, rgb(0x2c2f34), sx * (st.cabin[1]!.w + 0.02), st.cabin[1]!.y0 + 0.03, st.cabin[1]!.z + 0.04));
-  // door seam, side skirt, antenna, number plate (M8)
-  for (const sx of [1, -1]) parts.push(box(0.006, 0.09, 0.012, rgb(0x1c1d20), sx * (st.body[2]!.w + 0.002), st.body[2]!.y0 + 0.09, st.cabin[1]!.z + 0.12), box(0.006, 0.09, 0.012, rgb(0x1c1d20), sx * (st.body[2]!.w + 0.002), st.body[2]!.y0 + 0.09, st.cabin[2]!.z));
-  parts.push(box(0.05, 0.025, 0.006, rgb(0xf0f2f4), 0, st.body[0]!.y0 + 0.06, -st.len / 2 - 0.002));
-  if (rack === 0) parts.push(paint(new THREE.CylinderGeometry(0.004, 0.004, 0.14, 4).translate(0.1, st.roofY + 0.06, -0.12), rgb(0x2c2f34)));
-  // bumpers + grille line
-  const hw = st.body[st.body.length - 1]!.w;
-  parts.push(box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, st.len / 2 - 0.005), box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, -st.len / 2 + 0.005));
+  parts.push(box(0.05, 0.025, 0.006, rgb(0xf0f2f4), 0, st.body[0]!.y0 + 0.06, -st.len / 2 - 0.002)); // number plate
+  parts.push(box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, st.len / 2 - 0.005), box(hw * 1.9, 0.03, 0.02, rgb(0x2c2f34), 0, st.body[0]!.y0 + 0.02, -st.len / 2 + 0.005)); // bumpers
+  if (style === 5) { // pickup bed: dark liner + two rails + tailgate
+    parts.push(box(0.3, 0.008, 0.38, rgb(0x1c1d20), 0, st.body[2]!.y1 + 0.003, -0.25));
+    for (const sx of [1, -1]) parts.push(box(0.02, 0.035, 0.4, pal.body!, sx * 0.19, st.body[2]!.y1 - 0.005, -0.25));
+    if (!low) parts.push(box(0.4, 0.035, 0.02, pal.body!, 0, st.body[2]!.y1 - 0.005, -0.45));
+  } else if (style === 7 && !low) { // camper: roof AC pod + a stripe band along the habitat
+    parts.push(box(0.14, 0.03, 0.2, rgb(0xe9edf0), 0, st.roofY + 0.003, -0.18));
+    for (const sx of [1, -1]) parts.push(box(0.006, 0.03, 0.5, rgb(0x3a78c2), sx * (st.body[2]!.w + 0.003), 0.26, -0.18));
+  }
+  const rail = rgb(0x2c2f34), y = st.roofY + 0.012;
   if (rack === 1) {
-    const y = st.roofY + 0.012;
-    parts.push(box(0.3, 0.012, 0.015, rgb(0x2c2f34), 0, y, -0.08), box(0.3, 0.012, 0.015, rgb(0x2c2f34), 0, y, 0.06));
+    parts.push(box(0.3, 0.012, 0.015, rail, 0, y, -0.08), box(0.3, 0.012, 0.015, rail, 0, y, 0.06));
     parts.push(box(0.028, 0.016, 0.6, rgb(0xd83a34), -0.045, y + 0.014, 0), box(0.028, 0.016, 0.6, rgb(0x2f6fd0), 0.045, y + 0.014, 0));
   } else if (rack === 2) {
-    const y = st.roofY + 0.07;
-    parts.push(box(0.3, 0.012, 0.015, rgb(0x2c2f34), 0, st.roofY + 0.012, -0.08), box(0.3, 0.012, 0.015, rgb(0x2c2f34), 0, st.roofY + 0.012, 0.06));
-    for (const z of [-0.14, 0.14]) parts.push(...wheel(0.06, 0.02, 0, y, z, rgb(0x151618), rgb(0xb8bec6), 8));
-    parts.push(box(0.014, 0.014, 0.3, rgb(0xd83a34), 0, y + 0.03, 0));
+    const by = st.roofY + 0.07;
+    parts.push(box(0.3, 0.012, 0.015, rail, 0, y, -0.08), box(0.3, 0.012, 0.015, rail, 0, y, 0.06));
+    for (const z of [-0.14, 0.14]) parts.push(paint(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 8, 1, true).rotateZ(Math.PI / 2).translate(0, by, z), rgb(0x151618))); // bike wheels: open tyre bands
+    parts.push(box(0.014, 0.014, 0.3, rgb(0xd83a34), 0, by + 0.03, 0));
+  } else if (rack === 3) { // ski box: a long dark pod with a lighter lid line
+    parts.push(box(0.3, 0.012, 0.015, rail, 0, y, -0.08), box(0.3, 0.012, 0.015, rail, 0, y, 0.06));
+    parts.push(box(0.15, 0.05, 0.5, rgb(0x23272d), 0, y + 0.01, -0.01), box(0.15, 0.008, 0.5, rgb(0x6c727a), 0, y + 0.06, -0.01));
   }
   const z0 = st.len / 2 - 0.003, lw = hw * 0.72, ly = st.body[0]!.y1 - 0.012;
   const lights = lightGeo([
@@ -194,11 +250,15 @@ function windowSecs(z0: number, z1: number, w: number, y0: number, y1: number, n
   return out;
 }
 /** Coach / shuttle minibus. */
-export function buildBus(mini: boolean, colorHex: number): ModelParts {
+export function buildBus(mini: boolean, colorHex: number, low = false): ModelParts {
   const L = mini ? 1.0 : 1.55, H = mini ? 0.42 : 0.52, w = mini ? 0.21 : 0.24, y0 = 0.08;
   const pal: Palette = { ...BASE_PAL(0xf4f4f4), stripe: rgb(colorHex), body: rgb(0xf4f4f4) };
-  const secs: Sec[] = [{ z: -L / 2, w: w * 0.9, y0: y0 + 0.01, y1: y0 + H * 0.97 }, ...windowSecs(-L / 2 + 0.01, L / 2 - 0.12, w, y0, y0 + H, mini ? 6 : 10), { z: L / 2 - 0.04, w: w * 0.98, y0, y1: y0 + H * 0.96 }, { z: L / 2, w: w * 0.88, y0: y0 + 0.02, y1: y0 + H * 0.78 }];
-  const parts = [loft(secs, BUS_RING, pal, 'glass', 'body')];
+  const secs: Sec[] = [{ z: -L / 2, w: w * 0.9, y0: y0 + 0.01, y1: y0 + H * 0.97 }, ...windowSecs(-L / 2 + 0.01, L / 2 - 0.12, w, y0, y0 + H, low ? (mini ? 4 : 6) : mini ? 6 : 10), { z: L / 2 - 0.04, w: w * 0.98, y0, y1: y0 + H * 0.96 }, { z: L / 2, w: w * 0.88, y0: y0 + 0.02, y1: y0 + H * 0.78 }];
+  const parts = [loft(secs, BUS_RING, pal, 'glass', 'body'), blob(w + 0.03, L / 2 + 0.01, GROUND_BLOB_Y, rgb(0x34373d), low ? 6 : 10)];
+  if (!low) { // a driver at the wheel: head + shoulders painted on the windscreen (the loft is opaque), on the right-hand side of the nose
+    const dx = w * 0.45;
+    parts.push(box(0.07, 0.05, 0.004, rgb(0x35609a), dx, y0 + H * 0.5, L / 2 + 0.003), box(0.04, 0.04, 0.004, rgb(0xe3b896), dx, y0 + H * 0.5 + 0.045, L / 2 + 0.004), box(0.045, 0.014, 0.005, rgb(0x2c2f34), dx, y0 + H * 0.5 + 0.083, L / 2 + 0.004));
+  }
   const r = 0.085, tire = rgb(0x151618), hub = rgb(0x9aa0a8);
   const zs = mini ? [0.3, -0.3] : [0.5, -0.45, -0.62];
   for (const z of zs) for (const sx of [1, -1]) {
@@ -237,7 +297,7 @@ function carriage(zc: number, len: number, loco: boolean): THREE.BufferGeometry[
   return out;
 }
 export function buildTrain(): ModelParts {
-  const parts = [...carriage(1.55, 1.4, true), ...carriage(0, 1.4, false), ...carriage(-1.55, 1.4, false)];
+  const parts = [...carriage(1.55, 1.4, true), ...carriage(0, 1.4, false), ...carriage(-1.55, 1.4, false), blob(0.3, 2.3, GROUND_BLOB_Y - 0.0, rgb(0x34373d), 8)];
   parts.push(box(0.04, 0.03, 0.16, rgb(0x2c2f34), 0, 0.14, 0.775), box(0.04, 0.03, 0.15, rgb(0x2c2f34), 0, 0.14, -0.775));
   const lights = lightGeo([[0.08, 0.05, 0.012, 0.1, 0.3, 2.26, HEAD], [0.08, 0.05, 0.012, -0.1, 0.3, 2.26, HEAD], [0.08, 0.04, 0.012, 0.1, 0.3, -2.26, TAIL], [0.08, 0.04, 0.012, -0.1, 0.3, -2.26, TAIL]]);
   return { body: merge(parts), lights };

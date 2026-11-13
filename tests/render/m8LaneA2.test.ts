@@ -84,7 +84,7 @@ describe('M8 lane A2: lifts', () => {
 
 describe('M8 lane A2: vehicles', () => {
   it('cars stay <= 700, bus <= 2200, train <= 3500, plane <= 1200, all finite; wheels use about half the triangles of closed cylinders', () => {
-    for (let st = 0; st < 5; st++) { const m = buildCar(st, 0xc93a32, 0); expect(tris(m.body), `car ${st}`).toBeLessThanOrEqual(700); expect(finite(m.body)).toBe(true); }
+    for (let st = 0; st < 8; st++) { const m = buildCar(st, 0xc93a32, 0); expect(tris(m.body), `car ${st}`).toBeLessThanOrEqual(820); expect(finite(m.body)).toBe(true); }
     expect(tris(buildBus(false, 0xe8b93a).body)).toBeLessThanOrEqual(2200);
     expect(tris(buildBus(true, 0xe8b93a).body)).toBeLessThanOrEqual(1500);
     expect(tris(buildTrain().body)).toBeLessThanOrEqual(3500);

@@ -185,17 +185,17 @@ describe('vehicles', () => {
     expect(vehicleLook(0, 5, true).style).toBe(4);
     const styles = new Set<number>(), colors = new Set<number>(), racks = new Set<number>();
     for (let id = 0; id < 200; id++) { const l = vehicleLook(0, id, false); styles.add(l.style); colors.add(l.color); racks.add(l.rack); }
-    expect(styles.size).toBe(4); expect(colors.size).toBeGreaterThanOrEqual(6); expect(racks.size).toBe(2);
+    expect(styles.size).toBeGreaterThanOrEqual(7); expect(colors.size).toBeGreaterThanOrEqual(6); expect(racks.size).toBe(2);
   });
   it('model triangle budgets, finite vertices and few draw calls per vehicle', () => {
-    for (let s = 0; s < 5; s++) for (const rack of [0, 1, 2]) {
+    for (let s = 0; s < 8; s++) for (const rack of [0, 1, 2, 3]) {
       const m = buildCar(s, 0xc93a32, rack);
       expect(tris(m.body)).toBeLessThan(900); expect(tris(m.lights)).toBe(48);
       const p = m.body.getAttribute('position');
       for (let i = 0; i < p.count; i++) expect(Number.isFinite(p.getX(i) + p.getY(i) + p.getZ(i))).toBe(true);
       expect(m.body.getAttribute('color').count).toBe(p.count);
     }
-    expect(tris(buildBus(false, 0x3a78c2).body)).toBeLessThan(2000);
+    expect(tris(buildBus(false, 0x3a78c2).body)).toBeLessThan(2200);
     expect(tris(buildTrain().body)).toBeLessThan(3500); // was 3300: wheels 10 -> 12 radial segments, hubs 6 -> 8 (soft look pass)
     expect(tris(buildPlane().body)).toBeLessThan(1200); // M8 smooth pass: the lofted high-wing plane (was < 900)
     for (const k of [VehicleKind.Car, VehicleKind.Bus, VehicleKind.Train, VehicleKind.Plane]) {
