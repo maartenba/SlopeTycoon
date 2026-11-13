@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSim, type Sim } from '../../src/game/createSim';
-import { Bot, type MonthRow } from '../../src/game/bot';
+import { Bot } from '../../src/game/bot';
+import { registerGentleSummer } from './summerShared';
 import { DIFFICULTY, DAYS_PER_YEAR, OFFSEASON_RELIEF } from '../../src/config/balance';
 import { DEBT, SUPPORT_LOAN } from '../../src/config/prices';
 import { seasonStartDay } from '../../src/sim/Clock';
@@ -13,44 +14,7 @@ import { EventBus } from '../../src/core/EventBus';
 import type { GameEvents } from '../../src/core/events';
 import { RULES } from '../../src/sim/advisor/rules';
 
-/**
- * Gentler summer (docs/balance.md): a WINTER-FOCUSED resort (chain of lifts + pistes + restaurant + ski school, starter loan + a small loan, NO
- * summer attractions, the lifts are left on the default schedule) must get through its first summer and autumn without going broke.
- */
-const LIFTS: Record<64 | 128 | 256, number> = { 64: 2, 128: 3, 256: 4 };
-const sum = (rows: MonthRow[], f: (r: MonthRow) => number): number => rows.reduce((a, r) => a + f(r), 0);
-
-function winterResort(size: 64 | 128 | 256, seed: number, difficulty?: 'normal' | 'challenging'): { sim: Sim; bot: Bot } {
-  const sim = createSim({ size, seed, difficulty, now: () => 0 });
-  const bot = new Bot(sim, { starterLoan: true, expand: false, marketing: false, starterOpts: { lifts: LIFTS[size], attractions: 3 } });
-  sim.bus.on('finance:monthClosed', () => bot.snapshotMonth());
-  bot.takeLoan('small');
-  return { sim, bot };
-}
-
-describe('gentler summer: a winter-focused resort with the starter loan survives its first summer', () => {
-  for (const size of [64, 128, 256] as const) {
-    for (const seed of [61, 7, 1337]) {
-      it(`${size} seed ${seed}: cash never below -$100k, no bankruptcy, summer + autumn net >= -$5k per month`, () => {
-        const { sim, bot } = winterResort(size, seed);
-        const ev: string[] = [];
-        for (const k of ['finance:bankrupt', 'finance:declaredBankrupt'] as const) sim.bus.on(k, () => ev.push(k));
-        let minCash = Infinity;
-        for (let d = 0; d < DAYS_PER_YEAR + 150; d++) {
-          if (d === DAYS_PER_YEAR) sim.game.money = 10_000; // stress: the player has spent the winter profit by spring
-          sim.tick(240);
-          if (d >= DAYS_PER_YEAR) minCash = Math.min(minCash, sim.game.money);
-        }
-        expect(ev).toEqual([]);
-        expect(sim.finance.ended).toBe(false);
-        expect(minCash).toBeGreaterThan(-100_000);
-        const off = bot.rows.filter((r) => r.year === 2 && r.month >= 2 && r.month <= 7); // summer (2-5) + autumn (6-7)
-        expect(off.length).toBe(6);
-        expect(sum(off, (r) => r.net) / off.length).toBeGreaterThan(-5_000);
-      }, 240_000);
-    }
-  }
-});
+registerGentleSummer([64, 128]);
 
 describe('Tourism Board off-season support loan', () => {
   const inSeason = (season: 'spring' | 'summer' | 'autumn' | 'winter', money = -2_000): Sim => {
@@ -203,24 +167,4 @@ describe('debt model: foreclosure is far more forgiving', () => {
     expect((a.finance as unknown as { autoDays: number }).autoDays).toBe(0);
     expect((b.finance as unknown as { autoDays: number }).autoDays).toBe(DIFFICULTY.challenging.foreclosureDays);
   });
-});
-
-describe('M6.3 summer plan (bot option `summer`, docs/balance.md "M6.3 STOP check")', () => {
-  const play = (size: 64 | 128, seed: number, summer: boolean): { sim: Sim; bot: Bot } => {
-    const sim = createSim({ size, seed, now: () => 0 });
-    const bot = new Bot(sim, { respectUnlocks: true, reserve: 2_000, summerLifts: 'keep', summer, starterOpts: { lifts: size === 64 ? 1 : 2, attractions: 1, toilet: true } });
-    sim.bus.on('finance:monthClosed', () => bot.snapshotMonth());
-    for (let d = 0; d < 2 * DAYS_PER_YEAR + 1; d++) { bot.daily(); sim.tick(240); }
-    return { sim, bot };
-  };
-  const summerIncome = (bot: Bot): number => bot.rows.filter((r) => r.year === 2 && r.month >= 2 && r.month <= 5).reduce((a, r) => a + r.incomeTotal, 0);
-  it('builds campground, petting zoo and viewpoint; summer income does not fall (128 / seed 7), and stays off by default', () => {
-    const off = play(128, 7, false), on = play(128, 7, true);
-    const types = new Set(on.sim.buildings.all().map((b) => b.type));
-    for (const t of ['campground', 'pettingZoo', 'viewpoint']) expect(types.has(t)).toBe(true);
-    for (const t of ['campground', 'pettingZoo', 'viewpoint']) expect(off.sim.buildings.all().some((b) => b.type === t)).toBe(false);
-    // Bound relaxed 0.97 -> 0.9 (M6.5 STOP, docs/balance.md): the two summer incomes are chaotic at +-7 % (the arrival draw moves with every guest-type change: at 1dc955d off 83479 / on 88656, with the Snowboarder type off 89666 / on 83255; the sum of both runs is unchanged within 0.5 %). The test still guards a collapse.
-    expect(summerIncome(on.bot)).toBeGreaterThan(summerIncome(off.bot) * 0.9);
-    expect(on.sim.game.money).toBeGreaterThan(0);
-  }, 240_000);
 });

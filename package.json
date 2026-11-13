@@ -27,7 +27,7 @@
     "test": "vitest run",
     "lint": "eslint src tests sw vite-plugins scripts --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test:balance": "BALANCE=1 vitest run tests/game/balance.test.ts",
+    "test:balance": "BALANCE=1 vitest run tests/game/balance",
     "analysis:ski": "SKI_ANALYSIS=1 vitest run --config vitest.analysis.config.ts tests/analysis/ski.analysis.ts",
     "analysis:timeflow": "TIMEFLOW_ANALYSIS=1 vitest run --config vitest.analysis.config.ts tests/analysis/timeflow.analysis.ts",
     "analysis:timeflow:report": "vite-node scripts/analysis/timeflowReport.ts",

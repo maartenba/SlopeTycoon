@@ -1,0 +1,370 @@
+import { describe, expect, it } from 'vitest';
+import { createSim, type Sim } from '../../src/game/createSim';
+import { Bot, CONTENT_WISHES, WISHES, runBot, type BotOptions, type MonthRow } from '../../src/game/bot';
+import { makeResort, run, attachCounters } from './harness';
+import { LOAN_OFFERS } from '../../src/config/prices';
+import { GEAR_OWNERS } from '../../src/config/prices';
+import { LIFT_OPS } from '../../src/config/liftOps';
+import { DAYS_PER_YEAR, type DifficultyId } from '../../src/config/balance';
+import { foodYear } from '../../scripts/analysis/foodSaturation';
+import { BUILDINGS } from '../../src/config/buildings';
+
+/**
+ * Balance pass (Task 35, docs/balance.md). Default run = fast checks on a 64 map (~20 s). The 3-year x 3-size x seeds sweep and the
+ * difficulty comparison run with `npm run test:balance` (BALANCE=1) and print the per-month tables used in docs/balance.md.
+ */
+export const FULL = !!process.env.BALANCE || !!process.env.BENCH;
+const sum = (rows: MonthRow[], f: (r: MonthRow) => number): number => rows.reduce((a, r) => a + f(r), 0);
+const year = (rows: MonthRow[], y: number): MonthRow[] => rows.filter((r) => r.year === y);
+const winter = (rows: MonthRow[], y: number): MonthRow[] => rows.filter((r) => r.year === y && r.month >= 8);
+const summer = (rows: MonthRow[], y: number): MonthRow[] => rows.filter((r) => r.year === y && r.month >= 2 && r.month <= 5);
+
+export function play(size: 64 | 128 | 256, seed: number, days: number, o: BotOptions & { difficulty?: DifficultyId } = {}): { sim: Sim; bot: Bot } {
+  const sim = createSim({ size, seed, difficulty: o.difficulty, now: () => 0 });
+  const bot = new Bot(sim, o);
+  runBot(sim, bot, days);
+  return { sim, bot };
+}
+export const table = (rows: MonthRow[]): string => rows.map((r) => `y${r.year} m${String(r.month).padStart(2)} arr${String(r.guests).padStart(5)} ${r.rating}★ inc${String(Math.round(r.incomeTotal)).padStart(7)} exp${String(Math.round(r.expenseTotal)).padStart(7)} net${String(Math.round(r.net)).padStart(7)} cash${String(Math.round(r.cash)).padStart(8)} debt${String(Math.round(r.debt)).padStart(7)} inc#${r.incidents}`).join('\n');
+
+/** Shard of every BALANCE=1 test (longest-first packing of the measured durations, docs/balance.md "Shards"). The default (non-BALANCE) tests live in shard 0. */
+const ASSIGN: Record<string, number> = {"allon-256-7": 0, "chal-256-1": 0, "sweep-128-7": 0, "grants-256": 0, "sweep-diff": 0, "food-cafe": 0, "allon-64-61": 0, "allon-64-7": 0, "chal-sum": 1, "eco3": 1, "diff-relaxed": 1, "diff-challenging": 1, "allon-128-61": 1, "sweep-64-61": 1, "career-64": 1, "sweep-256-7": 2, "allon-256-61": 2, "content-64": 2, "content-128": 2, "diff-normal": 2, "sweep-128-61": 2, "grants-128": 2, "sweep-64-7": 2, "sweep-256-61": 3, "career-256": 3, "allon-128-7": 3, "career-128": 3, "chal-128-1": 3, "food-mountainHut": 3, "food-lodge": 3, "grants-64": 3};
+
+/** Registers one shard of the balance suite: the shard files tests/game/balance.test.ts (0), balance.b/c/d.test.ts (1-3) call this so vitest runs them in parallel workers. */
+export function registerBalance(shard: number): void {
+  const mine = (key: string): boolean => { if (!(key in ASSIGN)) throw new Error(`unassigned balance test ${key}`); return ASSIGN[key] === shard; };
+  void mine;
+  if (shard === 0) {
+  describe('balance: early game and the first two years (64, Normal, bot)', () => {
+    const { sim, bot } = play(64, 61, 2 * DAYS_PER_YEAR);
+    const rows = bot.rows;
+
+    it('first winter is roughly break-even to clearly-not-runaway positive (operating net of months 9-11)', () => {
+      const w = rows.filter((r) => r.year === 1 && r.month >= 9);
+      const net = sum(w, (r) => r.net);
+      expect(net).toBeGreaterThan(-10_000);
+      expect(net).toBeLessThan(100_000); // months 9-11 are 45 days now (15-day months): was 165k for 90 days; measured +61k
+      expect(sim.finance.ended).toBe(false);
+    });
+
+    it('profit by the end of year 2 (annual net > 0), year 3 positive too (sweep: BALANCE=1)', () => {
+      expect(sum(year(rows, 2), (r) => r.net)).toBeGreaterThan(0);
+    });
+
+    it('summer is viable but weaker than winter', () => {
+      const w = winter(rows, 2), s = summer(rows, 2);
+      const wNet = sum(w, (r) => r.net) / w.length, sNet = sum(s, (r) => r.net) / s.length;
+      expect(sum(s, (r) => r.incomeTotal)).toBeGreaterThan(0.05 * sum(w, (r) => r.incomeTotal)); // viable: real income
+      expect(sNet).toBeGreaterThan(0); // gentler summer (docs/balance.md): a bot with summer attractions earns every summer month (measured +2k..+16k per 15-day month; was -8k..-15k before the off-season demand floor + idle lift energy)
+      const autumn = year(rows, 2).filter((r) => r.month === 6 || r.month === 7);
+      expect(sum(autumn, (r) => r.net) / autumn.length).toBeGreaterThan(-8_000); // the autumn trough (no snow yet, no summer guests) stays shallow
+      expect(sNet).toBeLessThan(wNet); // weaker than winter
+    });
+
+    it('rating 3-4.5 stars after year 1 and incidents stay moderate', () => {
+      const y2 = year(rows, 2);
+      const avg = sum(y2, (r) => r.rating) / y2.length;
+      expect(avg).toBeGreaterThanOrEqual(3); expect(avg).toBeLessThanOrEqual(4.5);
+      expect(sum(y2, (r) => r.incidents) / y2.length).toBeLessThan(12);
+    });
+
+    it('rental still earns with 82 % gear owners', () => {
+      expect(GEAR_OWNERS.ski).toBeGreaterThanOrEqual(80); expect(GEAR_OWNERS.ski).toBeLessThanOrEqual(85);
+      expect(sum(rows, (r) => r.income.rental ?? 0)).toBeGreaterThan(0);
+    });
+
+    it('magnitudes: energy is 3-25 % of lift revenue, wages + upkeep are not trivial', () => {
+      const w = winter(rows, 2);
+      const lifts = sum(w, (r) => r.income.lifts ?? 0) + sum(w, (r) => r.income.passes ?? 0), energy = sum(w, (r) => r.expense.energy ?? 0);
+      expect(energy / lifts).toBeGreaterThan(0.03); expect(energy / lifts).toBeLessThan(0.25);
+      expect(sum(w, (r) => (r.expense.upkeep ?? 0) + (r.expense.staff ?? 0)) / sum(w, (r) => r.incomeTotal)).toBeGreaterThan(0.15);
+    });
+  });
+  }
+
+  if (shard === 0) {
+  describe('balance: the early loan is meaningful (128, tutorial-style starter chain)', () => {
+    it('without the loan the chain leaves little cash; with it there is room to grow', () => {
+      const a = new Bot(createSim({ size: 128, seed: 61, now: () => 0 })), b = new Bot(createSim({ size: 128, seed: 61, now: () => 0 }), { starterLoan: true });
+      const starter = LOAN_OFFERS.find((o) => o.id === 'starter')!.baseAmount;
+      expect(a.sim.game.money).toBeLessThan(50_000); // (start cash 130k -> 150k in the money pass: 43k) can't afford the next lift (+ piste) or a second lodge soon
+      expect(b.sim.game.money - a.sim.game.money).toBeCloseTo(starter, -2);
+      expect(b.sim.game.money).toBeGreaterThan(60_000);
+      expect(a.report?.failures).toEqual([]);
+    });
+  });
+  }
+
+  if (shard === 0) {
+  describe('balance: no runaway exploits (64, one winter)', () => {
+    const base = sum(play(64, 61, DAYS_PER_YEAR * 2 / 3).bot.rows, (r) => r.net);
+    it('extreme price strategies cannot beat the baseline by more than 1.6x', () => {
+      for (const [name, f] of [['max prices', 100], ['min prices', 0.3], ['x2 markups', 2]] as const) {
+        const { bot } = play(64, 61, DAYS_PER_YEAR * 2 / 3, { prices: (s) => { s.priceApi.set('dayPass', Math.min(s.pricing.maxOf('dayPass'), s.pricing.defaultOf('dayPass') * Math.min(f, 2.67))); if (f <= 1) s.priceApi.preset(f); else s.priceApi.preset(Math.min(f, 1.6)); } });
+        const net = sum(bot.rows, (r) => r.net);
+        expect(net, name).toBeLessThan(Math.max(base, 20_000) * 1.6);
+      }
+    });
+    it('loan cycling (take everything, repay at once) never creates money', () => {
+      const sim = createSim({ size: 64, seed: 61, now: () => 0 });
+      const before = sim.game.money;
+      for (let i = 0; i < 25; i++) {
+        for (const o of sim.loans.offers(sim.creditCtx())) if (o.available) sim.loans.take(o.id, sim.creditCtx(), { year: 1, month: 8 });
+        for (const l of [...sim.loans.active()]) sim.loans.repay(l.id);
+      }
+      expect(sim.loans.totalDebt()).toBe(0);
+      expect(sim.game.money).toBeLessThanOrEqual(before);
+      // a starter loan held all winter costs interest: the loan is never profitable by itself
+      const a = play(64, 61, 75, { starterLoan: true }), b = play(64, 61, 75);
+      const money = (x: { sim: Sim }): number => x.sim.game.money - x.sim.loans.totalDebt();
+      expect(money(a)).toBeLessThan(money(b) + 5_000);
+    });
+  });
+  }
+
+  if (shard === 0) {
+  describe('balance: lift hours and arrival capacity', () => {
+    it('default lift hours cover guests arriving until ~15:30', () => {
+      expect(LIFT_OPS.defaultFrom).toBeLessThanOrEqual(8.5); expect(LIFT_OPS.defaultTo).toBeGreaterThanOrEqual(17);
+    });
+    for (const size of [64, 128, 256] as const) {
+      it(`rides occur with the DEFAULT lift hours on a ${size} map`, () => {
+        // Size independent: arrivals are spread over ~08-16 h and the first ride follows within a few hours even on 256 (docs/balance.md #10).
+        const { sim } = makeResort(size, size === 256 ? 1337 : 7, { defaultHours: true, startDay: 167 });
+        const c = attachCounters(sim);
+        expect(run(sim, { days: 6 })).toEqual([]);
+        expect(c.rides).toBeGreaterThanOrEqual(20);
+      });
+    }
+    it('capacity-limited regime is NOT the normal regime: winter peak guests stay below parking capacity (1 parking = 200)', () => {
+      const { sim } = makeResort(64, 61, { startDay: 167, defaultHours: true });
+      let peak = 0;
+      for (let d = 0; d < 20; d++) for (let t = 0; t < 24; t++) { sim.tick(10); peak = Math.max(peak, sim.guestSim.store.count); }
+      expect(peak).toBeLessThan(160);
+    });
+  });
+  }
+
+  describe.skipIf(!FULL)('[balance] 3-year sweep (BALANCE=1): sizes x seeds x difficulty', () => {
+    const cases: Array<[64 | 128 | 256, number, boolean]> = [[64, 61, false], [64, 7, false], [128, 61, false], [128, 7, false], [256, 61, true], [256, 7, true]];
+    for (const [size, seed, loan] of cases) {
+      it.skipIf(!mine(`sweep-${size}-${seed}`))(`${size} seed ${seed}: year-2 profit, year-3 profit, sane rating, never bankrupt`, () => {
+        const { sim, bot } = play(size, seed, 3 * DAYS_PER_YEAR, { starterLoan: loan });
+        console.log(`[balance] ${size} seed ${seed}${loan ? ' (starter loan)' : ''}\n${table(bot.rows)}`);
+        expect(sim.finance.ended).toBe(false);
+        expect(sum(year(bot.rows, 2), (r) => r.net)).toBeGreaterThan(0);
+        expect(sum(year(bot.rows, 3), (r) => r.net)).toBeGreaterThan(0);
+        const stars = sum(year(bot.rows, 2), (r) => r.rating) / 12;
+        expect(stars).toBeGreaterThanOrEqual(3); expect(stars).toBeLessThanOrEqual(4.5);
+      }, 600_000);
+    }
+    it.skipIf(!mine('sweep-diff'))('difficulty ordering (64): relaxed > normal > challenging, and challenging is still profitable in year 2', () => {
+      const net = (d: DifficultyId): number => sum(year(play(64, 61, 2 * DAYS_PER_YEAR, { difficulty: d }).bot.rows, 2), (r) => r.net);
+      const r = net('relaxed'), n = net('normal'), c = net('challenging');
+      console.log(`[balance] difficulty year-2 net: relaxed ${Math.round(r)} normal ${Math.round(n)} challenging ${Math.round(c)}`);
+      expect(r).toBeGreaterThan(n); expect(n).toBeGreaterThan(c); expect(c).toBeGreaterThan(0);
+    }, 600_000);
+  });
+
+  describe.skipIf(!FULL)('[balance] goal grants (M5.1): the bot does not game goals', () => {
+    for (const [size, seed, loan] of [[64, 61, false], [128, 61, false], [256, 61, true]] as Array<[64 | 128 | 256, number, boolean]>) {
+      it.skipIf(!mine(`grants-${size}`))(`${size} seed ${seed}: grants are <= 10 % of year-1 revenue and year 2 is profitable without them`, () => {
+        const { bot } = play(size, seed, 2 * DAYS_PER_YEAR, { starterLoan: loan });
+        const grant = (y: number): number => sum(year(bot.rows, y), (r) => r.income.grant ?? 0);
+        const rev = (y: number): number => sum(year(bot.rows, y), (r) => r.incomeTotal);
+        const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);
+        console.log(`[balance] grants ${size}/${seed}: y1 net ${Math.round(net(1))} (grants ${Math.round(grant(1))}, ${(100 * grant(1) / Math.max(1, rev(1))).toFixed(1)} % of revenue, net w/o grants ${Math.round(net(1) - grant(1))}); y2 net ${Math.round(net(2))} (grants ${Math.round(grant(2))}, net w/o grants ${Math.round(net(2) - grant(2))})`);
+        expect(grant(1)).toBeLessThanOrEqual(0.1 * rev(1));
+        expect(net(2) - grant(2)).toBeGreaterThan(0);
+      }, 600_000);
+    }
+  });
+
+  describe.skipIf(!FULL)('[balance] Career with respectUnlocks (M5.3): the gating does not hurt the economy', () => {
+    for (const [size, seed] of [[64, 61], [128, 7], [256, 7]] as Array<[64 | 128 | 256, number]>) {
+      it.skipIf(!mine(`career-${size}`))(`${size} seed ${seed}: profit by year 2 on Normal, level 4 reached in year 2`, () => {
+        const sim = createSim({ size, seed, mode: 'career', now: () => 0 });
+        const bot = new Bot(sim, { respectUnlocks: true });
+        const at: Record<number, string> = {};
+        sim.progression.onLevelUp((u) => { at[u.level] = `y${sim.game.date.year}/d${sim.game.date.day}`; });
+        runBot(sim, bot, 3 * DAYS_PER_YEAR);
+        const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);
+        console.log(`[balance] career ${size}/${seed}: levels ${JSON.stringify(at)}; y2 net ${Math.round(net(2))}, y3 net ${Math.round(net(3))}`);
+        expect(net(2)).toBeGreaterThan(0);
+        expect(net(3)).toBeGreaterThan(0);
+        expect(sim.progression.level).toBeGreaterThanOrEqual(4);
+        expect(at[4]).toBeDefined();
+      }, 600_000);
+    }
+  });
+
+  describe.skipIf(!FULL)('[balance] everything on (M5.4 closing sweep): automatic events, story guests, rivals, six staff upgrades, green bot', () => {
+    const cases: Array<[64 | 128 | 256, number, boolean]> = [[64, 61, false], [64, 7, false], [128, 61, false], [128, 7, false], [256, 61, true], [256, 7, true]];
+    for (const [size, seed, loan] of cases) {
+      it.skipIf(!mine(`allon-${size}-${seed}`))(`${size} seed ${seed}: profit by year 2 and 3 holds with every depth system active`, () => {
+        const sim = createSim({ size, seed, now: () => 0 });
+        const bot = new Bot(sim, { starterLoan: loan, staffUpgrades: true });
+        runBot(sim, bot, 3 * DAYS_PER_YEAR);
+        const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);
+        const stars = sum(year(bot.rows, 2), (r) => r.rating) / 12;
+        console.log(`[balance] all-on ${size}/${seed}${loan ? ' (starter loan)' : ''}: y1 ${Math.round(net(1))} y2 ${Math.round(net(2))} y3 ${Math.round(net(3))} ($), y2 stars ${stars.toFixed(2)}, rivals share ${(100 * sim.rivals.share).toFixed(0)} %, upgrades ${sim.staffUpgrades.has('rangers') ? 'trained' : 'partial'}`);
+        expect(sim.finance.ended).toBe(false);
+        expect(net(2)).toBeGreaterThan(0);
+        expect(net(3)).toBeGreaterThan(0);
+        expect(stars).toBeGreaterThanOrEqual(3); expect(stars).toBeLessThanOrEqual(4.6);
+      }, 900_000);
+    }
+  });
+
+  if (shard === 0) {
+  describe('balance: money pass (docs/balance.md "Money pass"): a winter-focused human is rarely blocked and survives summer (64, Normal)', () => {
+    it('no summer attractions, lifts left on all summer, small reserve: never below $0, year 2 positive, summer months >= -$3k on average', () => {
+      const sim = createSim({ size: 64, seed: 61, now: () => 0 });
+      const summerOnly = new Set(['adventurePark', 'beach', 'boatRental', 'alpineFarm']);
+      const bot = new Bot(sim, { respectUnlocks: true, reserve: 2_000, summerLifts: 'keep', policy: { id: 'human', wishes: WISHES.filter(([t]) => !summerOnly.has(t)) }, starterOpts: { lifts: 1, attractions: 0, toilet: true } });
+      let min = sim.game.money, below1k = 0;
+      runBot(sim, bot, 2 * DAYS_PER_YEAR, () => { min = Math.min(min, sim.game.money); if (sim.game.money < 1_000) below1k++; });
+      expect(min).toBeGreaterThan(0);
+      expect(below1k).toBeLessThanOrEqual(5); // blocked on construction for at most a few days
+      expect(sum(year(bot.rows, 2), (r) => r.net)).toBeGreaterThan(0);
+      const s = summer(bot.rows, 2);
+      expect(sum(s, (r) => r.net) / s.length).toBeGreaterThan(-3_000);
+    });
+  });
+  }
+
+  {
+  describe('balance: Eco programme (docs/eco.md)', () => {
+    it.skipIf(shard !== 0)('the eco bot builds the centre, funds the policies and earns the certificate within two years (64 / 61)', () => {
+      const { sim } = play(64, 61, 2 * DAYS_PER_YEAR, { eco: true, greenEnergy: true });
+      expect(sim.buildings.all().some((b) => b.type === 'ecoCentre' && b.active)).toBe(true);
+      expect(sim.eco.activeCount()).toBeGreaterThanOrEqual(3);
+      expect(sim.eco.points()).toBeGreaterThanOrEqual(15); expect(sim.eco.everCertifiedFlag).toBe(true);
+      expect(sim.sustain.last()!.score).toBeLessThanOrEqual(100);
+      expect(sim.finance.ended).toBe(false);
+    }, 300_000);
+    it.skipIf(!FULL || !mine('eco3'))('[balance] year-3 net with every policy stays within 15 % of the same resort with the buildings only (never dominant, never ruinous)', () => {
+      for (const seed of [61, 7]) {
+        const ctl = play(64, seed, 3 * DAYS_PER_YEAR, { eco: 'build', greenEnergy: true }), all = play(64, seed, 3 * DAYS_PER_YEAR, { eco: true, greenEnergy: true });
+        const net = (b: Bot): number => sum(year(b.rows, 3), (r) => r.net);
+        const diff = (net(all.bot) - net(ctl.bot)) / Math.abs(net(ctl.bot));
+        console.log(`[balance] eco ${seed}: y3 net buildings-only ${Math.round(net(ctl.bot))} vs all policies ${Math.round(net(all.bot))} (${(100 * diff).toFixed(1)} %), facet ${ctl.sim.sustain.last()!.score} -> ${all.sim.sustain.last()!.score}`);
+        expect(Math.abs(diff)).toBeLessThan(0.15);
+      }
+    }, 900_000);
+  });
+  }
+
+  if (shard === 0) {
+  describe('balance: content bot (M7.1, docs/economy-audit.md)', () => {
+    it('CONTENT_WISHES names every catalog building the normal wish list does not, once, cheapest first', () => {
+      const normal = new Set(WISHES.map(([t]) => t));
+      const ids = CONTENT_WISHES.map(([t]) => t);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(new Set([...ids, ...normal])).toEqual(new Set(Object.keys(BUILDINGS)));
+      const costs = ids.map((i) => BUILDINGS[i]!.cost);
+      expect(costs).toEqual([...costs].sort((a, b) => a - b));
+    });
+  });
+  }
+
+  describe.skipIf(!FULL)('[balance] content bot (M7.1 Task 7.1.4): every building id gets built over three years', () => {
+    it.skipIf(!mine('content-128'))('128 / seed 1 (river, lake, rock, forest, rail stub): all catalog buildings stand, nobody is bankrupt, and the books are real numbers', () => {
+      const sim = createSim({ size: 128, seed: 1, now: () => 0 });
+      const bot = new Bot(sim, { content: 'all' });
+      runBot(sim, bot, 3 * DAYS_PER_YEAR);
+      const built = new Set(sim.buildings.all().map((b) => b.type));
+      const missing = Object.keys(BUILDINGS).filter((id) => !built.has(id));
+      console.log(`[balance] content bot 128/1: ${built.size}/${Object.keys(BUILDINGS).length} building types built, missing: ${missing.join(', ') || 'none'}\n${table(bot.rows.filter((r) => r.month % 3 === 0))}`);
+      expect(missing).toEqual([]);
+      expect(sim.finance.ended).toBe(false);
+      expect(Number.isFinite(sum(bot.rows, (r) => r.net))).toBe(true);
+    }, 900_000);
+    it.skipIf(!mine('content-64'))('64 maps: at least 50 building types, never bankrupt on Relaxed / Normal / Challenging (a bot that builds everything only dents the books)', () => {
+      for (const difficulty of ['relaxed', 'normal', 'challenging'] as DifficultyId[]) {
+        const sim = createSim({ size: 64, seed: 61, difficulty, now: () => 0 });
+        const bot = new Bot(sim, { content: 'all', respectUnlocks: true });
+        runBot(sim, bot, 3 * DAYS_PER_YEAR);
+        expect(new Set(sim.buildings.all().map((b) => b.type)).size, difficulty).toBeGreaterThanOrEqual(50);
+        expect(sim.finance.ended, difficulty).toBe(false);
+      }
+    }, 900_000);
+  });
+
+  /**
+   * Difficulty targets (M7.1; measured by `npm run analysis:difficulty`, docs/economy-audit.md "Difficulty targets"). The default career bot (respects the unlock gate, lifts left on,
+   * seeds 61 / 7 / 5 on a 64 map) must land in the profit-by-year BAND of its difficulty, survive every summer and never go bankrupt. Bands are +-~25 % around the measured values.
+   */
+  describe.skipIf(!FULL)('[balance] difficulty targets: profit by year bands, summer survival, bankruptcy rate', () => {
+    const BANDS: Record<DifficultyId, { y1: [number, number]; y2: [number, number]; y3: [number, number] }> = {
+      relaxed: { y1: [0, 110_000], y2: [150_000, 280_000], y3: [140_000, 280_000] },
+      normal: { y1: [-40_000, 70_000], y2: [115_000, 175_000], y3: [90_000, 190_000] },
+      challenging: { y1: [-50_000, 40_000], y2: [75_000, 125_000], y3: [70_000, 140_000] }, // M7.2: about 70 % of Normal (owner decision, docs/balance.md "M7.2")
+    };
+    for (const difficulty of ['relaxed', 'normal', 'challenging'] as DifficultyId[]) {
+      it.skipIf(!mine(`diff-${difficulty}`))(`${difficulty}: profit-by-year band, every summer month on average above zero, cash never below zero, no bankruptcy (3 seeds)`, () => {
+        let bankrupt = 0;
+        for (const seed of [61, 7, 5]) {
+          const sim = createSim({ size: 64, seed, difficulty, now: () => 0 });
+          const bot = new Bot(sim, { respectUnlocks: true });
+          let min = sim.game.money;
+          runBot(sim, bot, 3 * DAYS_PER_YEAR, () => { min = Math.min(min, sim.game.money); });
+          const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net);
+          const s = summer(bot.rows, 2);
+          console.log(`[balance] ${difficulty} ${seed}: y1 ${Math.round(net(1))} y2 ${Math.round(net(2))} y3 ${Math.round(net(3))}, summer/month ${Math.round(sum(s, (r) => r.net) / s.length)}, min cash ${Math.round(min)}`);
+          const b = BANDS[difficulty];
+          for (const [y, band] of [[1, b.y1], [2, b.y2], [3, b.y3]] as const) { expect(net(y), `${difficulty} ${seed} y${y}`).toBeGreaterThanOrEqual(band[0]); expect(net(y), `${difficulty} ${seed} y${y}`).toBeLessThanOrEqual(band[1]); }
+          expect(sum(s, (r) => r.net) / s.length, `${difficulty} ${seed} summer`).toBeGreaterThan(0);
+          expect(min, `${difficulty} ${seed} cash`).toBeGreaterThan(0);
+          if (sim.finance.ended) bankrupt++;
+        }
+        expect(bankrupt).toBe(0);
+      }, 900_000);
+    }
+  });
+
+  /**
+   * M7.2 (owner decision on the M7.1 playtest): Challenging is about 30 % tighter than Normal for the default bot (year-2 net about 70 % of Normal on 64 / 128), still profitable in
+   * years 2 and 3 on 64 / 128 / 256, every summer on average above zero, and nobody goes bankrupt.
+   */
+  describe.skipIf(!FULL)('[balance] Challenging is about 30 % tighter than Normal (M7.2)', () => {
+    const y2 = (size: 64 | 128, seed: number, difficulty: DifficultyId): number => { const sim = createSim({ size, seed, difficulty, now: () => 0 }); const bot = new Bot(sim, { respectUnlocks: true }); runBot(sim, bot, 2 * DAYS_PER_YEAR); return sum(year(bot.rows, 2), (r) => r.net); };
+    it.skipIf(!mine('chal-sum'))('year-2 net: Challenging / Normal is 0.6 .. 0.8 on 64 (3 seeds, summed) and on 128 (2 seeds, summed)', () => {
+      for (const [size, seeds] of [[64, [61, 7, 5]], [128, [1, 4]]] as const) {
+        const n = seeds.reduce((a, sd) => a + y2(size, sd, 'normal'), 0), c = seeds.reduce((a, sd) => a + y2(size, sd, 'challenging'), 0);
+        console.log(`[balance] ${size}: normal ${Math.round(n)} challenging ${Math.round(c)} ratio ${(c / n).toFixed(2)}`);
+        expect(c / n, `${size} ratio`).toBeGreaterThan(0.6); expect(c / n, `${size} ratio`).toBeLessThan(0.8);
+      }
+    }, 900_000);
+    for (const [size, seed] of [[128, 1], [256, 1]] as const) {
+      it.skipIf(!mine(`chal-${size}-${seed}`))(`Challenging ${size} / seed ${seed}: profitable in year 2 and year 3, summer months above zero, not bankrupt`, () => {
+        const sim = createSim({ size, seed, difficulty: 'challenging', now: () => 0 });
+        const bot = new Bot(sim, { respectUnlocks: true });
+        runBot(sim, bot, 3 * DAYS_PER_YEAR);
+        const net = (y: number): number => sum(year(bot.rows, y), (r) => r.net), s = summer(bot.rows, 2);
+        console.log(`[balance] challenging ${size}/${seed}: y2 ${Math.round(net(2))} y3 ${Math.round(net(3))} summer/month ${Math.round(sum(s, (r) => r.net) / s.length)}`);
+        expect(net(2)).toBeGreaterThan(0); expect(net(3)).toBeGreaterThan(0);
+        expect(sum(s, (r) => r.net) / s.length).toBeGreaterThan(0);
+        expect(sim.finance.ended).toBe(false);
+      }, 900_000);
+    }
+  });
+
+  /**
+   * M7.2 (owner question 4 of the M7.1 playtest, docs/economy-audit.md "Food buildings"): food demand is finite (guests share the same meals), so every dining place
+   * beyond the demand only adds running costs: more cafes / huts / lodges NEVER raise the net of the starter resort, and a spammed resort earns clearly less.
+   */
+  describe.skipIf(!FULL)('[balance] food buildings saturate: spamming them loses money (M7.2)', () => {
+    for (const type of ['cafe', 'mountainHut', 'lodge']) {
+      it.skipIf(!mine(`food-${type}`))(`${type}: 8 extra places earn less than 3, which earn less than none (net, mean of 2 seeds, 1 year); the income barely moves`, () => {
+        const run = (n: number): { net: number; income: number } => { const a = foodYear(type, n, 61), b = foodYear(type, n, 5); return { net: (a.net + b.net) / 2, income: (a.income + b.income) / 2 }; };
+        const r0 = run(0), r3 = run(3), r8 = run(8);
+        console.log(`[balance] ${type}: net +0 ${Math.round(r0.net)} / +3 ${Math.round(r3.net)} / +8 ${Math.round(r8.net)}; income +0 ${Math.round(r0.income)} / +8 ${Math.round(r8.income)}`);
+        expect(r3.net).toBeLessThan(r0.net);
+        expect(r8.net).toBeLessThan(r3.net);
+        expect(r8.net).toBeLessThan(r0.net - 8_000);
+        expect(Math.abs(r8.income - r0.income) / r0.income, 'extra places do not create demand').toBeLessThan(0.06);
+      }, 900_000);
+    }
+  });
+}
