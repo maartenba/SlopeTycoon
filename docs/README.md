@@ -3,7 +3,7 @@
 One doc per feature or system. Player-facing docs are the guide in `site/guide/*.md`; release history is `CHANGELOG.md`. Phase / milestone tags (M5.x, M6.x, Task N) are historical: the code is the source of truth.
 
 ## Start here
-- [release.md](release.md): release checklist and notes. [phase6-status.md](phase6-status.md): what the 0.3.0 content wave shipped, deferred and why. [depth.md](depth.md): M5.4 depth summary.
+- [gate-speed.md](gate-speed.md): measured release-gate timings and the plan to speed the gate up. [release.md](release.md): release checklist and notes. [phase6-status.md](phase6-status.md): what the 0.3.0 content wave shipped, deferred and why. [depth.md](depth.md): M5.4 depth summary.
 - [economy-audit.md](economy-audit.md): M7.1 economy + rules audit: building contract suite, access / placement audit, per-building ROI table, difficulty targets, fix list. [placement-rules.md](placement-rules.md) carries the generated rules table; [playtest-m71.md](playtest-m71.md) the 0.3.1 checklist.
 - [graphics-audit.md](graphics-audit.md), [graphics-m8.md](graphics-m8.md), [shadows.md](shadows.md): M8 graphics pass: baseline audit and ranking, before / after perf + flicker verification, and the sun-shadow / contact-shadow design; [playtest-m8.md](playtest-m8.md) is the owner's real-GPU checklist.
 - [seo-research.md](seo-research.md): Ahrefs keyword + competitor research, keyword map, landing pages, design brief and the implementation status per recommendation (M7.2). [outreach-drafts.md](outreach-drafts.md) holds draft posts for the owner to publish himself; [playtest-m72.md](playtest-m72.md) is the M7.2 review checklist.

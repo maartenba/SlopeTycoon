@@ -42,6 +42,7 @@
     "promo:towns": "vite-node scripts/promo/capture.ts --build-towns",
     "promo:capture": "vite-node scripts/promo/capture.ts",
     "promo:video": "vite-node scripts/promo/assemble.ts",
+    "gate:timings": "vite-node scripts/gate-timings.ts",
     "flicker": "vite-node scripts/flicker-test.ts",
     "shadow:stability": "vite-node scripts/shadow-stability.ts",
     "shadow:cost": "vite-node scripts/shadow-cost.ts",
