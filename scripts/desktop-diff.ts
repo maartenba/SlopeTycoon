@@ -56,7 +56,9 @@ if (opt('compare') !== undefined) {
     await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 });
     await page.goto(`${srv.url}?size=64&seed=61&start=winter&hints=0`, { waitUntil: 'load', timeout: 90000 });
     await page.waitForFunction(() => !!(window as any).__slope?.view, { timeout: 90000 });
-    await sleep(2500);
+    await page.evaluate(() => (window as any).__slope.loop.setSpeed(0)); // pause BEFORE the settle wait: the sim clock (08:00 vs 08:06) moved the sky gradient between the two runs, that was the 'flaky' ~50 % diff
+    await page.waitForFunction(() => !document.getElementById('splash'), { timeout: 60000 }).catch(() => undefined); // the boot splash (fading, then removed) is what differed between runs
+    await sleep(4000); // 0.6.5: widened from 2.5 s
     await page.evaluate(() => {
       (window as any).__slope.loop.setSpeed(0);
       const st = document.createElement('style'); st.textContent = '#app canvas{visibility:hidden!important}#app{background:#243447}st-toast,st-assistant{display:none!important}'; document.head.appendChild(st);

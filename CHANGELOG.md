@@ -4,6 +4,18 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-11-13 (pre-release)
+
+A look-and-atmosphere update. The economy and your old saves are unchanged.
+
+### Highlights
+
+- **Tractors work the pastures** in summer: they mow, leave round bales and haul hay home from every Alpine Farm.
+- **Fuller cows and a better tractor**: cows with bells and coat patterns, a tractor and hay trailer with more detail.
+- **Smoother lake and river banks**, with sky and tree reflections on lakes (Medium and High).
+- **Hill shadows and long tree shadows** at dawn and dusk on High.
+- **Photographers raise their cameras and flash**, and falling leaves are a little smaller.
+
 ### Changes
 
 - Fuller cows with bells and coat patterns: rounder bodies, jointed legs with hooves, proper heads with horns, ears and eyes, a dewlap, udder and tufted tail, a brass cowbell, soft coat patches, and four coats (black-and-white, red-and-white, two browns) with a few smaller calves.

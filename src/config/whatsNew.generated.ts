@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.5",
+    "date": "2026-11-13",
+    "highlights": [
+      "Tractors work the pastures in summer: they mow, leave round bales and haul hay home from every Alpine Farm.",
+      "Fuller cows and a better tractor: cows with bells and coat patterns, a tractor and hay trailer with more detail.",
+      "Smoother lake and river banks, with sky and tree reflections on lakes (Medium and High).",
+      "Hill shadows and long tree shadows at dawn and dusk on High.",
+      "Photographers raise their cameras and flash, and falling leaves are a little smaller."
+    ]
+  },
+  {
     "version": "0.6.4",
     "date": "2026-11-12",
     "highlights": [
@@ -19,17 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "They walk to the best viewpoint, take their pictures and have a hot drink. Good shots bring a small word-of-mouth bonus.",
       "A new Golden hour trophy and a new tip from Rudi go with them.",
       "You can hear a quiet camera shutter when you zoom in on one at work."
-    ]
-  },
-  {
-    "version": "0.6.2",
-    "date": "2026-11-10",
-    "highlights": [
-      "New planes, paraglider canopies and hang gliders: rounder shapes, a spinner and windows on the plane, striped arched canopies with lines and a…",
-      "Groomers drive around buildings instead of through them, and you can hear them working when you zoom in on one.",
-      "Snow keeps its size on big monitors and high-resolution screens instead of shrinking to tiny dots.",
-      "Steadier first-person, ride and photo views: far trees no longer shimmer as you move.",
-      "The website has a 30 second trailer and a 90 second film (click to play, captions included), plus new pages on playing ski games online and building…"
     ]
   }
 ];

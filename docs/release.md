@@ -1,6 +1,20 @@
 # Release notes and checklist
 
-Current release: **0.6.4 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.6.5 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.6.5 (2026-11-13, macOS, Node v24.22.3)
+
+Look and atmosphere (render-only; no sim, save or golden change): lake / river banks and lake reflections, hill and tree shadows on High, photographer camera flash, smaller leaves, lighter sky objects on Low / Medium, tractors working the pastures, fuller cows (880 triangles, coat variants, bells) and a better tractor (980 triangles, three liveries), trailer (360), hay loaf and wrapped bales (`docs/farm-work.md` "0.6.5 look upgrade").
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run gate:full` (6 slots) | wall 19.6 min, 36 stages, all passed, no flaky stage, except `desktop:diff` (see below) |
+| Desktop | `npm run desktop:diff` | the earlier "flaky settle" was NOT a settle: the sim clock kept running during the wait (sky 08:00 vs 08:06), so the sky gradient differed between the two runs. `scripts/desktop-diff.ts` now pauses the loop before the wait, waits for the splash to go and settles 4 s; SAME on all six screens, first attempt |
+| Flicker | `npm run flicker -- --only 64-summer-day` (cows and tractors in view) | rotfine 0.1394 % (baseline 0.1386 %), zoomfine 0.0463 %, 0 pops |
+| Size | `npm run size` | 3153.8 kB raw / 1123.8 kB gzip (0.6.4: 1110.4 kB; budget < 2048 kB gzip) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | OK |
+
+Not verified by agents: how the cows and tractors look by hand (SwiftShader only; cows are small at game zoom), real GPU fps, a phone in the hand. Not done: animated cow tail / ears / bell, rectangular bales, a tractor contact shadow.
 
 ## Unreleased gate run (2026-11-13, macOS, Node v24.22.3, HEAD 73e7269)
 `npm run gate:full` with the retuned defaults (6 slots, browser stages weigh 2): wall 19.2 min (30.3 min before), 36 stages, none failed, `desktop:diff` flaky (first attempt hit by a load spike, retry SAME). Goldens/balance unchanged, `test:perf` 49 passed, touch 39/39, mobile:audit pass, flicker 64 winter rotfine 0.6577 % (default) / 0.6938 % High. Numbers in `docs/gate-speed.md` "Retune". Nothing pushed or tagged.

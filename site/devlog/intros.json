@@ -108,5 +108,10 @@
     "tagline": "falling leaves",
     "lead": "A small update about autumn. Leaves now drift down from the deciduous trees and the larches near the camera, in gold, orange and red, and they thin out when the snow arrives or it rains. They follow the Atmosphere setting, and with reduced motion they just lie still. I also re-made the trailer and the 90 second film on the website so they show the leaves. You press play to start them, nothing loads before that. I have only seen it on a software renderer, so how it looks on a real screen is still open.",
     "shot": "schirmbar-open"
+  },
+  "0.6.5": {
+    "tagline": "tractors and cows",
+    "lead": "A small update about how things look. In summer the Alpine Farms now send tractors out to mow the pasture, leave round bales and bring the hay home. The cows and the tractor got a proper going-over, because they looked a bit plain: cows have bells and coat patterns, and the tractor has a curved bonnet, mudguards and a slatted trailer. Lake and river banks are smoother and lakes reflect the sky. On High the hills and the trees just off screen cast shadows at dawn and dusk, and photographers raise their cameras and flash. I have only seen all of this on a software renderer, so how it looks on a real screen is still open.",
+    "shot": "season-summer"
   }
 }
