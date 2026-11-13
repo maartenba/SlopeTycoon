@@ -67,7 +67,7 @@ function run(s: Stage): Promise<Res> {
     const log = createWriteStream(`.weave/gate/logs/${s.id.replace(/[:]/g, '_')}.log`);
     const t0 = Date.now();
     // `/usr/bin/time -l` reports user/sys/peak RSS of the whole child tree's waited-for processes (macOS).
-    const p = spawn('/usr/bin/time', ['-l', 'sh', '-c', s.cmd], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+    const p = spawn('/usr/bin/time', ['-l', 'sh', '-c', s.cmd], { stdio: ['ignore', 'pipe', 'pipe'], detached: true, env: Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'NODE_ENV')) }); // vite-node exports NODE_ENV=development: a build under it has no service worker (docs/gate-speed.md)
     let out = '';
     const feed = (d: Buffer): void => { const t = String(d); log.write(t); out += t; if (out.length > 400000) out = out.slice(-200000); };
     p.stdout?.on('data', feed); p.stderr?.on('data', feed);

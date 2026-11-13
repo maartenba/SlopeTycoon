@@ -4,6 +4,7 @@ import { extname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import type { AddressInfo } from 'node:net';
 import { pngSize } from './lib/png';
+import { devBuildProblem } from './lib/dist-guard';
 import { createPagesServer, normalizeBase } from './lib/static-server';
 
 const argv = process.argv;
@@ -18,6 +19,7 @@ const problems: string[] = [];
 const check = (ok: boolean, msg: string): void => { if (!ok) problems.push(msg); };
 
 if (!existsSync(join(dist, 'sw.js'))) { console.error(`${distArg}/sw.js missing: run \`npm run build\` (or build:site) first`); process.exit(1); }
+check(!devBuildProblem(dist), devBuildProblem(dist));
 const argBase = process.argv.indexOf('--base') >= 0 ? process.argv[process.argv.indexOf('--base') + 1] : undefined;
 const mount = argBase ? normalizeBase(argBase) : '/';
 const server = createPagesServer(dist, mount);
