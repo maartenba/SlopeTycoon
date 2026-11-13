@@ -148,17 +148,65 @@ export class AnimalHerd {
 
 const finish = (parts: THREE.BufferGeometry[]): THREE.BufferGeometry => keepNormals(parts);
 
-export function createCowGeometry(): THREE.BufferGeometry {
-  const hide = 0xf2efe8, patch = 0x3a2c25, pink = 0xe8a8a0, horn = 0xe8d8a0;
-  return finish([
-    ...torso({ L: 0.52, H: 0.26, W: 0.2, legH: 0.12, c: hide, leg: 0xb9b0a4, legR: 1.3 }),
-    ell(0.1, 0.1, 0.12, patch, 0, 0.3, 0.04, {}, 6, 3), ell(0.08, 0.05, 0.09, patch, 0.02, 0.38, -0.2, {}, 5, 3), // coat patches
-    ell(0.07, 0.07, 0.13, hide, 0, 0.35, 0.3, { rx: 0.9 }, 6, 4), // neck
-    ell(0.06, 0.07, 0.085, hide, 0, 0.36, 0.38, { rx: 0.35 }, 6, 4), ell(0.045, 0.035, 0.035, pink, 0, 0.32, 0.45, {}, 5, 3), // head, muzzle
-    cone(0.012, 0.045, horn, 0.05, 0.41, 0.37, { rz: -0.9 }, 3), cone(0.012, 0.045, horn, -0.05, 0.41, 0.37, { rz: 0.9 }, 3), // horns
-    ell(0.04, 0.015, 0.025, hide, 0.075, 0.39, 0.35, { rz: -0.4 }, 4, 3), ell(0.04, 0.015, 0.025, hide, -0.075, 0.39, 0.35, { rz: 0.4 }, 4, 3), // ears
-    tube(0.012, 0.008, 0.2, hide, 0, 0.38, -0.3, { rx: Math.PI - 0.12 }, 4), ell(0.02, 0.03, 0.02, patch, 0, 0.12, -0.31, {}, 4, 3), // tail + tuft
-  ]);
+/** Soft coat patches by vertex colour: every vertex of `g` that still carries `hide` is blended towards `patch` by a smooth world-space pattern (no extra triangles, soft edges). */
+function coatPatches(g: THREE.BufferGeometry, hide: number, patch: number, seed = 0): THREE.BufferGeometry {
+  const pos = g.getAttribute('position'), col = g.getAttribute('color'), h = new THREE.Color(hide), pc = new THREE.Color(patch), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    if (Math.abs(col.getX(i) - h.r) > 1e-4 || Math.abs(col.getY(i) - h.g) > 1e-4) continue;
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const n = Math.sin(x * 23 + seed) * Math.sin(z * 15 + y * 9 + 1.3) + 0.7 * Math.sin(z * 21 - x * 13 + 2) * Math.cos(y * 17);
+    const t = Math.min(1, Math.max(0, (n - 0.15) / 0.35));
+    c.copy(h).lerp(pc, t * t * (3 - 2 * t)); col.setXYZ(i, c.r, c.g, c.b);
+  }
+  return g;
+}
+/** Cow variants: the base mesh is a pale hide with dark patches, an instance colour (`COW_TINTS`, chosen by a stable hash of the animal id) turns it into
+ * Holstein black-and-white, Simmental red-and-white or all-over Brown Swiss / alpine brown. Same triangles, no extra draw call. */
+export const COW_TINTS: ReadonlyArray<readonly [number, number, number]> = [[1, 1, 1], [1.0, 0.72, 0.52], [0.78, 0.6, 0.48], [0.62, 0.5, 0.42]];
+export const cowVariantOf = (id: number): number => { let h = (id * 2654435761) >>> 0; h ^= h >>> 15; return (h >>> 3) % COW_TINTS.length; };
+/** Is this cow a calf (about one in six, drawn smaller)? */
+export const cowIsCalf = (id: number): boolean => { let h = (id * 40503 + 7) >>> 0; h = Math.imul(h ^ (h >>> 13), 2246822519) >>> 0; return (h >>> 5) % 6 === 0; };
+
+/** Alpine cow (forward = +z, ~0.5 tiles long, <= ~900 triangles): barrel torso with shoulder and hip, jointed legs with hooves, broad head with muzzle / nostrils / eyes, curved horns,
+ * dewlap, udder, tufted tail and (`bell`) a brass cowbell on a leather strap. */
+export function createCowGeometry(bell = true): THREE.BufferGeometry {
+  const hide = 0xf2efe8, patch = 0x3a2c25, pink = 0xe8a8a0, horn = 0xe8d8a0, hoof = 0x2e2622, nose = 0xd98f8a, dark = 0x1a1412, leather = 0x6a4527, brass = 0xd4a838;
+  const body = [
+    ell(0.105, 0.135, 0.2, hide, 0, 0.26, 0.1, {}, 10, 6), // chest + shoulder
+    ell(0.105, 0.125, 0.19, hide, 0, 0.255, -0.1, {}, 10, 6), // rump + hips
+    ell(0.085, 0.07, 0.17, hide, 0, 0.2, 0, {}, 6, 4), // barrel belly
+    ell(0.04, 0.03, 0.05, hide, 0, 0.385, 0.1, {}, 6, 3), // withers
+    ell(0.07, 0.075, 0.13, hide, 0, 0.33, 0.27, { rx: 0.85 }, 8, 4), // neck
+  ].map((g) => coatPatches(g, hide, patch));
+  const parts: THREE.BufferGeometry[] = [...body];
+  // legs: upper + lower with a knee (front) / hock (hind) bend, and a hoof
+  for (const sx of [-1, 1]) {
+    for (const [z, hind] of [[0.17, false], [-0.15, true]] as const) {
+      const x = sx * 0.062;
+      parts.push(tube(0.034, 0.026, 0.1, hide, x, 0.1, hind ? z - 0.02 : z, { rx: hind ? 0.32 : 0.05 }, 6)); // upper leg (forearm / thigh)
+      parts.push(tube(0.024, 0.018, 0.1, 0xcfc6b8, x, 0.025, z, { rx: hind ? -0.2 : 0 }, 6)); // lower leg (cannon bone)
+      parts.push(tube(0.02, 0.028, 0.03, hoof, x, 0, z, {}, 6)); // hoof
+    }
+  }
+  parts.push(
+    ell(0.062, 0.06, 0.08, hide, 0, 0.35, 0.37, { rx: 0.3 }, 8, 4), // head
+    ell(0.05, 0.042, 0.05, nose, 0, 0.315, 0.44, { rx: 0.1 }, 6, 4), ell(0.012, 0.01, 0.01, dark, 0.02, 0.32, 0.485, {}, 4, 3), ell(0.012, 0.01, 0.01, dark, -0.02, 0.32, 0.485, {}, 4, 3), // muzzle + nostrils
+    ell(0.011, 0.014, 0.012, dark, 0.056, 0.37, 0.4, {}, 4, 3), ell(0.011, 0.014, 0.012, dark, -0.056, 0.37, 0.4, {}, 4, 3), // eyes
+    ell(0.003, 0.004, 0.004, 0xffffff, 0.063, 0.375, 0.408, {}, 3, 2), ell(0.003, 0.004, 0.004, 0xffffff, -0.063, 0.375, 0.408, {}, 3, 2), // eye highlights
+    ell(0.045, 0.014, 0.025, hide, 0.095, 0.385, 0.35, { rz: -0.25 }, 5, 3), ell(0.03, 0.009, 0.016, pink, 0.099, 0.384, 0.352, { rz: -0.25 }, 4, 3), // ears out to the sides + inner tone
+    ell(0.045, 0.014, 0.025, hide, -0.095, 0.385, 0.35, { rz: 0.25 }, 5, 3), ell(0.03, 0.009, 0.016, pink, -0.099, 0.384, 0.352, { rz: 0.25 }, 4, 3),
+    tube(0.014, 0.01, 0.05, horn, 0.045, 0.4, 0.34, { rz: -1.1 }, 4), tube(0.01, 0.003, 0.05, horn, 0.085, 0.425, 0.34, { rz: -0.2 }, 4), // curved horns: base then upturned tip
+    tube(0.014, 0.01, 0.05, horn, -0.045, 0.4, 0.34, { rz: 1.1 }, 4), tube(0.01, 0.003, 0.05, horn, -0.085, 0.425, 0.34, { rz: 0.2 }, 4),
+    ell(0.04, 0.05, 0.05, hide, 0, 0.26, 0.28, { rx: 0.4 }, 6, 3), // dewlap
+    ell(0.05, 0.04, 0.055, pink, 0, 0.115, -0.11, {}, 8, 4), // udder
+    tube(0.01, 0.008, 0.03, pink, 0.02, 0.085, -0.1, {}, 4), tube(0.01, 0.008, 0.03, pink, -0.02, 0.085, -0.1, {}, 4),
+    tube(0.014, 0.009, 0.22, hide, 0, 0.36, -0.29, { rx: Math.PI + 0.12 }, 5), ell(0.022, 0.04, 0.022, patch, 0, 0.14, -0.31, {}, 5, 3), // tail + tuft
+  );
+  if (bell) parts.push(
+    tube(0.075, 0.075, 0.025, leather, 0, 0.2, 0.28, { rx: 0.9 }, 8), // leather strap round the neck
+    tube(0.026, 0.04, 0.06, brass, 0, 0.14, 0.33, { rx: 0.15 }, 7), ell(0.01, 0.01, 0.01, dark, 0, 0.138, 0.335, {}, 4, 3), // brass cowbell + clapper
+  );
+  return finish(parts);
 }
 export function createSheepGeometry(): THREE.BufferGeometry {
   const wool = 0xf4f1e8, face = 0x2b2b2b;
@@ -258,14 +306,14 @@ export function createDonkeyGeometry(): THREE.BufferGeometry {
 
 export type NatureSpecies = 'cow' | 'sheep' | 'goat' | 'deer' | 'ibex' | 'chamois' | 'marmot' | 'fox' | 'eagle';
 export const NATURE_GEOMETRY: Record<NatureSpecies, () => THREE.BufferGeometry> = {
-  cow: createCowGeometry, sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,
+  cow: () => createCowGeometry(), sheep: createSheepGeometry, goat: createGoatGeometry, deer: createDeerGeometry, ibex: createIbexGeometry,
   chamois: createChamoisGeometry, marmot: createMarmotGeometry, fox: createFoxGeometry, eagle: createEagleGeometry,
 };
 
 /** Almabtrieb cow (M5.4 Task 21): the plain cow with a flower headdress (wreath + bouquet + ribbons) and a bell on a red strap. Not a nature species: only the festival procession uses it. */
 export function createDecoratedCowGeometry(): THREE.BufferGeometry {
   const flowers = [0xd9453a, 0xf2c14e, 0xfafafa, 0xf06292, 0x8e5bd0];
-  const parts: THREE.BufferGeometry[] = [createCowGeometry(),
+  const parts: THREE.BufferGeometry[] = [createCowGeometry(false),
     box(0.2, 0.035, 0.2, 0x3f7d33, 0, 0.45, 0.36), // leaf base on the head
     box(0.1, 0.12, 0.1, 0xf2c14e, 0, 0.48, 0.36), box(0.06, 0.1, 0.06, 0xd9453a, 0, 0.6, 0.36), // bouquet
     box(0.04, 0.2, 0.03, 0xd9453a, 0.11, 0.26, 0.36), box(0.04, 0.2, 0.03, 0x4f86a8, -0.11, 0.26, 0.36), // ribbons

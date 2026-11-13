@@ -40,7 +40,7 @@ describe('M8 lane B: trees, rocks, animals, guests', () => {
   it('animals: no more than +25 % triangles each, finite, smooth normals, within the tile footprint', () => {
     for (const [n, before] of Object.entries(ANIMAL_BEFORE)) {
       const g = (A as unknown as Record<string, () => THREE.BufferGeometry>)[`create${n}Geometry`]!();
-      expect(tris(g), n).toBeLessThanOrEqual(before * 1.25);
+      expect(tris(g), n).toBeLessThanOrEqual(n === 'Cow' ? 900 : before * 1.25); // 0.6.5: the cow was rebuilt fuller (owner request), capped at 900
       expect(finite(g), n).toBe(true);
       expect(g.getAttribute('color'), n).toBeDefined();
       g.computeBoundingBox(); if (n !== 'Eagle') expect(g.boundingBox!.min.y, n).toBeGreaterThanOrEqual(-0.01); // the eagle flies

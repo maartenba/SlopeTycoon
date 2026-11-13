@@ -58,3 +58,7 @@ New proximity layer `tractor` (ceiling 0.04, quieter than any other bed but the 
 * Parking is inside the fenced pasture: leaving and arriving, the tractor drives through the fence rails (no gate is modelled).
 * The exhaust is a few tiny puffs: easy to miss at the default zoom.
 * SwiftShader only: no real GPU timing, no audio heard by an ear (the bed is unlistened, `docs/playtest-audio.md`).
+
+## 0.6.5 look upgrade
+
+Tractor: **980 triangles** (cap 1,000, three liveries red / green / blue picked by a stable hash of the farm id, one instanced mesh each; empty ones are not drawn), trailer **360** (cap 450, slatted sides, A-frame drawbar, rounded arches), round bale **96** (wrap band), hay loaf **84** (its own `farm:loaves` layer: domed, straw strands by vertex colour). Draw calls while tractors are visible: unchanged for one livery (+1 per extra livery in view, +1 loaf layer while a load is on). Exhaust: pool 9, life 2.5 s, larger puffs. Cows (`src/render/meshes/Animals.ts`): 880 triangles, instance-colour coat variants (`COW_TINTS`), one in six drawn as a calf. Not done: animated tail / ear / bell (the whole-body pose animation is unchanged), rectangular bales, a contact shadow disc. Shots: `.weave/shots/tractor-m8-{before,after}-o-*`, `m8-*-o-cows*`; MaterialGuard 0 in every shot; flicker `64-summer-day` rotfine 802.8 px/frame (0.1394 %), zoomfine 266.5 (0.0463 %), 0 pops.

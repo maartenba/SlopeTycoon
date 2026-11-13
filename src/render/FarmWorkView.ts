@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FARM_WORK as F } from '../config/farmWork';
 import type { WeatherKind } from '../core/events';
 import { farmPhase, headingAt, hk, lerpAngle, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, rowProgress, stepRunner, type FarmSite, type Runner, type TripPlan, type WorkWorld } from './farmWorkPlan';
-import { baleGeometry, TRACTOR, tractorGeometry, trailerGeometry } from './meshes/tractor';
+import { baleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, trailerGeometry } from './meshes/tractor';
 import { SMOKE_FRAG, SMOKE_VERT } from './Smoke';
 
 /**
@@ -34,7 +34,7 @@ uniform float uNight; varying float vA; varying vec2 vUv;
 void main(){
   float e = smoothstep(0.0, 0.22, vUv.y) * (1.0 - smoothstep(0.78, 1.0, vUv.y));
   vec3 straw = mix(vec3(0.82, 0.76, 0.44), vec3(0.74, 0.68, 0.38), vUv.y);
-  gl_FragColor = vec4(straw * (1.0 - 0.55 * uNight), vA * 0.8 * e);
+  gl_FragColor = vec4(straw * (1.0 - 0.55 * uNight), vA * 0.9 * e);
 }`;
 
 const ease = (p: number): number => p * p * (3 - 2 * p);
@@ -46,7 +46,8 @@ export class FarmWorkView {
   readonly group = new THREE.Group();
   /** No shadows: mown stripes + exhaust. */
   readonly fx = new THREE.Group();
-  readonly tractors: THREE.InstancedMesh; readonly trailers: THREE.InstancedMesh; readonly bales: THREE.InstancedMesh; readonly stripes: THREE.InstancedMesh; readonly exhaust: THREE.Mesh;
+  /** `tractors` = livery 0 (red); `liveries` = all three meshes (red, green, blue: one per farm hash). */
+  readonly tractors: THREE.InstancedMesh; readonly liveries: THREE.InstancedMesh[]; readonly loaves: THREE.InstancedMesh; readonly trailers: THREE.InstancedMesh; readonly bales: THREE.InstancedMesh; readonly stripes: THREE.InstancedMesh; readonly exhaust: THREE.Mesh;
   /** Render clock: the accumulated frame seconds, the only time source. */
   clock = 0;
   private states = new Map<string, TState>();
@@ -69,7 +70,9 @@ export class FarmWorkView {
     const lit = new THREE.MeshLambertMaterial({ vertexColors: true });
     const cap = F.caps.tractors;
     const mk = (g: THREE.BufferGeometry, n: number, name: string): THREE.InstancedMesh => { const m = new THREE.InstancedMesh(g, lit, n); m.count = 0; m.frustumCulled = false; m.name = name; this.group.add(m); return m; };
-    this.tractors = mk(tractorGeometry(), cap, 'farm:tractors');
+    this.liveries = Array.from({ length: LIVERY_COUNT }, (_, i) => mk(tractorGeometry(i), cap, i ? `farm:tractors${i}` : 'farm:tractors'));
+    this.tractors = this.liveries[0]!;
+    this.loaves = mk(loafGeometry(), cap, 'farm:loaves');
     this.trailers = mk(trailerGeometry(), cap, 'farm:trailers');
     this.bales = mk(baleGeometry(), F.caps.patches * F.bales.perPatch + cap, 'farm:bales');
     const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -177,12 +180,12 @@ export class FarmWorkView {
     this.stats.tractors = tn;
     this.shown = near && this.states.size > 0;
     this.group.visible = this.shown; this.fx.visible = this.shown;
-    if (!this.shown) { this.tractors.count = this.trailers.count = this.bales.count = this.stripes.count = 0; this.stats.trailers = this.stats.bales = this.stats.stripes = this.stats.puffs = 0; this.exhaust.visible = false; return; }
+    if (!this.shown) { for (const m of this.liveries) m.count = 0; this.loaves.count = this.trailers.count = this.bales.count = this.stripes.count = 0; this.stats.trailers = this.stats.bales = this.stats.stripes = this.stats.puffs = 0; this.exhaust.visible = false; return; }
     this.write(c);
   }
 
   private write(c: FarmWorkCtx): void {
-    const o = this.o; let nt = 0, nb = 0;
+    const o = this.o; let nt = 0, nb = 0, nl = 0; const vn = this.liveries.map(() => 0);
     o.rotation.order = 'YZX';
     const A = TRACTOR.trailerAxle, H = TRACTOR.hitch;
     for (const st of this.states.values()) {
@@ -205,7 +208,7 @@ export class FarmWorkView {
       // tractor
       const g = this.ground(x, y), gf = this.ground(x + Math.cos(yaw) * 0.2, y + Math.sin(yaw) * 0.2), gb = this.ground(x - Math.cos(yaw) * 0.2, y - Math.sin(yaw) * 0.2);
       o.position.set(x, Math.max(g, (gf + gb) / 2), y); o.rotation.set(0, -yaw, Math.atan2(gf - gb, 0.4)); o.scale.setScalar(sc); o.updateMatrix();
-      this.tractors.setMatrixAt(nt, o.matrix);
+      const lv = Math.floor(hk(this.seed, st.farm, 77) * LIVERY_COUNT) % LIVERY_COUNT; this.liveries[lv]!.setMatrixAt(vn[lv]!++, o.matrix);
       const tm = this.m4.copy(o.matrix);
       // exhaust (Medium / High, moving or working only)
       if (c.exhaust && r && !r.done && this.clock >= st.nextPuff) {
@@ -219,10 +222,10 @@ export class FarmWorkView {
       o.position.set(trx, Math.max(tg, (tf + tb) / 2), try_); o.rotation.set(0, -tryaw, Math.atan2(tf - tb, 0.9)); o.updateMatrix();
       this.trailers.setMatrixAt(nt, o.matrix);
       // hay load: a long loaf on the deck that grows with the load
-      if (load > 0.02 && nb < this.bales.instanceMatrix.count) {
+      if (load > 0.02 && nl < this.loaves.instanceMatrix.count) {
         const f = load / F.load.max, hh = F.load.height * (0.25 + 0.75 * f) * 0.5;
-        this.m5.compose(V.set(-A, 0.16 + hh * 0.85, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)), new THREE.Vector3(F.load.width * (0.4 + 0.6 * f) * 0.5, hh, F.load.length));
-        this.m5.premultiply(o.matrix); this.bales.setMatrixAt(nb++, this.m5);
+        this.m5.compose(V.set(-A, 0.15, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)), new THREE.Vector3(F.load.width * (0.4 + 0.6 * f) * 0.5, hh * 1.6, F.load.length * 0.5));
+        this.m5.premultiply(o.matrix); this.loaves.setMatrixAt(nl++, this.m5);
       }
       nt++;
     }
@@ -252,17 +255,17 @@ export class FarmWorkView {
         }
       }
     }
-    this.tractors.count = this.trailers.count = nt; this.bales.count = nb; this.stripes.count = ns;
-    this.tractors.instanceMatrix.needsUpdate = this.trailers.instanceMatrix.needsUpdate = this.bales.instanceMatrix.needsUpdate = this.stripes.instanceMatrix.needsUpdate = true;
+    this.liveries.forEach((m, i) => { m.count = vn[i]!; m.visible = m.count > 0; m.instanceMatrix.needsUpdate = true; }); this.loaves.count = nl; this.loaves.instanceMatrix.needsUpdate = true; this.trailers.count = nt; this.bales.count = nb; this.stripes.count = ns;
+    this.trailers.instanceMatrix.needsUpdate = this.bales.instanceMatrix.needsUpdate = this.stripes.instanceMatrix.needsUpdate = true;
     (this.stripes.geometry.getAttribute('aAlpha') as THREE.BufferAttribute).needsUpdate = true;
     this.stats.trailers = nt; this.stats.bales = nb; this.stats.stripes = ns;
     // exhaust uniforms
     this.puffMat.uniforms.uTime!.value = this.clock;
-    this.puffMat.uniforms.uScale!.value = Math.max(0.5, Math.min(1.4, c.viewHeight / 50)) * 0.2;
+    this.puffMat.uniforms.uScale!.value = Math.max(0.5, Math.min(1.5, c.viewHeight / 50)) * 0.27;
     this.exhaust.visible = c.exhaust && nt > 0;
     (this.puffGeo.getAttribute('aOrigin') as THREE.BufferAttribute).needsUpdate = true; (this.puffGeo.getAttribute('aBirth') as THREE.BufferAttribute).needsUpdate = true;
     let puffs = 0; for (let i = 0; i < this.puffB.length; i++) if (this.puffB[i]! >= 0 && this.clock - this.puffB[i]! < F.exhaust.life) puffs++;
     this.stats.puffs = puffs;
   }
-  dispose(): void { for (const m of [this.tractors, this.trailers, this.bales, this.stripes]) m.geometry.dispose(); this.puffGeo.dispose(); this.puffMat.dispose(); this.stripeMat.dispose(); }
+  dispose(): void { for (const m of [...this.liveries, this.loaves, this.trailers, this.bales, this.stripes]) m.geometry.dispose(); this.puffGeo.dispose(); this.puffMat.dispose(); this.stripeMat.dispose(); }
 }

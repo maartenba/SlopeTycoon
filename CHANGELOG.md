@@ -6,6 +6,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ### Changes
 
+- Fuller cows with bells and coat patterns: rounder bodies, jointed legs with hooves, proper heads with horns, ears and eyes, a dewlap, udder and tufted tail, a brass cowbell, soft coat patches, and four coats (black-and-white, red-and-white, two browns) with a few smaller calves.
+- A better tractor and hay trailer: a curved bonnet with grille and headlights, mudguards, deep tyre treads, a roof visor, a beacon and a farmer in a coloured jacket (red, green or blue tractors, one colour per farm), a slatted hay trailer, a domed hay load with straw strands and wrapped round bales; the exhaust puffs are bigger and last longer.
 - Smaller falling leaves: about two thirds of the old size, still easy to see between the trees.
 - Photographers raise their cameras and flash: while they shoot at a viewpoint the camera comes up to the face and each shot gives a brief glint (nothing under reduced motion).
 - Lighter sky objects on low settings: the jump plane, canopies and hang gliders use simpler models and fewer at a time on Low and Medium (High looks as before).

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MODE, type Critter } from '../sim/nature/Fauna';
-import { NATURE_GEOMETRY, type NatureSpecies } from './meshes/Animals';
+import { COW_TINTS, cowIsCalf, cowVariantOf, NATURE_GEOMETRY, type NatureSpecies } from './meshes/Animals';
 
 /** Instanced per-species rendering of livestock + wild fauna (one draw call per species, <= 9). Positions ease towards the sim positions
  * (the sim steps each animal every few ticks); walk bob / sway is a per-instance pose; far zoom hides small species. */
@@ -47,7 +47,7 @@ export class NatureView {
   private disp = new Map<number, Disp>();
   private m = new THREE.Matrix4(); private q = new THREE.Quaternion(); private up = new THREE.Vector3(0, 1, 0);
   private p = new THREE.Vector3(); private sc = new THREE.Vector3(1, 1, 1); private e = new THREE.Euler(); private q2 = new THREE.Quaternion();
-  private time = 0;
+  private time = 0; private tint = new THREE.Color();
   private fo = { x: 0, z: 0 }; private readonly fo0 = { x: 0, z: 0 };
   private winterColor = new THREE.Color(1, 1, 1);
   drawn = 0;
@@ -57,6 +57,7 @@ export class NatureView {
     for (const sp of Object.keys(NATURE_GEOMETRY) as NatureSpecies[]) {
       const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
       const mesh = new THREE.InstancedMesh(NATURE_GEOMETRY[sp](), mat, NATURE_VIEW.capPerSpecies);
+      if (sp === 'cow') mesh.setColorAt(0, new THREE.Color(1, 1, 1)); // coat variants (Holstein / Simmental / Brown Swiss) = a per-instance tint
       mesh.count = 0; mesh.frustumCulled = false; mesh.name = `nature:${sp}`;
       this.group.add(mesh); this.meshes.set(sp, mesh); this.mats.set(sp, mat);
     }
@@ -111,13 +112,14 @@ export class NatureView {
       }
       this.e.set(pitch, 0, roll, 'YXZ');
       this.q.setFromAxisAngle(this.up, d.yaw); this.q.multiply(this.q2.setFromEuler(this.e));
-      const k = NATURE_VIEW.scale[sp]; this.sc.set(k, k, k);
+      const k = NATURE_VIEW.scale[sp] * (sp === 'cow' && cowIsCalf(a.id) ? 0.7 : 1); this.sc.set(k, k, k);
+      if (sp === 'cow') { const t = COW_TINTS[cowVariantOf(a.id)]!; mesh.setColorAt(i, this.tint.setRGB(t[0], t[1], t[2])); }
       this.m.compose(this.p.set(d.x, gy + bob, d.y), this.q, this.sc);
       mesh.setMatrixAt(i, this.m);
       drawn++;
     }
     this.drawn = drawn;
-    for (const [sp, mesh] of this.meshes) { mesh.count = counts.get(sp) ?? 0; mesh.instanceMatrix.needsUpdate = true; mesh.visible = mesh.count > 0; }
+    for (const [sp, mesh] of this.meshes) { mesh.count = counts.get(sp) ?? 0; mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; mesh.visible = mesh.count > 0; }
     if (this.disp.size > 4000) this.disp.clear();
   }
 

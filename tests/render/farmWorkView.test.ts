@@ -16,12 +16,12 @@ const run = (v: FarmWorkView, secs: number, c: FarmWorkCtx, dt = 0.05): void => 
 
 describe('FarmWorkView', () => {
   it('shows nothing outside summer, with Atmosphere Off, and when far away', () => {
-    for (const c of [ctx({ day: WINTER }), ctx({ cap: 0 })]) { const v = mk(); run(v, 5, c); expect(v.stats.tractors).toBe(0); expect(v.group.visible).toBe(false); expect(v.tractors.count).toBe(0); }
+    for (const c of [ctx({ day: WINTER }), ctx({ cap: 0 })]) { const v = mk(); run(v, 5, c); expect(v.stats.tractors).toBe(0); expect(v.group.visible).toBe(false); expect(v.liveries.reduce((n, m) => n + m.count, 0)).toBe(0); }
     const v = mk(); run(v, 5, ctx({ viewHeight: 300 })); expect(v.group.visible).toBe(false);
     run(v, 2, ctx()); expect(v.group.visible).toBe(true);
   });
   it('caps tractors per farm and lets them fade in parked', () => {
-    for (const cap of [1, 2]) { const v = mk(); run(v, 4, ctx({ cap })); expect(v.tractors.count).toBe(2 * cap); expect(v.trailers.count).toBe(2 * cap); for (const s of v.snapshot()) expect(s.presence).toBe(1); }
+    for (const cap of [1, 2]) { const v = mk(); run(v, 4, ctx({ cap })); expect(v.liveries.reduce((n, m) => n + m.count, 0)).toBe(2 * cap); expect(v.trailers.count).toBe(2 * cap); for (const s of v.snapshot()) expect(s.presence).toBe(1); }
   });
   it('starts trips in the morning and keeps every tractor off buildings', () => {
     const v = mk(); const c = ctx({ hour: 9 });
@@ -60,8 +60,8 @@ describe('FarmWorkView', () => {
     const a = mk(), b = mk(); for (const v of [a, b]) v.force({ day: JUN, hour: 10, at: [0.3, 0.6] });
     run(a, 6, ctx({ exhaust: true })); run(b, 6, ctx({ exhaust: false }));
     expect(a.stats.puffs).toBeGreaterThan(0); expect(b.stats.puffs).toBe(0); expect(b.exhaust.visible).toBe(false);
-    expect(a.tractors.count).toBeLessThanOrEqual(F.caps.tractors); expect(a.stripes.count).toBeLessThanOrEqual(F.caps.stripes);
-    expect(a.group.children.length + a.fx.children.length).toBe(5); // tractors, trailers, bales + stripes, exhaust
+    expect(a.liveries.reduce((n, m) => n + m.count, 0)).toBeLessThanOrEqual(F.caps.tractors); expect(a.stripes.count).toBeLessThanOrEqual(F.caps.stripes);
+    expect(a.group.children.length + a.fx.children.length).toBe(8); // 3 livery meshes (empty ones are not drawn), hay loaves, trailers, bales, stripes, exhaust
   });
   it('patches fade after the tractors leave', () => {
     const v = mk(); v.force({ day: JUN, hour: 10, at: ['mowB', 'mowB'] }); run(v, 1, ctx());

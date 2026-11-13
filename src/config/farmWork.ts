@@ -27,7 +27,7 @@ export const FARM_WORK = {
   /** Instance caps. */
   caps: { tractors: 12, patches: 18, stripes: 220 },
   /** Exhaust: puffs per tractor in the pool, seconds between puffs, life; Medium / High only. */
-  exhaust: { pool: 7, every: 0.45, life: 1.7 },
+  exhaust: { pool: 9, every: 0.45, life: 2.5 },
   /** Show only when the camera is this close: full at <= near, gone at >= far (tiles tall, lodHeightFor). */
   view: { near: 60, far: 110 },
   /** Engine bed (audio layer `tractor`): only near a working tractor, zoomed in; reach in tiles. */
