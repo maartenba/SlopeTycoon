@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TapConfirm, TouchGestures, angleDelta, joystickAxes, joystickKeys, resolveTouchEnabled, toolKindOf, type TouchIntent } from '../../src/render/touch';
+import { DEFAULT_TOUCH_CONFIG, TapConfirm, TouchGestures, angleDelta, joystickAxes, joystickKeys, resolveTouchEnabled, toolKindOf, type TouchIntent } from '../../src/render/touch';
 
 const rig = (mode: 'pan' | 'paint' = 'pan', kind: 'select' | 'tap' | 'paint' = 'select') => {
   const out: TouchIntent[] = [];
@@ -20,6 +20,14 @@ describe('touch gestures: one finger', () => {
     g.tick(200); expect(out).toEqual([]);
     g.tick(460); g.tick(900);
     g.pointerUp(1, 1000);
+    expect(out).toEqual([{ type: 'longpress', x: 50, y: 60 }]);
+  });
+  it('a still press held past the threshold is a long press even when no tick ran before the finger lifted (busy main thread)', () => {
+    const out: TouchIntent[] = [];
+    const g = new TouchGestures((i) => out.push(i), { ...DEFAULT_TOUCH_CONFIG, tapMs: 1500 });
+    g.mode = 'pan'; g.toolKind = 'select';
+    g.pointerDown(1, 50, 60, 0);
+    g.pointerUp(1, 800);
     expect(out).toEqual([{ type: 'longpress', x: 50, y: 60 }]);
   });
   it('a drag beyond the slop pans (total offset first, then deltas) and never taps or long-presses', () => {

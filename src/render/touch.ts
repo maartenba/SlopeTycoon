@@ -137,6 +137,13 @@ export class TouchGestures {
     this.ptrs.delete(id);
     if (was === 'paint') { this.emit(cancelled ? { type: 'paintCancel' } : { type: 'paintEnd', x: p.x, y: p.y }); this.state = 'idle'; return; }
     if (was === 'one') {
+      // The long-press timer is a 60 ms interval: on a busy main thread it may not have run before the finger lifts. The finger was held still past the
+      // threshold, so it is a long press, never a tap (measured: a 900 ms stall during an 800 ms hold turned the long press into a tap).
+      if (!cancelled && t - p.t0 >= this.cfg.longPressMs && Math.hypot(p.x - p.sx, p.y - p.sy) <= this.cfg.tapSlopPx) {
+        this.emit({ type: 'longpress', x: p.x, y: p.y });
+        this.state = 'idle';
+        return;
+      }
       if (!cancelled && t - p.t0 <= this.cfg.tapMs) this.emit({ type: 'tap', x: p.x, y: p.y });
       this.state = 'idle';
       return;

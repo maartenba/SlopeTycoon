@@ -21,6 +21,8 @@ async function bootPage(browser: any, base: string, vp: string, extra = '', bare
   const { w, h } = VIEWPORTS[vp]!;
   const page: Page = await browser.newPage();
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, hasTouch: true, isMobile: true });
+  const thr = Number(process.env.TOUCH_CPU_THROTTLE ?? 0); // load simulation: CDP Emulation.setCPUThrottlingRate (e.g. 4)
+  if (thr > 1) await (await page.createCDPSession()).send('Emulation.setCPUThrottlingRate', { rate: thr });
   const rig = new Rig(page, vp, base);
   const qp = new URLSearchParams(bare ? 'touch=1&touchhold=6000' : 'size=64&seed=61&start=winter&hints=0&touch=1&touchhold=6000');
   for (const [k, v] of new URLSearchParams(extra.replace(/^&/, ''))) qp.set(k, v);

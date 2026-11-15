@@ -34,6 +34,12 @@ export class Rig {
 
   // ---- touch primitives (real CDP touch events) ----
   async tap(x: number, y: number): Promise<void> { await this.page.touchscreen.tap(x, y); await sleep(120); }
+  /** Hold and report what the PAGE saw: handler-time ms between pointerdown and pointerup (a loaded machine stretches or compresses the CDP-driven hold; the game judges event time). */
+  async holdMeasured(x: number, y: number, ms: number): Promise<number> {
+    await this.page.evaluate(() => { const w = window as any; w.__hold = { d: 0, u: 0 }; const dn = (): void => { w.__hold.d = performance.now(); }, up = (): void => { w.__hold.u = performance.now(); }; w.__holdOff?.(); window.addEventListener('pointerdown', dn, true); window.addEventListener('pointerup', up, true); w.__holdOff = () => { window.removeEventListener('pointerdown', dn, true); window.removeEventListener('pointerup', up, true); }; });
+    await this.hold(x, y, ms);
+    return this.page.evaluate(() => { const h = (window as any).__hold; (window as any).__holdOff?.(); return h.u - h.d; });
+  }
   async hold(x: number, y: number, ms: number): Promise<void> { const t = await this.page.touchscreen.touchStart(x, y); await sleep(ms); await t.end(); await sleep(120); }
   /** One finger through a polyline of points. */
   async drag(pts: Array<[number, number]>, stepMs = 16, wait = 0): Promise<void> {
@@ -108,6 +114,8 @@ export class Rig {
     return this.s((s, a) => { const h = s.grid.getCorner(Math.max(0, Math.min(s.grid.size, Math.round(a.x))), Math.max(0, Math.min(s.grid.size, Math.round(a.z)))) * 0.5; const v = s.renderer.camera.position.clone().set(a.x, h, a.z).project(s.renderer.camera); const r = s.renderer.webgl.domElement.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }, { x, z });
   }
   async cam(): Promise<{ yaw: number; zoom: number; tx: number; tz: number }> { return this.s((s) => { const c = s.renderer.controls; return { yaw: c.yaw, zoom: c.zoom, tx: c.target.x, tz: c.target.z }; }); }
+  /** Poll `fn` (in the page, via __slope) until it returns a truthy value or `ms` passes: state, not time (a loaded machine stretches every sleep). */
+  async until<T>(fn: () => Promise<T>, ok: (v: T) => boolean, ms = 8000): Promise<T> { const t0 = Date.now(); let v = await fn(); while (!ok(v) && Date.now() - t0 < ms) { await sleep(100); v = await fn(); } return v; }
   tool(): Promise<string> { return this.s((s) => s.tools.current); }
   async setTool(id: string): Promise<void> { await this.s((s, a) => s.tools.activate(a), id); await sleep(150); }
   /** SwiftShader renders ~8 fps: CDP acks every touch event through the (busy) main thread, so a 100 ms tap arrives 300+ ms long. resetView relaxes tapMs and longPressMs; the long-press scenarios restore longPressMs. */

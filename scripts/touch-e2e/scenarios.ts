@@ -109,10 +109,15 @@ export function registerAll(reg: Reg): void {
     // a slow near-still two-finger press (hold 600ms) -> not a tap -> no undo
     // long press cancels the tool
     await r.longPressMs(450);
-    await r.s((s) => s.startPlacement('shop')); await sleep(200);
-    await r.hold(w / 2, h / 2, 800);
-    await sleep(200);
-    await r.check('long press cancels the placement tool', (await r.tool()) === 'select', `tool ${await r.tool()}`);
+    // A press that the page itself saw shorter than the threshold is not a long press (CDP delivery under load): repeat it, the assertion stays the same.
+    let toolAfter = '', seen = 0;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await r.s((s) => s.startPlacement('shop')); await r.until(() => r.tool(), (t) => t === 'placement');
+      seen = await r.holdMeasured(w / 2, h / 2, 800);
+      toolAfter = await r.until(() => r.tool(), (t) => t === 'select', 3000);
+      if (toolAfter === 'select' || seen >= 600) break;
+    }
+    await r.check('long press cancels the placement tool', toolAfter === 'select', `tool ${toolAfter}, page-seen hold ${seen.toFixed(0)} ms`);
     await r.check('long press placed nothing', (await count()) === n1);
     // select + long press shows the tile highlight (hover info); tap on a building selects it
     await r.resetView(2.5); await r.longPressMs(450);
@@ -124,8 +129,7 @@ export function registerAll(reg: Reg): void {
     const shop = await r.s((s) => { const b = s.buildings.all().filter((q: any) => q.type === 'shop').pop(); return b ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : null; });
     const lp2 = await r.project(shop!.x, shop!.y);
     await r.tap(lp2.x, lp2.y);
-    await sleep(400);
-    const sel = await r.s((s) => s.selection().building !== null);
+    const sel = await r.until(() => r.s((s) => s.selection().building !== null), (v) => v === true);
     await r.check('tap on a building selects it', !!sel);
     await r.shot(`select-${r.vp}`);
   });
