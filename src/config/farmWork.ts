@@ -13,6 +13,8 @@ export const FARM_WORK = {
   hours: { earliest: 7.5, lunch: [12, 13.5] as const, lastDepart: 13.8, home: 17.5, stagger: 1.4 },
   /** Trip pace in GAME time (docs/farm-work.md "Pace"): a trip lasts about `tripHours` game hours whatever the game speed (1x: a game hour = 6.25 s); the drive speed is scaled by the plan's natural
    * duration (`paceRate`, clamped to [1, maxRate] = at most ~1.3 tiles/s at 1x) and by the softened speed multiplier (`paceSpeed`). At 10x / fast-forward tractors stay parked. */
+  /** Drawn heading easing (seconds): tractor / trailer, see `smoothYaw`. */
+  smooth: { yawTau: 0.16, trailerTau: 0.2 },
   pace: { tripHours: 3.4, secPerHour: 150 / 24, maxRate: 1.9, /** At 3x the tractor speeds up only by this share of the extra speed (1 + (speed - 1) * share): a calm ~2 tiles/s at most, never frantic. */ speedShare: 0.35 },
   /** Speeds (tiles per second, real time) and the in-place turn at the gate / the unload stop (seconds). */
   speed: { drive: 0.7, mow: 0.55, turn: 0.45 },

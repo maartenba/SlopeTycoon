@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FARM_WORK as F } from '../../src/config/farmWork';
-import { paceRate, paceSpeed, planDuration, tripGameHours, BLOCK, buildWorkWorld, farmPhase, hayLoadAt, headingAt, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, stepRunner, tractorCap, type FarmSite, type TripPlan } from '../../src/render/farmWorkPlan';
+import { smoothYaw, paceRate, paceSpeed, planDuration, tripGameHours, BLOCK, buildWorkWorld, farmPhase, hayLoadAt, headingAt, loadOf, mayDepart, mustBeHome, newRunner, patchLevel, planHome, planTrip, posAt, stepRunner, tractorCap, type FarmSite, type TripPlan } from '../../src/render/farmWorkPlan';
 import { simDayOf } from '../../src/sim/calendar';
 import { Grid, TileType } from '../../src/world/Grid';
 import { OccFlag } from '../../src/world/Occupancy';
@@ -155,4 +155,25 @@ describe('farm work pace and gap', () => {
     for (const q of a!.squares) { expect(Number.isFinite(q.x + q.y + q.yaw)).toBe(true); }
     const home = planHome(world, s, 0, { x: 30, y: 40 }, 0.5); expect(near(home)).toBe(1);
   });
+});
+
+describe('smoothYaw (drawn heading easing)', () => {
+  it('snaps without a previous value, on snap, and keeps the previous value at dt 0', () => {
+    expect(smoothYaw(undefined, 1.2, 0.03, 0.16)).toBe(1.2);
+    expect(smoothYaw(0.3, 1.2, 0.03, 0.16, true)).toBe(1.2);
+    expect(smoothYaw(0.3, 1.2, 0, 0.16)).toBe(0.3);
+  });
+  it('eases the shortest way round, never overshoots, converges, and caps the per-frame turn', () => {
+    let y = 3.0; const target = -3.0; // the short way is through pi, 0.28 rad apart
+    for (let i = 0; i < 4; i++) { const n = smoothYaw(y, target, 1 / 30, 0.16); const dBefore = Math.abs(((target - y + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI), dAfter = Math.abs(((target - n + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI); expect(dAfter).toBeLessThanOrEqual(dBefore + 1e-12); y = n; }
+    let a = 0; const t0 = 0.66; for (let i = 0; i < 2; i++) a = smoothYaw(a, t0, 1 / 30, 0.16);
+    expect(a).toBeLessThan(0.66 * 0.6); // a 0.66 rad corner that used to be done in 2 frames now takes much longer
+    for (let i = 0; i < 60; i++) a = smoothYaw(a, t0, 1 / 30, 0.16);
+    expect(a).toBeCloseTo(t0, 3);
+  });
+  it('turn rate at 30 fps for a 0.66 rad corner stays under 4 rad/s (was ~10 rad/s at 3x)', () => {
+    let a = 0, worst = 0; for (let i = 0; i < 30; i++) { const n = smoothYaw(a, 0.66, 1 / 30, 0.16); worst = Math.max(worst, Math.abs(n - a) * 30); a = n; }
+    expect(worst).toBeLessThan(4);
+  });
+  it('is finite for any input', () => { expect(Number.isFinite(smoothYaw(NaN, 1, 0.03, 0.16))).toBe(true); expect(Number.isFinite(smoothYaw(0, NaN, 0.03, 0.16))).toBe(true); });
 });

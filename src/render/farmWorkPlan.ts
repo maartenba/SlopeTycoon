@@ -216,6 +216,12 @@ export function headingAt(plan: TripPlan, s: number): number {
   const a = posAt(plan, Math.max(0, s - 0.12)), b = posAt(plan, Math.min(plan.total, s + 0.12));
   return Math.hypot(b.x - a.x, b.y - a.y) < 1e-6 ? headingAt(plan, Math.min(plan.total - 0.3, Math.max(0.3, s + 0.3))) : Math.atan2(b.y - a.y, b.x - a.x);
 }
+/** Eases a drawn heading toward `target` with time constant `tau` seconds over a frame of `dt` seconds (1 - exp(-dt / tau)); `snap` (or no previous value, or dt 0 at the first frame) returns the target. Shortest way round, finite for any input. */
+export function smoothYaw(prev: number | undefined, target: number, dt: number, tau: number, snap = false): number {
+  if (prev === undefined || snap || !Number.isFinite(prev) || !Number.isFinite(target)) return Number.isFinite(target) ? target : 0;
+  if (dt <= 0) return prev;
+  return lerpAngle(prev, target, 1 - Math.exp(-dt / Math.max(1e-3, tau)));
+}
 export function lerpAngle(a: number, b: number, t: number): number { const d = ((b - a + Math.PI) % TAU + TAU) % TAU - Math.PI; return a + d * t; }
 
 /** Advance a runner by `dt` real seconds (dwells at the gate / patch ends, a drive-speed per segment, the unload stop at the end). */

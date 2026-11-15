@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { FARM_WORK as F } from '../config/farmWork';
 import type { WeatherKind } from '../core/events';
-import { farmPhase, headingAt, hk, lerpAngle, loadOf, mayDepart, mustBeHome, newRunner, paceSpeed, patchLevel, planHome, planTrip, posAt, rowProgress, stepRunner, type FarmSite, type Runner, type TripPlan, type WorkWorld } from './farmWorkPlan';
+import { smoothYaw, farmPhase, headingAt, hk, lerpAngle, loadOf, mayDepart, mustBeHome, newRunner, paceSpeed, patchLevel, planHome, planTrip, posAt, rowProgress, stepRunner, type FarmSite, type Runner, type TripPlan, type WorkWorld } from './farmWorkPlan';
 import { baleGeometry, squareBaleGeometry, LIVERY_COUNT, loafGeometry, TRACTOR, tractorGeometry, trailerGeometry } from './meshes/tractor';
 import { SMOKE_FRAG, SMOKE_VERT } from './Smoke';
 
@@ -23,7 +23,7 @@ export interface ForceOpts { day?: number; hour?: number; weather?: WeatherKind;
 interface Patch { id: number; plan: TripPlan; runner: Runner | null; mown: [number, number]; bales: number[]; squares: number[]; doneAt: number; born: number }
 interface TState {
   farm: number; idx: number; presence: number; runner: Runner | null; wait: number; trips: number; day: number; parkYaw: number; patch: Patch | null;
-  x: number; y: number; yaw: number; trYaw: number; trX: number; trY: number; load: number; moving: boolean; nextPuff: number; ring: number; site: FarmSite; forceDone: boolean;
+  x: number; y: number; yaw: number; /** smoothed heading of the tractor / trailer actually drawn (`smoothYaw`) and the clock of its last update */ yawS?: number; trS?: number; yawAt?: number; trYaw: number; trX: number; trY: number; load: number; moving: boolean; nextPuff: number; ring: number; site: FarmSite; forceDone: boolean;
 }
 
 const STRIPE_VERT = `
@@ -205,6 +205,12 @@ export class FarmWorkView {
         // patch progress
         const pa = st.patch; if (pa) { pa.mown[0] = rowProgress(r.plan, r.s, 0); pa.mown[1] = rowProgress(r.plan, r.s, 1); r.plan.bales.forEach((b, i) => { pa.bales[i] = clamp01((r.s - b.s) / (F.speed.mow * F.bales.popSec)); }); r.plan.squares.forEach((b, i) => { pa.squares[i] = clamp01((r.s - b.s) / (F.speed.mow * F.bales.popSec)); }); }
       } else { const pk = st.site.park[st.idx % st.site.park.length]!; x = pk.x; y = pk.y; yaw = st.parkYaw; trx = x - Math.cos(yaw) * H; try_ = y - Math.sin(yaw) * H; tryaw = yaw; }
+      { // heading follows the path tangent, which turns by up to ~0.7 rad within a 0.24 tile chord at a route corner: ease the DRAWN heading (and the trailer's) with a short time constant so a corner is a swing, not a snap (3x pace showed up to 15 rad/s)
+        const dtw = st.yawAt === undefined ? 0 : Math.min(0.1, Math.max(0, this.clock - st.yawAt)); st.yawAt = this.clock;
+        yaw = smoothYaw(st.yawS, yaw, dtw, F.smooth.yawTau, !r); st.yawS = yaw;
+        tryaw = smoothYaw(st.trS, tryaw, dtw, F.smooth.trailerTau, !r); st.trS = tryaw;
+        if (r && r.s < H + A) { trx = x - Math.cos(yaw) * H; try_ = y - Math.sin(yaw) * H; }
+      }
       st.x = x; st.y = y; st.yaw = yaw; st.load = load; st.moving = moving; st.trX = trx; st.trY = try_; st.trYaw = tryaw;
       const sc = ease(st.presence); if (sc <= 0.001) continue;
       // tractor
