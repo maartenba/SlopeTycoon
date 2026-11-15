@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Grid, TileType } from '../../src/world/Grid';
-import { junctionWeight, lakeFieldAt, CONTOUR_LEVEL, CONTOUR_SUB, cornerField, kernel, makeField, tileCells, triangleHeight } from '../../src/render/waterContour';
+import { junctionWeight, lakeFieldAt, CONTOUR_LEVEL, CONTOUR_SUB, cornerField, fieldAt, kernel, makeField, mouthWeight, waterFieldAt, tileCells, triangleHeight } from '../../src/render/waterContour';
 import { buildWaterData } from '../../src/render/Water';
 import { diagonalNS } from '../../src/render/TerrainGeometry';
 
@@ -103,5 +103,34 @@ describe('river / lake junction (seam fix)', () => {
     let lakeTop = -1; const lakeY = d.positions[1]!; // lake level 0 -> LIFT only
     for (let i = 0; i < d.vertexCount; i++) { const x = d.positions[i * 3]!; if (x > 18.9 && x < 20.01 && Math.abs(d.positions[i * 3 + 2]! - 24.5) < 0.01) lakeTop = Math.max(lakeTop, Math.abs(d.positions[i * 3 + 1]! - lakeY)); }
     expect(lakeTop).toBeGreaterThanOrEqual(0); expect(lakeTop).toBeLessThan(1e-4);
+  });
+});
+
+describe('river mouth smoothing (waterFieldAt)', () => {
+  const mouth = (): Grid => {
+    const g = new Grid(64);
+    for (let y = 8; y < 16; y++) for (let x = 8; x < 16; x++) g.tileType[y * 64 + x] = TileType.Water;
+    for (let y = 0; y < 8; y++) g.tileType[y * 64 + 12] = TileType.Stream; // a one-tile river ending at the lake's top edge
+    return g;
+  };
+  it('weight needs both lake and river water; 0 on a plain shore, a plain river, deep in the lake', () => {
+    expect(mouthWeight(0, 0.5)).toBe(0); expect(mouthWeight(0.5, 0)).toBe(0); expect(mouthWeight(1, 0)).toBe(0);
+    expect(mouthWeight(0.4, 0.4)).toBeGreaterThan(0.9);
+  });
+  it('is bit-identical to fieldAt away from the mouth and stays in [0, 1] and finite everywhere', () => {
+    const g = mouth();
+    for (let py = 2; py < 20; py += 0.25) for (let px = 5; px < 19; px += 0.25) {
+      const w = waterFieldAt(g, px, py);
+      expect(Number.isFinite(w)).toBe(true); expect(w).toBeGreaterThanOrEqual(0); expect(w).toBeLessThanOrEqual(1);
+      if (py < 5 || py > 11 || px < 9 || px > 15) expect(w).toBe(fieldAt(g, px, py)); // far from the mouth
+    }
+    expect(waterFieldAt(g, 8, 12)).toBeCloseTo(0.5, 5); // plain west shore keeps the 0.5 contour
+  });
+  it('changes the field only near the mouth and by a bounded amount (no new islands, no holes)', () => {
+    const g = mouth(); let moved = 0, max = 0;
+    for (let py = 2; py < 20; py += 0.125) for (let px = 5; px < 19; px += 0.125) { const d = Math.abs(waterFieldAt(g, px, py) - fieldAt(g, px, py)); if (d > 1e-9) moved++; max = Math.max(max, d); }
+    expect(moved).toBeGreaterThan(0); expect(max).toBeLessThan(0.2);
+    expect(waterFieldAt(g, 12.5, 11.5)).toBeGreaterThan(0.9); // lake centre stays water
+    expect(waterFieldAt(g, 12.5, 3.5)).toBeGreaterThan(0.7); // river centre stays water
   });
 });

@@ -47,12 +47,32 @@ export const lakeFieldAt = (grid: Grid, px: number, py: number): number => field
 /** River / lake junction blend 0..1 from the lake-only field: 0 below 0.05, 1 from 0.5 on (the shared edge), smooth. The river surface height and bed depth follow the lake by this weight, so no step shows at the join. */
 export function junctionWeight(lakeField: number): number { const t = Math.min(1, Math.max(0, (lakeField - 0.05) / 0.45)); return t * t * (3 - 2 * t); }
 
+/** Weight 0..1 of the river-mouth smoothing: needs BOTH lake water and river water around the point (the stream-only part of the field and the lake-only part), so a plain lake shore or a plain river bank (weight 0) keeps the exact 0.5 straight-shore contour. */
+export function mouthWeight(lakeField: number, streamField: number): number {
+  const r = (v: number): number => { const t = Math.min(1, Math.max(0, (v - 0.04) / 0.3)); return t * t * (3 - 2 * t); };
+  return r(lakeField) * r(streamField);
+}
+/** Taps (tiles) of the wider blur at a river mouth: a concave 90 degree corner between a one-tile river bank and a lake shore otherwise leaves a visible kink (fillet radius ~0.3 tile). */
+export const MOUTH_TAP = 0.42;
+/**
+ * The drawn-water field: `fieldAt`, but near a river mouth (lake AND river water around the point) it eases to the mean of four diagonal taps at +-MOUTH_TAP, which rounds the
+ * concave corner where the river bank meets the lake shore into one smooth bend. Weight 0 away from a mouth, so every other shoreline is bit-identical to `fieldAt`. Global grid only
+ * (identical at every chunk border), finite, in [0, 1].
+ */
+export function waterFieldAt(grid: Grid, px: number, py: number): number {
+  const f = fieldAt(grid, px, py), lf = fieldAt(grid, px, py, true);
+  const w = mouthWeight(lf, f - lf);
+  if (w <= 0) return f;
+  const m = (fieldAt(grid, px - MOUTH_TAP, py - MOUTH_TAP) + fieldAt(grid, px + MOUTH_TAP, py - MOUTH_TAP) + fieldAt(grid, px - MOUTH_TAP, py + MOUTH_TAP) + fieldAt(grid, px + MOUTH_TAP, py + MOUTH_TAP)) / 4;
+  return Math.min(1, Math.max(0, f + (m - f) * w));
+}
+
 /** The field at a tile corner (integer position). */
 export function cornerField(grid: Grid, vx: number, vy: number): number { return fieldAt(grid, vx, vy); }
 
 /** `corner(vx, vy)` and `at(px, py)` bound to one grid. */
 export function makeField(grid: Grid): { corner: (vx: number, vy: number) => number; at: (px: number, py: number) => number } {
-  return { corner: (vx, vy) => fieldAt(grid, vx, vy), at: (px, py) => fieldAt(grid, px, py) };
+  return { corner: (vx, vy) => fieldAt(grid, vx, vy), at: (px, py) => waterFieldAt(grid, px, py) };
 }
 
 /** Height of the drawn terrain triangle (the same split `diagonalNS` picks) at tile-local (u, v), corners [n, e, s, w]. Exact on the terrain surface. */
