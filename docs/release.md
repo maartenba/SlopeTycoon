@@ -1,6 +1,17 @@
 # Release notes and checklist
 
-Current release: **0.6.5 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.6.6 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.6.6 (2026-11-15, macOS, Node v24.22.3)
+
+Look and motion (render-only; no sim, save or golden change): seven car / bus body styles, two-tone roofs, melting roof snow, soft shadows, brake lights, night headlight pools, cow tail / ear / bell motion (sheep and goats too), square hay bales, calmer tractors with eased turns, smoother river mouth and bank corner. Touch: a still press held past the long-press threshold is a long press even if the 60 ms timer never ran (`TouchGestures.pointerUp`).
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run gate:full` (6 slots) | wall 17.9 min, 36 stages, all passed on the first attempt, no flaky stage, no hang (touch:e2e 300 s, 1 attempt) |
+| Touch placement | `npm run touch:e2e -- --only placement --viewport phone` | 13/13 alone (8 runs) and 13/13 under `TOUCH_CPU_THROTTLE=4` (10 runs); camera,placement,drawers subset 39/39 three times (`docs/touch.md`) |
+| Size | `npm run size` | 1132.0 kB gzip total (budget 2048 kB): app js 833.2 kB, three chunk 143.0 kB, css 1.5 kB, icons 62.7 kB; audio 46.2 MB runtime-cached, excluded |
+| Site | `npm run site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (283 URLs crawled) |
 
 ## 0.6.5 (2026-11-13, macOS, Node v24.22.3)
 

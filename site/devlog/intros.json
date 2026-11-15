@@ -113,5 +113,10 @@
     "tagline": "tractors and cows",
     "lead": "A small update about how things look. In summer the Alpine Farms now send tractors out to mow the pasture, leave round bales and bring the hay home. The cows and the tractor got a proper going-over, because they looked a bit plain: cows have bells and coat patterns, and the tractor has a curved bonnet, mudguards and a slatted trailer. Lake and river banks are smoother and lakes reflect the sky. On High the hills and the trees just off screen cast shadows at dawn and dusk, and photographers raise their cameras and flash. I have only seen all of this on a software renderer, so how it looks on a real screen is still open.",
     "shot": "season-summer"
+  },
+  "0.6.6": {
+    "tagline": "cars, cows and a calmer farm",
+    "lead": "Another small update about how things look and move. Cars and buses now come in several body styles with two-tone roofs, and in winter they carry snow on the roof that melts when they stand in the sun. They have soft shadows, brake lights that follow real slowing down and quiet headlight pools at night. Cows swish their tails and ring their bells, and sheep and goats twitch now and then. Tractors drive at a calmer pace and turn corners smoothly, and some trailers carry square bales. Where a river runs into a lake, the seam is gone. Again, I have only seen it on a software renderer.",
+    "shot": "season-summer"
   }
 }

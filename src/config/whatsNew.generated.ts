@@ -3,6 +3,16 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.6.6",
+    "date": "2026-11-15",
+    "highlights": [
+      "Nicer cars and buses: several body styles, two-tone roofs, snow on the roof that melts in the sun, soft shadows, brake lights, and headlight pools…",
+      "Cows swish their tails and ring their bells; sheep and goats twitch their ears and tails.",
+      "Square hay bales and calmer tractors: tractors drive at a gentle pace, turn corners smoothly and use a gap in the fence.",
+      "Smoother river meets lake: no more seam or doubled foam where a river enters a lake."
+    ]
+  },
+  {
     "version": "0.6.5",
     "date": "2026-11-13",
     "highlights": [
@@ -20,16 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Leaves fall in autumn: golds, oranges and reds drift down from the deciduous trees and larches near the camera, and thin out as the snow arrives and…",
       "The leaves follow the Atmosphere setting and the graphics quality, and lie still with reduced motion.",
       "The website's 30 second trailer and 90 second film are re-made with the falling leaves (click to play, no autoplay, nothing loads until you press…"
-    ]
-  },
-  {
-    "version": "0.6.3",
-    "date": "2026-11-12",
-    "highlights": [
-      "Photographers are a new kind of guest. They turn up once you have a Viewpoint or a Treehouse, and they like the golden hour and beautiful skies.",
-      "They walk to the best viewpoint, take their pictures and have a hot drink. Good shots bring a small word-of-mouth bonus.",
-      "A new Golden hour trophy and a new tip from Rudi go with them.",
-      "You can hear a quiet camera shutter when you zoom in on one at work."
     ]
   }
 ];
