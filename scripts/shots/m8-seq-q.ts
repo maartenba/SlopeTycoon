@@ -4,13 +4,15 @@
  * Steps the real game with `__slope.frameStep` (virtual clock, deterministic) under a slow camera orbit and writes PNGs to .weave/seq/<tag>/<scn>/fNNN.png; run
  * `scripts/promo/flickerStats.py .weave/seq/<tag>` on the folder. cows: `--dt 0.25 --n 6` is the close cow gallery. Honest: SwiftShader, no GPU numbers.
  */
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { launch, startServer } from '../lib/harness';
 const arg = (k: string, d: string): string => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1]! : d; };
 const scn = arg('scn', 'traffic-day'), tag = arg('tag', 'x'), N = Number(arg('n', '60')), DT = Number(arg('dt', String(1 / 30))), W = Number(arg('w', '960')), H = Number(arg('h', '540')), Q = arg('q', 'high');
+const SPEED = Number(arg('speed', '1')), TRACK = arg('track', '0') === '1';
+const PRE = arg('pre', ''), HIDE = arg('hide', ''), STATICN = Number(arg('static', '0'));
 const zoomA = Number(arg('zoom', '0')), orbit = Number(arg('orbit', '1'));
 const winter = scn.endsWith('winter'), night = scn.endsWith('night'), seed = scn === 'junction' ? 5 : 5;
-const dir = `.weave/seq/${tag}/${scn}`; mkdirSync(dir, { recursive: true });
+const dir = `.weave/seq/${tag}/${scn}${STATICN ? '-static' : ''}`; mkdirSync(dir, { recursive: true });
 const srv = await startServer(); const br = await launch(); const errors: string[] = [];
 try {
   const page = await br.newPage(); await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
@@ -69,10 +71,11 @@ try {
       s.farmWork.force({ day: 70, hour: 10, at: ['mowA', 'mowB'] });
       orbitC = { x: farm.x + 3, z: farm.y + 3, y: 0 }; look(orbitC.x, orbitC.z, a.zoom || (a.scn === 'cows' ? 12 : 6));
       out.cows = s.natureView.meshes.get('cow')?.count;
+      if (a.track) { const tr = s.farmWork.snapshot().find((q: any) => q.onTrip); if (tr) { orbitC = { x: tr.x, z: tr.y, y: 0 }; look(tr.x, tr.y, a.zoom || 8); out.track = tr; } }
     }
     (window as any).__orbit = orbitC;
     return out;
-  }, { scn, night, zoom: zoomA });
+  }, { scn, night, zoom: zoomA, track: TRACK });
   console.log('[stats] setup', JSON.stringify(setup));
   await page.evaluate(async (a) => {
     const s = (window as any).__slope, c = s.renderer.controls, o = (window as any).__orbit, P = await (new Function('u', 'return import(u)') as any)('/src/world/Props.ts');
@@ -86,13 +89,25 @@ try {
       }
     };
     s.frameStep(0.1, 30); // preroll: builds settle and the camera zoom tween lands
-  }, { scn, orbit });
+    // A/B toggles of the flicker hunt: --hide trees,rocks,buildings,tractors,cows,vehicles  --pre "js" (e.g. __slope.renderer.setShadows(false))
+    for (const h of String(a.hide).split(',').filter(Boolean)) {
+      const set = (v: boolean): void => { if (h === 'buildings') { for (const b of s.sim.buildings.all()) { const gg = s.buildingsView.get(b.id); if (gg) gg.visible = v; } return; } const m: any = { trees: s.trees.group, rocks: s.rocks.group, cows: s.natureView.group, tractors: s.farmWork.view.group, vehicles: s.vehicleRenderer.group }; if (m[h]) m[h].visible = v; };
+      if (h === 'tractors') { for (const o of [s.farmWork.view.group, s.farmWork.view.fx]) Object.defineProperty(o, 'visible', { get: () => false, set: () => undefined }); continue; }
+      const prev = s.frameCam; s.frameCam = (t: number) => { prev(t); set(false); };
+    }
+    if (a.speed > 1) s.loop.setSpeed(a.speed >= 3 ? 2 : 1);
+    if (a.track) { const tr = s.farmWork.snapshot().find((q: any) => q.onTrip); if (tr) { const O = (window as any).__orbit; O.x = tr.x + Math.cos(tr.yaw) * 2.5; O.z = tr.y + Math.sin(tr.yaw) * 2.5; c.target.set(O.x, P.surfaceHeight(s.grid, O.x, O.z), O.z); c.focusOn(O.x, O.z, { zoom: a.zoom || 8, duration: 0 }); s.frameStep(0.1, 5); } else console.log('[stats] no tractor on trip'); }
+    if (a.pre) (0, eval)(a.pre);
+  }, { scn, orbit, hide: HIDE, pre: PRE, speed: SPEED, track: TRACK, zoom: zoomA });
+  const snaps: any[] = [];
   for (let i = 0; i < N; i++) {
     await page.evaluate((dt: number, i: number) => { (window as any).__slope.frameStep(i === 0 ? 0 : dt, 1); }, DT, i);
     await page.screenshot({ path: `${dir}/f${String(i).padStart(3, '0')}.png` });
+    if (scn === 'farm') snaps.push(await page.evaluate(() => (window as any).__slope.farmWork.snapshot()));
   }
   const info = await page.evaluate(() => { const s = (window as any).__slope, i = s.renderer.webgl.info; return { calls: i.render.calls, tris: i.render.triangles, guard: s.materialGuard.check(), fx: s.vehicleRenderer.fxLayer?.count, vehicles: s.vehicleRenderer.group.children.length, cows: s.natureView.meshes.get('cow')?.count }; });
   console.log('[stats] frame info', JSON.stringify(info));
   await page.evaluate(() => (window as any).__slope.frameStepEnd());
+  if (snaps.length) writeFileSync(`${dir}/tractors.json`, JSON.stringify({ dt: DT, speed: SPEED, snaps }));
   console.log('errors', errors.filter((e) => !/GL Driver/.test(e)).slice(0, 6));
 } finally { await br.close(); srv.stop(); }
