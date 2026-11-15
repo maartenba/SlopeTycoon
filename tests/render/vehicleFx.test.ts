@@ -103,8 +103,8 @@ describe('headlight pool selection hysteresis', () => {
       if (last !== null && key !== last) changes++; last = key;
     }
     expect(changes).toBe(0);
-    let c2 = 0, p2 = new Set<number>(), l2: string | null = null;
-    for (let f = 0; f < 60; f++) { const xs = [1, 2, 3, 4.0 + 0.3 * Math.sin(f / 3), 4.0 - 0.3 * Math.sin(f / 3)]; const k = nearestN(xs, zs, 0, 0, 4).sort().join(','); if (l2 !== null && k !== l2) c2++; l2 = k; void p2; }
+    let c2 = 0, l2: string | null = null;
+    for (let f = 0; f < 60; f++) { const xs = [1, 2, 3, 4.0 + 0.3 * Math.sin(f / 3), 4.0 - 0.3 * Math.sin(f / 3)]; const k = nearestN(xs, zs, 0, 0, 4).sort().join(','); if (l2 !== null && k !== l2) c2++; l2 = k; }
     expect(c2).toBeGreaterThan(3); // the plain nearest-N ping-pongs
   });
 });
