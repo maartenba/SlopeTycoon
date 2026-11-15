@@ -12,7 +12,8 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 - Softer vehicle shadows, roof snow that only sits on roofs and boot lids and melts when a car stands in the sun (and is shed when it drives), brake lights that follow real slowing down, quiet headlight pools at night, and seats and rails visible through the bus windows.
 - Calmer tractors: shorter trips, a gentle drive speed (at most about 1.3 tiles a second) and a softer speed-up at 3x.
 - Sheep twitch their ears and goats flick their tails, and the swinging cow parts are lit correctly as they move.
-- The river mouth blends into the lake without a visible cut line.
+- The river mouth blends into the lake without a visible cut line, and the corner where the river bank meets the lake shore is rounder.
+- Tractors turn at route corners with a swing instead of a snap, also at 3x; cow bells and tails stop shimmering when you zoom far out; the bus seats and cabin walls are brighter.
 
 ## [0.6.5] - 2026-11-13 (pre-release)
 
