@@ -15,6 +15,12 @@ const sstep = (a: number, b: number, x: number): number => { const t = Math.min(
 export function tailAngle(t: number, ph: number): number { return 0.2 * Math.sin(t * 2.1 + ph) + 0.34 * sstep(0.6, 0.95, Math.sin(t * 0.37 + ph * 1.7)) * Math.sin(t * 9 + ph); }
 /** Ear angle about z (rad, `side` +1 left / -1 right): a short twitch every few seconds, each ear on its own beat. */
 export function earAngle(t: number, ph: number, side: 1 | -1): number { return side * 0.5 * Math.pow(Math.max(0, Math.sin(t * 0.6 + ph + side * 2.1)), 14) * Math.sin(t * 20 + ph); }
+/** Far-zoom fade (view height in tiles, `lodHeightFor`): a 0.06 tile bell is ~1 px at a view height of 40+ and would shimmer, so each part fades out (amplitude x fade, smoothstep) before it gets that small. Bell first, then tail / ears. */
+export const MOTION_FADE = { bell: [24, 44], tail: [45, 85] } as const;
+export function motionFade(viewHeight: number, part: 'bell' | 'tail'): number {
+  const [a, b] = MOTION_FADE[part]; if (!Number.isFinite(viewHeight)) return 0;
+  const t = Math.min(1, Math.max(0, (viewHeight - a) / (b - a))); return 1 - t * t * (3 - 2 * t);
+}
 /** Bell pendulum about x (rad). */
 export function bellAngle(t: number, ph: number): number { return 0.16 * Math.sin(t * 2.6 + ph) + 0.06 * Math.sin(t * 5.3 + ph * 2); }
 
@@ -34,7 +40,7 @@ export const MOTION_SCALE = { cow: 1, sheep: 0.8, goat: 1 } as const;
 export function motionGlsl(pv: typeof COW_PIVOT, amp = 1): { decl: string; normal: string; apply: string } {
   const a = f(amp);
   return {
-    decl: `attribute float aPart; attribute float aPhase; uniform float uCowT; uniform float uCowMotion;
+    decl: `attribute float aPart; attribute float aPhase; uniform float uCowT; uniform float uCowMotion; uniform float uCowBell;
 float cmStep(float a, float b, float x){ float t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
 vec3 cmRotZ(vec3 p, vec3 o, float a){ float c = cos(a), s = sin(a); vec3 d = p - o; return o + vec3(c * d.x - s * d.y, s * d.x + c * d.y, d.z); }
 vec3 cmRotX(vec3 p, vec3 o, float a){ float c = cos(a), s = sin(a); vec3 d = p - o; return o + vec3(d.x, c * d.y - s * d.z, s * d.y + c * d.z); }
@@ -42,10 +48,10 @@ float cmAngle(){
   float t = uCowT, ph = aPhase;
   if (aPart < 1.5) return ${a} * uCowMotion * (0.2 * sin(t * 2.1 + ph) + 0.34 * cmStep(0.6, 0.95, sin(t * 0.37 + ph * 1.7)) * sin(t * 9.0 + ph));
   if (aPart < 3.5) { float sd = aPart < 2.5 ? 1.0 : -1.0; return ${a} * uCowMotion * sd * 0.5 * pow(max(0.0, sin(t * 0.6 + ph + sd * 2.1)), 14.0) * sin(t * 20.0 + ph); }
-  return ${a} * uCowMotion * (0.16 * sin(t * 2.6 + ph) + 0.06 * sin(t * 5.3 + ph * 2.0));
+  return ${a} * uCowBell * (0.16 * sin(t * 2.6 + ph) + 0.06 * sin(t * 5.3 + ph * 2.0));
 }`,
-    normal: `if (aPart > 0.5 && uCowMotion > 0.0) { float ca = cmAngle(); objectNormal = aPart > 3.5 ? cmRotX(objectNormal, vec3(0.0), ca) : cmRotZ(objectNormal, vec3(0.0), ca); }`,
-    apply: `if (aPart > 0.5 && uCowMotion > 0.0) {
+    normal: `if (aPart > 0.5 && (uCowMotion > 0.0 || uCowBell > 0.0)) { float ca = cmAngle(); objectNormal = aPart > 3.5 ? cmRotX(objectNormal, vec3(0.0), ca) : cmRotZ(objectNormal, vec3(0.0), ca); }`,
+    apply: `if (aPart > 0.5 && (uCowMotion > 0.0 || uCowBell > 0.0)) {
   float ca = cmAngle();
   if (aPart < 1.5) transformed = cmRotZ(transformed, ${glv(pv.tail)}, ca);
   else if (aPart < 3.5) { float sd = aPart < 2.5 ? 1.0 : -1.0; transformed = cmRotZ(transformed, vec3(sd * ${f(pv.earL[0])}, ${f(pv.earL[1])}, ${f(pv.earL[2])}), ca); }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { COW_MOTION_GLSL, COW_PART, COW_PIVOT, GOAT_PIVOT, MOTION_SCALE, SHEEP_PIVOT, bellAngle, cowPhase, earAngle, motionGlsl, tailAngle } from '../../src/render/cowMotion';
+import { COW_MOTION_GLSL, COW_PART, COW_PIVOT, GOAT_PIVOT, MOTION_SCALE, SHEEP_PIVOT, bellAngle, cowPhase, earAngle, motionFade, motionGlsl, tailAngle } from '../../src/render/cowMotion';
 import { createCowGeometry, createGoatGeometry, createSheepGeometry } from '../../src/render/meshes/Animals';
 import { NatureView } from '../../src/render/NatureView';
 
@@ -74,5 +74,23 @@ describe('cow micro-animation', () => {
   it('close-zoom amplitude is visible but subtle: the tail tip swings 2-12 cm-equivalents (0.04-0.13 tiles) and the bell tip under 0.02 tiles', () => {
     let tip = 0, bell = 0; for (let t = 0; t < 60; t += 0.05) { tip = Math.max(tip, Math.abs(tailAngle(t, 1.1)) * 0.22); bell = Math.max(bell, Math.abs(bellAngle(t, 1.1)) * 0.06); }
     expect(tip).toBeGreaterThan(0.04); expect(tip).toBeLessThan(0.13); expect(bell).toBeLessThan(0.02);
+  });
+});
+
+describe('far-zoom fade of the bell and tail (no 1 px shimmer)', () => {
+  it('is 1 up close, 0 far away, monotone, smooth, bell before tail, finite', () => {
+    for (const part of ['bell', 'tail'] as const) {
+      let prev = 1.0001;
+      for (let h = 0; h <= 140; h += 0.5) { const f = motionFade(h, part); expect(f).toBeGreaterThanOrEqual(0); expect(f).toBeLessThanOrEqual(1); expect(f).toBeLessThanOrEqual(prev + 1e-12); expect(prev - f).toBeLessThan(0.08); prev = f; }
+      expect(motionFade(10, part)).toBe(1); expect(motionFade(120, part)).toBe(0);
+    }
+    expect(motionFade(34, 'bell')).toBeLessThan(motionFade(34, 'tail')); // the bell has already faded where the tail still swings
+    expect(motionFade(NaN, 'bell')).toBe(0);
+  });
+  it('the view feeds the uniforms: bell 1 close, 0 at far zoom, reduced motion 0', () => {
+    const v = new NatureView(() => 0), u = (): { uCowMotion: { value: number }; uCowBell: { value: number } } => (v as unknown as { cowUniforms: ReturnType<typeof u> }).cowUniforms;
+    v.update(0.1, [], 5, 5, 20); expect(u().uCowBell.value).toBe(1); expect(u().uCowMotion.value).toBe(1);
+    v.update(0.1, [], 5, 5, 60); expect(u().uCowBell.value).toBe(0); expect(u().uCowMotion.value).toBeGreaterThan(0);
+    v.reduced = true; v.update(0.1, [], 5, 5, 20); expect(u().uCowBell.value).toBe(0);
   });
 });

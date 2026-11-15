@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MODE, type Critter } from '../sim/nature/Fauna';
-import { COW_PIVOT, GOAT_PIVOT, MOTION_SCALE, SHEEP_PIVOT, cowPhase, motionGlsl } from './cowMotion';
+import { COW_PIVOT, GOAT_PIVOT, MOTION_SCALE, SHEEP_PIVOT, cowPhase, motionFade, motionGlsl } from './cowMotion';
 import { COW_TINTS, cowIsCalf, cowVariantOf, NATURE_GEOMETRY, type NatureSpecies } from './meshes/Animals';
 
 /** Instanced per-species rendering of livestock + wild fauna (one draw call per species, <= 9). Positions ease towards the sim positions
@@ -54,7 +54,7 @@ export class NatureView {
   drawn = 0;
   /** Reduced motion: the cow's tail / ears / bell stay still (render-only). */
   reduced = false;
-  private cowUniforms = { uCowT: { value: 0 }, uCowMotion: { value: 1 } };
+  private cowUniforms = { uCowT: { value: 0 }, uCowMotion: { value: 1 }, uCowBell: { value: 1 } };
   private phases = new Map<NatureSpecies, THREE.InstancedBufferAttribute>();
 
   /** `ground(x, y)` = terrain surface height at tile coords. */
@@ -89,7 +89,7 @@ export class NatureView {
   /** Draw `animals` (hidden ones skipped). centre/radius = camera target + view radius in tiles for off-screen culling. */
   update(dt: number, animals: Iterable<Critter>, cx: number, cz: number, viewHeight: number, disturb: { x: number; z: number } | null = null): void {
     this.time += dt;
-    this.cowUniforms.uCowT.value = this.time; this.cowUniforms.uCowMotion.value = this.reduced ? 0 : 1;
+    this.cowUniforms.uCowT.value = this.time; this.cowUniforms.uCowMotion.value = this.reduced ? 0 : motionFade(viewHeight, 'tail'); this.cowUniforms.uCowBell.value = this.reduced ? 0 : motionFade(viewHeight, 'bell'); // far zoom: the 1 px parts fade out (no shimmer)
     const counts = new Map<NatureSpecies, number>();
     const R = viewHeight * 1.3 + 8, R2 = R * R;
     let drawn = 0;
