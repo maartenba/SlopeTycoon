@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { headPool, nearestN, poolStrength, shadowStrength, softShadow, VEHICLE_FX, VehicleFxLayer } from '../../src/render/vehicleFx';
+import { headPool, nearestN, nearestStable, poolStrength, shadowStrength, softShadow, VEHICLE_FX, VehicleFxLayer } from '../../src/render/vehicleFx';
 import { brakeLight, meltFactor, newSuspension, snowLevel, SNOW_COVER, startCover, stepSnowCover, stepSuspension, SUSP } from '../../src/render/vehicleMotion';
 import { buildBus, buildCar, snowMask } from '../../src/render/meshes/VehicleModels';
 import * as THREE from 'three';
@@ -80,8 +80,31 @@ describe('bus interior', () => {
   it('the full bus has seats behind open windows and stays <= 2200 triangles; Low keeps the closed shell', () => {
     const full = buildBus(false, 0xd83a34), mini = buildBus(true, 0xd83a34), low = buildBus(false, 0xd83a34, true);
     expect(tris(full.body)).toBeLessThanOrEqual(2200); expect(tris(mini.body)).toBeLessThanOrEqual(1500); expect(tris(low.body)).toBeLessThan(tris(full.body) + 1);
-    const col = full.body.getAttribute('color'); let seat = 0; const sc = new THREE.Color(0x35496b);
+    const col = full.body.getAttribute('color'); let seat = 0; const sc = new THREE.Color(0xd9893a);
     for (let i = 0; i < col.count; i++) if (Math.abs(col.getZ(i) - sc.b) < 0.01 && Math.abs(col.getX(i) - sc.r) < 0.01 && Math.abs(col.getY(i) - sc.g) < 0.01) seat++;
     expect(seat).toBeGreaterThan(100);
+  });
+});
+
+describe('headlight pool selection hysteresis', () => {
+  it('equals nearestN without history, keeps members inside cap + margin, never exceeds cap', () => {
+    const xs = [1, 2, 3, 4, 5, 6], zs = [0, 0, 0, 0, 0, 0];
+    expect(nearestStable(xs, zs, 0, 0, 3, new Set())).toEqual(nearestN(xs, zs, 0, 0, 3));
+    // vehicle 3 (rank 3, just outside cap 3) was a member: it stays; the nearest newcomer waits for a free slot
+    const out = nearestStable(xs, zs, 0, 0, 3, new Set([0, 1, 3]), 2); expect(out.length).toBe(3); expect(out).toContain(3); expect(out).not.toContain(2);
+    // far beyond the margin it is dropped
+    expect(nearestStable(xs, zs, 0, 0, 3, new Set([5]), 1)).not.toContain(5);
+  });
+  it('two vehicles swapping ranks around the cap boundary cause no selection change after the first', () => {
+    const zs = [0, 0, 0, 0, 0]; let prev = new Set<number>(), changes = 0, last: string | null = null;
+    for (let f = 0; f < 60; f++) {
+      const xs = [1, 2, 3, 4.0 + 0.3 * Math.sin(f / 3), 4.0 - 0.3 * Math.sin(f / 3)]; // vehicles 3 and 4 trade rank 3 / 4 around cap 4
+      const sel = nearestStable(xs, zs, 0, 0, 4, prev); prev = new Set(sel); const key = [...sel].sort().join(',');
+      if (last !== null && key !== last) changes++; last = key;
+    }
+    expect(changes).toBe(0);
+    let c2 = 0, p2 = new Set<number>(), l2: string | null = null;
+    for (let f = 0; f < 60; f++) { const xs = [1, 2, 3, 4.0 + 0.3 * Math.sin(f / 3), 4.0 - 0.3 * Math.sin(f / 3)]; const k = nearestN(xs, zs, 0, 0, 4).sort().join(','); if (l2 !== null && k !== l2) c2++; l2 = k; void p2; }
+    expect(c2).toBeGreaterThan(3); // the plain nearest-N ping-pongs
   });
 });

@@ -8,7 +8,7 @@ export const VEHICLE_FX = {
   /** Base darkness of the soft contact shadow (0..1) and how much of it survives at full night (the night sky is dark already). */
   shadow: 0.5, shadowNight: 0.45,
   /** Headlight pool: peak strength, length / width in tiles, how far ahead of the nose it starts, nearest-N cap and the per-frame fade step. */
-  pool: { peak: 0.34, length: 1.35, width: 0.62, lead: 0.0, cap: 12, ease: 0.08, nightOn: 0.28 },
+  pool: { peak: 0.34, length: 1.35, width: 0.62, lead: 0.0, cap: 12, /** rank margin before a vehicle loses its pool (see `nearestStable`) */ hysteresis: 3, ease: 0.08, nightOn: 0.28 },
   /** Instance capacity of the layer. */
   capacity: 224,
 } as const;
@@ -33,6 +33,17 @@ export function nearestN(xs: ArrayLike<number>, zs: ArrayLike<number>, fx: numbe
   const d = (i: number): number => (xs[i]! - fx) ** 2 + (zs[i]! - fz) ** 2;
   idx.sort((a, b) => d(a) - d(b) || a - b);
   return idx.slice(0, cap);
+}
+
+/**
+ * Same as `nearestN` but with hysteresis: a point that is already in `prev` keeps its place until its rank falls beyond `cap + margin`, and a newcomer needs a rank inside `cap`
+ * (and a free slot) to get in. Vehicles trading places around the cap-th / (cap+1)-th rank therefore no longer fade a pool in and out back and forth. At most `cap` indexes.
+ */
+export function nearestStable(xs: ArrayLike<number>, zs: ArrayLike<number>, fx: number, fz: number, cap: number, prev: ReadonlySet<number>, margin: number = VEHICLE_FX.pool.hysteresis): number[] {
+  const order = nearestN(xs, zs, fx, fz, xs.length), out: number[] = [];
+  order.forEach((i, rank) => { if (out.length < cap && prev.has(i) && rank < cap + margin) out.push(i); });
+  order.forEach((i, rank) => { if (out.length < cap && rank < cap && !out.includes(i)) out.push(i); });
+  return out;
 }
 
 const VERT = `attribute float aKind; attribute float aStr; varying vec2 vP; varying float vK; varying float vS;

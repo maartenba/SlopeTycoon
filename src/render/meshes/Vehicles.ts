@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { VEHICLE_SPEED, VehicleKind, vehiclePose, type Vehicle } from '@/sim/guests/Arrivals';
 import { buildBus, buildCar, buildPlane, buildTrain, CAR_COLORS, SPORT_COLORS, TWO_TONE_ROOFS, type ModelParts } from './VehicleModels';
 import { bumpBob, meltFactor, newSuspension, snowLevel, SNOW_COVER, startCover, stepSnowCover, stepSuspension, type Suspension } from '../vehicleMotion';
-import { nearestN, poolStrength, shadowStrength, VehicleFxLayer, VEHICLE_FX } from '../vehicleFx';
+import { nearestStable, poolStrength, shadowStrength, VehicleFxLayer, VEHICLE_FX } from '../vehicleFx';
 import { GROUND_BLOB_Y } from './VehicleModels';
 
 /** Shared snow cover 0..1 of the vehicle roofs (set by `VehicleRenderer`): up-facing vertices above the wheels blend to snow white in the vertex shader (no extra draw call, no texture). */
@@ -92,6 +92,7 @@ export class VehicleRenderer {
   private meshes = new Map<number, Live>();
   private pose = { x: 0, y: 0, heading: 0 };
   private q = new THREE.Quaternion(); private pos = new THREE.Vector3();
+  private poolSet = new Set<Live>();
   /** Roof gear season (skis in winter, bikes in summer) for newly appearing cars. */
   winter = false;
   /** 0..1 night factor: head/tail lights glow. */
@@ -155,7 +156,8 @@ export class VehicleRenderer {
     }
     // headlight pools: nearest N road vehicles at night; each one fades in / out (no popping when the selection changes)
     const want = new Set<Live>();
-    if (pStr > 0) for (const i of nearestN(rx, rz, this.focus.x, this.focus.z, VEHICLE_FX.pool.cap)) want.add(roadCars[i]!);
+    if (pStr > 0) { const prev = new Set<number>(); roadCars.forEach((m, i) => { if (this.poolSet.has(m)) prev.add(i); }); for (const i of nearestStable(rx, rz, this.focus.x, this.focus.z, VEHICLE_FX.pool.cap, prev)) want.add(roadCars[i]!); }
+    this.poolSet = want;
     for (const m of roadCars) {
       m.pool += ((want.has(m) ? 1 : 0) - m.pool) * VEHICLE_FX.pool.ease; if (m.pool < 0.01 && !want.has(m)) m.pool = 0;
       if (m.pool > 0) { this.q.setFromEuler(m.group.rotation); this.pos.copy(m.group.position); fxl.add(1, this.pos, this.q, GROUND_BLOB_Y + 0.002, m.foot[1] + VEHICLE_FX.pool.length / 2 - 0.3, VEHICLE_FX.pool.width, VEHICLE_FX.pool.length, m.pool * pStr); }

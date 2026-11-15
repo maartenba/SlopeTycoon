@@ -280,10 +280,10 @@ export function busInterior(L: number, H: number, w: number, y0: number, mini: b
   const liner = new THREE.BoxGeometry(iw * 2, yt - yb, z1 - z0).translate(0, (yt + yb) / 2, (z0 + z1) / 2);
   const ix = liner.getIndex()!; for (let i = 0; i < ix.count; i += 3) { const a = ix.getX(i + 1); ix.setX(i + 1, ix.getX(i + 2)); ix.setX(i + 2, a); } // faces point inwards
   liner.computeVertexNormals();
-  out.push(paint(liner, rgb(0x8d96a2)));
-  out.push(box(iw * 2 - 0.01, 0.01, z1 - z0 - 0.01, rgb(0x2c2f34), 0, yb + 0.006, (z0 + z1) / 2)); // aisle floor
-  const seat = rgb(0x35496b), rail = rgb(0xc9ced4), n = mini ? 4 : 7, step = (z1 - z0 - 0.14) / n;
-  for (let k = 0; k < n; k++) for (const sx of [1, -1]) out.push(box(0.1, 0.13, 0.07, seat, sx * (iw - 0.07), yb + 0.08, z0 + 0.1 + k * step));
+  out.push(paint(liner, rgb(0xc4cbd3))); // light cabin walls: the dark glass-side seats read against them at iso zoom (5-6)
+  out.push(box(iw * 2 - 0.01, 0.01, z1 - z0 - 0.01, rgb(0x6c727a), 0, yb + 0.006, (z0 + z1) / 2)); // aisle floor
+  const seat = rgb(0xd9893a), rail = rgb(0xc9ced4), n = mini ? 4 : 7, step = (z1 - z0 - 0.14) / n;
+  for (let k = 0; k < n; k++) for (const sx of [1, -1]) out.push(box(0.11, 0.15, 0.075, seat, sx * (iw - 0.07), yb + 0.09, z0 + 0.1 + k * step));
   for (const sx of [1, -1]) out.push(box(0.008, 0.008, z1 - z0 - 0.1, rail, sx * 0.045, yt - 0.03, (z0 + z1) / 2));
   return out;
 }
