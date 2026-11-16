@@ -5,7 +5,7 @@ import { anchors, buildNetwork, findSite, placeSite, planPathTo, planRoadTo } fr
 import { BUILDINGS } from '../../src/config/buildings';
 import { CHAPEL, WEDDING } from '../../src/config/wedding';
 import { DAYS_PER_YEAR } from '../../src/config/balance';
-import { Wedding, weddingPlan } from '../../src/sim/events/Wedding';
+import { Wedding, routeOnPaths, weddingPlan } from '../../src/sim/events/Wedding';
 import { seasonOf, weekdayOf } from '../../src/sim/Clock';
 import { Achievements } from '../../src/sim/meta/Achievements';
 import { ACHIEVEMENT_BY_ID } from '../../src/config/achievements';
@@ -135,5 +135,58 @@ describe('Wedding bells achievement', () => {
   });
   it('the Wedding class exposes the door side for each rotation', () => {
     expect(Wedding.doorDir(0)).toEqual([0, 1]); expect(Wedding.doorDir(1)).toEqual([-1, 0]); expect(Wedding.doorDir(2)).toEqual([0, -1]); expect(Wedding.doorDir(3)).toEqual([1, 0]);
+  });
+});
+
+describe('the party walks on the paths (0.7.2)', () => {
+  const onPath = (s: Sim, x: number, y: number): boolean => { const k = s.networks.kind[Math.floor(y) * s.size + Math.floor(x)]!; return k === 1 || k === 2 || k === 3; };
+
+  it('routeOnPaths: a pure BFS over footpath tiles, null when not connected', () => {
+    const size = 12, kind = new Uint8Array(size * size);
+    for (let x = 2; x <= 8; x++) kind[5 * size + x] = 1;
+    const r = routeOnPaths(kind, undefined, size, { x: 1.5, y: 5.5 }, { x: 9.5, y: 5.5 })!;
+    expect(r.slice(0, 2)).toEqual([1.5, 5.5]); expect(r.slice(-2)).toEqual([9.5, 5.5]);
+    expect(r).toEqual(routeOnPaths(kind, undefined, size, { x: 1.5, y: 5.5 }, { x: 9.5, y: 5.5 }));
+    kind[5 * size + 5] = 0; // a gap: not connected
+    expect(routeOnPaths(kind, undefined, size, { x: 1.5, y: 5.5 }, { x: 9.5, y: 5.5 })).toBeNull();
+    expect(routeOnPaths(new Uint8Array(size * size), undefined, size, { x: 1, y: 1 }, { x: 5, y: 5 })).toBeNull();
+  });
+
+  it('a forced wedding walks along path tiles (only the doorstep stretches are off the path), the group stays together, save + reload gives the same poses', () => {
+    const s = make();
+    withChapel(s);
+    expect(s.wedding.force(6)).toBe(true);
+    const r = s.wedding.rec!;
+    expect(r.p1 && r.p1.length >= 4).toBe(true); // a route exists (the lodge is joined to the chapel by a footpath)
+    const L = (a: number[]): number => { let l = 0; for (let k = 2; k < a.length; k += 2) l += Math.hypot(a[k]! - a[k - 2]!, a[k + 1]! - a[k - 1]!); return l; };
+    expect(r.tArrive - r.tDepart).toBeCloseTo(L(r.p1!) / WEDDING.walkTilesPerMin, 5);
+    for (const [t0, t1, a, b] of [[r.tDepart, r.tArrive, [r.ox, r.oy], [r.fx, r.fy]], [r.tEnd, r.tFeast, [r.fx, r.fy], [r.sx ?? r.ox, r.sy ?? r.oy]]] as Array<[number, number, number[], number[]]>) {
+      for (let t = t0 + 1; t < t1; t += 3) for (let i = 0; i < 6; i++) {
+        const p = s.wedding.poseOf(i, t); if (!p) continue;
+        const nearEnd = Math.hypot(p.x - a[0]!, p.y - a[1]!) < 3 || Math.hypot(p.x - b[0]!, p.y - b[1]!) < 3;
+        if (!nearEnd) expect(onPath(s, p.x, p.y)).toBe(true);
+      }
+    }
+    // together: mid-walk the whole party is within a few tiles of the couple
+    const t = (r.tDepart + r.tArrive) / 2, c = s.wedding.poseOf(0, t)!;
+    for (let i = 1; i < 6; i++) { const q = s.wedding.poseOf(i, t)!; expect(Math.hypot(q.x - c.x, q.y - c.y)).toBeLessThan(2.5); }
+    // mid-walk save + reload: identical poses; deterministic
+    const data = JSON.parse(JSON.stringify(s.wedding.serialize()));
+    const s2 = make(); s2.wedding.load(data);
+    for (const tt of [t, r.tArrive - 1, r.tEnd + 20]) for (let i = 0; i < 6; i++) expect(s2.wedding.poseOf(i, tt)).toEqual(s.wedding.poseOf(i, tt));
+    const s3 = make(); withChapel(s3); s3.wedding.force(6);
+    expect(s3.wedding.rec).toEqual(r);
+  });
+
+  it('no footpath: a straight line, logged, and an old save without routes still loads', () => {
+    const logs: string[] = [];
+    const s = make(); withChapel(s);
+    const w = new Wedding({ seed: 1, bus: s.bus, now: () => 100, chapel: () => ({ x: 20, y: 20, w: 2, h: 3, rot: 0 }), origin: () => ({ x: 30, y: 20 }), feastSites: () => [], weather: () => 'clear', earn: () => {}, inBounds: () => true, route: () => null, log: (m) => logs.push(m) });
+    expect(w.force(4)).toBe(true);
+    expect(w.rec!.p1).toBeNull(); expect(logs.length).toBeGreaterThan(0);
+    const old = { ...w.rec! } as Record<string, unknown>; delete old.p1; delete old.p2;
+    const w2 = new Wedding({ seed: 1, bus: s.bus, now: () => 100, chapel: () => null, origin: () => null, feastSites: () => [], weather: () => 'clear', earn: () => {}, inBounds: () => true });
+    w2.load({ last: 0, count: 0, rec: old });
+    expect(w2.poseOf(0, w.rec!.tDepart + 3)).not.toBeNull();
   });
 });

@@ -3,7 +3,7 @@
  * Summer career game: the Chapel is locked at level 1; with the unlock bypassed it is placed beside the base lodge and joined to the village by a footpath (active), a wedding is forced on a summer morning, the party sets out
  * (news), walks to the forecourt (the view shows 4-6 figures), the bell rings twice (`wedding:bell`), the ceremony stands two hours, the party walks to a lodge nearby and pays the small feast income, then is gone.
  * The hour chime comes from the chapel (the probe reports a chapel). The 'Wedding bells' achievement counts. Then save in the MIDDLE of a ceremony, reload, every saved part identical (observer parts too), the party is still
- * at the door, MaterialGuard 0, no console errors. Exit 1 on a failed check or console error. `--shots 1` also writes .weave/shots/chapel-*.png (the chapel by day and at night, the party at the door, walking, at the feast). */
+ * at the door, MaterialGuard 0, no console errors. Exit 1 on a failed check or console error. `--shots 1` also writes .weave/shots/chapel2-*.png (the chapel by day and at night, the party at the door, walking, at the feast). */
 import { launch, startServer } from './lib/harness';
 
 const arg = (k: string, d: string): string => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1]! : d; };
@@ -61,6 +61,18 @@ try {
     const now = (): number => sim.game.date.year * 180 * 1440 + sim.game.date.day * 1440 + sim.game.date.minute;
     const goto = (t: number): void => { adv(Math.max(0, Math.ceil((t - now()) / 6))); };
     const view = s.weddingView;
+    // 0.7.2: the party walks along the footpath network; every sampled position of both walks is on a path tile, except within 3 tiles of an end (the lodge door / the chapel door)
+    const kindAt = (x: number, y: number): number => sim.networks.kind[Math.floor(y) * sim.size + Math.floor(x)];
+    let offPath = 0, samples = 0;
+    for (const [t0, t1, a, b] of [[rec.tDepart, rec.tArrive, [rec.ox, rec.oy], [rec.fx, rec.fy]], [rec.tEnd, rec.tFeast, [rec.fx, rec.fy], [rec.sx ?? rec.ox, rec.sy ?? rec.oy]]] as any[]) {
+      for (let t = t0 + 1; t < t1; t += 2) for (let i = 0; i < rec.guests; i++) {
+        const p = w.poseOf(i, t); if (!p || p.mode !== 'walk') continue;
+        samples++;
+        if (Math.hypot(p.x - a[0], p.y - a[1]) < 3 || Math.hypot(p.x - b[0], p.y - b[1]) < 3) continue;
+        if (![1, 2, 3].includes(kindAt(p.x, p.y))) offPath++;
+      }
+    }
+    const routed = !!rec.p1 && rec.p1.length >= 4;
     goto(rec.tDepart + 30); view.update(0.1); const walking = view.visibleCount;
     goto(rec.tBell + 20); view.update(0.1); const standing = view.visibleCount; const bellsAtDoor = log.filter((l) => l.n === 'wedding:bell').length;
     const door = Math.hypot(w.poseOf(0, now()).x - rec.fx, w.poseOf(0, now()).y - rec.fy);
@@ -68,11 +80,12 @@ try {
     goto(rec.tFeast + 10); view.update(0.1); const inside = view.visibleCount;
     const feast = log.find((l) => l.n === 'wedding:feast');
     goto(rec.tGone + 10); view.update(0.1);
-    return { ok, guests: rec.guests, hasFeast: rec.sx !== null, walking, standing, bellsAtDoor, door: Math.round(door * 100) / 100, bells, held, inside, feast: feast ? feast.p.income : 0, gone: w.rec === null, count: w.count, goneVisible: view.visibleCount, started: log.filter((l) => l.n === 'wedding:started').length, money: Math.round(sim.game.money - money0) };
+    return { offPath, samples, routed, ok, guests: rec.guests, hasFeast: rec.sx !== null, walking, standing, bellsAtDoor, door: Math.round(door * 100) / 100, bells, held, inside, feast: feast ? feast.p.income : 0, gone: w.rec === null, count: w.count, goneVisible: view.visibleCount, started: log.filter((l) => l.n === 'wedding:started').length, money: Math.round(sim.game.money - money0) };
   });
   console.log(JSON.stringify(wed));
   check('a wedding can be forced with a connected chapel', wed.ok === true);
   check('the news event fired once ("A wedding at the chapel today")', wed.started === 1, wed.started);
+  check('the party walks along the footpaths: a route exists and no walking position is off a path tile (except at the doors)', wed.routed && wed.samples > 20 && wed.offPath === 0, { routed: wed.routed, samples: wed.samples, offPath: wed.offPath });
   check('the party walks out (4-6 figures drawn)', wed.walking >= 4 && wed.walking <= 6 && wed.walking === wed.guests, { walking: wed.walking, guests: wed.guests });
   check('the couple stands at the chapel door during the ceremony; the party is drawn', wed.door < 1 && wed.standing === wed.guests, { door: wed.door, standing: wed.standing });
   check('the bell rang once at the start of the ceremony, twice by the end (2 strikes each in the sound layer)', wed.bellsAtDoor === 1 && wed.bells === 2, { bellsAtDoor: wed.bellsAtDoor, bells: wed.bells });
@@ -82,18 +95,19 @@ try {
 
   if (shots) {
     const focus = (zoom: number, yaw?: number, dx = 0, dy = 0): Promise<any> => page.evaluate((zoom, yaw, dx, dy) => { const s = (window as any).__slope, c2 = s.renderer.controls; const b = s.sim.buildings.all().find((q: any) => q.type === 'chapel'); c2.target.set(b.x + b.w / 2 + dx, s.grid.getCorner(Math.round(b.x), Math.round(b.y)) * 0.5, b.y + b.h / 2 + dy); c2.zoom = 1; c2.zoomBy(zoom); if (yaw !== undefined) c2.yaw = yaw; const u = document.getElementById('ui'); if (u) u.style.display = 'none'; return 'ok'; }, zoom, yaw, dx, dy);
-    const shot = async (name: string): Promise<void> => { await sleep(1800); await page.screenshot({ path: `.weave/shots/chapel-${name}.png` }); };
+    const shot = async (name: string): Promise<void> => { await sleep(1800); await page.screenshot({ path: `.weave/shots/chapel2-${name}.png` }); };
     const stage = (phase: 'walk' | 'door' | 'feast', hour: number): Promise<any> => page.evaluate((phase, hour) => {
       const s = (window as any).__slope, sim = s.sim, w = sim.wedding, loop = s.loop; loop.setSpeed(0); s.setHour?.(hour);
       const now = (): number => sim.game.date.year * 180 * 1440 + sim.game.date.day * 1440 + sim.game.date.minute;
       if (!w.rec) { sim.game.date.minute = 9 * 60; w.force(5); }
       const r = w.rec, t = phase === 'walk' ? r.tDepart + (r.tArrive - r.tDepart) * 0.6 : phase === 'door' ? r.tBell + 30 : r.tEnd + (r.tFeast - r.tEnd) * 0.5;
       if (!s.__wvOrig) s.__wvOrig = s.weddingView.now; s.weddingView.now = () => t; s.weddingView.update(5); void now;
-      return { t: Math.round(t - r.tDepart), n: s.weddingView.visibleCount };
+      const q = w.poseOf(1, t), b = sim.buildings.all().find((c: any) => c.type === 'chapel');
+      return { t: Math.round(t - r.tDepart), n: s.weddingView.visibleCount, dx: q ? q.x - (b.x + b.w / 2) : 0, dy: q ? q.y - (b.y + b.h / 2) : 0 };
     }, phase, hour);
     await page.evaluate(() => { (window as any).__slope.setHour(12); });
     await focus(9, 0.785398); await shot('day');
-    await stage('walk', 11); await focus(6, 0.785398, 4, 0); await shot('party-walking');
+    const st = await stage('walk', 11); await focus(5, 0.785398, st.dx, st.dy); await shot('party-walking');
     await stage('door', 12); await focus(14, 0.6, -1.4, 0); await shot('party-door');
     await stage('feast', 14); await focus(7, 0.785398, 0, 2); await shot('party-to-lodge');
     await page.evaluate(() => { (window as any).__slope.setHour(21.5); }); await focus(10, 0.9); await shot('night');

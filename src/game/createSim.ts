@@ -66,7 +66,7 @@ import { resortNameOr } from '../sim/ResortName';
 import { skyClosedReason } from '../sim/attractions/SkySites';
 import { TOURIST_OFFICE, BAKERY } from '../config/visitorServices';
 import { CHAPEL, WEDDING } from '../config/wedding';
-import { Wedding } from '../sim/events/Wedding';
+import { Wedding, routeOnPaths } from '../sim/events/Wedding';
 import { PhotoBuzz } from '../sim/guests/PhotoBuzz';
 import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
 import { Rating, createRatingSystem } from '../sim/Rating';
@@ -1323,6 +1323,8 @@ export function createSim(opts: SimOptions) {
     weather: () => weather.current.kind,
     earn: (a) => economy.earn('restaurants', a),
     inBounds: (x, y) => x > 2 && y > 2 && x < size - 2 && y < size - 2,
+    route: (a, b) => routeOnPaths(networks.kind, networks.cross, size, a, b),
+    log: (m) => console.debug(m),
   });
   wedding.enabled = opts.autoEvents !== false && !sdef;
   bus.on('time:hour', () => wedding.onHour());

@@ -27,8 +27,68 @@ export function weddingPlan(seed: number, day: number): WeddingPlan | null {
   return { day, departHour, guests };
 }
 
+/** A walked route: flat [x0, y0, x1, y1, ...] tile-space points. */
+export type Route = number[];
+const routeLen = (r: Route): number => { let l = 0; for (let k = 2; k < r.length; k += 2) l += Math.hypot(r[k]! - r[k - 2]!, r[k + 1]! - r[k - 1]!); return l; };
+/** The point at arc distance `d` along a route plus the local heading (dx, dy unit). */
+function alongRoute(r: Route, d: number): { x: number; y: number; dx: number; dy: number } {
+  let rest = Math.max(0, d), k = 2;
+  for (; k < r.length; k += 2) {
+    const ax = r[k - 2]!, ay = r[k - 1]!, bx = r[k]!, by = r[k + 1]!, len = Math.hypot(bx - ax, by - ay);
+    if (len < 1e-9) continue;
+    if (rest <= len || k + 2 >= r.length) { const f = Math.min(1, rest / len); return { x: ax + (bx - ax) * f, y: ay + (by - ay) * f, dx: (bx - ax) / len, dy: (by - ay) / len }; }
+    rest -= len;
+  }
+  return { x: r[0] ?? 0, y: r[1] ?? 0, dx: 0, dy: 1 };
+}
+
+/**
+ * The walking route between two points over the footpath / road network (4-neighbour BFS over tiles whose kind is 1 footpath, 2 road, or a level crossing),
+ * from the path tile nearest to `a` to the path tile nearest to `b` (both within `snap` tiles). The route starts at `a` and ends at `b` themselves (the
+ * doorstep stretches are the only off-path parts). Null when either end has no path nearby or the two are not connected. Pure and deterministic.
+ */
+export function routeOnPaths(kind: ArrayLike<number>, cross: ArrayLike<number> | undefined, size: number, a: { x: number; y: number }, b: { x: number; y: number }, snap = 6): Route | null {
+  const isPath = (i: number): boolean => kind[i] === 1 || kind[i] === 2 || (kind[i] === 3 && (cross?.[i] ?? 0) > 0);
+  const nearest = (p: { x: number; y: number }): number => {
+    const px = Math.floor(p.x), py = Math.floor(p.y);
+    let best = -1, bd = Infinity;
+    for (let y = Math.max(0, py - snap); y <= Math.min(size - 1, py + snap); y++) for (let x = Math.max(0, px - snap); x <= Math.min(size - 1, px + snap); x++) {
+      const i = y * size + x;
+      if (!isPath(i)) continue;
+      const d = Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y);
+      if (d < bd - 1e-9) { bd = d; best = i; }
+    }
+    return best;
+  };
+  const s = nearest(a), g = nearest(b);
+  if (s < 0 || g < 0) return null;
+  const prev = new Int32Array(size * size).fill(-2);
+  prev[s] = -1;
+  const q = [s];
+  for (let h = 0; h < q.length && prev[g] === -2; h++) {
+    const i = q[h]!, x = i % size, y = (i / size) | 0;
+    for (let k = 0; k < 4; k++) {
+      const nx = x + (k === 1 ? 1 : k === 3 ? -1 : 0), ny = y + (k === 2 ? 1 : k === 0 ? -1 : 0);
+      if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+      const ni = ny * size + nx;
+      if (prev[ni] !== -2 || !isPath(ni)) continue;
+      prev[ni] = i; q.push(ni);
+    }
+  }
+  if (prev[g] === -2) return null;
+  const tiles: number[] = [];
+  for (let c = g; c !== -1; c = prev[c]!) tiles.push(c);
+  tiles.reverse();
+  const out: Route = [a.x, a.y];
+  for (const t of tiles) out.push((t % size) + 0.5, ((t / size) | 0) + 0.5);
+  out.push(b.x, b.y);
+  return out;
+}
+
 export interface WeddingRec {
   day: number; guests: number;
+  /** Walked routes over the footpath network (0.7.2): origin -> forecourt and forecourt -> feast (or back to the start); null = a straight line (no path / old save). */
+  p1?: Route | null; p2?: Route | null;
   /** Where the party starts, the forecourt in front of the chapel door, the chapel centre, and the feast building centre (null = no lodge / restaurant in reach). */
   ox: number; oy: number; fx: number; fy: number; cx: number; cy: number; sx: number | null; sy: number | null;
   /** Absolute sim minutes: set out, arrived at the forecourt, first bell, second bell (end of the ceremony), arrived at the feast (or back at the start), gone. */
@@ -54,6 +114,10 @@ export interface WeddingDeps {
   /** Feast income (restaurants). */
   earn: (amount: number) => void;
   inBounds: (x: number, y: number) => boolean;
+  /** Walking route over the footpath / road network between two points (null = none: the party then walks a straight line). Optional. */
+  route?: (a: { x: number; y: number }, b: { x: number; y: number }) => Route | null;
+  /** Diagnostics (a straight-line fallback is logged). Optional. */
+  log?: (msg: string) => void;
 }
 
 const DIR: Array<[number, number]> = [[0, 1], [-1, 0], [0, -1], [1, 0]]; // the door side (+z before rotation) for rot 0..3 (the mesh turns by -rot * 90 degrees)
@@ -105,12 +169,17 @@ export class Wedding {
     }
     let site: { x: number; y: number } | null = null, best: number = W.feastReach;
     for (const s of this.d.feastSites()) { const dd = Math.hypot(s.x - fc.x, s.y - fc.y); if (dd < best && dd > 2) { best = dd; site = s; } }
-    const walk1 = Math.hypot(o.x - fc.x, o.y - fc.y) / W.walkTilesPerMin;
+    const back0 = site ?? o;
+    const p1 = this.d.route?.(o, fc) ?? null, p2 = this.d.route?.(fc, back0) ?? null;
+    if (!p1) this.d.log?.('wedding: no footpath from the start to the chapel, the party walks a straight line');
+    if (!p2) this.d.log?.('wedding: no footpath from the chapel to the feast, the party walks a straight line');
+    const len1 = p1 ? routeLen(p1) : Math.hypot(o.x - fc.x, o.y - fc.y), len2 = p2 ? routeLen(p2) : Math.hypot(back0.x - fc.x, back0.y - fc.y);
+    const walk1 = len1 / W.walkTilesPerMin;
     const tDepart = Math.min(now, plan.day * 1440 + plan.departHour * 60);
     const tArrive = tDepart + walk1, tBell = ceilHour(tArrive + 1), tEnd = tBell + W.ceremonyMin;
-    const back = site ?? o, tFeast = ceilHour(tEnd + Math.hypot(back.x - fc.x, back.y - fc.y) / W.walkTilesPerMin);
+    const tFeast = ceilHour(tEnd + len2 / W.walkTilesPerMin);
     const tGone = site ? tFeast + W.feastMin : tFeast;
-    this.rec = { day: plan.day, guests: plan.guests, ox: o.x, oy: o.y, fx: fc.x, fy: fc.y, cx, cy, sx: site ? site.x : null, sy: site ? site.y : null, tDepart, tArrive, tBell, tEnd, tFeast, tGone, bell1: false, bell2: false, held: false, paid: false, income: 0 };
+    this.rec = { day: plan.day, guests: plan.guests, p1, p2, ox: o.x, oy: o.y, fx: fc.x, fy: fc.y, cx, cy, sx: site ? site.x : null, sy: site ? site.y : null, tDepart, tArrive, tBell, tEnd, tFeast, tGone, bell1: false, bell2: false, held: false, paid: false, income: 0 };
     this.d.bus.emit('wedding:started', { x: cx, y: cy, guests: plan.guests });
     return true;
   }
@@ -141,20 +210,21 @@ export class Wedding {
     if (!r || t < r.tDepart || t >= r.tGone) return null;
     const hasFeast = r.sx !== null && r.sy !== null;
     if (hasFeast && t >= r.tFeast) return null;
-    const lat = (i - (r.guests - 1) / 2) * 0.32, back = ((i * 7) % 3) * 0.22; // a loose group: spread across the walk and a little in depth
-    const seg = (ax: number, ay: number, bx: number, by: number, f: number): PartyPose => {
-      const dx = bx - ax, dy = by - ay, len = Math.max(1e-6, Math.hypot(dx, dy)), ux = dx / len, uy = dy / len;
-      const along = Math.min(len, Math.max(0, f * len - back));
-      return { x: ax + ux * along - uy * lat, y: ay + uy * along + ux * lat, yaw: Math.atan2(dx, dy), mode: 'walk', dist: along };
+    // the party walks in single file along the route: the couple first, each follower a little further behind (small offsets along the path), a hair off the centre line
+    const lat = (i % 2 === 0 ? -1 : 1) * 0.1 * (i > 1 ? 1 : 0.6), back = i * 0.32;
+    const seg = (route: Route | null | undefined, ax: number, ay: number, bx: number, by: number, f: number): PartyPose => {
+      const pts = route && route.length >= 4 ? route : [ax, ay, bx, by], L = routeLen(pts);
+      const along = Math.min(L, Math.max(0, f * L - back)), p = alongRoute(pts, along);
+      return { x: p.x - p.dy * lat, y: p.y + p.dx * lat, yaw: Math.atan2(p.dx, p.dy), mode: 'walk', dist: along };
     };
-    if (t < r.tArrive) return seg(r.ox, r.oy, r.fx, r.fy, (t - r.tDepart) / Math.max(1, r.tArrive - r.tDepart));
+    if (t < r.tArrive) return seg(r.p1, r.ox, r.oy, r.fx, r.fy, (t - r.tDepart) / Math.max(1, r.tArrive - r.tDepart));
     if (t < r.tEnd) { // standing at the door: the couple in front, the guests in a loose arc behind, all facing the chapel
       const fx = r.cx - r.fx, fy = r.cy - r.fy, len = Math.max(1e-6, Math.hypot(fx, fy)), ux = fx / len, uy = fy / len; // toward the chapel
       const couple = i < 2, k = couple ? i - 0.5 : i - 2 - (r.guests - 3) / 2, depth = couple ? 0 : 0.5 + (i % 2) * 0.3, sp = couple ? 0.26 : 0.34;
       return { x: r.fx - ux * depth - uy * k * sp, y: r.fy - uy * depth + ux * k * sp, yaw: Math.atan2(ux, uy), mode: 'stand', dist: 0 };
     }
     const toX = hasFeast ? r.sx! : r.ox, toY = hasFeast ? r.sy! : r.oy;
-    return seg(r.fx, r.fy, toX, toY, (t - r.tEnd) / Math.max(1, r.tFeast - r.tEnd));
+    return seg(r.p2, r.fx, r.fy, toX, toY, (t - r.tEnd) / Math.max(1, r.tFeast - r.tEnd));
   }
 
   serialize(): WeddingSave { return { last: this.last, count: this.count, rec: this.rec ? { ...this.rec } : null }; }
