@@ -1,6 +1,6 @@
 # Mobile UI v2: real-phone audit, proposal and implementation
 
-Status: **implemented** (2026-11-16, unreleased, on top of 0.6.6). Sections 1-4 below are the audit and the proposal as written on 2026-11-15; section 0 says what was built, what changed against the proposal and the measured results. A static mockup lives in `.weave/mobile-mockup/index.html` (git-ignored, local).
+Status: **implemented** and **released in 0.7.0** (2026-11-16). Sections 1-4 below are the audit and the proposal as written on 2026-11-15; section 0 says what was built, what changed against the proposal and the measured results. A static mockup lives in `.weave/mobile-mockup/index.html` (git-ignored, local).
 
 ## 0. Implemented (2026-11-16)
 
@@ -45,13 +45,19 @@ Other checks (2026-11-16): `desktop:diff` SAME on all six screens (at most 0.002
 ### Follow-ups
 - **Desktop sparkline** (owner likes it): the same sparkline + tap-for-chart in the desktop placement tool instead of the 320 px profile card. Not done here: desktop must stay pixel-identical in this change.
 - Real-phone check on the Motorola G7: safe-area insets, the Chrome URL-bar collapse (the audit has neither), thumb reach of Cancel / Place, the Rudi count badge (it overlaps the avatar by design), the 4 s toast release after a tool, the vertical landscape bar.
-- `st-recap` (the month-end card) is still an independent floating card (hidden in tool and modal mode only): fold it into the banner chip.
+- `st-recap`: the welcome-back recap is now a full-screen card registered with the coordinator (0.7.0, see section 0.1); the small month-end and level-up cards are still independent floating cards (hidden in tool, modal and sheet mode): folding them into the banner chip is open.
 - The overflow menu is not keyboard-navigable with arrow keys yet (Tab works).
 - `mobile:audit` (the M7.5 audit) is kept next to `mobile:audit2` in the gate; once v2 is accepted the old one can go.
 
 
 
 The M7.5 design in [mobile-ui.md](mobile-ui.md) (st-sheet, tool-first, camdrag fade) stays the base. v2 fixes what M7.5 could not see: **many things on screen at once, each placed by its own hard-coded pixel offsets, on a screen that is shorter and denser than the harness one.**
+
+## 0.1 Follow-ups shipped in 0.7.0 (2026-11-16, owner decisions)
+
+- **Dock tab row** (`StDock`, phones and short landscape only; desktop untouched): `.dockw` wraps the row; a 44 px `>` button with a fade shows on the side that has more tabs (`edgeState`, updated on scroll, resize and a ResizeObserver), `<` once scrolled; `scroll-snap-type: x mandatory` / `scroll-snap-align: start` keep whole tabs; at <= 520 px a short label replaces the long one (`DOCK_SHORT`: Paths, Pistes, Ops) while `aria-label` / `title` keep the full name. No nudge animation (owner). Tests: `tests/ui-dom/dockAffordance.test.ts`, the `drawers` touch e2e group (taps `>` until the last tab is fully visible, then `<`; phone 390, moto-g7 412x762, 38/38).
+- **Full-screen cards** (`StWhatsNew` for What's new + the update card, `StRecap` for the welcome-back recap): on phones the card is a fixed full-screen sheet (48 px sticky header, 44 px close button, scrolling body, sticky action row, safe-area insets). `phoneCards.registerFullscreen` makes `data-phone-mode` = `modal` while one is open, closes the sheet cards, and holds the card while a map tool is active (`html[data-toolfirst]`); the recap does not auto-dismiss on a phone. The host is full-size ONLY while `data-fs` is set: a full-size host that is always there swallowed every tap on the dock (found by the touch e2e: first attempt failed 12 of 50 checks, then 50/50 after the fix). The month-end and level-up cards stay small and step aside in sheet / modal / tool mode. The consent card lives inside the title screen, never over the game. `mobile:audit2` states `whats-new`, `update-card`, `recap`: 0 overlaps >= 400 px² at 412, 360, 390, moto-g7 and landscape; the map-visible % of those states is not meaningful (the audit does not count the full-screen card), the shots `mob4-*` show what the player sees.
+- Known and unchanged: the landscape touch e2e 'hiking trail / mtb trail paint mode drag paints' fails (before v2 too; `.weave/plans/ideas-backlog.md`).
 
 ## 1. The audit (`npm run mobile:audit2`)
 

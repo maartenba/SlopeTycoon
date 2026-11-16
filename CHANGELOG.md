@@ -4,15 +4,23 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-16 (pre-release)
+
+A phone update. On a phone the map now gets most of the screen. The economy and your old saves are unchanged, and the desktop looks the same as before.
+
 ### Highlights
 
-- **Phones show much more of the map**: one slim top row (menu, money, stars, guests, speed, more) and one card at a time.
-- **A bottom tool bar while you build**: the message (cost or why not), Cancel, rotate, Undo, Options and Place sit in one place within thumb reach, with a small ground profile for lifts and pistes.
-- **Rudi's tips and the news** are a small badge and live in the **...** menu too; **full-screen settings and reports** with a clear close button.
-- The speed buttons moved behind one speed chip; landscape phones get a vertical tool bar.
+- **Phones show much more of the map**: one slim top row (menu, money, stars, guests, speed, more) and one card at a time, so nothing stacks on top of anything else.
+- **A bottom tool bar while you build**: the message (cost or why not), Cancel, rotate, Undo, Options and Place sit in one place within thumb reach, with a small ground profile for lifts and pistes. Landscape phones get a vertical bar.
+- **The tab row shows when there is more**: a fade and a **>** button at the edge, whole tabs that snap into place, and shorter names (Paths, Pistes) so more fit.
+- **What's new, the update card and the welcome-back recap open full screen** on phones, with a big close button, instead of floating over other panels.
+- **Rudi's tips and the news** are a small badge and also live in the **...** menu; settings and reports are full-screen sheets with a clear close button.
 
 ### Changes
 
+- Phones: the dock tab row has a soft fade and a 44 px `>` button on the side that has more tabs (and `<` once scrolled), scrolls in whole tabs (scroll snap), and uses short labels on narrow screens (Paths, Pistes, Ops); the full name stays the accessible name and the tooltip. The desktop dock is unchanged.
+- Phones: What's new, the update card and the welcome-back recap are full-screen sheets (48 px header, 44 px close button, scrolling body, safe-area insets); the recap stays until you close it, and nothing else floats over or under them. A tool that is active holds them back until it ends. Desktop and tablets keep the small card.
+- Phones: the month-end and level-up cards stay small and step aside while a sheet or dialog is open.
 - Phones: one 44 px top row and one 44 px goal / Rudi / news row replace the stack of cards (top chrome 146 px to 48 px); the map is at least 75 % visible by default and in tool modes on a 412x762 phone (was 23-62 %).
 - Phones: while a tool is active only the top row and the tool bar are on screen; messages from the tool appear once (no tooltip, no error toast), toasts that arrive meanwhile wait until the tool ends, critical alerts take the message row.
 - Phones: the ground profile is a sparkline in the tool bar; tap it for the full chart above the bar.

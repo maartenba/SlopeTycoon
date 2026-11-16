@@ -1,6 +1,22 @@
 # Release notes and checklist
 
-Current release: **0.6.6 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.7.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.7.0 (2026-11-16, macOS, Node v24.22.3)
+
+Phone UI (no sim, save or golden change; desktop pixel-identical): mobile UI v2 (one top row, banner row, bottom tool bar, one card at a time; `docs/mobile-ui-v2.md`), the dock tab row scroll affordance (`>` / `<`, snap, short labels) and full-screen What's new / update card / welcome-back recap on phones.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run gate:full` (6 slots) | wall 25.1 min, 37 stages, no flaky stage, no hang; the one failure was a `prefer-const` lint error in a new test (`tests/ui-dom/phoneV2.test.ts`), fixed after the run and `npm run lint` re-run clean (the other 36 stages passed on the first attempt) |
+| Unit tests | `npm test` (in the gate) | 488 files passed (4 skipped), 5109 tests passed (139 skipped) |
+| Touch | `npm run touch:e2e` (gate subset) + `-- --only drawers --viewport phone,moto-g7` | gate subset (camera, placement, drawers) 11 + 13 + 19 passed; standalone drawers 38/38 at phone 390 and moto-g7 412x762 (incl. `>` scrolls the row and reveals the last tab, `<` scrolls back) |
+| Mobile audit | `npm run mobile:audit2 -- --overlaps 400 --thresholds 1` (gate stage) | passed: 0 overlaps >= 400 px², 0 tap targets < 44 px in 144 state rows (412, 360, 390, moto-g7, landscape 915x412), new states `whats-new`, `update-card`, `recap` |
+| Desktop | `npm run desktop:diff` (gate stage) | SAME vs the previous commit |
+| Size | `npm run size` | 3208.4 kB raw / 1140.5 kB gzip (0.6.6: 1132.0 kB; budget 2048 kB): app js 841.0 kB, three chunk 143.0 kB, css 2.1 kB, icons 62.7 kB; audio excluded |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (66 pages, 8.3 MB screenshots) |
+
+Not verified by agents: a real phone in the hand (the owner tests on a Motorola G7 from the live site), real GPU frame rate, audio by ear. Known and open: the landscape touch e2e 'hiking trail / mtb trail paint mode drag paints' failed in standalone runs before v2 (backlog, local only).
 
 ## 0.6.6 (2026-11-15, macOS, Node v24.22.3)
 

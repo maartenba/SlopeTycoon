@@ -61,8 +61,9 @@ While you place a building, paint a piste or build a lift, **only the top row an
 
 {{fig:touch-phone-place}}
 
-Drawers (Buildings, Lifts, Paths, Pistes, Terrain, Landscape, View, Finance, Operations, Marketing, Pricing), the inspector for a building or lift, Rudi's advice and the news list are **sheets** that rise from the bottom with a grab bar. **Only one sheet is open at a time**: opening another closes the first. Settings, Statistics and the reports are **full-screen** with a big close button.
+Drawers (Buildings, Lifts, Paths, Pistes, Terrain, Landscape, View, Finance, Operations, Marketing, Pricing), the inspector for a building or lift, Rudi's advice and the news list are **sheets** that rise from the bottom with a grab bar. **Only one sheet is open at a time**: opening another closes the first. Settings, Statistics, the reports, **What's new**, the update card and the welcome-back summary are **full-screen** with a big close button.
 
+- **The tab row** at the bottom scrolls sideways and snaps to whole tabs. When there are more tabs than fit, a fade and a **>** button show at that edge (and **<** once you have scrolled); a tap moves one page. On narrow screens a few names are shorter (Paths, Pistes, Ops).
 - A sheet opens low, at its **peek** height: a row of cards or the first lines. **Drag the grab bar up** for half and full height, or tap it to toggle; a quick flick moves one step, dragging down folds it again.
 - A swipe **up on the content** grows the sheet first and then scrolls; a swipe **down** scrolls back to the top first and then folds the sheet. Swiping **sideways** scrolls the card row.
 - **Pick a card** and the sheet and the dock row fold away, so the ghost and the map are free: the tool bar appears instead. **Options** (or a dock button after you finish) brings the cards back. Each drawer remembers its own height.

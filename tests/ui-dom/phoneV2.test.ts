@@ -194,7 +194,7 @@ describe('top row fit at 360 px (css contract; the real fit is measured by mobil
 describe('full-screen cards on phones (owner decision 2026-11-16)', () => {
   it('What\u2019s new / update / recap register as full-screen: mode modal, sheet cards close, held while a tool is active, desktop stays idle', () => {
     phoneMq(true);
-    let dlg = 0, open = false, sheet = true;
+    const dlg = 0; let open = false, sheet = true;
     const c = installPhoneCards({ dialogs: () => dlg });
     c.register({ id: 'drawer', isOpen: () => sheet, close: () => { sheet = false; } });
     c.registerFullscreen({ id: 'whats-new', isOpen: () => open, close: () => { open = false; } });

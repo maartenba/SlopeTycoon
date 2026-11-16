@@ -118,5 +118,10 @@
     "tagline": "cars, cows and a calmer farm",
     "lead": "Another small update about how things look and move. Cars and buses now come in several body styles with two-tone roofs, and in winter they carry snow on the roof that melts when they stand in the sun. They have soft shadows, brake lights that follow real slowing down and quiet headlight pools at night. Cows swish their tails and ring their bells, and sheep and goats twitch now and then. Tractors drive at a calmer pace and turn corners smoothly, and some trailers carry square bales. Where a river runs into a lake, the seam is gone. Again, I have only seen it on a software renderer.",
     "shot": "season-summer"
+  },
+  "0.7.0": {
+    "tagline": "a phone that shows the map",
+    "lead": "This one is about playing on a phone. I tried the game on a real phone and it was too crowded: cards on top of cards, and the map squeezed into whatever was left. Now there is one slim row at the top and one card at a time. While you build, a small bar at the bottom shows what the tool is saying and has the buttons you need. The tab row shows a fade and an arrow when there is more to scroll, and the what's new card opens full screen instead of floating over things. Nothing changes on desktop. I have tested it on emulated phones, and I will keep checking it on a real one.",
+    "shot": "season-summer"
   }
 }

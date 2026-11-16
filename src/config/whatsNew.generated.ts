@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.7.0",
+    "date": "2026-11-16",
+    "highlights": [
+      "Phones show much more of the map: one slim top row (menu, money, stars, guests, speed, more) and one card at a time, so nothing stacks on top of…",
+      "A bottom tool bar while you build: the message (cost or why not), Cancel, rotate, Undo, Options and Place sit in one place within thumb reach, with…",
+      "The tab row shows when there is more: a fade and a > button at the edge, whole tabs that snap into place, and shorter names (Paths, Pistes) so more…",
+      "What's new, the update card and the welcome-back recap open full screen on phones, with a big close button, instead of floating over other panels.",
+      "Rudi's tips and the news are a small badge and also live in the ... menu; settings and reports are full-screen sheets with a clear close button."
+    ]
+  },
+  {
     "version": "0.6.6",
     "date": "2026-11-15",
     "highlights": [
@@ -21,15 +32,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Smoother lake and river banks, with sky and tree reflections on lakes (Medium and High).",
       "Hill shadows and long tree shadows at dawn and dusk on High.",
       "Photographers raise their cameras and flash, and falling leaves are a little smaller."
-    ]
-  },
-  {
-    "version": "0.6.4",
-    "date": "2026-11-12",
-    "highlights": [
-      "Leaves fall in autumn: golds, oranges and reds drift down from the deciduous trees and larches near the camera, and thin out as the snow arrives and…",
-      "The leaves follow the Atmosphere setting and the graphics quality, and lie still with reduced motion.",
-      "The website's 30 second trailer and 90 second film are re-made with the falling leaves (click to play, no autoplay, nothing loads until you press…"
     ]
   }
 ];
