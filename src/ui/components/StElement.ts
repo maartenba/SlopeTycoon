@@ -66,6 +66,14 @@ kbd { font: 700 var(--fs-sm)/1 var(--font-ui); background: #0f1722; border: 1px 
 .layer > .bd { position: absolute; inset: 0; background: rgba(6,10,16,.62); }
 .dlg { position: relative; display: flex; flex-direction: column; width: min(var(--w, 640px), 100%); max-height: 100%; box-sizing: border-box; background: linear-gradient(#1c2635, #151d29); border: 1px solid #4a6080; border-radius: var(--r-lg); box-shadow: 0 18px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.07); overflow: hidden; }
 .dlg.sm { --w: var(--modal-sm); } .dlg.md { --w: var(--modal-md); } .dlg.lg { --w: var(--modal-lg); }
+/* Phones (docs/mobile-ui-v2.md): medium / large dialogs (Settings, Statistics, year report...) are FULL sheets with a 48 px header and a 44 px close button; small ones stay centred cards */
+@media (max-width: 520px), (max-height: 520px) {
+  .layer:has(> .dlg.md), .layer:has(> .dlg.lg) { padding: 0; align-items: stretch; }
+  .dlg.md, .dlg.lg { width: 100%; height: 100%; max-height: none; border-radius: 0; border-width: 0; }
+  .dlg.md > header, .dlg.lg > header { min-height: 48px; padding-top: max(6px, env(safe-area-inset-top, 0px)); flex: none; }
+  .dlg.md > header .x, .dlg.lg > header .x { min-width: 44px; min-height: 44px; font-size: 18px; }
+  .dlg.md > .body, .dlg.lg > .body { padding-bottom: max(14px, env(safe-area-inset-bottom, 0px)); }
+}
 .dlg > header { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 12px 10px 16px; background: linear-gradient(#26354a, #1f2c3e); border-bottom: 1px solid #34465e; }
 .dlg > header .ic { font-size: 18px; line-height: 1; }
 .dlg > header h2 { flex: 1; margin: 0; font: 400 var(--fs-xl)/1.1 var(--font-display); letter-spacing: .4px; color: #fff; }
