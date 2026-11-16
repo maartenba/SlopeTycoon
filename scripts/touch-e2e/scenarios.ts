@@ -502,7 +502,7 @@ export function registerAll(reg: Reg): void {
     const sh0 = await sheetSize();
     if (sh0 && !(await r.page.evaluate(() => (document.querySelector('st-dock') as any).shadowRoot.querySelector('st-sheet').hasAttribute('data-side')))) {
       // phone portrait: the drawer is a sheet. A swipe up on its content first GROWS the sheet (scroll chaining), and never paints or pans the map
-      const hnd = await r.rect({ css: '.handle', tag: 'st-sheet' }); // a tool is active, so the sheet is down to its handle: tapping the grabber brings the cards back (peek)
+      const hnd = (await r.rect({ css: '[data-role=bar-options]', tag: 'st-touch-controls' })) ?? (await r.rect({ css: '.handle', tag: 'st-sheet' })); // a tool is active: on phones the sheet header is gone, the tool bar's Options button brings the cards back (older layouts: the grabber)
       if (hnd) { await r.tap(hnd.x, hnd.y); await sleep(500); }
       const rc = await r.rect({ css: '.drawer .head', tag: 'st-dock' });
       const rr = await r.rect({ css: '.drawer .head', tag: 'st-dock' }) ?? rc;
@@ -543,16 +543,18 @@ export function registerAll(reg: Reg): void {
     };
     await clean('HUD (speed, top bar, dock)');
     // speed / pause
-    const speedBtn = async (t: string): Promise<boolean> => r.tapEl({ text: t, tag: 'st-speed-control' });
+    // phones: the speed buttons are a popover behind the speed chip (docs/mobile-ui-v2.md); elsewhere the chip is not visible and tapEl returns false
+    const chip = async (): Promise<void> => { if (await r.tapEl({ css: '[data-role=speed-chip]', tag: 'st-speed-control' })) await sleep(200); };
+    const speedBtn = async (t: string): Promise<boolean> => { await chip(); return r.tapEl({ text: t, tag: 'st-speed-control' }); };
     await speedBtn('3×'); await sleep(200);
     await r.check('3× button sets the speed', (await r.s((s) => s.loop.speed)) === 2, `speed index ${await r.s((s) => s.loop.speed)}`);
     await speedBtn('10×'); await sleep(200);
     await r.check('10× button sets the speed', (await r.s((s) => s.loop.speed)) === 3);
-    await r.tapEl({ css: 'button', tag: 'st-speed-control', nth: 0 }); await sleep(200);
+    await chip(); await r.tapEl({ css: '.btns > button', tag: 'st-speed-control', nth: 0 }); await sleep(200);
     await r.check('Pause button pauses', (await r.s((s) => s.loop.paused)) === true);
     await speedBtn('1×'); await sleep(200);
     await r.check('1× button resumes at normal speed (Pause is not a toggle; there is no Space key on touch)', (await r.s((s) => s.loop.speed)) === 1 && (await r.s((s) => s.loop.paused)) === false);
-    await r.tapEl({ text: 'Skip to', tag: 'st-speed-control' }); await sleep(500);
+    await chip(); await r.tapEl({ text: 'Skip to', tag: 'st-speed-control' }); await sleep(500);
     const menuBtn = await r.rect({ css: '.menu button', tag: 'st-speed-control' });
     await r.check('Skip-to menu opens with >= 44 px items', !!menuBtn && menuBtn.h >= 44, JSON.stringify(menuBtn));
     await esc(); await r.tap(w * 0.5, h * 0.3);

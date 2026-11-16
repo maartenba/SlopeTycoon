@@ -106,7 +106,8 @@ button.t.primary[disabled]{opacity:.45;filter:saturate(.4)}
 .bar .ma{display:flex;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px));max-width:min(60vw,520px);align-items:center;gap:6px;padding:2px 10px;min-height:36px;background:var(--c-panel);border:1px solid rgba(90,112,144,.5);border-radius:18px;box-sizing:border-box;pointer-events:auto}
 .bar .hint{display:block;-webkit-line-clamp:unset;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 .bar .spark{width:96px;flex:none}.bar .infob{flex:none;min-height:36px}
-.bar .bc,.bar .gl,.bar .gr,.bar .undob,.bar .optb,.bar .modeb,.bar .place{width:56px;min-width:56px}
+.bar .bc,.bar .gl,.bar .gr,.bar .undob,.bar .optb,.bar .modeb,.bar .place{width:56px;min-width:56px;grid-area:auto}
+.bar .bc{order:1}.bar .gl,.bar .modeb{order:2}.bar .undob{order:3}.bar .optb{order:4}.bar .place{order:5;min-height:56px}.bar .spark small{display:none}.bar .spark{width:72px}
 .detail{bottom:calc(52px + env(safe-area-inset-bottom,0px));right:calc(80px + env(safe-area-inset-right,0px));left:calc(8px + env(safe-area-inset-left,0px))}
 }`;
   }
@@ -294,7 +295,7 @@ button.t.primary[disabled]{opacity:.45;filter:saturate(.4)}
     for (const b of this.rotBtns) b.hidden = lift;
     this.placeBtn.classList.toggle('active', this.st.confirming);
     let msg = this.alertText || this.st.hint || TIP;
-    if (typeof matchMedia === 'function' && matchMedia('(max-width: 520px), (max-height: 520px)').matches) msg = msg.replace(/^(\u2716\s*)?[A-Za-z' -]{3,30}(\([^)]*\))?:\s+(?=\S)/, '$1'); // phones: the lift / building name prefix is not needed in the one-line message
+    if (typeof matchMedia === 'function' && matchMedia('(max-width: 520px), (max-height: 520px)').matches) msg = msg.replace(/^(\u2716\s*)?[A-Za-z' -]{3,30}(\([^)]*\))?:\s+(?=\S)/, '$1').replace(/^(.{24,}?[.!?])\s[\s\S]*$/, '$1'); // phones: no lift / building name prefix, only the first sentence (the rest is behind the i button)
     this.hintEl.textContent = msg;
     const bad = !!this.alertText || /^\s*(\u2716|✖|Not on the map|No |Cannot)/.test(msg) || /cannot|must|needs|not enough|blocked/i.test(msg) && !/\$/.test(msg);
     this.hintEl.classList.toggle('bad', bad); this.hintEl.classList.toggle('note', !bad && !/\$/.test(msg));

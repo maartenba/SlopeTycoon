@@ -140,6 +140,7 @@ export class Rig {
         if (!el.matches('button,input:not([type=hidden]),select,textarea,a[href],summary,[role=button],[role=option],[role=tab],[role=menuitem],[role=switch],[role=checkbox],st-select')) continue;
         if (el.tagName === 'A' && el.closest('p, li')) continue; // inline text links are exempt
         if (a.within && !((el.getRootNode() as ShadowRoot).host?.tagName.toLowerCase() === a.within || el.closest(a.within))) continue;
+        if (getComputedStyle(el).pointerEvents === 'none') continue; // a non-interactive overlay (e.g. Rudi's count dot): not a tap target
         let hidden = false;
         for (let p: Element | null = el; p; p = p.parentElement || ((p.getRootNode() as ShadowRoot).host ?? null)) { const cs = getComputedStyle(p); if (cs.display === 'none' || cs.visibility === 'hidden' || (p as HTMLElement).hidden) { hidden = true; break; } }
         if (hidden) continue;
