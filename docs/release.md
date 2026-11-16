@@ -1,6 +1,20 @@
 # Release notes and checklist
 
-Current release: **0.7.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.7.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.7.2 (2026-11-16, macOS, Node v24.22.3)
+
+The wedding party walks along the footpaths and roads (`docs/chapel.md`: `routeOnPaths`, routes saved in the wedding record, followers trail the couple), a wedding picture on the guide's village page, and a check of the desktop top-bar spot. Observer save record gains optional `p1` / `p2` (old saves load as straight lines, no migration); no sim hash or golden change.
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run gate:full` (6 slots) | wall 21.7 min, 38 stages, all passed on the first attempt, no flaky stage, no hang |
+| Unit tests | `npm test` (in the gate) | 489 files passed (4 skipped), 5137 tests passed (139 skipped) |
+| Balance | `npm run test:balance` (run alone first: 48 passed; 4 shards in the gate) | passed, no golden moved |
+| Chapel | `npm run chapel:sanity -- --shots 1` | OK, plus: 400 sampled walking positions, 0 off a path tile (except within 3 tiles of the doors); shots `chapel2-*` looked at |
+| Desktop | `npm run desktop:diff` | SAME. The 0.7.0 6x6 px spot (0.0027 %) is not noise (two runs of the same commit: 0 px) and not CSS leaking: against 0.6.6 (same script) the only difference is glyph antialiasing of one letter in the "Graphics: med" button; no layout change, no fix |
+| Size | `npm run size` | 3227.2 kB raw / 1146.6 kB gzip (0.7.1: 1146.0 kB; budget 2048 kB) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (68 pages, 8.4 MB screenshots of 8.5; the new `chapel-wedding` shot is 51 + 28 kB, no recompression needed) |
 
 ## 0.7.1 (2026-11-16, macOS, Node v24.22.3)
 

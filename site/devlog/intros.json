@@ -128,5 +128,10 @@
     "tagline": "a chapel, and a tidier phone",
     "lead": "Two things this time. First, a small mountain chapel for the village: whitewashed, with a bell tower, a bench by the door and a few graves. It adds a little charm to the rating, and now and then, mostly on a summer Saturday, there is a wedding. The party walks up to the door, the bell rings, they stay for two hours and then have a meal at a lodge nearby. Second, some tidying that was on my list. While you place a lift or a piste on desktop, the ground profile is now a small line that opens into the full chart when you click it, the same as on a phone. Painting a hiking trail with your finger on a landscape phone works in my test again, and the month-end card on a phone no longer sits on top of the other cards. I have only seen the wedding on a software renderer, so I do not know yet how the little people look on a real screen.",
     "shot": "season-summer"
+  },
+  "0.7.2": {
+    "tagline": "the wedding party takes the path",
+    "lead": "A small one. In 0.7.1 the wedding party walked in a straight line from the Base Lodge to the chapel, right across lawns and through fences. Now they follow your footpaths and roads, in a little line with the couple at the front, and then go on to the meal the same way. If there is no path they still cut across, as before. The guide also finally has a picture of the chapel.",
+    "shot": "chapel-wedding"
   }
 }

@@ -4,6 +4,22 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-16 (pre-release)
+
+A small update for the chapel. Your old saves keep working, and the economy and the desktop look are unchanged.
+
+### Highlights
+
+- **Wedding guests follow the paths**: the party now walks along your footpaths and roads from the Base Lodge to the chapel and on to the meal, instead of cutting straight across the grass.
+- **The party stays together**: the couple go first and the guests trail behind them in a small line.
+- **A picture of the chapel on the website**: the guide page *Pizza, bakery, chapel & the sky* now shows a wedding at the chapel door.
+
+### Changes
+
+- Weddings: the two walks use the footpath / road network (`routeOnPaths`, a deterministic search over path tiles); the walking time follows the real route length; the routes are saved in the wedding record, so a save in the middle of a walk loads the same picture. With no connected path the party walks a straight line and it is logged; saves from 0.7.1 without routes load as straight lines.
+- Tooling: `npm run chapel:sanity` asserts that every walking position is on a path tile except at the doors; its screenshots are now `.weave/shots/chapel2-*.png`.
+- Checked: the 6x6 px spot in the desktop top bar (0.0027 %) is not run-to-run noise (two runs of the same commit are identical) but a one-letter glyph antialiasing difference in the "Graphics: med" button against 0.6.6; layout is unchanged, so nothing to fix.
+
 ## [0.7.1] - 2026-11-16 (pre-release)
 
 A small update: a chapel for the village and some phone and desktop tidying. Your old saves keep working, and the economy and the desktop look are unchanged apart from the ground profile.

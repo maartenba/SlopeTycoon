@@ -3,6 +3,15 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.7.2",
+    "date": "2026-11-16",
+    "highlights": [
+      "Wedding guests follow the paths: the party now walks along your footpaths and roads from the Base Lodge to the chapel and on to the meal, instead of…",
+      "The party stays together: the couple go first and the guests trail behind them in a small line.",
+      "A picture of the chapel on the website: the guide page Pizza, bakery, chapel & the sky now shows a wedding at the chapel door."
+    ]
+  },
+  {
     "version": "0.7.1",
     "date": "2026-11-16",
     "highlights": [
@@ -21,16 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "The tab row shows when there is more: a fade and a > button at the edge, whole tabs that snap into place, and shorter names (Paths, Pistes) so more…",
       "What's new, the update card and the welcome-back recap open full screen on phones, with a big close button, instead of floating over other panels.",
       "Rudi's tips and the news are a small badge and also live in the ... menu; settings and reports are full-screen sheets with a clear close button."
-    ]
-  },
-  {
-    "version": "0.6.6",
-    "date": "2026-11-15",
-    "highlights": [
-      "Nicer cars and buses: several body styles, two-tone roofs, snow on the roof that melts in the sun, soft shadows, brake lights, and headlight pools…",
-      "Cows swish their tails and ring their bells; sheep and goats twitch their ears and tails.",
-      "Square hay bales and calmer tractors: tractors drive at a gentle pace, turn corners smoothly and use a gap in the fence.",
-      "Smoother river meets lake: no more seam or doubled foam where a river enters a lake."
     ]
   }
 ];
