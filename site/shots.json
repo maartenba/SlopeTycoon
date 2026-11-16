@@ -899,12 +899,12 @@
     },
     {
       "id": "touch-phone-hud",
-      "alt": "The game on a phone held upright: a one-row top bar, a one-line HUD strip, one row of speed buttons, a single goal row, and most of the screen is map.",
+      "alt": "The game on a phone held upright: one slim top row with the menu, money, stars, guests, a speed chip and a more button, a single goal row under it, and most of the screen is map.",
       "pages": [
         "touch"
       ],
       "kind": "harness",
-      "caption": "On a phone the map comes first: one-row bar, one-line HUD.",
+      "caption": "On a phone the map comes first: one slim top row, one goal row.",
       "shot": {
         "start": "summer",
         "hour": 12,
@@ -939,12 +939,12 @@
     },
     {
       "id": "touch-phone-ghost",
-      "alt": "A phone while placing a cafe: the drawer has folded to its grab bar, the ghost sits beside the lodge with its price, and the Place bar is above the dock.",
+      "alt": "A phone while placing a cafe: only the top row and the tool bar remain; the bar shows the price, Cancel, rotate, Undo, Options and Place, and the ghost sits beside the lodge.",
       "pages": [
         "touch"
       ],
       "kind": "harness",
-      "caption": "Pick a card and the sheet folds away; the ghost and the map stay free.",
+      "caption": "Pick a card and the tool bar appears; the ghost and the map stay free.",
       "shot": {
         "start": "summer",
         "hour": 12,

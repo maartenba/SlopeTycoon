@@ -1,5 +1,6 @@
 # Mobile UI: phones show the map (M7.5)
 
+> **Update 2026-11-16: mobile UI v2 is implemented** (`docs/mobile-ui-v2.md`): one top row, one banner row, one card at a time (`src/ui/phoneCards.ts`) and a bottom tool bar. The M7.5 sheets, the tool-first and drag-fade logic below are still the base (the coordinator reads `html[data-toolfirst]` / `data-camdrag`); the 146 px top stack, the left tool rail and the floating ghost tooltip described here are gone on phones. `npm run mobile:audit2` is the real-phone audit and the gate stage.
 The owner's problem: on a phone, panels covered the game. This document is the audit (before and after), the `st-sheet` component, the breakpoints, and how to add a panel that behaves on a phone. Desktop (>= 1100 px) is unchanged, and checked: `npm run desktop:diff`.
 
 ## The rule

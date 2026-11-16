@@ -30,7 +30,7 @@ const css = `
 .sheet{display:contents}
 .sheet.on{position:fixed;z-index:100;display:flex;flex-direction:column;box-sizing:border-box;left:max(0px,env(safe-area-inset-left,0px));right:max(0px,env(safe-area-inset-right,0px));bottom:var(--phone-sheet-bottom,var(--sheet-bottom,0px));overflow:hidden;pointer-events:auto;background:rgba(18,26,38,.97);border:1px solid rgba(90,112,144,.5);border-bottom:0;border-radius:14px 14px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.45);transition:height .2s ease,width .2s ease;max-height:calc(100% - var(--sheet-top,56px) - var(--sheet-bottom,0px))}
 .sheet.on.drag{transition:none}
-.sheet.on.side{left:auto;right:max(0px,env(safe-area-inset-right,0px));top:var(--sheet-top,56px);bottom:var(--sheet-bottom,0px);max-height:none;border-radius:14px 0 0 14px;border:1px solid rgba(90,112,144,.5);border-right:0;flex-direction:row}
+.sheet.on.side{left:auto;right:var(--phone-sheet-right,max(0px,env(safe-area-inset-right,0px)));top:var(--sheet-top,56px);bottom:var(--phone-sheet-bottom,var(--sheet-bottom,0px));max-height:none;border-radius:14px 0 0 14px;border:1px solid rgba(90,112,144,.5);border-right:0;flex-direction:row}
 .handle{display:none}
 .sheet.on .handle{display:flex;flex:none;align-items:center;justify-content:center;height:44px;min-height:44px;width:100%;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;background:transparent;border:0;border-radius:0;padding:0;color:inherit}
 .sheet.on .handle:active:not(:disabled){transform:none}

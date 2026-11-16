@@ -683,7 +683,8 @@ export function registerAll(reg: Reg): void {
     await r.check('swipe down from the top edge does not reload or scroll', (await r.ev<number>('window.__marker')) === 42 && (await vv()).sy === 0);
     // double tap on the map and on a HUD panel: no zoom of the page
     await r.tap(w * 0.5, h * 0.55); await r.tap(w * 0.5, h * 0.55);
-    const hud = await r.rect({ css: '.panel', tag: 'st-hud' });
+    const hudPanel = await r.rect({ css: '.panel', tag: 'st-hud' });
+    const hud = hudPanel && { ...hudPanel, x: hudPanel.x - hudPanel.w * 0.38 }; // the money end of the strip: the centre of the phone strip is the star rating, a tap target that opens its panel (docs/mobile-ui-v2.md)
     if (hud) { await r.tap(hud.x, hud.y); await r.tap(hud.x, hud.y); }
     const v1 = await vv();
     await r.check('double tap does not zoom the page', v1.scale === 1 && v1.sx === 0 && v1.sy === 0, JSON.stringify(v1));

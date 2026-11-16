@@ -111,3 +111,7 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
   html[data-phone-mode="modal"] #ui > st-topbar, html[data-phone-mode="modal"] #right-col > *, html[data-phone-mode="modal"] #ui > st-dock, html[data-phone-mode="modal"] #ui > st-news,
   html[data-phone-mode="modal"] #ui > st-assistant, html[data-phone-mode="modal"] #ui > st-touch-controls, html[data-phone-mode="modal"] #ui > st-profile, html[data-phone-mode="modal"] #ui > st-toast { visibility: hidden; }
 }
+@media (max-height: 520px) {
+  /* landscape: the vertical tool bar owns the right edge, so a side sheet opened from Options stops short of it and clears the message pill */
+  html[data-toolfirst] #ui { --phone-sheet-right: calc(80px + env(safe-area-inset-right, 0px)); --phone-sheet-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+}
