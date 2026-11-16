@@ -1630,5 +1630,21 @@
     "bytes": 48660
    }
   ]
+ },
+ "chapel-wedding": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "chapel-wedding-640.webp",
+    "bytes": 28260
+   },
+   {
+    "w": 1280,
+    "file": "chapel-wedding-1280.webp",
+    "bytes": 51746
+   }
+  ]
  }
 }

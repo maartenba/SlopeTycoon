@@ -2107,6 +2107,27 @@
       "kind": "copy",
       "caption": "The Carnival parade on the village street.",
       "source": "docs/img/carnival-street.webp"
+    },
+    {
+      "id": "chapel-wedding",
+      "alt": "A wedding party in white and dark suits standing at the door of a whitewashed mountain chapel in the village on a summer day.",
+      "pages": [
+        "village-and-sky"
+      ],
+      "kind": "harness",
+      "caption": "A summer wedding at the village chapel.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "summer",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,imp=(u)=>new Function('u','return import(u)')(u);const {findSite,anchors,planPathTo,buildNetwork}=await imp('/src/tutorial/suggest.ts');s.loop.setSpeed(0);sim.progression.bypass++;sim.economy.earn('other',500000);const site=findSite(sim,'chapel',anchors(sim).lodge,{rmax:24});const o=s.debugPlace('chapel',site.x,site.y,site.rot,true);const p=planPathTo(sim,site.rect);if(p&&p.length)buildNetwork(sim,1,p);sim.refreshCoverage(undefined,true);sim.buildings.reevaluate();sim.progression.bypass--;const cw=sim.weather.current;cw.kind='clear';cw.intensity=0;cw.fog=0;cw.wind=0.1;sim.game.date.minute=9*60;sim.wedding.force(5);const w=sim.wedding,r=w.rec,t=r.tBell+30;s.weddingView.now=()=>t;s.weddingView.update(5);const b=sim.buildings.get(o.building.id);const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(13);const u=document.getElementById('ui');if(u)u.style.display='none';return 'ok'})()"
+      }
     }
   ]
 }
