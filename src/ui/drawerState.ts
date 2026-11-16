@@ -1,4 +1,6 @@
 export type DrawerId = 'buildings' | 'lifts' | 'paths' | 'pistes' | 'terrain' | 'landscape' | 'bulldoze' | 'view' | 'finance' | 'ops' | 'marketing' | 'pricing';
+/** Shorter dock labels on narrow phones (the full label stays the accessible name / tooltip). */
+export const DOCK_SHORT: Readonly<Partial<Record<string, string>>> = { paths: 'Paths', pistes: 'Pistes', ops: 'Ops' };
 export const DRAWERS: ReadonlyArray<{ id: DrawerId; label: string; icon: string; key?: string }> = [
   { id: 'buildings', label: 'Buildings', icon: '🏠' },
   { id: 'lifts', label: 'Lifts', icon: '🚡' },

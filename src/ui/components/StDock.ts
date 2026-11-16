@@ -14,7 +14,7 @@ import {
   AUTO_FLATTEN_TIP, BUILDING_ICONS, BUILDING_TABS, LIFT_ICONS, NETWORK_ITEMS, buildingInfo, buildingsInTab, liftInfo, liftSeason, trailSeasonNote, networkInfo, networkSeason,
   type BuildingTab, type InfoModel, type NetworkItem,
 } from '../buildInfo';
-import { DRAWERS, FLATTEN_DRAWERS, digitSelectsItem, drawerReduce, type DrawerId, type DrawerState } from '../drawerState';
+import { DOCK_SHORT, DRAWERS, FLATTEN_DRAWERS, digitSelectsItem, drawerReduce, type DrawerId, type DrawerState } from '../drawerState';
 import { ChangeGate } from '../keyedDiff';
 import { edgeState, popoverLeft, scrollIntoViewLeft, wheelToHorizontal } from '../drawerScroll';
 import { icon } from '../icons';
@@ -208,6 +208,17 @@ const css = `
 .body:has(.pc[data-path-controls]) .pc{width:100%;max-height:none;overflow:visible}
 }
 @media (max-width:760px),(max-height:520px){.dock{display:var(--dock-row,flex)}:host(.peek) st-sheet{display:none}}
+/* Dock scroll affordance (phones / short landscape only; desktop is untouched): whole-tab snapping, a fade + 44 px chevron on each side that has more tabs, short labels. */
+.dockw{display:contents}.dockw .dn{display:none}.dockw .dock button .sh{display:none}
+@media (max-width:760px),(max-height:520px){
+.dockw{display:block;position:relative;max-width:100%;min-width:0}
+.dock{scroll-snap-type:x mandatory;scroll-padding:0 4px}.dock button{scroll-snap-align:start}
+.dockw .dn{position:absolute;top:0;bottom:0;width:44px;min-width:44px;height:auto;margin:0;padding:0;border:0;border-radius:var(--r-md);color:#fff;font-size:22px;line-height:1;cursor:pointer;z-index:2;align-items:center;justify-content:center;pointer-events:auto}
+.dockw .dn.r{right:0;background:linear-gradient(to right,rgba(24,32,44,0),rgba(24,32,44,.92) 55%)}
+.dockw .dn.l{left:0;background:linear-gradient(to left,rgba(24,32,44,0),rgba(24,32,44,.92) 55%)}
+.dockw.can-l .dn.l,.dockw.can-r .dn.r{display:flex}
+}
+@media (max-width:520px),(max-height:520px){.dockw .dock button .lg{display:none}.dockw .dock button .sh{display:inline}}
 /* Tablets keep the drawers but never let one pass ~45 % of the screen height (the map has to stay usable) */
 @media (min-width:521px) and (max-width:1099px) and (min-height:521px){.drawer{max-height:min(40vh,300px)}.drawer.mid{max-height:min(44vh,360px)}.drawer.tall{max-height:min(44vh,360px)}.drawer.tall .pane{max-height:calc(min(44vh,360px) - 48px)}}
 /* Phones (portrait <= 520 px wide, landscape <= 520 px high): the open drawer is a bottom sheet / side sheet (st-sheet, docs/mobile-ui.md). st-sheet is a passthrough elsewhere, so none of this applies there. */
@@ -271,6 +282,7 @@ export class StDock extends StElement {
   private head = el('div', 'head');
   private body = el('div', 'body');
   private dock = el('div', 'dock panel');
+  private dockw = el('div', 'dockw');
   private dockBtns = new Map<DrawerId, HTMLButtonElement>();
   private cards: Card[] = [];
   private built = new Map<string, Built>();
@@ -317,7 +329,9 @@ export class StDock extends StElement {
     this.infoEl.hidden = true;
     this.infoEl.append(this.infoThumb, this.infoTxt, this.infoRest);
     this.drawer.append(this.head, this.body, this.infoEl);
-    this.wrap.append(this.sheet, this.dock);
+    this.dockw.append(this.dockChevron('l', 'Previous tabs', -1), this.dock, this.dockChevron('r', 'More tabs', 1));
+    this.dock.addEventListener('scroll', () => this.syncDockEdges(), { passive: true });
+    this.wrap.append(this.sheet, this.dockw);
     this.root.appendChild(this.wrap);
   }
 
@@ -325,8 +339,10 @@ export class StDock extends StElement {
     this.api = api;
     for (const d of DRAWERS) {
       const b = el('button');
-      b.append(el('span', 'ic', d.icon), el('span', '', d.label));
+      const short = DOCK_SHORT[d.id];
+      if (short) b.append(el('span', 'ic', d.icon), el('span', 'lg', d.label), el('span', 'sh', short)); else b.append(el('span', 'ic', d.icon), el('span', '', d.label));
       b.title = d.label + (d.key ? ` (${d.key})` : '');
+      b.setAttribute('aria-label', d.label);
       b.dataset.drawer = d.id;
       b.addEventListener('click', () => this.dispatch({ type: 'toggle', id: d.id }));
       this.dockBtns.set(d.id, b);
@@ -334,6 +350,11 @@ export class StDock extends StElement {
     }
     window.addEventListener('keydown', this.keyHandler, true);
     this.track(() => window.removeEventListener('keydown', this.keyHandler, true));
+    const sync = (): void => this.syncDockEdges();
+    window.addEventListener('resize', sync);
+    this.track(() => window.removeEventListener('resize', sync));
+    if (typeof ResizeObserver !== 'undefined') { const ro = new ResizeObserver(sync); ro.observe(this.dock); this.track(() => ro.disconnect()); }
+    this.syncDockEdges();
     this.renderDrawer();
   }
 
@@ -355,6 +376,17 @@ export class StDock extends StElement {
     this.sheet.setSnap('peek', false);
   };
   disconnectedCallback(): void { this.peekObs?.disconnect(); this.peekObs = null; this.sheet.removeEventListener('st-sheet-snap', this.onSheetSnap); super.disconnectedCallback(); }
+  private dockChevron(cls: 'l' | 'r', label: string, dir: 1 | -1): HTMLElement {
+    const n = el('button', `dn ${cls}`, dir < 0 ? '\u2039' : '\u203A');
+    n.setAttribute('aria-label', label); n.title = label; n.dataset.role = `dock-${dir < 0 ? 'prev' : 'next'}`;
+    n.addEventListener('click', () => this.dock.scrollBy({ left: dir * Math.max(120, this.dock.clientWidth - 60), behavior: 'smooth' }));
+    return n;
+  }
+  /** Shows the fade + chevron on each side that has more tabs (pure rule: `edgeState`). */
+  private syncDockEdges(): void {
+    const e = edgeState(this.dock.scrollLeft, this.dock.clientWidth, this.dock.scrollWidth);
+    this.dockw.classList.toggle('can-l', e.left); this.dockw.classList.toggle('can-r', e.right);
+  }
   private syncPeek(): void {
     const mini = this.classList.contains('peek');
     this.sheet.setAttribute('peek-h', String(mini ? SHEET_MINI : SHEET_PEEK));

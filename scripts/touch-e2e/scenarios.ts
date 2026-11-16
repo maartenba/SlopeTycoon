@@ -467,6 +467,20 @@ export function registerAll(reg: Reg): void {
       await r.check('dock row scrolls sideways by swipe, nothing selected', dr2 > dr.l + 20 && s1.tool === s0.tool, `scrollLeft ${dr.l} -> ${dr2}`);
       await r.swipe(dr.x + dr.w * 0.2, dr.y, dr.x + dr.w * 0.9, dr.y, 10);
     } else await r.check('dock row fits (no scrolling needed)', true, `overflow ${dr.max}`);
+    // dock chevrons (owner decision 2026-11-16): on a phone the `›` shows while there is more, one tap scrolls the row and reveals the last tab, then `‹` shows
+    if (dr.max > 10 && r.vp !== 'tablet') {
+      await dock("sr.querySelector('.dock').scrollLeft = 0;"); await sleep(400);
+      const vis = (cls: string): Promise<boolean> => dock(`const b = sr.querySelector('.dn.${cls}'); const q = b.getBoundingClientRect(); return getComputedStyle(b).display !== 'none' && q.width >= 44 && q.height >= 44;`);
+      await r.check('dock: `›` is shown at the start, `‹` is not', (await vis('r')) && !(await vis('l')));
+      for (let i = 0; i < 6 && (await vis('r')); i++) { await r.tapEl({ css: '.dn.r', tag: 'st-dock' }); await sleep(700); }
+      const end = await dock("const d = sr.querySelector('.dock'); const last = d.lastElementChild.getBoundingClientRect(), dd = d.getBoundingClientRect(); return { left: last.left >= dd.left - 1 && last.right <= dd.right + 1, name: d.lastElementChild.getAttribute('aria-label') };");
+      await r.check('dock: tapping `›` scrolls the row and reveals the last tab fully', end.left, `last tab ${end.name}`);
+      await r.check('dock: at the end `›` hides and `‹` shows', !(await vis('r')) && (await vis('l')));
+      await r.tapEl({ css: '.dn.l', tag: 'st-dock' }); await sleep(900);
+      const back = await dock("return sr.querySelector('.dock').scrollLeft;");
+      await r.check('dock: `‹` scrolls back', back < dr.max - 20, `scrollLeft ${back}`);
+      await dock("sr.querySelector('.dock').scrollLeft = 0;"); await sleep(300);
+    }
     // buildings drawer: open, card rail scrolls by swipe (no placement), card tap selects, close button
     await r.tapEl({ text: 'Buildings', tag: 'st-dock' }); await sleep(600);
     const g0 = await dock("const g = sr.querySelector('.drawer .grid'); if (!g) return null; const q = g.getBoundingClientRect(); return { l: g.scrollLeft, max: g.scrollWidth - g.clientWidth, x: q.left, y: q.top + q.height / 2, w: q.width };");
