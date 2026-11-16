@@ -35,6 +35,7 @@ export const STAGES: Stage[] = [
   { id: 'menu-music:e2e', cmd: 'npm run menu-music:e2e', needs: { browser: true, devServer: true }, writes: '.weave', parallel: 'yes' },
   { id: 'sfx:e2e', cmd: 'npm run sfx:e2e', needs: { browser: true, devServer: true }, writes: '.weave', parallel: 'yes' },
   { id: 'touch:e2e', cmd: 'npm run touch:e2e -- --only camera,placement,drawers --viewport phone', needs: { browser: true, devServer: true }, writes: '.weave', parallel: 'yes' },
+  { id: 'mobile:audit2', cmd: 'npm run mobile:audit2 -- --overlaps 400 --thresholds 1 --shots 0', needs: { browser: true, devServer: true }, writes: '.weave/mobile-audit', parallel: 'yes' },
   { id: 'mobile:audit', cmd: 'npm run mobile:audit -- --label gate', needs: { browser: true, devServer: true }, writes: '.weave/shots', parallel: 'yes' },
   { id: 'desktop:diff', cmd: 'npm run desktop:diff -- --out .weave/gate/desktop-diff', needs: { browser: true, devServer: true }, writes: '.weave/gate/desktop-diff', parallel: 'yes (the real gate also needs a before worktree)' },
   { id: 'flicker', cmd: 'npm run flicker -- --only 64-winter-day', needs: { browser: true, devServer: true, quiet: true }, writes: '.weave', parallel: 'NO: frame-timing sensitive, keep serial' },

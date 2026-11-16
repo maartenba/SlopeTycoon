@@ -525,7 +525,7 @@ export function registerAll(reg: Reg): void {
       const over = await r.ev<number>('document.documentElement.scrollWidth - innerWidth');
       await r.check(`${name}: opens by tap, page does not overflow`, ok && over <= 0, `overflow ${over}`);
       await r.tapEl({ text: name, tag: 'st-dock', scroll: true }); await sleep(300);
-      await r.s(() => { for (const k of ['Escape']) window.dispatchEvent(new KeyboardEvent('keydown', { key: k })); });
+      await r.s(() => { (document.querySelector('st-dock') as any).show(null); }); // (Escape with nothing open opens the pause menu, which hides the dock on phones)
     }
   });
 

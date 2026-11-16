@@ -228,7 +228,7 @@ export class StSpeedControl extends StElement {
       const sp = a.getSpeed();
       for (const [s, b] of this.btns) b.classList.toggle('active', s === sp);
       this.chipEl.replaceChildren(sp === 0 ? icon('pause', 16) : document.createTextNode(sp === 1 ? '1×' : sp === 2 ? '3×' : '10×')); this.chipEl.classList.toggle('paused', sp === 0);
-      this.chipEl.title = this.chipEl.ariaLabel = 'Game speed: tap for pause / 1× / 3× / 10× / nights / skip';
+      this.chipEl.title = this.chipEl.ariaLabel = 'Game speed: tap to change it';
       const d = a.getDate();
       this.dateEl.textContent = formatClock(d);
       const tip = formatGameDate({ year: d.year, day: d.day }).tooltip; // full date + day of year, no clock (the text already has it; a changing title would flicker the tooltip)

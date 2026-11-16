@@ -111,7 +111,7 @@ describe('gate stage table and --since path mapping', () => {
     expect(by.get('verify:site')!.needs).toEqual(['site:check']); expect(by.get('site:check')!.needs).toEqual(['build:site']);
     expect(by.get('test')!.slots).toBe(4); expect(by.get('analytics:e2e')!.slots).toBe(2); expect(by.get('typecheck')!.slots).toBe(1);
     expect(FULL.every((i) => ALL.includes(i))).toBe(true);
-    for (const id of [...E2E, 'shot:suite', 'mobile:audit', 'touch:e2e', 'desktop:diff', 'flicker', 'test:perf', ...BALANCE]) expect(FULL).toContain(id);
+    for (const id of [...E2E, 'shot:suite', 'mobile:audit', 'mobile:audit2', 'touch:e2e', 'desktop:diff', 'flicker', 'test:perf', ...BALANCE]) expect(FULL).toContain(id);
   });
   it('docs only: the repo tests, nothing else', () => { expect([...stagesForPaths(['docs/gate-speed.md', 'CHANGELOG.md']).ids]).toEqual(['test:repo']); });
   it('site only: the site gate + site/repo tests, no build', () => {
@@ -172,7 +172,7 @@ describe('dev-build detection', () => {
 
 /** Schedule simulation (no contention model) from the walls of the recorded 13 Nov 2026 gate:full (36 stages, 1817 s at 4 slots, browser weight 3). */
 describe('gate schedule simulation (docs/gate-speed.md "Retune")', () => {
-  const walls: Record<string, number> = { typecheck: 6.6, lint: 8.4, test: 201.3, 'test:balance': 280.3, 'test:balance.b': 262.4, 'test:balance.c': 251.7, 'test:balance.d': 257.4, 'test:perf': 59.2, build: 9.5, 'verify:pwa': 0.5, 'analytics:e2e': 47.6, 'offline:splash': 16.3, 'menu-music:e2e': 44.4, 'sfx:e2e': 58.6, 'music:e2e': 80.5, 'play:sanity': 35.5, 'phase6:sanity': 18.3, 'summer:sanity': 28.1, 'winter:sanity': 32.2, 'winter-tours:sanity': 13.6, 'backcountry:sanity': 26.2, 'sled:sanity': 22.8, 'm74:sanity': 20.4, 'schirmbar:sanity': 18.1, 'visitor:sanity': 70.9, 'photographer:sanity': 18, 'shot:suite': 192.9, 'touch:e2e': 220.7, 'mobile:audit': 267.9, 'desktop:diff': 72.7, flicker: 125.5, 'site:og': 10.4, 'docs:img': 0.3, 'build:site': 10.8, 'site:check': 0.5, 'verify:site': 1.8 };
+  const walls: Record<string, number> = { typecheck: 6.6, lint: 8.4, test: 201.3, 'test:balance': 280.3, 'test:balance.b': 262.4, 'test:balance.c': 251.7, 'test:balance.d': 257.4, 'test:perf': 59.2, build: 9.5, 'verify:pwa': 0.5, 'analytics:e2e': 47.6, 'offline:splash': 16.3, 'menu-music:e2e': 44.4, 'sfx:e2e': 58.6, 'music:e2e': 80.5, 'play:sanity': 35.5, 'phase6:sanity': 18.3, 'summer:sanity': 28.1, 'winter:sanity': 32.2, 'winter-tours:sanity': 13.6, 'backcountry:sanity': 26.2, 'sled:sanity': 22.8, 'm74:sanity': 20.4, 'schirmbar:sanity': 18.1, 'visitor:sanity': 70.9, 'photographer:sanity': 18, 'shot:suite': 192.9, 'touch:e2e': 220.7, 'mobile:audit': 267.9, 'mobile:audit2': 420, 'desktop:diff': 72.7, flicker: 125.5, 'site:og': 10.4, 'docs:img': 0.3, 'build:site': 10.8, 'site:check': 0.5, 'verify:site': 1.8 };
   const plan = withDeps(STAGES, FULL);
   const wall = (s: StageDef): number => walls[s.id] ?? s.est;
   const old = plan.map((s) => (s.slots === 2 && !s.id.startsWith('test:') ? { ...s, slots: 3 } : s)); // the previous table: browser stages (not the san ones) were 3; sanity 2

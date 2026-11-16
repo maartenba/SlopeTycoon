@@ -35,6 +35,7 @@ export const STAGES: StageDef[] = [
   { id: 'shot:suite', cmd: 'npm run shot:suite', slots: HEAVY, est: 180 },
   { id: 'touch:e2e', cmd: 'npm run touch:e2e -- --only camera,placement,drawers --viewport phone', slots: HEAVY, est: 215 },
   { id: 'mobile:audit', cmd: 'npm run mobile:audit -- --label gate', slots: HEAVY, est: 265 },
+  { id: 'mobile:audit2', cmd: 'npm run mobile:audit2 -- --overlaps 400 --thresholds 1 --shots 0', slots: HEAVY, est: 420 }, // real-phone profiles (360 / 390 / 412 / moto-g7 / landscape): no overlapping cards, map >= 60 % / 50 %, taps >= 44 px (docs/mobile-ui-v2.md)
   { id: 'desktop:diff', cmd: 'npx vite-node scripts/gate-desktop-diff.ts', slots: HEAVY, est: 70 },
   { id: 'flicker', cmd: 'npm run flicker -- --only 64-winter-day', slots: HEAVY, exclusive: true, est: 120 },
   { id: 'site:og', cmd: 'npm run site:og', slots: LIGHT, est: 10 },
@@ -68,7 +69,7 @@ export function stagesForPaths(paths: string[]): Selection {
   for (const f of p) {
     if (/^(package(-lock)?\.json|vite\.config\.[jt]s|vitest[^/]*\.config\.[jt]s|tsconfig[^/]*\.json|\.nvmrc|scripts\/gate[^/]*\.ts|scripts\/lib\/(gate|harness|static-server|dist-guard)[^/]*\.ts)$/.test(f)) add('build / tooling config', FULL);
     else if (/^src\/(sim|config|game|core|world)\//.test(f)) add('src/sim|config|game|core|world', FULL);
-    else if (/^src\/(render|ui)\//.test(f) || /\.(glsl|vert|frag)$/.test(f)) add('src/render|ui', [...BASE.slice(0, 2), 'test:render', 'build', 'verify:pwa', 'shot:suite', 'flicker', 'desktop:diff', 'mobile:audit', 'test:perf', ...RENDER_SANITIES]);
+    else if (/^src\/(render|ui)\//.test(f) || /\.(glsl|vert|frag)$/.test(f)) add('src/render|ui', [...BASE.slice(0, 2), 'test:render', 'build', 'verify:pwa', 'shot:suite', 'flicker', 'desktop:diff', 'mobile:audit', 'mobile:audit2', 'test:perf', ...RENDER_SANITIES]);
     else if (/^(src\/audio\/|public\/audio\/)/.test(f)) add('src/audio|public/audio', ['typecheck', 'lint', 'test:audio', 'build', 'verify:pwa', 'music:e2e', 'menu-music:e2e', 'sfx:e2e']);
     else if (/^src\/persist\//.test(f)) add('src/persist', [...BASE, ...SAVE_SANITIES]);
     else if (/^(src\/(sw|pwa)\/|sw\/|vite-plugins\/)/.test(f)) add('service worker / pwa', ['typecheck', 'lint', 'build', 'verify:pwa', 'offline:splash', 'analytics:e2e']);
