@@ -23,27 +23,28 @@ Cell = map-visible % / overlapping pairs >= 400 px² / tap targets < 44 px / top
 | State | moto-g7 412x762 before | moto-g7 after | 360x696 before | 360x696 after | 390x714 after | 412x811 after | land 915x412 after |
 |---|---|---|---|---|---|---|---|
 | default | 63 % / 1 / 1 / 146 | **81 %** / 0 / 0 / 48 | 58 % | **79 %** / 0 / 0 / 48 | 80 % | 82 % | 62 % |
-| goals-open | 50 % / 4 | **70 %** / 0 | 44 % | **68 %** / 0 | 69 % | 72 % | 56 % |
-| rudi-advice | 46 % / 4 | **65 %** / 0 | 41 % | **62 %** / 0 | 63 % | 67 % | 49 % |
-| news-open | 48 % / 4 | **65 %** / 0 | 43 % | **62 %** / 0 | 63 % | 67 % | 49 % |
+| goals-open | 50 % / 4 | **73 %** / 0 | 44 % | **68 %** / 0 | 69 % | 74 % | 56 % |
+| rudi-advice | 46 % / 4 | **68 %** / 0 | 41 % | **68 %** / 0 | 69 % | 69 % | 61 % |
+| news-open | 48 % / 4 | **70 %** / 0 | 43 % | **67 %** / 0 | 68 % | 72 % | 61 % |
 | toast | 61 % / 1 | **79 %** / 0 | 55 % | **76 %** / 0 | 78 % | 80 % | 61 % |
-| inspector | 49 % / 5 | **63 %** / 0 | 44 % | **60 %** / 0 | 61 % | 65 % | 50 % |
+| inspector | 49 % / 5 | **68 %** / 0 | 44 % | **66 %** / 0 | 66 % | 70 % | 59 % |
 | building-placement | 53 % / 1 | **80 %** / 0 | 47 % | **79 %** / 0 | 79 % | 82 % | 85 % |
-| piste-painting | 62 % / 1 | **80 %** / 0 | 61 % | **79 %** / 0 | 79 % | 82 % | 85 % |
+| piste-painting | 62 % / 1 | **61 %** / 0 (80 % in the earlier runs) | 61 % | **79 %** / 0 | 59 % (79 % earlier) | 63 % (82 %) | 85 % |
 | scenario-default (Family Valley) | 59 % / 2 | **81 %** / 0 | 52 % | **79 %** / 0 | 80 % | 82 % | 62 % |
 | lift-valid | 29 % / 6 | **80 %** / 0 | 21 % / 10 | **79 %** / 0 | 79 % | 82 % | 86 % |
 | lift-invalid (the owner's case) | 23 % / 7 | **80 %** / 0 | 18 % / 12 | **79 %** / 0 | 79 % | 82 % | 86 % |
 | settings (modal) | 58 % / 4 / 4 | 85 % / 0 / 0 | 56 % | 83 % / 0 / 0 | 84 % | 85 % | 79 % |
 | year-report (modal, excluded) | 15 % / 26 | 22 % / 0 / 0 | 16 % | 22 % / 0 / 0 | 22 % | 22 % | 21 % |
 
-All thresholds pass on 360x696, 390x714, 412x811 and moto-g7 (map >= 60 % default / >= 50 % tool, no overlaps > 400 px², no tap target < 44 px, top chrome 48 px (65 px in modals, excluded)). Landscape 915x412 has no threshold: the three side-sheet states (Rudi, news, inspector) sit at 46-50 % because the side sheet takes the right 320 px; the rest is 56-86 %. Screenshots: `.weave/shots/mob3-before-*` / `mob3-after-*` (moto-g7 and 360, every state).
+All thresholds pass on 360x696, 390x714, 412x811 and moto-g7 (map >= 60 % default / >= 50 % tool, no overlaps > 400 px², no tap target < 44 px, top chrome 48 px (65 px in modals, excluded)). In the final gate run piste-painting measured 59-63 % on three profiles (80 % in every earlier run): the audit's tap on the map sometimes leaves the Pistes sheet open, which is the sheet state, not the tool bar; still above the 50 % tool threshold, but flaky in the audit and worth a look. Landscape 915x412 has no threshold: the side-sheet states (Rudi, news, inspector) are 59-61 % now (the goal chip steps aside while a sheet is open), the rest 56-86 %. Screenshots: `.weave/shots/mob3-before-*` / `mob3-after-*` (moto-g7 and 360, every state).
+
+**Gate**: `npm run gate:full` on the final commit: **37 stages, 0 failed, 0 flaky, 21.7 min** (mobile:audit2 580 s and the old mobile:audit both pass; touch:e2e gate subset, desktop:diff, shot:suite, flicker, test:perf, the sanities all pass). An earlier gate attempt failed `mobile:audit2` (year-report overlaps because the mode only followed on the 250 ms poll under load: fixed with `modalStack.onChange`; landscape side sheets overlapped the Rudi / news chips: fixed) and the old `mobile:audit` (landscape sheet states 46.8 % < 50 %: fixed by hiding the goal chip while a sheet is open).
 
 Other checks (2026-11-16): `desktop:diff` SAME on all six screens (at most 0.0027 % of the pixels, a 6x6 px spot in the top bar that also differs run to run); `touch:e2e` phone portrait **209 / 209** (after fixing the test selectors: speed chip, bar roles, rating hit area), tablet all groups pass, landscape all groups pass **except hiking trail / mtb trail "paint mode drag paints"** which fail identically on the pre-change commit (a pre-existing landscape issue, not caused by v2).
 
 ### Follow-ups
 - **Desktop sparkline** (owner likes it): the same sparkline + tap-for-chart in the desktop placement tool instead of the 320 px profile card. Not done here: desktop must stay pixel-identical in this change.
 - Real-phone check on the Motorola G7: safe-area insets, the Chrome URL-bar collapse (the audit has neither), thumb reach of Cancel / Place, the Rudi count badge (it overlaps the avatar by design), the 4 s toast release after a tool, the vertical landscape bar.
-- Landscape side-sheet states are at 46-50 % map: a half-height sheet or a narrower side sheet would give 60 %.
 - `st-recap` (the month-end card) is still an independent floating card (hidden in tool and modal mode only): fold it into the banner chip.
 - The overflow menu is not keyboard-navigable with arrow keys yet (Tab works).
 - `mobile:audit` (the M7.5 audit) is kept next to `mobile:audit2` in the gate; once v2 is accepted the old one can go.
