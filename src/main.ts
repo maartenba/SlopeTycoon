@@ -179,6 +179,7 @@ import { GuestRenderer } from '@/render/GuestRenderer';
 import { VehicleRenderer } from '@/render/meshes/Vehicles';
 import { heightAt } from '@/render/Picking';
 import { MaterialGuard, type GuardRenderer } from '@/render/MaterialGuard';
+import { RaceCourseView } from '@/render/race/RaceCourseView';
 import { seasonYear, hourOfDay } from '@/sim/Clock';
 import { sunTimes, isNightHour, fmtClock } from '@/sim/Daylight';
 import { AtmosphereController, type AtmosInput, type AtmosForce } from '@/render/atmosphere/AtmosphereState';
@@ -767,6 +768,8 @@ const visitorView = new VisitorView(grid, sim.visitor, () => game.date.year * DA
 renderer.scene.add(visitorView.group);
 const weddingView = new WeddingView(grid, sim.wedding, () => game.date.year * DAYS_PER_YEAR * 1440 + game.date.day * 1440 + game.date.minute); // chapel wedding party (docs/chapel.md): up to six small figures, nothing while no wedding is on
 renderer.scene.add(weddingView.group);
+const raceCourseView = new RaceCourseView(grid, sim.race, () => (game.date.year * DAYS_PER_YEAR + game.date.day) * 24 + Math.floor(game.date.minute / 60), (c) => sim.names.pisteName(c.run)); // race course gates + timing boards (docs/race-course.md): 3 draw calls for every course
+renderer.scene.add(raceCourseView.group);
 // The visitor's call (audio/visitorCall.ts): a global quiet call at the sighting (pending until the audio is unlocked), a spatial one when the camera is near, again on 'Show me'. Pan = where it is on screen.
 const visitorCalls = new VisitorCalls((o) => audioRef?.sfx.play('distantCall', o) ?? false, () => performance.now() / 1000);
 const visitorAudioFacts = (): { active: boolean; dist: number; pan: number } => {
@@ -810,6 +813,7 @@ const updateNature = (dt: number, cam: THREE.Camera, vh: number): void => {
   bcFlags.update();
   visitorView.update(dt);
   weddingView.update(dt);
+  raceCourseView.update(dt);
   { const f = visitorAudioFacts(); visitorCalls.frame(f.active, f.dist, f.pan); }
   sledRunView.update();
   updateFestival(dt);
@@ -2552,6 +2556,7 @@ if (ui && !DEMO) {
     highlight: (on) => { pisteHighlightOn = on; showPisteInspector(); },
     setClosed: (closed) => { const r = selectedPiste ? sim.pisteReportAt(selectedPiste.x, selectedPiste.y) : null; if (r) sim.setRunClosed(r.id, closed); refreshUi(); },
     setGroom: (mode) => { const r = selectedPiste ? sim.pisteReportAt(selectedPiste.x, selectedPiste.y) : null; if (r) sim.setRunGroomMode(r.id, mode); refreshUi(); },
+    setCourse: (on) => { const r = selectedPiste ? sim.pisteReportAt(selectedPiste.x, selectedPiste.y) : null; if (r) sim.setRunCourse(r.id, on); refreshUi(); },
   });
   const routeInspector = el('st-route-inspector');
   routeInspectorRef = routeInspector;
@@ -2617,9 +2622,10 @@ if (ui && !DEMO) {
   const liftName = (kind: string, id: number): string => `${LIFTS[kind as keyof typeof LIFTS]?.name ?? kind} ${id}`;
   opsPanel.bind({
     runs: {
-      rows: () => sim.runList().map((r) => ({ id: r.id, name: r.name, difficultyLabel: r.difficultyLabel, difficultyColor: r.difficultyColor, lengthM: r.lengthM, dropM: r.dropM, passesToday: r.passesToday, passesWeek: r.passesWeek, quality: r.avgQuality, open: r.open, reason: r.reason, closedByPlayer: r.closedByPlayer, groomMode: r.groomMode, groomedDaysAgo: r.groomedDaysAgo })),
+      rows: () => sim.runList().map((r) => ({ id: r.id, name: r.name, difficultyLabel: r.difficultyLabel, difficultyColor: r.difficultyColor, lengthM: r.lengthM, dropM: r.dropM, passesToday: r.passesToday, passesWeek: r.passesWeek, quality: r.avgQuality, open: r.open, reason: r.reason, closedByPlayer: r.closedByPlayer, groomMode: r.groomMode, groomedDaysAgo: r.groomedDaysAgo, course: r.course })),
       setClosed: (id, closed) => { sim.setRunClosed(id, closed); covOverlay.invalidate(); refreshUi(); },
       setGroom: (id, m) => { sim.setRunGroomMode(id, m); refreshUi(); },
+      setCourse: (id, on) => { sim.setRunCourse(id, on); refreshUi(); },
       focus: (id) => { const r = sim.runList().find((x) => x.id === id); if (!r) return; selectedId = null; selectedPiste = { x: Math.floor(r.x), y: Math.floor(r.y) }; pisteHighlightOn = true; renderer.controls.focusOn(r.x, r.y); refreshUi(); },
     },
     rows: () => sim.liftOps.scheduleTable().map((r) => {
@@ -3192,7 +3198,7 @@ const atmosDebug = {
   suggestions: () => atmos.suggestions(atmosSample(currentHour())),
   settings: atmosSettings,
 };
-(window as unknown as { __slope: unknown }).__slope = { ...(import.meta.env.DEV ? { THREE } : {}), get groomingView() { return groomingView; }, visitorView, weddingView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, fallingLeaves, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
+(window as unknown as { __slope: unknown }).__slope = { ...(import.meta.env.DEV ? { THREE } : {}), get groomingView() { return groomingView; }, visitorView, weddingView, raceCourseView, apresNotes, planBridge, select, selectPiste, selectRoute, bcFlags, sledRunView, setOverlay, startPlacement, refreshProps, debugPlace: (type: string, x: number, y: number, rot = 0, flatten = true) => { const o = debugPlaceBuilding(sim.env, props, type, x, y, rot, flatten, false); if (o.ok && o.building) { sim.refreshCoverage(o.building, true); sim.buildings.reevaluate(); sim.refreshCoverage(undefined, true); } return o; }, sim, trees, rocks, villageDecor, landscapeTool, landscapeDecor, springMarkers, riverDebug: { /* visual-QA harness: ghost / dig without the mouse */ plan: (x: number, y: number, tx?: number, ty?: number) => planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }), ghost: (x: number, y: number, tx?: number, ty?: number) => { const p = planRiver(sim.riverEnv(), { x, y }, tx === undefined ? null : { x: tx, y: ty! }); overlays.setVertexRect(x, y, x + 1, y + 1); overlays.setRiverGhost(p.path, p.carveDepth, p.changed); return p.ok ? p.cost : p.reason; }, dig: (x: number, y: number, tx?: number, ty?: number) => landscapeTool.digRiver({ x, y }, tx === undefined ? null : { x: tx, y: ty! }) }, landscapeDebug: { /* visual-QA harness: place without the mouse */ find: (extent = 5, from = 0) => { const env = sim.landscapeEnv(); let n = 0; for (let y = 8; y < grid.size - 8; y++) for (let x = 8; x < grid.size - 8; x++) if (planPond(env, pondRectAround(x, y, extent)).ok && n++ >= from) return { x, y }; return null; }, dig: (x: number, y: number, extent = 5) => { const env = sim.landscapeEnv(), plan = planPond(env, pondRectAround(x, y, extent)); if (plan.ok) { const r = applyPond(env, sim.landscape, plan); refreshProps(r.touchedChunks); } return plan.ok ? plan.cost : plan.reason; }, decor: (kind: Parameters<typeof planDecor>[3], x: number, y: number, rot: 0 | 1 = 0) => { const p = planDecor(sim.landscapeEnv(), x, y, kind); if (p.ok) applyDecor(sim.landscape, x, y, kind, rot); return p.ok ? 'ok' : p.reason; }, rocks: (x: number, y: number, brush = 3) => { const p = planRocks(sim.landscapeEnv(), x, y, brush, 0); refreshProps(applyRocks(props, p)); return p.rocks.length; } }, festivalDressing, fireworks, natureView, materialGuard, atmos: atmosDebug, fallingLeaves, setHour: (h: number | null) => { timeOverride = h; lastHour = -1; }, perf: perfApi, game, loop, registry, eventLog, lighting, bus, buildingMeshes, buildingsView, renderer, terrain, water, terrainInfo, grid, props, terraform, overlays, buildings, economy, placement, coverage, covOverlay, liftTools, weather, snow, cond, openStatus, precip, guestSim, guestRenderer, get safety() { return safetyRef; }, get saves() { return saves; } };
 // Farm vehicles QA hook (docs/farm-work.md, docs/promo-video.md): __slope.farmWork.force({ day, hour, weather, at }) puts the tractors mid-trip for a shot (at: "mowA" | "mowB" | "home" | "gate" | "unload" | 0..1, one per tractor as an array); force(null) releases.
 Object.assign((window as unknown as { __slope: object }).__slope, { vehicleRenderer, farmWork: { view: farmWork, force: (o: Parameters<typeof farmWork.force>[0]) => farmWork.force(o), snapshot: () => farmWork.snapshot(), stats: () => ({ ...farmWork.stats }), working: () => farmWork.working() } });
 bootStage('frame');

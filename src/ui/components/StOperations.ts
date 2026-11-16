@@ -52,11 +52,14 @@ export interface RunRow {
   id: number; name: string; difficultyLabel: string; difficultyColor: string; lengthM: number; dropM: number;
   passesToday: number; passesWeek: number; quality: string | null; open: boolean; reason?: string; closedByPlayer: boolean;
   groomMode: 'auto' | 'first' | 'skip'; groomedDaysAgo: number | null;
+  /** Race course (0.8.0): marked, can be marked now, status line. */
+  course?: { on: boolean; can: boolean; text: string };
 }
 export interface RunsApi {
   rows(): RunRow[];
   setClosed(id: number, closed: boolean): void;
   setGroom(id: number, mode: 'auto' | 'first' | 'skip'): void;
+  setCourse?(id: number, on: boolean): void;
   /** Click on a name: move the camera to the run and highlight it. */
   focus(id: number): void;
 }
@@ -151,7 +154,7 @@ export class StOperations extends StElement {
     const rows = a.rows();
     if (!rows.length) return [el('div', 'small', 'No pistes yet. Paint a piste: every stretch between junctions and lift stations is a run.')];
     const tbl = el('table'), head = el('tr');
-    for (const h of ['Run', 'Level', 'Length', 'Drop', 'Today', 'Week', 'Surface', 'Groomed', 'Grooming', 'Status']) head.append(el('th', '', h));
+    for (const h of ['Run', 'Level', 'Length', 'Drop', 'Today', 'Week', 'Surface', 'Groomed', 'Grooming', 'Course', 'Status']) head.append(el('th', '', h));
     tbl.append(head);
     for (const r of rows) {
       const tr = el('tr'); tr.dataset.run = String(r.id);
@@ -162,11 +165,13 @@ export class StOperations extends StElement {
       const modes: Array<['auto' | 'first' | 'skip', string]> = [['auto', 'Auto'], ['first', 'First'], ['skip', 'Never']];
       const g = el('button', 'tab', modes.find((m) => m[0] === r.groomMode)![1]); g.dataset.groom = String(r.id); g.title = 'Grooming order: Auto / Groom first / Never groom';
       g.addEventListener('click', () => { a.setGroom(r.id, modes[(modes.findIndex((m) => m[0] === r.groomMode) + 1) % modes.length]![0]); this.refresh(); });
+      const cr = el('button', `tab${r.course?.on ? ' active' : ''}`, r.course?.on ? '⚑ Course' : '—'); cr.dataset.course = String(r.id); cr.title = r.course?.text ?? '';
+      cr.disabled = !r.course || !r.course.can; cr.addEventListener('click', () => { a.setCourse?.(r.id, !r.course?.on); this.refresh(); });
       const st = el('button', `tab${r.open ? '' : ' active'}`, r.open ? 'Open' : 'Closed'); st.dataset.toggle = String(r.id);
       st.title = r.open ? 'Click to close this run' : r.closedByPlayer ? 'Closed by you: click to reopen' : (r.reason ?? 'Closed');
       st.addEventListener('click', () => { if (r.open || r.closedByPlayer) { a.setClosed(r.id, r.open); this.refresh(); } });
       tr.append(td(name), td(dot, r.difficultyLabel), td(`${r.lengthM.toLocaleString('en-US')} m`), td(`${r.dropM.toLocaleString('en-US')} m`), td(String(r.passesToday)), td(String(r.passesWeek)),
-        td(r.quality ?? 'n/a'), td(r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(st));
+        td(r.quality ?? 'n/a'), td(r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(cr), td(st));
       tbl.append(tr);
     }
     return [tbl];

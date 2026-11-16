@@ -26,7 +26,7 @@ import { Names } from '../sim/Names';
 import { pisteReport, type PisteReport } from '../sim/PisteStats';
 import { RunIndex } from '../sim/Runs';
 import { RunSettings, type GroomMode } from '../sim/RunSettings';
-import { RaceCourse, lapQuota } from '../sim/race/RaceCourse';
+import { RaceCourse, fmtTime, lapQuota } from '../sim/race/RaceCourse';
 import { RACE } from '../config/race';
 import { RACER_TYPE } from '../config/guestTypes';
 import type { Run, RunNetwork } from '../world/Runs';
@@ -525,7 +525,7 @@ export function createSim(opts: SimOptions) {
   const race = new RaceCourse({
     size, runs: () => runIndex.runs(), runId: (r) => names.pisteId(r), settings: runSettings,
     startHuts: () => buildings.all().filter((b) => b.type === 'startHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h })),
-    timingHuts: () => buildings.all().filter((b) => b.type === 'timingHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h })),
+    timingHuts: () => buildings.all().filter((b) => b.type === 'timingHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h, rot: b.rot })),
     runOpen: (r) => { const st = openStatus.pisteAt(r.tiles[0]! % size, (r.tiles[0]! / size) | 0); return st ? st.open : true; },
     groomedDaysAgo: (id) => { const g = runSettings.lastGroomedDay(id); return g === undefined ? null : Math.max(0, absDayNow() - g); },
     day: absDayNow, earn: (a) => economy.earn('recreation', a),
@@ -1146,15 +1146,20 @@ export function createSim(opts: SimOptions) {
     if (e) names.renamePiste(e, name);
     return !!e;
   };
+  /** Race course state of a run (0.8.0): marked or not, can it be marked right now, and the one line the inspector / Runs tab shows (the reason when it cannot). */
+  const courseOf = (e: Run): { on: boolean; can: boolean; text: string } => {
+    const on = runSettings.isCourse(names.pisteId(e)), why = race.reasonFor(e);
+    return { on, can: on || why === null, text: on ? (why ? `Race course, inactive: ${RACE.reasons[why]}` : `Race course · ${race.racersToday()} racers today${race.bestMs(names.pisteId(e)) === null ? '' : ` · best ${fmtTime(race.bestMs(names.pisteId(e))!)}`}`) : why ? RACE.reasons[why] : 'Can be a race course' };
+  };
   /** Everything the inspector / Runs list shows about one run. */
-  type RunInfo = PisteReport & { tileIdx: number[]; x: number; y: number; closedByPlayer: boolean; groomMode: GroomMode; passesToday: number; passesWeek: number; groomedDaysAgo: number | null; nodeFrom: number; nodeTo: number };
+  type RunInfo = PisteReport & { tileIdx: number[]; x: number; y: number; closedByPlayer: boolean; groomMode: GroomMode; passesToday: number; passesWeek: number; groomedDaysAgo: number | null; nodeFrom: number; nodeTo: number; course: { on: boolean; can: boolean; text: string } };
   const reportOf = (e: Run): RunInfo => {
     const r = pisteReport(e, { difficulty: networks.difficulty, quality: ops.quality, status: (c) => openStatus.pisteAt(c.tiles[0]! % size, (c.tiles[0]! / size) | 0), runsAt: (tiles) => guestSim.exploration.runsAt(tiles) });
     const id = names.pisteId(e), t = e.poly[e.poly.length >> 1] ?? e.tiles[0]!, lg = runSettings.lastGroomedDay(id);
     return {
       ...r, id, name: names.pisteName(e), autoName: names.pisteAutoName(e), tileIdx: e.tiles, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5,
       closedByPlayer: runSettings.isClosed(id), groomMode: runSettings.groomMode(id), passesToday: runPasses(e), passesWeek: runSettings.passesWeek(id) + runPasses(e),
-      groomedDaysAgo: lg === undefined ? null : Math.max(0, absDayNow() - lg), nodeFrom: e.from, nodeTo: e.to,
+      groomedDaysAgo: lg === undefined ? null : Math.max(0, absDayNow() - lg), nodeFrom: e.from, nodeTo: e.to, course: courseOf(e),
     };
   };
   const pisteReportAt = (x: number, y: number): RunInfo | null => {
@@ -1311,6 +1316,7 @@ export function createSim(opts: SimOptions) {
         get raftRides(): number { let n = 0; for (const a of attractions.all()) if (a.b.type === 'raftingBase') n += a.stats.served; return n; },
         get powderHounds(): number { return events.active().some((e) => e.id === 'powder') && marketing.running().some((m) => m.id === 'powder') ? 1 : 0; },
         get concert(): number { return events.active().some((e) => e.id === 'mountainConcertSummer' || e.id === 'mountainConcertWinter') ? 1 : 0; },
+        get racerLaps(): number { return race.total; },
         get masked(): number { if (!events.carnivalOn() || rating.stars < CARNIVAL.trophyStars) return 0; const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && costumed(st.id[i]!)) n++; return n; },
         get suites(): number { let m = 0; for (const a of attractions.all()) if (a.b.type === 'luxuryHotel') m = Math.max(m, attractions.rooms.occupied(a.id)); return m; },
         get summerShare(): number { if (!r || r.partial) return 0; let all = 0, s = 0; for (const x of r.months) { all += x.income; if (x.month >= 2 && x.month <= 5) s += x.income; } return all > 0 ? Math.round((100 * s) / all * 10) / 10 : 0; },

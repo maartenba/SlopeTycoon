@@ -12,6 +12,8 @@ export interface PisteInspectorInfo {
   avgSlopePct?: number; maxSlopePct?: number; loop?: boolean;
   closedByPlayer?: boolean; groomMode?: 'auto' | 'first' | 'skip';
   passesToday?: number; passesWeek?: number; groomedDaysAgo?: number | null;
+  /** Race course (0.8.0): marked or not, can it be marked now, and the one line to show (the reason when it cannot). */
+  course?: { on: boolean; can: boolean; text: string };
 }
 export interface PisteInspectorApi {
   /** Commit a name (already trimmed/clamped by the component; empty = reset to the automatic name). */
@@ -20,6 +22,8 @@ export interface PisteInspectorApi {
   /** Per-run controls (docs/runs.md). */
   setClosed?(closed: boolean): void;
   setGroom?(mode: 'auto' | 'first' | 'skip'): void;
+  /** Mark / unmark the run as a race course (docs/race-course.md). */
+  setCourse?(on: boolean): void;
 }
 
 export const PISTE_NAME_MAX = 24;
@@ -85,6 +89,14 @@ export class StPisteInspector extends StElement {
         row.append(g);
       }
       kids.push(row);
+    }
+    if (i.course && a?.setCourse) {
+      const row = el('div', { className: 'row' });
+      const tog = el('button', { type: 'button', className: 'run-course', textContent: i.course.on ? 'Not a race course' : 'Make a race course', title: i.course.text });
+      tog.dataset.role = 'run-course'; tog.style.minHeight = '44px'; tog.disabled = !i.course.can;
+      tog.addEventListener('click', () => a.setCourse?.(!i.course!.on));
+      row.append(tog);
+      kids.push(row, line(i.course.text, i.course.can ? 'small' : 'warn'));
     }
     for (const w of i.warnings) kids.push(line(`⚠ ${w}`, 'warn'));
     const hl = el('input', { type: 'checkbox', checked: i.highlighted });

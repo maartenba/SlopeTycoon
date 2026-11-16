@@ -31,7 +31,7 @@ export type Op = '>=' | '<=' | '==' | '!=';
 export interface Cond { f: string; op: Op; v: string | number | boolean }
 export type MedalRank = 1 | 2 | 3;
 
-export type FactKey = 'stars' | 'level' | 'guests' | 'openLifts' | 'money' | 'festivals' | 'railShare' | 'viewsSeen' | 'riverToSea' | 'raftRides' | 'powderHounds' | 'concert' | 'suites' | 'summerShare' | 'masked';
+export type FactKey = 'stars' | 'level' | 'guests' | 'openLifts' | 'money' | 'festivals' | 'railShare' | 'viewsSeen' | 'riverToSea' | 'raftRides' | 'powderHounds' | 'concert' | 'suites' | 'summerShare' | 'masked' | 'racerLaps';
 export type Tracker =
   | { kind: 'event'; event: GameEventName; where?: readonly Cond[]; n?: number; per?: 'profile' | 'game'; /** payload field to add instead of 1 */ by?: string; counter?: string }
   | { kind: 'render'; counter: string; n: number }
@@ -118,6 +118,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'summer-share', title: 'Summer share', description: 'Earn a quarter of a full year\'s income in summer.', tier: 3, icon: 'sun', scope: 'career', tracker: { kind: 'fact', fact: 'summerShare', op: '>=', v: 25 } },
   // ---- tier 3: rare
   { id: 'roy-gold', title: 'Resort of the Year: Gold', description: 'Be named Resort of the Year with a gold headline.', tier: 3, icon: 'trophy', scope: 'career', tracker: { kind: 'report', metric: 'headline', min: 3 }, reward: 'flags:golden' },
+  { id: 'through-the-gates', title: 'Through the gates', description: 'Count a hundred racer laps on your race course in one game.', tier: 2, icon: 'medal', scope: 'any', tracker: { kind: 'fact', fact: 'racerLaps', op: '>=', v: 100 } },
   { id: 'wedding-bells', title: 'Wedding bells', description: 'Host three weddings at your chapel in one game.', tier: 2, icon: 'smile', scope: 'any', tracker: { kind: 'event', event: 'wedding:held', n: 3, per: 'game' } },
   { id: 'level-6', title: 'Alpine destination', description: 'Reach resort level 6.', tier: 3, icon: 'mountain', scope: 'career', tracker: { kind: 'fact', fact: 'level', op: '>=', v: 6 } },
   { id: 'all-lifts', title: 'Every kind of lift', description: 'Build every lift type in one game.', tier: 3, icon: 'lift', scope: 'any', tracker: { kind: 'distinct', event: 'lift:built', key: 'kind', n: 12 } },

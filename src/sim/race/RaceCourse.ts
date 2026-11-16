@@ -7,7 +7,7 @@ import type { RunSettings } from '../RunSettings';
  * This system derives everything else: validity (red / black, drop, not a loop, a Start Hut beside the top and a Timing Hut beside the foot), the gate line
  * (a pure function of the run), the quality that drives racer demand, and the racers' lap bookkeeping (saved in the `raceCourse` module, null while nothing happened).
  */
-export interface HutRect { x: number; y: number; w: number; h: number }
+export interface HutRect { x: number; y: number; w: number; h: number; /** quarter turns (the Timing Hut's board faces along it) */ rot?: number }
 export interface RaceDeps {
   size: number;
   runs(): readonly Run[];
@@ -51,6 +51,8 @@ export function courseGates(run: Run, size: number): Gate[] {
   return out;
 }
 
+/** m:ss.t */
+export const fmtTime = (ms: number): string => { const t = Math.round(ms / 100), m = Math.floor(t / 600), s = (t % 600) / 10; return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`; };
 const mix = (a: number, b: number): number => { let h = (Math.imul(a | 0, 0x9e3779b1) ^ Math.imul(b | 0, 0x85ebca6b)) >>> 0; h = Math.imul(h ^ (h >>> 16), 0x7feb352d) >>> 0; h = Math.imul(h ^ (h >>> 15), 0x846ca68b) >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 /** Laps a racer trains before leaving (a stable function of the guest id). */
 export const lapQuota = (guestId: number): number => RACE.laps[0] + Math.floor(mix(guestId, 11) * (RACE.laps[1] - RACE.laps[0] + 1));
