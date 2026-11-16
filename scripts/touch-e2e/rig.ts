@@ -3,7 +3,7 @@
 import { mkdirSync } from 'node:fs';
 import type { Page, TouchHandle } from 'puppeteer-core';
 
-export const VIEWPORTS: Record<string, { w: number; h: number }> = { phone: { w: 390, h: 844 }, land: { w: 844, h: 390 }, tablet: { w: 1024, h: 768 } };
+export const VIEWPORTS: Record<string, { w: number; h: number }> = { phone: { w: 390, h: 844 }, land: { w: 844, h: 390 }, tablet: { w: 1024, h: 768 }, 'moto-g7': { w: 412, h: 762 } }; // moto-g7 = the owner's phone: 412x866 minus Chrome's ~104 px bars (docs/mobile-ui-v2.md)
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 export interface Result { vp: string; group: string; name: string; pass: boolean; detail: string }
@@ -65,7 +65,15 @@ export class Rig {
 
   // ---- DOM helpers (pierce shadow roots) ----
   /** Centre of the first visible element matching css / text (title, aria-label, text). `within` limits to a custom-element tag. */
+  /** Phones (docs/mobile-ui-v2.md): the left rail is gone, its buttons live in the tool bar under other roles; the same intent keeps working through this alias. */
   async rect(q: { css?: string; text?: string; tag?: string; role?: string; nth?: number; card?: boolean; scroll?: boolean }): Promise<{ x: number; y: number; w: number; h: number } | null> {
+    const m = /^\[data-role=(drawer|mode|undo)\]$/.exec(q.css ?? '');
+    const first = await this.rect0(q);
+    if (first || !m || q.tag !== 'st-touch-controls') return first;
+    return this.rect0({ ...q, css: `[data-role=bar-${m[1] === 'drawer' ? 'options' : m[1]}]` });
+  }
+
+  private async rect0(q: { css?: string; text?: string; tag?: string; role?: string; nth?: number; card?: boolean; scroll?: boolean }): Promise<{ x: number; y: number; w: number; h: number } | null> {
     return this.page.evaluate((qq) => {
       const all: Element[] = [];
       const walk = (r: Document | ShadowRoot | Element): void => { for (const e of Array.from(r.querySelectorAll('*'))) { all.push(e); if (e.shadowRoot) walk(e.shadowRoot); } };

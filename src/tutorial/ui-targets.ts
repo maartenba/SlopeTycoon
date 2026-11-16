@@ -10,8 +10,9 @@ import { DRAWERS } from '../ui/drawerState';
  * the deepest element that is currently visible, so the highlight walks the player through the menus.
  */
 const STATIC: Record<string, string[]> = {
-  'topbar:rotate': ['[data-tutorial-id="topbar:rotate"]'],
-  'topbar:save': ['[data-tutorial-id="topbar:save"]'],
+  // Phones (docs/mobile-ui-v2.md): rotate / save live in the overflow menu: when it is closed the highlight falls back to the `...` button (first visible match wins)
+  'topbar:rotate': ['[data-tutorial-id="topbar:rotate"]', '[data-tutorial-id="topbar:more"]'],
+  'topbar:save': ['[data-tutorial-id="topbar:save"]', '[data-tutorial-id="topbar:more"]'],
   'tool:status': ['#tool-status'],
   'hud:speed': ['st-speed-control'],
   'hud:season': ['[data-tutorial-id="hud:season"]', 'st-hud'],

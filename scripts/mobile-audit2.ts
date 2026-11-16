@@ -82,7 +82,8 @@ const MEASURE = `(() => {
     const w = Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1), h = Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1);
     if (w > 0 && h > 0) overlaps.push({ a: a.grp + ' ' + a.el, b: b.grp + ' ' + b.el, area: w * h, w, h });
   }
-  const sorted = boxes.filter((b) => b.y1 < 140).sort((p, q) => p.y1 - q.y1); let top = 0;
+  // the TOP ROW only: the banner row (goal / scenario chip, Rudi, news), the toast pill and the profile card are separate cards under it (docs/mobile-ui-v2.md 3.2)
+  const sorted = boxes.filter((b) => b.y1 < 140 && !/st-(goals|scenario-card|assistant|news|toast|profile)/.test(b.grp)).sort((p, q) => p.y1 - q.y1); let top = 0;
   for (const b of sorted) { if (b.y1 <= top + 12) top = Math.max(top, b.y2); else break; }
   return { W, H, dpr: devicePixelRatio, visible: +(100 * (1 - cov / (cols * rows))).toFixed(1), topChrome: top, boxes, overlaps, small: tg.filter((t) => t.w < 44 || t.h < 44), targetCount: tg.length };
 })()`;

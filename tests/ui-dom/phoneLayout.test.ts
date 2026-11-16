@@ -10,18 +10,15 @@ afterEach(() => { document.body.replaceChildren(); localStorage.clear(); vi.useR
 const sr = (e: HTMLElement): ShadowRoot => e.shadowRoot!;
 
 describe('phone layout: top bar overflow (M7.5)', () => {
-  it('has a ... overflow button; the secondary buttons carry .sec, the primary ones do not; the button toggles the second row', () => {
+  it('has a ... overflow button that toggles the overflow menu (.ovf); the bar itself keeps Menu + the overflow button (css), the rest is in the menu', () => {
     const t = el('st-topbar');
     document.body.append(t);
     t.bind({ rotate: () => {}, help: () => {}, settings: () => {}, saveLoad: () => {}, menu: () => {}, photo: () => {}, stats: () => {}, walk: () => {}, quality: { get: () => 'med', set: () => {}, options: ['low', 'med', 'high'] } });
     const panel = sr(t).querySelector('.panel')!;
-    const label = (b: Element): string => b.getAttribute('aria-label') ?? b.textContent ?? '';
-    const sec = Array.from(panel.querySelectorAll('.sec:not(.sep)')).map(label);
-    expect(sec.some((s) => /Rotate left/.test(s))).toBe(true);
-    expect(sec.some((s) => /Rotate right/.test(s))).toBe(true);
-    expect(sec.some((s) => /shortcuts/i.test(s))).toBe(true);
-    const primary = Array.from(panel.querySelectorAll('button:not(.sec):not(.more)')).map(label).join('|');
-    for (const p of ['main menu', 'Save game', 'Photo mode', 'Statistics', 'settings']) expect(primary, p).toContain(p);
+    const ovf = panel.querySelector('.ovf')!;
+    const items = Array.from(ovf.querySelectorAll('button')).map((b) => b.getAttribute('aria-label') ?? '').join('|');
+    for (const p of ['Rotate the view left', 'Rotate the view right', 'Save game', 'Photo mode', 'Statistics', 'settings', 'Keyboard shortcuts']) expect(items, p).toContain(p);
+    expect(panel.querySelector('button.keep')?.getAttribute('aria-label')).toMatch(/main menu/);
     const more = panel.querySelector('button.more') as HTMLButtonElement;
     expect(more.getAttribute('aria-expanded')).toBe('false');
     more.click();
@@ -29,9 +26,10 @@ describe('phone layout: top bar overflow (M7.5)', () => {
     more.click();
     expect(panel.classList.contains('open')).toBe(false);
     const css = sr(t).querySelector('style')?.textContent ?? (sr(t) as unknown as { adoptedStyleSheets: CSSStyleSheet[] }).adoptedStyleSheets.map((s) => Array.from(s.cssRules).map((r) => r.cssText).join('')).join('');
-    expect(css).toMatch(/\.more\s*\{\s*display:\s*none/); // desktop never shows it
-    // the tutorial's rotate target still exists (also in the touch column on phones)
+    expect(css).toMatch(/\.more,\.ovf\s*\{\s*display:\s*none/); // desktop never shows them
+    // the tutorial's rotate target still exists on the desktop bar and in the overflow menu; `...` is the phone fallback
     expect(panel.querySelector('[data-tutorial-id="topbar:rotate"]')).toBeTruthy();
+    expect(more.dataset.tutorialId).toBe('topbar:more');
   });
 });
 

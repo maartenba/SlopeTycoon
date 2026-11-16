@@ -93,7 +93,6 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
   /* mode: tool = only the top row and the tool bar; modal = nothing else floats (the dialog is a full sheet) */
   html[data-phone-mode="tool"] #right-col > st-goals, html[data-phone-mode="tool"] #right-col > st-scenario-card, html[data-phone-mode="tool"] #ui > st-news, html[data-phone-mode="tool"] #ui > st-assistant,
   html[data-toolfirst] #right-col > st-scenario-card { display: none; }
-  html[data-phone-mode="sheet"] #ui { --phone-chip: none; }
   html[data-toolfirst] #ui > st-dock { --dock-row: none; }
   html[data-toolfirst] #ui { --phone-sheet-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 }

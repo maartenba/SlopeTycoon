@@ -72,6 +72,11 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
     openSet = now;
     if (phone && now.size) root.setAttribute('data-phone-card', [...now].join(' ')); else root.removeAttribute('data-phone-card');
     const mode = phone ? phoneMode({ modal: o.dialogs() > 0, tool: root.hasAttribute('data-toolfirst'), sheet: now.size > 0 }) : 'idle';
+    // Rudi's avatar and the news chip step aside while another card owns the screen (a host attribute: shadow css cannot see <html>)
+    for (const [sel, id] of [['#ui > st-assistant', 'rudi'], ['#ui > st-news', 'news']] as const) {
+      const h = document.querySelector(sel), hide = phone && mode !== 'idle' && !now.has(id); // the card that is open keeps its chip (it closes it)
+      if (h && h.hasAttribute('data-chip-hidden') !== hide) h.toggleAttribute('data-chip-hidden', hide);
+    }
     if (mode !== cur || (phone && !root.hasAttribute('data-phone-mode')) || (!phone && root.hasAttribute('data-phone-mode'))) {
       cur = mode;
       if (phone) root.setAttribute('data-phone-mode', mode); else root.removeAttribute('data-phone-mode');
