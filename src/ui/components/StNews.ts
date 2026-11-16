@@ -66,7 +66,7 @@ export class StNews extends StElement {
 .e small{color:#9fb0c8;display:block}.n{background:#5a7090;border-radius:8px;padding:0 6px;font-size:11px}
 .tabs{display:flex;gap:4px}.tabs button{flex:1;padding:2px 6px}.tabs button.on{background:#3a5070;border-color:#7aa0d0}.r{display:flex;flex-direction:column;gap:2px;padding:3px 6px;border-radius:4px;background:rgba(20,28,40,.85);border-left:3px solid #5a7090;cursor:default}.r.loc{cursor:pointer}.r.pos{border-color:#4caf50}.r.neg{border-color:#e0a030}.r .stars{color:#ffc94d;display:flex;gap:1px;align-items:center}.r p{margin:0;overflow-wrap:anywhere}.r small{color:#9fb0c8}.r .go{align-self:flex-start;font-size:11px;padding:0 6px}
 .bar{display:flex;gap:6px;align-items:center}.bar select{flex:1}.today{font-size:11px;color:#9fb0c8}.mutes{display:flex;flex-wrap:wrap;gap:6px;font-size:11px}
-@media (max-width:520px),(max-height:520px){:host(.open){width:auto}:host{min-width:0}.wrap>button{min-width:44px;min-height:44px;}:host([data-chip-hidden]) .wrap>button{display:none}.wrap>button .w{display:none}}
+@media (max-width:520px),(max-height:520px){:host(.open){width:auto}:host{min-width:0}.wrap>button{min-width:44px;min-height:44px;}:host([data-chip-hidden]) .wrap>button{display:none}.wrap>button{position:relative;width:44px;padding:0;justify-content:center}.wrap>button .car{display:none}.wrap>button .cnt{position:absolute;top:1px;right:3px;font-size:10px;font-weight:800;color:#ffd070}.wrap>button .w{display:none}}
 ${SHEET_PANEL_CSS}st-sheet[data-sheet] .list{max-height:none;overflow:visible}`;
   }
 
@@ -156,7 +156,9 @@ ${SHEET_PANEL_CSS}st-sheet[data-sheet] .list{max-height:none;overflow:visible}`;
 
   private render(): void {
     const w = document.createElement('span'); w.className = 'w'; w.textContent = ' News';
-    this.head.replaceChildren(icon('news', 14), w, ` ${this.unread ? `(${this.unread}) ` : ''}${this.open ? '▾' : '▸'}`);
+    const cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = this.unread ? `(${this.unread}) ` : '';
+    const car = document.createElement('span'); car.className = 'car'; car.textContent = this.open ? '▾' : '▸';
+    this.head.replaceChildren(icon('news', 14), w, document.createTextNode(' '), cnt, car); // phones: a 44 px chip, the count rides in its corner (css)
     if (this.isConnected) this.classList.toggle('open', this.open);
     this.head.setAttribute('aria-expanded', String(this.open));
     this.body.hidden = !this.open;

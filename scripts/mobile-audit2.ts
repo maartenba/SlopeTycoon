@@ -44,7 +44,7 @@ const MEASURE = `(() => {
   const label = (e) => ((e.getAttribute && (e.getAttribute('aria-label') || e.getAttribute('title'))) || e.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 28);
   const hiddenEl = (e, cs) => cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.05 || e.hidden;
   const isInter = (e) => e.tagName === 'BUTTON' || e.tagName === 'A' || e.tagName === 'INPUT' || e.getAttribute('role') === 'button' || e.getAttribute('role') === 'tab';
-  const addTarget = (grp, e, cs, r) => { if (isInter(e) && r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < H && r.right > 0 && r.left < W && cs.pointerEvents !== 'none') targets.push({ grp, el: name(e), label: label(e), w: +r.width.toFixed(1), h: +r.height.toFixed(1), x: Math.round(r.left), y: Math.round(r.top) }); };
+  const addTarget = (grp, e, cs, r) => { if (isInter(e) && r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < H && r.right > 0 && r.left < W && cs.pointerEvents !== 'none') { let tw = r.width, th = r.height; if (e.tagName === 'INPUT' && /checkbox|radio/.test(e.type)) { const b = getComputedStyle(e, '::before'); tw = Math.max(tw, parseFloat(b.width) || 0); th = Math.max(th, parseFloat(b.height) || 0); } /* the kit grows a checkbox / toggle hit area through an invisible ::before */ targets.push({ grp, el: name(e), label: label(e), w: +tw.toFixed(1), h: +th.toFixed(1), x: Math.round(r.left), y: Math.round(r.top) }); } };
   const walkT = (n, grp) => { for (const k of (n.shadowRoot ? Array.from(n.shadowRoot.children) : []).concat(Array.from(n.children))) { if (!(k instanceof Element) || k.tagName === 'STYLE') continue; const kc = getComputedStyle(k); if (hiddenEl(k, kc)) continue; addTarget(grp, k, kc, k.getBoundingClientRect()); walkT(k, grp); } };
   const visit = (e, grp) => {
     if (!(e instanceof Element)) return;
@@ -83,7 +83,7 @@ const MEASURE = `(() => {
     if (w > 0 && h > 0) overlaps.push({ a: a.grp + ' ' + a.el, b: b.grp + ' ' + b.el, area: w * h, w, h });
   }
   // the TOP ROW only: the banner row (goal / scenario chip, Rudi, news), the toast pill and the profile card are separate cards under it (docs/mobile-ui-v2.md 3.2)
-  const sorted = boxes.filter((b) => b.y1 < 140 && !/st-(goals|scenario-card|assistant|news|toast|profile)/.test(b.grp)).sort((p, q) => p.y1 - q.y1); let top = 0;
+  const sorted = boxes.filter((b) => b.y1 < 140 && !/st-(goals|scenario-card|assistant|news|toast|profile|touch-controls)/.test(b.grp)).sort((p, q) => p.y1 - q.y1); let top = 0;
   for (const b of sorted) { if (b.y1 <= top + 12) top = Math.max(top, b.y2); else break; }
   return { W, H, dpr: devicePixelRatio, visible: +(100 * (1 - cov / (cols * rows))).toFixed(1), topChrome: top, boxes, overlaps, small: tg.filter((t) => t.w < 44 || t.h < 44), targetCount: tg.length };
 })()`;

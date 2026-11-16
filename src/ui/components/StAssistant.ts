@@ -50,7 +50,7 @@ export const ASSISTANT_CSS =
   '.advice .ab button{flex:none;font-size:11px;padding:0 8px;line-height:22px;min-height:24px}.advice .ab button.primary{background:#2f8f4a;border-color:#6fd08a}' +
   '.advice .why{margin:0;color:#cfe3f1;font-size:11px;line-height:1.3;overflow-wrap:anywhere;white-space:normal}@media (pointer:coarse){.advice .ab button{min-height:44px;min-width:44px;font-size:12px}}.advice .fr{color:#9fe0a0}' +
   '.advice .empty{color:#cfe3f1}.advice .foot2{flex:none;color:#7f93ad;font-size:10px}' +
-  '@media (max-width:520px),(max-height:520px){.wrap{flex-direction:column-reverse;align-items:flex-end;width:auto}:host([data-chip-hidden]) .arow{display:none}.avatar{width:44px;height:44px;border-width:2px}.advbadge{pointer-events:none;left:auto;right:-4px;top:-6px;min-width:18px;height:18px;padding:0 4px;font-size:11px}}' +
+  '@media (max-width:520px),(max-height:520px){.wrap{flex-direction:column-reverse;align-items:flex-end;width:auto}:host([data-chip-hidden]) .arow{display:none}.avatar{width:44px;height:44px;border-width:2px}.advbadge{pointer-events:none;left:auto;right:-4px;top:-6px;min-width:18px;height:18px;padding:0 4px;font-size:11px;background:#d9a441;color:#1b2430;border-color:#d9a441;box-shadow:none}.advbadge svg{display:none!important}}' +
   '.hintb{border-color:#ffd070}.hintb .row{display:flex;gap:6px;align-items:flex-start}.hintb .grow{flex:1}';
 
 export type Expression = RudiExpression;
@@ -169,7 +169,7 @@ export class StAssistant extends StElement {
     this.advBadge.className = 'advbadge'; this.advBadge.hidden = true;
     this.advBadge.addEventListener('click', () => this.toggleAdvice());
     this.arow.className = 'arow'; this.arow.append(this.avatar, this.advBadge);
-    this.wrap.append(this.hintBox, this.bubble, sheetFor(this.advCard, `${RANGER_NAME}: ${ADVISOR_UI.title}`, 'advice', 140, 'hidden'), this.goals, this.arow);
+    this.wrap.append(this.hintBox, this.bubble, sheetFor(this.advCard, `${RANGER_NAME}: ${ADVISOR_UI.title}`, 'advice', 120, 'hidden'), this.goals, this.arow);
     this.root.append(this.wrap);
     // Nothing rendered yet: no lesson => the bubble (and its buttons) stay hidden. A hint() before the first render() used to unhide the wrap and show
     // the empty bubble (no title / text / dots, every button) - the 'blank dialog' bug.

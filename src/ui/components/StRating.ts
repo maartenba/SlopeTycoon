@@ -37,7 +37,7 @@ export class StRating extends StElement {
     return `:host{position:relative}span.l{cursor:pointer;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}.pop{position:absolute;top:26px;right:0;width:260px;z-index:5;background:rgba(22,32,46,.98);border:1px solid #34465e;border-radius:8px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.45);flex-direction:column;align-items:stretch;gap:3px}
 .row{display:grid;grid-template-columns:100px 1fr 28px;gap:6px;align-items:center;font-size:11px}.t{height:7px;background:#233044;border-radius:4px;overflow:hidden}.f{height:100%;background:#4caf50}.tip{color:#ffd070;font-size:11px}
 .chip[hidden]{display:none}.chip{font-size:10px;font-weight:700;padding:0 4px;border-radius:7px;background:rgba(28,42,56,.7);margin-left:2px;opacity:0;transition:opacity .6s ease}.chip.up{color:#a8dca0}.chip.down{color:#e6a39a}.chip.on{opacity:.95}
-svg.fade{animation:starfade .7s ease-out}@media (max-width:520px),(max-height:520px){span.l{min-height:44px;min-width:44px;justify-content:center}}@media (max-width:400px){.sm{display:none}}@keyframes starfade{from{opacity:.35}to{opacity:1}}
+svg.fade{animation:starfade .7s ease-out}@media (max-width:520px),(max-height:520px){span.l{min-height:44px;min-width:44px;justify-content:center}}@media (max-width:400px){.sm{display:none!important}}@keyframes starfade{from{opacity:.35}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.chip{transition:none}svg.fade{animation:none}}`;
   }
 

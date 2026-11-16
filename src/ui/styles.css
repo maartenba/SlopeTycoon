@@ -109,7 +109,8 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
 @media (max-width: 520px), (max-height: 520px) {
   /* modal mode: the dialog is a full sheet; nothing else floats behind it */
   html[data-phone-mode="modal"] #ui > st-topbar, html[data-phone-mode="modal"] #right-col > *, html[data-phone-mode="modal"] #ui > st-dock, html[data-phone-mode="modal"] #ui > st-news,
-  html[data-phone-mode="modal"] #ui > st-assistant, html[data-phone-mode="modal"] #ui > st-touch-controls, html[data-phone-mode="modal"] #ui > st-profile, html[data-phone-mode="modal"] #ui > st-toast { visibility: hidden; }
+  html[data-phone-mode="modal"] #ui > st-assistant, html[data-phone-mode="modal"] #ui > st-touch-controls, html[data-phone-mode="modal"] #ui > st-profile, html[data-phone-mode="modal"] #ui > st-toast, html[data-phone-mode="modal"] #ui > st-recap { visibility: hidden; }
+  html[data-phone-mode="tool"] #ui > st-recap { display: none; }
 }
 @media (max-height: 520px) {
   /* landscape: the vertical tool bar owns the right edge, so a side sheet opened from Options stops short of it and clears the message pill */
@@ -117,6 +118,6 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
 }
 @media (max-height: 520px) {
   /* landscape: a side sheet starts under the banner row (the tool bar mode has no banner) */
-  #ui { --phone-sheet-top: calc(104px + env(safe-area-inset-top, 0px)); }
+  #ui { --phone-sheet-top: calc(112px + env(safe-area-inset-top, 0px)); }
   html[data-toolfirst] #ui { --phone-sheet-top: calc(56px + env(safe-area-inset-top, 0px)); }
 }

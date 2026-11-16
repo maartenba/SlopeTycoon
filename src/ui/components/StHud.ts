@@ -47,7 +47,7 @@ export class StHud extends StElement {
 .r1{gap:8px;justify-content:space-between}
 .r1>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:calc(14px * var(--ui-scale, 1));font-weight:800}
 /* stars stay as icons; the smiley goes first, then the guest icon (docs/mobile-ui-v2.md, owner decision 2026-11-16) */
-@media (max-width:380px){.gi{display:none}}
+@media (max-width:380px){.gi{display:none!important}}
 }
 }`;
   }
