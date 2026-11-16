@@ -32,7 +32,7 @@ describe('race course controls', () => {
     const row = (id: number, o: Partial<RunRow> = {}): RunRow => ({ id, name: `Run ${id}`, difficultyLabel: 'Red', difficultyColor: '#d33', lengthM: 300, dropM: 80, passesToday: 4, passesWeek: 20, quality: 'Groomed', open: true, closedByPlayer: false, groomMode: 'auto', groomedDaysAgo: 0, ...o });
     e.bind({
       rows: () => [], setMode: () => {}, setHours: () => {}, setEco: () => {}, setSeason: () => {}, keepOnly: () => {}, projected: () => 0,
-      runs: { rows: () => [row(1, { course: { on: true, can: true, text: 'Race course' } }), row(2, { course: { on: false, can: false, text: 'Needs a red or black run' } })], setClosed: () => {}, setGroom: () => {}, setCourse: (id, on) => calls.push(`${id}:${on}`), focus: () => {} },
+      runs: { rows: () => [row(1, { course: { on: true, can: true, text: 'Race course' } }), row(2, { course: { on: false, can: false, text: 'Needs a red or black run' } })], setClosed: () => {}, setGroom: () => {}, setCourse: (id: number, on: boolean) => calls.push(`${id}:${on}`), focus: () => {} },
     } as never);
     document.body.append(e);
     const r = root(e);

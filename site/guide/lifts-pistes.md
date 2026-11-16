@@ -91,6 +91,12 @@ Press <kbd>O</kbd> (or use the **View** drawer) until you reach the **Runs** ove
 
 Old saves load with every run open and every grooming order on Auto.
 
+### Race courses and racers
+
+A red or black run with at least 60 m of drop can be a **race course** (unlocked at level 3). Place a **Start Hut** beside the top of the run and a **Timing Hut** beside its foot (both in the building drawer, Recreation), then open the run's inspector and press **Make a race course** (or use the **Course** column in **Operations → Runs**). The button says what is missing: *Needs a Start Hut at the top*, *Needs a Timing Hut at the foot*, *Needs a red or black run*. Flags go up along the run by themselves, red and blue, and the Timing Hut shows a board with the best time and the number of racers today.
+
+**Racers** are a winter guest type that come to train on your course: they ski it faster, a few laps each, pay a small course fee on their first lap of the day and eat at your lodges. They like **fresh snow**: groom the course every night (set the run to *Groom first*) or fewer come; a **black** course draws more than a red one. Other skiers may still use the run. A closed course (by you, the weather or no snow) simply stops attracting racers. You can mark up to three courses. The huts are a small cost centre that pays back slowly, so build them for the look and the atmosphere, not for the money.
+
 ### Slope profile and *Suggest a run*
 
 While you drag a piste or place a lift a small **profile card** shows the ground as a side view: altitude over distance, coloured by difficulty tile by tile, with today's **snowline** as a dashed line, plus length, drop and the average and steepest gradient. It tells you before you pay whether a "green" run is really green and whether the bottom will be bare in warm weather.

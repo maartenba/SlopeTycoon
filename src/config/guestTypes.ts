@@ -221,7 +221,7 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
     // 0.8.0 (docs/race-course.md): trains on the player's race course on winter days; needs an open, valid course (pseudo id `@raceCourse`). Fast, expert, few words: a course fee a day, lunch at a lodge, no slope bars.
     // The arrival weight is scaled by the courses' quality (`Spawner.raceDemand`) and capped per course.
-    id: 'racer', label: 'Racer', seasons: { winter: 0.03 }, minLevel: 3, requires: ['@raceCourse'], fallback: 'adventure', segment: 'adventure', racer: true,
+    id: 'racer', label: 'Racer', seasons: { winter: 0.06 }, minLevel: 3, requires: ['@raceCourse'], fallback: 'adventure', segment: 'adventure', racer: true,
     weather: { rain: 0.2, storm: 0, heavySnow: 0.4, snow: 0.9 },
     appeal: { restaurant: 0.8, terrace: 0.5, cafe: 0.5, lodging: 0.6, rental: 0.1, bar: 0.4, stunt: 0.3, adventure: 0.4, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.1 },
     group: [1, 3], budget: [180, 360], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [2, 0],

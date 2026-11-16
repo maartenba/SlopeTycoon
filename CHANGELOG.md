@@ -4,6 +4,13 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Added (0.8.0 candidate: racers and a race course; no version bump yet)
+
+- **Race course** (level 3): mark a red or black run (60 m of drop or more) as a course in its inspector or in **Operations → Runs**, with a **Start Hut** at the top and a **Timing Hut** at the foot ($6,000 / $14,000). Red and blue gates go up along the run by themselves, the Timing Hut shows a live board (best time, racers today). The button names what is missing.
+- **Racers**: a new winter guest type that trains on an open, groomed course: faster, a few laps each, a small course fee on the first lap of a day. A black course draws more than a red one, an ungroomed one far fewer; other skiers can still use the run. Rudi suggests a course and nags about grooming it; achievement *Through the gates* (100 laps).
+- Tooling: `npm run race:sanity` (real-page story) and `npm run analysis:race` (course ROI: a black course roughly breaks even, a red one costs a few thousand a year; see `docs/race-course.md`).
+- Saves: `runs` module v2 (optional `course` list) and the new `raceCourse` module; v1 saves load with no courses. The staff golden `progression` part moved (two new unlock rows); nothing else did (`docs/balance.md` "0.8.0 racers").
+
 ## [0.7.2] - 2026-11-16 (pre-release)
 
 A small update for the chapel. Your old saves keep working, and the economy and the desktop look are unchanged.

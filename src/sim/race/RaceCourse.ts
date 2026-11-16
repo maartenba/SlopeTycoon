@@ -152,7 +152,7 @@ export class RaceCourse {
     rec[0]++; this.total++; this.version++;
     if (rec[1] !== day + 1) { rec[1] = day + 1; this.today++; this.d.earn(RACE.courseFee); }
     this.laps.set(guestId, rec);
-    const ms = Math.round((c.run.lengthM / (RACE.boardMps * (0.85 + 0.3 * mix(guestId, rec[0] + 97)) * (0.9 + 0.1 * c.quality))) * 1000);
+    const ms = Math.round((RACE.boardBaseS + c.run.lengthM / (RACE.boardMps * (0.85 + 0.3 * mix(guestId, rec[0] + 97)) * (0.9 + 0.1 * c.quality))) * 1000);
     const b = this.bestToday.get(c.id);
     if (b === undefined || ms < b) this.bestToday.set(c.id, ms);
     return rec[0] >= lapQuota(guestId);

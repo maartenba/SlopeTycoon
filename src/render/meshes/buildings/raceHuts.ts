@@ -25,7 +25,7 @@ export function timingHut(b: PartBuilder, w: number, h: number): void {
   b.gable(-0.2, 0.61, bz, 0.58, 1.3, 0.26, C.roofBlue, false);
   doorway(b, -0.55, bz + 0.25, 's', 0.2, 0.36, C.dark, C.white);
   frameWin(b, 0.1, 0.34, bz + 0.26, 's', 0.2);
-  for (const x of [-0.42, 0.22]) b.cyl(x, 0.6, bz, 0.02, 0.42, C.dark, 'wood', 6); // two posts hold the live board (drawn by the view at y = 0.8..1.15)
+  for (const x of [-0.42, 0.22]) b.cyl(x, 0.6, bz, 0.02, 0.42, C.dark, 'wood', 6); // two posts hold the live board (drawn by the view around y = 1.1)
   // finish arch: two posts and a chequered bar, a flagpole
   for (const x of [0.62, 0.95]) b.cyl(x, 0.03, 0.3, 0.02, 0.45, C.red, 'wood', 6);
   for (let i = 0; i < 6; i++) b.box(0.66 + i * 0.055, 0.46, 0.3, 0.055, 0.05, 0.03, i % 2 ? C.white : C.black, 'wood');

@@ -31,7 +31,7 @@ export const STAGES: StageDef[] = [
   { id: 'music:e2e', cmd: 'npm run music:e2e', needs: ['verify:pwa'], slots: HEAVY, est: 80 },
   san('play:sanity', 'play:sanity', 32), san('phase6:sanity', 'phase6:sanity', 17), san('summer:sanity', 'summer:sanity', 24), san('winter:sanity', 'winter:sanity', 29),
   san('winter-tours:sanity', 'winter:tours', 11), san('backcountry:sanity', 'backcountry:sanity', 24), san('sled:sanity', 'sled:sanity', 22), san('m74:sanity', 'm74:sanity', 21),
-  san('schirmbar:sanity', 'schirmbar:sanity', 16), san('chapel:sanity', 'chapel:sanity', 20), san('visitor:sanity', 'visitor:sanity', 58), san('photographer:sanity', 'photographer:sanity', 16),
+  san('schirmbar:sanity', 'schirmbar:sanity', 16), san('chapel:sanity', 'chapel:sanity', 20), san('race:sanity', 'race:sanity', 90), san('visitor:sanity', 'visitor:sanity', 58), san('photographer:sanity', 'photographer:sanity', 16),
   { id: 'shot:suite', cmd: 'npm run shot:suite', slots: HEAVY, est: 180 },
   { id: 'touch:e2e', cmd: 'npm run touch:e2e -- --only camera,placement,drawers --viewport phone', slots: HEAVY, est: 215 },
   { id: 'mobile:audit', cmd: 'npm run mobile:audit -- --label gate', slots: HEAVY, est: 265 },
@@ -55,7 +55,7 @@ export const BASE = ['typecheck', 'lint', 'test', 'build', 'verify:pwa'];
 /** The whole release gate. */
 export const FULL = ALL.filter((id) => !/^test:(repo|site|scripts|render|audio)$/.test(id));
 
-const RENDER_SANITIES = ['play:sanity', 'winter:sanity', 'summer:sanity', 'schirmbar:sanity', 'chapel:sanity', 'photographer:sanity', 'visitor:sanity'];
+const RENDER_SANITIES = ['play:sanity', 'winter:sanity', 'summer:sanity', 'schirmbar:sanity', 'chapel:sanity', 'race:sanity', 'photographer:sanity', 'visitor:sanity'];
 const SAVE_SANITIES = ['play:sanity', 'phase6:sanity'];
 
 export interface Selection { ids: Set<string>; reason: string[] }

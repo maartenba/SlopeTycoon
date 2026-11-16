@@ -16,12 +16,12 @@ export const RACE = {
   /** Perpendicular offset of a gate from the centre line, in tiles. */
   gateOffset: 0.6,
   /** Dollars per racer and day (charged on the first lap of the day; a small steady income, never a money machine). */
-  courseFee: 14,
+  courseFee: 20,
   /** Racers alive at once per valid course, and valid courses that count. */
   maxRacersPerCourse: 12,
   maxCourses: 3,
   /** Arrival share of the Racer type (a season share of the extra-type draw; scaled by the quality of the courses). */
-  share: 0.03,
+  share: 0.06,
   /** Downhill speed of a racer (a multiple of the normal ski speed). */
   speedMul: 1.4,
   /** A racer trains this many laps (inclusive range, seeded per guest) and then leaves. */
@@ -32,8 +32,10 @@ export const RACE = {
   diffQuality: { 3: 0.8, 4: 1.0 } as Record<number, number>,
   /** Pseudo building id the spawner computes (a valid, open course). */
   cond: '@raceCourse',
-  /** Metres per second of a course time at a quality of 1 (timing board only; cosmetic). */
-  boardMps: 21,
+  /** Metres per second of a course time at a quality of 1 (timing board only; cosmetic, the sim never uses it). */
+  boardMps: 9,
+  /** Seconds every course time starts with (start gate, flat bits); a 120 m course reads about 0:45, a 600 m one about 1:35. */
+  boardBaseS: 30,
   /** The Racer type id (config/guestTypes.ts). */
   typeId: 'racer',
   /** Achievement threshold: racer laps. */

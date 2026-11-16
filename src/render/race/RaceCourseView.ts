@@ -98,7 +98,7 @@ export class RaceCourseView {
     let slot = 0;
     for (const c of list) {
       if (!c.timing || slot >= BOARD_SLOTS) continue;
-      const t = c.timing, cx = t.x + t.w / 2, cz = t.y + t.h / 2, y = surfaceHeightAt(this.grid, cx, cz) + 0.8;
+      const t = c.timing, cx = t.x + t.w / 2, cz = t.y + t.h / 2, y = surfaceHeightAt(this.grid, cx, cz) + 1.1;
       const yaw = -((t.rot ?? 0) % 4) * (Math.PI / 2), ux = Math.cos(yaw), uz = -Math.sin(yaw), nx = Math.sin(yaw), nz = Math.cos(yaw);
       const hw = 0.42, hh = 0.17;
       for (let side = 0; side < 2; side++) {
