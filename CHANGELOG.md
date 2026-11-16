@@ -4,6 +4,21 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Highlights
+
+- **Phones show much more of the map**: one slim top row (menu, money, stars, guests, speed, more) and one card at a time.
+- **A bottom tool bar while you build**: the message (cost or why not), Cancel, rotate, Undo, Options and Place sit in one place within thumb reach, with a small ground profile for lifts and pistes.
+- **Rudi's tips and the news** are a small badge and live in the **...** menu too; **full-screen settings and reports** with a clear close button.
+- The speed buttons moved behind one speed chip; landscape phones get a vertical tool bar.
+
+### Changes
+
+- Phones: one 44 px top row and one 44 px goal / Rudi / news row replace the stack of cards (top chrome 146 px to 48 px); the map is at least 75 % visible by default and in tool modes on a 412x762 phone (was 23-62 %).
+- Phones: while a tool is active only the top row and the tool bar are on screen; messages from the tool appear once (no tooltip, no error toast), toasts that arrive meanwhile wait until the tool ends, critical alerts take the message row.
+- Phones: the ground profile is a sparkline in the tool bar; tap it for the full chart above the bar.
+- Phones: settings, statistics and the reports are full-screen sheets; Rudi, news, inspectors and drawers open one at a time.
+- Landscape phones: a vertical tool bar at the right edge and a message pill at the bottom.
+
 ## [0.6.6] - 2026-11-15 (pre-release)
 
 A look-and-motion update. The economy and your old saves are unchanged.
