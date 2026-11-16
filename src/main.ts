@@ -577,7 +577,12 @@ const fastNightsApi = {
 };
 const overlays = new Overlays(grid);
 const ghostTip = new GhostTip();
-overlays.onTooltip = (t) => ghostTip.show(t);
+let touchBarRef: { setDetails(l: Array<{ kind: string; text: string }> | null): void } | null = null;
+// Phones with touch: the tool bar owns the placement message (first reason + an `i` for the rest); the floating tooltip is desktop / tablet only
+overlays.onTooltip = (t) => {
+  if (touchBarRef && phoneCardsRef?.isPhone() && touchWire.enabled()) { ghostTip.show(null); touchBarRef.setDetails(t && (t.text || t.lines?.length) ? (t.lines ?? [{ kind: t.blocked ? 'error' : 'info', text: t.text }]) : null); return; }
+  ghostTip.show(t);
+};
 renderer.scene.add(overlays.group);
 let netTools: NetworkTools | null = null;
 // Soft piste / trail / contact-shadow ground data (one N x N texture sampled by the terrain shader; rewritten only when the networks or buildings change).
@@ -2984,19 +2989,20 @@ if (ui && !DEMO) {
   }
   const whatsNewEl = el('st-whats-new');
   ui.append(topbar, debug, recapEl, whatsNewEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, statsEl, viewHud);
-  { const touchBar = el('st-touch-controls'); touchWire.bindBar(touchBar); ui.append(touchBar); }
+  { const touchBar = el('st-touch-controls'); touchBarRef = touchBar as unknown as typeof touchBarRef; touchWire.bindBar(touchBar); ui.append(touchBar); }
   // Phones: ONE floating card at a time + html[data-phone-mode] (src/ui/phoneCards.ts, docs/mobile-ui-v2.md)
   {
     const cards = installPhoneCards({ dialogs: () => modalStack.dialogs });
     const q = <T extends HTMLElement>(sel: string): T | null => document.querySelector(sel) as T | null;
-    const sheetShown = (host: HTMLElement | null): boolean => { const sh = host?.shadowRoot?.querySelector('st-sheet') as HTMLElement | null; return !!sh && !sh.hidden && Array.from(sh.children).some((c) => !(c as HTMLElement).hidden); };
+    const sheetShown = (host: HTMLElement | null): boolean => { const sh = host?.shadowRoot?.querySelector('st-sheet') as HTMLElement | null; return !!host && !host.hidden && !!sh && !sh.hidden; };
     cards.register({ id: 'drawer', isOpen: () => dock.openDrawer !== null && !dock.classList.contains('peek'), close: () => dock.show(null) });
     cards.register({ id: 'goals', isOpen: () => !!goalsEl.expanded, close: () => goalsEl.setExpanded(false) });
-    cards.register({ id: 'scenario', isOpen: () => !!scenCard.expanded, close: () => scenCard.setExpanded(false) });
+    cards.register({ id: 'scenario', isOpen: () => !!scen && !!scenCard.expanded, close: () => scenCard.setExpanded(false) });
     cards.register({ id: 'rudi', isOpen: () => !!q<HTMLElement & { adviceOpen?: boolean }>('st-assistant')?.adviceOpen, close: () => q<HTMLElement & { toggleAdvice(o?: boolean): void }>('st-assistant')?.toggleAdvice(false) });
     cards.register({ id: 'news', isOpen: () => !!news.isOpen, close: () => news.setOpen(false) });
     cards.register({ id: 'inspector', isOpen: () => ['st-inspector', 'st-lift-inspector', 'st-guest-inspector', 'st-piste-inspector', 'st-route-inspector'].some((t) => sheetShown(q<HTMLElement>(`#right-col > ${t}`))), close: () => select(null) });
     phoneCardsRef = cards;
+    setTimeout(() => { (window as unknown as { __slope: Record<string, unknown> }).__slope.phoneCards = cards; }, 0); // debug / audit handle
   }
   {
     const pause = el('st-pause-menu');

@@ -97,3 +97,13 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
   html[data-toolfirst] #ui > st-dock { --dock-row: none; }
   html[data-toolfirst] #ui { --phone-sheet-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 }
+@media (max-width: 520px), (max-height: 520px) {
+  /* the ground profile: the tool bar shows a sparkline; the full chart is ONE card above the bar, only after a tap on the sparkline */
+  #ui > st-profile { left: calc(8px + var(--sl)); right: calc(8px + var(--sr)); top: auto; bottom: calc(120px + env(safe-area-inset-bottom, 0px)); width: auto; display: none; }
+  html[data-profile-open] #ui > st-profile { display: block; }
+}
+@media (max-height: 520px) { #ui > st-profile { right: calc(80px + var(--sr)); bottom: calc(52px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 520px), (max-height: 520px) {
+  /* one toast pill, never on top of an expanded goal / scenario card (it goes to the bottom then) */
+  html[data-phone-card~="goals"] #ui > st-toast, html[data-phone-card~="scenario"] #ui > st-toast { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+}

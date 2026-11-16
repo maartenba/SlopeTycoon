@@ -45,7 +45,7 @@ export class StProfile extends StElement {
 .head{font-weight:800;color:var(--c-accent-text);font-size:var(--fs-sm);white-space:nowrap}
 .stats{font-size:var(--fs-sm);color:#cfe0f5;white-space:nowrap}
 .note{font-size:var(--fs-sm);color:#ffcf80;white-space:normal}
-.legend{display:flex;gap:8px;font-size:10px;color:#9fb4cc}.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:-1px}`;
+.legend{display:flex;gap:8px;font-size:10px;color:#9fb4cc}svg{max-width:100%;height:auto}.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:-1px}`;
   }
 
   constructor() {
@@ -58,7 +58,9 @@ export class StProfile extends StElement {
   }
 
   show(v: ProfileView | null): void {
-    if (!v || v.profile.samples.length < 2) { this.card.hidden = true; return; }
+    const ok = !!v && v.profile.samples.length >= 2;
+    window.dispatchEvent(new CustomEvent('st-profile-view', { detail: ok ? v : null })); // phones: the tool bar draws a sparkline from it (StTouchControls)
+    if (!v || !ok) { this.card.hidden = true; return; }
     this.card.hidden = false;
     const p = v.profile;
     this.head.textContent = v.title;

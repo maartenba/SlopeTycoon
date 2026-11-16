@@ -48,7 +48,7 @@ button.head:hover:not(:disabled){background:transparent;border:0}
 .o.met .name{color:#7fd68a}.o.failed .name{color:#ff9a8a;text-decoration:line-through}.o.failed .bar>i{background:#c0524a}
 .act{flex:0 0 auto;display:flex;gap:6px;align-items:center}.act:empty{display:none}
 .act button{flex:1;padding:1px 6px;font-size:11px;line-height:18px}
-.done{font-size:11.5px;color:#d5e0ee}`;
+.done{font-size:11.5px;color:#d5e0ee}.dl{display:none}@media (max-width:520px),(max-height:520px){.dl{display:inline}.panel.col .sub{display:none}}`;
   }
 
   constructor() {
@@ -84,14 +84,15 @@ button.head:hover:not(:disabled){background:transparent;border:0}
     const met = v.objectives.filter((o) => o.met).length;
     const t = document.createElement('span'); t.className = 't'; t.textContent = v.name;
     const n = document.createElement('span'); n.className = 'n'; n.textContent = `${met}/${v.objectives.length}`;
+    const dl = document.createElement('span'); dl.className = 'n dl'; dl.textContent = v.finished ? '' : ` \u00B7 ${Math.max(0, Math.round(v.daysLeft))} d`; // phones: the countdown rides in the chip
     const c = document.createElement('span'); c.className = 'c'; c.textContent = this.collapsed ? '\u25B8' : '\u25BE';
-    this.head.replaceChildren(t, n, c);
+    this.head.replaceChildren(t, n, dl, c);
     this.head.title = this.collapsed ? 'Show objectives' : 'Hide objectives';
     this.head.setAttribute('aria-expanded', String(!this.collapsed));
     this.sub.textContent = v.finished ? (v.finished.result === 'won' ? `Won \u00B7 ${MEDAL_LABEL[v.finished.medal]} \u00B7 ${v.finished.score} pts` : `Lost \u00B7 ${v.finished.reason}`) : v.timeLabel;
     this.sub.dataset.deadline = String(v.daysLeft);
     this.sub.title = v.finished ? '' : `Real time left: ${deadlineRealTimeText(Math.max(0, v.daysLeft))}`;
-    this.list.hidden = this.collapsed; this.act.hidden = this.collapsed;
+    this.list.hidden = this.collapsed; this.act.hidden = this.collapsed; this.head.parentElement?.classList.toggle('col', this.collapsed);
     if (this.collapsed) return;
     this.list.replaceChildren(...sortObjectives(v.objectives).map((o) => {
       const row = document.createElement('div'); row.className = `o${o.mandatory ? '' : ' opt'}${o.met ? ' met' : ''}${o.failed ? ' failed' : ''}`;

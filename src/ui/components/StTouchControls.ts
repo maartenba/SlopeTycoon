@@ -43,6 +43,19 @@ export class StTouchControls extends StElement {
   private drawerBtn!: HTMLButtonElement;
   private placeBtn!: HTMLButtonElement;
   private rotBtns: HTMLButtonElement[] = [];
+  private readonly ma = document.createElement('div');
+  private readonly infoBtn = document.createElement('button');
+  private readonly sparkBtn = document.createElement('button');
+  private readonly detailEl = document.createElement('div');
+  private undoB!: HTMLButtonElement;
+  private optB!: HTMLButtonElement;
+  private modeB!: HTMLButtonElement;
+  private details: Array<{ kind: string; text: string }> = [];
+  private profile: { samples: Array<{ distM: number; altM: number; difficulty: number }>; summary: string } | null = null;
+  private onProfile: ((e: Event) => void) | null = null;
+  private alertFn: ((e: Event) => void) | null = null;
+  private alertText = '';
+  private alertTimer = 0;
   private runBtn: HTMLButtonElement | null = null;
   private held = new Set<string>();
   private joyId = -1;
@@ -68,7 +81,34 @@ button.t.wide{padding:0 14px}
 @media (max-width:760px) and (min-height:521px){.views[data-view=photo]{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;flex-direction:row}.joy,.views:not([data-view=photo]){bottom:calc(164px + env(safe-area-inset-bottom,0px))}} /* portrait: the view HUD card (Exit) sits at the bottom centre: keep the stick and buttons above it */
 @media (max-height:520px){.col{top:calc(72px + env(safe-area-inset-top,0px));left:calc(52px + env(safe-area-inset-left,0px));right:auto;flex-direction:row}.bar{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:520px) and (min-height:521px){.col{top:calc(228px + env(safe-area-inset-top,0px))}.bar{bottom:calc(128px + env(safe-area-inset-bottom,0px))}} /* phone portrait: below the HUD strip / speed row / goal chip; above the dock + the sheet's handle */
-@media (max-height:520px) and (max-width:500px){.col{top:calc(112px + env(safe-area-inset-top,0px));left:calc(8px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px}}`;
+@media (max-height:520px) and (max-width:500px){.col{top:calc(112px + env(safe-area-inset-top,0px));left:calc(8px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px}}
+.ph,.detail,.ma{display:none}.ma{display:contents}.bar.np{display:none}
+/* Phones (docs/mobile-ui-v2.md): the bar is the 104 px TOOL BAR at the bottom (row A: the ONE message + a profile sparkline; row B: Cancel, rotate, Undo, Options, Place). The left rail is gone: its jobs are in row B / the overflow menu. */
+@media (max-width:520px),(max-height:520px){
+.col{display:none!important}
+.bar,.bar.np{display:grid;grid-template-columns:44px 44px 44px 44px 1fr;grid-template-rows:44px 52px;gap:4px;left:calc(8px + env(safe-area-inset-left,0px));right:calc(8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));transform:none;max-width:none;padding:4px 6px;box-sizing:border-box;align-items:stretch;touch-action:none}
+.bar[hidden]{display:none}
+.bar button.t{min-width:44px;min-height:44px;padding:0;font-size:calc(18px * var(--ui-scale,1))}
+.ma{display:contents}.ph{display:inline-flex}.ph[hidden],.detail[hidden]{display:none}
+.hint{grid-row:1;grid-column:1/5;align-self:center;max-width:none;font-size:calc(12.5px * var(--ui-scale,1));line-height:1.25;font-weight:700;color:#8be28b;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hint.bad{color:#ff8d8d}.hint.note{color:#cfd8dc}
+.bar.hasd .hint{grid-column:1/4}.infob{grid-row:1;grid-column:4;font-size:16px}.infob[hidden]{display:none}
+.spark{grid-row:1;grid-column:5;justify-self:stretch;padding:0 4px;background:transparent;border-color:transparent;flex-direction:column;align-items:stretch;gap:0;min-width:0}.spark svg{width:100%;height:26px;display:block}.spark small{font-size:10px;line-height:1;color:#b9c6d8;text-align:center;white-space:nowrap}
+.bc{grid-row:2;grid-column:1}.gl{grid-row:2;grid-column:2}.bar .gr{display:none}.undob{grid-row:2;grid-column:3}.optb{grid-row:2;grid-column:4}.modeb{grid-row:2;grid-column:2}.place{grid-row:2;grid-column:5;min-width:0}
+.bar.nopivot .gl{display:none}.bar.nopivot:not(.paint) .undob{grid-column:2}.bar.nopivot:not(.paint) .optb{grid-column:3}.bar.nopivot:not(.paint) .place{grid-column:4/6}.bar.nopivot .modeb[hidden]{display:none}
+button.t.primary[disabled]{opacity:.45;filter:saturate(.4)}
+.detail{position:fixed;left:calc(8px + env(safe-area-inset-left,0px));right:calc(8px + env(safe-area-inset-right,0px));bottom:calc(120px + env(safe-area-inset-bottom,0px));z-index:3;pointer-events:auto;box-sizing:border-box;padding:8px 10px;background:var(--c-panel);border:1px solid rgba(90,112,144,.5);border-radius:var(--r-md);font-size:calc(12px * var(--ui-scale,1));line-height:1.35;color:#e8eef2;max-height:150px;overflow:auto}.detail:not([hidden]){display:block}
+.detail div.e{color:#ff8d8d}.detail div.w{color:#ffc857}
+}
+/* landscape phones: the tool bar is a vertical strip at the right edge, the message a pill at the bottom centre */
+@media (max-height:520px){
+.bar,.bar.np{display:flex;flex-direction:column;left:auto;right:calc(8px + env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));bottom:auto;transform:none;width:64px;padding:4px;gap:4px;max-height:calc(100vh - 16px);overflow:auto}
+.bar .ma{display:flex;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px));max-width:min(60vw,520px);align-items:center;gap:6px;padding:2px 10px;min-height:36px;background:var(--c-panel);border:1px solid rgba(90,112,144,.5);border-radius:18px;box-sizing:border-box;pointer-events:auto}
+.bar .hint{display:block;-webkit-line-clamp:unset;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.bar .spark{width:96px;flex:none}.bar .infob{flex:none;min-height:36px}
+.bar .bc,.bar .gl,.bar .gr,.bar .undob,.bar .optb,.bar .modeb,.bar .place{width:56px;min-width:56px}
+.detail{bottom:calc(52px + env(safe-area-inset-bottom,0px));right:calc(80px + env(safe-area-inset-right,0px));left:calc(8px + env(safe-area-inset-left,0px))}
+}`;
   }
 
   constructor() {
@@ -88,20 +128,29 @@ button.t.wide{padding:0 14px}
     this.cancelBtn = mk('✕', 'Cancel the tool (long press)', () => this.api?.cancelTool(), 'danger'); this.cancelBtn.dataset.role = 'cancel';
     this.drawerBtn = mk('☰', 'Show the tool options', () => this.api?.toggleDrawer?.()); this.drawerBtn.dataset.role = 'drawer';
     this.col.append(this.modeBtn, this.drawerBtn, undo, rl, rr, this.cancelBtn);
-    // placement bar
+    // placement bar (tablets: rotate, Place, Cancel, hint) = the 2-row TOOL BAR on phones (css): row A the ONE message + sparkline, row B Cancel, rotate, Undo, Options, Place
     this.bar.className = 'cl bar';
-    const gl = mk('⟲', 'Rotate the building left', () => this.api?.rotateGhost(-1)); gl.dataset.role = 'ghost-left';
-    const gr = mk('⟳', 'Rotate the building right', () => this.api?.rotateGhost(1)); gr.dataset.role = 'ghost-right';
-    this.placeBtn = mk('✓ <small>Place</small>', 'Place the building at the ghost (or tap the ghost again)', () => this.api?.confirm(), 'primary wide'); this.placeBtn.dataset.role = 'place';
-    const bc = mk('✕', 'Cancel placing', () => this.api?.cancelTool(), 'danger'); bc.dataset.role = 'bar-cancel';
+    const gl = mk('⟲', 'Rotate the building left', () => this.api?.rotateGhost(-1), 'gl'); gl.dataset.role = 'ghost-left';
+    const gr = mk('⟳', 'Rotate the building right', () => this.api?.rotateGhost(1), 'gr'); gr.dataset.role = 'ghost-right';
+    this.placeBtn = mk('✓ <small>Place</small>', 'Place the building at the ghost (or tap the ghost again)', () => { if (this.st.tool === 'placement' || this.st.tool === 'lift') this.api?.confirm(); else this.api?.cancelTool(); }, 'primary wide place'); this.placeBtn.dataset.role = 'place';
+    const bc = mk('✕', 'Cancel placing', () => this.api?.cancelTool(), 'danger bc'); bc.dataset.role = 'bar-cancel';
     this.hintEl.className = 'hint'; this.hintEl.textContent = TIP; this.hintEl.setAttribute('role', 'status');
+    this.undoB = mk('↶', 'Undo the last build action (two-finger tap)', () => this.api?.undo(), 'ph undob'); this.undoB.dataset.role = 'bar-undo';
+    this.optB = mk('☰', 'Options: show or hide the tool options', () => this.api?.toggleDrawer?.(), 'ph optb'); this.optB.dataset.role = 'bar-options';
+    this.modeB = mk('✋', 'One-finger drag: pan the map (tap to paint)', () => this.api?.setMode(this.st.mode === 'pan' ? 'paint' : 'pan'), 'ph modeb'); this.modeB.dataset.role = 'bar-mode';
+    this.infoBtn.className = 't ph infob'; this.infoBtn.textContent = 'i'; this.infoBtn.title = 'Why not? More detail'; this.infoBtn.setAttribute('aria-label', 'More detail'); this.infoBtn.dataset.role = 'bar-info'; this.infoBtn.hidden = true;
+    this.infoBtn.addEventListener('click', (e) => { e.stopPropagation(); this.detailEl.hidden = !this.detailEl.hidden; });
+    this.sparkBtn.className = 't ph spark'; this.sparkBtn.hidden = true; this.sparkBtn.dataset.role = 'bar-profile'; this.sparkBtn.title = 'Show the ground profile'; this.sparkBtn.setAttribute('aria-label', 'Show the ground profile');
+    this.sparkBtn.addEventListener('click', (e) => { e.stopPropagation(); const r = document.documentElement; r.toggleAttribute('data-profile-open', !r.hasAttribute('data-profile-open')); });
+    this.detailEl.className = 'detail'; this.detailEl.hidden = true; this.detailEl.setAttribute('role', 'status'); this.detailEl.addEventListener('click', () => { this.detailEl.hidden = true; });
+    this.ma.className = 'ma'; this.ma.append(this.hintEl, this.infoBtn, this.sparkBtn);
     this.rotBtns = [gl, gr];
-    this.bar.append(gl, gr, this.placeBtn, bc, this.hintEl);
+    this.bar.append(gl, gr, this.placeBtn, bc, this.ma, this.undoB, this.optB, this.modeB);
     // views
     this.views.className = 'cl views';
     this.joy.className = 'joy'; this.joy.hidden = true; this.knob.className = 'knob'; this.joy.append(this.knob); this.joy.dataset.role = 'joystick'; this.joy.setAttribute('aria-label', 'Walk joystick'); this.joy.setAttribute('role', 'application');
     this.bindJoystick();
-    this.root.append(this.col, this.bar, this.views, this.joy); // no attributes on the host in the constructor (custom element rule): sync() runs when connected
+    this.root.append(this.col, this.bar, this.detailEl, this.views, this.joy); // no attributes on the host in the constructor (custom element rule): sync() runs when connected
   }
 
   bind(api: TouchControlsApi): void { this.api = api; }
@@ -110,9 +159,18 @@ button.t.wide{padding:0 14px}
     const read = (): void => { const c = document.body.classList; this.setView(c.contains('view-walk') ? 'walk' : c.contains('view-photo') ? 'photo' : c.contains('view-ride') ? 'ride' : 'iso'); };
     if (typeof MutationObserver !== 'undefined') { this.obs = new MutationObserver(read); this.obs.observe(document.body, { attributes: true, attributeFilter: ['class'] }); }
     read();
+    this.onProfile = (e: Event): void => {
+      const v = (e as CustomEvent).detail as { kind: string; profile: { samples: Array<{ distM: number; altM: number; difficulty: number }>; lengthM: number; dropM: number; avgPct: number; maxPct: number } } | null;
+      this.profile = v ? { samples: v.profile.samples, summary: `${Math.round(v.profile.lengthM)} m · ${v.kind === 'lift' ? '\u2191' : '\u2193'}${Math.round(Math.abs(v.profile.dropM))} m · max ${Math.round(v.profile.maxPct)}%` } : null;
+      if (!v) document.documentElement.removeAttribute('data-profile-open');
+      this.syncSpark();
+    };
+    window.addEventListener('st-profile-view', this.onProfile);
+    this.alertFn = (e: Event): void => { this.alertText = String((e as CustomEvent).detail?.text ?? ''); window.clearTimeout(this.alertTimer); this.alertTimer = window.setTimeout(() => { this.alertText = ''; this.sync(); }, 6000); this.sync(); };
+    window.addEventListener('st-tool-alert', this.alertFn);
     this.sync();
   }
-  disconnectedCallback(): void { this.obs?.disconnect(); this.obs = null; super.disconnectedCallback(); this.releaseAll(); }
+  disconnectedCallback(): void { this.obs?.disconnect(); this.obs = null; if (this.onProfile) window.removeEventListener('st-profile-view', this.onProfile); if (this.alertFn) window.removeEventListener('st-tool-alert', this.alertFn); window.clearTimeout(this.alertTimer); super.disconnectedCallback(); this.releaseAll(); }
 
   setState(s: Partial<TouchBarState>): void { this.st = { ...this.st, ...s }; this.sync(); }
   setView(v: TouchView): void { if (v === this.view) return; this.view = v; if (v !== 'walk') this.releaseAll(); this.buildViews(); this.sync(); }
@@ -175,6 +233,39 @@ button.t.wide{padding:0 14px}
     j.addEventListener('pointerup', end); j.addEventListener('pointercancel', end);
   }
 
+  /** Phones: the aiming tool's long text (every reason + hint, as the ghost tooltip prints it); the bar shows only the first reason and an `i` for the rest. */
+  setDetails(lines: Array<{ kind: string; text: string }> | null): void {
+    this.details = lines ?? [];
+    this.detailEl.replaceChildren(...this.details.map((l) => { const d = document.createElement('div'); d.className = l.kind === 'error' ? 'e' : l.kind === 'warn' ? 'w' : ''; d.textContent = l.kind === 'error' ? `\u2716 ${l.text}` : l.kind === 'warn' ? `\u26a0 ${l.text}` : l.text; return d; }));
+    this.syncDetails();
+  }
+  /** The ONE message the bar shows (row A): tests / audits read it. */
+  get message(): string { return this.hintEl.textContent ?? ''; }
+  get placeDisabled(): boolean { return this.placeBtn.disabled; }
+  private syncDetails(): void {
+    const more = this.details.length > 1 || this.details.some((l) => l.text.length > 70);
+    this.infoBtn.hidden = !more; this.bar.classList.toggle('hasd', more);
+    if (!more) this.detailEl.hidden = true;
+  }
+  private syncSpark(): void {
+    const p = this.profile;
+    this.sparkBtn.hidden = !p;
+    if (!p) { this.sparkBtn.replaceChildren(); return; }
+    const NS = 'http://www.w3.org/2000/svg', W = 100, H = 26, s = p.samples;
+    let lo = Infinity, hi = -Infinity; for (const q of s) { lo = Math.min(lo, q.altM); hi = Math.max(hi, q.altM); }
+    const span = Math.max(10, hi - lo), tot = Math.max(1, s[s.length - 1]!.distM);
+    const x = (d: number): number => (d / tot) * W, y = (a: number): number => 2 + (1 - (a - lo) / span) * (H - 4);
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+    const COL = ['#3fb950', '#3b82f6', '#e5484d', '#aab4c4'];
+    for (let i = 1; i < s.length; i++) {
+      const a = s[i - 1]!, b = s[i]!, poly = document.createElementNS(NS, 'polygon');
+      poly.setAttribute('points', `${x(a.distM)},${y(a.altM)} ${x(b.distM)},${y(b.altM)} ${x(b.distM)},${H} ${x(a.distM)},${H}`); poly.setAttribute('fill', COL[Math.max(0, Math.min(3, b.difficulty))]!); poly.setAttribute('fill-opacity', '.8');
+      svg.append(poly);
+    }
+    const sm = document.createElement('small'); sm.textContent = p.summary;
+    this.sparkBtn.replaceChildren(svg, sm);
+  }
+
   private sync(): void {
     const on = this.st.enabled, iso = this.view === 'iso';
     this.hidden = !on;
@@ -189,11 +280,25 @@ button.t.wide{padding:0 14px}
     this.drawerBtn.setAttribute('aria-pressed', String(!this.st.drawerHidden));
     this.drawerBtn.classList.toggle('active', !this.st.drawerHidden);
     this.drawerBtn.title = this.st.drawerHidden ? 'Show the tool options' : 'Hide the tool options (free the map)'; this.drawerBtn.setAttribute('aria-label', this.drawerBtn.title);
-    this.bar.hidden = !on || !iso || (this.st.tool !== 'placement' && this.st.tool !== 'lift');
+    const ghostTool = this.st.tool === 'placement' || this.st.tool === 'lift';
+    this.bar.hidden = !on || !iso || this.st.tool === 'select';
+    this.bar.classList.toggle('np', !ghostTool); // tablets: the bar is only for the ghost tools; phones show it for every tool
+    const paint = this.st.kind === 'paint';
+    this.modeB.hidden = !paint; this.modeB.classList.toggle('active', this.st.mode === 'paint'); this.modeB.innerHTML = this.st.mode === 'paint' ? '🖌' : '✋';
+    this.bar.classList.toggle('paint', paint);
+    this.bar.classList.toggle('nopivot', !ghostTool || this.st.tool === 'lift'); // no ghost rotation for lifts / paint tools
+    this.placeBtn.innerHTML = ghostTool ? '✓ <small>Place</small>' : '✓ <small>Done</small>';
+    this.placeBtn.title = ghostTool ? 'Place the building at the ghost (or tap the ghost again)' : 'Done: leave the tool';
+    this.placeBtn.dataset.done = ghostTool ? '' : '1';
     const lift = this.st.tool === 'lift';
     for (const b of this.rotBtns) b.hidden = lift;
     this.placeBtn.classList.toggle('active', this.st.confirming);
-    this.hintEl.textContent = this.st.hint || TIP;
+    let msg = this.alertText || this.st.hint || TIP;
+    if (typeof matchMedia === 'function' && matchMedia('(max-width: 520px), (max-height: 520px)').matches) msg = msg.replace(/^(\u2716\s*)?[A-Za-z' -]{3,30}(\([^)]*\))?:\s+(?=\S)/, '$1'); // phones: the lift / building name prefix is not needed in the one-line message
+    this.hintEl.textContent = msg;
+    const bad = !!this.alertText || /^\s*(\u2716|✖|Not on the map|No |Cannot)/.test(msg) || /cannot|must|needs|not enough|blocked/i.test(msg) && !/\$/.test(msg);
+    this.hintEl.classList.toggle('bad', bad); this.hintEl.classList.toggle('note', !bad && !/\$/.test(msg));
+    this.placeBtn.disabled = ghostTool && bad;
     this.views.hidden = !on || this.view === 'iso';
     this.joy.hidden = !on || this.view !== 'walk';
   }

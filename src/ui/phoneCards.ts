@@ -41,6 +41,8 @@ export interface PhoneCards {
   /** Re-evaluate now (events call this; a 250 ms poll covers the rest). */
   update(): void;
   isPhone(): boolean;
+  /** Ids of the sheet cards that are open right now. */
+  open(): string[];
   dispose(): void;
 }
 
@@ -68,6 +70,7 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
       }
     }
     openSet = now;
+    if (phone && now.size) root.setAttribute('data-phone-card', [...now].join(' ')); else root.removeAttribute('data-phone-card');
     const mode = phone ? phoneMode({ modal: o.dialogs() > 0, tool: root.hasAttribute('data-toolfirst'), sheet: now.size > 0 }) : 'idle';
     if (mode !== cur || (phone && !root.hasAttribute('data-phone-mode')) || (!phone && root.hasAttribute('data-phone-mode'))) {
       cur = mode;
@@ -83,7 +86,7 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
   return {
     mode: () => cur,
     register: (c) => { cards.push(c); },
-    update, isPhone,
+    update, isPhone, open: () => [...openSet],
     dispose() { window.clearInterval(t); window.removeEventListener('st-sheet-snap', ev); window.removeEventListener('pointerup', ev, true); window.removeEventListener('click', ev, true); window.removeEventListener('resize', ev); mq?.removeEventListener?.('change', ev); root.removeAttribute('data-phone-mode'); },
   };
 }

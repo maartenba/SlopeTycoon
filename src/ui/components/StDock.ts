@@ -207,6 +207,7 @@ const css = `
 .body:has(.pc [data-suggest]) .pc{width:100%;grid-template-columns:repeat(3,1fr);max-height:none;overflow:visible}
 .body:has(.pc[data-path-controls]) .pc{width:100%;max-height:none;overflow:visible}
 }
+@media (max-width:760px),(max-height:520px){.dock{display:var(--dock-row,flex)}:host(.peek) st-sheet{display:none}}
 /* Tablets keep the drawers but never let one pass ~45 % of the screen height (the map has to stay usable) */
 @media (min-width:521px) and (max-width:1099px) and (min-height:521px){.drawer{max-height:min(40vh,300px)}.drawer.mid{max-height:min(44vh,360px)}.drawer.tall{max-height:min(44vh,360px)}.drawer.tall .pane{max-height:calc(min(44vh,360px) - 48px)}}
 /* Phones (portrait <= 520 px wide, landscape <= 520 px high): the open drawer is a bottom sheet / side sheet (st-sheet, docs/mobile-ui.md). st-sheet is a passthrough elsewhere, so none of this applies there. */
