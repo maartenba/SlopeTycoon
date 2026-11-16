@@ -361,13 +361,13 @@ export function registerAll(reg: Reg): void {
       if (from === 'free') return h < 500 ? r.line(w * 0.3, h * 0.45, w * 0.5, h * 0.55, 14) : r.line(w * 0.25, h * 0.5, w * 0.5, h * 0.56, 14);
       const t = await r.s((s, a) => {
         const b = s.buildings.all().find((q: any) => q.type === 'baseLodge'); const K = s.sim.networks.kind, size = s.sim.grid.size;
-        if (a === 'lodge') return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+        if (a === 'lodge') return { x: b.x + b.w / 2, y: b.y + b.h - 0.5 }; // a tile INSIDE the lodge (its last row): a fixed pixel offset below the centre fell outside the footprint on landscape phones (zoom / aspect), where the stroke had no path to start from
         let best: any = null, bd = 1e9; for (let i = 0; i < K.length; i++) if (K[i] === 2) { const x = i % size, y = Math.floor(i / size), d = Math.hypot(x - b.x, y - b.y); if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
         return best;
       }, from);
       let p = await r.project(t.x, t.y);
       if (p.y < h * 0.42) { await r.s((s, a) => s.renderer.controls.panPixels(0, a), h * 0.45 - p.y); await sleep(500); p = await r.project(t.x, t.y); } // keep the start clear of the HUD cards at the top
-      return r.line(p.x, p.y + (from === 'lodge' ? 45 : 0), p.x + DIRS[dir]![0], p.y + (from === 'lodge' ? 45 : 0) + DIRS[dir]![1], 14);
+      return r.line(p.x, p.y + (0), p.x + DIRS[dir]![0], p.y + (0) + DIRS[dir]![1], 14);
     };
     const cases: Array<{ id: string; drawer: string; card: string; tool: string; m: string; from?: 'free' | 'lodge' | 'road' }> = [
       ...(r.winter ? [{ id: 'ski piste', drawer: 'Pistes & Trails', card: 'Ski piste', tool: 'network', m: 'piste' }] : []),
