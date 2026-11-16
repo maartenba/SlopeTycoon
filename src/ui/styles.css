@@ -104,7 +104,7 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
 @media (max-height: 520px) { #ui > st-profile { right: calc(80px + var(--sr)); bottom: calc(52px + env(safe-area-inset-bottom, 0px)); } }
 @media (max-width: 520px), (max-height: 520px) {
   /* one toast pill, never on top of an expanded goal / scenario card (it goes to the bottom then) */
-  html[data-phone-card~="goals"] #ui > st-toast, html[data-phone-card~="scenario"] #ui > st-toast { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  html[data-phone-card~="goals"] #ui > st-toast, html[data-phone-card~="scenario"] #ui > st-toast, html[data-recap-card] #ui > st-toast { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 520px), (max-height: 520px) {
   /* modal mode: the dialog is a full sheet; nothing else floats behind it */

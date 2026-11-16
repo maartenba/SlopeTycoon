@@ -58,6 +58,11 @@ export class StRecap extends StElement {
 .actions{display:flex;align-items:center;gap:8px;margin-top:auto}.actions .hl{flex:1 1 auto;min-width:0;color:#b9c6d8}.actions button{flex:0 0 auto}
 .card[hidden]{display:none}
 @media (max-width:520px),(max-height:520px){
+/* phones (0.7.1): the small month-end / level-up card sits UNDER the banner row (goal chip / Rudi / news), not on top of it; it only shows in idle mode (styles.css hides it in tool / sheet / modal), so it is never beside another card */
+:host(:not([data-fs])){top:calc(var(--ban-top,52px) + 60px);left:calc(8px + var(--sl,0px));right:calc(8px + var(--sr,0px));margin:0;width:auto;max-width:${RECAP_W}px}
+:host(:not([data-fs])) .card{width:100%}
+:host(:not([data-fs])) .card.collapsed{height:48px;padding:2px 6px 2px 10px;justify-content:center}
+:host(:not([data-fs])) .head button{flex:none;min-width:44px;height:44px;padding:0;font-size:16px;line-height:1}
 /* the welcome-back recap is a full-screen sheet on phones (stays until closed: no auto-dismiss); the month and level-up cards stay small and transient */
 :host([data-fs]){position:fixed;inset:0;margin:0;width:auto;z-index:30}
 :host([data-fs]) .card.recap{position:fixed;inset:0;width:auto;height:auto;border-radius:0;border:0;gap:10px;padding:0 calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));font-size:15px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -98,7 +103,7 @@ export class StRecap extends StElement {
     if (this.suppressed) return false;
     if ((this.mode === 'recap' || this.mode === 'unlock') && !this.card.hidden) return false; // the recap / a level-up card has priority; the month is in Finance anyway
     if (this.limiter.push({ key, text: m.title, severity: 'info' }, now) !== 'shown') return false;
-    this.mode = 'month'; this.collapsed = false; this.card.hidden = false; this.monthModel = m;
+    this.mode = 'month'; this.collapsed = typeof matchMedia === 'function' && matchMedia(PHONE_MEDIA).matches; /* phones: a one-line chip, tap the arrow for the numbers */ this.card.hidden = false; document.documentElement.setAttribute('data-recap-card', ''); this.monthModel = m;
     this.renderMonth();
     this.arm(MONTH_CARD_MS);
     return true;
@@ -109,7 +114,7 @@ export class StRecap extends StElement {
     if (this.suppressed || (this.mode === 'recap' && !this.card.hidden)) return false;
     if (this.unlockLimiter.push({ key: `level:${m.level}`, text: m.name, severity: 'good' }, now) !== 'shown') return false;
     window.clearTimeout(this.timer);
-    this.mode = 'unlock'; this.collapsed = false; this.card.hidden = false;
+    this.mode = 'unlock'; this.collapsed = false; this.card.hidden = false; document.documentElement.setAttribute('data-recap-card', '');
     this.renderUnlock(m);
     this.arm(UNLOCK_CARD_MS);
     return true;
@@ -117,7 +122,7 @@ export class StRecap extends StElement {
 
   dismiss(): void {
     window.clearTimeout(this.timer);
-    this.mode = null; this.monthModel = null; this.card.hidden = true; this.removeAttribute('data-fs');
+    this.mode = null; this.monthModel = null; this.card.hidden = true; this.removeAttribute('data-fs'); document.documentElement.removeAttribute('data-recap-card'); // (styles.css: on phones the toast pill drops to the bottom while the small card owns the top)
     this.card.replaceChildren();
   }
 

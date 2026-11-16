@@ -124,11 +124,14 @@ export class StTopBar extends StElement {
     );
     // Phones: the overflow button opens one menu with everything that is not in the top row (nothing is removed; desktop never shows it). Buttons here are separate instances with the same handlers.
     const more = btn('\u22EF', 'More: photo, statistics, save, settings, tips, news', () => { const on = !p.classList.contains('open'); p.classList.toggle('open', on); more.setAttribute('aria-expanded', String(on)); if (on) this.refreshInfo(); });
+    /** Menu keyboard model (0.7.1): roving tabindex over the visible menu items; Up / Down / Home / End move focus, Esc closes and returns focus to the button. */
+    const items = (): HTMLButtonElement[] => Array.from(ovf.querySelectorAll<HTMLButtonElement>('button[role=menuitem]')).filter((b) => !b.hidden);
+    const focusItem = (i: number): void => { const l = items(); if (!l.length) return; const n = l[(i + l.length) % l.length]!; for (const b of l) b.tabIndex = b === n ? 0 : -1; n.focus(); };
     more.className = 'more'; more.setAttribute('aria-expanded', 'false'); more.setAttribute('aria-haspopup', 'true'); more.dataset.tutorialId = 'topbar:more';
     const ovf = document.createElement('div'); ovf.className = 'ovf'; ovf.setAttribute('role', 'menu'); ovf.setAttribute('aria-label', 'More');
     this.ovfInfo = Object.assign(document.createElement('div'), { className: 'info' }); this.infoFn = api.info ?? null;
     ovf.append(this.ovfInfo);
-    const closeOvf = (): void => { p.classList.remove('open'); more.setAttribute('aria-expanded', 'false'); };
+    const closeOvf = (refocus = false): void => { p.classList.remove('open'); more.setAttribute('aria-expanded', 'false'); if (refocus) more.focus(); };
     const item = (label: string, title: string, fn: () => void, tutorialId?: string, role?: string): HTMLButtonElement => {
       const b = btn(label, title, () => { closeOvf(); fn(); }, tutorialId); b.setAttribute('role', 'menuitem'); if (role) b.dataset.role = role; ovf.append(b); return b;
     };
@@ -145,6 +148,15 @@ export class StTopBar extends StElement {
     item('? Help', 'Keyboard shortcuts and help', () => api.help(), undefined, 'ovf-help');
     if (api.quality) { const g2 = makeSelect((api.quality.options ?? []).map((q) => ({ value: q, label: `Graphics: ${q}` })), api.quality.get(), 'Graphics quality', (v) => api.quality?.set(v)); g2.classList.add('gfx'); ovf.append(g2); }
     p.append(more, ovf);
+    more.addEventListener('keydown', (e) => { if ((e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); if (!p.classList.contains('open')) more.click(); focusItem(e.key === 'ArrowUp' ? -1 : 0); } });
+    ovf.addEventListener('keydown', (e) => {
+      const l = items(), cur = l.indexOf((this.root.activeElement ?? e.target) as HTMLButtonElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusItem(cur + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusItem(cur < 0 ? -1 : cur - 1); }
+      else if (e.key === 'Home') { e.preventDefault(); focusItem(0); }
+      else if (e.key === 'End') { e.preventDefault(); focusItem(-1); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeOvf(true); }
+    });
     window.addEventListener('pointerdown', (e) => { if (p.classList.contains('open') && !e.composedPath().includes(this)) closeOvf(); }, true);
     this.root.appendChild(p);
     this.refreshSaveTip();

@@ -128,6 +128,7 @@ const STATES: State[] = [
   { id: 'rudi-advice', boot: 'career', kind: 'default', setup: `${D} const a=q('st-assistant'); a.toggleAdvice&&a.toggleAdvice(true)` },
   { id: 'news-open', boot: 'career', kind: 'default', setup: `${D} const n=q('st-news'); const b=n.shadowRoot.querySelector('[aria-expanded]'); if(b&&b.getAttribute('aria-expanded')!=='true') b.click()` },
   { id: 'toast', boot: 'career', kind: 'default', setup: `${D} const t=q('st-toast'); t.show('Snow is on the way: the lifts open at 08:00','info',9000); t.show('Not enough money for a Lodge','warn',9000)` },
+  { id: 'month-card', boot: 'career', kind: 'default', setup: `${D} q('st-recap').showMonth({title:'January report',income:{label:'Income',text:'+$12,400',tone:'good'},expense:{label:'Expenses',text:'-$8,100',tone:'bad'},net:{label:'Net',text:'+$4,300',tone:'good'},guests:'1,240 guests',rating:{text:'3.5 stars',tone:'good'},highlight:'Best earner: Lift tickets'}, 'audit-month', 1e12)` },
   { id: 'inspector', boot: 'career', kind: 'default', setup: `${D} const b=__slope.buildings.all().find(x=>x.type==='baseLodge'); __slope.select(b.id)` },
   { id: 'building-placement', boot: 'career', kind: 'tool', setup: firstCard('buildings'), act: async (p, _d, h) => { await p.touchscreen.tap(200, Math.round(h * 0.45)); await sleep(500); } },
   { id: 'piste-painting', boot: 'career', kind: 'tool', setup: firstCard('pistes'), act: async (p, d, h) => { await p.touchscreen.tap(Math.round(d.w / 2), Math.round(h * 0.45)); await sleep(500); } },

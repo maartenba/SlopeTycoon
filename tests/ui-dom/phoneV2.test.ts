@@ -33,6 +33,36 @@ describe('speed chip popover (phones)', () => {
   });
 });
 
+describe('overflow menu keyboard (0.7.1)', () => {
+  const mk = (): { t: HTMLElement; more: HTMLButtonElement; ovf: HTMLElement; items: HTMLButtonElement[]; focused: () => HTMLElement | null } => {
+    const t = el('st-topbar'); document.body.append(t);
+    t.bind({ rotate: () => {}, help: () => {}, settings: () => {}, saveLoad: () => {}, menu: () => {}, photo: () => {}, stats: () => {}, walk: () => {}, rudi: () => {}, news: () => {}, info: () => [] });
+    const more = q(t, 'button.more') as HTMLButtonElement, ovf = q(t, '.ovf')!;
+    return { t, more, ovf, items: (qa(t, '.ovf button[role=menuitem]') as HTMLButtonElement[]).filter((b) => !b.hidden), focused: () => t.shadowRoot!.activeElement as HTMLElement | null };
+  };
+  const key = (e: HTMLElement, k: string): void => { e.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })); };
+  it('ArrowDown on the button opens the menu and focuses the first item; roving tabindex; Up / Down wrap; Home / End jump', () => {
+    const { more, ovf, items, focused } = mk();
+    expect(ovf.getAttribute('role')).toBe('menu'); expect(more.getAttribute('aria-haspopup')).toBe('true');
+    key(more, 'ArrowDown');
+    expect(more.getAttribute('aria-expanded')).toBe('true');
+    expect(focused()).toBe(items[0]);
+    expect(items.filter((b) => b.tabIndex === 0)).toEqual([items[0]]);
+    key(ovf, 'ArrowDown'); expect(focused()).toBe(items[1]); expect(items.filter((b) => b.tabIndex === 0)).toEqual([items[1]]);
+    key(ovf, 'End'); expect(focused()).toBe(items[items.length - 1]);
+    key(ovf, 'ArrowDown'); expect(focused()).toBe(items[0]); // wraps
+    key(ovf, 'ArrowUp'); expect(focused()).toBe(items[items.length - 1]);
+    key(ovf, 'Home'); expect(focused()).toBe(items[0]);
+  });
+  it('Escape closes the menu and returns focus to the ... button; ArrowUp on the button opens at the last item', () => {
+    const { t, more, ovf, items, focused } = mk();
+    key(more, 'ArrowUp'); expect(focused()).toBe(items[items.length - 1]);
+    key(ovf, 'Escape');
+    expect(more.getAttribute('aria-expanded')).toBe('false'); expect(q(t, '.panel')!.classList.contains('open')).toBe(false);
+    expect(focused()).toBe(more);
+  });
+});
+
 describe('overflow menu contents', () => {
   it('lists Rudi\'s tips, News, Photo, Statistics, Save, Settings, Rotate, Walk, Help and calls the handlers; closes after a pick', () => {
     const t = el('st-topbar'); document.body.append(t);
@@ -229,5 +259,23 @@ describe('full-screen cards on phones (owner decision 2026-11-16)', () => {
     expect(r.hasAttribute('data-fs')).toBe(true);
     vi.advanceTimersByTime(60_000);
     expect((r as unknown as { showing: boolean }).showing).toBe(true);
+  });
+});
+
+describe('month-end card on phones (0.7.1)', () => {
+  const m = { title: 'January report', income: { label: 'Income', text: '+$1', tone: 'good' as const }, expense: { label: 'Expenses', text: '-$1', tone: 'bad' as const }, net: { label: 'Net', text: '+$0', tone: 'neutral' as const }, guests: '10 guests', rating: null, highlight: null };
+  it('starts as a one-line chip on a phone (tap for numbers) and sets data-recap-card while visible; desktop starts expanded', () => {
+    phoneMq(true);
+    const r = el('st-recap') as unknown as { showMonth(m: unknown, k: string, now?: number): boolean; dismiss(): void } & HTMLElement; document.body.append(r);
+    expect(r.showMonth(m, 'k1', 1e9)).toBe(true);
+    expect((q(r, '.card') as HTMLElement).classList.contains('collapsed')).toBe(true);
+    expect(document.documentElement.hasAttribute('data-recap-card')).toBe(true);
+    (q(r, '.collapse') as HTMLButtonElement).click();
+    expect((q(r, '.card') as HTMLElement).classList.contains('collapsed')).toBe(false);
+    r.dismiss(); expect(document.documentElement.hasAttribute('data-recap-card')).toBe(false);
+    phoneMq(false);
+    expect(r.showMonth(m, 'k2', 2e9)).toBe(true);
+    expect((q(r, '.card') as HTMLElement).classList.contains('collapsed')).toBe(false);
+    r.dismiss();
   });
 });
