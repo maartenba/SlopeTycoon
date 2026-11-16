@@ -190,3 +190,44 @@ describe('top row fit at 360 px (css contract; the real fit is measured by mobil
     expect(rcss).toMatch(/max-width:\s*400px/);
   });
 });
+
+describe('full-screen cards on phones (owner decision 2026-11-16)', () => {
+  it('What\u2019s new / update / recap register as full-screen: mode modal, sheet cards close, held while a tool is active, desktop stays idle', () => {
+    phoneMq(true);
+    let dlg = 0, open = false, sheet = true;
+    const c = installPhoneCards({ dialogs: () => dlg });
+    c.register({ id: 'drawer', isOpen: () => sheet, close: () => { sheet = false; } });
+    c.registerFullscreen({ id: 'whats-new', isOpen: () => open, close: () => { open = false; } });
+    c.update(); expect(c.mode()).toBe('sheet');
+    open = true; c.update();
+    expect(c.mode()).toBe('modal'); expect(sheet).toBe(false); expect(document.documentElement.getAttribute('data-phone-mode')).toBe('modal');
+    document.documentElement.setAttribute('data-toolfirst', ''); c.update();
+    expect(c.mode()).toBe('tool'); // held: a tool never gets a card thrown over it
+    document.documentElement.removeAttribute('data-toolfirst'); c.update(); expect(c.mode()).toBe('modal');
+    open = false; c.update(); expect(c.mode()).toBe('idle');
+    c.dispose(); phoneMq(false);
+    const d = installPhoneCards({ dialogs: () => 0 }); d.registerFullscreen({ id: 'x', isOpen: () => true, close: () => {} }); d.update();
+    expect(d.mode()).toBe('idle'); d.dispose();
+  });
+
+  it('the What\u2019s new card marks itself full-screen (data-fs) while shown and carries the phone sheet css with 44 px close', async () => {
+    const w = el('st-whats-new'); document.body.append(w);
+    (w as unknown as { showWhatsNew(s: unknown[], u: null): void }).showWhatsNew([{ version: '0.7.0', date: '', highlights: ['a'] }], null);
+    expect(w.hasAttribute('data-fs')).toBe(true);
+    const css = (w as unknown as { css(): string }).css();
+    expect(css).toMatch(/@media \(max-width:520px\),\(max-height:520px\)\{\n:host\(\[data-fs\]\)\{position:fixed;inset:0/); // only while shown: a full-size host would swallow every tap on the dock
+    expect(css).not.toMatch(/:host\{[^}]*inset:0/);
+    expect(css).toMatch(/width:44px;height:44px/); expect(css).toMatch(/safe-area-inset-top/);
+    (q(w, '.close-btn') as HTMLButtonElement).click();
+    expect(w.hasAttribute('data-fs')).toBe(false);
+  });
+
+  it('the welcome-back recap does not auto-dismiss on a phone and is full-screen (data-fs)', () => {
+    vi.useFakeTimers(); phoneMq(true);
+    const r = el('st-recap'); document.body.append(r);
+    (r as unknown as { showRecap(m: unknown): boolean }).showRecap({ title: 'Welcome back', subtitle: 's', stars: 3, trend: null, cash: '$1', change: null, lastMonth: null, issues: [], goals: [], advice: [] });
+    expect(r.hasAttribute('data-fs')).toBe(true);
+    vi.advanceTimersByTime(60_000);
+    expect((r as unknown as { showing: boolean }).showing).toBe(true);
+  });
+});

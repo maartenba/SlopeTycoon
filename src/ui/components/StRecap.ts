@@ -1,3 +1,4 @@
+import { PHONE_MEDIA } from '../phoneCards';
 import { starRow } from '../icons';
 import { TOP_CARD_Y } from '../layout';
 import type { MonthCardModel, RecapModel, Tone } from '../recap';
@@ -54,7 +55,17 @@ export class StRecap extends StElement {
 .sec{margin:2px 0 0;font-size:calc(10.5px * var(--ui-scale, 1));letter-spacing:.5px;text-transform:uppercase;color:#7f93ad}
 .li{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.li.pct{display:flex;gap:6px}.li.pct>span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}.li.pct>span:last-child{color:#9fb4cc}
 .warn{color:#f0c060}
-.actions{display:flex;align-items:center;gap:8px;margin-top:auto}.actions .hl{flex:1 1 auto;min-width:0;color:#b9c6d8}.actions button{flex:0 0 auto}`;
+.actions{display:flex;align-items:center;gap:8px;margin-top:auto}.actions .hl{flex:1 1 auto;min-width:0;color:#b9c6d8}.actions button{flex:0 0 auto}
+.card[hidden]{display:none}
+@media (max-width:520px),(max-height:520px){
+/* the welcome-back recap is a full-screen sheet on phones (stays until closed: no auto-dismiss); the month and level-up cards stay small and transient */
+:host([data-fs]){position:fixed;inset:0;margin:0;width:auto;z-index:30}
+:host([data-fs]) .card.recap{position:fixed;inset:0;width:auto;height:auto;border-radius:0;border:0;gap:10px;padding:0 calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px));font-size:15px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+:host([data-fs]) .card.recap .head{position:sticky;top:0;z-index:1;margin:0 calc(-16px - env(safe-area-inset-right,0px)) 0 calc(-16px - env(safe-area-inset-left,0px));padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px));min-height:48px;padding-top:env(safe-area-inset-top,0px);background:var(--c-panel);border-bottom:1px solid rgba(90,112,144,.4)}
+:host([data-fs]) .card.recap .head h3{font-size:19px}
+:host([data-fs]) .card.recap .head button{flex:none;width:44px;height:44px;padding:0;font-size:18px;line-height:1}
+:host([data-fs]) .card.recap .li{white-space:normal}.card.recap .row{min-height:28px}
+}`;
   }
 
   constructor() {
@@ -76,8 +87,9 @@ export class StRecap extends StElement {
   showRecap(m: RecapModel): boolean {
     if (this.suppressed) return false;
     this.mode = 'recap'; this.collapsed = false; this.card.hidden = false;
+    this.toggleAttribute('data-fs', true);
     this.renderRecap(m);
-    this.arm(RECAP_AUTO_MS);
+    if (!(typeof matchMedia === 'function' && matchMedia(PHONE_MEDIA).matches)) this.arm(RECAP_AUTO_MS); // phones: a full-screen sheet stays until closed
     return true;
   }
 
@@ -105,7 +117,7 @@ export class StRecap extends StElement {
 
   dismiss(): void {
     window.clearTimeout(this.timer);
-    this.mode = null; this.monthModel = null; this.card.hidden = true;
+    this.mode = null; this.monthModel = null; this.card.hidden = true; this.removeAttribute('data-fs');
     this.card.replaceChildren();
   }
 

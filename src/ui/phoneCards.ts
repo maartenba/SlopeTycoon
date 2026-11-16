@@ -36,6 +36,8 @@ export interface SheetCard { id: string; isOpen(): boolean; close(): void }
 
 export interface PhoneCards {
   mode(): PhoneMode;
+  /** Register a full-screen card (What's new, the update card, the welcome-back recap): while open on a phone the mode is `modal`, the sheet cards close, nothing else floats. Held (not counted) while a map tool is active. */
+  registerFullscreen(card: SheetCard): void;
   /** Register a sheet-like card (exclusive with the others). */
   register(card: SheetCard): void;
   /** Re-evaluate now (events call this; a 250 ms poll covers the rest). */
@@ -58,13 +60,16 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
   const root = o.root ?? document.documentElement;
   const mq = typeof matchMedia === 'function' ? matchMedia(PHONE_MEDIA) : null;
   const cards: SheetCard[] = [];
+  const fsCards: SheetCard[] = [];
   let openSet = new Set<string>();
   let cur: PhoneMode = 'idle';
   const isPhone = (): boolean => !!mq?.matches;
   const update = (): void => {
     const phone = isPhone();
     const now = new Set(cards.filter((c) => c.isOpen()).map((c) => c.id));
-    if (phone) {
+    const fs = phone && !root.hasAttribute('data-toolfirst') && fsCards.some((c) => c.isOpen());
+    if (fs) for (const c of cards) if (now.has(c.id)) { c.close(); now.delete(c.id); } // a full-screen card owns the screen: no sheet behind it
+    if (phone && !fs) {
       const fresh = [...now].filter((id) => !openSet.has(id));
       if (fresh.length) { // the newest opened card wins: close every other open one
         const keep = fresh[fresh.length - 1]!;
@@ -73,7 +78,7 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
     }
     openSet = now;
     if (phone && now.size) root.setAttribute('data-phone-card', [...now].join(' ')); else root.removeAttribute('data-phone-card');
-    const mode = phone ? phoneMode({ modal: o.dialogs() > 0, tool: root.hasAttribute('data-toolfirst'), sheet: now.size > 0 }) : 'idle';
+    const mode = phone ? phoneMode({ modal: o.dialogs() > 0 || fs, tool: root.hasAttribute('data-toolfirst'), sheet: now.size > 0 }) : 'idle';
     // Rudi's avatar and the news chip step aside while another card owns the screen (a host attribute: shadow css cannot see <html>)
     for (const [sel, id] of [['#ui > st-assistant', 'rudi'], ['#ui > st-news', 'news']] as const) {
       const h = document.querySelector(sel), hide = phone && mode !== 'idle' && !now.has(id); // the card that is open keeps its chip (it closes it)
@@ -94,6 +99,7 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
   return {
     mode: () => cur,
     register: (c) => { cards.push(c); },
+    registerFullscreen: (c) => { fsCards.push(c); },
     update, isPhone, open: () => [...openSet],
     dispose() { window.clearInterval(t); window.removeEventListener('st-sheet-snap', ev); window.removeEventListener('pointerup', ev, true); window.removeEventListener('click', ev, true); window.removeEventListener('resize', ev); mq?.removeEventListener?.('change', ev); offDialogs?.(); root.removeAttribute('data-phone-mode'); },
   };

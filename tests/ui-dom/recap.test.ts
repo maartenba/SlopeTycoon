@@ -31,7 +31,9 @@ describe('st-recap', () => {
     const css = (r as unknown as { css(): string }).css();
     expect(css).toMatch(/:host\{[^}]*pointer-events:none/);
     expect(css).toMatch(/\.card\{pointer-events:auto/);
-    expect(css).not.toMatch(/inset:\s*0|100vw|100vh|100%\s*;?\s*height/);
+    const outside = css.split('@media')[0]!; // phones get a full-screen sheet for the welcome-back recap only (inside the phone query, host pointer-events stay none)
+    expect(outside).not.toMatch(/inset:\s*0|100vw|100vh|100%\s*;?\s*height/);
+    expect(css).toMatch(/@media \(max-width:520px\),\(max-height:520px\)\{[^]*:host\(\[data-fs\]\)/);
     expect(css).toMatch(/width:320px/);
     const text = q(r, '.card')!.textContent!;
     for (const s of ['Welcome back', '$9,000', 'A goal', 'Some advice', '1 incident is still open']) expect(text).toContain(s);

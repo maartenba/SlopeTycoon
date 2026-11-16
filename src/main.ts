@@ -2999,6 +2999,8 @@ if (ui && !DEMO) {
     cards.register({ id: 'goals', isOpen: () => !!goalsEl.expanded, close: () => goalsEl.setExpanded(false) });
     cards.register({ id: 'scenario', isOpen: () => !!scen && !!scenCard.expanded, close: () => scenCard.setExpanded(false) });
     cards.register({ id: 'rudi', isOpen: () => !!q<HTMLElement & { adviceOpen?: boolean }>('st-assistant')?.adviceOpen, close: () => q<HTMLElement & { toggleAdvice(o?: boolean): void }>('st-assistant')?.toggleAdvice(false) });
+    cards.registerFullscreen({ id: 'whats-new', isOpen: () => whatsNewEl.showing, close: () => whatsNewEl.dismiss() });
+    cards.registerFullscreen({ id: 'recap', isOpen: () => recapEl.showing && recapEl.currentMode === 'recap', close: () => recapEl.dismiss() });
     cards.register({ id: 'news', isOpen: () => !!news.isOpen, close: () => news.setOpen(false) });
     cards.register({ id: 'inspector', isOpen: () => ['st-inspector', 'st-lift-inspector', 'st-guest-inspector', 'st-piste-inspector', 'st-route-inspector'].some((t) => sheetShown(q<HTMLElement>(`#right-col > ${t}`))), close: () => select(null) });
     phoneCardsRef = cards;
