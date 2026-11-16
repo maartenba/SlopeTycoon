@@ -710,12 +710,12 @@
    {
     "w": 390,
     "file": "touch-phone-hud-640.webp",
-    "bytes": 30156
+    "bytes": 28788
    },
    {
     "w": 390,
     "file": "touch-phone-hud-1280.webp",
-    "bytes": 40774
+    "bytes": 38762
    }
   ]
  },
@@ -726,12 +726,12 @@
    {
     "w": 390,
     "file": "touch-phone-place-640.webp",
-    "bytes": 29520
+    "bytes": 28436
    },
    {
     "w": 390,
     "file": "touch-phone-place-1280.webp",
-    "bytes": 42754
+    "bytes": 41772
    }
   ]
  },
@@ -1526,12 +1526,12 @@
    {
     "w": 390,
     "file": "touch-phone-ghost-640.webp",
-    "bytes": 26648
+    "bytes": 20884
    },
    {
     "w": 390,
     "file": "touch-phone-ghost-1280.webp",
-    "bytes": 26648
+    "bytes": 20884
    }
   ]
  },
@@ -1542,12 +1542,12 @@
    {
     "w": 390,
     "file": "touch-phone-inspector-640.webp",
-    "bytes": 29736
+    "bytes": 29026
    },
    {
     "w": 390,
     "file": "touch-phone-inspector-1280.webp",
-    "bytes": 40156
+    "bytes": 38928
    }
   ]
  },
@@ -1558,12 +1558,12 @@
    {
     "w": 640,
     "file": "touch-phone-land-640.webp",
-    "bytes": 29238
+    "bytes": 26132
    },
    {
     "w": 844,
     "file": "touch-phone-land-1280.webp",
-    "bytes": 43858
+    "bytes": 40066
    }
   ]
  },
