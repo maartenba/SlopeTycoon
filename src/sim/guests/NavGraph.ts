@@ -210,7 +210,7 @@ export class NavGraph implements PathGraph {
   }
 
   /** Tiles per tick when moving a -> b. */
-  speed(mode: number, a: number, b: number, skill: number, walkMul = 1): number {
+  speed(mode: number, a: number, b: number, skill: number, walkMul = 1, skiMul = 1): number {
     const walk = NAV_SPEED.walk * this.walkScale * walkMul; // walkMul: per-type pace on foot (seniors 0.82, `config/guestTypes` SENIOR_WALK); skiing is not affected
     if (mode === NavMode.Walk) return walk;
     const onPath = this.isPathTile(b) || this.stationMask[b] === 1;
@@ -222,7 +222,7 @@ export class NavGraph implements PathGraph {
     if (onPath) return walk * 0.8;
     const drop = this.altOf(a) - this.altOf(b);
     if (drop <= EPS) return NAV_SPEED.skiFlat;
-    return NAV_SPEED.skiBase * (0.8 + 0.07 * skill) * (0.6 + Math.min(1, drop * 4) * 0.6) * (this.qualityFactor ? this.qualityFactor(b) : 1);
+    return NAV_SPEED.skiBase * (0.8 + 0.07 * skill) * (0.6 + Math.min(1, drop * 4) * 0.6) * (this.qualityFactor ? this.qualityFactor(b) : 1) * skiMul; // skiMul: racers run the course faster (config/race.ts)
   }
 
   isPiste(t: number): boolean { return (this.world.layers[t]! & Layer.Ski) !== 0 && this.world.kind[t] === 0; }

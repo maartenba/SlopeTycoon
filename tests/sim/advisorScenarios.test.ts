@@ -18,6 +18,7 @@ import { paintBackcountryRoute } from './backcountryHelpers';
 import { sentence } from '../../src/ui/text';
 import { tutorialSim, makeEngine } from '../tutorial/helpers';
 import { Queries } from '../../src/tutorial/queries';
+import { mainRun, paintRun, prepareCourse } from './race/helpers';
 
 type Pt = { x: number; y: number };
 const make = (seed = 61, size: 64 | 128 | 256 = 64): Sim => {
@@ -357,6 +358,22 @@ const SCENARIOS: Scenario[] = [
     id: 'chapel.wedding', daily: true,
     setup: (s) => { s.wedding.rec = { day: 1, guests: 5, ox: 5, oy: 5, fx: 8, fy: 8, cx: 9, cy: 9, sx: null, sy: null, tDepart: 0, tArrive: 10, tBell: 60, tEnd: 180, tFeast: 240, tGone: 300, bell1: false, bell2: false, held: false, paid: false, income: 0 }; },
     fixes: [{ name: 'the party has gone home', apply: (s) => { s.wedding.rec = null; } }],
+  },
+  {
+    id: 'race.course.available', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; paintRun(s, mainRun(s), 2); },
+    fixes: [
+      { name: 'the run is marked as a course', apply: (s) => { s.runSettings.setCourse(s.names.pisteId(mainRun(s)), true); } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 1_000; } },
+    ],
+  },
+  {
+    id: 'race.course.ungroomed', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; const id = prepareCourse(s, 2); s.setRunCourse(id, true); s.runSettings.loadStats(undefined); },
+    fixes: [
+      { name: 'the course is groomed', apply: (s) => { s.runSettings.noteGroomed(s.names.pisteId(mainRun(s)), s.game.date.year * 180 + s.game.date.day); } },
+      { name: 'the player un-marks the course', apply: (s) => { s.runSettings.setCourse(s.names.pisteId(mainRun(s)), false); } },
+    ],
   },
   {
     id: 'tourist.office', daily: true,

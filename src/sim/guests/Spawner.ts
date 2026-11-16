@@ -113,6 +113,8 @@ export class Spawner {
   levelFn: () => number = () => 99;
   /** World conditions the extra types may require (`config/guestTypes` pseudo ids such as `@mtbBikeLift`); createSim wires it. Read every 10 ticks. */
   flagsFn: (() => readonly string[]) | null = null;
+  /** Racer arrival multiplier (0.8.0): the summed quality of the open race courses, 0 without one or when the courses are full (`RaceCourse.demand`). */
+  raceDemand: (() => number) | null = null;
   /** Live marketing provider (campaigns); default = the `marketing` field. */
   marketingFn: (() => MarketingState) | null = null;
   /** Price elasticity + calendar demand (replaces the fixed-ticket stub when set). */
@@ -243,6 +245,7 @@ export class Spawner {
     for (let j = 0; j < GUEST_TYPE_DEFS.length; j++) {
       const t = CORE_TYPE_COUNT + j, d = GUEST_TYPE_DEFS[j]!, seg = segmentIndex(t);
       let w = extraWeight(d, ctx);
+      if (w > 0 && d.racer) w *= this.raceDemand?.() ?? 0;
       if (w > 0 && d.photographer) w *= arrivalMult(arrivalLight(this.photoDayFor(state, season, ctx.weather), hourOfDay(state.date))); // the golden hour / a special sky draws them
       if (w > 0) w *= (this.mixBias?.[t] ?? 1) * (mk.weights[GUEST_TYPE_NAMES[seg]!] ?? 1) * (mk.types?.[d.id] ?? 1) * (this.pricingDemand?.typeWeight(seg) ?? 1);
       ws.push(w); sum += w;

@@ -24,6 +24,7 @@ import { anchors, findAlongPiste, findSite, type Site } from '../../tutorial/sug
 import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { ENERGY } from '../../config/energy';
+import { RACE } from '../../config/race';
 import { SUSTAIN } from '../../config/rivals';
 import { CROSSING } from '../../config/crossings';
 import { CAMP } from '../attractions/Campground';
@@ -342,6 +343,18 @@ export const RULES: readonly Rule[] = [
   }, false, true),
   // A one-line aside, only while a rare visit's tracks are still fresh (never before the first one)
   rule('visitor.tip', 1, (c) => { const v = c.sim.visitor.visit; return c.sim.visitor.count >= 1 && v ? { id: 'visitor.tip', severity: 'info', ...TEXT.visitorTip(), target: { x: Math.floor(v.fx), y: Math.floor(v.fy) } } : null; }, true, true),
+  // Race course (0.8.0, docs/race-course.md): a red or black run with a real drop and no course yet; and a course that nobody grooms. Never required by a goal.
+  rule('race.course.available', 1, (c) => {
+    const sim = c.sim;
+    if (sim.runSettings.courseIds().length || sim.progression.locked('building', 'startHut') || sim.guestSim.store.count < (c.shown ? 10 : 15) || sim.rating.stars < 2) return null;
+    const best = sim.runIndex.runs().filter((u) => u.difficulty >= RACE.minDifficulty && u.dropM >= RACE.minDropM && !u.loop && !u.synthetic).sort((x, y) => y.dropM - x.dropM)[0];
+    if (!best || sim.game.money < BUILDINGS.startHut!.cost + BUILDINGS.timingHut!.cost + (c.shown ? 1_000 : 3_000)) return null;
+    return { id: 'race.course.available', severity: 'info', ...TEXT.raceCourseAvailable(sim.names.pisteName(best)), panel: { drawer: 'buildings', item: 'startHut' } };
+  }),
+  rule('race.course.ungroomed', 1, (c) => {
+    const bad = c.sim.race.courses().find((k) => k.open && k.quality < 0.5);
+    return bad ? { id: 'race.course.ungroomed', severity: 'info', ...TEXT.raceCourseUngroomed(c.sim.names.pisteName(bad.run)), panel: { drawer: 'ops' } } : null;
+  }),
   // Tourist Office (M7.4, docs/m74-buildings.md): a settled resort (a base lodge, 15 guests, 2 stars) without one: +6 % arrivals for a few thousand dollars
   rule('tourist.office', 1, (c) => {
     const sim = c.sim;

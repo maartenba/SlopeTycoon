@@ -109,6 +109,8 @@ export interface GuestTypeDef {
   tourer?: boolean;
   /** Photographer (docs/photographers.md): comes for the light, goes to the best viewpoint in the golden hour / on a special-sky day; arrival weight follows `PhotoLight.arrivalMult`. */
   photographer?: boolean;
+  /** Racer (0.8.0, docs/race-course.md): trains laps on a race course (the via pick is forced onto it), skis faster, ignores slope stops, leaves after a few laps. */
+  racer?: boolean;
 }
 
 /**
@@ -129,10 +131,12 @@ export const COND_COASTER = '@coaster';
 /** Type index of the Senior (CORE_TYPE_COUNT + 2) and their pace on foot (0.82 of a normal guest; skiing is not slowed; docs/guest-types.md). */
 export const SENIOR_TYPE = 8;
 export const SENIOR_WALK = 0.82;
+/** Type index of the Racer (CORE_TYPE_COUNT + 8; 0.8.0). */
+export const RACER_TYPE = 14;
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer.
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer, 14 = Racer (0.8.0).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -213,6 +217,15 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     group: [1, 2], budget: [90, 170], overnight: 0.3, skill: [0.45, 0.4, 0.15, 0], maxSkill: 2, pref: [0, 0],
     foodPrefer: ['heatedTerrace', 'cafe', 'mountainHut'], eatBonus: 0.5,
     look: { top: 6, topShare: 0.8, colour: 0x6a8f7b, hat: 9, noHelmet: true }, // sage jackets, a beret and a camera on a strap
+  },
+  {
+    // 0.8.0 (docs/race-course.md): trains on the player's race course on winter days; needs an open, valid course (pseudo id `@raceCourse`). Fast, expert, few words: a course fee a day, lunch at a lodge, no slope bars.
+    // The arrival weight is scaled by the courses' quality (`Spawner.raceDemand`) and capped per course.
+    id: 'racer', label: 'Racer', seasons: { winter: 0.03 }, minLevel: 3, requires: ['@raceCourse'], fallback: 'adventure', segment: 'adventure', racer: true,
+    weather: { rain: 0.2, storm: 0, heavySnow: 0.4, snow: 0.9 },
+    appeal: { restaurant: 0.8, terrace: 0.5, cafe: 0.5, lodging: 0.6, rental: 0.1, bar: 0.4, stunt: 0.3, adventure: 0.4, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.1 },
+    group: [1, 3], budget: [180, 360], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [2, 0],
+    look: { top: 4, topShare: 0.9, colour: 0xf5d90a, gear: 'ski', helmet: true }, // yellow race bibs, helmets
   },
 ];
 /** Extra types, in index order (index = CORE_TYPE_COUNT + position). Starts as the shipped list; tests may reset / register more. */

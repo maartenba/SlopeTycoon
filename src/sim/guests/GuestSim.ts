@@ -22,7 +22,7 @@ import { NavGraph, NavMode, navFromWalkNet, skiModeFor, isSkiMode } from './NavG
 import { tickNeeds, type NeedEnv } from './Needs';
 import { ReviewDirector, type PlaceText } from './Reviews';
 import { injuryRisk, maxDifficultyFor, recordRun } from './Skill';
-import { CORE_TYPE_COUNT, extraDef } from '../../config/guestTypes';
+import { CORE_TYPE_COUNT, RACER_TYPE, extraDef } from '../../config/guestTypes';
 import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
 import { Layer } from '../../world/Networks';
@@ -77,6 +77,10 @@ export class GuestSim {
   pisteQualityAt: ((tile: number, skill: number) => { like: number; injury: number } | null) | null = null;
   /** Ops hook (Task 25): ski-speed multiplier for a piste tile. */
   pisteSpeedFactor: ((tile: number) => number) | null = null;
+  /** Race course hook (0.8.0): a racer reached its via tile (a lap on a course). Returns true when the racer has trained enough and leaves. */
+  raceLap: ((guestId: number, tile: number) => void) | null = null;
+  /** Has this racer trained its laps (stateless: read from the saved lap record), so it leaves after the run. */
+  raceDone: ((guestId: number) => boolean) | null = null;
   /** Safety hook (Task 26): called when a run ends in injury; returns true when the incident system took the guest over (frozen as Injured). */
   injuryHook: ((guestId: number, x: number, y: number, f: { over: number; offPiste: boolean; quality: number }) => boolean) | null = null;
   /** Observer hook run at the end of every guest tick (story guests poll the store here; it must never change guest behaviour). */
@@ -583,6 +587,7 @@ export class GuestSim {
   private coffeeBreak(i: number): void {
     const s = this.store;
     const h = s.hunger[i]!;
+    if (s.type[i] === RACER_TYPE) return; // racers do not stop for a coffee mid-run
     if (!((h >= SNACK.passMin && h <= SNACK.passMax) || s.fatigue[i]! >= SNACK.tired)) return;
     const b = this.decider.snackWithin(s.x[i]!, s.y[i]!, SNACK.passRadius);
     if (!b) return;
@@ -646,7 +651,7 @@ export class GuestSim {
   /** Mid-run Schirmbar stop (docs/schirmbar.md): a skier within SCHIRMBAR.passRadius of an open bar takes a drink on 1 pass in SCHIRMBAR.oneIn, then carries on (the next decision). Stateless, no RNG. */
   private slopeStop(i: number): void {
     const s = this.store;
-    if (s.budget[i]! < SCHIRMBAR.minBudget) return;
+    if (s.budget[i]! < SCHIRMBAR.minBudget || s.type[i] === RACER_TYPE) return; // racers never stop for a drink mid-run
     const b = this.decider.stopWithin(s.x[i]!, s.y[i]!, SCHIRMBAR.passRadius);
     if (!b || this.barStopped.get(s.id[i]!) === s.runs[i]! || !schirmbarStop(s.id[i]!, s.runs[i]!)) return;
     if (this.barStopped.size > 3000) for (const id of [...this.barStopped.keys()]) if (this.store.slotOf(id) < 0) this.barStopped.delete(id);
@@ -746,7 +751,7 @@ export class GuestSim {
         return;
       }
       case Act.SkiDown:
-        if (s.via[i]! > 0) { this.exploration.recordVia(s.via[i]! - 1); s.via[i] = -s.via[i]!; this.nm?.reset(i); return; } // via reached: carry on to the bottom
+        if (s.via[i]! > 0) { this.exploration.recordVia(s.via[i]! - 1); if (s.type[i] === RACER_TYPE) this.raceLap?.(s.id[i]!, s.via[i]! - 1); s.via[i] = -s.via[i]!; this.nm?.reset(i); return; } // via reached: carry on to the bottom
         this.finishRun(i, rng); return;
       case Act.ToTrail: {
         const pend = this.exc.pending.get(i);
@@ -772,6 +777,7 @@ export class GuestSim {
     const fd = s.type[i]! >= 6 ? extraDef(s.type[i]!)?.flats : undefined; // Snowboarders (Task 33): a small happiness hit for the flat share of the lift's ski route (long low-gradient stretches / catwalks)
     if (fd) { const li = this.decider.lifts.find((l) => l.lift.id === s.liftId[i]); const fl = li?.flat?.[maxDifficultyFor(skill)] ?? 0; if (fl > 0) s.happiness[i] = Math.max(0, s.happiness[i]! - fd.flatHit * fl); }
     s.state[i] = GState.Idle; s.timer[i] = rng.int(EXPLORE.runPause[0], EXPLORE.runPause[1]); s.act[i] = Act.None;
+    if (s.type[i] === RACER_TYPE && this.raceDone?.(s.id[i]!)) { this.startLeaving(i, Leave.Satisfied); return; } // a racer that trained its laps heads home (no injury roll after the last gate)
     const pq = this.pisteQualityAt?.(((s.y[i]! | 0) * this.world.mapSize) + (s.x[i]! | 0), skill);
     const offPiste = s.moveMode[i] === NavMode.SkiOff;
     const w = this.world.weather();

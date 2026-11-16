@@ -46,6 +46,9 @@ export const UNLOCKS: readonly UnlockDef[] = [
   // 0.7.1 (docs/chapel.md): the Chapel, village charm and Saturday weddings; optional, no goal or Advisor build action requires it.
   { kind: 'building', id: 'chapel', level: 2 },
   // M7.8 (docs/schirmbar.md): the Schirmbar, an optional winter slope bar; no goal or Advisor build action requires it.
+  // 0.8.0 (docs/race-course.md): Start Hut + Timing Hut (owner decision 2026-11-16: level 3; the World Cup stays level 4); no goal or Advisor build action requires them.
+  { kind: 'building', id: 'startHut', level: 3 },
+  { kind: 'building', id: 'timingHut', level: 3 },
   { kind: 'building', id: 'schirmbar', level: 2 },
   { kind: 'building', id: 'landingField', level: 2 },
   { kind: 'building', id: 'grassStrip', level: 3 },

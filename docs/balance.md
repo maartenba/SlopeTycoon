@@ -412,3 +412,7 @@ The surprise now gives one in-game month (15 sim days) of +10 % arrivals from th
 `BALANCE=1 vitest run tests/game/balance`: 4 files, 48 passed (96 are skipped by design), **no balance golden moved**. The plain `Bot` builds no chapel (it is not in its wish lists, and the `content: 'all'` variant did not reach it in these runs); weddings and the village charm only exist with a built, connected chapel.
 
 **Golden re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` part `progression` `4bddb238` -> `76a87ccf` (15 other parts and the money did not move). Reason: the new unlock row `{ building: 'chapel', level: 2 }` is part of the progression state the part hashes (the same thing that happened for the Schirmbar row in M7.8); nothing in the played game changed.
+
+## 0.8.0 racers (race course, `docs/race-course.md`)
+
+**Golden re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` part `progression` `76a87ccf` -> `33375cb9` (every other part and the money did not move). Reason: the two new unlock rows `{ building: 'startHut', level: 3 }` and `{ building: 'timingHut', level: 3 }` are part of the progression state the part hashes (as for the chapel and the Schirmbar); the plain `Bot` builds no Start Hut or Timing Hut, so no racer ever spawns there (the Racer arrival weight is 0 without a valid course, and a zero extra-type weight draws nothing).

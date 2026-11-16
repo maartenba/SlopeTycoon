@@ -26,6 +26,9 @@ import { Names } from '../sim/Names';
 import { pisteReport, type PisteReport } from '../sim/PisteStats';
 import { RunIndex } from '../sim/Runs';
 import { RunSettings, type GroomMode } from '../sim/RunSettings';
+import { RaceCourse, lapQuota } from '../sim/race/RaceCourse';
+import { RACE } from '../config/race';
+import { RACER_TYPE } from '../config/guestTypes';
 import type { Run, RunNetwork } from '../world/Runs';
 import { Economy } from '../sim/Economy';
 import { Pricing } from '../sim/Pricing';
@@ -518,6 +521,22 @@ export function createSim(opts: SimOptions) {
   };
   pq.onGroom = (i) => { const r = runIndex.runOfTile(i); if (r) runSettings.noteGroomed(names.pisteId(r), absDayNow()); };
   const runPasses = (r: Run): number => { let m = 0; for (const t of r.poly.length ? r.poly : r.tiles) { const v = (pq.trafficDay[t] ?? 0) + (pq.traffic[t] ?? 0); if (v > m) m = v; } return m; };
+  // Race courses (0.8.0, docs/race-course.md): a property of a run; racers train on it. Wired here because it needs runs, buildings, the open status and the guests.
+  const race = new RaceCourse({
+    size, runs: () => runIndex.runs(), runId: (r) => names.pisteId(r), settings: runSettings,
+    startHuts: () => buildings.all().filter((b) => b.type === 'startHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h })),
+    timingHuts: () => buildings.all().filter((b) => b.type === 'timingHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h })),
+    runOpen: (r) => { const st = openStatus.pisteAt(r.tiles[0]! % size, (r.tiles[0]! / size) | 0); return st ? st.open : true; },
+    groomedDaysAgo: (id) => { const g = runSettings.lastGroomedDay(id); return g === undefined ? null : Math.max(0, absDayNow() - g); },
+    day: absDayNow, earn: (a) => economy.earn('recreation', a),
+  });
+  guestSim.exploration.racerTiles = () => race.courseTiles();
+  guestSim.raceLap = (id, tile) => { race.onLap(id, tile); };
+  guestSim.raceDone = (id) => race.lapsOf(id) >= lapQuota(id);
+  bus.on('day:changed', () => race.prune((id) => guestSim.store.slotOf(id) >= 0));
+  const racersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === RACER_TYPE) n++; return n; };
+  guestSim.spawner.raceDemand = () => race.demand(racersAlive());
+  const setRunCourse = (id: number, on: boolean): { ok: boolean; reason?: string } => { const r = race.setCourse(id, on); return r.ok ? r : { ok: false, reason: r.reason ? RACE.reasons[r.reason] : undefined }; };
   pq.onDayRollover = () => {
     const ids: number[] = [];
     for (const r of runIndex.runs()) { const id = names.pisteId(r); ids.push(id); runSettings.notePasses(id, runPasses(r)); }
@@ -875,6 +894,7 @@ export function createSim(opts: SimOptions) {
     if (attractions.all().some((a) => a.spec.angling && a.open && anglingPlanner.plan(a.b).bodies.some((b) => fishStock.get(b.key) > 0.05))) f.push(COND_FISHING);
     if (attractions.all().some((a) => a.open && a.b.type === 'sledRental')) f.push(COND_SLED); // Sledder (M7.3): an open Sled Rental (safe run, winter, snow)
     if (attractions.all().some((a) => a.open && a.b.type === 'alpineCoaster')) f.push(COND_COASTER);
+    if (race.active().length) f.push(RACE.cond); // Racer (0.8.0): an open, valid race course
     if (guestSim.decider.touring.hasSafeRoute()) f.push(COND_BACKCOUNTRY); // Ski tourer (Task 34): an open backcountry route below danger 4
     return f;
   };
@@ -1333,7 +1353,7 @@ export function createSim(opts: SimOptions) {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
-    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, runList, setRunClosed, setRunGroomMode, renameRun,
+    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, race, setRunCourse, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,

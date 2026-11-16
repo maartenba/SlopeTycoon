@@ -6,11 +6,12 @@ export type GroomMode = 'auto' | 'first' | 'skip';
 export const GROOM_MODES: readonly GroomMode[] = ['auto', 'first', 'skip'];
 export const GROOM_MODE_LABEL: Record<GroomMode, string> = { auto: 'Auto', first: 'Groom first', skip: 'Do not groom' };
 
-export interface RunSettingsData { closed: number[]; groom: Array<[number, GroomMode]> }
+export interface RunSettingsData { closed: number[]; groom: Array<[number, GroomMode]>; /** Race courses (0.8.0, docs/race-course.md): persistent run ids. Absent while there is none (saves and hashes of resorts without a course are unchanged). */ course?: number[] }
 
 export class RunSettings {
   private closedSet = new Set<number>();
   private groomMap = new Map<number, GroomMode>();
+  private courseSet = new Set<number>();
   /** Bumps on every change (caches). */
   version = 0;
   /** Daily peak passes of the last 7 days per run id (oldest first). Observer-only. */
@@ -28,6 +29,14 @@ export class RunSettings {
     this.version++;
     return true;
   }
+  isCourse(id: number): boolean { return this.courseSet.has(id); }
+  setCourse(id: number, on: boolean): boolean {
+    if (on === this.courseSet.has(id)) return false;
+    if (on) this.courseSet.add(id); else this.courseSet.delete(id);
+    this.version++;
+    return true;
+  }
+  courseIds(): number[] { return [...this.courseSet].sort((a, b) => a - b); }
   groomMode(id: number): GroomMode { return this.groomMap.get(id) ?? 'auto'; }
   setGroomMode(id: number, m: GroomMode): boolean {
     if (m === this.groomMode(id)) return false;
@@ -40,6 +49,7 @@ export class RunSettings {
     let changed = false;
     for (const id of [...this.closedSet]) if (!live.has(id)) { this.closedSet.delete(id); changed = true; }
     for (const id of [...this.groomMap.keys()]) if (!live.has(id)) { this.groomMap.delete(id); changed = true; }
+    for (const id of [...this.courseSet]) if (!live.has(id)) { this.courseSet.delete(id); changed = true; }
     for (const id of [...this.history.keys()]) if (!live.has(id)) this.history.delete(id);
     for (const id of [...this.lastGroomed.keys()]) if (!live.has(id)) this.lastGroomed.delete(id);
     if (changed) this.version++;
@@ -61,10 +71,11 @@ export class RunSettings {
   /** Passes over the last 7 completed days (sum of daily peaks). */
   passesWeek(id: number): number { let s = 0; for (const v of this.history.get(id) ?? []) s += v; return s; }
 
-  serialize(): RunSettingsData { return { closed: [...this.closedSet].sort((a, b) => a - b), groom: [...this.groomMap].sort((a, b) => a[0] - b[0]) }; }
+  serialize(): RunSettingsData { return { closed: [...this.closedSet].sort((a, b) => a - b), groom: [...this.groomMap].sort((a, b) => a[0] - b[0]), ...(this.courseSet.size ? { course: this.courseIds() } : {}) }; }
   load(d: Partial<RunSettingsData> | undefined): void {
     this.closedSet = new Set(d?.closed ?? []);
     this.groomMap = new Map((d?.groom ?? []).filter(([, m]) => GROOM_MODES.includes(m)));
+    this.courseSet = new Set(d?.course ?? []);
     this.version++;
   }
   serializeStats(): { history: Array<[number, number[]]>; today: Array<[number, number]>; groomed: Array<[number, number]> } { return { history: [...this.history].sort((a, b) => a[0] - b[0]), today: [...this.todayPeak].sort((a, b) => a[0] - b[0]), groomed: [...this.lastGroomed].sort((a, b) => a[0] - b[0]) }; }

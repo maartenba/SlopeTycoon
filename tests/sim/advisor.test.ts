@@ -13,6 +13,7 @@ import { paintBackcountryRoute } from './backcountryHelpers';
 import { Q } from '../../src/sim/ops/PisteQuality';
 import { GuestType } from '../../src/sim/guests/Guest';
 import { DAYS_PER_YEAR } from '../../src/config/balance';
+import { mainRun, paintRun, prepareCourse } from './race/helpers';
 
 const fresh = (seed = 61): Sim => { const s = createSim({ size: 64, seed, starterResort: true, startSeason: 'winter', now: () => 0 } as never); s.tick(240 * 3 + 20); s.advisor.reset(); return s; }; // +20 ticks (2 h): lifts open at sunrise + 45 min = 08:29 on 4 Dec
 const ids = (sim: Sim): string[] => sim.advisor.ranked().map((a) => a.id);
@@ -90,6 +91,8 @@ const CASES: Case[] = [
   { id: 'visitor.tip', trigger: (s) => { s.visitor.count = 1; s.visitor.visit = { year: 1, startMin: 0, durMin: 600, path: [10, 10, 12, 12], fx: 20, fy: 20, ranger: false, left: true, followed: false }; }, calm: (s) => { s.visitor.count = 0; } },
   { id: 'chapel.suggest', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 1_000; } },
   { id: 'chapel.wedding', trigger: (s) => { s.wedding.rec = { day: 1, guests: 5, ox: 5, oy: 5, fx: 8, fy: 8, cx: 9, cy: 9, sx: null, sy: null, tDepart: 0, tArrive: 10, tBell: 60, tEnd: 180, tFeast: 240, tGone: 300, bell1: false, bell2: false, held: false, paid: false, income: 0 }; }, calm: () => {} },
+  { id: 'race.course.available', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; paintRun(s, mainRun(s), 2); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; paintRun(s, mainRun(s), 2); s.runSettings.setCourse(s.names.pisteId(mainRun(s)), true); } },
+  { id: 'race.course.ungroomed', trigger: (s) => { s.progression.unlockAll = true; const id = prepareCourse(s, 2); s.setRunCourse(id, true); s.runSettings.loadStats(undefined); }, calm: (s) => { s.progression.unlockAll = true; const id = prepareCourse(s, 2); s.setRunCourse(id, true); s.runSettings.noteGroomed(id, s.game.date.year * DAYS_PER_YEAR + s.game.date.day); } },
   { id: 'tourist.office', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 1_000; } },
   { id: 'photo.viewpoint', trigger: (s) => { guests(s, 20); placeSite(s, findSite(s, 'viewpoint', anchors(s).lodge, { rmax: 14 })!); s.tick(1); }, calm: (s) => { guests(s, 20); } },
   { id: 'schirmbar.suggest', trigger: (s) => { s.progression.unlockAll = true; guests(s, 30); setDay(s, seasonStartDay('winter') + 5); s.game.money = 50_000; }, calm: (s) => { s.progression.unlockAll = true; guests(s, 30); setDay(s, seasonStartDay('summer') + 5); s.game.money = 50_000; } },
