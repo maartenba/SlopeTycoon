@@ -115,3 +115,8 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
   /* landscape: the vertical tool bar owns the right edge, so a side sheet opened from Options stops short of it and clears the message pill */
   html[data-toolfirst] #ui { --phone-sheet-right: calc(80px + env(safe-area-inset-right, 0px)); --phone-sheet-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
 }
+@media (max-height: 520px) {
+  /* landscape: a side sheet starts under the banner row (the tool bar mode has no banner) */
+  #ui { --phone-sheet-top: calc(104px + env(safe-area-inset-top, 0px)); }
+  html[data-toolfirst] #ui { --phone-sheet-top: calc(56px + env(safe-area-inset-top, 0px)); }
+}
