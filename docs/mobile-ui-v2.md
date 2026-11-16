@@ -1,6 +1,54 @@
-# Mobile UI v2: real-phone audit and proposal
+# Mobile UI v2: real-phone audit, proposal and implementation
 
-Status: **proposal, nothing implemented** (planning step for the owner's "Mobile UI on a real smartphone is not good" report, 2026-11-15). Code in this change: only `scripts/mobile-audit2.ts` (`npm run mobile:audit2`). A static mockup of the proposal lives in `.weave/mobile-mockup/index.html` (git-ignored, local).
+Status: **implemented** (2026-11-16, unreleased, on top of 0.6.6). Sections 1-4 below are the audit and the proposal as written on 2026-11-15; section 0 says what was built, what changed against the proposal and the measured results. A static mockup lives in `.weave/mobile-mockup/index.html` (git-ignored, local).
+
+## 0. Implemented (2026-11-16)
+
+Owner decisions that shaped it: one **speed chip** with a popover; the **stars stay icons** at 360 px (the smiley goes first, then the guest icon; half-stars were never needed); the **dock row is hidden in tool mode** and *Options* in the tool bar re-opens the current sheet; Rudi's floating avatar became a **44 px badge** (with a count dot that opens the advice sheet) and *Rudi's tips* / *News* are also in the **...** menu; during placement a **profile sparkline** in the tool bar with the full chart on tap (desktop is **not** changed: follow-up below); **event toasts are held** while a tool is active; the real phone is a **Motorola G7** (412x866 CSS px, inner 412x762 under Chrome's bars).
+
+What exists now:
+- `src/ui/phoneCards.ts` (+ `tests/ui/phoneCards.test.ts`): the coordinator. `html[data-phone-mode]` = `idle | tool | sheet | modal` from (open dialogs, `html[data-toolfirst]`, registered sheet cards). Registered cards (drawer, goals, scenario, Rudi's advice, news, inspector) are **exclusive**: the newest opened closes the others. It also sets `html[data-phone-card]` (which cards are open) and `data-chip-hidden` on Rudi / news. It integrates the M7.5 `data-toolfirst` / `data-camdrag` (inputs, not duplicated). `__slope.phoneCards.open()` is the debug handle.
+- **Top row** (`styles.css`, `StTopBar`, `StHud`, `StSpeedControl`): Menu | money, stars, guests | speed chip | `...` in one 44 px row (`#right-col` is `display: contents` on phones, its children are placed by CSS from `--row-top`). The `...` opens one menu (`.ovf`): Rudi's tips, News, Photo, Statistics, Save, Settings, Rotate left / right, Walk, Continue / Install, Help, Graphics, plus the date and weather lines (`info`). The speed chip (`.chipb`) opens a popover with pause, 1x, 3x, 10x, fast nights and Skip to. At 360 px: the smiley is hidden at <= 400 px, the guest icon at <= 380 px (guest count stays as a number); money keeps its full text.
+- **Banner row**: the goal / scenario card is the single chip (`StGoals` / `StScenarioCard` collapsed by default on phones, the scenario countdown rides in the chip), Rudi's avatar is a 44 px badge, the news chip is a 44 px icon with the unread count in its corner. They are hidden in tool and modal mode.
+- **Tool mode**: only the top row and the 104 px tool bar. `StTouchControls` is the bar on phones for every map tool: row A = **the one message** (`hint`, first sentence, name prefix stripped, red for a reason / green for a cost), an `i` button for the long text (`setDetails`, fed by the ghost tooltip lines) and a **profile sparkline** (`st-profile-view` from `StProfile`; tap = the full chart card above the bar); row B = Cancel, rotate (ghost tools), Undo, Options, Place (dimmed and disabled while invalid; "Done" for paint tools, with the pan / paint toggle). Removed on phones: the left rail, the floating ghost tooltip (`main.ts` routes it to the bar), the dock row and the sheet header (`--dock-row`, `:host(.peek) st-sheet`). Sheets opened from Options sit above the bar (`--phone-sheet-bottom`).
+- **Toasts** (`StToast`): while a tool is active on a phone, tool errors and critical news take the message row of the bar for 6 s (`st-tool-alert`, decision: a single line, no toast on top of the bar); every other toast is queued (`ToastHold`, max 6) and shown one at a time after the tool ends. The pill sits under the banner row (bottom when the goal card is expanded).
+- **Modals**: `.dlg.md` / `.dlg.lg` (Settings, Statistics, year report ...) are full-screen sheets on phones with a 48 px header and a 44 px close button; `data-phone-mode=modal` hides everything else.
+- **Landscape**: 44 px top row, a vertical 64 px tool bar at the right edge, the message + sparkline in a pill at the bottom centre; side sheets start under the banner row (or the top row in tool mode) and stop short of the bar.
+- **Tutorial**: `topbar:rotate` and `topbar:save` fall back to the `...` button (`data-tutorial-id="topbar:more"`) when the overflow menu is closed (`src/tutorial/ui-targets.ts`); the rotate / save entries inside the menu keep their ids, so the highlight walks into the menu. Steps pointing at `hud:*` keep working (the speed chip is inside `st-speed-control`).
+- **Audit / e2e**: `mobile:audit2` has a `moto-g7` profile and is a **gate stage** (`mobile:audit2 -- --overlaps 400 --thresholds 1`, full tier, next to the old `mobile:audit`); thresholds now apply to every portrait profile (map >= 60 % default / 50 % tool, taps >= 44 px counting the kit's invisible checkbox hit area, top chrome <= 64 px measured on the top row only). `touch:e2e` has a `moto-g7` viewport and aliases from the rail roles to the bar roles.
+
+### Results (`npm run mobile:audit2 -- --overlaps 400 --thresholds 1`, effective inner heights)
+Cell = map-visible % / overlapping pairs >= 400 px² / tap targets < 44 px / top chrome px. **Before** = the 2026-11-16 baseline of the same script on the 0.6.6 UI.
+
+| State | moto-g7 412x762 before | moto-g7 after | 360x696 before | 360x696 after | 390x714 after | 412x811 after | land 915x412 after |
+|---|---|---|---|---|---|---|---|
+| default | 63 % / 1 / 1 / 146 | **81 %** / 0 / 0 / 48 | 58 % | **79 %** / 0 / 0 / 48 | 80 % | 82 % | 62 % |
+| goals-open | 50 % / 4 | **70 %** / 0 | 44 % | **68 %** / 0 | 69 % | 72 % | 56 % |
+| rudi-advice | 46 % / 4 | **65 %** / 0 | 41 % | **62 %** / 0 | 63 % | 67 % | 49 % |
+| news-open | 48 % / 4 | **65 %** / 0 | 43 % | **62 %** / 0 | 63 % | 67 % | 49 % |
+| toast | 61 % / 1 | **79 %** / 0 | 55 % | **76 %** / 0 | 78 % | 80 % | 61 % |
+| inspector | 49 % / 5 | **63 %** / 0 | 44 % | **60 %** / 0 | 61 % | 65 % | 50 % |
+| building-placement | 53 % / 1 | **80 %** / 0 | 47 % | **79 %** / 0 | 79 % | 82 % | 85 % |
+| piste-painting | 62 % / 1 | **80 %** / 0 | 61 % | **79 %** / 0 | 79 % | 82 % | 85 % |
+| scenario-default (Family Valley) | 59 % / 2 | **81 %** / 0 | 52 % | **79 %** / 0 | 80 % | 82 % | 62 % |
+| lift-valid | 29 % / 6 | **80 %** / 0 | 21 % / 10 | **79 %** / 0 | 79 % | 82 % | 86 % |
+| lift-invalid (the owner's case) | 23 % / 7 | **80 %** / 0 | 18 % / 12 | **79 %** / 0 | 79 % | 82 % | 86 % |
+| settings (modal) | 58 % / 4 / 4 | 85 % / 0 / 0 | 56 % | 83 % / 0 / 0 | 84 % | 85 % | 79 % |
+| year-report (modal, excluded) | 15 % / 26 | 22 % / 0 / 0 | 16 % | 22 % / 0 / 0 | 22 % | 22 % | 21 % |
+
+All thresholds pass on 360x696, 390x714, 412x811 and moto-g7 (map >= 60 % default / >= 50 % tool, no overlaps > 400 px², no tap target < 44 px, top chrome 48 px (65 px in modals, excluded)). Landscape 915x412 has no threshold: the three side-sheet states (Rudi, news, inspector) sit at 46-50 % because the side sheet takes the right 320 px; the rest is 56-86 %. Screenshots: `.weave/shots/mob3-before-*` / `mob3-after-*` (moto-g7 and 360, every state).
+
+Other checks (2026-11-16): `desktop:diff` SAME on all six screens (at most 0.0027 % of the pixels, a 6x6 px spot in the top bar that also differs run to run); `touch:e2e` phone portrait **209 / 209** (after fixing the test selectors: speed chip, bar roles, rating hit area), tablet all groups pass, landscape all groups pass **except hiking trail / mtb trail "paint mode drag paints"** which fail identically on the pre-change commit (a pre-existing landscape issue, not caused by v2).
+
+### Follow-ups
+- **Desktop sparkline** (owner likes it): the same sparkline + tap-for-chart in the desktop placement tool instead of the 320 px profile card. Not done here: desktop must stay pixel-identical in this change.
+- Real-phone check on the Motorola G7: safe-area insets, the Chrome URL-bar collapse (the audit has neither), thumb reach of Cancel / Place, the Rudi count badge (it overlaps the avatar by design), the 4 s toast release after a tool, the vertical landscape bar.
+- Landscape side-sheet states are at 46-50 % map: a half-height sheet or a narrower side sheet would give 60 %.
+- `st-recap` (the month-end card) is still an independent floating card (hidden in tool and modal mode only): fold it into the banner chip.
+- The overflow menu is not keyboard-navigable with arrow keys yet (Tab works).
+- `mobile:audit` (the M7.5 audit) is kept next to `mobile:audit2` in the gate; once v2 is accepted the old one can go.
+
+
 
 The M7.5 design in [mobile-ui.md](mobile-ui.md) (st-sheet, tool-first, camdrag fade) stays the base. v2 fixes what M7.5 could not see: **many things on screen at once, each placed by its own hard-coded pixel offsets, on a screen that is shorter and denser than the harness one.**
 
