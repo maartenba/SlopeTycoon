@@ -23,7 +23,7 @@ describe('st-profile', () => {
     expect(card.hidden).toBe(true);
     p.show({ kind: 'piste', title: 'Ski piste profile', profile: prof([0, 0, 1, 2, 3]), snowlineM: 1985, note: 'careful' });
     expect(card.hidden).toBe(false);
-    const polys = Array.from(p.shadowRoot!.querySelectorAll('polygon'));
+    const polys = Array.from(p.shadowRoot!.querySelectorAll('.card polygon'));
     expect(polys.length).toBe(4);
     expect(polys.map((q) => q.getAttribute('fill'))).toEqual([PROFILE_COLORS[0], PROFILE_COLORS[1], PROFILE_COLORS[2], PROFILE_COLORS[3]]);
     expect(p.shadowRoot!.textContent).toContain('snowline');

@@ -38,9 +38,17 @@ export class StProfile extends StElement {
   private stats = document.createElement('div');
   private noteEl = document.createElement('div');
   private legend = document.createElement('div');
+  /** Desktop / tablets: the compact one-line pill (sparkline + stats); a click opens the full chart as a popover, Esc / click outside closes. */
+  private pill = document.createElement('button');
+  private wrap = document.createElement('div');
+  private keyFn = (e: KeyboardEvent): void => { if (e.key === 'Escape' && this.wrap.classList.contains('open')) { this.setOpen(false); e.stopPropagation(); } };
+  private docFn = (e: Event): void => { if (this.wrap.classList.contains('open') && !e.composedPath().includes(this.wrap)) this.setOpen(false); };
 
   protected css(): string {
     return `:host{position:fixed;left:calc(50% - 160px);top:216px;width:320px;pointer-events:none!important;z-index:21}
+.wrap{position:relative}.pill{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;background:var(--c-panel);color:#cfe0f5;border:1px solid rgba(90,112,144,.35);border-radius:var(--r-md);padding:3px 8px;font:inherit;font-size:var(--fs-sm);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.28)}.pill svg{width:72px;height:22px;flex:none}.pill span{overflow:hidden;text-overflow:ellipsis}
+.wrap .card{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);pointer-events:auto}.wrap.open .card{display:flex}
+@media (max-width:520px),(max-height:520px){.pill{display:none!important}.wrap .card{display:flex;position:static;pointer-events:none}}
 .card{pointer-events:none;box-sizing:border-box;background:var(--c-panel);border:1px solid rgba(90,112,144,.35);border-radius:var(--r-md);padding:6px 8px;display:flex;flex-direction:column;gap:3px;box-shadow:0 2px 8px rgba(0,0,0,.28)}
 .head{font-weight:800;color:var(--c-accent-text);font-size:var(--fs-sm);white-space:nowrap}
 .stats{font-size:var(--fs-sm);color:#cfe0f5;white-space:nowrap}
@@ -53,15 +61,42 @@ export class StProfile extends StElement {
     this.card.className = 'card'; this.head.className = 'head'; this.stats.className = 'stats'; this.noteEl.className = 'note'; this.legend.className = 'legend';
     for (let d = 0; d < 4; d++) { const s = document.createElement('span'); const i = document.createElement('i'); i.style.background = profileColor(d); s.append(i, PROFILE_NAMES[d]!); this.legend.appendChild(s); }
     this.card.append(this.head, this.svg, this.stats, this.noteEl, this.legend);
-    this.root.appendChild(this.card);
+    this.wrap.className = 'wrap'; this.pill.className = 'pill'; this.pill.type = 'button'; this.pill.dataset.role = 'profile-pill';
+    this.pill.setAttribute('aria-expanded', 'false'); this.pill.setAttribute('aria-label', 'Ground profile: click for the full chart');
+    this.pill.addEventListener('click', (e) => { e.stopPropagation(); this.setOpen(!this.wrap.classList.contains('open')); });
+    this.wrap.append(this.pill, this.card);
+    this.root.appendChild(this.wrap);
+    this.wrap.hidden = true;
     this.card.hidden = true; // (the host must not get attributes in its constructor)
+  }
+
+  connectedCallback(): void { window.addEventListener('keydown', this.keyFn, true); document.addEventListener('pointerdown', this.docFn, true); }
+  disconnectedCallback(): void { window.removeEventListener('keydown', this.keyFn, true); document.removeEventListener('pointerdown', this.docFn, true); super.disconnectedCallback(); }
+
+  private setOpen(on: boolean): void { this.wrap.classList.toggle('open', on); this.pill.setAttribute('aria-expanded', String(on)); }
+
+  /** The compact sparkline inside the pill. */
+  private drawPill(v: ProfileView): void {
+    const s = v.profile.samples, SW = 72, SH = 22;
+    let lo = Infinity, hi = -Infinity; for (const q of s) { lo = Math.min(lo, q.altM); hi = Math.max(hi, q.altM); }
+    const span = Math.max(10, hi - lo), tot = Math.max(1, s[s.length - 1]!.distM);
+    const x = (d: number): number => (d / tot) * SW, y = (a: number): number => 2 + (1 - (a - lo) / span) * (SH - 4);
+    const svg = sv('svg', { viewBox: `0 0 ${SW} ${SH}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
+    for (let i = 1; i < s.length; i++) {
+      const a = s[i - 1]!, b = s[i]!;
+      svg.appendChild(sv('polygon', { points: `${x(a.distM)},${y(a.altM)} ${x(b.distM)},${y(b.altM)} ${x(b.distM)},${SH} ${x(a.distM)},${SH}`, fill: profileColor(Math.max(0, Math.min(3, b.difficulty))), 'fill-opacity': 0.8 }));
+    }
+    const p = v.profile, t = document.createElement('span');
+    t.textContent = `${Math.round(p.lengthM)} m · ${v.kind === 'lift' ? 'climb' : 'drop'} ${Math.round(Math.abs(p.dropM))} m · max ${Math.round(p.maxPct)}%`;
+    this.pill.replaceChildren(svg, t);
   }
 
   show(v: ProfileView | null): void {
     const ok = !!v && v.profile.samples.length >= 2;
     window.dispatchEvent(new CustomEvent('st-profile-view', { detail: ok ? v : null })); // phones: the tool bar draws a sparkline from it (StTouchControls)
-    if (!v || !ok) { this.card.hidden = true; return; }
-    this.card.hidden = false;
+    if (!v || !ok) { this.card.hidden = true; this.wrap.hidden = true; this.setOpen(false); return; }
+    this.card.hidden = false; this.wrap.hidden = false;
+    this.drawPill(v);
     const p = v.profile;
     this.head.textContent = v.title;
     const climb = v.kind === 'lift';
