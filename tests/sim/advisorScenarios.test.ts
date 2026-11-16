@@ -346,6 +346,19 @@ const SCENARIOS: Scenario[] = [
     fixes: [{ name: 'the tracks are gone', apply: (s) => { s.visitor.visit = null; } }],
   },
   {
+    id: 'chapel.suggest', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; },
+    fixes: [
+      { name: 'a Chapel stands', apply: (s) => { buildAt(s, 'chapel', lodge(s), { rmax: 14 }); } },
+      { name: 'cash drops below the threshold', apply: (s) => { s.game.money = 1_000; } },
+    ],
+  },
+  {
+    id: 'chapel.wedding', daily: true,
+    setup: (s) => { s.wedding.rec = { day: 1, guests: 5, ox: 5, oy: 5, fx: 8, fy: 8, cx: 9, cy: 9, sx: null, sy: null, tDepart: 0, tArrive: 10, tBell: 60, tEnd: 180, tFeast: 240, tGone: 300, bell1: false, bell2: false, held: false, paid: false, income: 0 }; },
+    fixes: [{ name: 'the party has gone home', apply: (s) => { s.wedding.rec = null; } }],
+  },
+  {
     id: 'tourist.office', daily: true,
     setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; },
     fixes: [

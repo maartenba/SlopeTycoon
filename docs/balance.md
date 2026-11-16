@@ -406,3 +406,9 @@ Observer state only (own save module, not in `stateHash`; the schedule is a pure
 ## Visitor buzz (small winter surprise, follow-up)
 
 The surprise now gives one in-game month (15 sim days) of +10 % arrivals from the moment it begins: one more multiplicative factor in the same arrival-rate hook as the Tourist Office (`setAttractiveness`), one window per sighting (an overlapping second one neither extends nor stacks it), saved as one number (`buzzUntil`) in the existing observer module, off in the tutorial, the title demo and scenarios. Because `createSim` defaults equal the real game, the default-start sim has a sighting in year 1 winter: the `yearReport` snapshot moved (y1 guests 1539 -> 1576, y2 3172 -> 3126 through the shifted arrival draw; one-off re-record, reason above). `npm run test:balance`: 48 passed, no band moved.
+
+## 0.7.1 (Chapel + weddings, docs/chapel.md)
+
+`BALANCE=1 vitest run tests/game/balance`: 4 files, 48 passed (96 are skipped by design), **no balance golden moved**. The plain `Bot` builds no chapel (it is not in its wish lists, and the `content: 'all'` variant did not reach it in these runs); weddings and the village charm only exist with a built, connected chapel.
+
+**Golden re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` part `progression` `4bddb238` -> `76a87ccf` (15 other parts and the money did not move). Reason: the new unlock row `{ building: 'chapel', level: 2 }` is part of the progression state the part hashes (the same thing that happened for the Schirmbar row in M7.8); nothing in the played game changed.

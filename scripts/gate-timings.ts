@@ -28,7 +28,7 @@ export const STAGES: Stage[] = [
   { id: 'shot-suite', cmd: 'npm run shot:suite', needs: { browser: true, devServer: true }, writes: '.weave/shots', parallel: 'yes (own vite + Chrome)' },
   san('play', 'play:sanity'), san('phase6', 'phase6:sanity'), san('summer', 'summer:sanity'), san('winter', 'winter:sanity'),
   san('winter-tours', 'winter:tours'), san('backcountry', 'backcountry:sanity'), san('sled', 'sled:sanity'), san('m74', 'm74:sanity'),
-  san('schirmbar', 'schirmbar:sanity'), san('visitor', 'visitor:sanity'), san('photographer', 'photographer:sanity'),
+  san('schirmbar', 'schirmbar:sanity'), san('chapel', 'chapel:sanity'), san('visitor', 'visitor:sanity'), san('photographer', 'photographer:sanity'),
   { id: 'analytics:e2e', cmd: 'npm run analytics:e2e', needs: { browser: true, devServer: true }, writes: '.weave', parallel: 'yes' },
   { id: 'offline:splash', cmd: 'npm run offline:splash', needs: { browser: true, dist: true }, writes: '.weave', after: 'build', parallel: 'after build (serves dist)' },
   { id: 'music:e2e', cmd: 'npm run music:e2e', needs: { browser: true, devServer: true }, writes: '.weave', parallel: 'yes' },

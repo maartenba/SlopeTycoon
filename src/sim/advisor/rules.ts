@@ -349,6 +349,17 @@ export const RULES: readonly Rule[] = [
     if (sim.buildings.all().some((b) => b.type === 'touristOffice') || sim.progression.locked('building', 'touristOffice') || sim.game.money < BUILDINGS.touristOffice!.cost + (c.shown ? 1_000 : 2_000)) return null;
     return { id: 'tourist.office', severity: 'info', ...TEXT.touristOffice(), panel: { drawer: 'buildings', item: 'touristOffice' } };
   }),
+  // Chapel (0.7.1, docs/chapel.md): a settled resort without one gets a gentle suggestion; while a wedding party is out, a one-line aside pointing at the chapel.
+  rule('chapel.suggest', 1, (c) => {
+    const sim = c.sim;
+    if (sim.guestSim.store.count < (c.shown ? 10 : 15) || sim.rating.stars < 2 || !has(sim, 'baseLodge')) return null;
+    if (sim.buildings.all().some((b) => b.type === 'chapel') || sim.progression.locked('building', 'chapel') || sim.game.money < BUILDINGS.chapel!.cost + (c.shown ? 1_000 : 2_500)) return null;
+    return { id: 'chapel.suggest', severity: 'info', ...TEXT.chapelSuggest(), panel: { drawer: 'buildings', item: 'chapel' } };
+  }),
+  rule('chapel.wedding', 1, (c) => {
+    const r = c.sim.wedding.rec;
+    return r ? { id: 'chapel.wedding', severity: 'info', ...TEXT.chapelWedding(), target: { x: Math.floor(r.cx), y: Math.floor(r.cy) } } : null;
+  }, true, true),
   // Photographers (docs/photographers.md): a Viewpoint or Treehouse stands, but no photographer has come yet: a clear evening and a good viewpoint draw them.
   rule('photo.viewpoint', 1, (c) => {
     const sim = c.sim;

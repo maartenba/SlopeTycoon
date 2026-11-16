@@ -6,7 +6,7 @@ export interface SoundCue { sfx: SfxName; opts?: PlayOpts }
 /** Events that intentionally make no sound (high-frequency, covered by the news feed chimes, or purely informational). */
 export const IGNORED_EVENTS = [
   'guest:arrived', 'photo:taken', 'photo:golden', 'guest:left', 'guest:review', 'lift:closed', 'attraction:opened', 'attraction:closed', 'weather:changed', 'piste:opened', 'backcountry:opened', 'backcountry:closed',
-  'ops:grooming', 'ops:schedule', 'ops:serviceSoon', 'lift:serviceStarted', 'lift:serviced', 'lift:serviceOverdue', 'incident:injury', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated', 'visitor:followup', 'visitor:spotted', 'incident:stranded', 'finance:monthClosed',
+  'ops:grooming', 'ops:schedule', 'ops:serviceSoon', 'lift:serviceStarted', 'lift:serviced', 'lift:serviceOverdue', 'incident:injury', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated', 'visitor:followup', 'visitor:spotted', 'wedding:started', 'wedding:bell', 'wedding:held', 'wedding:feast', 'incident:stranded', 'finance:monthClosed',
   'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished',
   'incident:resolved', 'finance:bankrupt', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'scenario:objective', 'story:resolved',
   // money:changed: the ka-ching is tied to the significant +$ popups (FX layer, throttled to 1 per 3 s), not to every sale.

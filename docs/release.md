@@ -1,6 +1,26 @@
 # Release notes and checklist
 
-Current release: **0.7.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.7.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.7.1 (2026-11-16, macOS, Node v24.22.3)
+
+A chapel with weddings (`docs/chapel.md`), the compact ground profile on desktop (`docs/mobile-ui-v2.md`), the landscape trail-paint e2e fix (test geometry, not a product bug), the month-end card under the banner row and arrow keys in the `...` menu on phones. Observer save module `wedding` (additive, no migration), one staff golden part re-recorded (`progression`: the new unlock row), no balance golden moved. Desktop pixel-identical on the six standard screens (the ground-profile pill only shows during a lift / piste placement).
+
+| Check | Command | Result |
+|---|---|---|
+| Gate | `npm run gate:full` (6 slots) | wall 21.7 min, 38 stages, all passed on the first attempt, no flaky stage, no hang (touch:e2e 274 s, mobile:audit2 647 s) |
+| Unit tests | `npm test` (in the gate) | 489 files passed (4 skipped), 5134 tests passed (139 skipped) |
+| Balance | `npm run test:balance` (4 shards in the gate) | passed, no golden moved (plain bot builds no chapel) |
+| Chapel | `npm run chapel:sanity -- --shots 1` | OK: lock at level 1, placement + footpath, forced wedding (news, 5 figures, 2 bells, ceremony, feast $550), save mid-ceremony + reload identical, MaterialGuard 0 |
+| Touch | `npm run touch:e2e -- --only trails --viewport land,phone,tablet` + gate subset | trails 21/21 at land, phone and tablet (was 19/21 at land); gate subset passed |
+| Mobile audit | `npm run mobile:audit2 -- --overlaps 400 --thresholds 1` (gate stage) | passed, new `month-card` state: 0 overlaps, map 69-74 % portrait, 57 % landscape |
+| Desktop | `npm run desktop:diff` (gate stage) | SAME on all six screens (the buildings drawer differs by 0.0176 % of pixels, 180 px: the new Chapel card, under the SAME threshold) |
+| Size | `npm run size` | 3225.6 kB raw / 1146.0 kB gzip (0.7.0: 1140.5 kB; budget 2048 kB): app js 846.4 kB, three chunk 143.0 kB, css 2.1 kB, icons 62.7 kB; audio excluded |
+| Chapel mesh | `tests/repo/buildingContract.test.ts` | 1,102 triangles (budget 3,000), height 2.05 |
+| ROI | `npm run analysis:roi -- --only chapel,touristOffice` | chapel +$5,044 / yr +/- $2,211 (payback 150 days), inside the noise; Tourist Office +$5,079 +/- $3,419 |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (67 pages, 8.3 MB screenshots) |
+
+Not verified by agents: a real phone in the hand, real GPU frame rate, audio by ear (the wedding bell and the chapel hour chime were checked only as events and probe values), how the small wedding figures look on a real screen. Known and open: the wedding party walks in straight lines from the Base Lodge (it ignores paths).
 
 ## 0.7.0 (2026-11-16, macOS, Node v24.22.3)
 

@@ -118,6 +118,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'summer-share', title: 'Summer share', description: 'Earn a quarter of a full year\'s income in summer.', tier: 3, icon: 'sun', scope: 'career', tracker: { kind: 'fact', fact: 'summerShare', op: '>=', v: 25 } },
   // ---- tier 3: rare
   { id: 'roy-gold', title: 'Resort of the Year: Gold', description: 'Be named Resort of the Year with a gold headline.', tier: 3, icon: 'trophy', scope: 'career', tracker: { kind: 'report', metric: 'headline', min: 3 }, reward: 'flags:golden' },
+  { id: 'wedding-bells', title: 'Wedding bells', description: 'Host three weddings at your chapel in one game.', tier: 2, icon: 'smile', scope: 'any', tracker: { kind: 'event', event: 'wedding:held', n: 3, per: 'game' } },
   { id: 'level-6', title: 'Alpine destination', description: 'Reach resort level 6.', tier: 3, icon: 'mountain', scope: 'career', tracker: { kind: 'fact', fact: 'level', op: '>=', v: 6 } },
   { id: 'all-lifts', title: 'Every kind of lift', description: 'Build every lift type in one game.', tier: 3, icon: 'lift', scope: 'any', tracker: { kind: 'distinct', event: 'lift:built', key: 'kind', n: 12 } },
   { id: 'scenario-gold', title: 'Gold standard', description: 'Win any scenario with a gold medal.', tier: 3, icon: 'medal', scope: 'scenario', tracker: { kind: 'scenario', scenario: 'any', min: 3 }, reward: 'frame:gold' },

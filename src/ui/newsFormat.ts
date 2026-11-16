@@ -129,6 +129,9 @@ export const NEWS_FORMATTERS: Table = {
   'wildlife:relocated': (e, c) => ({ text: `Rangers relocated a ${e.animal} away from ${place(c, e.x, e.y).name} (${money(c, e.cost)})`, severity: 'good', tier: 'important', icon: '🐻', key: 'wildlife:relocated', category: 'incident', focus: xy(e.toX, e.toY) }),
   'visitor:spotted': (e) => ({ text: e.ranger ? 'A yeti has been spotted! A ranger is investigating the area. Visitors are flocking in to see it.' : 'Guests report a yeti up on the mountain. Nobody is free to investigate. Visitors are flocking in to see it.', severity: 'info', tier: 'important', icon: '🐾', key: 'visitor:spotted', category: 'incident', focus: { x: e.fx - 0.5, y: e.fy - 0.5, label: 'Show me', quiet: true } }),
   'visitor:followup': (e) => ({ text: e.tracks === 'footprints' ? 'Only footprints found.' : 'The ranger found large tracks but no yeti.', severity: 'info', tier: 'info', icon: '🐾', key: 'visitor:followup', category: 'incident', focus: xy(e.x, e.y) }),
+  'wedding:started': (e) => ({ text: 'A wedding at the chapel today', severity: 'good', tier: 'info', icon: '\u{1F492}', key: 'wedding:started', category: 'milestone', focus: xy(e.x, e.y) }),
+  'wedding:bell': 'ignored', 'wedding:held': 'ignored', // the bell is the sound layer's; the count is the achievement's
+  'wedding:feast': (e, c) => ({ text: `The wedding party is celebrating at ${place(c, e.x, e.y).name} (${money(c, e.income)})`, severity: 'good', tier: 'trivial', icon: '\u{1F37D}\uFE0F', key: 'wedding:feast', category: 'milestone', focus: xy(e.x, e.y) }),
   'ops:grooming': (e) => (e.tiles > 0 ? { text: `Grooming done: ${e.vehicles} snowcat${e.vehicles === 1 ? '' : 's'}, ${e.tiles} tiles`, severity: 'info', tier: 'trivial', icon: '🚜', key: 'grooming', category: 'ops', counter: 'grooming' } : null),
   'incident:injury': (e) => ({ text: 'A guest was injured on the slopes', severity: 'warn', tier: 'trivial', icon: '🤕', key: 'injury', category: 'incident', focus: xy(e.x, e.y, 'guest', e.guestId), counter: 'injuries' }),
   'incident:created': (e, c) => (e.severity >= 1
@@ -188,7 +191,7 @@ export function formatEvent<K extends GameEventName>(name: K, payload: GameEvent
 }
 
 /** Events whose message carries no single place to look at (explicit, enforced by tests; everything else must give a `focus`). */
-export const NON_SPATIAL_EVENTS: ReadonlySet<GameEventName> = new Set<GameEventName>([
+export const NON_SPATIAL_EVENTS: ReadonlySet<GameEventName> = new Set<GameEventName>(['wedding:bell', 'wedding:held', 
   'guest:arrived', 'photo:taken', 'photo:golden', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened', 'piste:opened', 'backcountry:opened', 'backcountry:closed',
   'weather:changed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'ops:grooming', 'incident:resolved', 'incident:escalated',
   'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'ops:schedule', 'ops:serviceSoon', 'lift:serviceStarted', 'finance:monthClosed', 'rating:changed',

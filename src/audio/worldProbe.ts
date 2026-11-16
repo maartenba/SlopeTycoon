@@ -28,6 +28,8 @@ export interface ProbeDeps {
   tractors?: () => Array<{ x: number; y: number }>;
   /** Open campgrounds (centre tile; the fire crackles in the evening). Optional: absent = none. */
   campfires?: () => Array<{ x: number; y: number }>;
+  /** The connected chapel (centre tile; the hour chime and the wedding bell sound from it). Optional: absent / empty = no chapel, the chime follows any building as before. */
+  chapels?: () => Array<{ x: number; y: number }>;
   /** Mountain concert stages while an event runs (centre tile). Optional: absent = none. */
   concerts?: () => Array<{ x: number; y: number }>;
   /** Carnival parade streets while it runs (chain centre tile; M7.4). Optional: absent = none. */
@@ -91,6 +93,7 @@ export class WorldProbe {
     o.gondola = 0; o.cablecar = 0; o.funicular = 0;
     if (d.stationSources) for (const st of d.stationSources()) { const p = proximity(Math.hypot(st.x - l.x, st.y - l.z), PROX.stations.reach); if (p > o[st.family]!) o[st.family] = p; }
     const b = nearestSource(l, d.buildings()); o.buildings = b ? proximity(b.dist, 35) : 0;
+    const ch = d.chapels ? nearestSource(l, d.chapels()) : null; o.chapel = ch ? proximity(ch.dist, 35) : undefined;
     let cows = 0;
     for (const c of d.cows()) if (Math.hypot(c.x - l.x, c.y - l.z) < 30) cows++;
     o.cows = cows;

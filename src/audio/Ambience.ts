@@ -32,6 +32,8 @@ export interface AmbienceState {
   lifts: number;
   /** Buildings (village) proximity 0..1. */
   buildings: number;
+  /** Chapel proximity 0..1 (0.7.1). Present only while a connected chapel exists: the village hour chime then sounds from the chapel instead of from any building. Absent = the old behaviour. */
+  chapel?: number;
   /** Cows near the camera. */
   cows: number;
   /** Snowcat grooming proximity 0..1 (0 = none active). */
@@ -149,7 +151,7 @@ export function ambienceMix(s: AmbienceState): AmbienceMix {
   const tractor = clamp01(s.tractor ?? 0) * Math.pow(close, 1.4) * day * (1 - wet); // a working tractor: a low putt-putt, only with the camera close (zoomed in) and by day
   const cowSeason = summer ? 1 : spring || autumn ? 0.4 : 0;
   const cowbells = cowSeason * (1 - Math.exp(-Math.max(0, s.cows) / 3)) * close * nat * day * (1 - wet);
-  const bells = clamp01(s.buildings) * day * close;
+  const bells = clamp01(s.chapel ?? s.buildings) * day * close; // the village chime comes from the chapel when there is one (0.7.1)
   const clanks = lift * 0.9;
   const drips = spring ? close * nat * clamp01(0.3 + day) * (1 - wet * 0.5) * 0.6 : 0;
   const creaks = winter ? close * (0.3 + 0.5 * night) * quiet : 0;
@@ -337,6 +339,18 @@ export class Ambience {
     const n = Math.min(AMB.church.maxStrikes, churchStrikes(hour, this.lastState?.sunrise, this.lastState?.sunset));
     if (n > 0) this.lastChime = now;
     for (let i = 0; i < n; i++) this.sfx.play('churchBell', { delay: i * 1.8, gain: 0.4 + 0.6 * this.mix.bells });
+  }
+
+  /** A wedding bell (0.7.1): the chapel's synthesised bell, `AMB.church.maxStrikes` strikes at most, never closer than `minGapSec` to the last chime, only with the camera really at the chapel. */
+  weddingBell(): void {
+    const s = this.lastState;
+    if (!s || s.chapel === undefined) return;
+    const close = clamp01((AMB.farZoom - s.zoom) / (AMB.farZoom - AMB.closeZoom)), lvl = clamp01(s.chapel) * close;
+    if (lvl < AMB.church.minBells) return;
+    const now = this.engine.now();
+    if (now - this.lastChime < AMB.church.minGapSec) return;
+    this.lastChime = now;
+    for (let i = 0; i < AMB.church.maxStrikes; i++) this.sfx.play('churchBell', { delay: i * 1.8, gain: 0.4 + 0.6 * lvl });
   }
 
   dispose(): void { this.apres.dispose(); for (const id of LAYER_IDS) this.layers[id]?.dispose(); this.layers = {}; this.built = false; }

@@ -3,6 +3,16 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.7.1",
+    "date": "2026-11-16",
+    "highlights": [
+      "A mountain chapel with weddings: a whitewashed chapel with a bell tower (level 2, one per resort). It adds a little village charm to the rating, and…",
+      "A compact ground profile on desktop: while you place a lift or a piste, the profile is one small line with a sparkline; click it for the full chart.",
+      "Landscape trail painting on phones works again in the touch test (the test started the stroke in the wrong place; the game itself was fine).",
+      "Smaller phone polish: the month-end card is a one-line chip under the banner row instead of a card on top of others, and the ... menu works with the…"
+    ]
+  },
+  {
     "version": "0.7.0",
     "date": "2026-11-16",
     "highlights": [
@@ -21,17 +31,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Cows swish their tails and ring their bells; sheep and goats twitch their ears and tails.",
       "Square hay bales and calmer tractors: tractors drive at a gentle pace, turn corners smoothly and use a gap in the fence.",
       "Smoother river meets lake: no more seam or doubled foam where a river enters a lake."
-    ]
-  },
-  {
-    "version": "0.6.5",
-    "date": "2026-11-13",
-    "highlights": [
-      "Tractors work the pastures in summer: they mow, leave round bales and haul hay home from every Alpine Farm.",
-      "Fuller cows and a better tractor: cows with bells and coat patterns, a tractor and hay trailer with more detail.",
-      "Smoother lake and river banks, with sky and tree reflections on lakes (Medium and High).",
-      "Hill shadows and long tree shadows at dawn and dusk on High.",
-      "Photographers raise their cameras and flash, and falling leaves are a little smaller."
     ]
   }
 ];

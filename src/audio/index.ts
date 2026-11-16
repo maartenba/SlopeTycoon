@@ -73,6 +73,7 @@ export function createAudio(d: AudioDeps): AudioApi {
   };
   for (const n of GAME_EVENT_NAMES) hook(n);
   offs.push(d.bus.on('time:hour', (p) => ambience.onHour(p.hour)));
+  offs.push(d.bus.on('wedding:bell', () => ambience.weddingBell()));
   offs.push(d.bus.on('speed:changed', (p) => music.setInputs({ speed: p.speed })));
   const musicTimer = typeof setInterval === 'function' ? setInterval(() => music.tick(), MUSIC_PLAY.tickMs) : null;
 

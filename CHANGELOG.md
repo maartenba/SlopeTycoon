@@ -4,6 +4,27 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-16 (pre-release)
+
+A small update: a chapel for the village and some phone and desktop tidying. Your old saves keep working, and the economy and the desktop look are unchanged apart from the ground profile.
+
+### Highlights
+
+- **A mountain chapel with weddings**: a whitewashed chapel with a bell tower (level 2, one per resort). It adds a little village charm to the rating, and now and then, mostly on a summer Saturday, a wedding party walks to the door, the bell rings and they celebrate at a lodge nearby.
+- **A compact ground profile on desktop**: while you place a lift or a piste, the profile is one small line with a sparkline; click it for the full chart.
+- **Landscape trail painting on phones** works again in the touch test (the test started the stroke in the wrong place; the game itself was fine).
+- **Smaller phone polish**: the month-end card is a one-line chip under the banner row instead of a card on top of others, and the **...** menu works with the arrow keys.
+
+### Changes
+
+- New building: **Chapel** (2 x 3, $4,200, $8 a day, level 2, footpath or road, one per resort); village charm +0.06 scenery while it is connected (`docs/chapel.md`).
+- Weddings: seeded and rare (Saturdays, 45 % summer, 20 % spring and autumn, 8 % winter), a party of 4 to 6 walks from the Base Lodge, two bell strikes at the start and the end of a two-hour ceremony, then a meal at a lodge, cafe or pizzeria within 40 tiles (about $110 a person); news items; Rudi tips; the trophy *Wedding bells* (three weddings in one game).
+- The hour chime comes from the chapel when there is one (same soft bell, same rate limit; no new sound file).
+- Desktop and tablets: the ground profile of lifts and pistes is a compact pill in the placement area; a click opens the full chart under it, Esc or a click outside closes it. Phones keep the tool-bar sparkline.
+- Phones: the month-end and level-up cards sit under the banner row, one at a time, and the month card starts as a one-line chip; the **...** menu has Up / Down / Home / End, Esc closes it and gives the focus back to the button.
+- Touch test: trail strokes in the e2e now start on a lodge tile (landscape trails 21/21).
+- Tooling: `npm run chapel:sanity`, a `month-card` state in `mobile:audit2`.
+
 ## [0.7.0] - 2026-11-16 (pre-release)
 
 A phone update. On a phone the map now gets most of the screen. The economy and your old saves are unchanged, and the desktop looks the same as before.

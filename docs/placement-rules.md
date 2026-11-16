@@ -93,6 +93,7 @@ Generated from `src/config/buildings.ts` by `npm run docs:rules` (`scripts/analy
 | Pizzeria | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
 | Bakery | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | – |
 | Tourist Office | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | 1 | all | – |
+| Chapel | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | default | never | no | 1 | all | – |
 | Grass Strip | footpath or road | Needs a footpath or road next to it | forbid | ≤2 | default | never | no | 1 | all | – |
 | Skydive Centre | footpath or road | Needs a footpath or road next to it | forbid | flat | default | never | no | – | all | needs Grass Strip |
 | Launch Ramp | footpath, road, hiking trail or piste | Needs a footpath, road, hiking trail or piste next to it | edge | ≤3 | optional | never | yes | – | all | high ground (≥14) |

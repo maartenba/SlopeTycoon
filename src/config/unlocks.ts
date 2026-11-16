@@ -43,6 +43,8 @@ export const UNLOCKS: readonly UnlockDef[] = [
   // M7.4 (docs/m74-buildings.md): optional visitor services and sky activities; no goal or Advisor build action requires them (Pizzeria and Bakery are cheap and always open).
   { kind: 'building', id: 'touristOffice', level: 2 },
   { kind: 'building', id: 'launchRamp', level: 2 },
+  // 0.7.1 (docs/chapel.md): the Chapel, village charm and Saturday weddings; optional, no goal or Advisor build action requires it.
+  { kind: 'building', id: 'chapel', level: 2 },
   // M7.8 (docs/schirmbar.md): the Schirmbar, an optional winter slope bar; no goal or Advisor build action requires it.
   { kind: 'building', id: 'schirmbar', level: 2 },
   { kind: 'building', id: 'landingField', level: 2 },

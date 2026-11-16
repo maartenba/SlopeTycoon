@@ -65,6 +65,8 @@ import { hasStreet } from '../sim/events/Street';
 import { resortNameOr } from '../sim/ResortName';
 import { skyClosedReason } from '../sim/attractions/SkySites';
 import { TOURIST_OFFICE, BAKERY } from '../config/visitorServices';
+import { CHAPEL, WEDDING } from '../config/wedding';
+import { Wedding } from '../sim/events/Wedding';
 import { PhotoBuzz } from '../sim/guests/PhotoBuzz';
 import { TOILET_USES_PER_DAY } from '../sim/attractions/Toilets';
 import { Rating, createRatingSystem } from '../sim/Rating';
@@ -785,7 +787,7 @@ export function createSim(opts: SimOptions) {
         const bakery = buildings.all().some((b) => b.active && b.type === 'bakery' && buildings.all().some((l) => l.active && BAKERY.lodgings.includes(l.type) && Math.hypot(l.x + l.w / 2 - (b.x + b.w / 2), l.y + l.h / 2 - (b.y + b.h / 2)) <= BAKERY.radius));
         return { score: bakery ? Math.min(100, f.score + BAKERY.facilities) : f.score, hint: f.hint };
       },
-    }), scenery: (() => { const sc = nature.scenery(), pen = energy.sceneryPenalty(); return pen > 0 ? Math.max(0, sc - pen) : sc; })(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
+    }), scenery: (() => { const sc = nature.scenery() + (buildings.all().some((b) => b.type === 'chapel' && b.active) ? CHAPEL.charm : 0) /* village charm (0.7.1): one connected chapel */, pen = energy.sceneryPenalty(); return Math.min(1, pen > 0 ? Math.max(0, sc - pen) : sc); })(), sustainability: ((): { score: number; hint: string } => { const p = sustain.measure(); return { score: p.score, hint: sustainHint(p) }; })() }),
   });
   registry.replace(createRatingSystem(rating));
   // Rivals + market share (Task 23): scales arrivals by a small bounded factor (exactly 1 in the grace period, in scenarios / the tutorial).
@@ -1311,6 +1313,19 @@ export function createSim(opts: SimOptions) {
   visitor.enabled = opts.visitor !== false && opts.autoEvents !== false && !sdef;
   visitorRef = visitor;
   bus.on('time:hour', () => visitor.onHour());
+  // Chapel weddings (0.7.1, docs/chapel.md): observer state (saved in the 'wedding' module); the schedule is a pure function of (seed, day). The party and its bell need a connected chapel.
+  const wedding = new Wedding({
+    seed, bus,
+    now: () => absDay() * 1440 + game.date.minute,
+    chapel: () => { const c = buildings.all().find((b) => b.type === 'chapel' && b.active); return c ? { x: c.x, y: c.y, w: c.w, h: c.h, rot: c.rot } : null; },
+    origin: () => { const l = buildings.all().find((b) => b.type === 'baseLodge'); return l ? { x: l.x + l.w / 2, y: l.y + l.h / 2 } : null; },
+    feastSites: () => buildings.all().filter((b) => b.active && WEDDING.feastTypes.includes(b.type)).map((b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })),
+    weather: () => weather.current.kind,
+    earn: (a) => economy.earn('restaurants', a),
+    inBounds: (x, y) => x > 2 && y > 2 && x < size - 2 && y < size - 2,
+  });
+  wedding.enabled = opts.autoEvents !== false && !sdef;
+  bus.on('time:hour', () => wedding.onHour());
   const resort = { name: resortNameOr(opts.resortName, seed) };
   const sim = {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
@@ -1322,7 +1337,7 @@ export function createSim(opts: SimOptions) {
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,
     staff, staffUpgrades, events, stories, names, nature, leavers, rating, goals, progression, gate, advisor, session, stats, yearReports, loans, ticketing: ticketingRef, finance, liftOps, creditCtx, lodgeTouched, relief, closedDays,
     /** The resort name (M7.8, docs/schirmbar.md): observer state, saved in the 'resort' module (not part of the state hash). */
-    resort, visitor, photoBuzz,
+    resort, visitor, wedding, photoBuzz,
     setResortName(raw: unknown): string { const n = resortNameOr(raw, seed); resort.name = n; return n; },
     /** The validated new-game options this game was created with (stored in the save, 'config' module). */
     config: cfg, difficulty: diff,

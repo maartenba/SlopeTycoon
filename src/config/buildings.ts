@@ -229,6 +229,8 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   b('bakery', 'Bakery', 'services', 1, 2, 2200, 7, { access: 'path', altAccess: ['road'], placeTip: 'Place the bakery beside a footpath or a road, ideally near the lodgings' }, { staff: 1, capacity: 6, chimney: { x: 0.2, y: 1.1, z: -0.4 } }),
   // Tourist Office: one per resort, always +6 % arrivals while open (owner decision, config/visitorServices.ts).
   b('touristOffice', 'Tourist Office', 'services', 2, 2, 3500, 12, { access: 'road', altAccess: ['path'], maxCount: 1, placeTip: 'Place the tourist office beside a road or a footpath: one per resort' }, { staff: 1 }),
+  // Chapel (0.7.1, docs/chapel.md): a 2 x 3 whitewashed mountain chapel, one per resort. Village charm (+scenery, capped) and now and then a Saturday wedding (config/wedding.ts). Nothing requires it.
+  b('chapel', 'Chapel', 'services', 2, 3, 4200, 8, { access: 'path', altAccess: ['road'], maxCount: 1, site: { maxSlope: 2, slopeKind: 'any', autoFlatten: 'default', slopeMessage: 'The chapel needs level ground' }, placeTip: 'Place the chapel on level ground beside a footpath or a road: the door faces the way you are looking' }, {}),
   // Grass Strip (owner decision: a cheap airfield, NOT the Altiport): a flat mown strip with a windsock, the plane's base for the Skydive Centre.
   b('grassStrip', 'Grass Strip', 'transport', 7, 2, 6000, 10, { access: 'road', altAccess: ['path'], maxCount: 1, site: { maxSlope: 2, slopeMessage: 'The strip must be flat' }, placeTip: 'Place the grass strip on flat ground beside a road or a footpath: the jump plane takes off from it' }, {}),
   // Skydive Centre: office + hangar beside the strip; daytime jumps in clear weather ($95 a jump). Needs the Grass Strip.

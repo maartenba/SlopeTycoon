@@ -67,6 +67,14 @@ export interface GameEvents {
   'visitor:spotted': { x: number; y: number; fx: number; fy: number; ranger: boolean };
   /** The ranger's follow-up, some hours after the visitor has gone. */
   'visitor:followup': { x: number; y: number; tracks: 'footprints' | 'tracks' };
+  /** A wedding party sets out for the chapel (x, y = the chapel centre). */
+  'wedding:started': { x: number; y: number; guests: number };
+  /** The chapel bell rings (the start and the end of the ceremony); the audio caps decide whether it is heard. */
+  'wedding:bell': { x: number; y: number; strikes: number };
+  /** A ceremony is over; `count` = weddings held in this game. */
+  'wedding:held': { count: number };
+  /** The party arrived at a lodge / restaurant for the feast (x, y = that building); the small income is booked. */
+  'wedding:feast': { x: number; y: number; income: number };
   /** A night's grooming finished: vehicles that drove and tiles groomed. */
   'ops:grooming': { vehicles: number; tiles: number };
   /** A guest was injured. */
@@ -145,7 +153,7 @@ export type GameEventName = keyof GameEvents;
 /** Every event name (used by the debug event log). `satisfies` + the check below keep it exhaustive. */
 export const GAME_EVENT_NAMES = [
   'guest:arrived', 'photo:taken', 'photo:golden', 'guest:left', 'guest:review', 'building:placed', 'building:removed', 'path:drawn', 'piste:painted', 'lift:built', 'lift:opened',
-  'piste:opened', 'backcountry:opened', 'backcountry:closed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'incident:avalanche', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated', 'visitor:spotted', 'visitor:followup',
+  'piste:opened', 'backcountry:opened', 'backcountry:closed', 'money:changed', 'loan:taken', 'speed:changed', 'season:changed', 'incident:avalanche', 'incident:wildlife', 'wildlife:scare', 'wildlife:hazed', 'wildlife:relocated', 'visitor:spotted', 'visitor:followup', 'wedding:started', 'wedding:bell', 'wedding:held', 'wedding:feast',
   'incident:injury', 'incident:created', 'incident:resolved', 'incident:escalated', 'finance:bankruptcyWarning', 'finance:bankrupt', 'finance:debtWarning', 'finance:declaredBankrupt', 'lift:broken', 'lift:repaired', 'ops:serviceSoon', 'lift:serviceStarted', 'lift:serviced', 'lift:serviceOverdue', 'incident:stranded', 'ops:schedule', 'finance:monthClosed', 'rating:changed', 'day:changed', 'month:changed', 'year:changed', 'year:report', 'time:hour', 'lift:closed', 'weather:changed', 'attraction:opened', 'attraction:closed',
   'ops:grooming', 'family:dropoff', 'family:regroup', 'lesson:started', 'lesson:finished', 'marketing:started', 'marketing:ended', 'marketing:cancelled', 'milestone', 'scenario:objective', 'scenario:finished', 'story:resolved',
 ] as const satisfies readonly GameEventName[];

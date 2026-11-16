@@ -206,3 +206,9 @@ Worry: is "keep building cafes" a balanced exploit? Method (`npm run analysis:fo
 | Skydive Centre | - | - | - | no valid site on the ROI-sandbox maps (it needs the strip first: measured in the real page instead: 71 jumps and $8,455 in 8 busy summer days with 120 guests x 4 days at 6x arrivals, about $1,000 a day at full demand; capacity 4 at a time keeps it below $3,000 a day even then) |
 
 The balance suite's content bot (every building id built over three years, 64 maps) still passes: none of these rows breaks the books.
+
+## 0.7.1 row (docs/chapel.md; `npm run analysis:roi -- --only chapel,touristOffice`, 5 seeds, 180 days from 1 December)
+
+| Building | Capex | Net / year | Payback | Note |
+|---|---|---|---|---|
+| Chapel | $4,200 | **+$5,044** ±$2,211 | 150 days | within the noise of the guest stream; the year starts in winter, so the summer weddings (about 3-4 a year x about $550) and the charm (+0.06 scenery) are mostly not measured. One per resort by `maxCount`. Cheap-to-mid, does not dominate. |

@@ -326,3 +326,6 @@ Node budget: the three new layers add about 44 live nodes (stream 17, rapids 9, 
 
 ## Schirmbar (M7.8)
 The Schirmbar counts as a bar for the apres proximity: `src/main.ts` `apresBars` lists `apresBar` and `schirmbar` (active, open, serving), so the same gating applies (open, serving hours 10:00 - 17:30 for the Schirmbar, zoomed in, near) and the levels / cap in `src/config/audioProximity.ts` are shared. See `docs/schirmbar.md`.
+## Chapel bell (0.7.1)
+
+With a connected Chapel (`docs/chapel.md`) the village hour chime comes from the chapel instead of from any building: the world probe reports `chapel` (0..1 within 35 tiles) and `ambienceMix` uses it for `bells`. Wedding ceremonies ring the same **synthesised** `churchBell` (`Ambience.weddingBell()`, on `wedding:bell`), two strikes at the start and at the end of the ceremony, under the same `AMB.church` caps (one chime per 60 s of audio time, at most 2 strikes, camera must be close). The recorded church-bell sample stays retired (the honk issue); no new audio file.
