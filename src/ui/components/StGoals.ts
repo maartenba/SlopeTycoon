@@ -87,6 +87,10 @@ button.chip.sb{border-color:#5a7090;color:#cfe0ff}
     this.refresh();
   }
 
+  /** Phones: the card is a sheet-like card while expanded (phone card coordinator). */
+  get expanded(): boolean { return !this.collapsed && !this.suppressed && !this.hidden; }
+  setExpanded(on: boolean): void { if (on === !this.collapsed) return; this.collapsed = !on; this.lastKey = ''; this.refresh(); }
+
   /** Hide the card (tutorial running) or show it again. */
   suppress(on: boolean): void { this.suppressed = on; this.hidden = on; if (!on) this.refresh(); }
 

@@ -76,3 +76,24 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
   #ui > st-news { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) { #right-col, #ui > st-news, #ui > st-assistant { transition: none !important; } }
+
+/* ---- Phones v2 (docs/mobile-ui-v2.md): ONE 44 px top row (Menu | money, stars, guests | speed chip | overflow), ONE 44 px banner row under it (goal / scenario chip,
+   Rudi, news), one floating card at a time (src/ui/phoneCards.ts sets html[data-phone-mode] = idle | tool | sheet | modal), a bottom tool bar while building.
+   Everything is inside the phone query: desktop (>= 1100 px) and tablets are untouched. ---- */
+@media (max-width: 520px), (max-height: 520px) {
+  :root { --row-top: calc(4px + env(safe-area-inset-top, 0px)); --ban-top: calc(52px + env(safe-area-inset-top, 0px)); --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px); }
+  #right-col { display: contents; }
+  #ui > st-topbar { position: absolute; left: calc(8px + var(--sl)); right: calc(8px + var(--sr)); top: var(--row-top); height: 44px; max-width: none; display: flex; align-items: center; justify-content: space-between; overflow: visible; pointer-events: none; }
+  #right-col > st-hud { position: absolute; left: calc(56px + var(--sl)); right: calc(108px + var(--sr)); top: var(--row-top); height: 44px; width: auto; max-width: none; }
+  #right-col > st-speed-control { position: absolute; right: calc(58px + var(--sr)); top: var(--row-top); width: 44px; height: 44px; max-width: none; z-index: 5; }
+  #right-col > st-goals, #right-col > st-scenario-card { position: absolute; left: calc(8px + var(--sl)); right: calc(108px + var(--sr)); top: var(--ban-top); width: auto; max-width: none; z-index: 4; }
+  #ui > st-assistant { left: auto; right: calc(58px + var(--sr)); top: var(--ban-top); bottom: auto; z-index: 4; }
+  #ui > st-news { left: auto; right: calc(8px + var(--sr)); top: var(--ban-top); bottom: auto; z-index: 4; width: auto; }
+  #ui > st-settings, html[data-touch] #ui > st-settings { left: auto; right: auto; top: auto; bottom: 0; width: 0; height: 0; }
+  /* mode: tool = only the top row and the tool bar; modal = nothing else floats (the dialog is a full sheet) */
+  html[data-phone-mode="tool"] #right-col > st-goals, html[data-phone-mode="tool"] #right-col > st-scenario-card, html[data-phone-mode="tool"] #ui > st-news, html[data-phone-mode="tool"] #ui > st-assistant,
+  html[data-toolfirst] #right-col > st-scenario-card { display: none; }
+  html[data-phone-mode="sheet"] #ui { --phone-chip: none; }
+  html[data-toolfirst] #ui > st-dock { --dock-row: none; }
+  html[data-toolfirst] #ui { --phone-sheet-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+}

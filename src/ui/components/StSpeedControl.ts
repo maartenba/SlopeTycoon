@@ -33,6 +33,9 @@ export class StSpeedControl extends StElement {
   private btns = new Map<Speed, HTMLButtonElement>();
   private dateEl = document.createElement('span');
   private seasonEl = document.createElement('span');
+  private chipEl = document.createElement('button');
+  private panelEl: HTMLElement | null = null;
+  private popOff: (() => void) | null = null;
   private nightBtn = document.createElement('button');
   private skipBtn = document.createElement('button');
   private menuEl = document.createElement('div');
@@ -69,13 +72,17 @@ export class StSpeedControl extends StElement {
 @media (prefers-reduced-motion:reduce){.pill .spin{animation:none}}
 .hold{flex:none;font-weight:800;font-size:calc(11px * var(--ui-scale, 1));color:#ffd070;background:#3a2c10;border:1px solid #f0b04088;border-radius:999px;padding:0 8px;line-height:18px;white-space:nowrap}.hold[hidden]{display:none}
 .btns .night{position:relative}
+.chipb{display:none}
 @media (max-width:520px),(max-height:520px){
-.panel{flex-direction:row;align-items:center;padding:3px 6px;gap:6px}
-.btns{flex:1 1 auto;flex-wrap:nowrap;gap:4px;min-width:0}
-.btns button{height:auto;min-width:max(40px,var(--touch-min,0px));padding:0 4px}
+/* one speed chip (44 px) in the top row; the buttons (pause / 1x / 3x / 10x / night / skip) are a popover below it */
+.panel{display:block;padding:0;width:44px;height:44px;overflow:visible}
+.chipb{display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;font-weight:800;font-size:calc(15px * var(--ui-scale, 1));background:transparent;border-color:transparent;position:relative}
+.chipb.paused{color:#ffd070}
+.btns{display:none}.panel.pop .btns{display:flex;position:fixed;z-index:45;top:calc(56px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px));flex-wrap:nowrap;gap:6px;padding:6px;background:var(--c-panel,#141c28);border:1px solid rgba(90,112,144,.6);border-radius:var(--r-lg,12px);box-shadow:0 8px 24px rgba(0,0,0,.55)}
+.btns button{height:44px;min-width:44px;padding:0 4px}
 .btns .sp{display:none}
-.when{flex:0 1 auto}
-.when .d,.when .s{display:none}
+.when{display:none}
+.pill{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 }
 .warp{position:absolute;right:2px;bottom:0;color:#0d1624;font-weight:900;font-size:calc(11px * var(--ui-scale, 1));line-height:1;white-space:nowrap;pointer-events:none}.warp:empty{display:none}`;
   }
@@ -113,6 +120,12 @@ export class StSpeedControl extends StElement {
     this.dateEl.className = 'd'; this.seasonEl.className = 's';
     when.append(this.dateEl, this.holdEl, this.seasonEl);
     p.append(btns, when);
+    // Phones: one speed chip opens the popover (CSS shows it only on phones)
+    this.chipEl.className = 'chipb'; this.chipEl.dataset.role = 'speed-chip'; this.chipEl.setAttribute('aria-haspopup', 'true'); this.chipEl.setAttribute('aria-expanded', 'false');
+    this.chipEl.addEventListener('click', () => this.togglePop());
+    btns.addEventListener('click', () => { this.setPop(false); });
+    p.prepend(this.chipEl);
+    this.panelEl = p;
     this.root.appendChild(p);
     this.root.appendChild(this.menuEl);
     // Fast-forward pill (a status region: spinner, 'Fast-forwarding… to next season', days left / ETA, progress bar, Cancel)
@@ -150,6 +163,17 @@ export class StSpeedControl extends StElement {
     this.menuOff = () => window.removeEventListener('pointerdown', off, true);
   }
   private menuOff: (() => void) | null = null;
+
+  /** Phones: open / close the speed popover (closes on a pick or a tap elsewhere). */
+  togglePop(): void { this.setPop(!this.panelEl?.classList.contains('pop')); }
+  private setPop(on: boolean): void {
+    this.panelEl?.classList.toggle('pop', on); this.chipEl.setAttribute('aria-expanded', String(on));
+    this.popOff?.(); this.popOff = null;
+    if (!on) return;
+    const off = (ev: Event): void => { if (!ev.composedPath().includes(this)) this.setPop(false); };
+    window.addEventListener('pointerdown', off, true);
+    this.popOff = () => window.removeEventListener('pointerdown', off, true);
+  }
 
   private closeMenu(focus: boolean): void {
     this.menuOff?.(); this.menuOff = null;
@@ -203,6 +227,8 @@ export class StSpeedControl extends StElement {
     const refresh = (): void => {
       const sp = a.getSpeed();
       for (const [s, b] of this.btns) b.classList.toggle('active', s === sp);
+      this.chipEl.replaceChildren(sp === 0 ? icon('pause', 16) : document.createTextNode(sp === 1 ? '1×' : sp === 2 ? '3×' : '10×')); this.chipEl.classList.toggle('paused', sp === 0);
+      this.chipEl.title = this.chipEl.ariaLabel = 'Game speed: tap for pause / 1× / 3× / 10× / nights / skip';
       const d = a.getDate();
       this.dateEl.textContent = formatClock(d);
       const tip = formatGameDate({ year: d.year, day: d.day }).tooltip; // full date + day of year, no clock (the text already has it; a changing title would flicker the tooltip)
@@ -217,6 +243,6 @@ export class StSpeedControl extends StElement {
     this.listen(a.bus, 'day:changed', refresh);
     const offHold = modalPause.subscribe(refresh);
     this.timer = window.setInterval(refresh, 120); // minutes advance every tick; throttled text update
-    this.track(() => { clearInterval(this.timer); this.menuOff?.(); offHold(); });
+    this.track(() => { clearInterval(this.timer); this.menuOff?.(); this.popOff?.(); offHold(); });
   }
 }

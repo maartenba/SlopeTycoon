@@ -61,9 +61,12 @@ button.head:hover:not(:disabled){background:transparent;border:0}
     this.root.appendChild(p);
   }
 
+  get expanded(): boolean { return !this.collapsed && !this.hidden; }
+  setExpanded(on: boolean): void { if (on === !this.collapsed) return; this.collapsed = !on; this.lastKey = ''; this.refresh(); }
+
   bind(bus: GameBus, api: ScenarioCardApi): void {
     this.api = api;
-    try { this.collapsed = window.localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { this.collapsed = false; }
+    try { const st = window.localStorage.getItem(COLLAPSE_KEY); this.collapsed = st === null ? (typeof matchMedia === 'function' && matchMedia('(max-width: 520px), (max-height: 520px)').matches) : st === '1'; } catch { this.collapsed = false; }
     for (const ev of ['day:changed', 'time:hour', 'scenario:objective', 'scenario:finished'] as const) this.listen(bus, ev, () => this.refresh());
     this.refresh();
   }

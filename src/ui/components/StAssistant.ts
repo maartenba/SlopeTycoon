@@ -50,6 +50,7 @@ export const ASSISTANT_CSS =
   '.advice .ab button{flex:none;font-size:11px;padding:0 8px;line-height:22px;min-height:24px}.advice .ab button.primary{background:#2f8f4a;border-color:#6fd08a}' +
   '.advice .why{margin:0;color:#cfe3f1;font-size:11px;line-height:1.3;overflow-wrap:anywhere;white-space:normal}@media (pointer:coarse){.advice .ab button{min-height:44px;min-width:44px;font-size:12px}}.advice .fr{color:#9fe0a0}' +
   '.advice .empty{color:#cfe3f1}.advice .foot2{flex:none;color:#7f93ad;font-size:10px}' +
+  '@media (max-width:520px),(max-height:520px){.wrap{flex-direction:column-reverse;align-items:flex-end;width:auto}.arow{display:var(--phone-chip,flex)}.avatar{width:44px;height:44px;border-width:2px}.advbadge{pointer-events:none;left:auto;right:-4px;top:-6px;min-width:18px;height:18px;padding:0 4px;font-size:11px}}' +
   '.hintb{border-color:#ffd070}.hintb .row{display:flex;gap:6px;align-items:flex-start}.hintb .grow{flex:1}';
 
 export type Expression = RudiExpression;
@@ -263,6 +264,7 @@ export class StAssistant extends StElement {
   private get advVisible(): boolean { return !this.tutorialOn && (this.advView.count > 0 || this.advOpen); }
 
   toggleAdvice(open = !this.advOpen): void { this.advOpen = open; this.syncAdvice(); }
+
 
   renderAdvice(v: AdviceView): void {
     this.advView = v;

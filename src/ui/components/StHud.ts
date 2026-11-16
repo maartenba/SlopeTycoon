@@ -41,10 +41,14 @@ export class StHud extends StElement {
 .fps{flex:0 0 auto;color:#8fa0b8}
 .tgl{display:none}
 @media (max-width:520px),(max-height:520px){
-.tgl{display:inline-flex;flex:none;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-8px -8px -8px 0;padding:0;background:transparent;border-color:transparent;font-size:16px;line-height:1}
-.panel{padding:2px 8px}
-.panel:not(.exp) .r0,.panel:not(.exp) .r2,.panel:not(.exp) .r3{display:none}
-.r1{gap:8px}
+.tgl{display:none}
+.panel{padding:0 8px;height:44px;justify-content:center}
+.panel:not(.exp) .r0,.panel:not(.exp) .r2,.panel:not(.exp) .r3,.panel .r3{display:none}
+.r1{gap:8px;justify-content:space-between}
+.r1>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:calc(14px * var(--ui-scale, 1));font-weight:800}
+/* stars stay as icons; the smiley goes first, then the guest icon (docs/mobile-ui-v2.md, owner decision 2026-11-16) */
+@media (max-width:380px){.gi{display:none}}
+}
 }`;
   }
 
@@ -80,6 +84,12 @@ export class StHud extends StElement {
     p.querySelector('.r1')?.appendChild(tgl);
     this.panel = p;
     this.root.appendChild(p);
+  }
+
+  /** Phones: date, weather and season lines for the overflow menu (the strip itself shows only money, stars and guests). */
+  detailLines(): string[] {
+    const t = (e: HTMLElement): string => (e.textContent ?? '').replace(/\s+/g, ' ').trim();
+    return [t(this.dateEl), [t(this.weatherEl), t(this.tempEl), t(this.snowEl)].filter(Boolean).join(' · '), t(this.seasonEl)].filter(Boolean);
   }
 
   /** Game mode / resort level as the tooltip of the whole card ('Career \u00B7 Level 3 \u00B7 Regional name'); refreshed on day and milestone events. */
@@ -124,7 +134,7 @@ export class StHud extends StElement {
   private refreshGuests(): void {
     if (!this.guests) return;
     const g = this.guests();
-    this.guestsEl.replaceChildren(icon('guests', 14), ` ${g.count.toLocaleString('en-US')}${g.message ? ` · ${g.message}` : ''}`);
+    const gi = icon('guests', 14); gi.classList.add('gi'); this.guestsEl.replaceChildren(gi, ` ${g.count.toLocaleString('en-US')}${g.message ? ` · ${g.message}` : ''}`);
     this.guestsEl.title = g.message || 'Guests in the resort';
   }
 

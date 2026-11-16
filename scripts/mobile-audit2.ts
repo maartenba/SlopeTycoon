@@ -29,9 +29,10 @@ const DEVICES: Device[] = [
   { id: '412', name: 'Pixel-class Android 412x915 (chrome 104)', w: 412, fullH: 915, chrome: 104, dpr: 2.6 },
   { id: '360', name: 'Small Android 360x800 (chrome 104)', w: 360, fullH: 800, chrome: 104, dpr: 3 },
   { id: '390', name: 'iPhone 13/14 390x844 (chrome 130)', w: 390, fullH: 844, chrome: 130, dpr: 3 },
+  { id: 'moto-g7', name: 'Motorola G7 412x866 (owner phone; Chrome 56 top + 48 nav = 104)', w: 412, fullH: 866, chrome: 104, dpr: 2.625 },
   { id: 'land', name: 'Android landscape 915x412', w: 915, fullH: 412, chrome: 0, dpr: 2.6 },
 ];
-const WANT = (opt('dev') ?? '412,360,390,land').split(',');
+const WANT = (opt('dev') ?? '412,360,390,moto-g7,land').split(',');
 
 /** Runs in the page. Returns floating boxes, overlaps, map-visible %, small tap targets and the top stack height. */
 const MEASURE = `(() => {
@@ -208,7 +209,7 @@ for (const r of rows) {
   if (OVERLAP_N !== null) for (const o of r.m.overlaps) if (o.area > OVERLAP_N) { bad++; console.log(`FAIL overlap ${r.dev}/${r.height}/${r.state}: ${o.a} x ${o.b} = ${o.area} px²`); }
   if (THRESH && r.height === 'eff') {
     const min = r.kind === 'default' ? 60 : r.kind === 'tool' ? 50 : 0;
-    if (r.dev === '360' && min && r.m.visible < min) { bad++; console.log(`FAIL map ${r.dev}/${r.state}: ${r.m.visible}% < ${min}%`); }
+    if (r.dev !== 'land' && min && r.m.visible < min) { bad++; console.log(`FAIL map ${r.dev}/${r.state}: ${r.m.visible}% < ${min}%`); }
     if (r.kind !== 'modal') { if (r.m.small.length) { bad++; console.log(`FAIL targets ${r.dev}/${r.state}: ${r.m.small.length} below 44 px`); } if (r.m.topChrome > 64) { bad++; console.log(`FAIL top chrome ${r.dev}/${r.state}: ${r.m.topChrome}px > 64`); } }
   }
 }

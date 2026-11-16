@@ -138,6 +138,8 @@ import type { StToast } from '@/ui/components/StToast';
 import { EventBus } from '@/core/EventBus';
 import { registerComponents, el } from '@/ui';
 import { wireTouch } from '@/ui/touchWire';
+import { installPhoneCards, type PhoneCards } from '@/ui/phoneCards';
+let phoneCardsRef: PhoneCards | null = null;
 import { onPalette } from '@/config/palette';
 import { createAudio, samplesDisabledByUrl, type AudioApi } from '@/audio';
 import { createMenuAudio } from '@/audio/menuAudio';
@@ -2473,6 +2475,9 @@ if (ui && !DEMO) {
     menu: () => { openGameMenu(); },
     photo: () => { if (photo.active) exitPhoto(); else enterPhoto(); },
     stats: () => { if (!DEMO) statsRef?.toggle(); },
+    rudi: () => { (document.querySelector('st-assistant') as unknown as { toggleAdvice?(o?: boolean): void } | null)?.toggleAdvice?.(true); },
+    news: () => { (document.querySelector('st-news') as unknown as { setOpen?(o: boolean): void } | null)?.setOpen?.(true); },
+    info: () => (hudRef as unknown as { detailLines?(): string[] } | null)?.detailLines?.() ?? [],
     walk: () => { if (renderer.viewMode.mode === 'walk') exitWalk(); else startDrop(); },
     walkDrag: dropDrag,
     quality: { get: () => quality, set: (q) => applyQualityNow(q as GraphicsQuality), options: GRAPHICS_QUALITIES },
@@ -2980,6 +2985,19 @@ if (ui && !DEMO) {
   const whatsNewEl = el('st-whats-new');
   ui.append(topbar, debug, recapEl, whatsNewEl, dock, toastEl, profileEl, help, news, settingsEl, trophiesEl, statsEl, viewHud);
   { const touchBar = el('st-touch-controls'); touchWire.bindBar(touchBar); ui.append(touchBar); }
+  // Phones: ONE floating card at a time + html[data-phone-mode] (src/ui/phoneCards.ts, docs/mobile-ui-v2.md)
+  {
+    const cards = installPhoneCards({ dialogs: () => modalStack.dialogs });
+    const q = <T extends HTMLElement>(sel: string): T | null => document.querySelector(sel) as T | null;
+    const sheetShown = (host: HTMLElement | null): boolean => { const sh = host?.shadowRoot?.querySelector('st-sheet') as HTMLElement | null; return !!sh && !sh.hidden && Array.from(sh.children).some((c) => !(c as HTMLElement).hidden); };
+    cards.register({ id: 'drawer', isOpen: () => dock.openDrawer !== null && !dock.classList.contains('peek'), close: () => dock.show(null) });
+    cards.register({ id: 'goals', isOpen: () => !!goalsEl.expanded, close: () => goalsEl.setExpanded(false) });
+    cards.register({ id: 'scenario', isOpen: () => !!scenCard.expanded, close: () => scenCard.setExpanded(false) });
+    cards.register({ id: 'rudi', isOpen: () => !!q<HTMLElement & { adviceOpen?: boolean }>('st-assistant')?.adviceOpen, close: () => q<HTMLElement & { toggleAdvice(o?: boolean): void }>('st-assistant')?.toggleAdvice(false) });
+    cards.register({ id: 'news', isOpen: () => !!news.isOpen, close: () => news.setOpen(false) });
+    cards.register({ id: 'inspector', isOpen: () => ['st-inspector', 'st-lift-inspector', 'st-guest-inspector', 'st-piste-inspector', 'st-route-inspector'].some((t) => sheetShown(q<HTMLElement>(`#right-col > ${t}`))), close: () => select(null) });
+    phoneCardsRef = cards;
+  }
   {
     const pause = el('st-pause-menu');
     pauseRef = pause;

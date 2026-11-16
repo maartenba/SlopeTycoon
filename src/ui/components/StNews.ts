@@ -66,7 +66,7 @@ export class StNews extends StElement {
 .e small{color:#9fb0c8;display:block}.n{background:#5a7090;border-radius:8px;padding:0 6px;font-size:11px}
 .tabs{display:flex;gap:4px}.tabs button{flex:1;padding:2px 6px}.tabs button.on{background:#3a5070;border-color:#7aa0d0}.r{display:flex;flex-direction:column;gap:2px;padding:3px 6px;border-radius:4px;background:rgba(20,28,40,.85);border-left:3px solid #5a7090;cursor:default}.r.loc{cursor:pointer}.r.pos{border-color:#4caf50}.r.neg{border-color:#e0a030}.r .stars{color:#ffc94d;display:flex;gap:1px;align-items:center}.r p{margin:0;overflow-wrap:anywhere}.r small{color:#9fb0c8}.r .go{align-self:flex-start;font-size:11px;padding:0 6px}
 .bar{display:flex;gap:6px;align-items:center}.bar select{flex:1}.today{font-size:11px;color:#9fb0c8}.mutes{display:flex;flex-wrap:wrap;gap:6px;font-size:11px}
-@media (max-width:520px),(max-height:520px){:host(.open){width:auto}}
+@media (max-width:520px),(max-height:520px){:host(.open){width:auto}:host{min-width:0}.wrap>button{min-width:44px;min-height:44px;display:var(--phone-chip,inline-flex)}.wrap>button .w{display:none}}
 ${SHEET_PANEL_CSS}st-sheet[data-sheet] .list{max-height:none;overflow:visible}`;
   }
 
@@ -102,6 +102,11 @@ ${SHEET_PANEL_CSS}st-sheet[data-sheet] .list{max-height:none;overflow:visible}`;
     this.root.appendChild(wrap);
     this.render();
   }
+
+  /** The news card is open (phone card coordinator). */
+  get isOpen(): boolean { return this.open; }
+  setOpen(on: boolean): void { if (on === this.open) return; this.open = on; if (on) this.unread = 0; this.render(); }
+  get unreadCount(): number { return this.unread + this.revUnread; }
 
   get items(): readonly NewsEntry[] { return this.feed.rows; }
   get model(): NewsFeed { return this.feed; }
