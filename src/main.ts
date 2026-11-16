@@ -2992,7 +2992,7 @@ if (ui && !DEMO) {
   { const touchBar = el('st-touch-controls'); touchBarRef = touchBar as unknown as typeof touchBarRef; touchWire.bindBar(touchBar); ui.append(touchBar); }
   // Phones: ONE floating card at a time + html[data-phone-mode] (src/ui/phoneCards.ts, docs/mobile-ui-v2.md)
   {
-    const cards = installPhoneCards({ dialogs: () => modalStack.dialogs });
+    const cards = installPhoneCards({ dialogs: () => modalStack.dialogs, onDialogs: (fn) => modalStack.onChange(fn) });
     const q = <T extends HTMLElement>(sel: string): T | null => document.querySelector(sel) as T | null;
     const sheetShown = (host: HTMLElement | null): boolean => { const sh = host?.shadowRoot?.querySelector('st-sheet') as HTMLElement | null; return !!host && !host.hidden && !!sh && !sh.hidden; };
     cards.register({ id: 'drawer', isOpen: () => dock.openDrawer !== null && !dock.classList.contains('peek'), close: () => dock.show(null) });

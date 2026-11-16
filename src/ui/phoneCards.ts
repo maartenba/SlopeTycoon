@@ -49,6 +49,8 @@ export interface PhoneCards {
 export interface PhoneCardsOpts {
   /** Number of open dialogs (default: modalStack.dialogs, injected by main.ts to keep this module DOM-light). */
   dialogs(): number;
+  /** Subscribe to dialog open / close (modalStack.onChange): the mode follows at once, not on the next poll. */
+  onDialogs?(fn: () => void): () => void;
   root?: HTMLElement;
 }
 
@@ -87,11 +89,12 @@ export function installPhoneCards(o: PhoneCardsOpts): PhoneCards {
   const ev = (): void => update();
   window.addEventListener('st-sheet-snap', ev); window.addEventListener('pointerup', ev, true); window.addEventListener('click', ev, true); window.addEventListener('resize', ev);
   mq?.addEventListener?.('change', ev);
+  const offDialogs = o.onDialogs?.(ev);
   update();
   return {
     mode: () => cur,
     register: (c) => { cards.push(c); },
     update, isPhone, open: () => [...openSet],
-    dispose() { window.clearInterval(t); window.removeEventListener('st-sheet-snap', ev); window.removeEventListener('pointerup', ev, true); window.removeEventListener('click', ev, true); window.removeEventListener('resize', ev); mq?.removeEventListener?.('change', ev); root.removeAttribute('data-phone-mode'); },
+    dispose() { window.clearInterval(t); window.removeEventListener('st-sheet-snap', ev); window.removeEventListener('pointerup', ev, true); window.removeEventListener('click', ev, true); window.removeEventListener('resize', ev); mq?.removeEventListener?.('change', ev); offDialogs?.(); root.removeAttribute('data-phone-mode'); },
   };
 }

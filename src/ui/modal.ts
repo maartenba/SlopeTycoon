@@ -22,8 +22,12 @@ class ModalStack {
   get top(): StackEntry | undefined { return this.entries[this.entries.length - 1]; }
   /** Number of real dialogs (popups excluded). */
   get dialogs(): number { return this.entries.filter((e) => e.trap).length; }
-  push(e: StackEntry): number { this.remove(e); this.entries.push(e); return MODAL_Z0 + this.entries.length * 2; }
-  remove(e: StackEntry): void { const i = this.entries.indexOf(e); if (i >= 0) this.entries.splice(i, 1); }
+  private readonly subs = new Set<() => void>();
+  /** Called after every push / remove (the phone card coordinator re-derives its mode at once instead of on its poll). */
+  onChange(fn: () => void): () => void { this.subs.add(fn); return () => { this.subs.delete(fn); }; }
+  private changed(): void { for (const f of this.subs) f(); }
+  push(e: StackEntry): number { this.remove(e); this.entries.push(e); this.changed(); return MODAL_Z0 + this.entries.length * 2; }
+  remove(e: StackEntry): void { const i = this.entries.indexOf(e); if (i >= 0) { this.entries.splice(i, 1); this.changed(); } }
   has(e: StackEntry): boolean { return this.entries.includes(e); }
   /** Esc: close the top entry only. Returns whether something was closed. */
   closeTop(): boolean { const t = this.top; if (!t || t.escapable === false) return false; t.close(); return true; }

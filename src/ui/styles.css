@@ -121,3 +121,9 @@ html[data-touch] #ui > st-settings { top: calc(74px + env(safe-area-inset-top, 0
   #ui { --phone-sheet-top: calc(112px + env(safe-area-inset-top, 0px)); }
   html[data-toolfirst] #ui { --phone-sheet-top: calc(56px + env(safe-area-inset-top, 0px)); }
 }
+@media (max-width: 520px), (max-height: 520px) {
+  /* one card at a time: while a sheet owns the screen (drawer, inspector, Rudi, news) the goal / scenario chip steps aside, unless it is the open card itself */
+  html[data-phone-mode="sheet"]:not([data-phone-card~="goals"]):not([data-phone-card~="scenario"]) #right-col > st-goals,
+  html[data-phone-mode="sheet"]:not([data-phone-card~="goals"]):not([data-phone-card~="scenario"]) #right-col > st-scenario-card { display: none; }
+}
+@media (max-height: 520px) { html[data-phone-mode="sheet"] #ui { --phone-sheet-top: calc(56px + env(safe-area-inset-top, 0px)); } }

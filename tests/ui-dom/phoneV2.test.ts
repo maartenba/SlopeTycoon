@@ -160,6 +160,18 @@ describe('phone card coordinator', () => {
     state.dialogs = 1; cards.update(); expect(root.getAttribute('data-phone-mode')).toBe('modal');
     cards.dispose(); expect(root.hasAttribute('data-phone-mode')).toBe(false);
   });
+  it('a dialog opening / closing changes the mode at once (modalStack.onChange), not on the next poll', async () => {
+    phoneMq(true);
+    const { modalStack } = await import('../../src/ui/modal');
+    const cards = installPhoneCards({ dialogs: () => modalStack.dialogs, onDialogs: (fn) => modalStack.onChange(fn) });
+    const entry = { close: () => modalStack.remove(entry), trap: { containsFocus: () => false, cycle: () => {} } };
+    expect(document.documentElement.getAttribute('data-phone-mode')).toBe('idle');
+    modalStack.push(entry);
+    expect(document.documentElement.getAttribute('data-phone-mode')).toBe('modal');
+    modalStack.remove(entry);
+    expect(document.documentElement.getAttribute('data-phone-mode')).toBe('idle');
+    cards.dispose();
+  });
   it('desktop (no phone media): no data-phone-mode at all', () => {
     phoneMq(false);
     const cards = installPhoneCards({ dialogs: () => 0 });
