@@ -1035,7 +1035,7 @@ export function createSim(opts: SimOptions) {
   }, RACE.boardBaseS, RACE.boardMps);
   raceDayRef = raceDay;
   guestSim.spectateUntil = (id) => (raceDay.session && raceDay.session.spectators.includes(id) ? RACE_DAY.to : null);
-  bus.on('time:hour', (e) => raceDay.onHour(e.hour));
+  bus.on('time:hour', (e) => raceDay.onHour(e?.hour ?? Math.floor(hourOfDay(game.date)))); // (some tests emit the event without a payload)
   bus.on('day:changed', () => raceDay.onDay());
   const bookRaceDay = (course: number, day: number): string | null => { const why = raceDay.blocker(course, day); if (why) return why; return raceDay.book(course, day) ? null : 'Not enough cash'; };
   // Story guests (M5.4 Task 22): observer module polled at the end of every guest tick; own RNG; on unless `stories: false`.

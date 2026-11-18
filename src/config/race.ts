@@ -65,7 +65,7 @@ export const RACE_DAY = {
   /** Race field (inclusive range) of a club race and of a World Cup day. */
   field: [20, 30] as readonly [number, number], fieldWorldCup: [36, 48] as readonly [number, number],
   /** Entry fee per racer (dollars), income category `recreation`. */
-  entryFee: 15, entryFeeWorldCup: 25,
+  entryFee: 10, entryFeeWorldCup: 20,
   /** Extra arrivals on the race day itself (a club race is a small draw; the World Cup keeps its own festival multiplier). */
   arrivalMult: 1.1,
   /** Spectators (existing guests): cap per race, by course colour (a black course draws more). Hard ceiling 40. */

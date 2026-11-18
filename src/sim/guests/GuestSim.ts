@@ -22,6 +22,7 @@ import { NavGraph, NavMode, navFromWalkNet, skiModeFor, isSkiMode } from './NavG
 import { tickNeeds, type NeedEnv } from './Needs';
 import { ReviewDirector, type PlaceText } from './Reviews';
 import { injuryRisk, maxDifficultyFor, recordRun } from './Skill';
+import { OccFlag } from '../../world/Occupancy';
 import { CORE_TYPE_COUNT, RACER_TYPE, extraDef } from '../../config/guestTypes';
 import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
@@ -662,6 +663,22 @@ export class GuestSim {
   }
   barStops = 0;
 
+  /** A spectator does not stand on exactly the same spot as the others: a stable hash of the guest id picks a free tile within ~1.6 tiles of the doorstep (no RNG). */
+  private spreadSpectator(i: number): void {
+    const s = this.store, nav = this.world.nav?.(), n = this.world.mapSize;
+    if (!nav) return;
+    const h = Math.imul(s.id[i]! ^ 0x5bd1e995, 0x9e3779b1) >>> 0;
+    for (let k = 0; k < 6; k++) {
+      const hh = Math.imul(h + k * 0x7f4a7c15, 0x85ebca6b) >>> 0, a = ((hh & 0xffff) / 65536) * Math.PI * 2, r = 0.5 + 1.1 * (((hh >>> 16) & 0xffff) / 65536);
+      const x = s.x[i]! + Math.cos(a) * r, y = s.y[i]! + Math.sin(a) * r, tx = Math.floor(x), ty = Math.floor(y);
+      if (tx < 0 || ty < 0 || tx >= n || ty >= n) continue;
+      const t = ty * n + tx;
+      if ((nav.occ[t]! & (OccFlag.Building | OccFlag.Lift | OccFlag.Water)) !== 0) continue;
+      this.moveSlot(i, x, y, this.world.groundAt(x, y));
+      return;
+    }
+  }
+
   /** Race days (0.8.1): the hour a spectator may leave the finish area (null = not a spectator). Set by createSim from `RaceDay`. */
   spectateUntil: ((guestId: number) => number | null) | null = null;
   /**
@@ -763,7 +780,7 @@ export class GuestSim {
       case Act.ToBuilding: {
         const b = this.byId.get(s.target[i]!);
         const until = b && b.type === 'timingHut' ? this.spectateUntil?.(s.id[i]!) ?? null : null;
-        if (until !== null) { s.state[i] = GState.Idle; s.act[i] = Act.None; s.target[i] = 0; s.timer[i] = Math.max(1, Math.min(60, Math.round((until - this.hour) * 10))); return; } // a race-day spectator stands at the finish until the race ends (docs/race-course.md)
+        if (until !== null) { s.state[i] = GState.Idle; s.act[i] = Act.None; s.target[i] = 0; s.timer[i] = Math.max(1, Math.min(60, Math.round((until - this.hour) * 10))); this.spreadSpectator(i); return; } // a race-day spectator stands at the finish until the race ends (docs/race-course.md)
         const res = b && this.attractions ? this.attractions.arrive(i, b, this.tick) : 'unhandled';
         if (res === 'using') return;
         if (b && res === 'unhandled' && this.isPhotog(i) && BUILDINGS[b.type]?.viewpoint && this.photoSession(i, b)) return;

@@ -10,6 +10,7 @@ import { BUILDINGS } from '../../src/config/buildings';
 import { placeBuilding } from '../../src/sim/PlaceBuilding';
 import { Layer } from '../../src/world/Networks';
 import { RACER_TYPE } from '../../src/config/guestTypes';
+import { RACE_DAY } from '../../src/config/race';
 import { DAYS_PER_YEAR } from '../../src/config/balance';
 
 const argv = process.argv.slice(2);
@@ -48,6 +49,37 @@ function year(s: Sim): Tot & { laps: number } {
 }
 
 const money = (n: number): string => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString('en-US')}`;
+
+/**
+ * Race-day economy guard (0.8.1, docs/race-course.md "Race days"): `npm run analysis:race -- --raceday 1`. Per seed and colour, TWO identical resorts (same seed, a groomed course) run
+ * to a winter Saturday; one books a Club Race there. The Saturday's income (every ledger category, the booking cost is an expense and is reported separately) is compared with the
+ * control's: the guard is `RACE_DAY.earnCapVsSaturday` (1.5x).
+ */
+if (arg('raceday', '0') === '1') {
+  const absDay = (s: Sim): number => s.game.date.year * DAYS_PER_YEAR + s.game.date.day;
+  const incomeDay = (s: Sim, day: number): number => { while (absDay(s) < day) s.tick(1); const a = s.economy.lifetimeIncome(); while (absDay(s) === day) s.tick(1); return s.economy.lifetimeIncome() - a; };
+  let worst = 0;
+  for (const [name, stored] of [['red', 2], ['black', 3]] as const) for (const seed of SEEDS) {
+    const mkRun = (book: boolean): { s: Sim; sat: number; id: number } | null => {
+      const s = mk(seed); s.game.date.day = 120; // 1 Dec
+      const st = setup(s, stored); if (!st.ok) return null;
+      const id = s.names.pisteId([...s.runIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!);
+      s.tick(240 * 3); s.runSettings.noteGroomed(id, absDay(s));
+      let d = absDay(s) + 3; while (((d % 7) + 7) % 7 !== 5) d++;
+      if (book && s.bookRaceDay(id, d)) throw new Error('race day refused');
+      return { s, sat: d, id };
+    };
+    const a = mkRun(false), b = mkRun(true);
+    if (!a || !b) { console.log(`${name} seed ${seed}: course not possible`); continue; }
+    // groom the course daily in both (the resort's own cats mostly do)
+    const run = (r: { s: Sim; sat: number; id: number }): number => { while (absDay(r.s) < r.sat) { r.s.runSettings.noteGroomed(r.id, absDay(r.s)); r.s.tick(1); } return incomeDay(r.s, r.sat); };
+    const normal = run(a), race = run(b), res = b.s.raceDay.results[0];
+    const ratio = normal > 0 ? race / normal : 0; worst = Math.max(worst, ratio);
+    console.log(`${name.padEnd(5)} seed ${seed}: normal Saturday ${money(normal)} race day ${money(race)} x${ratio.toFixed(2)} (fees+sponsor ${money(res?.earned ?? 0)}, spectators ${res?.spectators ?? 0}, field ${res?.field ?? 0}, cost -$3,000)`);
+  }
+  console.log(`\nWorst race day / Saturday ratio ${worst.toFixed(2)} (guard ${RACE_DAY.earnCapVsSaturday})`);
+  process.exit(worst <= RACE_DAY.earnCapVsSaturday ? 0 : 1);
+}
 const rows: Array<{ name: string; capex: number; net: number; income: number; expense: number; racers: number; laps: number; n: number }> = [];
 for (const [name, stored] of [['red', 2], ['black', 3]] as const) {
   const acc = { capex: 0, net: 0, income: 0, expense: 0, racers: 0, laps: 0, n: 0 };
