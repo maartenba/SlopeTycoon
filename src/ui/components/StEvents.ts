@@ -8,6 +8,8 @@ export interface EventsApi {
   /** Book a festival starting on an absolute day; returns an error text or null. */
   book(id: string, start: number): string | null;
   cancel(id: string, start: number): string | null;
+  /** Book a Club Race (0.8.1) on a race course for an absolute day; error text or null. */
+  bookRace?(course: number, start: number): string | null;
   /** 'Show me': the running concert's stage, or the Lifts drawer when a gondola / cable car is missing. */
   showMe?(what: 'stage' | 'lifts', id: string): void;
 }
@@ -45,6 +47,7 @@ export class StEvents extends StElement {
   private pending = false;
   /** Chosen start day per festival id (survives refreshes). */
   private pick = new Map<string, number>();
+  private raceCourse = 0;
 
   protected css(): string { return css; }
   constructor() { super(); this.root.appendChild(this.wrap); }
@@ -92,6 +95,35 @@ export class StEvents extends StElement {
       }
       out.push(row);
     }
+    const rc = v.raceDayCard;
+    if (rc && a.bookRace) {
+      out.push(el('h4', '', 'Race day'));
+      const card = el('div', rc.general ? 'card locked' : 'card');
+      card.dataset.role = 'race-day-card';
+      card.style.width = 'auto';
+      card.append(el('h5', '', `${rc.general ? '🔒 ' : ''}🏁 Club Race`), el('div', 'muted', `A weekend race on your course: the run closes 10:00-14:00, guests come to watch, a sponsor pays. ${formatMoney(rc.cost)}, one a week, 2 days notice.`));
+      if (rc.general) card.append(el('div', 'warn', rc.general));
+      else if (rc.courses.length) {
+        if (!rc.courses.some((c) => c.id === this.raceCourse)) this.raceCourse = (rc.courses.find((c) => c.valid) ?? rc.courses[0]!).id;
+        const cs = makeSelect(rc.courses.map((c) => ({ value: String(c.id), label: `${c.name}${c.valid ? '' : ' (inactive)'}`, disabled: !c.valid })), String(this.raceCourse), 'Race course', (val) => { this.raceCourse = Number(val); this.refresh(); });
+        const cur = rc.courses.find((c) => c.id === this.raceCourse)!;
+        const opts = rc.options[this.raceCourse] ?? [];
+        const good = opts.filter((o) => !o.blocker);
+        const chosen = this.pick.get('raceDay');
+        const initial = opts.some((o) => o.start === chosen) ? chosen! : good[0]?.start ?? opts[0]?.start;
+        const sel = makeSelect(opts.map((o) => ({ value: String(o.start), label: o.blocker ? `${o.label} (${o.blocker})` : o.label, disabled: !!o.blocker })), initial === undefined ? '' : String(initial), 'Race day date', (val) => { this.pick.set('raceDay', Number(val)); });
+        const btn = el('button', '', good.length && cur.valid ? 'Book' : 'Unavailable');
+        btn.dataset.role = 'race-day-book'; btn.disabled = !good.length || !cur.valid;
+        btn.addEventListener('click', () => { const s2 = Number(sel.value); this.pick.set('raceDay', s2); this.msg = a.bookRace!(this.raceCourse, s2) ?? ''; this.refresh(); });
+        const r1 = el('div', 'row'); r1.append(cs);
+        const r2 = el('div', 'row'); r2.append(sel, btn);
+        card.append(r1, r2);
+        const info = [cur.sponsor ? `Sponsor: ${cur.sponsor}` : 'A sponsor joins when you book', cur.last ? `Last winner: ${cur.last}` : ''].filter(Boolean).join(' · ');
+        card.append(el('div', 'muted', info));
+        if (!cur.valid && cur.reason) card.append(el('div', 'warn', cur.reason));
+      }
+      out.push(card);
+    }
     out.push(el('h4', '', 'Book a festival'));
     const cards = el('div', 'cards');
     for (const c of v.cards) {
@@ -101,7 +133,7 @@ export class StEvents extends StElement {
         el('div', 'muted', c.def.blurb),
         el('div', '', `${formatMoney(c.def.cost)} · ${c.def.days} days · +${Math.round((c.def.arrivalMult - 1) * 100)}% arrivals`),
       );
-      const reqs = [c.def.minStars > 0 ? `${c.def.minStars}★` : '', `level ${c.def.minLevel}`, ...c.def.needs.map((n) => (n === 'lodge' ? 'Base Lodge' : n === 'gondola' ? 'gondola or cable car' : n === 'street' ? 'village street' : 'black piste'))].filter(Boolean).join(', ');
+      const reqs = [c.def.minStars > 0 ? `${c.def.minStars}★` : '', `level ${c.def.minLevel}`, ...c.def.needs.map((n) => (n === 'lodge' ? 'Base Lodge' : n === 'gondola' ? 'gondola or cable car' : n === 'street' ? 'village street' : n === 'raceCourse' ? 'race course (red or black run)' : 'black piste'))].filter(Boolean).join(', ');
       card.append(el('div', 'muted', `Needs: ${reqs}`));
       if (c.window) card.append(el('div', 'muted', `Starts ${c.window}`));
       if (c.next && !c.general) card.append(el('div', 'muted', `Next: ${c.next}`));

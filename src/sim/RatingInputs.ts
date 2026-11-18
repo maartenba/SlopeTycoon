@@ -41,6 +41,8 @@ export interface RatingSources {
   value?(): number;
   /** Facilities facet (comfort need on): undefined = not measured. */
   facilities?(): { score: number; hint: string } | undefined;
+  /** Race-day sponsor bonus in rating points (0.8.1). */
+  eventBonus?(): number;
 }
 
 const ICY = 4;
@@ -91,5 +93,6 @@ export function gatherRatingInput(s: RatingSources): RatingInput {
     openLifts,
     debt: s.debt ? s.debt() : 0,
     ...(s.facilities ? (() => { const f = s.facilities!(); return f ? { facilities: f } : {}; })() : {}),
+    ...(s.eventBonus ? (() => { const b = s.eventBonus!(); return b > 0 ? { eventBonus: b } : {}; })() : {}),
   };
 }

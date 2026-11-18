@@ -662,6 +662,33 @@ export class GuestSim {
   }
   barStops = 0;
 
+  /** Race days (0.8.1): the hour a spectator may leave the finish area (null = not a spectator). Set by createSim from `RaceDay`. */
+  spectateUntil: ((guestId: number) => number | null) | null = null;
+  /**
+   * Race day: send up to `n` guests nearest to (x, y) (within `radius` tiles) to the Timing Hut `buildingId`. Eligible = alive, not a racer, not a child of a family, standing
+   * or walking about (not riding, queueing, skiing down, on an excursion, leaving, sleeping or injured), not in `taken`. Nearest first, ties by id: no RNG. Returns the ids.
+   */
+  sendSpectators(x: number, y: number, radius: number, n: number, taken: ReadonlySet<number>, buildingId: number): number[] {
+    const s = this.store, out: Array<{ d: number; slot: number }> = [], r2 = radius * radius;
+    if (!this.byId.get(buildingId)) return [];
+    for (let i = 0; i < s.limit; i++) {
+      if (!s.alive[i] || s.type[i] === RACER_TYPE || taken.has(s.id[i]!)) continue;
+      const st = s.state[i]!;
+      if (st !== GState.Idle && !(st === GState.Walking && (s.act[i] === Act.None || s.act[i] === Act.ToBuilding))) continue;
+      if (this.families.isKid(i)) continue;
+      const d = (s.x[i]! - x) ** 2 + (s.y[i]! - y) ** 2;
+      if (d <= r2) out.push({ d, slot: i });
+    }
+    out.sort((a, b) => a.d - b.d || s.id[a.slot]! - s.id[b.slot]!);
+    const ids: number[] = [];
+    for (const { slot } of out.slice(0, n)) {
+      this.exc.drop(slot); this.nm?.reset(slot);
+      this.start(slot, { kind: 'activity', building: this.byId.get(buildingId), score: 9 });
+      ids.push(s.id[slot]!);
+    }
+    return ids;
+  }
+
   /** Convert a hike/bike path with no lift hop left and >= EXC.minTiles remaining into a compressed-time excursion. */
   private tryExcursion(i: number): void {
     const nm = this.nm, g = this.graph(), s = this.store;
@@ -735,6 +762,8 @@ export class GuestSim {
     switch (s.act[i]) {
       case Act.ToBuilding: {
         const b = this.byId.get(s.target[i]!);
+        const until = b && b.type === 'timingHut' ? this.spectateUntil?.(s.id[i]!) ?? null : null;
+        if (until !== null) { s.state[i] = GState.Idle; s.act[i] = Act.None; s.target[i] = 0; s.timer[i] = Math.max(1, Math.min(60, Math.round((until - this.hour) * 10))); return; } // a race-day spectator stands at the finish until the race ends (docs/race-course.md)
         const res = b && this.attractions ? this.attractions.arrive(i, b, this.tick) : 'unhandled';
         if (res === 'using') return;
         if (b && res === 'unhandled' && this.isPhotog(i) && BUILDINGS[b.type]?.viewpoint && this.photoSession(i, b)) return;

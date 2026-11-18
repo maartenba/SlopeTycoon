@@ -50,4 +50,46 @@ export const RACE = {
     tooMany: 'Three courses is the limit',
   },
 } as const;
+
+/**
+ * Race days (0.8.1, docs/race-course.md "Race days"): a Club Race the player books on a weekend, spectators, a sponsor, and the World Cup on the course.
+ * Economy guard: a race day earns at most `earnCapVsSaturday` x a normal Saturday (checked by `npm run analysis:race`).
+ */
+export const RACE_DAY = {
+  /** Booking: dollars, days of notice, the weekdays allowed (Clock weekday 5 = Saturday, 6 = Sunday), at most this many per calendar week (Monday to Sunday). */
+  cost: 3_000, leadDays: 2, weekdays: [5, 6] as readonly number[], perWeek: 1, minLevel: 3,
+  /** Refund share when cancelled before the day. */
+  refund: 0.8,
+  /** The course is closed to the public from `from` to `to` o'clock (reason "Race day"); spectators are called in at these hours (top-ups). */
+  from: 10, to: 14, spectatorHours: [10, 11, 12] as readonly number[],
+  /** Race field (inclusive range) of a club race and of a World Cup day. */
+  field: [20, 30] as readonly [number, number], fieldWorldCup: [36, 48] as readonly [number, number],
+  /** Entry fee per racer (dollars), income category `recreation`. */
+  entryFee: 15, entryFeeWorldCup: 25,
+  /** Extra arrivals on the race day itself (a club race is a small draw; the World Cup keeps its own festival multiplier). */
+  arrivalMult: 1.1,
+  /** Spectators (existing guests): cap per race, by course colour (a black course draws more). Hard ceiling 40. */
+  spectators: { club: { 3: 18, 4: 28 }, worldCup: { 3: 32, 4: 40 } } as Record<'club' | 'worldCup', Record<number, number>>,
+  maxSpectators: 40,
+  /** Spectators sent per hour at most (the crowd builds up). */
+  perWave: 16,
+  /** Candidates must be within this many tiles of the Timing Hut. */
+  radius: 40,
+  /** Spectators who watched get this much hungry afterwards (they eat and drink at the nearby shops). */
+  hungerAfter: 0.35,
+  /** The sponsor rating bonus fades linearly over this many days. */
+  bonusDays: 14,
+  /** World Cup on a BLACK course draws a little more (festival arrival multiplier x). */
+  worldCupBlackMult: 1.08,
+  /** A race day earns (fees + sponsor + shop income of the day) at most this much more than a normal Saturday. */
+  earnCapVsSaturday: 1.5,
+  /** Results kept (latest first). */
+  keepResults: 6,
+  /** Fictional racer names (a first initial + one of these). */
+  winners: ['Berger', 'Huber', 'Steiner', 'Moser-Alm', 'Kofler', 'Egger', 'Lindner', 'Vogl', 'Haas', 'Brandt', 'Wieser', 'Pichler'] as readonly string[],
+  /** News texts. */
+  reasons: { cancelled: 'Race day cancelled: the course is not ready' },
+} as const;
+export type RaceKind = 'club' | 'worldCup';
+
 export type CourseReason = keyof typeof RACE.reasons;

@@ -1,6 +1,7 @@
 import { createSim, type Sim } from '../../../src/game/createSim';
 import { placeBuilding } from '../../../src/sim/PlaceBuilding';
 import { Layer } from '../../../src/world/Networks';
+import { hourOfDay, weekdayOf } from '../../../src/sim/Clock';
 import type { Run } from '../../../src/world/Runs';
 
 export const mkWinter = (seed = 61): Sim => {
@@ -45,3 +46,17 @@ export function prepareCourse(s: Sim, stored = 2): number {
   s.tick(1);
   return s.names.pisteId(mainRun(s));
 }
+
+export const absDay = (s: Sim): number => s.game.date.year * 180 + s.game.date.day;
+const hourNow = (s: Sim): number => hourOfDay(s.game.date);
+/** Tick until the sim clock reads `day` at `hour` (never past). */
+export function advanceTo(s: Sim, day: number, hour: number): void {
+  for (let g = 0; g < 240 * 30 && (absDay(s) < day || (absDay(s) === day && hourNow(s) < hour)); g++) s.tick(1);
+}
+/** First Saturday at least `ahead` days from now (weekday 5). */
+export const nextSaturday = (s: Sim, ahead = 2): number => { let d = absDay(s) + ahead; while (weekdayOf({ year: 0, day: d }) !== 5) d++; return d; };
+export function raceFixture(stored = 2, seed = 61): { s: Sim; id: number } {
+  const f = courseFixture(stored, seed); f.s.setRunCourse(f.id, true); f.s.guestSim.spawner.rateMult = 4; f.s.tick(1);
+  return { s: f.s, id: f.id };
+}
+

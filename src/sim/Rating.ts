@@ -31,6 +31,8 @@ export interface RatingInput {
   sustainability?: { score: number; hint: string };
   /** Facilities facet (Task 8): toilet cover + comfort satisfaction, 0..100 + hint. Absent (comfort need off, older tests) = left out and the other weights renormalised. */
   facilities?: { score: number; hint: string };
+  /** Race-day sponsor bonus (0.8.1): rating points 0..1 (at most +0.05 stars), fading over two weeks. Absent / 0 = none (hashes of resorts without a race day are unchanged). */
+  eventBonus?: number;
 }
 
 /** Component hints that are good news, not advice (the advisor never shows them as a to-do). */
@@ -124,6 +126,7 @@ export function scoreInput(i: RatingInput): RatingBreakdown {
   if (am.lodgingDemand > 0) bonus += 3 * clamp(am.lodgingCapacity / am.lodgingDemand); else bonus += Math.min(3, am.lodgingCapacity / 40);
   if (am.lodgingDemand > 0 && am.lodgingCapacity < am.lodgingDemand * 0.5) bonusHints.push('More lodging');
   if (i.scenery !== undefined) { bonus += 2 * clamp(i.scenery); if (i.scenery < 0.15) bonusHints.push('Plant trees or add farms for scenery'); }
+  if (i.eventBonus && i.eventBonus > 0) bonus += Math.min(1, i.eventBonus);
   score += bonus;
 
   // unresolved incidents heavily hit the total on top of the component

@@ -768,7 +768,7 @@ const visitorView = new VisitorView(grid, sim.visitor, () => game.date.year * DA
 renderer.scene.add(visitorView.group);
 const weddingView = new WeddingView(grid, sim.wedding, () => game.date.year * DAYS_PER_YEAR * 1440 + game.date.day * 1440 + game.date.minute); // chapel wedding party (docs/chapel.md): up to six small figures, nothing while no wedding is on
 renderer.scene.add(weddingView.group);
-const raceCourseView = new RaceCourseView(grid, sim.race, () => (game.date.year * DAYS_PER_YEAR + game.date.day) * 24 + Math.floor(game.date.minute / 60), (c) => sim.names.pisteName(c.run)); // race course gates + timing boards (docs/race-course.md): 3 draw calls for every course
+const raceCourseView = new RaceCourseView(grid, sim.race, () => (game.date.year * DAYS_PER_YEAR + game.date.day) * 24 + Math.floor(game.date.minute / 60), (c) => sim.names.pisteName(c.run), sim.raceDay); // race course gates + timing boards (docs/race-course.md): 3 draw calls for every course
 renderer.scene.add(raceCourseView.group);
 // The visitor's call (audio/visitorCall.ts): a global quiet call at the sighting (pending until the audio is unlocked), a spatial one when the camera is near, again on 'Show me'. Pan = where it is on screen.
 const visitorCalls = new VisitorCalls((o) => audioRef?.sfx.play('distantCall', o) ?? false, () => performance.now() / 1000);
@@ -2598,9 +2598,10 @@ if (ui && !DEMO) {
   const mktPanel = el('st-marketing');
   const evPanel = el('st-events');
   evPanel.bind({
-    view: () => { const v = buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money), bd = sim.visitor.buzzDaysLeft(); return bd > 0 ? { ...v, buzz: { text: `Mountain buzz +10% visitors (${bd} day${bd === 1 ? '' : 's'} left)` } } : v; },
+    view: () => { const v = buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money, { raceDay: sim.raceDay, courses: sim.race.courses(), courseName: (c) => sim.names.pisteName(c.run) }), bd = sim.visitor.buzzDaysLeft(); return bd > 0 ? { ...v, buzz: { text: `Mountain buzz +10% visitors (${bd} day${bd === 1 ? '' : 's'} left)` } } : v; },
     book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
-    cancel: (id, start) => { if (!sim.events.cancel(id as FestivalId, start)) return 'Cannot cancel'; refreshUi(); return null; },
+    bookRace: (course, start) => { const why = sim.bookRaceDay(course, start); if (why) return why; toast('Club Race booked.'); refreshUi(); return null; },
+    cancel: (id, start) => { const ok = id.startsWith('raceDay:') ? sim.raceDay.cancel(Number(id.slice(8)), start) : sim.events.cancel(id as FestivalId, start); if (!ok) return 'Cannot cancel'; refreshUi(); return null; },
     showMe: (what, id) => {
       const st = festivalDressing.layouts.find((l) => l.festival === id)?.stage;
       if (what === 'stage' && st) goTo({ x: st.x - 0.5, y: st.z - 0.5 });

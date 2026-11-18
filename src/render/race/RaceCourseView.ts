@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Grid } from '@/world/Grid';
 import type { RaceCourse, CourseInfo } from '@/sim/race/RaceCourse';
+import type { RaceDay } from '@/sim/race/RaceDay';
 import { courseGates, fmtTime } from '@/sim/race/RaceCourse';
 import { surfaceHeightAt } from '@/render/meshes/Paths';
 
@@ -16,8 +17,10 @@ export const GATE_TRIS = 14;
 
 export { fmtTime };
 /** The three lines of a board (pure: tested). */
-export function boardLines(name: string, bestMs: number | null, racers: number): [string, string, string] {
-  return [name.slice(0, 16).toUpperCase(), bestMs === null ? 'BEST --:--.-' : `BEST ${fmtTime(bestMs)}`, `RACERS ${racers}`];
+export function boardLines(name: string, bestMs: number | null, racers: number, race?: { winnerMs: number | null; sponsor: string | null; live: boolean }): [string, string, string] {
+  // Race days (0.8.1): while a race runs the second line says so; after it the winner's time stays up; the sponsor takes the third line.
+  const l2 = race?.live ? 'RACE DAY - LIVE' : race?.winnerMs != null ? `WIN ${fmtTime(race.winnerMs)}` : bestMs === null ? 'BEST --:--.-' : `BEST ${fmtTime(bestMs)}`;
+  return [name.slice(0, 16).toUpperCase(), l2, race?.sponsor ? race.sponsor.toUpperCase().slice(0, 28) : `RACERS ${racers}`];
 }
 
 export class RaceCourseView {
@@ -35,7 +38,7 @@ export class RaceCourseView {
   private geos: THREE.BufferGeometry[] = [];
   private colour = new THREE.Color();
 
-  constructor(private grid: Grid, private race: RaceCourse, private hourStamp: () => number, private nameOf: (c: CourseInfo) => string) {
+  constructor(private grid: Grid, private race: RaceCourse, private hourStamp: () => number, private nameOf: (c: CourseInfo) => string, private raceDay?: RaceDay) {
     this.group.name = 'raceCourse';
     const poleGeo = new THREE.BoxGeometry(0.035, 0.6, 0.035); poleGeo.translate(0, 0.3, 0);
     const flagGeo = new THREE.PlaneGeometry(0.3, 0.17); flagGeo.translate(0.15, 0.5, 0);
@@ -69,7 +72,7 @@ export class RaceCourseView {
     const list = this.race.courses().filter((c) => c.valid);
     const sig = list.map((c) => `${c.id}:${c.run.tiles.length}:${c.run.poly.length}:${c.run.difficulty}`).join('|');
     if (sig !== this.sig) { this.sig = sig; this.rebuildGates(list); this.boardSig = ''; }
-    const bsig = `${this.hourStamp()}|${this.race.version}|${list.map((c) => `${c.id}${c.timing ? `${c.timing.x},${c.timing.y},${c.timing.rot ?? 0}` : ''}`).join('|')}`;
+    const bsig = `${this.hourStamp()}|${this.race.version}|${this.raceDay?.version ?? 0}|${list.map((c) => `${c.id}${c.timing ? `${c.timing.x},${c.timing.y},${c.timing.rot ?? 0}` : ''}`).join('|')}`;
     if (bsig !== this.boardSig) { this.boardSig = bsig; this.redrawBoards(list); }
   }
 
@@ -107,7 +110,7 @@ export class RaceCourseView {
         corners.forEach(([a, b], i) => pos.setXYZ(k * 4 + i, cx + rx * a * hw + fx * off, y + b * hh, cz + rz * a * hw + fz * off));
       }
       if (ctx) {
-        const [l1, l2, l3] = boardLines(this.nameOf(c), this.race.bestMs(c.id), this.race.racersToday());
+        const [l1, l2, l3] = boardLines(this.nameOf(c), this.race.bestMs(c.id), this.race.racersToday(), this.raceDay ? { winnerMs: ((r) => (r && Math.floor(this.hourStamp() / 24) - r.day <= 3 ? r.winnerMs : null))(this.raceDay.lastResult(c.id)), sponsor: this.raceDay.sponsorOf(c.id)?.name ?? null, live: this.raceDay.raceOn(c.id) } : undefined);
         const oy = slot * SLOT_H;
         ctx.fillStyle = '#f5d90a'; ctx.font = 'bold 15px sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(l1, 8, oy + 12);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px monospace'; ctx.fillText(l2, 8, oy + 34);

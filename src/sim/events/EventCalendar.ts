@@ -40,6 +40,10 @@ export interface CalendarDeps {
   gate?: (minLevel: number) => string | null;
   hasLodge: () => boolean;
   hasBlackPiste: () => boolean;
+  /** A valid race course on a red or black run (World Cup, 0.8.1). Absent = no restriction (older fixtures keep the black-piste rule). */
+  hasRaceCourse?: () => boolean;
+  /** Extra World Cup arrival multiplier (a BLACK course draws more; 1 = none). */
+  worldCupBonus?: () => number;
   /** A gondola or cable car stands in the resort (Mountain Concert). Absent = no restriction (older fixtures). */
   hasGondola?: () => boolean;
   /** A village street (CARNIVAL.streetTiles connected road / path tiles) stands near the base (Carnival). Absent = no restriction (older fixtures). */
@@ -133,7 +137,7 @@ export class EventCalendar {
   /** Product of every running event's arrival multiplier and the review effect (exactly 1 with nothing on). */
   arrivalMult(day = this.d.today()): number {
     let m = 1;
-    for (const e of this.active(day)) m *= e.def.arrivalMult;
+    for (const e of this.active(day)) { m *= e.def.arrivalMult; if (e.id === 'worldCup' && this.d.worldCupBonus) m *= this.d.worldCupBonus(); }
     if (this.buff && day < this.buff.until) m *= this.buff.mult;
     return m;
   }
@@ -202,6 +206,7 @@ export class EventCalendar {
     if (this.d.stars() < def.minStars) return `Needs ${def.minStars} stars`;
     if (def.needs.includes('lodge') && !this.d.hasLodge()) return 'Needs a Base Lodge';
     if (def.needs.includes('blackPiste') && !this.d.hasBlackPiste()) return 'Needs a black piste';
+    if (def.needs.includes('raceCourse') && !(this.d.hasRaceCourse ? this.d.hasRaceCourse() : this.d.hasBlackPiste())) return this.d.hasRaceCourse ? 'Needs a race course on a red or black run' : 'Needs a black piste'; // fixtures without the race wiring keep the old black-piste rule
     if (def.needs.includes('gondola') && this.d.hasGondola && !this.d.hasGondola()) return 'Needs a gondola or cable car';
     if (def.needs.includes('street') && this.d.hasStreet && !this.d.hasStreet()) return `Needs a village street (${CARNIVAL.streetTiles}+ road or path tiles in a row)`;
     return null;

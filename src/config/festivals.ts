@@ -31,7 +31,7 @@ export interface DressingSpec {
   palette: readonly number[];
 }
 
-export type FestivalNeed = 'lodge' | 'blackPiste' | 'gondola' | 'street';
+export type FestivalNeed = 'lodge' | 'blackPiste' | 'gondola' | 'street' | 'raceCourse';
 
 /**
  * Carnival (M7.4; upgrade of the old 'Winter Carnival', docs/festivals.md "Carnival"): an EU mountain-village carnival around Shrove Tuesday. The calendar is label-only, so
@@ -121,8 +121,8 @@ export const FESTIVALS: readonly FestivalDef[] = [
     fireworks: 'none',
   },
   {
-    id: 'worldCup', name: 'World Cup Race', icon: '🏆', kind: 'booked', seasons: ['winter'], startWindow: [140, 164], days: 3, leadDays: 5, cost: 15_000, arrivalMult: 1.3, cheer: 0.01, minStars: 3.5, minLevel: 4, needs: ['lodge', 'blackPiste'],
-    blurb: 'Racers on a black piste, a grandstand and a finish banner. Needs a black piste.',
+    id: 'worldCup', name: 'World Cup Race', icon: '🏆', kind: 'booked', seasons: ['winter'], startWindow: [140, 164], days: 3, leadDays: 5, cost: 15_000, arrivalMult: 1.3, cheer: 0.01, minStars: 3.5, minLevel: 4, needs: ['lodge', 'raceCourse'],
+    blurb: 'The world\'s best racers on YOUR race course: a grandstand by the Timing Hut, a finish banner and a crowd on the hill every day from 10:00 to 14:00. Needs a race course on a red or black run (a black course draws more).',
     dressing: { bunting: [8, 12], flags: [8, 10], banners: [1, 2], stalls: [0, 0], procession: { kind: 'racer', count: [6, 8] }, grandstand: true, palette: WARM },
     fireworks: 'finale',
   },

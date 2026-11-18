@@ -15,7 +15,11 @@ export function dressingWorldOf(sim: Sim): DressingWorld {
   for (const l of sim.lifts.all()) if (l.bottom.ground < lowest) { lowest = l.bottom.ground; base = { x: l.bottom.x + 0.5, y: l.bottom.y + 0.5 }; }
   const black = (i: number): boolean => ((networks.layers[i] ?? 0) & 1) !== 0 && (networks.kind[i] ?? 0) === 0 && networks.difficulty[i] === 3;
   const alt = (i: number): number => grid.getCorner(i % N, (i / N) | 0);
-  const racerLine = sim.events.active().some((e) => e.id === 'worldCup') ? blackPisteLine(black, alt, N) : [];
+  // World Cup (0.8.1): the racers run the player's race course (a black one first) and the grandstand + finish banner sit by its Timing Hut; a save with a World Cup booked
+  // but no course keeps the old black-piste line.
+  const wc = sim.events.active().some((e) => e.id === 'worldCup');
+  const course = wc ? sim.race.courses().filter((c) => c.valid && c.timing).sort((a, b) => b.run.difficulty - a.run.difficulty || a.id - b.id)[0] : undefined;
+  const racerLine = !wc ? [] : course ? course.run.poly.map((t) => ({ x: t % N, y: (t / N) | 0 })) : blackPisteLine(black, alt, N);
   // Mountain concert anchors (Task 41): gondola / cable car top stations, viewpoint buildings, mid-station plazas
   const liftTops: Array<{ x: number; y: number }> = [], midStations: Array<{ x: number; y: number }> = [];
   for (const l of sim.lifts.all()) {
@@ -30,6 +34,6 @@ export function dressingWorldOf(sim: Sim): DressingWorld {
     size: N, kind: (i) => networks.kind[i] ?? 0, isWater: (i) => isWaterType(grid.tileType[i]!), isBuilding: (i) => ((grid.occupancy.flags[i] ?? 0) & (OccFlag.Building | OccFlag.Lift)) !== 0, // roads / paths / pistes also set flags: those tiles are exactly where the dressing goes
     steep: (i) => { const x = i % N, y = (i / N) | 0; return Math.abs(grid.getCorner(x, y) - grid.getCorner(Math.min(N - 1, x + 1), Math.min(N - 1, y + 1))) > 1.2; },
     station: base, village: { x: va.x, y: va.y }, lodge: lodge ? { x: lodge.x + lodge.w / 2, y: lodge.y + lodge.h / 2 } : null,
-    finish: racerLine.length ? racerLine[racerLine.length - 1]! : null, racerLine,
+    finish: racerLine.length ? racerLine[racerLine.length - 1]! : null, racerLine, // the foot of the course = beside its Timing Hut (reach <= 2 tiles)
   };
 }

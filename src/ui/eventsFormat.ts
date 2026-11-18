@@ -1,6 +1,11 @@
 import { DAYS_PER_MONTH, DAYS_PER_YEAR } from '../config/balance';
 import { BOOKABLE_FESTIVALS, FESTIVAL_BY_ID, type FestivalDef, type FestivalId } from '../config/festivals';
 import type { EventCalendar } from '../sim/events/EventCalendar';
+import type { RaceDay } from '../sim/race/RaceDay';
+import type { CourseInfo } from '../sim/race/RaceCourse';
+import { fmtTime } from '../sim/race/RaceCourse';
+import { RACE, RACE_DAY } from '../config/race';
+import { weekdayOf } from '../sim/Clock';
 
 import { SIM_MONTHS_SHORT, REAL_MONTHS_SHORT, SEASON_OF_REAL_MONTH, dayOfYearLabel, formatGameDate, realMonthOfDay } from '../sim/calendar';
 import type { SeasonId } from '../core/events';
@@ -14,7 +19,7 @@ export function dayLabel(abs: number, todayYear?: number): string {
 }
 export const rangeLabel = (start: number, end: number, todayYear?: number): string => (end - start <= 1 ? dayLabel(start, todayYear) : `${dayLabel(start, todayYear)} – ${dayLabel(end - 1, todayYear)}`);
 
-export interface EventsRow { id: FestivalId; name: string; icon: string; when: string; note: string; booked: boolean; start: number; cancellable: boolean; /** The running event has a stage the camera can go to. */ stage?: boolean }
+export interface EventsRow { id: string; name: string; icon: string; when: string; note: string; booked: boolean; start: number; cancellable: boolean; /** The running event has a stage the camera can go to. */ stage?: boolean }
 export interface FestivalCard {
   def: FestivalDef;
   /** Start days offered (a few per window) with the reason each cannot be booked (null = bookable). */
@@ -32,7 +37,19 @@ export const countdown = (days: number): string => (days <= 0 ? 'today' : days =
 /** One month of the strip (real order January..December): season, whether today is in it and the events that start in it. */
 export interface MonthStripCell { month: string; season: SeasonId; today: boolean; events: Array<{ id: FestivalId; icon: string; name: string }> }
 
+/** Club Race card (0.8.1): one date list per race course, with the reason a date cannot be booked. */
+export interface RaceDayCard {
+  cost: number;
+  /** Level gate etc. regardless of the date / course; null = none. */
+  general: string | null;
+  courses: Array<{ id: number; name: string; difficulty: number; valid: boolean; reason: string | null; sponsor: string | null; last: string | null }>;
+  options: Record<number, Array<{ start: number; label: string; blocker: string | null }>>;
+}
+export interface RaceDayInfo { raceDay: RaceDay; courses: readonly CourseInfo[]; courseName(c: CourseInfo): string }
+const WEEKDAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export interface EventsView {
+  raceDayCard?: RaceDayCard;
   todayLabel: string;
   /** Persistent-style date, 'Sat 14 Feb · Winter · Year 1'. */
   todayChip: string;
@@ -48,7 +65,7 @@ export interface EventsView {
 }
 
 /** Pure view model of the calendar for the Events panel. */
-export function buildEventsView(cal: EventCalendar, today: number, funds: number): EventsView {
+export function buildEventsView(cal: EventCalendar, today: number, funds: number, race?: RaceDayInfo): EventsView {
   const year = Math.floor(today / DAYS_PER_YEAR);
   const running: EventsRow[] = cal.active(today).filter((e) => e.id !== 'critic').map((e) => ({
     id: e.id, name: e.def.name, icon: e.def.icon, when: rangeLabel(e.start, e.end, year), note: e.days > 1 ? `day ${e.dayIndex + 1} of ${e.days}` : 'today', booked: !e.auto, start: e.start, cancellable: false, ...(e.def.dressing?.stage ? { stage: true } : {}),
@@ -56,6 +73,26 @@ export function buildEventsView(cal: EventCalendar, today: number, funds: number
   const upcoming: EventsRow[] = cal.upcoming().filter((u) => u.start > today).map((u) => ({
     id: u.id, name: u.def.name, icon: u.def.icon, when: rangeLabel(u.start, u.end, year), note: countdown(u.daysAway), booked: u.booked, start: u.start, cancellable: u.booked,
   }));
+  let raceDayCard: RaceDayCard | undefined;
+  if (race) {
+    const rd = race.raceDay;
+    const s = rd.session;
+    if (s) running.push({ id: `raceDay:${s.course}`, name: `${s.kind === 'club' ? 'Club Race' : 'World Cup race'} · ${s.name}`, icon: '🏁', when: dayLabel(s.day, year), note: `${s.field} racers · ${s.spectators.length} watching · until ${RACE_DAY.to}:00`, booked: s.kind === 'club', start: s.day, cancellable: false });
+    for (const b of rd.bookings) { const c = race.courses.find((x) => x.id === b.course); upcoming.push({ id: `raceDay:${b.course}`, name: `Club Race${c ? ` · ${race.courseName(c)}` : ''}`, icon: '🏁', when: dayLabel(b.day, year), note: countdown(b.day - today), booked: true, start: b.day, cancellable: b.day > today }); }
+    upcoming.sort((a, b) => a.start - b.start);
+    const marked = race.courses;
+    const options: RaceDayCard['options'] = {};
+    for (const c of marked) {
+      const o: Array<{ start: number; label: string; blocker: string | null }> = [];
+      for (let k = RACE_DAY.leadDays; k < 60 && o.length < 12; k++) { const d = today + k, wd = weekdayOf({ year: 0, day: d }); if (!RACE_DAY.weekdays.includes(wd)) continue; if (rd.blocker(c.id, d) === 'Only in winter') continue; o.push({ start: d, label: `${WEEKDAY[wd]} ${dayLabel(d, year)}`, blocker: rd.blocker(c.id, d) }); }
+      options[c.id] = o;
+    }
+    raceDayCard = {
+      cost: RACE_DAY.cost, general: marked.length ? rd.requirement() : 'Mark a run as a race course first (Operations > Runs)',
+      courses: marked.map((c) => { const r = rd.lastResult(c.id), sp = rd.sponsorOf(c.id); return { id: c.id, name: race.courseName(c), difficulty: c.run.difficulty, valid: c.valid, reason: c.reason ? RACE.reasons[c.reason] : null, sponsor: sp?.name ?? null, last: r ? `${r.winner} ${fmtTime(r.winnerMs)}` : null }; }),
+      options,
+    };
+  }
   const cards = BOOKABLE_FESTIVALS.map((def): FestivalCard => {
     const opts = cal.startOptions(def.id, Math.max(1, Math.floor(def.days / 2)));
     const options = opts.slice(0, 40).map((start) => ({ start, label: dayLabel(start, year), blocker: cal.blocker(def.id, start) }));
@@ -73,6 +110,7 @@ export function buildEventsView(cal: EventCalendar, today: number, funds: number
   for (const e of cal.active(today)) if (e.id !== 'critic') mark(e.id, e.def, today);
   for (const u of cal.upcoming(DAYS_PER_YEAR)) if (u.id !== 'critic') mark(u.id, u.def, u.start);
   return {
+    ...(raceDayCard ? { raceDayCard } : {}),
     todayLabel: f.chip, todayChip: f.chip, strip, running, upcoming, cards,
     review: cal.lastReview ? { score: cal.lastReview.score, when: dayLabel(cal.lastReview.day, year) } : null,
     nextCritic: null,

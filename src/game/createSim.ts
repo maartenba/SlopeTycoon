@@ -10,7 +10,7 @@ import { createOps, Reservoirs, SNOWMAKING, qualityPreference, qualityInjuryScal
 import { TileConditions } from '../sim/TileConditions';
 import { OpenStatus } from '../sim/OpenStatus';
 import { constructionMultiplierAt, worldScaleFor } from '../sim/Season';
-import { seasonOf, hourOfDay, jumpTo, seasonStartDay, monthIndex } from '../sim/Clock';
+import { seasonOf, hourOfDay, jumpTo, seasonStartDay, monthIndex, weekdayOf } from '../sim/Clock';
 import { nightWarp } from '../core/pacing';
 import { sunTimes } from '../sim/Daylight';
 import { Energy } from '../sim/Energy';
@@ -27,7 +27,8 @@ import { pisteReport, type PisteReport } from '../sim/PisteStats';
 import { RunIndex } from '../sim/Runs';
 import { RunSettings, type GroomMode } from '../sim/RunSettings';
 import { RaceCourse, fmtTime, lapQuota } from '../sim/race/RaceCourse';
-import { RACE } from '../config/race';
+import { RaceDay } from '../sim/race/RaceDay';
+import { RACE, RACE_DAY } from '../config/race';
 import { RACER_TYPE } from '../config/guestTypes';
 import type { Run, RunNetwork } from '../world/Runs';
 import { Economy } from '../sim/Economy';
@@ -780,6 +781,7 @@ export function createSim(opts: SimOptions) {
       qualityLike: (skill, q) => 0.5 + 0.5 * qualityPreference(skill, q),
       debt: () => finance.debtSeverity(),
       value: () => pricing.valueScore(),
+      eventBonus: () => raceDayRef?.ratingBonus() ?? 0,
       facilities: () => {
         if (!guestSim.comfortNeed) return undefined; // comfort need off: facet not measured (the other weights renormalise)
         const pt = (b: { x: number; y: number; w: number; h: number }): { x: number; y: number } => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
@@ -823,8 +825,9 @@ export function createSim(opts: SimOptions) {
   guestSim.onPhotoSession = (info) => photoBuzz.session(info);
   bus.on('day:changed', () => photoBuzz.newDay(game.date.year * DAYS_PER_YEAR + game.date.day));
   let visitorRef: Visitor | null = null; // rare visitor (built further down): its sighting buzz is one more arrival factor
+  let raceDayRef: RaceDay | null = null; // Race days (0.8.1): a club race day draws a few more guests; built further down
   let eventsRef: EventCalendar | null = null; // Events calendar (festival / critic / powder arrival effects), built further down
-  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * (visitorRef?.buzzMult() ?? 1) * photoBuzz.mult() * rivals.arrivalMult() * eco.arrivalMult());
+  guestSim.spawner.setAttractiveness((st) => rating.attractiveness(st.openLifts, seasonOf(game.date) === 'winter' ? undefined : offSeasonNoLiftFactor(st)) * safety.wildlife.arrivalFactor() * (buildings.all().some((b) => b.type === 'touristOffice' && b.active) ? TOURIST_OFFICE.arrivalMult : 1) * (eventsRef?.arrivalMult() ?? 1) * (raceDayRef?.arrivalMult() ?? 1) * (visitorRef?.buzzMult() ?? 1) * photoBuzz.mult() * rivals.arrivalMult() * eco.arrivalMult());
   pricing.bind({
     date: () => game.date,
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
@@ -1000,6 +1003,8 @@ export function createSim(opts: SimOptions) {
       blackCache = { day: absDay(), v };
       return v;
     },
+    hasRaceCourse: () => race.courses().some((c) => c.valid),
+    worldCupBonus: () => (race.courses().some((c) => c.valid && c.run.difficulty === 4) ? RACE_DAY.worldCupBlackMult : 1),
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
     hasHerd: () => nature.livestock.animals.length > 0,
     critic: () => { const x = safety.incidents.stats(); return { stars: rating.stars, happiness: avgHappiness(), openShare: openStatus.pisteStatuses().length ? openStatus.pisteStatuses().filter((p) => p.open).length / openStatus.pisteStatuses().length : 0, incidents: x.penalty > 0 ? 1 : 0 }; },
@@ -1008,6 +1013,31 @@ export function createSim(opts: SimOptions) {
     seed, auto: opts.autoEvents !== false,
   });
   eventsRef = events;
+  // Race days (0.8.1, docs/race-course.md "Race days"): the Club Race the player books on a weekend, the World Cup race on the course, spectators and the sponsor.
+  const raceDay = new RaceDay({
+    seed, day: absDay,
+    weekday: (a) => weekdayOf({ year: 0, day: a }),
+    inSeason: (a) => seasonOf({ day: ((a % DAYS_PER_YEAR) + DAYS_PER_YEAR) % DAYS_PER_YEAR }) === 'winter',
+    gate: (lvl) => (progression.open || progression.level >= lvl ? null : lockedReason(lvl)),
+    funds: () => game.money, pay: (a) => { economy.spend('marketing', a); return true; }, refund: (a) => { economy.refund(a, 'marketing'); },
+    earn: (cat, a) => economy.earn(cat, a),
+    courses: () => race.courses(), courseName: (c) => names.pisteName(c.run),
+    worldCupToday: () => events.active().some((e) => e.id === 'worldCup'),
+    worldCupOn: (a) => events.active(a).some((e) => e.id === 'worldCup') || events.booked.some((b) => b.id === 'worldCup' && a >= b.start && a < b.end),
+    close: (c, ticks) => openStatus.closeTiles([...c.run.tiles], 'Race day', safety.incidents.nowTick ?? 0, ticks),
+    send: (c, n, taken) => {
+      const t = c.timing; if (!t) return [];
+      const hut = buildings.all().find((b) => b.type === 'timingHut' && b.active && b.x === t.x && b.y === t.y); if (!hut) return [];
+      return guestSim.sendSpectators(t.x + t.w / 2, t.y + t.h / 2, RACE_DAY.radius, n, taken, hut.id);
+    },
+    fed: (ids) => { const st = guestSim.store; for (const id of ids) { const i = st.slotOf(id); if (i >= 0 && st.alive[i]) st.hunger[i] = Math.min(1, st.hunger[i]! + RACE_DAY.hungerAfter); } },
+    news: (m) => toast(m, 'info', 'building'),
+  }, RACE.boardBaseS, RACE.boardMps);
+  raceDayRef = raceDay;
+  guestSim.spectateUntil = (id) => (raceDay.session && raceDay.session.spectators.includes(id) ? RACE_DAY.to : null);
+  bus.on('time:hour', (e) => raceDay.onHour(e.hour));
+  bus.on('day:changed', () => raceDay.onDay());
+  const bookRaceDay = (course: number, day: number): string | null => { const why = raceDay.blocker(course, day); if (why) return why; return raceDay.book(course, day) ? null : 'Not enough cash'; };
   // Story guests (M5.4 Task 22): observer module polled at the end of every guest tick; own RNG; on unless `stories: false`.
   const storyCache = { day: -1, black: false, trail: false };
   const storyHas = (need: 'black' | 'meal' | 'apres' | 'school' | 'trail'): boolean => {
@@ -1359,7 +1389,7 @@ export function createSim(opts: SimOptions) {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
-    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, race, setRunCourse, runList, setRunClosed, setRunGroomMode, renameRun,
+    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, race, raceDay, bookRaceDay, setRunCourse, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,

@@ -19,7 +19,7 @@ describe('piste difficulty code mapping', () => {
   it('majority wins; steepness gives the stored code the festival / world-cup code expects (Black = 3)', () => {
     expect(pisteDifficulty([0, 1, 2, 3], [3, 3, 1, 0])).toBe(4);
     expect(difficultyFromSteepness(2)).toBe(3);
-    expect(FESTIVAL_BY_ID.worldCup.needs).toContain('blackPiste');
+    expect(FESTIVAL_BY_ID.worldCup.needs).toContain('raceCourse'); // 0.8.1: the World Cup needs a race course on a red or black run (a black one draws more)
   });
 });
 
