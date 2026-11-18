@@ -31,6 +31,7 @@ const css = `
 .warn{color:#ffb070}.ok{color:#8fd88f}.bad{color:#ff9a8a}.muted{color:#aab}
 h4{margin:2px 0;font-size:12px;color:#ffd070}
 st-select{min-width:120px}
+@media (max-width:520px),(max-height:520px){[data-role="race-day-card"] button,[data-role="race-day-card"] st-select{min-height:44px}[data-role="race-day-book"]{min-width:44px}}
 `;
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''): HTMLElementTagNameMap[K] => {
   const e = document.createElement(tag);

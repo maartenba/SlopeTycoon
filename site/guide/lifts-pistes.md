@@ -97,6 +97,14 @@ A red or black run with at least 60 m of drop can be a **race course** (unlocked
 
 **Racers** are a winter guest type that come to train on your course: they ski it faster, a few laps each, pay a small course fee on their first lap of the day and eat at your lodges. They like **fresh snow**: groom the course every night (set the run to *Groom first*) or fewer come; a **black** course draws more than a red one. Other skiers may still use the run. A closed course (by you, the weather or no snow) simply stops attracting racers. You can mark up to three courses. The huts are a small cost centre that pays back slowly, so build them for the look and the atmosphere, not for the money.
 
+### Race days, spectators and sponsors
+
+With a race course you can book a **Club Race**: open **Marketing**, find **Race day** in the Events panel, pick the course and a Saturday or Sunday (winter only, at least two days ahead, one a week, $3,000). At 10:00 the run closes to everyone else with the reason *Race day*, a field of 20 to 30 racers starts, and at 14:00 the run opens again. The winner's time goes on the timing board (*RACE DAY - LIVE* while it runs, *WIN 1:12.4* for a few days after) and into the news. If the course is closed or no longer valid at 10:00, the race is cancelled and you get the fee back.
+
+**Spectators** are your own guests: some walk to the Timing Hut, stand around the finish until 14:00 and are hungry afterwards, so the lodges, cafes and kiosks near the finish sell more. Up to 18 come to a club race on a red course and 28 on a black one. A race day brings a few more guests that day, and it earns clearly less than it costs: think of it as a show for the guests, not a money machine.
+
+Every course gets one **sponsor**, a made-up Alpine company such as a cheese dairy, a ski-wax maker or a mountain bakery. It pays a little for each race, its name is on the board and in the news, and it gives the resort a very small rating boost (at most 0.05 stars) that fades over two weeks. The **World Cup** now needs a race course on a red or black run and is raced on it every day; a **black** course draws a bigger crowd.
+
 ### Slope profile and *Suggest a run*
 
 While you drag a piste or place a lift a small **profile card** shows the ground as a side view: altitude over distance, coloured by difficulty tile by tile, with today's **snowline** as a dashed line, plus length, drop and the average and steepest gradient. It tells you before you pay whether a "green" run is really green and whether the bottom will be bare in warm weather.

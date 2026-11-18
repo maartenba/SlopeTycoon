@@ -16,12 +16,12 @@ Dates use the real calendar of `docs/time-flow.md` "Calendar" (15-day months, si
 | Summer Music Festival | booked | start 1 Jun - 11 Aug (sim day 30-70) | 4 | $6,000 | x1.35 | Base Lodge, 3 stars, level 3 |
 | Mountain Concert | booked | summer: start 1-10 Sep (sim day 75-84) | 2 | $9,000 | x1.25 | gondola or cable car, 3 stars, level 3 |
 | Snow Concert | booked | winter: start 1-15 Mar (sim day 165-178), a late-season spring-skiing concert | 2 | $9,000 | x1.25 | gondola or cable car, 3 stars, level 3 |
-| World Cup Race | booked | start 6 Jan - 15 Feb (sim day 140-164) | 3 | $15,000 | x1.30 | Base Lodge, a black piste, 3.5 stars, level 4 |
+| World Cup Race | booked | start 6 Jan - 15 Feb (sim day 140-164) | 3 | $15,000 | x1.30 (x1.40 on a black course) | Base Lodge, a race course on a red or black run (`docs/race-course.md`), 3.5 stars, level 4 |
 | New Year | automatic | the last day of December (the eve, 'Dec 15', sim day 134) and 1 January | 2 | - | x1.10 | - |
 | Critic visit | automatic | every 80-140 days, **announced 3 days ahead** (a news item) | 1 | - | review effect | - |
 | Powder day | automatic | a snowfall >= `POWDER.minIntensity` in winter, 8-day cooldown | 1 | - | x1.20 | - |
 
-A booking needs `leadDays` of notice, the right season and start window, no overlap with another booking, the level gate (Career), the stars, the lodge / black piste and the cash. Cancelling before the start refunds 80 %. Bookings pay into the `marketing` ledger category. While a festival runs every guest gets a small daily happiness cheer (`cheer`), and the spawner's attractiveness is multiplied by `EventCalendar.arrivalMult()` (exactly 1 with nothing on).
+A booking needs `leadDays` of notice, the right season and start window, no overlap with another booking, the level gate (Career), the stars, the lodge / race course (World Cup; was a black piste before 0.8.1) / black piste and the cash. Cancelling before the start refunds 80 %. Bookings pay into the `marketing` ledger category. While a festival runs every guest gets a small daily happiness cheer (`cheer`), and the spawner's attractiveness is multiplied by `EventCalendar.arrivalMult()` (exactly 1 with nothing on).
 
 **Critic score** (`criticScore`): `0.6 x stars + 1.25 x guest mood + 0.75 x open-piste share - 0.5 if incidents are open`, rounded to half steps, clamped 0..5. A score >= 4 gives x1.12 arrivals for 10 days, <= 2 gives x0.92, anything between changes nothing.
 
@@ -46,7 +46,7 @@ Why it was easy to miss: it only exists with an Alpine Farm, the first autumn of
 * **poles** on both road edges (inside the road tile) with **bunting** strings between neighbours (re-uses the village `pennant` / `cord` geometry) and **flags** on some poles;
 * **banners** spanning the road, carrying the festival name (one shared canvas atlas, one row per label);
 * **market stalls** on the nearest free, non-steep tiles beside the road, facing it;
-* World Cup: a **grandstand** and **finish arch** at the foot of the black piste, racers on its line (`blackPisteLine`);
+* World Cup (0.8.1): a **grandstand** and **finish arch** at the foot of the player's **race course**, beside its Timing Hut, racers on the course line; saves with a World Cup booked and no course keep the old black-piste line (`blackPisteLine`). Each day also runs a real 10:00-14:00 race with spectators and a sponsor (`docs/race-course.md` "Race days");
 * the **procession loop** (out along one edge of the road, back along the other).
 
 Nothing stands on water, buildings or tiles another festival already took (`taken`). Everything is **view only**: no Occupancy, no pathing, no sim effect (tested: occupancy flags and the nav terrain version are unchanged). A separate render RNG is used (`renderRng`), never the sim RNG.
@@ -104,5 +104,5 @@ Module `events` v1 (booked festivals, history, critic schedule + notice flag, re
 ## Not covered / limits
 
 * `Sparkles.ts` (subtle glitter) from the original file list was not built: the fireworks + dressing cover the brief.
-* The World Cup racers / grandstand are covered by unit tests but were not photographed (the starter resort has no black piste).
+* The World Cup racers / grandstand on the player's course are photographed by `npm run race:sanity -- --shots 1` (0.8.1); the old black-piste fallback is unit-tested only.
 * Real GPU frame rate of the dressing is unmeasured (the harness runs SwiftShader); the draw-call budget (`<= 3` extra) is asserted in tests.

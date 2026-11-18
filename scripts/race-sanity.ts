@@ -143,6 +143,21 @@ try {
   check('a Club Race is refused on a weekday and with less than 2 days notice, with readable reasons', /Saturday or Sunday/.test(rd0.refusedMonday ?? '') && /notice/.test(rd0.refusedSoon ?? ''), { mon: rd0.refusedMonday, soon: rd0.refusedSoon });
   check('a Saturday race day books for $3,000, a second one in the same week is refused, a sponsor from the pool is assigned', rd0.booked === null && rd0.cost === 3000 && /one race day a week/i.test(rd0.refusedWeek ?? '') && !!rd0.sponsor && rd0.bookings === 1, { cost: rd0.cost, week: rd0.refusedWeek, sponsor: rd0.sponsor });
   check('the World Cup no longer asks for "a black piste": it accepts the course', !/black piste/i.test(rd0.worldCup ?? '') && !/race course/i.test(rd0.worldCup ?? ''), rd0.worldCup);
+  if (shots) { // the Events panel (Marketing drawer) with the Club Race card and the booking
+    await page.evaluate(() => { const dock = document.querySelector('st-dock') as any; dock.show('marketing'); const ev = dock.shadowRoot.querySelector('st-events') as any; ev?.refresh?.(); const card = ev?.root?.querySelector('[data-role="race-day-card"]'); card?.scrollIntoView?.({ block: 'center' }); });
+    await sleep(1200); await page.screenshot({ path: `.weave/shots/${out}-rd-events-panel.png` });
+    // the same card on a phone (390 x 844): inside the Marketing sheet, no new floating card, nothing wider than the screen
+    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+    await sleep(1500);
+    await page.evaluate(() => { const dock = document.querySelector('st-dock') as any; dock.show('marketing'); const ev = dock.shadowRoot.querySelector('st-events') as any; ev?.refresh?.(); const card = ev?.root?.querySelector('[data-role="race-day-card"]'); card?.scrollIntoView?.({ block: 'center' }); });
+    await sleep(1500); await page.screenshot({ path: `.weave/shots/${out}-rd-events-phone.png` });
+    const ph = await page.evaluate(() => { const ev = (document.querySelector('st-dock') as any).shadowRoot.querySelector('st-events') as any; const c = ev?.root?.querySelector('[data-role="race-day-card"]') as HTMLElement | null; const r = c?.getBoundingClientRect(); const b = c?.querySelector('[data-role="race-day-book"]')?.getBoundingClientRect(); return { right: r ? Math.round(r.right) : -1, width: r ? Math.round(r.width) : -1, book: b ? { w: Math.round(b.width), h: Math.round(b.height) } : null, selects: [...(c?.querySelectorAll('st-select') ?? [])].map((x) => Math.round(x.getBoundingClientRect().height)) }; });
+    console.log(JSON.stringify(ph));
+    check('phone: the Club Race card stays inside a 390 px screen and its controls are 44 px targets', ph.right > 0 && ph.right <= 390 && !!ph.book && ph.book.h >= 44 && ph.book.w >= 44 && ph.selects.every((h: number) => h >= 44), ph);
+    await page.evaluate(() => { (document.querySelector('st-dock') as any).show(null); });
+    await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 });
+    await sleep(800);
+  }
   const stepTo = (day: number, hour: number): Promise<any> => page.evaluate((day, hour) => {
     const s = (window as any).__slope, sim = s.sim, loop = s.loop; sim.guestSim.spawner.rateMult = 8; loop.setSpeed(1);
     let g = 0; const now = (): number => sim.game.date.year * 180 + sim.game.date.day + sim.game.date.minute / 1440;

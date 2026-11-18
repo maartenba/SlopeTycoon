@@ -23,7 +23,7 @@ Most events are booked from the card. A few simply happen: the **Almabtrieb** (t
 
 ## You can see it, too
 
-Every running festival dresses the village. Bunting and flags go up along the road near the bottom lift station, banners carry the festival name, market stalls open beside the road and a procession walks through in the daytime: decorated cows for the Almabtrieb, costumed revellers at the Carnival. The World Cup adds a grandstand and a finish arch at the foot of a black piste, and racers on the run. When it is over everything is taken down. The dressing is purely for looks: it never blocks building or walking.
+Every running festival dresses the village. Bunting and flags go up along the road near the bottom lift station, banners carry the festival name, market stalls open beside the road and a procession walks through in the daytime: decorated cows for the Almabtrieb, costumed revellers at the Carnival. The World Cup adds a grandstand and a finish arch at the foot of your race course (beside its Timing Hut), and racers on the run; see *Race days, spectators and sponsors* in [Lifts & pistes](page:lifts-pistes). When it is over everything is taken down. The dressing is purely for looks: it never blocks building or walking.
 
 {{fig:festival-market}}
 

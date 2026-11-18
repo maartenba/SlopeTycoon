@@ -416,3 +416,10 @@ The surprise now gives one in-game month (15 sim days) of +10 % arrivals from th
 ## 0.8.0 racers (race course, `docs/race-course.md`)
 
 **Golden re-recorded in the same commit:** `tests/sim/staff.test.ts` `GOLDEN_BOT` part `progression` `76a87ccf` -> `33375cb9` (every other part and the money did not move). Reason: the two new unlock rows `{ building: 'startHut', level: 3 }` and `{ building: 'timingHut', level: 3 }` are part of the progression state the part hashes (as for the chapel and the Schirmbar); the plain `Bot` builds no Start Hut or Timing Hut, so no racer ever spawns there (the Racer arrival weight is 0 without a valid course, and a zero extra-type weight draws nothing).
+
+## 0.8.1 race days (`docs/race-course.md` "Race days")
+
+**No golden moved** (to be confirmed by the release gate, see the 0.8.1 gate table in the session report): a resort without a booked race day or a World Cup race writes no race-day data (`raceCourse` serialises to `null`, `eventBonus` is absent from the rating input) and exactly 1 is multiplied into the arrival product, so the plain `Bot`, the staff golden parts and the balance suite are byte-identical. The plain `Bot` books nothing, never builds the huts and `autoEvents` never books a festival. `createSim` defaults == the real game: race days ship ON with no flag.
+
+**Economy guard** (`npm run analysis:race -- --raceday 1`, 64 maps, two identical resorts per seed run to a winter Saturday, one with a Club Race): the race day's total income is **x0.99 to x1.34 a normal Saturday** (red seed 61 x0.99, red seed 5 x1.34, black seed 61 x1.24, black seed 5 x1.02; guard `RACE_DAY.earnCapVsSaturday` = 1.5). Entry fee $10 and sponsor pay $250-340 were lowered from the first draft ($15, $380-520) because that draft reached x1.46: the direct income (fees + sponsor, ~$550-600) is already a quarter of a Saturday here. The $3,000 booking is a marketing expense, so a race day never pays for itself.
+

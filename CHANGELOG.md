@@ -4,6 +4,24 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+A race-day update for the race courses of 0.8.0. Your old saves keep working; nothing moves in a resort without a booked race day.
+
+### Highlights
+
+- **Club Race days**: book a Saturday or Sunday race on your course ($3,000, one a week). The run closes to the public from 10:00 to 14:00, the results go on the timing board and into the news.
+- **Spectators**: guests walk over to the Timing Hut, stand around the finish and then eat and drink at the shops nearby, so a race day is a day to see.
+- **A sponsor for your course**: each course gets one of ten made-up Alpine sponsors that pays a little per race and gives a small, fading rating boost.
+- **The World Cup on your course**: it now needs a race course on a red or black run, runs a real race every day on it, and a black course draws a bigger crowd.
+
+### Changes
+
+- **Race days** (`docs/race-course.md` "Race days"): the Club Race card sits in Marketing -> Events -> Race day. 10:00 the run closes ("Race day"), a field of 20-30 starts, 14:00 results (winner time, spectators, income). A course that is closed or inactive at 10:00 cancels the race and refunds the fee. A race day earns at most about 1.3 times a normal Saturday (`npm run analysis:race -- --raceday 1`).
+- **Spectators** are existing guests (cap 18 red / 28 black for a club race, 32 / 40 for the World Cup, never more than 40); they stand at the Timing Hut until 14:00 and are hungry afterwards.
+- **Sponsors**: a pool of ten fictional names (`src/config/raceSponsors.ts`, checked against a denylist of real brands), one per course, shown on the timing board and in the news.
+- **World Cup**: needs a race course (red or black) instead of a bare black piste; the grandstand and finish banner stand by the course's Timing Hut; a black course adds x1.08 arrivals. A save with a World Cup booked and no course keeps the old look.
+- The timing board shows "RACE DAY - LIVE" during a race and the winner's time for three days after; the third line is the sponsor.
+- Saves: `raceCourse` module v2 (bookings, the running race, results, sponsors, the rating bonus); v1 saves load with no race day; no golden moved (`docs/balance.md` "0.8.1 race days").
+
 ## [0.8.0] - 2026-11-18 (pre-release)
 
 A race update. You can now turn a steep run into a race course, and racers come to train on it. Your old saves keep working; the economy and the desktop look are unchanged.
