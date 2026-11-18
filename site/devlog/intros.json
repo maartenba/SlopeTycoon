@@ -133,5 +133,10 @@
     "tagline": "the wedding party takes the path",
     "lead": "A small one. In 0.7.1 the wedding party walked in a straight line from the Base Lodge to the chapel, right across lawns and through fences. Now they follow your footpaths and roads, in a little line with the couple at the front, and then go on to the meal the same way. If there is no path they still cut across, as before. The guide also finally has a picture of the chapel.",
     "shot": "chapel-wedding"
+  },
+  "0.8.0": {
+    "tagline": "race courses and racers",
+    "lead": "This one is for the steep runs. You can now mark a red or black run as a race course, build a Start Hut at the top and a Timing Hut at the foot, and gates go up along the run. Racers come to train on it, ski it a few times and pay a small fee. It will not make you rich, a black course roughly breaks even, but it looks good and the timing board is fun to watch.",
+    "shot": "runs-overlay"
   }
 }

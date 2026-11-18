@@ -4,7 +4,18 @@ All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
-### Added (0.8.0 candidate: racers and a race course; no version bump yet)
+## [0.8.0] - 2026-11-18 (pre-release)
+
+A race update. You can now turn a steep run into a race course, and racers come to train on it. Your old saves keep working; the economy and the desktop look are unchanged.
+
+### Highlights
+
+- **Race courses**: mark a red or black run as a course, put a Start Hut at the top and a Timing Hut at the foot (level 3), and red and blue gates go up along the run by themselves.
+- **Racers**: a new winter guest type that trains on an open, groomed course, skis fast, does a few laps and pays a small course fee. A black course draws more of them than a red one.
+- **A timing board**: the Timing Hut shows the best time and how many racers came today, and the run inspector shows the same.
+- **Advice and a trophy**: Rudi suggests a course and reminds you to groom it, and *Through the gates* rewards 100 laps.
+
+### Changes
 
 - **Race course** (level 3): mark a red or black run (60 m of drop or more) as a course in its inspector or in **Operations → Runs**, with a **Start Hut** at the top and a **Timing Hut** at the foot ($6,000 / $14,000). Red and blue gates go up along the run by themselves, the Timing Hut shows a live board (best time, racers today). The button names what is missing.
 - **Racers**: a new winter guest type that trains on an open, groomed course: faster, a few laps each, a small course fee on the first lap of a day. A black course draws more than a red one, an ungroomed one far fewer; other skiers can still use the run. Rudi suggests a course and nags about grooming it; achievement *Through the gates* (100 laps).

@@ -3,6 +3,16 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.8.0",
+    "date": "2026-11-18",
+    "highlights": [
+      "Race courses: mark a red or black run as a course, put a Start Hut at the top and a Timing Hut at the foot (level 3), and red and blue gates go up…",
+      "Racers: a new winter guest type that trains on an open, groomed course, skis fast, does a few laps and pays a small course fee. A black course draws…",
+      "A timing board: the Timing Hut shows the best time and how many racers came today, and the run inspector shows the same.",
+      "Advice and a trophy: Rudi suggests a course and reminds you to groom it, and Through the gates rewards 100 laps."
+    ]
+  },
+  {
     "version": "0.7.2",
     "date": "2026-11-16",
     "highlights": [
@@ -19,17 +29,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "A compact ground profile on desktop: while you place a lift or a piste, the profile is one small line with a sparkline; click it for the full chart.",
       "Landscape trail painting on phones works again in the touch test (the test started the stroke in the wrong place; the game itself was fine).",
       "Smaller phone polish: the month-end card is a one-line chip under the banner row instead of a card on top of others, and the ... menu works with the…"
-    ]
-  },
-  {
-    "version": "0.7.0",
-    "date": "2026-11-16",
-    "highlights": [
-      "Phones show much more of the map: one slim top row (menu, money, stars, guests, speed, more) and one card at a time, so nothing stacks on top of…",
-      "A bottom tool bar while you build: the message (cost or why not), Cancel, rotate, Undo, Options and Place sit in one place within thumb reach, with…",
-      "The tab row shows when there is more: a fade and a > button at the edge, whole tabs that snap into place, and shorter names (Paths, Pistes) so more…",
-      "What's new, the update card and the welcome-back recap open full screen on phones, with a big close button, instead of floating over other panels.",
-      "Rudi's tips and the news are a small badge and also live in the ... menu; settings and reports are full-screen sheets with a clear close button."
     ]
   }
 ];

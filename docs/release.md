@@ -1,6 +1,15 @@
 # Release notes and checklist
 
-Current release: **0.7.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.8.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.8.0 (2026-11-18, macOS, Node v24.22.3)
+
+Race courses and racers (`docs/race-course.md`): Start Hut + Timing Hut, a run marked as a course, the Racer guest type, auto gates and a timing board. Saves: `runs` module v2 and the `raceCourse` module (v1 saves load with no courses). Staff golden `progression` part re-recorded; nothing else moved. Owner playtest approved 2026-11-18. Gate: `npm run gate:full` (6 slots), wall 22.3 min, 39 stages, all passed first attempt, no flaky stage.
+
+| Check | Command | Result |
+|---|---|---|
+| Size | `npm run size` | 3243.7 kB raw / 1152.2 kB gzip (0.7.2: 1146.6 kB; budget 2048 kB) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | no new screenshot (budget); devlog reuses `runs-overlay` |
 
 ## 0.7.2 (2026-11-16, macOS, Node v24.22.3)
 
