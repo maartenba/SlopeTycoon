@@ -228,7 +228,7 @@ try {
   // ---- the World Cup on the player's course: the race runs on it, the grandstand + finish banner sit by the Timing Hut ----
   const wcDay = await page.evaluate(() => { const sim = (window as any).__slope.sim; sim.events.debugStart('worldCup', 2); return sim.game.date.year * 180 + sim.game.date.day + 1; });
   await stepTo(wcDay, 10.7);
-  await sleep(1500);
+  await page.waitForFunction(() => !!(window as any).__slope.festivalDressing.layouts.find((l: any) => l.festival === 'worldCup' && l.grandstand), { timeout: 60000 }).catch(() => undefined); // the dressing is rebuilt by the render loop (slow under a loaded gate)
   const wc = await page.evaluate(() => {
     const s = (window as any).__slope, sim = s.sim, rd = sim.raceDay, c = sim.race.courses()[0], t = c.timing, lay = s.festivalDressing.layouts.find((l: any) => l.festival === 'worldCup');
     const g = lay?.grandstand ?? null;
