@@ -3,6 +3,16 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.8.1",
+    "date": "2026-11-18",
+    "highlights": [
+      "Club Race days: book a Saturday or Sunday race on your course ($3,000, one a week). The run closes to the public from 10:00 to 14:00, the results go…",
+      "Spectators: guests walk over to the Timing Hut, stand around the finish and then eat and drink at the shops nearby, so a race day is a day to see.",
+      "A sponsor for your course: each course gets one of ten made-up Alpine sponsors that pays a little per race and gives a small, fading rating boost.",
+      "The World Cup on your course: it now needs a race course on a red or black run, runs a real race every day on it, and a black course draws a bigger…"
+    ]
+  },
+  {
     "version": "0.8.0",
     "date": "2026-11-18",
     "highlights": [
@@ -19,16 +29,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Wedding guests follow the paths: the party now walks along your footpaths and roads from the Base Lodge to the chapel and on to the meal, instead of…",
       "The party stays together: the couple go first and the guests trail behind them in a small line.",
       "A picture of the chapel on the website: the guide page Pizza, bakery, chapel & the sky now shows a wedding at the chapel door."
-    ]
-  },
-  {
-    "version": "0.7.1",
-    "date": "2026-11-16",
-    "highlights": [
-      "A mountain chapel with weddings: a whitewashed chapel with a bell tower (level 2, one per resort). It adds a little village charm to the rating, and…",
-      "A compact ground profile on desktop: while you place a lift or a piste, the profile is one small line with a sparkline; click it for the full chart.",
-      "Landscape trail painting on phones works again in the touch test (the test started the stroke in the wrong place; the game itself was fine).",
-      "Smaller phone polish: the month-end card is a one-line chip under the banner row instead of a card on top of others, and the ... menu works with the…"
     ]
   }
 ];

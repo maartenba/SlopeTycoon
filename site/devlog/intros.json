@@ -138,5 +138,10 @@
     "tagline": "race courses and racers",
     "lead": "This one is for the steep runs. You can now mark a red or black run as a race course, build a Start Hut at the top and a Timing Hut at the foot, and gates go up along the run. Racers come to train on it, ski it a few times and pay a small fee. It will not make you rich, a black course roughly breaks even, but it looks good and the timing board is fun to watch.",
     "shot": "runs-overlay"
+  },
+  "0.8.1": {
+    "tagline": "race days and sponsors",
+    "lead": "A follow-up for the race courses. You can now book a Club Race on a weekend, the run closes for a few hours, guests walk over to watch and the results go on the timing board. Each course gets a made-up sponsor, and the World Cup now runs on your own course. It is a small update, and old saves keep working.",
+    "shot": "runs-overlay"
   }
 }

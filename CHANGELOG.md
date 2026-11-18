@@ -2,7 +2,7 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.8.1] - 2026-11-18 (pre-release)
 
 A race-day update for the race courses of 0.8.0. Your old saves keep working; nothing moves in a resort without a booked race day.
 
