@@ -13,7 +13,7 @@ import { fmtTime, type CourseInfo } from './RaceCourse';
  */
 export interface RaceBooking { course: number; day: number }
 export interface RaceResult { day: number; course: number; name: string; kind: RaceKind; winnerMs: number; winner: string; field: number; spectators: number; sponsor: string | null; earned: number }
-export interface RaceSession { kind: RaceKind; course: number; day: number; name: string; difficulty: number; quality: number; field: number; sponsor: string | null; spectators: number[] }
+export interface RaceSession { /** a downhill course (summer, 0.8.2); absent = a ski course */ mtb?: boolean; kind: RaceKind; course: number; day: number; name: string; difficulty: number; quality: number; field: number; sponsor: string | null; spectators: number[] }
 export interface RaceDaySaved {
   bookings?: RaceBooking[]; session?: RaceSession | null; results?: RaceResult[]; sponsors?: Array<[number, string]>; bonus?: { day: number; pts: number } | null;
 }
@@ -23,8 +23,8 @@ export interface RaceDayDeps {
   day(): number;
   /** 0 = Monday .. 5 = Saturday, 6 = Sunday, for an absolute day. */
   weekday(abs: number): number;
-  /** The season of an absolute day is winter (courses are winter-only in 0.8.1; 0.8.2 adds summer). */
-  inSeason(abs: number): boolean;
+  /** The season of an absolute day is the course's season: winter for a ski course, summer for a downhill (MTB) course (0.8.2). */
+  inSeason(abs: number, mtb?: boolean): boolean;
   /** null = open; otherwise why the resort level is too low. */
   gate?(minLevel: number): string | null;
   funds(): number;
@@ -72,7 +72,7 @@ export class RaceDay {
   private bonus: { day: number; pts: number } | null = null;
   /** Bumps on every change (UI / board caches). */
   version = 0;
-  constructor(private d: RaceDayDeps, private boardBaseS = 30, private boardMps = 9) {}
+  constructor(private d: RaceDayDeps, private boardBaseS = 30, private boardMps = 9, private mtbBaseS = 25, private mtbMps = 11) {}
 
   // ---- queries ------------------------------------------------------------------------------------------------------------------------------
   /** The sponsor of a course (assigned when its first race day is booked or held), or null. */
@@ -107,7 +107,7 @@ export class RaceDay {
     if (day < t + RACE_DAY.leadDays) return `Needs ${RACE_DAY.leadDays} days notice`;
     const wd = this.d.weekday(day);
     if (!RACE_DAY.weekdays.includes(wd)) return 'Only on a Saturday or Sunday';
-    if (!this.d.inSeason(day)) return 'Only in winter';
+    if (!this.d.inSeason(day, c.mtb)) return c.mtb ? 'Only in summer' : 'Only in winter';
     if (this.d.worldCupOn(day)) return 'The World Cup is on that day';
     const ws = weekStartOf(day, wd);
     for (const b of this.bookings) if (weekStartOf(b.day, this.d.weekday(b.day)) === ws) return 'One race day a week is enough';
@@ -170,7 +170,7 @@ export class RaceDay {
       }
     } else if (this.d.worldCupToday()) {
       kind = 'worldCup';
-      const live = this.d.courses().filter((x) => x.valid && x.open).sort((a, b) => b.run.difficulty - a.run.difficulty || b.quality - a.quality || a.id - b.id);
+      const live = this.d.courses().filter((x) => x.valid && x.open && !x.mtb).sort((a, b) => b.run.difficulty - a.run.difficulty || b.quality - a.quality || a.id - b.id);
       c = live[0];
       if (!c) return; // an old save without a course keeps the abstract World Cup
     }
@@ -179,9 +179,9 @@ export class RaceDay {
     const sp = this.sponsorOf(c.id);
     const range = kind === 'club' ? RACE_DAY.field : RACE_DAY.fieldWorldCup;
     const field = range[0] + Math.floor(mix(this.d.seed, t, c.id, 3) * (range[1] - range[0] + 1));
-    this.session = { kind, course: c.id, day: t, name: this.d.courseName(c), difficulty: c.run.difficulty, quality: c.quality, field, sponsor: sp?.id ?? null, spectators: [] };
+    this.session = { ...(c.mtb ? { mtb: true } : {}), kind, course: c.id, day: t, name: this.d.courseName(c), difficulty: c.run.difficulty, quality: c.quality, field, sponsor: sp?.id ?? null, spectators: [] };
     this.d.close(c, (RACE_DAY.to - RACE_DAY.from) * 10);
-    this.d.news(`${this.session.name} ${kind === 'club' ? 'Club Race' : 'World Cup race'}: ${field} racers are at the gate. The run is closed to the public until ${RACE_DAY.to}:00.${sp ? ` Sponsored by ${sp.name}.` : ''}`);
+    this.d.news(`${this.session.name} ${kind === 'club' ? (c.mtb ? 'Downhill Race' : 'Club Race') : 'World Cup race'}: ${field} ${c.mtb ? 'riders' : 'racers'} are at the gate. The ${c.mtb ? 'trail' : 'run'} is closed to the public until ${RACE_DAY.to}:00.${sp ? ` Sponsored by ${sp.name}.` : ''}`);
     this.version++;
     this.topUp();
   }
@@ -199,7 +199,7 @@ export class RaceDay {
     const s = this.session; if (!s) return;
     const c = this.d.courses().find((x) => x.id === s.course);
     const length = c?.run.lengthM ?? 400;
-    const times = raceTimes(this.d.seed, s.day, s.course, length, s.quality, s.field, this.boardBaseS, this.boardMps);
+    const mtb = !!s.mtb, times = raceTimes(this.d.seed, s.day, s.course, length, s.quality, s.field, mtb ? this.mtbBaseS : this.boardBaseS, mtb ? this.mtbMps : this.boardMps);
     const winnerMs = times[0] ?? 0;
     const wi = Math.floor(mix(this.d.seed, s.day, s.course, 9) * RACE_DAY.winners.length);
     const winner = `${String.fromCharCode(65 + Math.floor(mix(this.d.seed, s.day, s.course, 10) * 26))}. ${RACE_DAY.winners[wi]!}`;
@@ -211,7 +211,7 @@ export class RaceDay {
     this.results.unshift({ day: s.day, course: s.course, name: s.name, kind: s.kind, winnerMs, winner, field: s.field, spectators: s.spectators.length, sponsor: s.sponsor, earned });
     if (this.results.length > RACE_DAY.keepResults) this.results.length = RACE_DAY.keepResults;
     this.d.fed(s.spectators);
-    this.d.news(`${s.name} ${s.kind === 'club' ? 'Club Race' : 'World Cup'}: ${winner} wins in ${fmtTime(winnerMs)} (${s.field} racers, ${s.spectators.length} spectators).${sp?.line ? ` ${sp.line}` : ''}`);
+    this.d.news(`${s.name} ${s.kind === 'club' ? (mtb ? 'Downhill Race' : 'Club Race') : 'World Cup'}: ${winner} wins in ${fmtTime(winnerMs)} (${s.field} ${mtb ? 'riders' : 'racers'}, ${s.spectators.length} spectators).${sp?.line ? ` ${sp.line}` : ''}`);
     this.session = null; this.version++;
   }
 

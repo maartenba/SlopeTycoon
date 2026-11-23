@@ -40,6 +40,33 @@ export const RACE = {
   typeId: 'racer',
   /** Achievement threshold: racer laps. */
   lapsAchievement: 100,
+  /** Summer mountain-bike downhill (0.8.2, docs/race-course.md "Downhill course"): the same huts and the same validity rules on a MTB trail; every number of the summer side lives here. */
+  mtb: {
+    /** Course ids of MTB trails are `idBase + a tile of the trail` (a trail has no Names id): the course follows the trail while that tile stays on it. Above any piste id. */
+    idBase: 0x40000000,
+    /** Arrival weight of the Downhiller type in summer (a season share of the extra-type draw; scaled by the courses' quality and capped per course). */
+    share: 0.05,
+    /** Dollars per rider and day (first lap of the day). A bike trail pass is charged on top by the trail itself. */
+    courseFee: 14,
+    /** A trail is never groomed: a fixed surface quality (dry, packed dirt), times the difficulty fit. */
+    surface: 0.9,
+    maxRidersPerCourse: 10,
+    laps: [3, 5] as readonly [number, number],
+    /** Course times on the board: seconds of start + metres per second. */
+    boardBaseS: 25, boardMps: 11,
+    /** Pseudo building id the spawner computes (a valid, open downhill course). */
+    cond: '@mtbCourse',
+    typeId: 'downhiller',
+    /** Plain-text reasons for a trail (the shared text where it fits). */
+    reasons: {
+      difficulty: 'Needs a red or black trail',
+      drop: 'Needs a drop of at least 60 m',
+      shape: 'Needs a single clear trail, not a loop',
+      noStartHut: 'Needs a Start Hut at the top',
+      noTimingHut: 'Needs a Timing Hut at the foot',
+      tooMany: 'Three downhill courses is the limit',
+    },
+  },
   /** The reasons a run is not a (valid) course, as shown to the player. */
   reasons: {
     difficulty: 'Needs a red or black run',
@@ -93,3 +120,5 @@ export const RACE_DAY = {
 export type RaceKind = 'club' | 'worldCup';
 
 export type CourseReason = keyof typeof RACE.reasons;
+/** The reason text for a run (`mtb`: a MTB trail, 0.8.2). */
+export const reasonText = (r: CourseReason, mtb: boolean): string => (mtb ? RACE.mtb.reasons[r] : RACE.reasons[r]);

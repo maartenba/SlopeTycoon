@@ -1,6 +1,6 @@
 # Guest types (framework)
 
-Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventure; indices 0-5) keep their hand-tuned tables. **Extra** types (index 6+) are data rows in `src/config/guestTypes.ts` (`GUEST_TYPE_DEFS`), so Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler arrive as data plus a few hooks. The shipped list is `SHIPPED_TYPES` (never reorder, append only): **6 = Mountain biker** (Task 25), **7 = Angler** (Task 42), **8 = Senior**, **9 = School group** (Task 29), **10 = Snowboarder** (Task 33), **11 = Ski tourer** (Task 34). Types that become active move the golden hashes (re-recorded at the milestone STOP).
+Phase 6, Task 9. Six **core** types (solo, couple, family, vip, budget, adventure; indices 0-5) keep their hand-tuned tables. **Extra** types (index 6+) are data rows in `src/config/guestTypes.ts` (`GUEST_TYPE_DEFS`), so Snowboarder, Mountain biker, Senior, Ski tourer, School group and Angler arrive as data plus a few hooks. The shipped list is `SHIPPED_TYPES` (never reorder, append only): **6 = Mountain biker** (Task 25), **7 = Angler** (Task 42), **8 = Senior**, **9 = School group** (Task 29), **10 = Snowboarder** (Task 33), **11 = Ski tourer** (Task 34), **15 = Downhiller** (0.8.2: a summer mountain biker who laps a downhill course, `docs/race-course.md` "Downhill course"). Types that become active move the golden hashes (re-recorded at the milestone STOP).
 
 ## A type row (`GuestTypeDef`)
 | Field | Meaning |

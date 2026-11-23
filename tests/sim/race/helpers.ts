@@ -60,3 +60,26 @@ export function raceFixture(stored = 2, seed = 61): { s: Sim; id: number } {
   return { s: f.s, id: f.id };
 }
 
+
+// ---- 0.8.2: summer downhill (MTB) course fixtures ----
+export const mkSummer = (seed = 61): Sim => {
+  const s = createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', startSeason: 'summer', now: () => 0 } as never);
+  s.tick(240 * 3 + 20);
+  s.game.money = 5_000_000;
+  s.progression.unlockAll = true;
+  return s;
+};
+/** Paint a MTB trail along the centre line of the biggest-drop ski run (a stored difficulty 0..3), place both huts beside its ends. Returns the trail's course id. */
+export function prepareDownhill(s: Sim, stored = 2): { id: number; tiles: number[] } {
+  const n = s.size, ski = mainRun(s), line = ski.poly.map((t) => ({ x: t % n, y: (t / n) | 0 }));
+  s.networks.paint(Layer.Mtb, line, stored);
+  s.tick(1);
+  const trail = [...s.mtbRunIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!;
+  const p = trail.poly;
+  const first = (type: 'startHut' | 'timingHut', tiles: number[]): number | null => { for (const t of tiles) { const id = putHutNear(s, type, t); if (id !== null) return id; } return null; };
+  const a = first('startHut', [p[1]!, p[0]!, p[2]!]), b = first('timingHut', [p[p.length - 2]!, p[p.length - 1]!, p[p.length - 3]!]);
+  if (a === null || b === null) throw new Error('huts could not be placed');
+  s.tick(1);
+  const t2 = [...s.mtbRunIndex.runs()].sort((x, y) => y.dropM - x.dropM)[0]!;
+  return { id: s.race.idOf(t2), tiles: t2.tiles };
+}

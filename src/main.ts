@@ -114,7 +114,7 @@ import { PlacementTool, type PlaceOutcome } from '@/build/PlacementTool';
 import { rotateBuilding } from '@/sim/PlaceBuilding';
 import { refundValue } from '@/build/Bulldoze';
 import { suggestPisteResult } from '@/tutorial/suggest';
-import { slopeProfile } from '@/sim/PisteStats';
+import { DIFFICULTY_COLORS, slopeProfile } from '@/sim/PisteStats';
 import type { ProfileView } from '@/ui/components/StProfile';
 import { Undo, undoMessage, redoMessage, verbIng } from '@/build/UndoActions';
 import { creditScore, creditLetter, debtCap } from '@/sim/Loans';
@@ -768,7 +768,7 @@ const visitorView = new VisitorView(grid, sim.visitor, () => game.date.year * DA
 renderer.scene.add(visitorView.group);
 const weddingView = new WeddingView(grid, sim.wedding, () => game.date.year * DAYS_PER_YEAR * 1440 + game.date.day * 1440 + game.date.minute); // chapel wedding party (docs/chapel.md): up to six small figures, nothing while no wedding is on
 renderer.scene.add(weddingView.group);
-const raceCourseView = new RaceCourseView(grid, sim.race, () => (game.date.year * DAYS_PER_YEAR + game.date.day) * 24 + Math.floor(game.date.minute / 60), (c) => sim.names.pisteName(c.run), sim.raceDay); // race course gates + timing boards (docs/race-course.md): 3 draw calls for every course
+const raceCourseView = new RaceCourseView(grid, sim.race, () => (game.date.year * DAYS_PER_YEAR + game.date.day) * 24 + Math.floor(game.date.minute / 60), (c) => sim.courseName(c), sim.raceDay); // race course gates + timing boards (docs/race-course.md): 3 draw calls for every course
 renderer.scene.add(raceCourseView.group);
 // The visitor's call (audio/visitorCall.ts): a global quiet call at the sighting (pending until the audio is unlocked), a spatial one when the camera is near, again on 'Show me'. Pan = where it is on screen.
 const visitorCalls = new VisitorCalls((o) => audioRef?.sfx.play('distantCall', o) ?? false, () => performance.now() / 1000);
@@ -2598,7 +2598,7 @@ if (ui && !DEMO) {
   const mktPanel = el('st-marketing');
   const evPanel = el('st-events');
   evPanel.bind({
-    view: () => { const v = buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money, { raceDay: sim.raceDay, courses: sim.race.courses(), courseName: (c) => sim.names.pisteName(c.run) }), bd = sim.visitor.buzzDaysLeft(); return bd > 0 ? { ...v, buzz: { text: `Mountain buzz +10% visitors (${bd} day${bd === 1 ? '' : 's'} left)` } } : v; },
+    view: () => { const v = buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money, { raceDay: sim.raceDay, courses: sim.race.courses(), courseName: (c) => sim.courseName(c) }), bd = sim.visitor.buzzDaysLeft(); return bd > 0 ? { ...v, buzz: { text: `Mountain buzz +10% visitors (${bd} day${bd === 1 ? '' : 's'} left)` } } : v; },
     book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
     bookRace: (course, start) => { const why = sim.bookRaceDay(course, start); if (why) return why; toast('Club Race booked.'); refreshUi(); return null; },
     cancel: (id, start) => { const ok = id.startsWith('raceDay:') ? sim.raceDay.cancel(Number(id.slice(8)), start) : sim.events.cancel(id as FestivalId, start); if (!ok) return 'Cannot cancel'; refreshUi(); return null; },
@@ -2623,11 +2623,11 @@ if (ui && !DEMO) {
   const liftName = (kind: string, id: number): string => `${LIFTS[kind as keyof typeof LIFTS]?.name ?? kind} ${id}`;
   opsPanel.bind({
     runs: {
-      rows: () => sim.runList().map((r) => ({ id: r.id, name: r.name, difficultyLabel: r.difficultyLabel, difficultyColor: r.difficultyColor, lengthM: r.lengthM, dropM: r.dropM, passesToday: r.passesToday, passesWeek: r.passesWeek, quality: r.avgQuality, open: r.open, reason: r.reason, closedByPlayer: r.closedByPlayer, groomMode: r.groomMode, groomedDaysAgo: r.groomedDaysAgo, course: r.course })),
+      rows: () => ([...sim.runList().map((r) => ({ id: r.id, name: r.name, difficultyLabel: r.difficultyLabel, difficultyColor: r.difficultyColor, lengthM: r.lengthM, dropM: r.dropM, passesToday: r.passesToday, passesWeek: r.passesWeek, quality: r.avgQuality, open: r.open, reason: r.reason, closedByPlayer: r.closedByPlayer, groomMode: r.groomMode, groomedDaysAgo: r.groomedDaysAgo, course: r.course })), ...sim.trailRows().map((t) => ({ id: t.id, name: `${t.name} (trail)`, difficultyLabel: ['', 'Green', 'Blue', 'Red', 'Black'][t.difficulty] ?? '', difficultyColor: DIFFICULTY_COLORS[t.difficulty - 1] ?? '#888888', reason: undefined, lengthM: t.lengthM, dropM: t.dropM, passesToday: 0, passesWeek: 0, quality: null, open: t.open, closedByPlayer: false, groomMode: 'auto' as const, groomedDaysAgo: null, course: t.course, mtb: true }))] as unknown as Array<import('@/ui/components/StOperations').RunRow>),
       setClosed: (id, closed) => { sim.setRunClosed(id, closed); covOverlay.invalidate(); refreshUi(); },
       setGroom: (id, m) => { sim.setRunGroomMode(id, m); refreshUi(); },
       setCourse: (id, on) => { sim.setRunCourse(id, on); refreshUi(); },
-      focus: (id) => { const r = sim.runList().find((x) => x.id === id); if (!r) return; selectedId = null; selectedPiste = { x: Math.floor(r.x), y: Math.floor(r.y) }; pisteHighlightOn = true; renderer.controls.focusOn(r.x, r.y); refreshUi(); },
+      focus: (id) => { const r = sim.runList().find((x) => x.id === id) ?? sim.trailRows().find((x) => x.id === id); if (!r) return; selectedId = null; selectedPiste = { x: Math.floor(r.x), y: Math.floor(r.y) }; pisteHighlightOn = true; renderer.controls.focusOn(r.x, r.y); refreshUi(); },
     },
     rows: () => sim.liftOps.scheduleTable().map((r) => {
       const l = lifts.get(r.id)!, s = sim.liftOps.status(r.id)!;

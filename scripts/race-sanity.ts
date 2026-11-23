@@ -8,6 +8,7 @@ import { launch, startServer } from './lib/harness';
 
 const arg = (k: string, d: string): string => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1]! : d; };
 const size = arg('size', '64'), seed = arg('seed', '61'), shots = arg('shots', '0') === '1', out = arg('out', 'race');
+if (arg('summer', '0') === '1') { await import('./mtb-sanity'); await new Promise(() => undefined); } // `race:sanity -- --summer 1` = `mtb:sanity` (the 0.8.2 downhill story; it exits by itself)
 const srv = await startServer();
 const br = await launch();
 const errors: string[] = [], fails: string[] = [];

@@ -2,6 +2,23 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+A summer twin of the race course: a mountain-bike downhill on the same huts. Old saves keep working; nothing moves in a resort without a downhill course.
+
+### Highlights
+
+- **Downhill courses**: a red or black mountain-bike trail with a Start Hut at the top and a Timing Hut at the foot can be marked as a downhill course in Operations -> Runs.
+- **Downhillers**: a new summer guest type that rides the course in laps, pays a small course fee and eats at your lodges.
+- **Downhill race days**: book a weekend Downhill Race in summer; the trail closes to riders from 10:00 to 14:00, spectators gather at the finish and the winner's time goes on the board.
+
+### Changes
+
+- **Downhill course** (`docs/race-course.md` "Downhill course"): a second run index over the MTB trail layer (`RunIndex` `layer`), the same validity rules as a ski course (red or black, 60 m drop, huts within 2 tiles of each end), ids derived from a trail tile (`RACE.mtb`), up to three per kind.
+- **Downhiller** guest type (index 15, summer, `@mtbCourse`): goals forced to the foot of an open course, 3-5 laps, $14 course fee a day; arrival demand follows the course surface (`RACE.mtb.surface` 0.9 x difficulty fit) and caps at 10 riders per course.
+- Club Race on a downhill course: summer only, same booking rules and sponsor pool; closed bike nav on a closed MTB tile.
+- Saves: `raceCourse` v2 gains an optional `todayMtb` and `mtb` on a session; the `runs` module stores downhill course ids (>= `RACE.mtb.idBase`). No golden moved (`docs/balance.md` "0.8.2 downhill").
+
 ## [0.8.1] - 2026-11-18 (pre-release)
 
 A race-day update for the race courses of 0.8.0. Your old saves keep working; nothing moves in a resort without a booked race day.

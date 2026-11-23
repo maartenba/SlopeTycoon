@@ -17,10 +17,10 @@ export const GATE_TRIS = 14;
 
 export { fmtTime };
 /** The three lines of a board (pure: tested). */
-export function boardLines(name: string, bestMs: number | null, racers: number, race?: { winnerMs: number | null; sponsor: string | null; live: boolean }): [string, string, string] {
+export function boardLines(name: string, bestMs: number | null, racers: number, race?: { winnerMs: number | null; sponsor: string | null; live: boolean }, mtb = false): [string, string, string] {
   // Race days (0.8.1): while a race runs the second line says so; after it the winner's time stays up; the sponsor takes the third line.
   const l2 = race?.live ? 'RACE DAY - LIVE' : race?.winnerMs != null ? `WIN ${fmtTime(race.winnerMs)}` : bestMs === null ? 'BEST --:--.-' : `BEST ${fmtTime(bestMs)}`;
-  return [name.slice(0, 16).toUpperCase(), l2, race?.sponsor ? race.sponsor.toUpperCase().slice(0, 28) : `RACERS ${racers}`];
+  return [name.slice(0, 16).toUpperCase(), l2, race?.sponsor ? race.sponsor.toUpperCase().slice(0, 28) : `${mtb ? 'RIDERS' : 'RACERS'} ${racers}`];
 }
 
 export class RaceCourseView {
@@ -110,7 +110,7 @@ export class RaceCourseView {
         corners.forEach(([a, b], i) => pos.setXYZ(k * 4 + i, cx + rx * a * hw + fx * off, y + b * hh, cz + rz * a * hw + fz * off));
       }
       if (ctx) {
-        const [l1, l2, l3] = boardLines(this.nameOf(c), this.race.bestMs(c.id), this.race.racersToday(), this.raceDay ? { winnerMs: ((r) => (r && Math.floor(this.hourStamp() / 24) - r.day <= 3 ? r.winnerMs : null))(this.raceDay.lastResult(c.id)), sponsor: this.raceDay.sponsorOf(c.id)?.name ?? null, live: this.raceDay.raceOn(c.id) } : undefined);
+        const [l1, l2, l3] = boardLines(this.nameOf(c), this.race.bestMs(c.id), this.race.racersToday(c.mtb), this.raceDay ? { winnerMs: ((r) => (r && Math.floor(this.hourStamp() / 24) - r.day <= 3 ? r.winnerMs : null))(this.raceDay.lastResult(c.id)), sponsor: this.raceDay.sponsorOf(c.id)?.name ?? null, live: this.raceDay.raceOn(c.id) } : undefined);
         const oy = slot * SLOT_H;
         ctx.fillStyle = '#f5d90a'; ctx.font = 'bold 15px sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(l1, 8, oy + 12);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px monospace'; ctx.fillText(l2, 8, oy + 34);

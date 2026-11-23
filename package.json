@@ -106,6 +106,7 @@
     "schirmbar:sanity": "vite-node scripts/schirmbar-sanity.ts",
     "chapel:sanity": "vite-node scripts/chapel-sanity.ts",
     "race:sanity": "vite-node scripts/race-sanity.ts",
+    "mtb:sanity": "vite-node scripts/mtb-sanity.ts",
     "photographer:sanity": "vite-node scripts/photographer-sanity.ts",
     "visitor:models": "vite-node scripts/visitor-models.ts",
     "visitor:studio": "vite-node scripts/visitor-studio.ts",

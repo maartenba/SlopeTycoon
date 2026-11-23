@@ -28,8 +28,8 @@ import { RunIndex } from '../sim/Runs';
 import { RunSettings, type GroomMode } from '../sim/RunSettings';
 import { RaceCourse, fmtTime, lapQuota } from '../sim/race/RaceCourse';
 import { RaceDay } from '../sim/race/RaceDay';
-import { RACE, RACE_DAY } from '../config/race';
-import { RACER_TYPE } from '../config/guestTypes';
+import { RACE, RACE_DAY, reasonText } from '../config/race';
+import { DOWNHILLER_TYPE, RACER_TYPE } from '../config/guestTypes';
 import type { Run, RunNetwork } from '../world/Runs';
 import { Economy } from '../sim/Economy';
 import { Pricing } from '../sim/Pricing';
@@ -339,6 +339,11 @@ export function createSim(opts: SimOptions) {
     alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
     stations: () => { const out: Array<{ x: number; y: number }> = []; for (const l of lifts.all()) { if (l.stations) for (const st of l.stations) out.push({ x: st.x + 1, y: st.y + 1 }); else out.push({ x: l.bottom.x + 1, y: l.bottom.y + 1 }, { x: l.top.x + 1, y: l.top.y + 1 }); } return out; }, // (mid-stations split runs too)
   });
+  // Downhill courses (0.8.2): a second run index over the MTB trails (no stations); a trail is a course candidate like a run (docs/race-course.md "Downhill course").
+  const mtbRunIndex = new RunIndex({
+    networks, terrainVersion: () => grid.terrainVersion, layer: NetLayer.Mtb, stations: () => [],
+    alt: (i) => { const c = grid.getCorners(i % size, (i / size) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * HEIGHT_UNIT; },
+  });
   type PisteEntryInfo = Run & { difficulty: number };
   let pisteIdx: { net: RunNetwork | null; map: Map<number, PisteEntryInfo>; list: PisteEntryInfo[] } = { net: null, map: new Map(), list: [] };
   const pisteIndex = (): typeof pisteIdx => {
@@ -348,7 +353,7 @@ export function createSim(opts: SimOptions) {
       for (const r of net.runs) for (const t of r.tiles) map.set(t, r);
       for (const nd of net.nodes) { const r = net.runs[nd.runsOut[0] ?? nd.runsIn[0] ?? -1]; if (r) for (const t of nd.tiles) map.set(t, r); }
       pisteIdx = { net, map, list };
-      runSettings.prune(new Set(list.map((r) => names.pisteId(r))));
+      runSettings.prune(new Set([...list.map((r) => names.pisteId(r)), ...runSettings.courseIds().filter((id) => id >= RACE.mtb.idBase)])); // a downhill course id is a tile of a MTB trail: kept (inactive, invisible) while the trail is gone
     }
     return pisteIdx;
   };
@@ -528,16 +533,24 @@ export function createSim(opts: SimOptions) {
     startHuts: () => buildings.all().filter((b) => b.type === 'startHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h })),
     timingHuts: () => buildings.all().filter((b) => b.type === 'timingHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h, rot: b.rot })),
     runOpen: (r) => { const st = openStatus.pisteAt(r.tiles[0]! % size, (r.tiles[0]! / size) | 0); return st ? st.open : true; },
+    mtbRuns: () => mtbRunIndex.runs(),
+    mtbOpen: (r) => { for (const t of r.tiles) { if (cond.hikeOk[t] !== 1 || openStatus.isTileClosed(t)) return false; } return true; },
     groomedDaysAgo: (id) => { const g = runSettings.lastGroomedDay(id); return g === undefined ? null : Math.max(0, absDayNow() - g); },
     day: absDayNow, earn: (a) => economy.earn('recreation', a),
   });
   guestSim.exploration.racerTiles = () => race.courseTiles();
   guestSim.raceLap = (id, tile) => { race.onLap(id, tile); };
-  guestSim.raceDone = (id) => race.lapsOf(id) >= lapQuota(id);
+  guestSim.raceDone = (id) => { const sl = guestSim.store.slotOf(id); return race.lapsOf(id) >= lapQuota(id, sl >= 0 && guestSim.store.type[sl] === DOWNHILLER_TYPE); };
+  guestSim.decider.mtbCourseGoals = () => race.mtbGoalTiles();
+  guestSim.mtbLap = (id, tile) => { race.onLap(id, tile, true); };
   bus.on('day:changed', () => race.prune((id) => guestSim.store.slotOf(id) >= 0));
   const racersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === RACER_TYPE) n++; return n; };
   guestSim.spawner.raceDemand = () => race.demand(racersAlive());
-  const setRunCourse = (id: number, on: boolean): { ok: boolean; reason?: string } => { const r = race.setCourse(id, on); return r.ok ? r : { ok: false, reason: r.reason ? RACE.reasons[r.reason] : undefined }; };
+  const ridersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === DOWNHILLER_TYPE) n++; return n; };
+  guestSim.spawner.mtbDemand = () => race.demandMtb(ridersAlive());
+  /** Display name of a course: a ski run's name; a downhill trail is "Downhill N" by its place among the marked downhill courses. */
+  const courseName = (c: { id: number; mtb: boolean; run: Run }): string => c.mtb ? `Downhill ${1 + race.courses().filter((k) => k.mtb).findIndex((k) => k.id === c.id)}` : names.pisteName(c.run);
+  const setRunCourse = (id: number, on: boolean): { ok: boolean; reason?: string } => { const r = race.setCourse(id, on); return r.ok ? r : { ok: false, reason: r.reason ? reasonText(r.reason, id >= RACE.mtb.idBase) : undefined }; };
   pq.onDayRollover = () => {
     const ids: number[] = [];
     for (const r of runIndex.runs()) { const id = names.pisteId(r); ids.push(id); runSettings.notePasses(id, runPasses(r)); }
@@ -897,7 +910,8 @@ export function createSim(opts: SimOptions) {
     if (attractions.all().some((a) => a.spec.angling && a.open && anglingPlanner.plan(a.b).bodies.some((b) => fishStock.get(b.key) > 0.05))) f.push(COND_FISHING);
     if (attractions.all().some((a) => a.open && a.b.type === 'sledRental')) f.push(COND_SLED); // Sledder (M7.3): an open Sled Rental (safe run, winter, snow)
     if (attractions.all().some((a) => a.open && a.b.type === 'alpineCoaster')) f.push(COND_COASTER);
-    if (race.active().length) f.push(RACE.cond); // Racer (0.8.0): an open, valid race course
+    if (race.active().length) f.push(RACE.cond);
+    if (race.activeMtb().length && lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes)) f.push(RACE.mtb.cond); // Downhiller (0.8.2): an open downhill course and an open bike lift // Racer (0.8.0): an open, valid race course
     if (guestSim.decider.touring.hasSafeRoute()) f.push(COND_BACKCOUNTRY); // Ski tourer (Task 34): an open backcountry route below danger 4
     return f;
   };
@@ -1003,8 +1017,8 @@ export function createSim(opts: SimOptions) {
       blackCache = { day: absDay(), v };
       return v;
     },
-    hasRaceCourse: () => race.courses().some((c) => c.valid),
-    worldCupBonus: () => (race.courses().some((c) => c.valid && c.run.difficulty === 4) ? RACE_DAY.worldCupBlackMult : 1),
+    hasRaceCourse: () => race.courses().some((c) => c.valid && !c.mtb),
+    worldCupBonus: () => (race.courses().some((c) => c.valid && !c.mtb && c.run.difficulty === 4) ? RACE_DAY.worldCupBlackMult : 1),
     powder: () => (weather.current.kind === 'snow' || weather.current.kind === 'heavySnow') && weather.current.intensity >= POWDER.minIntensity,
     hasHerd: () => nature.livestock.animals.length > 0,
     critic: () => { const x = safety.incidents.stats(); return { stars: rating.stars, happiness: avgHappiness(), openShare: openStatus.pisteStatuses().length ? openStatus.pisteStatuses().filter((p) => p.open).length / openStatus.pisteStatuses().length : 0, incidents: x.penalty > 0 ? 1 : 0 }; },
@@ -1017,11 +1031,11 @@ export function createSim(opts: SimOptions) {
   const raceDay = new RaceDay({
     seed, day: absDay,
     weekday: (a) => weekdayOf({ year: 0, day: a }),
-    inSeason: (a) => seasonOf({ day: ((a % DAYS_PER_YEAR) + DAYS_PER_YEAR) % DAYS_PER_YEAR }) === 'winter',
+    inSeason: (a, mtb) => seasonOf({ day: ((a % DAYS_PER_YEAR) + DAYS_PER_YEAR) % DAYS_PER_YEAR }) === (mtb ? 'summer' : 'winter'),
     gate: (lvl) => (progression.open || progression.level >= lvl ? null : lockedReason(lvl)),
     funds: () => game.money, pay: (a) => { economy.spend('marketing', a); return true; }, refund: (a) => { economy.refund(a, 'marketing'); },
     earn: (cat, a) => economy.earn(cat, a),
-    courses: () => race.courses(), courseName: (c) => names.pisteName(c.run),
+    courses: () => race.courses(), courseName,
     worldCupToday: () => events.active().some((e) => e.id === 'worldCup'),
     worldCupOn: (a) => events.active(a).some((e) => e.id === 'worldCup') || events.booked.some((b) => b.id === 'worldCup' && a >= b.start && a < b.end),
     close: (c, ticks) => openStatus.closeTiles([...c.run.tiles], 'Race day', safety.incidents.nowTick ?? 0, ticks),
@@ -1032,7 +1046,7 @@ export function createSim(opts: SimOptions) {
     },
     fed: (ids) => { const st = guestSim.store; for (const id of ids) { const i = st.slotOf(id); if (i >= 0 && st.alive[i]) st.hunger[i] = Math.min(1, st.hunger[i]! + RACE_DAY.hungerAfter); } },
     news: (m) => toast(m, 'info', 'building'),
-  }, RACE.boardBaseS, RACE.boardMps);
+  }, RACE.boardBaseS, RACE.boardMps, RACE.mtb.boardBaseS, RACE.mtb.boardMps);
   raceDayRef = raceDay;
   guestSim.spectateUntil = (id) => (raceDay.session && raceDay.session.spectators.includes(id) ? RACE_DAY.to : null);
   bus.on('time:hour', (e) => raceDay.onHour(e?.hour ?? Math.floor(hourOfDay(game.date)))); // (some tests emit the event without a payload)
@@ -1198,6 +1212,17 @@ export function createSim(opts: SimOptions) {
   };
   /** Every run (sorted by tile order of the network): the Runs list panel. */
   const runList = (): RunInfo[] => pisteIndex().list.map(reportOf);
+  /** The MTB trails that can be (or are) a downhill course (0.8.2): red / black trails only, so the Runs tab is not a list of every footpath. Rows carry `mtb`. */
+  const trailRows = (): Array<{ id: number; name: string; difficulty: number; lengthM: number; dropM: number; x: number; y: number; open: boolean; course: { on: boolean; can: boolean; text: string } }> => {
+    const out = [];
+    for (const r of mtbRunIndex.runs()) {
+      if (r.synthetic || r.difficulty < RACE.minDifficulty) { if (!runSettings.isCourse(race.idOf(r))) continue; }
+      const id = race.idOf(r), on = runSettings.isCourse(id), why = race.reasonFor(r), info = race.courses().find((c) => c.id === id), t = r.poly[r.poly.length >> 1] ?? r.tiles[0]!;
+      const text = on ? (why ? `Downhill course, inactive: ${reasonText(why, true)}` : `Downhill course · ${race.racersToday(true)} riders today${race.bestMs(id) === null ? '' : ` · best ${fmtTime(race.bestMs(id)!)}`}`) : why ? reasonText(why, true) : 'Can be a downhill course';
+      out.push({ id, name: info ? courseName(info) : `Trail ${(t % size)},${(t / size) | 0}`, difficulty: r.difficulty, lengthM: r.lengthM, dropM: r.dropM, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5, open: info ? info.open : true, course: { on, can: on || why === null, text } });
+    }
+    return out;
+  };
   const runById = (id: number): Run | undefined => pisteIndex().list.find((r) => names.pisteId(r) === id);
   const setRunClosed = (id: number, closed: boolean): boolean => {
     if (!runById(id)) return false;
@@ -1389,7 +1414,7 @@ export function createSim(opts: SimOptions) {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
-    jumpToDay, pisteReportAt, renamePisteAt, runIndex, runLabels, runSettings, race, raceDay, bookRaceDay, setRunCourse, runList, setRunClosed, setRunGroomMode, renameRun,
+    jumpToDay, trailRows, get mtbRuns() { return mtbRunIndex.runs(); }, courseName, pisteReportAt, renamePisteAt, runIndex, mtbRunIndex, runLabels, runSettings, race, raceDay, bookRaceDay, setRunCourse, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,

@@ -23,7 +23,7 @@ import { tickNeeds, type NeedEnv } from './Needs';
 import { ReviewDirector, type PlaceText } from './Reviews';
 import { injuryRisk, maxDifficultyFor, recordRun } from './Skill';
 import { OccFlag } from '../../world/Occupancy';
-import { CORE_TYPE_COUNT, RACER_TYPE, extraDef } from '../../config/guestTypes';
+import { CORE_TYPE_COUNT, DOWNHILLER_TYPE, RACER_TYPE, extraDef } from '../../config/guestTypes';
 import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
 import { Layer } from '../../world/Networks';
@@ -82,6 +82,8 @@ export class GuestSim {
   raceLap: ((guestId: number, tile: number) => void) | null = null;
   /** Has this racer trained its laps (stateless: read from the saved lap record), so it leaves after the run. */
   raceDone: ((guestId: number) => boolean) | null = null;
+  /** Downhill course hook (0.8.2): a downhiller reached the bottom goal of a downhill course (a lap). */
+  mtbLap: ((guestId: number, tile: number) => void) | null = null;
   /** Safety hook (Task 26): called when a run ends in injury; returns true when the incident system took the guest over (frozen as Injured). */
   injuryHook: ((guestId: number, x: number, y: number, f: { over: number; offPiste: boolean; quality: number }) => boolean) | null = null;
   /** Observer hook run at the end of every guest tick (story guests poll the store here; it must never change guest behaviour). */
@@ -120,7 +122,7 @@ export class GuestSim {
       hour: () => this.hour,
       leaveHour: (slot) => (slot !== undefined && this.isPhotog(slot) && this.curPhotoLeave > this.decider.leaveHour ? this.decider.photoDay.sunset + PHOTO.planUntil : this.decider.leaveHour),
       avoid: (t) => this.decider.avoidTile(t),
-      reachedGoal: (slot, kind) => { const s = this.store; this.attractions?.trail(slot, kind === 1 ? 'bike' : 'hike', this.tick); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); },
+      reachedGoal: (slot, kind) => { const s = this.store; this.attractions?.trail(slot, kind === 1 ? 'bike' : 'hike', this.tick); s.visits[slot] = Math.min(255, s.visits[slot]! + 1); if (kind === 1 && s.type[slot] === DOWNHILLER_TYPE) this.mtbLap?.(s.id[slot]!, this.exc.map.get(slot)?.goal ?? -1); },
       foodNear: (x, y) => { const r2 = EXC.foodRadius * EXC.foodRadius; for (const b of this.byId.values()) if ((FOOD.has(b.type) ? b.type !== 'baseLodge' : b.type === 'alpineFarm' || SNACKS.has(b.type)) && (b.x + b.w / 2 - x) ** 2 + (b.y + b.h / 2 - y) ** 2 <= r2) return true; return false; },
       packsLunch: (slot) => this.isPhotog(slot),
       viewDwellH: (goal, slot) => (slot !== undefined && this.isPhotog(slot) && this.decider.viewAt(goal) ? this.photoDwellH(slot, goal) : this.decider.viewDwell(goal)),
@@ -521,6 +523,7 @@ export class GuestSim {
       this.trekCleanup(slot); // aborted on the way up: the bed is released, the guest carries on as a day guest
     }
     s.state[slot] = GState.Idle; s.act[slot] = Act.None; s.timer[slot] = this.rng.int(5, 15); this.after(slot);
+    if (s.type[slot] === DOWNHILLER_TYPE && this.raceDone?.(id)) { this.startLeaving(slot, Leave.Satisfied); return; } // a downhiller that trained its laps heads home
     if (t && t.day === 3 && ok) {
       this.trekStats.completed++; this.trekDone.add(id); this.trek.delete(id);
       s.happiness[slot] = Math.min(1, s.happiness[slot]! + 0.15);
@@ -806,6 +809,7 @@ export class GuestSim {
         this.attractions?.trail(i, s.moveMode[i] === NavMode.Bike ? 'bike' : 'hike', this.tick);
         s.visits[i] = Math.min(255, s.visits[i]! + 1);
         s.state[i] = GState.Idle; s.timer[i] = rng.int(20, 50); s.act[i] = Act.None;
+        if (s.type[i] === DOWNHILLER_TYPE && s.moveMode[i] === NavMode.Bike) { const n = this.graph()?.size ?? 1; this.mtbLap?.(s.id[i]!, Math.floor(s.goalY[i]!) * n + Math.floor(s.goalX[i]!)); if (this.raceDone?.(s.id[i]!)) { this.startLeaving(i, Leave.Satisfied); return; } } // a lap on a downhill course (short route, no excursion)
         if (this.isPhotog(i)) { const vi = this.decider.viewAt(Math.floor(s.goalY[i]!) * (this.graph()?.size ?? 1) + Math.floor(s.goalX[i]!)); if (vi && this.photoShoot(i, vi.id, vi.score)) s.timer[i] = Math.round(this.photoDwellH(i, 0) * 10) || 6; } // a short walk to the spot (no excursion): the session in place
         return;
       }

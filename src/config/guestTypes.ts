@@ -111,6 +111,8 @@ export interface GuestTypeDef {
   photographer?: boolean;
   /** Racer (0.8.0, docs/race-course.md): trains laps on a race course (the via pick is forced onto it), skis faster, ignores slope stops, leaves after a few laps. */
   racer?: boolean;
+  /** Downhiller (0.8.2, docs/race-course.md "Downhill course"): a mountain biker who trains laps on a downhill course (the trail goal is forced onto it), leaves after a few laps. */
+  downhiller?: boolean;
 }
 
 /**
@@ -133,10 +135,12 @@ export const SENIOR_TYPE = 8;
 export const SENIOR_WALK = 0.82;
 /** Type index of the Racer (CORE_TYPE_COUNT + 8; 0.8.0). */
 export const RACER_TYPE = 14;
+/** Type index of the Downhiller (0.8.2). */
+export const DOWNHILLER_TYPE = 15;
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer, 14 = Racer (0.8.0).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer, 14 = Racer (0.8.0), 15 = Downhiller (0.8.2).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -226,6 +230,15 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     appeal: { restaurant: 0.8, terrace: 0.5, cafe: 0.5, lodging: 0.6, rental: 0.1, bar: 0.4, stunt: 0.3, adventure: 0.4, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.1 },
     group: [1, 3], budget: [180, 360], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [2, 0],
     look: { top: 4, topShare: 0.9, colour: 0xf5d90a, gear: 'ski', helmet: true }, // yellow race bibs, helmets
+  },
+  {
+    // 0.8.2 (docs/race-course.md "Downhill course"): the summer twin of the Racer. Trains laps on the player's downhill course (a MTB trail with a Start Hut and a Timing Hut), needs an open bike lift
+    // and an open, valid course (pseudo id `@mtbCourse`). Always on the bike, full-face helmet, a course fee a day (plus the trail pass), lunch where there is one.
+    id: 'downhiller', label: 'Downhiller', seasons: { summer: 0.05 }, minLevel: 3, requires: ['@mtbCourse'], fallback: 'adventure', segment: 'adventure', downhiller: true,
+    weather: { rain: 0.3, storm: 0, cloudy: 0.9 },
+    appeal: { adventure: 0.9, rental: 0.6, restaurant: 0.7, bar: 0.7, terrace: 0.6, shop: 0.3, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.05, stunt: 0.2, beach: 0.3, boats: 0.2 },
+    group: [1, 3], budget: [200, 380], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [0, 100],
+    look: { top: 4, topShare: 0.9, colour: 0xe0541c, helmet: true, outfit: 1 }, // orange jerseys, helmets, the summer outfit
   },
 ];
 /** Extra types, in index order (index = CORE_TYPE_COUNT + position). Starts as the shipped list; tests may reset / register more. */

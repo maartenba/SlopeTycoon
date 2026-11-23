@@ -150,7 +150,7 @@ export class NavGraph implements PathGraph {
       case NavMode.Bike: {
         if (path || station) return len * 0.8;
         // a bridge deck is flat by construction; `isBikeable` is false on water tiles, so bikers could never use an MTB bridge over a lake or stream without this
-        if ((w.layers[b]! & Layer.Mtb) === 0 || w.hikeOk[b] !== 1 || (!trailBridge && !w.isBikeable(b % n, (b / n) | 0))) return -1;
+        if ((w.layers[b]! & Layer.Mtb) === 0 || w.hikeOk[b] !== 1 || (w.closed && w.closed[b] === 1) || (!trailBridge && !w.isBikeable(b % n, (b / n) | 0))) return -1;
         const d = this.altOf(b) - this.altOf(a);
         if (d > EPS) return -1;
         return len * (d < -EPS ? 0.5 : 1.4);

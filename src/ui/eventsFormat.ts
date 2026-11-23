@@ -4,7 +4,7 @@ import type { EventCalendar } from '../sim/events/EventCalendar';
 import type { RaceDay } from '../sim/race/RaceDay';
 import type { CourseInfo } from '../sim/race/RaceCourse';
 import { fmtTime } from '../sim/race/RaceCourse';
-import { RACE, RACE_DAY } from '../config/race';
+import { RACE_DAY, reasonText } from '../config/race';
 import { weekdayOf } from '../sim/Clock';
 
 import { SIM_MONTHS_SHORT, REAL_MONTHS_SHORT, SEASON_OF_REAL_MONTH, dayOfYearLabel, formatGameDate, realMonthOfDay } from '../sim/calendar';
@@ -77,19 +77,19 @@ export function buildEventsView(cal: EventCalendar, today: number, funds: number
   if (race) {
     const rd = race.raceDay;
     const s = rd.session;
-    if (s) running.push({ id: `raceDay:${s.course}`, name: `${s.kind === 'club' ? 'Club Race' : 'World Cup race'} · ${s.name}`, icon: '🏁', when: dayLabel(s.day, year), note: `${s.field} racers · ${s.spectators.length} watching · until ${RACE_DAY.to}:00`, booked: s.kind === 'club', start: s.day, cancellable: false });
-    for (const b of rd.bookings) { const c = race.courses.find((x) => x.id === b.course); upcoming.push({ id: `raceDay:${b.course}`, name: `Club Race${c ? ` · ${race.courseName(c)}` : ''}`, icon: '🏁', when: dayLabel(b.day, year), note: countdown(b.day - today), booked: true, start: b.day, cancellable: b.day > today }); }
+    if (s) running.push({ id: `raceDay:${s.course}`, name: `${s.kind === 'club' ? (s.mtb ? 'Downhill Race' : 'Club Race') : 'World Cup race'} · ${s.name}`, icon: '🏁', when: dayLabel(s.day, year), note: `${s.field} ${s.mtb ? 'riders' : 'racers'} · ${s.spectators.length} watching · until ${RACE_DAY.to}:00`, booked: s.kind === 'club', start: s.day, cancellable: false });
+    for (const b of rd.bookings) { const c = race.courses.find((x) => x.id === b.course); upcoming.push({ id: `raceDay:${b.course}`, name: `${c?.mtb ? 'Downhill Race' : 'Club Race'}${c ? ` · ${race.courseName(c)}` : ''}`, icon: '🏁', when: dayLabel(b.day, year), note: countdown(b.day - today), booked: true, start: b.day, cancellable: b.day > today }); }
     upcoming.sort((a, b) => a.start - b.start);
     const marked = race.courses;
     const options: RaceDayCard['options'] = {};
     for (const c of marked) {
       const o: Array<{ start: number; label: string; blocker: string | null }> = [];
-      for (let k = RACE_DAY.leadDays; k < 60 && o.length < 12; k++) { const d = today + k, wd = weekdayOf({ year: 0, day: d }); if (!RACE_DAY.weekdays.includes(wd)) continue; if (rd.blocker(c.id, d) === 'Only in winter') continue; o.push({ start: d, label: `${WEEKDAY[wd]} ${dayLabel(d, year)}`, blocker: rd.blocker(c.id, d) }); }
+      for (let k = RACE_DAY.leadDays; k < 60 && o.length < 12; k++) { const d = today + k, wd = weekdayOf({ year: 0, day: d }); if (!RACE_DAY.weekdays.includes(wd)) continue; { const bl = rd.blocker(c.id, d); if (bl === 'Only in winter' || bl === 'Only in summer') continue; } o.push({ start: d, label: `${WEEKDAY[wd]} ${dayLabel(d, year)}`, blocker: rd.blocker(c.id, d) }); }
       options[c.id] = o;
     }
     raceDayCard = {
       cost: RACE_DAY.cost, general: marked.length ? rd.requirement() : 'Mark a run as a race course first (Operations > Runs)',
-      courses: marked.map((c) => { const r = rd.lastResult(c.id), sp = rd.sponsorOf(c.id); return { id: c.id, name: race.courseName(c), difficulty: c.run.difficulty, valid: c.valid, reason: c.reason ? RACE.reasons[c.reason] : null, sponsor: sp?.name ?? null, last: r ? `${r.winner} ${fmtTime(r.winnerMs)}` : null }; }),
+      courses: marked.map((c) => { const r = rd.lastResult(c.id), sp = rd.sponsorOf(c.id); return { id: c.id, name: race.courseName(c), difficulty: c.run.difficulty, valid: c.valid, reason: c.reason ? reasonText(c.reason, c.mtb) : null, sponsor: sp?.name ?? null, last: r ? `${r.winner} ${fmtTime(r.winnerMs)}` : null }; }),
       options,
     };
   }

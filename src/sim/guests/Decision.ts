@@ -151,6 +151,8 @@ export class Decider {
   lifts: LiftInfo[] = [];
   hikeTiles: number[] = [];
   mtbTiles: number[] = [];
+  /** Downhillers (0.8.2): the goal tiles at the foot of the open downhill courses (empty = none). */
+  mtbCourseGoals: () => readonly number[] = () => [];
   skiOpenTiles = 0;
   private descent = new Map<string, boolean>();
   private shapes = new Map<string, { flat: number; wide: number }>();
@@ -498,9 +500,10 @@ export class Decider {
       let bt = this.mtbTiles[Math.floor(rng.next() * this.mtbTiles.length)]!;
       const balt = this.mtbTiles[Math.floor(rng.next() * this.mtbTiles.length)]!;
       if (this.avoidTile(balt) < this.avoidTile(bt)) bt = balt;
-      const gb = this.pickGoal(s, i, rng, hour, x, y, pref, 'bike');
+      const dh = s.type[i]! >= 6 && !!extraDef(s.type[i]!)?.downhiller; // a downhiller only rides to the foot of a downhill course (the core draw order above is untouched)
+      const gb = this.pickGoal(s, i, rng, hour, x, y, pref, 'bike', dh ? this.mtbCourseGoals() : undefined);
       if (gb) bt = gb.tile;
-      if (!this.useGoals || gb) out.push({ kind: 'bike', tile: bt, via: gb?.via, oneWay: gb?.oneWay, score: -1.1 * this.avoidTile(bt) + (pref === Pref.Bike ? 1.1 : 0.05) - 0.6 * fatigue + noise() });
+      if ((!this.useGoals && !dh) || gb) out.push({ kind: 'bike', tile: bt, via: gb?.via, oneWay: gb?.oneWay, score: -1.1 * this.avoidTile(bt) + (pref === Pref.Bike ? 1.1 : 0.05) - 0.6 * fatigue + noise() });
     }
     // M7.1 (docs/economy-audit.md): the souvenir stop scored 0.2 and earned ~$50 a year (a dead building); 0.45 makes a first shop pay back in about a year (bot economy within +-5 %)
     if (this.shop.length && s.budget[i]! > 40) out.push({ kind: 'shop', building: this.nearest(this.shop, x, y, rng)!, score: 0.45 + noise() });

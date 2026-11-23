@@ -54,6 +54,8 @@ export interface RunRow {
   groomMode: 'auto' | 'first' | 'skip'; groomedDaysAgo: number | null;
   /** Race course (0.8.0): marked, can be marked now, status line. */
   course?: { on: boolean; can: boolean; text: string };
+  /** A MTB trail row (0.8.2): a downhill course candidate; no grooming, no manual closing. */
+  mtb?: boolean;
 }
 export interface RunsApi {
   rows(): RunRow[];
@@ -163,15 +165,15 @@ export class StOperations extends StElement {
       name.addEventListener('click', () => a.focus(r.id));
       const dot = el('span', '', '● '); dot.style.color = mapDifficultyCss(r.difficultyColor);
       const modes: Array<['auto' | 'first' | 'skip', string]> = [['auto', 'Auto'], ['first', 'First'], ['skip', 'Never']];
-      const g = el('button', 'tab', modes.find((m) => m[0] === r.groomMode)![1]); g.dataset.groom = String(r.id); g.title = 'Grooming order: Auto / Groom first / Never groom';
+      const g = el('button', 'tab', r.mtb ? '—' : modes.find((m) => m[0] === r.groomMode)![1]); g.dataset.groom = String(r.id); g.disabled = !!r.mtb; g.title = 'Grooming order: Auto / Groom first / Never groom';
       g.addEventListener('click', () => { a.setGroom(r.id, modes[(modes.findIndex((m) => m[0] === r.groomMode) + 1) % modes.length]![0]); this.refresh(); });
-      const cr = el('button', `tab${r.course?.on ? ' active' : ''}`, r.course?.on ? '⚑ Course' : '—'); cr.dataset.course = String(r.id); cr.title = r.course?.text ?? '';
+      const cr = el('button', `tab${r.course?.on ? ' active' : ''}`, r.course?.on ? (r.mtb ? '⚑ Downhill' : '⚑ Course') : '—'); cr.dataset.course = String(r.id); cr.title = r.course?.text ?? '';
       cr.disabled = !r.course || !r.course.can; cr.addEventListener('click', () => { a.setCourse?.(r.id, !r.course?.on); this.refresh(); });
       const st = el('button', `tab${r.open ? '' : ' active'}`, r.open ? 'Open' : 'Closed'); st.dataset.toggle = String(r.id);
       st.title = r.open ? 'Click to close this run' : r.closedByPlayer ? 'Closed by you: click to reopen' : (r.reason ?? 'Closed');
-      st.addEventListener('click', () => { if (r.open || r.closedByPlayer) { a.setClosed(r.id, r.open); this.refresh(); } });
+      st.disabled = !!r.mtb; st.addEventListener('click', () => { if (!r.mtb && (r.open || r.closedByPlayer)) { a.setClosed(r.id, r.open); this.refresh(); } });
       tr.append(td(name), td(dot, r.difficultyLabel), td(`${r.lengthM.toLocaleString('en-US')} m`), td(`${r.dropM.toLocaleString('en-US')} m`), td(String(r.passesToday)), td(String(r.passesWeek)),
-        td(r.quality ?? 'n/a'), td(r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(cr), td(st));
+        td(r.quality ?? 'n/a'), td(r.mtb ? 'n/a' : r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(cr), td(st));
       tbl.append(tr);
     }
     return [tbl];

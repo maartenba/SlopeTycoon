@@ -423,3 +423,6 @@ The surprise now gives one in-game month (15 sim days) of +10 % arrivals from th
 
 **Economy guard** (`npm run analysis:race -- --raceday 1`, 64 maps, two identical resorts per seed run to a winter Saturday, one with a Club Race): the race day's total income is **x0.99 to x1.34 a normal Saturday** (red seed 61 x0.99, red seed 5 x1.34, black seed 61 x1.24, black seed 5 x1.02; guard `RACE_DAY.earnCapVsSaturday` = 1.5). Entry fee $10 and sponsor pay $250-340 were lowered from the first draft ($15, $380-520) because that draft reached x1.46: the direct income (fees + sponsor, ~$550-600) is already a quarter of a Saturday here. The $3,000 booking is a marketing expense, so a race day never pays for itself.
 
+
+## 0.8.2 downhill
+The Downhiller (type 15) needs `@mtbCourse` (a marked downhill course with both huts and an open bike lift): the plain `Bot` builds none, so no golden moved (staff, yearReport and balance suites unchanged). Economy numbers: `npm run analysis:race -- --summer 1` (see `docs/race-course.md` "Downhill course").

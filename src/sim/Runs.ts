@@ -16,6 +16,8 @@ export interface RunIndexDeps {
   stations(): ReadonlyArray<Pt>;
   /** Bumps when terrain heights change (terraforming under a piste changes slope / drop / difficulty). */
   terrainVersion?(): number;
+  /** The layer that makes a tile part of a run (default: Ski). 0.8.2: a second index over the MTB trails (downhill courses). */
+  layer?: number;
 }
 
 export class RunIndex {
@@ -29,11 +31,10 @@ export class RunIndex {
     const tv = this.d.terrainVersion?.() ?? 0;
     const key = st.map((p) => `${p.x},${p.y}`).join(';');
     if (this.cache && this.cache.v === n.version && this.cache.tv === tv && this.cache.key === key) return this.cache.net;
-    const size = n.size, mask = new Uint8Array(size * size);
-    for (let i = 0; i < mask.length; i++) if (n.layers[i]! & Layer.Ski) mask[i] = 1;
+    const size = n.size, mask = new Uint8Array(size * size), layer = this.d.layer ?? Layer.Ski;
+    for (let i = 0; i < mask.length; i++) if (n.layers[i]! & layer) mask[i] = 1;
     const net = buildRuns({ size, mask, alt: (i) => this.d.alt(i), difficulty: n.difficulty, stations: st });
-    const dis = n.disconnectedMask();
-    for (const r of net.runs) r.disconnected = r.tiles.length > 0 && dis[r.tiles[0]!] === 1;
+    if (layer === Layer.Ski) { const dis = n.disconnectedMask(); for (const r of net.runs) r.disconnected = r.tiles.length > 0 && dis[r.tiles[0]!] === 1; }
     this.cache = { v: n.version, tv, key, net };
     this.rebuilds++;
     return net;

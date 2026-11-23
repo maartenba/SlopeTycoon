@@ -131,3 +131,7 @@ You decide when they run. **Operations → Lifts** has a **Snowmaking** row with
 *Turn all cannons off / on* is a one-click bulk switch, and every cannon has its own **On / Off** in its inspector. A switched-off cannon is **mothballed**: no energy, no water and only 15 % of its upkeep. The status line says why a cannon is idle (*Paused: snowline above this piste (1,420 m)*, *Off by you*, *Auto: waiting for cold*). Existing games default to **On**.
 
 > [!TIP] If a piste is closed, click it. The inspector says whether it is lack of snow, an avalanche closure or no connection.
+
+### Downhill courses (summer)
+
+The same huts work on a **mountain-bike trail**. Paint a red or black bike trail with at least 60 m of drop, put a **Start Hut** beside its top and a **Timing Hut** beside its foot, then open **Operations**, **Runs** and switch the trail to a **Downhill** course (trails are listed with "(trail)" after their name). **Downhillers** are a summer guest type that ride the course in a few laps, pay a small course fee on their first lap of the day and eat at your lodges; they need an open lift that carries bikes. A trail is never groomed, so there is nothing to keep up except that the trail stays clear of snow. In summer you can also book a **Downhill Race** on a weekend from the same Race day card: the trail is closed to riders from 10:00 to 14:00, guests come to watch and the winner's time goes on the board.
