@@ -65,7 +65,10 @@ export const RACE = {
       noStartHut: 'Needs a Start Hut at the top',
       noTimingHut: 'Needs a Timing Hut at the foot',
       tooMany: 'Three downhill courses is the limit',
+      gone: 'The trail is gone: rebuild it or unmark the course',
     },
+    /** An open, valid course no bike lift can reach (shown as the course status and as a Rudi tip). */
+    noLift: 'Riders cannot reach the top: connect it to a bike lift',
   },
   /** The reasons a run is not a (valid) course, as shown to the player. */
   reasons: {
@@ -75,6 +78,7 @@ export const RACE = {
     noStartHut: 'Needs a Start Hut at the top',
     noTimingHut: 'Needs a Timing Hut at the foot',
     tooMany: 'Three courses is the limit',
+    gone: 'The run is gone',
   },
 } as const;
 
@@ -98,6 +102,8 @@ export const RACE_DAY = {
   /** Spectators (existing guests): cap per race, by course colour (a black course draws more). Hard ceiling 40. */
   spectators: { club: { 3: 18, 4: 28 }, worldCup: { 3: 32, 4: 40 } } as Record<'club' | 'worldCup', Record<number, number>>,
   maxSpectators: 40,
+  /** A Downhill Race (0.8.2, summer: the resort earns less on a summer Saturday, so the race is smaller): field, entry fee and spectator cap by course colour. */
+  mtb: { field: [8, 12] as readonly [number, number], entryFee: 8, spectators: { 3: 8, 4: 10 } as Record<number, number>, /** share of the sponsor's flat sum paid on a summer race day */ sponsorShare: 0.6 },
   /** Spectators sent per hour at most (the crowd builds up). */
   perWave: 16,
   /** Candidates must be within this many tiles of the Timing Hut. */

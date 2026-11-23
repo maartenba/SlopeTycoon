@@ -527,6 +527,29 @@ export function createSim(opts: SimOptions) {
   };
   pq.onGroom = (i) => { const r = runIndex.runOfTile(i); if (r) runSettings.noteGroomed(names.pisteId(r), absDayNow()); };
   const runPasses = (r: Run): number => { let m = 0; for (const t of r.poly.length ? r.poly : r.tiles) { const v = (pq.trafficDay[t] ?? 0) + (pq.traffic[t] ?? 0); if (v > m) m = v; } return m; };
+  // Downhill courses: tiles a rider can reach from the top of a bike-carrying lift over trails (downhill or level) and footpaths / roads (any slope). Snow is ignored (a structural answer: "connect it to a bike lift").
+  const bikeReach = { v: -1, tv: -1, sig: '', set: new Set<number>() };
+  const bikeReachable = (): Set<number> => {
+    const lf = lifts.all().filter((l) => LIFTS[l.kind]?.carriesBikes), sig = lf.map((l) => `${l.id}:${l.top.x},${l.top.y}`).join(';');
+    if (bikeReach.v === networks.version && bikeReach.tv === grid.terrainVersion && bikeReach.sig === sig) return bikeReach.set;
+    const set = new Set<number>(), q: number[] = [], alt = (i: number): number => { const c = grid.getCorners(i % size, (i / size) | 0); return (c[0] + c[1] + c[2] + c[3]) / 4; };
+    const passable = (j: number): boolean => ((networks.layers[j] ?? 0) & NetLayer.Mtb) !== 0 || (networks.kind[j] === NetKind.Path || networks.kind[j] === NetKind.Road);
+    for (const l of lf) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = l.top.x + dx, y = l.top.y + dy; if (x < 0 || y < 0 || x >= size || y >= size) continue; const j = y * size + x; if (passable(j) && !set.has(j)) { set.add(j); q.push(j); } }
+    for (let h = 0; h < q.length; h++) {
+      const i = q[h]!, x = i % size, y = (i / size) | 0, ai = alt(i), onFlat = networks.kind[i] === NetKind.Path || networks.kind[i] === NetKind.Road;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        const j = ny * size + nx; if (set.has(j) || !passable(j)) continue;
+        const flatJ = networks.kind[j] === NetKind.Path || networks.kind[j] === NetKind.Road;
+        if (!flatJ && !onFlat && alt(j) > ai + 0.26) continue; // a trail is ridden downhill or level
+        set.add(j); q.push(j);
+      }
+    }
+    bikeReach.v = networks.version; bikeReach.tv = grid.terrainVersion; bikeReach.sig = sig; bikeReach.set = set;
+    return set;
+  };
+  const structurallyReachable = (starts: readonly number[]): boolean => starts.some((start) => { const set = bikeReachable(), x = start % size, y = (start / size) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < size && ny < size && set.has(ny * size + nx)) return true; } return false; });
   // Race courses (0.8.0, docs/race-course.md): a property of a run; racers train on it. Wired here because it needs runs, buildings, the open status and the guests.
   const race = new RaceCourse({
     size, runs: () => runIndex.runs(), runId: (r) => names.pisteId(r), settings: runSettings,
@@ -534,6 +557,7 @@ export function createSim(opts: SimOptions) {
     timingHuts: () => buildings.all().filter((b) => b.type === 'timingHut' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h, rot: b.rot })),
     runOpen: (r) => { const st = openStatus.pisteAt(r.tiles[0]! % size, (r.tiles[0]! / size) | 0); return st ? st.open : true; },
     mtbRuns: () => mtbRunIndex.runs(),
+    mtbReach: (starts, open) => structurallyReachable(starts) && (!open || guestSim.decider.downhillReachable(starts)),
     mtbOpen: (r) => { for (const t of r.tiles) { if (cond.hikeOk[t] !== 1 || openStatus.isTileClosed(t)) return false; } return true; },
     groomedDaysAgo: (id) => { const g = runSettings.lastGroomedDay(id); return g === undefined ? null : Math.max(0, absDayNow() - g); },
     day: absDayNow, earn: (a) => economy.earn('recreation', a),
@@ -541,7 +565,8 @@ export function createSim(opts: SimOptions) {
   guestSim.exploration.racerTiles = () => race.courseTiles();
   guestSim.raceLap = (id, tile) => { race.onLap(id, tile); };
   guestSim.raceDone = (id) => { const sl = guestSim.store.slotOf(id); return race.lapsOf(id) >= lapQuota(id, sl >= 0 && guestSim.store.type[sl] === DOWNHILLER_TYPE); };
-  guestSim.decider.mtbCourseGoals = () => race.mtbGoalTiles();
+  guestSim.decider.mtbCourseStarts = () => race.mtbStarts();
+  guestSim.mtbRoute = (tile) => race.mtbRoute(tile);
   guestSim.mtbLap = (id, tile) => { race.onLap(id, tile, true); };
   bus.on('day:changed', () => race.prune((id) => guestSim.store.slotOf(id) >= 0));
   const racersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === RACER_TYPE) n++; return n; };
@@ -549,7 +574,7 @@ export function createSim(opts: SimOptions) {
   const ridersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === DOWNHILLER_TYPE) n++; return n; };
   guestSim.spawner.mtbDemand = () => race.demandMtb(ridersAlive());
   /** Display name of a course: a ski run's name; a downhill trail is "Downhill N" by its place among the marked downhill courses. */
-  const courseName = (c: { id: number; mtb: boolean; run: Run }): string => c.mtb ? `Downhill ${1 + race.courses().filter((k) => k.mtb).findIndex((k) => k.id === c.id)}` : names.pisteName(c.run);
+  const courseName = (c: { id: number; mtb: boolean; run: Run }): string => c.mtb ? `Downhill ${race.nameNo(c.id)}` : names.pisteName(c.run);
   const setRunCourse = (id: number, on: boolean): { ok: boolean; reason?: string } => { const r = race.setCourse(id, on); return r.ok ? r : { ok: false, reason: r.reason ? reasonText(r.reason, id >= RACE.mtb.idBase) : undefined }; };
   pq.onDayRollover = () => {
     const ids: number[] = [];
@@ -1218,9 +1243,11 @@ export function createSim(opts: SimOptions) {
     for (const r of mtbRunIndex.runs()) {
       if (r.synthetic || r.difficulty < RACE.minDifficulty) { if (!runSettings.isCourse(race.idOf(r))) continue; }
       const id = race.idOf(r), on = runSettings.isCourse(id), why = race.reasonFor(r), info = race.courses().find((c) => c.id === id), t = r.poly[r.poly.length >> 1] ?? r.tiles[0]!;
-      const text = on ? (why ? `Downhill course, inactive: ${reasonText(why, true)}` : `Downhill course · ${race.racersToday(true)} riders today${race.bestMs(id) === null ? '' : ` · best ${fmtTime(race.bestMs(id)!)}`}`) : why ? reasonText(why, true) : 'Can be a downhill course';
-      out.push({ id, name: info ? courseName(info) : `Trail ${(t % size)},${(t / size) | 0}`, difficulty: r.difficulty, lengthM: r.lengthM, dropM: r.dropM, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5, open: info ? info.open : true, course: { on, can: on || why === null, text } });
+      const text = on ? (why ? `Downhill course, inactive: ${reasonText(why, true)}` : info?.blocked ? `Downhill course, not usable: ${info.blocked}` : `Downhill course · ${race.racersToday(true)} riders today${race.bestMs(id) === null ? '' : ` · best ${fmtTime(race.bestMs(id)!)}`}`) : why ? reasonText(why, true) : 'Can be a downhill course';
+      out.push({ id, name: info ? courseName(info) : `Trail ${(t % size)},${(t / size) | 0}`, difficulty: r.difficulty, lengthM: r.lengthM, dropM: r.dropM, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5, open: info ? info.open && !info.blocked : true, course: { on, can: on || why === null, text } });
     }
+    // a marked course whose trail is gone stays in the list (inactive, with the reason) until it is unmarked or the trail is rebuilt
+    for (const c of race.courses()) if (c.mtb && c.reason === 'gone') { const t = c.id - RACE.mtb.idBase; out.push({ id: c.id, name: courseName(c), difficulty: 1, lengthM: 0, dropM: 0, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5, open: false, course: { on: true, can: true, text: `Downhill course, inactive: ${reasonText('gone', true)}` } }); }
     return out;
   };
   const runById = (id: number): Run | undefined => pisteIndex().list.find((r) => names.pisteId(r) === id);

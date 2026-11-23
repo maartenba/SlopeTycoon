@@ -23,6 +23,8 @@ export interface RaceDeps {
   /** 0.8.2: the MTB trails as runs (a second run index over the Mtb layer), their openness (every tile bikeable) and the trail pass price paid by the rider is not here. Absent = no summer courses. */
   mtbRuns?(): readonly Run[];
   mtbOpen?(r: Run): boolean;
+  /** Can a rider get from a bike lift to this course start tile? Structural (trails / paths, downhill or flat, snow ignored) and, while the course is open, also a real bike path search. Absent = yes. */
+  mtbReach?(starts: readonly number[], open: boolean): boolean;
   /** Absolute day number. */
   day(): number;
   /** Pay the course fee (dollars). */
@@ -33,11 +35,13 @@ export interface CourseInfo {
   id: number; run: Run; valid: boolean; reason: CourseReason | null; open: boolean;
   /** A MTB trail downhill course (0.8.2, summer) instead of a ski run (winter). */
   mtb: boolean;
+  /** A valid downhill course no bike lift reaches (the reason text); null = usable. Such a course draws no downhillers. */
+  blocked: string | null;
   /** 0..1: grooming x difficulty fit. 0 when not valid / open. */
   quality: number;
   start: HutRect | null; timing: HutRect | null;
 }
-export interface RaceSaved { laps: Array<[number, number, number]>; total: number; day: number; today: number; best: Array<[number, number]>; /** 0.8.2: riders of the day on the downhill courses (absent while 0) */ todayMtb?: number }
+export interface RaceSaved { laps: Array<[number, number, number]>; total: number; day: number; today: number; best: Array<[number, number]>; /** 0.8.2: riders of the day on the downhill courses (absent while 0) */ todayMtb?: number; /** 0.8.2: the stable number of each downhill course, [course id, n] (absent while none) */ mtbNo?: Array<[number, number]> }
 
 /** Gap in tiles between a footprint and a tile (0 = touching or inside). */
 const gap = (h: HutRect, tx: number, ty: number): number => Math.max(h.x - tx - 1, tx - (h.x + h.w - 1) - 1, h.y - ty - 1, ty - (h.y + h.h - 1) - 1, 0);
@@ -63,6 +67,8 @@ const mix = (a: number, b: number): number => { let h = (Math.imul(a | 0, 0x9e37
 export const lapQuota = (guestId: number, mtb = false): number => { const L = mtb ? RACE.mtb.laps : RACE.laps; return L[0] + Math.floor(mix(guestId, 11) * (L[1] - L[0] + 1)); };
 
 const NO_RUNS: readonly Run[] = [];
+/** A placeholder run for a downhill course whose trail is gone (never drawn, never open). */
+const ghostRun = (tile: number): Run => ({ index: -1, tiles: [tile], count: 1, poly: [tile], from: -1, to: -1, top: { x: 0, y: 0 }, bottom: { x: 0, y: 0 }, topAlt: 0, bottomAlt: 0, lengthM: 0, dropM: 0, avgSlopePct: 0, maxSlopePct: 0, difficulty: 1, loop: false, synthetic: true, disconnected: false });
 
 export class RaceCourse {
   private laps = new Map<number, [number, number]>(); // guest id -> [laps done, last fee day + 1]
@@ -106,14 +112,15 @@ export class RaceCourse {
   /** Mark / unmark a run. Switching on is refused with the reason; switching off always works. */
   setCourse(id: number, on: boolean): { ok: boolean; reason?: CourseReason } {
     const r = this.d.runs().find((x) => this.d.runId(x) === id) ?? (this.d.mtbRuns?.() ?? []).find((x) => this.idOf(x) === id);
-    if (!r) return { ok: false };
+    if (!r) { if (!on && id >= RACE.mtb.idBase && this.d.settings.setCourse(id, false)) { this.mtbNo.delete(id); return { ok: true }; } return on && id >= RACE.mtb.idBase ? { ok: false, reason: 'gone' } : { ok: false }; }
     const mtb = this.isMtb(r);
-    if (!on) { this.d.settings.setCourse(id, false); return { ok: true }; }
+    if (!on) { this.d.settings.setCourse(id, false); this.mtbNo.delete(id); return { ok: true }; }
     if (this.d.settings.isCourse(id)) return { ok: true };
     const why = this.reasonFor(r);
     if (why) return { ok: false, reason: why };
     if (this.courses().filter((c) => c.mtb === mtb).length >= RACE.maxCourses) return { ok: false, reason: 'tooMany' };
     this.d.settings.setCourse(id, true);
+    if (mtb) this.numberOf(id);
     return { ok: true };
   }
 
@@ -135,32 +142,54 @@ export class RaceCourse {
       const reason = this.reasonFor(r);
       st.push({ id, run: r, mtb: true, reason, start: reason === null ? this.hutNear(this.d.startHuts(), r, true) : null, timing: reason === null ? this.hutNear(this.d.timingHuts(), r, false) : null });
     }
+    // a marked downhill course whose trail is gone (no run holds its anchor tile any more): inactive with a reason, never silently dropped; it returns when the trail does
+    if (this.d.mtbRuns) for (const id of this.d.settings.courseIds()) {
+      if (id < RACE.mtb.idBase || st.some((c) => c.id === id)) continue;
+      const t = id - RACE.mtb.idBase;
+      st.push({ id, run: ghostRun(t), mtb: true, reason: 'gone', start: null, timing: null });
+    }
+    for (const c of st.filter((x) => x.mtb).sort((a, b) => a.id - b.id)) this.numberOf(c.id);
     this.cache = { key, runs: this.d.runs(), mruns, st };
     return st;
   }
   private tilesCache: { sig: string; tiles: Set<number> } = { sig: '', tiles: new Set() };
   private bottoms: number[] = [];
+  private starts: Array<{ tiles: number[]; poly: number[] }> = [];
+  /** Stable "Downhill N" numbers (course id -> n), saved; the number is kept while the course is marked, however the others come and go. */
+  private mtbNo = new Map<number, number>();
   private fresh(): { list: CourseInfo[]; tiles: ReadonlySet<number> } {
     const list: CourseInfo[] = [];
     for (const c of this.structure()) {
       const valid = c.reason === null, open = valid && (c.mtb ? this.d.mtbOpen?.(c.run) ?? false : this.d.runOpen(c.run));
+      const blocked = valid && c.mtb && this.d.mtbReach && !this.d.mtbReach(c.run.poly.slice(0, RACE.endTiles), open) ? RACE.mtb.noLift : null;
       let gq: number;
       if (c.mtb) gq = RACE.mtb.surface; // a trail is never groomed
       else { const ago = this.d.groomedDaysAgo(c.id); gq = ago === null ? RACE.groomQuality.ungroomed : ago <= 1 ? RACE.groomQuality.fresh : ago <= 2 ? RACE.groomQuality.stale : RACE.groomQuality.ungroomed; }
-      list.push({ id: c.id, run: c.run, mtb: c.mtb, valid, reason: c.reason, open, quality: open ? gq * (RACE.diffQuality[c.run.difficulty] ?? 0.8) : 0, start: c.start, timing: c.timing });
+      list.push({ id: c.id, run: c.run, mtb: c.mtb, valid, reason: c.reason, open, quality: open && !blocked ? gq * (RACE.diffQuality[c.run.difficulty] ?? 0.8) : 0, blocked, start: c.start, timing: c.timing });
     }
-    const sig = list.filter((c) => c.open).map((c) => c.id).join(',') + '|' + (this.cache?.key ?? '');
+    const sig = list.filter((c) => c.open).map((c) => c.id + (c.blocked ? 'x' : '')).join(',') + '|' + (this.cache?.key ?? '');
     if (this.tilesCache.sig !== sig) {
-      const tiles = new Set<number>(), bottoms: number[] = [];
-      for (const c of list) if (c.open) { if (c.mtb) { for (const t of c.run.poly.slice(-RACE.endTiles)) bottoms.push(t); } else for (const t of c.run.tiles) tiles.add(t); }
-      this.tilesCache = { sig, tiles }; this.bottoms = bottoms;
+      const tiles = new Set<number>(), bottoms: number[] = [], starts: Array<{ tiles: number[]; poly: number[] }> = [];
+      for (const c of list) if (c.open) { if (c.mtb) { if (!c.blocked) { for (const t of c.run.poly.slice(-RACE.endTiles)) bottoms.push(t); starts.push({ tiles: c.run.poly.slice(0, RACE.endTiles), poly: c.run.poly }); } } else for (const t of c.run.tiles) tiles.add(t); }
+      this.tilesCache = { sig, tiles }; this.bottoms = bottoms; this.starts = starts;
     }
     return { list, tiles: this.tilesCache.tiles };
   }
   /** Active (valid + open) SKI courses (winter racers). */
   active(): CourseInfo[] { return this.courses().filter((c) => c.open && !c.mtb); }
   /** Active (valid + open) MTB downhill courses (summer downhillers, 0.8.2). */
-  activeMtb(): CourseInfo[] { return this.courses().filter((c) => c.open && c.mtb); }
+  activeMtb(): CourseInfo[] { return this.courses().filter((c) => c.open && c.mtb && !c.blocked); }
+  /** Per usable downhill course the first `endTiles` centre-line tiles, top first: where a Downhiller sets out (a lift first, then a bike path to the first of them it can reach, then the course). */
+  mtbStarts(): ReadonlyArray<readonly number[]> { this.fresh(); return this.starts.map((x) => x.tiles); }
+  /** The centre line from `tile` down to the foot of the usable downhill course that has `tile` among its start tiles, or null. A rider on that tile rides exactly these tiles. */
+  mtbRoute(tile: number): Int32Array | null { this.fresh(); for (const c of this.starts) { const k = c.tiles.indexOf(tile); if (k >= 0) return Int32Array.from(c.poly.slice(k)); } return null; }
+  /** The stable number of a downhill course ("Downhill N"). */
+  nameNo(id: number): number { this.courses(); return this.mtbNo.get(id) ?? 0; }
+  private numberOf(id: number): number {
+    let n = this.mtbNo.get(id);
+    if (n === undefined) { const used = new Set(this.mtbNo.values()); n = 1; while (used.has(n)) n++; this.mtbNo.set(id, n); }
+    return n;
+  }
   /** The last tiles of the centre line of every open downhill course: the goals of the Downhillers (a lap = reaching one). */
   mtbGoalTiles(): readonly number[] { this.fresh(); return this.bottoms; }
   /** Tiles of the open courses (racers aim at them). */
@@ -204,12 +233,12 @@ export class RaceCourse {
   prune(alive: (id: number) => boolean): void { for (const id of [...this.laps.keys()]) if (!alive(id)) this.laps.delete(id); }
 
   serialize(): RaceSaved | null {
-    if (!this.laps.size && !this.total) return null;
-    return { laps: [...this.laps].sort((a, b) => a[0] - b[0]).map(([id, v]) => [id, v[0], v[1]]), total: this.total, day: this.dayStamp, today: this.today, best: [...this.bestToday].sort((a, b) => a[0] - b[0]), ...(this.todayMtb ? { todayMtb: this.todayMtb } : {}) };
+    if (!this.laps.size && !this.total && !this.mtbNo.size) return null;
+    return { laps: [...this.laps].sort((a, b) => a[0] - b[0]).map(([id, v]) => [id, v[0], v[1]]), total: this.total, day: this.dayStamp, today: this.today, best: [...this.bestToday].sort((a, b) => a[0] - b[0]), ...(this.todayMtb ? { todayMtb: this.todayMtb } : {}), ...(this.mtbNo.size ? { mtbNo: [...this.mtbNo].sort((a, b) => a[0] - b[0]) } : {}) };
   }
   load(d: Partial<RaceSaved> | null | undefined): void {
     this.laps = new Map((d?.laps ?? []).map(([id, n, f]) => [id, [n, f] as [number, number]]));
-    this.total = d?.total ?? 0; this.dayStamp = d?.day ?? -1; this.today = d?.today ?? 0; this.todayMtb = d?.todayMtb ?? 0; this.bestToday = new Map(d?.best ?? []);
+    this.total = d?.total ?? 0; this.dayStamp = d?.day ?? -1; this.today = d?.today ?? 0; this.todayMtb = d?.todayMtb ?? 0; this.mtbNo = new Map(d?.mtbNo ?? []); this.bestToday = new Map(d?.best ?? []);
     this.cache = null; this.version++;
   }
   reset(): void { this.load(null); }

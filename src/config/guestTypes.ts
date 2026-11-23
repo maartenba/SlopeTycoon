@@ -238,7 +238,7 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     weather: { rain: 0.3, storm: 0, cloudy: 0.9 },
     appeal: { adventure: 0.9, rental: 0.6, restaurant: 0.7, bar: 0.7, terrace: 0.6, shop: 0.3, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.05, stunt: 0.2, beach: 0.3, boats: 0.2 },
     group: [1, 3], budget: [200, 380], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [0, 100],
-    look: { top: 4, topShare: 0.9, colour: 0xe0541c, helmet: true, outfit: 1 }, // orange jerseys, helmets, the summer outfit
+    look: { top: 1, topShare: 0.9, colour: 0xf08a24, helmet: true, outfit: 1 }, // orange jerseys (`top` indexes CLOTH_COLORS: 1 = orange), helmets, the summer outfit
   },
 ];
 /** Extra types, in index order (index = CORE_TYPE_COUNT + position). Starts as the shipped list; tests may reset / register more. */

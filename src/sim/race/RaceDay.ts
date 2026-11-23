@@ -92,7 +92,7 @@ export class RaceDay {
     return age < 0 || age >= RACE_DAY.bonusDays ? 0 : b.pts * (1 - age / RACE_DAY.bonusDays);
   }
   /** The spectator cap of a session. */
-  capFor(kind: RaceKind, difficulty: number): number { return Math.min(RACE_DAY.maxSpectators, RACE_DAY.spectators[kind][difficulty] ?? RACE_DAY.spectators[kind][3]!); }
+  capFor(kind: RaceKind, difficulty: number, mtb = false): number { if (mtb) return RACE_DAY.mtb.spectators[difficulty] ?? RACE_DAY.mtb.spectators[3]!; return Math.min(RACE_DAY.maxSpectators, RACE_DAY.spectators[kind][difficulty] ?? RACE_DAY.spectators[kind][3]!); }
 
   // ---- booking ------------------------------------------------------------------------------------------------------------------------------
   /** Date-independent prerequisites: the level gate; null = met. */
@@ -177,7 +177,7 @@ export class RaceDay {
     if (!kind || !c) return;
     this.assignSponsor(c.id);
     const sp = this.sponsorOf(c.id);
-    const range = kind === 'club' ? RACE_DAY.field : RACE_DAY.fieldWorldCup;
+    const range = c.mtb ? RACE_DAY.mtb.field : kind === 'club' ? RACE_DAY.field : RACE_DAY.fieldWorldCup;
     const field = range[0] + Math.floor(mix(this.d.seed, t, c.id, 3) * (range[1] - range[0] + 1));
     this.session = { ...(c.mtb ? { mtb: true } : {}), kind, course: c.id, day: t, name: this.d.courseName(c), difficulty: c.run.difficulty, quality: c.quality, field, sponsor: sp?.id ?? null, spectators: [] };
     this.d.close(c, (RACE_DAY.to - RACE_DAY.from) * 10);
@@ -189,7 +189,7 @@ export class RaceDay {
   private topUp(): void {
     const s = this.session; if (!s) return;
     const c = this.d.courses().find((x) => x.id === s.course); if (!c) return;
-    const room = Math.min(RACE_DAY.perWave, this.capFor(s.kind, s.difficulty) - s.spectators.length);
+    const room = Math.min(RACE_DAY.perWave, this.capFor(s.kind, s.difficulty, !!s.mtb) - s.spectators.length);
     if (room <= 0) return;
     const got = this.d.send(c, room, new Set(s.spectators));
     if (got.length) { s.spectators.push(...got); this.version++; }
@@ -204,10 +204,11 @@ export class RaceDay {
     const wi = Math.floor(mix(this.d.seed, s.day, s.course, 9) * RACE_DAY.winners.length);
     const winner = `${String.fromCharCode(65 + Math.floor(mix(this.d.seed, s.day, s.course, 10) * 26))}. ${RACE_DAY.winners[wi]!}`;
     const sp = s.sponsor ? SPONSOR_BY_ID[s.sponsor] ?? null : null;
-    const fees = s.field * (s.kind === 'club' ? RACE_DAY.entryFee : RACE_DAY.entryFeeWorldCup);
+    const fees = s.field * (mtb ? RACE_DAY.mtb.entryFee : s.kind === 'club' ? RACE_DAY.entryFee : RACE_DAY.entryFeeWorldCup);
     this.d.earn('recreation', fees);
-    if (sp) { this.d.earn('other', sp.pay); this.bonus = { day: s.day, pts: sp.rating }; }
-    const earned = fees + (sp?.pay ?? 0);
+    const spPay = sp ? Math.round(sp.pay * (mtb ? RACE_DAY.mtb.sponsorShare : 1)) : 0;
+    if (sp) { this.d.earn('other', spPay); this.bonus = { day: s.day, pts: sp.rating }; }
+    const earned = fees + spPay;
     this.results.unshift({ day: s.day, course: s.course, name: s.name, kind: s.kind, winnerMs, winner, field: s.field, spectators: s.spectators.length, sponsor: s.sponsor, earned });
     if (this.results.length > RACE_DAY.keepResults) this.results.length = RACE_DAY.keepResults;
     this.d.fed(s.spectators);

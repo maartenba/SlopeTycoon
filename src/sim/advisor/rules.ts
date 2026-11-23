@@ -352,8 +352,13 @@ export const RULES: readonly Rule[] = [
     return { id: 'race.course.available', severity: 'info', ...TEXT.raceCourseAvailable(sim.names.pisteName(best)), panel: { drawer: 'buildings', item: 'startHut' } };
   }),
   rule('race.course.ungroomed', 1, (c) => {
-    const bad = c.sim.race.courses().find((k) => k.open && k.quality < 0.5);
+    const bad = c.sim.race.courses().find((k) => !k.mtb && k.open && k.quality < 0.5);
     return bad ? { id: 'race.course.ungroomed', severity: 'info', ...TEXT.raceCourseUngroomed(c.sim.names.pisteName(bad.run)), panel: { drawer: 'ops' } } : null;
+  }),
+  // Downhill course (0.8.2): an open course no bike lift reaches draws no riders; say so and what to do. Never required by a goal.
+  rule('race.downhill.unreachable', 1, (c) => {
+    const bad = c.sim.race.courses().find((k) => k.mtb && k.valid && k.blocked);
+    return bad ? { id: 'race.downhill.unreachable', severity: 'info', ...TEXT.raceDownhillUnreachable(c.sim.courseName(bad)), panel: { drawer: 'ops' } } : null;
   }),
   // Tourist Office (M7.4, docs/m74-buildings.md): a settled resort (a base lodge, 15 guests, 2 stars) without one: +6 % arrivals for a few thousand dollars
   rule('tourist.office', 1, (c) => {

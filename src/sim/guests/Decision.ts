@@ -151,8 +151,52 @@ export class Decider {
   lifts: LiftInfo[] = [];
   hikeTiles: number[] = [];
   mtbTiles: number[] = [];
-  /** Downhillers (0.8.2): the goal tiles at the foot of the open downhill courses (empty = none). */
-  mtbCourseGoals: () => readonly number[] = () => [];
+  /** Downhillers (0.8.2): the first tile of every usable downhill course (empty = none). A rider takes a bike lift up, rides a bike path to this tile and then rides the course. */
+  mtbCourseStarts: () => ReadonlyArray<readonly number[]> = () => [];
+  private reachMemo = { key: '', map: new Map<string, boolean>() };
+  /** The bike lift a rider at (x, y) takes to reach a course start: the nearest open bike lift whose top has a bike path to `start`. null = none. `undefined` answers (the path search is deferred) keep the last known answer. */
+  downhillLift(start: number, x: number, y: number): LiftInfo | null {
+    const nav = this.nav(); if (!nav) return null;
+    const lifts = this.lifts.filter((l) => l.bikeDescent && (l.lift.activeMode === 'foot' || l.lift.activeMode === 'mixed')).sort((a, b) => Math.hypot(a.bottomX - x, a.bottomY - y) - Math.hypot(b.bottomX - x, b.bottomY - y) || a.lift.id - b.lift.id);
+    const key = `${nav.epoch}|${lifts.map((l) => l.lift.id).join(',')}`;
+    if (this.reachMemo.key !== key) this.reachMemo = { key, map: new Map() };
+    for (const l of lifts) {
+      const mk = `${l.lift.id}:${start}`, top = nav.stationAnchor(l.lift, 1);
+      let ok = this.reachMemo.map.get(mk);
+      if (ok === undefined) {
+        let r = nav.pf.cached(NavMode.Bike, top, start);
+        if (r === undefined && this.goals.queryBudget > 0) { this.goals.queryBudget--; r = nav.pf.find(NavMode.Bike, top, start); }
+        if (r === undefined) continue; // deferred: unknown, retried at the next refresh
+        ok = r !== null; this.reachMemo.map.set(mk, ok);
+      }
+      if (ok) return l;
+    }
+    return null;
+  }
+  private reachAny = { key: '', map: new Map<string, boolean>() };
+  /** The STATUS of a downhill course: does any bike-carrying lift (open or not: lifts close at night) have a bike path from its top to this course start? Unknown (deferred search) keeps the last known answer. */
+  downhillReachable(starts: readonly number[]): boolean {
+    const nav = this.nav(); if (!nav) return true;
+    const lifts = nav.world.lifts().filter((l) => LIFTS[l.kind]?.carriesBikes);
+    const key = `${nav.epoch}|${lifts.map((l) => l.id).join(',')}`;
+    if (this.reachAny.key !== key) this.reachAny = { key, map: this.reachAny.map };
+    const sk = starts.join(','), cur = this.reachAny.map.get(sk);
+    if (cur !== undefined && this.reachDone.get(sk) === key) return cur;
+    let unknown = false, any = false;
+    for (const l of lifts) {
+      const top = nav.stationAnchor(l, 1);
+      for (const start of starts) {
+        let r = nav.pf.cached(NavMode.Bike, top, start);
+        if (r === undefined && this.goals.queryBudget > 0) { this.goals.queryBudget--; r = nav.pf.find(NavMode.Bike, top, start); }
+        if (r === undefined) { unknown = true; continue; }
+        if (r !== null) { any = true; break; }
+      }
+      if (any) break;
+    }
+    if (!unknown || any) { this.reachAny.map.set(sk, any); this.reachDone.set(sk, key); return any; }
+    return cur ?? false;
+  }
+  private reachDone = new Map<string, string>();
   skiOpenTiles = 0;
   private descent = new Map<string, boolean>();
   private shapes = new Map<string, { flat: number; wide: number }>();
@@ -500,10 +544,17 @@ export class Decider {
       let bt = this.mtbTiles[Math.floor(rng.next() * this.mtbTiles.length)]!;
       const balt = this.mtbTiles[Math.floor(rng.next() * this.mtbTiles.length)]!;
       if (this.avoidTile(balt) < this.avoidTile(bt)) bt = balt;
-      const dh = s.type[i]! >= 6 && !!extraDef(s.type[i]!)?.downhiller; // a downhiller only rides to the foot of a downhill course (the core draw order above is untouched)
-      const gb = this.pickGoal(s, i, rng, hour, x, y, pref, 'bike', dh ? this.mtbCourseGoals() : undefined);
+      const dh = s.type[i]! >= 6 && !!extraDef(s.type[i]!)?.downhiller; // a downhiller only rides a downhill course: lift up, the bike path to its start, then the course itself (the core draw order above is untouched)
+      if (dh) {
+        const cs = this.mtbCourseStarts();
+        if (cs.length && hour < this.leaveHour - 1.5) {
+          const k0 = (Math.imul(s.id[i]!, 2654435761) >>> 0) % cs.length;
+          find: for (let q = 0; q < cs.length; q++) for (const c of cs[(k0 + q) % cs.length]!) { const l = this.downhillLift(c, x, y); if (l) { out.push({ kind: 'bike', tile: c, via: this.nav()!.stationAnchor(l.lift, 1), oneWay: true, score: 2.2 - 0.6 * fatigue + noise() }); break find; } }
+        }
+      }
+      const gb = dh ? null : this.pickGoal(s, i, rng, hour, x, y, pref, 'bike');
       if (gb) bt = gb.tile;
-      if ((!this.useGoals && !dh) || gb) out.push({ kind: 'bike', tile: bt, via: gb?.via, oneWay: gb?.oneWay, score: -1.1 * this.avoidTile(bt) + (pref === Pref.Bike ? 1.1 : 0.05) - 0.6 * fatigue + noise() });
+      if (!dh && (!this.useGoals || gb)) out.push({ kind: 'bike', tile: bt, via: gb?.via, oneWay: gb?.oneWay, score: -1.1 * this.avoidTile(bt) + (pref === Pref.Bike ? 1.1 : 0.05) - 0.6 * fatigue + noise() });
     }
     // M7.1 (docs/economy-audit.md): the souvenir stop scored 0.2 and earned ~$50 a year (a dead building); 0.45 makes a first shop pay back in about a year (bot economy within +-5 %)
     if (this.shop.length && s.budget[i]! > 40) out.push({ kind: 'shop', building: this.nearest(this.shop, x, y, rng)!, score: 0.45 + noise() });

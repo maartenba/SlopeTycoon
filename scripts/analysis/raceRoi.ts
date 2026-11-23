@@ -9,6 +9,7 @@ import { createSim, type Sim } from '../../src/game/createSim';
 import { BUILDINGS } from '../../src/config/buildings';
 import { placeBuilding } from '../../src/sim/PlaceBuilding';
 import { Layer } from '../../src/world/Networks';
+import { LIFTS } from '../../src/config/lifts';
 import { DOWNHILLER_TYPE, RACER_TYPE } from '../../src/config/guestTypes';
 import { RACE_DAY } from '../../src/config/race';
 import { DAYS_PER_YEAR } from '../../src/config/balance';
@@ -88,10 +89,14 @@ if (arg('summer', '0') === '1') {
   const SD = Number(arg('days', '60'));
   const mkS = (seed: number): Sim => createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', startSeason: 'summer', now: () => 0, money: 5e6 } as never);
   const absDay = (s: Sim): number => s.game.date.year * DAYS_PER_YEAR + s.game.date.day;
-  const setupS = (s: Sim, stored: number): { ok: boolean; capex: number; id: number } => {
+  const setupS = (s: Sim, stored: number): { ok: boolean; capex: number; id: number; mult: number } => {
     s.progression.unlockAll = true; s.tick(240 * 3);
-    const n = s.size, ski = [...s.runIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!;
-    s.networks.paint(Layer.Mtb, ski.poly.map((t) => ({ x: t % n, y: (t / n) | 0 })), stored); s.tick(1);
+    const n = s.size, ski = [...s.runIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!, top0 = s.lifts.all().find((l) => LIFTS[l.kind]?.carriesBikes)?.top;
+    const altOf = (t: number): number => { const c = s.grid.getCorners(t % n, (t / n) | 0); return ((c[0]! + c[1]! + c[2]! + c[3]!) / 4) * 0.5; };
+    const from = top0 ? Math.max(0, ski.poly.findIndex((t) => altOf(t) <= top0.ground - 0.2)) : 0; // a trail is ridden downhill: it starts at or below the top of the bike lift
+    const line = ski.poly.slice(from).map((t) => ({ x: t % n, y: (t / n) | 0 })), a0 = line[0]!, conn: Array<{ x: number; y: number }> = [];
+    if (top0) { let x = top0.x, y = top0.y; while ((x !== a0.x || y !== a0.y) && conn.length < 12) { x += Math.sign(a0.x - x); y += Math.sign(a0.y - y); conn.push({ x, y }); } conn.pop(); } // a connector from the lift's top station to the trail
+    s.networks.paint(Layer.Mtb, [...conn, ...line], stored); s.tick(1);
     const tr = [...s.mtbRunIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!, p = tr.poly;
     const put = (type: 'startHut' | 'timingHut', tiles: number[]): boolean => {
       for (const t of tiles) for (let k = 1; k <= 3; k++) for (let dy = -k; dy <= k; dy++) for (let dx = -k; dx <= k; dx++) {
@@ -101,11 +106,11 @@ if (arg('summer', '0') === '1') {
       }
       return false;
     };
-    const before = s.game.money;
+    const before = s.game.money, mult = s.economy.constructionMultiplier();
     const ok = put('startHut', [p[1]!, p[0]!, p[2]!]) && put('timingHut', [p[p.length - 2]!, p[p.length - 1]!, p[p.length - 3]!]);
     s.tick(1);
     const id = s.race.idOf([...s.mtbRunIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!);
-    return { ok: ok && s.setRunCourse(id, true).ok, capex: before - s.game.money, id };
+    return { ok: ok && s.setRunCourse(id, true).ok, capex: before - s.game.money, id, mult };
   };
   const ledgerNet = (s: Sim): number => s.economy.lifetimeIncome() - s.economy.lifetimeExpense();
   let worst = 0;
@@ -117,7 +122,7 @@ if (arg('summer', '0') === '1') {
     let riders = 0; s.bus.on('guest:arrived', (e) => { const sl = s.guestSim.store.slotOf(e.id); if (sl >= 0 && s.guestSim.store.type[sl] === DOWNHILLER_TYPE) riders++; });
     for (let d = 0; d < SD; d++) { base.tick(240); s.tick(240); }
     const net = (ledgerNet(s) - s0) - (ledgerNet(base) - b0);
-    console.log(`${name.padEnd(5)} seed ${seed}: capex ${money(st.capex)} net over ${SD} summer days ${money(net)} (${money(net * (DAYS_PER_YEAR / 4 / SD) * 4 / 4)} per summer-equivalent) riders ${riders} laps ${s.race.total}`);
+    console.log(`${name.padEnd(5)} seed ${seed}: capex ${money(st.capex)} (= $20,000 list price x the summer construction discount x${st.mult}) net over ${SD} summer days ${money(net)} (${money(net * (DAYS_PER_YEAR / 4 / SD) * 4 / 4)} per summer-equivalent) riders ${riders} laps ${s.race.total}${s.race.courses()[0]?.blocked ? ` [course status: ${s.race.courses()[0]!.blocked}]` : ''}`);
   }
   for (const [name, stored] of [['red', 2], ['black', 3]] as const) for (const seed of SEEDS) {
     const mkRun = (book: boolean): { s: Sim; sat: number } | null => {

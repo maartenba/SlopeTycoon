@@ -84,6 +84,8 @@ export class GuestSim {
   raceDone: ((guestId: number) => boolean) | null = null;
   /** Downhill course hook (0.8.2): a downhiller reached the bottom goal of a downhill course (a lap). */
   mtbLap: ((guestId: number, tile: number) => void) | null = null;
+  /** Downhill course hook: the centre line (top to bottom) of the usable course that starts at this tile, or null. */
+  mtbRoute: ((tile: number) => Int32Array | null) | null = null;
   /** Safety hook (Task 26): called when a run ends in injury; returns true when the incident system took the guest over (frozen as Injured). */
   injuryHook: ((guestId: number, x: number, y: number, f: { over: number; offPiste: boolean; quality: number }) => boolean) | null = null;
   /** Observer hook run at the end of every guest tick (story guests poll the store here; it must never change guest behaviour). */
@@ -805,6 +807,13 @@ export class GuestSim {
       case Act.ToTrail: {
         const pend = this.exc.pending.get(i);
         if (pend !== undefined) { const n = this.graph()?.size ?? 1; this.exc.pending.delete(i); s.goalX[i] = (pend % n) + 0.5; s.goalY[i] = Math.floor(pend / n) + 0.5; s.actTick[i] = this.tick; this.exc.liftFirst++; this.nm?.reset(i); return; }
+        if (s.type[i] === DOWNHILLER_TYPE && s.moveMode[i] === NavMode.Bike) { // at the start of a downhill course: ride exactly its tiles (the compressed model; a course too short for it is ridden by the cheapest bike path to its foot)
+          const n = this.graph()?.size ?? 1, route = this.mtbRoute?.(Math.floor(s.goalY[i]!) * n + Math.floor(s.goalX[i]!));
+          if (route) {
+            if (route.length >= EXC.minTiles) { if (this.exc.begin(i, route, 1, this.world.networkVersion(), n, true)) { this.nm?.reset(i); this.chk[i] = null; s.actTick[i] = this.tick; } else this.abort(i, 12); return; }
+            const foot = route[route.length - 1]!; s.goalX[i] = (foot % n) + 0.5; s.goalY[i] = Math.floor(foot / n) + 0.5; s.actTick[i] = this.tick; this.nm?.reset(i); return;
+          }
+        }
         { const tk = this.trek.get(s.id[i]!); if (tk && tk.day === 0) this.trek.delete(s.id[i]!); }
         this.attractions?.trail(i, s.moveMode[i] === NavMode.Bike ? 'bike' : 'hike', this.tick);
         s.visits[i] = Math.min(255, s.visits[i]! + 1);

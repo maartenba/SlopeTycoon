@@ -18,7 +18,7 @@ import { paintBackcountryRoute } from './backcountryHelpers';
 import { sentence } from '../../src/ui/text';
 import { tutorialSim, makeEngine } from '../tutorial/helpers';
 import { Queries } from '../../src/tutorial/queries';
-import { mainRun, paintRun, prepareCourse } from './race/helpers';
+import { mainRun, paintRun, prepareCourse, prepareDownhill } from './race/helpers';
 
 type Pt = { x: number; y: number };
 const make = (seed = 61, size: 64 | 128 | 256 = 64): Sim => {
@@ -373,6 +373,14 @@ const SCENARIOS: Scenario[] = [
     fixes: [
       { name: 'the course is groomed', apply: (s) => { s.runSettings.noteGroomed(s.names.pisteId(mainRun(s)), s.game.date.year * 180 + s.game.date.day); } },
       { name: 'the player un-marks the course', apply: (s) => { s.runSettings.setCourse(s.names.pisteId(mainRun(s)), false); } },
+    ],
+  },
+  {
+    id: 'race.downhill.unreachable', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; const { id } = prepareDownhill(s, 2, true); s.lifts.all().forEach((l) => { l.kind = 'tbar'; }); s.setRunCourse(id, true); s.tick(1); },
+    fixes: [
+      { name: 'a bike lift stands at the top again', apply: (s) => { s.lifts.all().forEach((l) => { l.kind = 'chair4'; }); } },
+      { name: 'the player un-marks the course', apply: (s) => { for (const id of s.runSettings.courseIds()) s.setRunCourse(id, false); } },
     ],
   },
   {

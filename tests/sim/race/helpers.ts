@@ -2,6 +2,7 @@ import { createSim, type Sim } from '../../../src/game/createSim';
 import { placeBuilding } from '../../../src/sim/PlaceBuilding';
 import { Layer } from '../../../src/world/Networks';
 import { hourOfDay, weekdayOf } from '../../../src/sim/Clock';
+import { LIFTS } from '../../../src/config/lifts';
 import type { Run } from '../../../src/world/Runs';
 
 export const mkWinter = (seed = 61): Sim => {
@@ -62,7 +63,7 @@ export function raceFixture(stored = 2, seed = 61): { s: Sim; id: number } {
 
 
 // ---- 0.8.2: summer downhill (MTB) course fixtures ----
-export const mkSummer = (seed = 61): Sim => {
+export const mkSummer = (seed = 5): Sim => {
   const s = createSim({ size: 64, seed, starterResort: true, mode: 'sandbox', startSeason: 'summer', now: () => 0 } as never);
   s.tick(240 * 3 + 20);
   s.game.money = 5_000_000;
@@ -70,9 +71,16 @@ export const mkSummer = (seed = 61): Sim => {
   return s;
 };
 /** Paint a MTB trail along the centre line of the biggest-drop ski run (a stored difficulty 0..3), place both huts beside its ends. Returns the trail's course id. */
-export function prepareDownhill(s: Sim, stored = 2): { id: number; tiles: number[] } {
-  const n = s.size, ski = mainRun(s), line = ski.poly.map((t) => ({ x: t % n, y: (t / n) | 0 }));
-  s.networks.paint(Layer.Mtb, line, stored);
+export function prepareDownhill(s: Sim, stored = 2, full = false): { id: number; tiles: number[] } {
+  const n = s.size, ski = mainRun(s), top0 = s.lifts.all().find((l) => LIFTS[l.kind]?.carriesBikes)?.top;
+  const altOf = (t: number): number => { const c = s.grid.getCorners(t % n, (t / n) | 0); return ((c[0]! + c[1]! + c[2]! + c[3]!) / 4) * 0.5; };
+  const from = top0 && !full ? Math.max(0, ski.poly.findIndex((t) => altOf(t) <= top0.ground - 0.2)) : 0; // a trail is ridden downhill: it starts at or below the lift's top
+  const line = ski.poly.slice(from).map((t) => ({ x: t % n, y: (t / n) | 0 }));
+  // a connector from the top station of the first bike lift to the start of the line, so the trail starts where the lift lets riders off (a trail must be connected to a lift)
+  const top = s.lifts.all().find((l) => LIFTS[l.kind]?.carriesBikes)?.top, a0 = line[0]!;
+  const conn: Array<{ x: number; y: number }> = [];
+  if (top) { let x = top.x, y = top.y; while ((x !== a0.x || y !== a0.y) && conn.length < 12) { x += Math.sign(a0.x - x); y += Math.sign(a0.y - y); conn.push({ x, y }); } conn.pop(); }
+  s.networks.paint(Layer.Mtb, [...conn, ...line], stored);
   s.tick(1);
   const trail = [...s.mtbRunIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!;
   const p = trail.poly;

@@ -17,7 +17,12 @@ A summer twin of the race course: a mountain-bike downhill on the same huts. Old
 - **Downhill course** (`docs/race-course.md` "Downhill course"): a second run index over the MTB trail layer (`RunIndex` `layer`), the same validity rules as a ski course (red or black, 60 m drop, huts within 2 tiles of each end), ids derived from a trail tile (`RACE.mtb`), up to three per kind.
 - **Downhiller** guest type (index 15, summer, `@mtbCourse`): goals forced to the foot of an open course, 3-5 laps, $14 course fee a day; arrival demand follows the course surface (`RACE.mtb.surface` 0.9 x difficulty fit) and caps at 10 riders per course.
 - Club Race on a downhill course: summer only, same booking rules and sponsor pool; closed bike nav on a closed MTB tile.
-- Saves: `raceCourse` v2 gains an optional `todayMtb` and `mtb` on a session; the `runs` module stores downhill course ids (>= `RACE.mtb.idBase`). No golden moved (`docs/balance.md` "0.8.2 downhill").
+- **Reachability**: a downhill course no bike lift reaches is shown as "not usable" with the reason (Runs row), Rudi says "Riders can't reach the top of Downhill N", and it draws no riders.
+- **Riders follow the course**: a downhiller takes the lift, rides to the start and then rides exactly the course tiles to the foot; a lap counts at the foot.
+- **Orange jerseys**: the Downhiller look used the wrong cloth index (green); it is orange now.
+- **A removed trail** leaves its course inactive with a reason (it returns when the trail is rebuilt); **"Downhill N"** keeps its number when another course is unmarked.
+- Downhill Race is a smaller race (8-12 riders, 8 / 10 spectators, sponsor pays 60 %) so a race day stays under 1.5x a normal summer Saturday (x1.17-1.38).
+- Saves: `raceCourse` v2 gains an optional `todayMtb`, `mtbNo` (course numbers) and `mtb` on a session; the `runs` module stores downhill course ids (>= `RACE.mtb.idBase`). No golden moved (`docs/balance.md` "0.8.2 downhill").
 
 ## [0.8.1] - 2026-11-18 (pre-release)
 

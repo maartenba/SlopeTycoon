@@ -6,7 +6,7 @@
 import { launch, startServer } from './lib/harness';
 
 const arg = (k: string, d: string): string => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1]! : d; };
-const size = arg('size', '64'), seed = arg('seed', '61'), shots = arg('shots', '0') === '1', out = arg('out', 'race3');
+const size = arg('size', '64'), seed = arg('seed', '5'), shots = arg('shots', '0') === '1', out = arg('out', 'race3');
 const srv = await startServer();
 const br = await launch();
 const errors: string[] = [], fails: string[] = [];
@@ -28,7 +28,12 @@ try {
     s.loop.setSpeed(0);
     sim.progression.setLevel(3); sim.economy.earn('other', 400_000);
     const n = sim.size, ski = Array.from(sim.runIndex.runs() as any[]).sort((a: any, b: any) => b.dropM - a.dropM)[0];
-    sim.networks.paint(Layer.Mtb, ski.poly.map((t: number) => ({ x: t % n, y: (t / n) | 0 })), 2); // a red bike trail along the main run
+    const bike = sim.lifts.all().find((l: any) => l.kind !== 'tbar'), top0 = bike.top;
+    const altOf = (t: number): number => { const c = s.grid.getCorners(t % n, (t / n) | 0); return ((c[0] + c[1] + c[2] + c[3]) / 4) * 0.5; };
+    const from = Math.max(0, ski.poly.findIndex((t: number) => altOf(t) <= top0.ground - 0.2)); // a trail is ridden downhill: it starts at or below the lift's top
+    const line = ski.poly.slice(from).map((t: number) => ({ x: t % n, y: (t / n) | 0 })), a0 = line[0], conn: any[] = [];
+    { let x = top0.x, y = top0.y; while ((x !== a0.x || y !== a0.y) && conn.length < 12) { x += Math.sign(a0.x - x); y += Math.sign(a0.y - y); conn.push({ x, y }); } conn.pop(); } // a connector from the lift's top station
+    sim.networks.paint(Layer.Mtb, [...conn, ...line], 2); // a red bike trail from the top of the bike lift down the main run
     const tr = () => Array.from(sim.mtbRunIndex.runs() as any[]).sort((a: any, b: any) => b.dropM - a.dropM)[0];
     const idOf = () => sim.race.idOf(tr());
     const o: any = { season: sim.game.date.day, diff: tr().difficulty, dropM: Math.round(tr().dropM) };
@@ -57,6 +62,8 @@ try {
   check('both huts stand beside the trail ends and are active', built.huts === true);
   check('the trail is marked as a downhill course (valid + open, "Downhill 1")', built.marked?.ok === true && built.courses.length === 1 && built.courses[0].mtb && built.courses[0].valid && built.courses[0].open && built.courses[0].name === 'Downhill 1', built.courses);
 
+  const unreach = await page.evaluate(() => { const sim = (window as any).__slope.sim, ls = sim.lifts.all(); const kinds = ls.map((l: any) => l.kind); ls.forEach((l: any) => { l.kind = 'tbar'; }); sim.tick(2); const blocked = sim.race.courses()[0].blocked, text = sim.trailRows()[0].course.text, demand = sim.race.demandMtb(0); ls.forEach((l: any, i: number) => { l.kind = kinds[i]; }); sim.tick(2); return { blocked, text, demand, back: sim.race.courses()[0].blocked }; });
+  check('with no bike lift the course shows "not usable" with the reason and draws no demand; the lift brings it back', typeof unreach.blocked === 'string' && /bike lift/.test(unreach.text) && unreach.demand === 0 && unreach.back === null, unreach);
   const view = await page.evaluate(() => { const s = (window as any).__slope, v = s.raceCourseView; v.update(1); return { gates: v.gateCount, boards: v.boardCount, meshes: v.group.children.filter((c: any) => c.isMesh).length, tris: v.triangles() }; });
   console.log(JSON.stringify(view));
   check('gates are drawn on the trail: 3 meshes, under the triangle budget', view.gates >= 5 && view.meshes === 3 && view.boards === 1 && view.tris < 8000, view);
@@ -67,12 +74,14 @@ try {
     let seen = 0, bestSeen: number | null = null; const income0 = sim.economy.ledger.recreation ?? 0;
     const riders = (): number => { let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === DT) n++; return n; };
     loop.setSpeed(1);
-    for (let k = 0; k < 720; k++) { loop.advance(1); const b = sim.race.bestMs(sim.race.courses()[0].id); if (b !== null && (bestSeen === null || b < bestSeen)) bestSeen = b; const r = riders(); if (r > seen) seen = r; }
+    const poly = new Set<number>(sim.race.courses()[0].run.poly); let offRoute = 0, onRoute = 0;
+    for (let k = 0; k < 720; k++) { loop.advance(1); for (const [slot, x] of sim.guestSim.exc.map) if (st.type[slot] === DT) { if (Array.from(x.route as Int32Array).every((t: number) => poly.has(t))) onRoute++; else offRoute++; } const b = sim.race.bestMs(sim.race.courses()[0].id); if (b !== null && (bestSeen === null || b < bestSeen)) bestSeen = b; const r = riders(); if (r > seen) seen = r; }
     loop.setSpeed(0);
-    return { seen, laps: sim.race.total, income: Math.round((sim.economy.ledger.recreation ?? 0) - income0), best: bestSeen, ridersToday: sim.race.racersToday(true) };
+    return { onRoute, offRoute, seen, laps: sim.race.total, income: Math.round((sim.economy.ledger.recreation ?? 0) - income0), best: bestSeen, ridersToday: sim.race.racersToday(true) };
   });
   console.log(JSON.stringify(day));
   check('downhillers (type 15) arrive in summer and lap the course', day.seen > 0 && day.laps >= 1, { seen: day.seen, laps: day.laps });
+  check('downhillers ride exactly the course tiles (their excursion route is the course centre line)', day.onRoute > 0 && day.offRoute === 0, { on: day.onRoute, off: day.offRoute });
   check('downhillers pay the course fee and the board has a time', day.income >= 14 && typeof day.best === 'number' && day.best > 20000 && day.best < 200000, { income: day.income, best: day.best });
 
   const focusRun = (zoom: number, yaw: number, at: 'mid' | 'start' | 'finish' = 'mid'): Promise<any> => page.evaluate((zoom, yaw, at) => {
@@ -87,8 +96,14 @@ try {
     await focusRun(5, 0.785398); await shot('course');
     await focusRun(12, 0.785398, 'start'); await shot('start-hut');
     await focusRun(12, 0.785398, 'finish'); await shot('finish-board');
-    await page.evaluate(() => { const s = (window as any).__slope, sim = s.sim, st = sim.guestSim.store; s.loop.setSpeed(1); let g = 0, hit = 0; while (g++ < 1500 && hit < 1) { s.loop.advance(1); hit = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === 15) hit++; } s.loop.setSpeed(0); });
+    await page.evaluate(() => { const s = (window as any).__slope, sim = s.sim, st = sim.guestSim.store; s.loop.setSpeed(1); let g = 0, hit = 0; while (g++ < 1500 && hit < 3) { s.loop.advance(1); hit = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === 15) hit++; } s.loop.setSpeed(0); });
     await focusRun(7, 0.785398); await shot('riders');
+    const orange = await page.evaluate(async () => { const s = (window as any).__slope, st = s.sim.guestSim.store, c2 = s.renderer.controls, imp = (u: string): Promise<any> => (new Function('u', 'return import(u)') as any)(u); const GA = await imp('/src/render/guestAppearance.ts'); const o: any = { tops: [] };
+      for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === 15) { const a = GA.appearanceOf(st.id[i], 15), name = GA.CLOTH_NAMES[a.top]; o.tops.push(name); if (name === 'orange' && o.at === undefined) { o.at = i; c2.target.set(st.x[i], st.z[i] * 0.5, st.y[i]); c2.zoom = 1; c2.zoomBy(40); } }
+      return o; });
+    console.log(JSON.stringify(orange));
+    check('the downhillers wear orange jerseys (appearance top = orange for most of them)', orange.tops.length > 0 && orange.tops.filter((t: string) => t === 'orange').length >= Math.ceil(orange.tops.length / 2), orange);
+    await shot('rider-close');
     await page.evaluate(() => { const u = document.getElementById('ui'); if (u) u.style.display = ''; (document.querySelector('st-operations') as any)?.refresh?.(); });
   }
 
@@ -107,7 +122,7 @@ try {
   }, day, hour);
   await stepTo(rd0.sat, 11.5);
   const live = await page.evaluate(() => { const sim = (window as any).__slope.sim, rd = sim.raceDay; return { session: !!rd.session, mtb: rd.session?.mtb, field: rd.session?.field, spectators: rd.session?.spectators.length ?? 0, closed: sim.openStatus.activeClosures(sim.safety.incidents.nowTick ?? 0).some((c: any) => c.reason === 'Race day') }; });
-  check('10:00 the downhill race starts and the trail is closed ("Race day")', live.session && live.mtb === true && live.closed && live.field >= 20, live);
+  check('10:00 the downhill race starts and the trail is closed ("Race day")', live.session && live.mtb === true && live.closed && live.field >= 8 && live.field <= 12, live);
   if (shots) { await page.evaluate(() => { (window as any).__slope.setHour?.(11.5); const u = document.getElementById('ui'); if (u) u.style.display = 'none'; }); await focusRun(8, 0.785398, 'finish'); await shot('race-crowd'); }
 
   const snapshot0 = (): Promise<any> => page.evaluate(async () => {
