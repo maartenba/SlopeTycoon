@@ -58,7 +58,7 @@ The control exists because these state is intentionally reset on load (identical
 Making in-transit guests fully restorable was judged not worth it (lift cable positions, queue slots and nav paths would all need serialising); the demotion costs the player a few seconds of queueing.
 `restored sim equals saved sim` test: all modules except `sys.guests`, `sys.attractions`, `networks` (version) are identical right after load.
 Things the determinism test found and that were fixed: Rating's per-day guard + last breakdown, lift boarding windows, piste traffic counters, patrol/heli agents + staff, wildlife animals, families (phases, schools' lesson queues), attraction open/reported flags, Spatial hash not cleared on in-place load.
-Test-only caveat: `PisteTraffic.sink` is a process-wide static (the last created sim receives traffic); the test re-attaches it before every tick of each sim. Irrelevant in the game (one sim per page).
+Since 0.8.3 two live sims in one process are independent: guest piste traffic goes through the sim's own nav world (`onPisteTraffic` -> `PisteQuality.recordTraffic`). Before, `PisteTraffic.sink` was a process-wide static (the last created sim received everybody's traffic), which is why older tests call `attachTraffic()` before each tick (now harmless; `tests/game/simIsolation.test.ts`).
 
 ## Budgets (`tests/persist/saveBudget.test.ts`, `[perf]`-tagged; starter resort + guests at ≥ 90 % of the cap; Apple-silicon Mac, Node 20)
 | map | guests | props | gzip save | plain JSON | save | load (decode + createSim) | longest event-loop gap save / load | budget |

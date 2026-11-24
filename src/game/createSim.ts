@@ -491,6 +491,7 @@ export function createSim(opts: SimOptions) {
   });
   backcountryRef = backcountry;
   guestSim.decider.touring.attach(backcountry); // Ski tourers (Task 34, docs/guest-types.md): the routes, their open state and danger; tourers never go at danger >= 4
+  navWorld.onPisteTraffic = (t) => ops.quality.recordTraffic(t); // per sim: the old process-wide PisteTraffic.sink leaked between live sims (0.8.3)
   (navWorld as { bcOff?: Uint8Array }).bcOff = backcountry.offPisteMask;
 
   // ---- Per-run operations (docs/runs.md): grooming orders, traffic history, last-groomed day ----

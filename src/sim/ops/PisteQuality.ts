@@ -19,7 +19,10 @@ export const PQ = {
   ticksPerHour: 10,
 } as const;
 
-/** Lightweight guest-pass counter: the ski movement step calls `PisteTraffic.record(tile)`; PisteQuality drains it hourly. */
+/**
+ * Standalone guest-pass counter for unit tests only. The sim does NOT use it (it was a process-wide singleton that leaked piste traffic between live sims):
+ * the ski movement step calls `world.onPisteTraffic(tile)` which is wired per sim to `PisteQuality.recordTraffic`. PisteQuality drains the counter hourly.
+ */
 export const PisteTraffic = {
   sink: null as Uint16Array | null,
   record(tile: number): void { const s = PisteTraffic.sink; if (s && s[tile]! < 65535) s[tile]!++; },
@@ -61,7 +64,10 @@ export class PisteQuality {
     this.state = new Uint8Array(n); this.wear = new Uint16Array(n); this.traffic = new Uint16Array(n); this.trafficDay = new Uint16Array(n);
   }
 
-  /** Make `PisteTraffic.record` feed this instance. */
+  /** Count one guest pass on a tile (called through the sim's own nav world, so two sims never share a counter). */
+  recordTraffic(tile: number): void { const t = this.traffic; if (t[tile]! < 65535) t[tile]!++; }
+
+  /** Make the standalone `PisteTraffic.record` feed this instance (unit tests; the sim wires `recordTraffic` itself, so this is never needed to tick two sims). */
   attachTraffic(): void { PisteTraffic.sink = this.traffic; }
 
   isPiste(i: number): boolean { return (this.net.layers[i]! & Layer.Ski) !== 0 && this.net.kind[i] === 0; }

@@ -3,7 +3,6 @@ import { RACE } from '../../config/race';
 import { RACER_TYPE, SENIOR_TYPE, SENIOR_WALK } from '../../config/guestTypes';
 import { GuestStore, WP_MAX } from './Guest';
 import { type NavGraph, isSkiMode } from './NavGraph';
-import { PisteTraffic } from '../ops/PisteQuality';
 
 export interface Goal {
   x: number; y: number;
@@ -273,7 +272,7 @@ export class NavMovement implements Movement {
       if (d / v <= time) {
         x = tx; y = ty; time -= d / v; j++;
         { const w = s.wpN[i]!; if (w < WP_MAX) { s.wp[(i * WP_MAX + w) * 2] = tx; s.wp[(i * WP_MAX + w) * 2 + 1] = ty; s.wpN[i] = w + 1; } }
-        if (ski && g.isPiste(b)) { PisteTraffic.record(b); const df = g.difficultyAt(b); if (df > s.runMax[i]!) s.runMax[i] = df; }
+        if (ski && g.isPiste(b)) { g.world.onPisteTraffic?.(b); const df = g.difficultyAt(b); if (df > s.runMax[i]!) s.runMax[i] = df; }
       } else { x += ((tx - x) / d) * v * time; y += ((ty - y) / d) * v * time; time = 0; }
     }
     s.x[i] = x; s.y[i] = y; this.idx[i] = j;

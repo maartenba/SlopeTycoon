@@ -41,6 +41,8 @@ export interface NavWorld {
   crossClosed?(tile: number): boolean;
   /** A guest waited a tick at a closed crossing (metric for the advisor). Optional. */
   onCrossingWait?(tile: number): void;
+  /** A guest crossed a piste tile: the owning sim's piste-traffic counter (per sim, never a process-wide singleton). */
+  onPisteTraffic?(tile: number): void;
   /** Snow depth in metres. */
   readonly snow: Float32Array;
   networkVersion(): number;
