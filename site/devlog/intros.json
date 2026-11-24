@@ -143,5 +143,10 @@
     "tagline": "race days and sponsors",
     "lead": "A follow-up for the race courses. You can now book a Club Race on a weekend, the run closes for a few hours, guests walk over to watch and the results go on the timing board. Each course gets a made-up sponsor, and the World Cup now runs on your own course. It is a small update, and old saves keep working.",
     "shot": "runs-overlay"
+  },
+  "0.8.2": {
+    "tagline": "a summer downhill",
+    "lead": "The race courses get a summer twin. A red or black mountain-bike trail with a Start Hut at the top and a Timing Hut at the foot can now be a downhill course, and downhillers come to ride it in laps. In summer you can book a Downhill Race on a weekend, the trail closes for a few hours and the winner's time goes on the board. Two small fixes came along: a course needs 50 m of drop instead of 60, and a run you repaint from blue to red is now called Red Run instead of staying Blue Run 1. Old saves keep working.",
+    "shot": "runs-overlay"
   }
 }

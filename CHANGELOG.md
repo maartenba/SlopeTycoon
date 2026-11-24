@@ -2,7 +2,7 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.8.2] - 2026-11-24 (pre-release)
 
 A summer twin of the race course: a mountain-bike downhill on the same huts. Old saves keep working; nothing moves in a resort without a downhill course.
 

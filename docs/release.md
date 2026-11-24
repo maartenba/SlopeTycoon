@@ -1,6 +1,15 @@
 # Release notes and checklist
 
-Current release: **0.8.1 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.8.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.8.2 (2026-11-24, macOS, Node v24.22.3)
+
+Downhill courses (`docs/race-course.md` "Downhill course"): a red / black MTB trail with the Start / Timing Huts, the Downhiller guest type, summer Downhill Race days, minimum drop 50 m, run names follow the colour after a repaint. Saves: `raceCourse` v2 gains optional `todayMtb` / `mtbNo` / `mtb`; `runs` stores downhill ids (old saves load unchanged). No golden moved. Owner playtest approved 2026-11-24. Gate: `npm run gate:full` (6 slots), wall 24.0 min, 40 stages, all passed first attempt, no flaky stage.
+
+| Check | Command | Result |
+|---|---|---|
+| Size | `npm run size` | 3271.5 kB raw / 1161.4 kB gzip (0.8.1: 1157.5 kB; budget 2048 kB) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (71 pages, 8.4 MB screenshots); no new screenshot, devlog reuses `runs-overlay` |
 
 ## 0.8.1 (2026-11-18, macOS, Node v24.22.3)
 

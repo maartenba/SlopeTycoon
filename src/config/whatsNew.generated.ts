@@ -3,6 +3,17 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.8.2",
+    "date": "2026-11-24",
+    "highlights": [
+      "Downhill courses: a red or black mountain-bike trail with a Start Hut at the top and a Timing Hut at the foot can be marked as a downhill course in…",
+      "Downhillers: a new summer guest type that rides the course in laps, pays a small course fee and eats at your lodges.",
+      "Downhill race days: book a weekend Downhill Race in summer; the trail closes to riders from 10:00 to 14:00, spectators gather at the finish and the…",
+      "Shorter courses: a race course now needs a drop of 50 m instead of 60, so more runs qualify.",
+      "Run names follow the colour: repaint a blue run red and it becomes Red Run N instead of staying Blue Run 1. Names you typed yourself never change."
+    ]
+  },
+  {
     "version": "0.8.1",
     "date": "2026-11-18",
     "highlights": [
@@ -20,15 +31,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Racers: a new winter guest type that trains on an open, groomed course, skis fast, does a few laps and pays a small course fee. A black course draws…",
       "A timing board: the Timing Hut shows the best time and how many racers came today, and the run inspector shows the same.",
       "Advice and a trophy: Rudi suggests a course and reminds you to groom it, and Through the gates rewards 100 laps."
-    ]
-  },
-  {
-    "version": "0.7.2",
-    "date": "2026-11-16",
-    "highlights": [
-      "Wedding guests follow the paths: the party now walks along your footpaths and roads from the Base Lodge to the chapel and on to the meal, instead of…",
-      "The party stays together: the couple go first and the guests trail behind them in a small line.",
-      "A picture of the chapel on the website: the guide page Pizza, bakery, chapel & the sky now shows a wedding at the chapel door."
     ]
   }
 ];
