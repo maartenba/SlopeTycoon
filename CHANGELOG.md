@@ -2,6 +2,22 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [0.8.3] - 2026-11-24 (pre-release)
+
+A small update: a Rudi tip for runs just under the race-course minimum, a flash that follows the light, and a fix for a bug that only test runs could hit. Old saves keep working; nothing moves in the economy.
+
+### Highlights
+
+- **Rudi on a run that is almost long enough**: if a red or black run (or a bike trail) with a Start or Timing Hut beside it is only 1 to 10 m short of the 50 m a race course needs, Rudi says how high it is and suggests lengthening it a few tiles downhill.
+- **A flash that follows the light**: when a photographer takes a picture the camera flash is a small glint in daylight and a bigger, slightly longer flash at dusk and at night. (The raised camera pose itself has been there since 0.6.6.)
+- **Old saves keep working**: no save format, balance or economy change in this release.
+
+### Changes
+
+- **Cross-sim state leak fixed** (developer-only, the game runs one sim per page): the guest piste-traffic counter was a process-wide static (`PisteTraffic.sink`), so the LAST created sim received the traffic of every live sim. Two sims in one process (a test, a bot, `analysis:race` building a control and a booked resort) diverged from the same seed, and tests had to call `attachTraffic()` before each tick. Traffic now goes through the sim's own nav world (`onPisteTraffic` -> `PisteQuality.recordTraffic`). `tests/game/simIsolation.test.ts` runs A, B, A in one process, two live sims of one seed advanced alternately, and the race-day scenario with a second sim alive, and asserts identical hashes. No golden moved (`docs/balance.md` "0.8.3").
+- **Rudi tip `race.course.short`** (`docs/race-course.md`): `RaceCourse.nearMiss()` (a pure read) finds an unmarked red / black run or trail with a hut near its top or foot and a drop within `RACE.nearMissM` (10 m) under `RACE.minDropM`; the tip names the run ("Red Run 1 drops 46 m: a race course needs 50 m") or "This bike trail". A refused mark already says the same through the run's own refusal text.
+- **Light-aware photographer flash** (render only, `docs/photographers.md`): `PHOTO_SHOOT.flashDay` (0.55 of the full size by day) and `flashLongerAtNight` (+50 % life) scale the existing pooled flash sprite by `lighting.nightUniform`. Same sprite, no new draw call or material, no noise. No sim, save or golden change.
+
 ## [0.8.2] - 2026-11-24 (pre-release)
 
 A summer twin of the race course: a mountain-bike downhill on the same huts. Old saves keep working; nothing moves in a resort without a downhill course.

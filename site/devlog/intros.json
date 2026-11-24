@@ -148,5 +148,10 @@
     "tagline": "a summer downhill",
     "lead": "The race courses get a summer twin. A red or black mountain-bike trail with a Start Hut at the top and a Timing Hut at the foot can now be a downhill course, and downhillers come to ride it in laps. In summer you can book a Downhill Race on a weekend, the trail closes for a few hours and the winner's time goes on the board. Two small fixes came along: a course needs 50 m of drop instead of 60, and a run you repaint from blue to red is now called Red Run instead of staying Blue Run 1. Old saves keep working.",
     "shot": "runs-overlay"
+  },
+  "0.8.3": {
+    "tagline": "a hint and a better flash",
+    "lead": "A small one. If a red or black run is only a few metres short of the 50 m a race course needs, and you already have a hut beside it, Rudi now tells you how many metres it is missing. The photographers' camera flash also follows the light: a small glint in daylight and a proper flash at dusk and at night. Behind the scenes I fixed a bug that let two games running in one process leak state into each other. You cannot hit it in the real game, but it was muddying my test numbers. Old saves keep working. I have only seen the flash on a software renderer.",
+    "shot": "schirmbar-open"
   }
 }

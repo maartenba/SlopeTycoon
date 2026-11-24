@@ -1,6 +1,16 @@
 # Release notes and checklist
 
-Current release: **0.8.2 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.8.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.8.3 (2026-11-24, macOS, Node v24.22.3)
+
+A small update: the cross-sim state leak (`PisteTraffic.sink`, a process-wide static; per sim now, `tests/game/simIsolation.test.ts`), the Rudi tip `race.course.short` (a run or trail with huts beside it 1-10 m under the 50 m minimum) and a light-aware photographer flash (render only). No save, golden or economy change.
+
+| Check | Command | Result |
+|---|---|---|
+| Size | `npm run size` | 3272.4 kB raw / 1161.6 kB gzip (0.8.2: 1161.4 kB; budget 2048 kB) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (72 pages, 8.4 MB screenshots of 8.5; no new screenshot, devlog reuses `schirmbar-open`) |
+| Visual check | `npm run shot` with a QA eval, `.weave/shots/photo2-*` | pose by day readable; the flash is a soft round glow at dusk (bigger, brighter) and a barely visible speck by day; software renderer only |
 
 ## 0.8.2 (2026-11-24, macOS, Node v24.22.3)
 

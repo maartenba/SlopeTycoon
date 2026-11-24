@@ -3,6 +3,15 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.8.3",
+    "date": "2026-11-24",
+    "highlights": [
+      "Rudi on a run that is almost long enough: if a red or black run (or a bike trail) with a Start or Timing Hut beside it is only 1 to 10 m short of…",
+      "A flash that follows the light: when a photographer takes a picture the camera flash is a small glint in daylight and a bigger, slightly longer…",
+      "Old saves keep working: no save format, balance or economy change in this release."
+    ]
+  },
+  {
     "version": "0.8.2",
     "date": "2026-11-24",
     "highlights": [
@@ -21,16 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Spectators: guests walk over to the Timing Hut, stand around the finish and then eat and drink at the shops nearby, so a race day is a day to see.",
       "A sponsor for your course: each course gets one of ten made-up Alpine sponsors that pays a little per race and gives a small, fading rating boost.",
       "The World Cup on your course: it now needs a race course on a red or black run, runs a real race every day on it, and a black course draws a bigger…"
-    ]
-  },
-  {
-    "version": "0.8.0",
-    "date": "2026-11-18",
-    "highlights": [
-      "Race courses: mark a red or black run as a course, put a Start Hut at the top and a Timing Hut at the foot (level 3), and red and blue gates go up…",
-      "Racers: a new winter guest type that trains on an open, groomed course, skis fast, does a few laps and pays a small course fee. A black course draws…",
-      "A timing board: the Timing Hut shows the best time and how many racers came today, and the run inspector shows the same.",
-      "Advice and a trophy: Rudi suggests a course and reminds you to groom it, and Through the gates rewards 100 laps."
     ]
   }
 ];

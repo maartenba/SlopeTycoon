@@ -426,3 +426,6 @@ The surprise now gives one in-game month (15 sim days) of +10 % arrivals from th
 
 ## 0.8.2 downhill
 The Downhiller (type 15) needs `@mtbCourse` (a marked downhill course with both huts and an open bike lift): the plain `Bot` builds none, so no golden moved (staff, yearReport and balance suites unchanged). Economy numbers: `npm run analysis:race -- --summer 1` (see `docs/race-course.md` "Downhill course").
+
+## 0.8.3 cross-sim leak
+**No golden moved** (confirmed by the release gate). The leak was `PisteTraffic.sink`, a process-wide static that `createOps` pointed at the most recently created sim, so the guest piste-traffic counter of every other live sim was lost (it counted into the last sim's `traffic` array instead). A single sim per process (every balance / golden suite, the real game) is unaffected, which is why no golden changes; only two live sims in one process differed (analysis scripts that build a control and a booked resort, tests that tick a sim and its restored copy). The counter now goes through the sim's own nav world (`onPisteTraffic`), `tests/game/simIsolation.test.ts` pins A, B, A and interleaved sims. Numbers recorded from the leaky build of `analysis:race -- --raceday 1` (the mean-of-three-Saturdays guard is the same, per-seed ratios can differ by the old noise) are not goldens.

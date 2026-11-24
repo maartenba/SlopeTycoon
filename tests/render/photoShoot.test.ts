@@ -74,7 +74,7 @@ describe('Gear.Shoot (raised camera pose)', () => {
     r.startShoot(st.id[slot]!, 3); r.update(0.5, 20); expect(r.batchCounts()[Gear.Shoot]).toBe(0);
   });
 
-  it('0.8.3: the glint is a small lens glint by day and grows to the full flash as the light drops (the night flash keeps the 0.5.x size)', () => {
+  it('0.8.3: the glint is a small lens glint by day and grows to the full flash as the light drops (the night flash keeps the 0.6.6 size)', () => {
     expect(PHOTO_SHOOT.flashDay).toBeGreaterThan(0.1);
     expect(PHOTO_SHOOT.flashDay).toBeLessThan(1);
     const size = (dark: number): number => PHOTO_SHOOT.flashDay + (1 - PHOTO_SHOOT.flashDay) * dark;
