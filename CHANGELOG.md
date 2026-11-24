@@ -11,6 +11,8 @@ A summer twin of the race course: a mountain-bike downhill on the same huts. Old
 - **Downhill courses**: a red or black mountain-bike trail with a Start Hut at the top and a Timing Hut at the foot can be marked as a downhill course in Operations -> Runs.
 - **Downhillers**: a new summer guest type that rides the course in laps, pays a small course fee and eats at your lodges.
 - **Downhill race days**: book a weekend Downhill Race in summer; the trail closes to riders from 10:00 to 14:00, spectators gather at the finish and the winner's time goes on the board.
+- **Shorter courses**: a race course now needs a drop of 50 m instead of 60, so more runs qualify.
+- **Run names follow the colour**: repaint a blue run red and it becomes Red Run N instead of staying Blue Run 1. Names you typed yourself never change.
 
 ### Changes
 
@@ -22,6 +24,9 @@ A summer twin of the race course: a mountain-bike downhill on the same huts. Old
 - **Orange jerseys**: the Downhiller look used the wrong cloth index (green); it is orange now.
 - **A removed trail** leaves its course inactive with a reason (it returns when the trail is rebuilt); **"Downhill N"** keeps its number when another course is unmarked.
 - Downhill Race is a smaller race (8-12 riders, 8 / 10 spectators, sponsor pays 60 %) so a race day stays under 1.5x a normal summer Saturday (x1.12-1.38).
+- **Minimum drop 50 m** (`RACE.minDropM`, ski and downhill; refusal text, guide and docs follow). Seed 23 on the 64 map now qualifies for a ski course; `analysis:race -- --raceday 1` compares a race day with the mean of three Saturdays (x1.02-1.38).
+- **Run names after a repaint**: an auto-generated run name takes the new difficulty with the next free number of that colour (numbers are never reused); a split part ("X (2)") and a player name keep theirs. Names are not part of `stateHash`.
+- **Text pass** on the race texts: Start Hut / Timing Hut casing, "World Cup Race" in the news and Events strip, "1 racer today", the booking toast says Downhill Race for a trail, a plainer Rudi tip for an unreachable trail.
 - Saves: `raceCourse` v2 gains an optional `todayMtb`, `mtbNo` (course numbers) and `mtb` on a session; the `runs` module stores downhill course ids (>= `RACE.mtb.idBase`). No golden moved (`docs/balance.md` "0.8.2 downhill").
 
 ## [0.8.1] - 2026-11-18 (pre-release)
