@@ -24,6 +24,33 @@ function world() {
 }
 
 describe('piste identity + names', () => {
+  it('an auto name follows a repaint to another difficulty, with stable numbering and a save round trip', () => {
+    const w = world(); const n = new Names(w.src);
+    w.set([{ tiles: col(30, 10, 20), difficulty: 2 }, { tiles: col(40, 10, 20), difficulty: 3 }]);
+    expect(n.pisteName(w.src.pisteAt(30, 12)!)).toBe('Blue Run 1');
+    expect(n.pisteName(w.src.pisteAt(40, 12)!)).toBe('Red Run 1');
+    const id = n.pisteId(w.src.pisteAt(30, 12)!);
+    w.set([{ tiles: col(30, 10, 20), difficulty: 3 }, { tiles: col(40, 10, 20), difficulty: 3 }]);
+    expect(n.pisteName(w.src.pisteAt(30, 12)!)).toBe('Red Run 2');
+    expect(n.pisteName(w.src.pisteAt(40, 12)!)).toBe('Red Run 1');
+    expect(n.pisteId(w.src.pisteAt(30, 12)!)).toBe(id);
+    w.set([{ tiles: col(30, 10, 20), difficulty: 3 }, { tiles: col(40, 10, 20), difficulty: 3 }]);
+    expect(n.pisteName(w.src.pisteAt(30, 12)!)).toBe('Red Run 2'); // stable on a re-read
+    const m = new Names(w.src); m.load(JSON.parse(JSON.stringify(n.serialize())));
+    expect(m.pisteName(w.src.pisteAt(30, 12)!)).toBe('Red Run 2');
+    expect(JSON.stringify(m.serialize())).toBe(JSON.stringify(n.serialize()));
+  });
+
+  it('a player-renamed run keeps its name after a repaint; resetting shows the current auto name', () => {
+    const w = world(); const n = new Names(w.src);
+    w.set([{ tiles: col(30, 10, 20), difficulty: 2 }]);
+    n.renamePiste(w.src.pisteAt(30, 12)!, 'The Eagle');
+    w.set([{ tiles: col(30, 10, 20), difficulty: 4 }]);
+    expect(n.pisteName(w.src.pisteAt(30, 12)!)).toBe('The Eagle');
+    n.renamePiste(w.src.pisteAt(30, 12)!, '');
+    expect(n.pisteName(w.src.pisteAt(30, 12)!)).toBe('Black Run 1');
+  });
+
   it('custom piste names persist while the piste grows and appear in describeLocation', () => {
     const w = world(); const n = new Names(w.src);
     w.set([{ tiles: col(30, 10, 20), difficulty: 2 }]);

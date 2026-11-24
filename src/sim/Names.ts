@@ -40,6 +40,7 @@ export interface Place {
 }
 
 export const NAME_RADIUS = 4;
+const AUTO_NO = /^(?:Green|Blue|Red|Black) Run (\d+)$/;
 const DIFF_NAMES = ['', 'Green', 'Blue', 'Red', 'Black'] as const;
 const COMPASS = ['northern', 'north-eastern', 'eastern', 'south-eastern', 'southern', 'south-western', 'western', 'north-western'] as const;
 
@@ -163,6 +164,12 @@ export class Names {
   }
 
   private touch(e: PisteEntry, p: PisteInfo): void {
+    // a repaint changes the difficulty: an AUTO name ('Blue Run 1', not a split 'X (2)') follows it with the next free number of the new colour (numbers are never reused).
+    // A player name lives in `custom` and is untouched; resetting it shows the up-to-date auto name.
+    const diff = Math.max(1, Math.min(4, p.difficulty || 1));
+    if (diff !== e.diff && e.name === `${DIFF_NAMES[e.diff]} Run ${AUTO_NO.exec(e.name)?.[1]}`) {
+      e.diff = diff; e.name = `${DIFF_NAMES[diff]} Run ${++this.pisteCount[diff]!}`;
+    }
     e.size = p.tiles.length;
     e.sample = new Set(p.tiles.filter((_, i) => i % Math.max(1, Math.floor(p.tiles.length / 24)) === 0));
   }
