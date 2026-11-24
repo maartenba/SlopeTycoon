@@ -6,7 +6,7 @@ export const RACE = {
   /** Run difficulty 1 green .. 4 black: a course needs red (3) or black (4). */
   minDifficulty: 3,
   /** Minimum drop of the run in metres. */
-  minDropM: 60,
+  minDropM: 50,
   /** A hut counts when its footprint is within this many tiles of the top (Start Hut) / foot (Timing Hut) of the centre line. */
   hutReach: 2,
   /** Centre-line tiles inspected at each end of the run when looking for a hut. */
@@ -60,7 +60,7 @@ export const RACE = {
     /** Plain-text reasons for a trail (the shared text where it fits). */
     reasons: {
       difficulty: 'Needs a red or black trail',
-      drop: 'Needs a drop of at least 60 m',
+      drop: 'Needs a drop of at least 50 m',
       shape: 'Needs a single clear trail, not a loop',
       noStartHut: 'Needs a Start Hut at the top',
       noTimingHut: 'Needs a Timing Hut at the foot',
@@ -73,7 +73,7 @@ export const RACE = {
   /** The reasons a run is not a (valid) course, as shown to the player. */
   reasons: {
     difficulty: 'Needs a red or black run',
-    drop: 'Needs a drop of at least 60 m',
+    drop: 'Needs a drop of at least 50 m',
     shape: 'Needs a single clear run, not a loop',
     noStartHut: 'Needs a Start Hut at the top',
     noTimingHut: 'Needs a Timing Hut at the foot',

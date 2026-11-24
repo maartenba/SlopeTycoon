@@ -62,7 +62,7 @@ if (arg('raceday', '0') === '1') {
   let worst = 0;
   for (const [name, stored] of [['red', 2], ['black', 3]] as const) for (const seed of SEEDS) {
     const mkRun = (book: boolean): { s: Sim; sat: number; id: number } | null => {
-      const s = mk(seed); s.game.date.day = 120; // 1 Dec
+      const s = mk(seed); s.game.date.day = Number(arg('day', '120')); // 1 Dec (default)
       const st = setup(s, stored); if (!st.ok) return null;
       const id = s.names.pisteId([...s.runIndex.runs()].sort((a, b) => b.dropM - a.dropM)[0]!);
       s.tick(240 * 3); s.runSettings.noteGroomed(id, absDay(s));
@@ -74,9 +74,12 @@ if (arg('raceday', '0') === '1') {
     if (!a || !b) { console.log(`${name} seed ${seed}: course not possible`); continue; }
     // groom the course daily in both (the resort's own cats mostly do)
     const run = (r: { s: Sim; sat: number; id: number }): number => { while (absDay(r.s) < r.sat) { r.s.runSettings.noteGroomed(r.id, absDay(r.s)); r.s.tick(1); } return incomeDay(r.s, r.sat); };
-    const normal = run(a), race = run(b), res = b.s.raceDay.results[0];
+    // a single Saturday is noisy on a weak resort (0.8.2: seed 23 swings x1.2-x1.8 on the same race): the control is the mean of three Saturdays (the race week and the next two, groomed daily)
+    const race = run(b), first = run(a); let sum = first;
+    for (let k = 1; k <= 2; k++) { while (absDay(a.s) < a.sat + 7 * k - 1) { a.s.runSettings.noteGroomed(a.id, absDay(a.s)); a.s.tick(1); } sum += incomeDay(a.s, a.sat + 7 * k); }
+    const normal = sum / 3, res = b.s.raceDay.results[0];
     const ratio = normal > 0 ? race / normal : 0; worst = Math.max(worst, ratio);
-    console.log(`${name.padEnd(5)} seed ${seed}: normal Saturday ${money(normal)} race day ${money(race)} x${ratio.toFixed(2)} (fees+sponsor ${money(res?.earned ?? 0)}, spectators ${res?.spectators ?? 0}, field ${res?.field ?? 0}, cost -$3,000)`);
+    console.log(`${name.padEnd(5)} seed ${seed}: normal Saturday (mean of 3) ${money(normal)} race day ${money(race)} x${ratio.toFixed(2)} (fees+sponsor ${money(res?.earned ?? 0)}, spectators ${res?.spectators ?? 0}, field ${res?.field ?? 0}, cost -$3,000)`);
   }
   console.log(`\nWorst race day / Saturday ratio ${worst.toFixed(2)} (guard ${RACE_DAY.earnCapVsSaturday})`);
   process.exit(worst <= RACE_DAY.earnCapVsSaturday ? 0 : 1);

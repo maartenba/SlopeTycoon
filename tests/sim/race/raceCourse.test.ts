@@ -19,6 +19,12 @@ describe('RaceCourse validity', () => {
     const r = { ...f.run, dropM: 30 };
     expect(f.s.race.reasonFor(r)).toBe('drop');
   });
+  it('the minimum drop is 50 m: 49 is refused, 50 passes the drop rule', () => {
+    const f = courseFixture();
+    expect(RACE.minDropM).toBe(50);
+    expect(f.s.race.reasonFor({ ...f.run, dropM: 49 })).toBe('drop');
+    expect(f.s.race.reasonFor({ ...f.run, dropM: 50 })).not.toBe('drop');
+  });
   it('a loop is refused (shape)', () => {
     const f = courseFixture();
     expect(f.s.race.reasonFor({ ...f.run, loop: true })).toBe('shape');
