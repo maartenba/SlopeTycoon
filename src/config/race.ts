@@ -7,6 +7,8 @@ export const RACE = {
   minDifficulty: 3,
   /** Minimum drop of the run in metres. */
   minDropM: 50,
+  /** Rudi's near-miss tip (`race.course.short`): a red / black run or trail with huts beside it whose drop is within this many metres BELOW the minimum. */
+  nearMissM: 10,
   /** A hut counts when its footprint is within this many tiles of the top (Start Hut) / foot (Timing Hut) of the centre line. */
   hutReach: 2,
   /** Centre-line tiles inspected at each end of the run when looking for a hut. */

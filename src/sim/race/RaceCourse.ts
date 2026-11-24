@@ -102,6 +102,22 @@ export class RaceCourse {
     if (!this.hutNear(this.d.timingHuts(), r, false)) return 'noTimingHut';
     return null;
   }
+  /**
+   * The run (or MTB trail) that just misses the minimum drop (`RACE.nearMissM` below `RACE.minDropM`) while a Start / Timing Hut already stands at its top / foot, biggest drop first;
+   * null when none. A pure read (Rudi's `race.course.short`): never marks anything, never allocates a course number.
+   */
+  nearMiss(): { run: Run; mtb: boolean } | null {
+    let best: { run: Run; mtb: boolean } | null = null;
+    const all: Array<{ run: Run; mtb: boolean }> = [...this.d.runs().map((run) => ({ run, mtb: false })), ...(this.d.mtbRuns?.() ?? NO_RUNS).map((run) => ({ run, mtb: true }))];
+    for (const c of all) {
+      const r = c.run;
+      if (r.loop || r.synthetic || r.poly.length < 4 || r.difficulty < RACE.minDifficulty || r.dropM >= RACE.minDropM || r.dropM < RACE.minDropM - RACE.nearMissM) continue;
+      if (this.d.settings.isCourse(c.mtb ? this.idOf(r) : this.d.runId(r))) continue;
+      if (!this.hutNear(this.d.startHuts(), r, true) && !this.hutNear(this.d.timingHuts(), r, false)) continue;
+      if (!best || r.dropM > best.run.dropM) best = c;
+    }
+    return best;
+  }
   private hutNear(huts: readonly HutRect[], r: Run, top: boolean): HutRect | null {
     const n = RACE.endTiles, p = r.poly, tiles = top ? p.slice(0, n) : p.slice(Math.max(0, p.length - n));
     let best: HutRect | null = null, bg = Infinity;

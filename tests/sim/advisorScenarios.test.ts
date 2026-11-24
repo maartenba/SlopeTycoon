@@ -368,6 +368,11 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'race.course.short', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; const run = mainRun(s); s.race.nearMiss = () => ({ run: { ...run, dropM: 46 }, mtb: false }); },
+    fixes: [{ name: 'the run is lengthened past the minimum', apply: (s) => { s.race.nearMiss = () => null; } }],
+  },
+  {
     id: 'race.course.ungroomed', daily: true,
     setup: (s) => { s.progression.unlockAll = true; const id = prepareCourse(s, 2); s.setRunCourse(id, true); s.runSettings.loadStats(undefined); },
     fixes: [

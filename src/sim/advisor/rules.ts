@@ -351,6 +351,13 @@ export const RULES: readonly Rule[] = [
     if (!best || sim.game.money < BUILDINGS.startHut!.cost + BUILDINGS.timingHut!.cost + (c.shown ? 1_000 : 3_000)) return null;
     return { id: 'race.course.available', severity: 'info', ...TEXT.raceCourseAvailable(sim.names.pisteName(best)), panel: { drawer: 'buildings', item: 'startHut' } };
   }),
+  // Just under the minimum drop (0.8.3): huts already stand beside a red / black run or trail that is 1-10 m short of a course. Never required by a goal.
+  rule('race.course.short', 1, (c) => {
+    const near = c.sim.race.nearMiss();
+    if (!near) return null;
+    const name = near.mtb ? 'This bike trail' : c.sim.names.pisteName(near.run);
+    return { id: 'race.course.short', severity: 'info', ...TEXT.raceCourseShort(name, Math.round(near.run.dropM), RACE.minDropM), target: { x: near.run.top.x, y: near.run.top.y } };
+  }),
   rule('race.course.ungroomed', 1, (c) => {
     const bad = c.sim.race.courses().find((k) => !k.mtb && k.open && k.quality < 0.5);
     return bad ? { id: 'race.course.ungroomed', severity: 'info', ...TEXT.raceCourseUngroomed(c.sim.names.pisteName(bad.run)), panel: { drawer: 'ops' } } : null;
