@@ -10,6 +10,7 @@ A small update: the cross-sim state leak (`PisteTraffic.sink`, a process-wide st
 |---|---|---|
 | Size | `npm run size` | 3272.4 kB raw / 1161.6 kB gzip (0.8.2: 1161.4 kB; budget 2048 kB) |
 | Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | all OK (72 pages, 8.4 MB screenshots of 8.5; no new screenshot, devlog reuses `schirmbar-open`) |
+| Gate | `npm run gate:full` (6 slots) | wall 23.9 min, 40 stages; everything passed except lint (an unused import) and one test (`hotels.test.ts` pool energy compared two live sims, which are independent now); both fixed, then `gate --only lint,test,typecheck` passed (3.4 min). No golden moved, no flaky stage |
 | Visual check | `npm run shot` with a QA eval, `.weave/shots/photo2-*` | pose by day readable; the flash is a soft round glow at dusk (bigger, brighter) and a barely visible speck by day; software renderer only |
 
 ## 0.8.2 (2026-11-24, macOS, Node v24.22.3)
