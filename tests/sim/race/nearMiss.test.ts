@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { RULES } from '../../../src/sim/advisor/rules';
 import { RACE } from '../../../src/config/race';
 import { mainRun, mkWinter, prepareCourse } from './helpers';
-import { Advisor } from '../../../src/sim/advisor/Advisor';
 
 describe('race.course.short', () => {
   it('seed 2 has a 45 m run; without huts there is no near miss, with huts there is', () => {
