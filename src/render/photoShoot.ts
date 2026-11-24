@@ -20,6 +20,10 @@ export const PHOTO_SHOOT = {
   maxShots: 8,
   /** Flash sprite: height above the guest's feet (tiles, scaled by the figure), forward offset (tiles), size (tiles). */
   flashUp: 0.5, flashForward: 0.12, flashSize: 0.34,
+  /** Size of the glint in full daylight, as a share of the night flash (0.1.. 1): by day it is a small lens glint, as the light drops (`lighting.nightUniform`) it grows to a real flash. */
+  flashDay: 0.55,
+  /** Extra length of the flash at night (x1 + this): a flash lights its surroundings a touch longer than a lens glint. */
+  flashLongerAtNight: 0.5,
   /** The flash only shows when the view is this close (view height in tiles, like `lodHeightFor`), ground cameras always. */
   nearView: 45,
 } as const;

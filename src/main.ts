@@ -1300,7 +1300,7 @@ sim.bus.on('photo:taken', (e) => {
   if (g > 0.04) { audioRef?.sfx.play('shutter', { gain: g, pan: Math.max(-0.6, Math.min(0.6, (e.x - lx) / 30)) }); if (import.meta.env.DEV) (window as unknown as { __shutters?: number }).__shutters = ((window as unknown as { __shutters?: number }).__shutters ?? 0) + 1; } // __shutters: dev-only counter read by photographer:sanity
 });
 guestRenderer.isKid = (slot) => guestSim.families.isKid(slot);
-guestRenderer.onFlash = (x, y, z, k): void => { if (DEMO || getReducedMotion() || !renderer.viewMode.isIso || lodHeightFor(renderer.camera) > PHOTO_SHOOT.nearView) return; fx.particles.emit({ x, y, z, count: 1, kind: 'flash', scale: k }); }; // a brief glint, near iso views only, never under reduced motion
+guestRenderer.onFlash = (x, y, z, k): void => { if (DEMO || getReducedMotion() || !renderer.viewMode.isIso || lodHeightFor(renderer.camera) > PHOTO_SHOOT.nearView) return; const dark = lighting.nightUniform.value; fx.particles.emit({ x, y, z, count: 1, kind: 'flash', scale: k * (PHOTO_SHOOT.flashDay + (1 - PHOTO_SHOOT.flashDay) * dark), lifeScale: (1 + PHOTO_SHOOT.flashLongerAtNight * dark) * (import.meta.env.DEV ? ((window as unknown as { __flashLife?: number }).__flashLife ?? 1) : 1) }); }; // a brief glint (a small lens glint by day, a bigger and slightly longer flash as the light drops), near iso views only, never under reduced motion
 guestRenderer.usingKind = (slot) => { const ty = buildings.get(guestSim.store.target[slot]!)?.type; return ty === 'iceRink' ? 1 : ty === 'beach' ? 2 : 0; };
 {
   const prev = renderer.onFrame;
