@@ -229,7 +229,7 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     weather: { rain: 0.2, storm: 0, heavySnow: 0.4, snow: 0.9 },
     appeal: { restaurant: 0.8, terrace: 0.5, cafe: 0.5, lodging: 0.6, rental: 0.1, bar: 0.4, stunt: 0.3, adventure: 0.4, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.1 },
     group: [1, 3], budget: [180, 360], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [2, 0],
-    look: { top: 4, topShare: 0.9, colour: 0xf5d90a, gear: 'ski', helmet: true }, // yellow race bibs, helmets
+    look: { top: 2, topShare: 0.9, colour: 0xf2c14e, gear: 'ski', helmet: true }, // yellow race bibs, helmets (`top` indexes CLOTH_COLORS: 2 = yellow)
   },
   {
     // 0.8.2 (docs/race-course.md "Downhill course"): the summer twin of the Racer. Trains laps on the player's downhill course (a MTB trail with a Start Hut and a Timing Hut), needs an open bike lift

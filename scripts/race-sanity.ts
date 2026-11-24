@@ -121,6 +121,13 @@ try {
     // racers on the run: step until at least two racers ski on the course, then freeze
     await page.evaluate(() => { const s = (window as any).__slope, sim = s.sim, st = sim.guestSim.store; s.loop.setSpeed(1); let g = 0, hit = 0; while (g++ < 1200 && hit < 2) { s.loop.advance(1); hit = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === 14 && sim.race.courseTiles().has(Math.floor(st.y[i]) * sim.size + Math.floor(st.x[i]))) hit++; } s.loop.setSpeed(0); (window as any).__hit = hit; });
     await focusRun(7, 0.785398); await shot('racers');
+    const bib = await page.evaluate(async () => { const s = (window as any).__slope, sim = s.sim, st = sim.guestSim.store, c2 = s.renderer.controls, imp = (u: string): Promise<any> => (new Function('u', 'return import(u)') as any)(u); const GA = await imp('/src/render/guestAppearance.ts'); const o: any = { tops: [] };
+      const n = sim.size, p = sim.race.courses()[0].run.poly, mid = p[p.length >> 1], mx = (mid % n) + 0.5, my = ((mid / n) | 0) + 0.5; let k = 0;
+      for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === 14) { const name = GA.CLOTH_NAMES[GA.appearanceOf(st.id[i], 14, true).top]; o.tops.push(name); if (k < 3) { st.x[i] = st.px[i] = mx + 0.7 * k - 0.7; st.y[i] = st.py[i] = my + 0.3 * k; st.z[i] = st.pz[i] = s.grid.getCorner(Math.round(mx), Math.round(my)) * 0.5; st.state[i] = 1; st.timer[i] = 600; k++; } } // (the shot only: three racers stand on the course, still, for a close look at the bibs)
+      c2.focusOn(mx, my); c2.zoom = 1; c2.zoomBy(22); return o; });
+    console.log(JSON.stringify(bib));
+    check('the Racers wear yellow bibs (appearance top = yellow for most of them)', bib.tops.length > 0 && bib.tops.filter((t: string) => t === 'yellow').length >= Math.ceil(bib.tops.length / 2), bib);
+    await shot('racer-close');
     await page.evaluate(() => { (window as any).__slope.setHour(21.5); }); await focusRun(8, 0.9, 'bottom'); await shot('night');
     await page.evaluate(() => { const s = (window as any).__slope; s.setHour?.(null); const u = document.getElementById('ui'); if (u) u.style.display = ''; });
   }

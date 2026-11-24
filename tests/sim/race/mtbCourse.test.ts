@@ -75,6 +75,11 @@ describe('Downhill course fixes (0.8.2 follow-up)', () => {
     const look = SHIPPED_TYPES[DOWNHILLER_TYPE - CORE_TYPE_COUNT]!.look!;
     expect(CLOTH_NAMES[look.top!]).toBe('orange'); expect(CLOTH_COLORS[look.top!]).toBe(look.colour);
   });
+  it('3b. the Racer bibs are yellow (CLOTH_COLORS[look.top]) and the look is render-only', async () => {
+    const { CLOTH_COLORS, CLOTH_NAMES } = await import('../../../src/render/guestAppearance');
+    const look = SHIPPED_TYPES[14 - CORE_TYPE_COUNT]!.look!;
+    expect(CLOTH_NAMES[look.top!]).toBe('yellow'); expect(CLOTH_COLORS[look.top!]).toBe(look.colour);
+  });
   it('4. a removed trail leaves the course inactive with a reason; rebuilding it brings it back', () => {
     const s = mkSummer(); const { id, tiles } = prepareDownhill(s, 2); s.setRunCourse(id, true); s.tick(2);
     expect(s.race.courses()[0]!.valid).toBe(true);
