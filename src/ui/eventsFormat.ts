@@ -77,7 +77,7 @@ export function buildEventsView(cal: EventCalendar, today: number, funds: number
   if (race) {
     const rd = race.raceDay;
     const s = rd.session;
-    if (s) running.push({ id: `raceDay:${s.course}`, name: `${s.kind === 'club' ? (s.mtb ? 'Downhill Race' : 'Club Race') : 'World Cup race'} · ${s.name}`, icon: '🏁', when: dayLabel(s.day, year), note: `${s.field} ${s.mtb ? 'riders' : 'racers'} · ${s.spectators.length} watching · until ${RACE_DAY.to}:00`, booked: s.kind === 'club', start: s.day, cancellable: false });
+    if (s) running.push({ id: `raceDay:${s.course}`, name: `${s.kind === 'club' ? (s.mtb ? 'Downhill Race' : 'Club Race') : 'World Cup Race'} · ${s.name}`, icon: '🏁', when: dayLabel(s.day, year), note: `${s.field} ${s.mtb ? 'riders' : 'racers'} · ${s.spectators.length} watching · until ${RACE_DAY.to}:00`, booked: s.kind === 'club', start: s.day, cancellable: false });
     for (const b of rd.bookings) { const c = race.courses.find((x) => x.id === b.course); upcoming.push({ id: `raceDay:${b.course}`, name: `${c?.mtb ? 'Downhill Race' : 'Club Race'}${c ? ` · ${race.courseName(c)}` : ''}`, icon: '🏁', when: dayLabel(b.day, year), note: countdown(b.day - today), booked: true, start: b.day, cancellable: b.day > today }); }
     upcoming.sort((a, b) => a.start - b.start);
     const marked = race.courses;

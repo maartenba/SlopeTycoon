@@ -102,7 +102,7 @@ export class StEvents extends StElement {
       const card = el('div', rc.general ? 'card locked' : 'card');
       card.dataset.role = 'race-day-card';
       card.style.width = 'auto';
-      card.append(el('h5', '', `${rc.general ? '🔒 ' : ''}🏁 Club Race`), el('div', 'muted', `A weekend race on your course: the run closes 10:00-14:00, guests come to watch, a sponsor pays. ${formatMoney(rc.cost)}, one a week, 2 days notice.`));
+      card.append(el('h5', '', `${rc.general ? '🔒 ' : ''}🏁 Club Race`), el('div', 'muted', `A weekend race on your course: the run or trail closes 10:00-14:00, guests come to watch, a sponsor pays. ${formatMoney(rc.cost)}, one a week, 2 days notice.`));
       if (rc.general) card.append(el('div', 'warn', rc.general));
       else if (rc.courses.length) {
         if (!rc.courses.some((c) => c.id === this.raceCourse)) this.raceCourse = (rc.courses.find((c) => c.valid) ?? rc.courses[0]!).id;

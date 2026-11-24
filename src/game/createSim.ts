@@ -1218,7 +1218,7 @@ export function createSim(opts: SimOptions) {
   /** Race course state of a run (0.8.0): marked or not, can it be marked right now, and the one line the inspector / Runs tab shows (the reason when it cannot). */
   const courseOf = (e: Run): { on: boolean; can: boolean; text: string } => {
     const on = runSettings.isCourse(names.pisteId(e)), why = race.reasonFor(e);
-    return { on, can: on || why === null, text: on ? (why ? `Race course, inactive: ${RACE.reasons[why]}` : `Race course · ${race.racersToday()} racers today${race.bestMs(names.pisteId(e)) === null ? '' : ` · best ${fmtTime(race.bestMs(names.pisteId(e))!)}`}`) : why ? RACE.reasons[why] : 'Can be a race course' };
+    return { on, can: on || why === null, text: on ? (why ? `Race course, inactive: ${RACE.reasons[why]}` : `Race course · ${race.racersToday()} ${race.racersToday() === 1 ? 'racer' : 'racers'} today${race.bestMs(names.pisteId(e)) === null ? '' : ` · best ${fmtTime(race.bestMs(names.pisteId(e))!)}`}`) : why ? RACE.reasons[why] : 'Can be a race course' };
   };
   /** Everything the inspector / Runs list shows about one run. */
   type RunInfo = PisteReport & { tileIdx: number[]; x: number; y: number; closedByPlayer: boolean; groomMode: GroomMode; passesToday: number; passesWeek: number; groomedDaysAgo: number | null; nodeFrom: number; nodeTo: number; course: { on: boolean; can: boolean; text: string } };
@@ -1243,7 +1243,7 @@ export function createSim(opts: SimOptions) {
     for (const r of mtbRunIndex.runs()) {
       if (r.synthetic || r.difficulty < RACE.minDifficulty) { if (!runSettings.isCourse(race.idOf(r))) continue; }
       const id = race.idOf(r), on = runSettings.isCourse(id), why = race.reasonFor(r), info = race.courses().find((c) => c.id === id), t = r.poly[r.poly.length >> 1] ?? r.tiles[0]!;
-      const text = on ? (why ? `Downhill course, inactive: ${reasonText(why, true)}` : info?.blocked ? `Downhill course, not usable: ${info.blocked}` : `Downhill course · ${race.racersToday(true)} riders today${race.bestMs(id) === null ? '' : ` · best ${fmtTime(race.bestMs(id)!)}`}`) : why ? reasonText(why, true) : 'Can be a downhill course';
+      const text = on ? (why ? `Downhill course, inactive: ${reasonText(why, true)}` : info?.blocked ? `Downhill course, not usable: ${info.blocked}` : `Downhill course · ${race.racersToday(true)} ${race.racersToday(true) === 1 ? 'rider' : 'riders'} today${race.bestMs(id) === null ? '' : ` · best ${fmtTime(race.bestMs(id)!)}`}`) : why ? reasonText(why, true) : 'Can be a downhill course';
       out.push({ id, name: info ? courseName(info) : `Trail ${(t % size)},${(t / size) | 0}`, difficulty: r.difficulty, lengthM: r.lengthM, dropM: r.dropM, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5, open: info ? info.open && !info.blocked : true, course: { on, can: on || why === null, text } });
     }
     // a marked course whose trail is gone stays in the list (inactive, with the reason) until it is unmarked or the trail is rebuilt

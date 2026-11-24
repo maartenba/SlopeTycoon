@@ -181,7 +181,7 @@ export class RaceDay {
     const field = range[0] + Math.floor(mix(this.d.seed, t, c.id, 3) * (range[1] - range[0] + 1));
     this.session = { ...(c.mtb ? { mtb: true } : {}), kind, course: c.id, day: t, name: this.d.courseName(c), difficulty: c.run.difficulty, quality: c.quality, field, sponsor: sp?.id ?? null, spectators: [] };
     this.d.close(c, (RACE_DAY.to - RACE_DAY.from) * 10);
-    this.d.news(`${this.session.name} ${kind === 'club' ? (c.mtb ? 'Downhill Race' : 'Club Race') : 'World Cup race'}: ${field} ${c.mtb ? 'riders' : 'racers'} are at the gate. The ${c.mtb ? 'trail' : 'run'} is closed to the public until ${RACE_DAY.to}:00.${sp ? ` Sponsored by ${sp.name}.` : ''}`);
+    this.d.news(`${this.session.name} ${kind === 'club' ? (c.mtb ? 'Downhill Race' : 'Club Race') : 'World Cup Race'}: ${field} ${c.mtb ? 'riders' : 'racers'} are at the gate. The ${c.mtb ? 'trail' : 'run'} is closed to the public until ${RACE_DAY.to}:00.${sp ? ` Sponsored by ${sp.name}.` : ''}`);
     this.version++;
     this.topUp();
   }
@@ -212,7 +212,7 @@ export class RaceDay {
     this.results.unshift({ day: s.day, course: s.course, name: s.name, kind: s.kind, winnerMs, winner, field: s.field, spectators: s.spectators.length, sponsor: s.sponsor, earned });
     if (this.results.length > RACE_DAY.keepResults) this.results.length = RACE_DAY.keepResults;
     this.d.fed(s.spectators);
-    this.d.news(`${s.name} ${s.kind === 'club' ? (mtb ? 'Downhill Race' : 'Club Race') : 'World Cup'}: ${winner} wins in ${fmtTime(winnerMs)} (${s.field} ${mtb ? 'riders' : 'racers'}, ${s.spectators.length} spectators).${sp?.line ? ` ${sp.line}` : ''}`);
+    this.d.news(`${s.name} ${s.kind === 'club' ? (mtb ? 'Downhill Race' : 'Club Race') : 'World Cup Race'}: ${winner} wins in ${fmtTime(winnerMs)} (${s.field} ${mtb ? 'riders' : 'racers'}, ${s.spectators.length} spectators).${sp?.line ? ` ${sp.line}` : ''}`);
     this.session = null; this.version++;
   }
 

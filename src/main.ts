@@ -2600,7 +2600,7 @@ if (ui && !DEMO) {
   evPanel.bind({
     view: () => { const v = buildEventsView(sim.events, game.date.year * DAYS_PER_YEAR + game.date.day, game.money, { raceDay: sim.raceDay, courses: sim.race.courses(), courseName: (c) => sim.courseName(c) }), bd = sim.visitor.buzzDaysLeft(); return bd > 0 ? { ...v, buzz: { text: `Mountain buzz +10% visitors (${bd} day${bd === 1 ? '' : 's'} left)` } } : v; },
     book: (id, start) => { const why = sim.events.blocker(id as FestivalId, start); if (why) return why; sim.events.book(id as FestivalId, start); analytics().track('festival_booked', { id }); toast(`${FESTIVAL_BY_ID[id as FestivalId].name} booked.`); refreshUi(); return null; },
-    bookRace: (course, start) => { const why = sim.bookRaceDay(course, start); if (why) return why; toast('Club Race booked.'); refreshUi(); return null; },
+    bookRace: (course, start) => { const why = sim.bookRaceDay(course, start); if (why) return why; toast(sim.race.courses().find((c) => c.id === course)?.mtb ? 'Downhill Race booked.' : 'Club Race booked.'); refreshUi(); return null; },
     cancel: (id, start) => { const ok = id.startsWith('raceDay:') ? sim.raceDay.cancel(Number(id.slice(8)), start) : sim.events.cancel(id as FestivalId, start); if (!ok) return 'Cannot cancel'; refreshUi(); return null; },
     showMe: (what, id) => {
       const st = festivalDressing.layouts.find((l) => l.festival === id)?.stage;
