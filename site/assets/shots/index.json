@@ -1646,5 +1646,37 @@
     "bytes": 51746
    }
   ]
+ },
+ "snow-park": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "snow-park-640.webp",
+    "bytes": 29536
+   },
+   {
+    "w": 1280,
+    "file": "snow-park-1280.webp",
+    "bytes": 66064
+   }
+  ]
+ },
+ "race-course": {
+  "w": 1280,
+  "h": 800,
+  "files": [
+   {
+    "w": 640,
+    "file": "race-course-640.webp",
+    "bytes": 29822
+   },
+   {
+    "w": 1280,
+    "file": "race-course-1280.webp",
+    "bytes": 61692
+   }
+  ]
  }
 }

@@ -4,7 +4,7 @@ seo: "Ski lift types and pistes – Slope Tycoon guide"
 order: 4
 summary: "The twelve lift types, mid-stations, towers and clearance, planned lift maintenance, pistes and runs, grooming and snowmaking."
 description: "Slope Tycoon lifts and pistes: twelve lift types, mid-stations, towers and clearance, planned maintenance, pistes and runs, grooming and snowmaking."
-screenshots: [ui-lifts-drawer, lift-midstation, runs-overlay, ui-runs-tab]
+screenshots: [ui-lifts-drawer, lift-midstation, runs-overlay, ui-runs-tab, snow-park, race-course]
 ---
 ## Lifts
 
@@ -95,9 +95,13 @@ Old saves load with every run open and every grooming order on Auto.
 
 A blue, red or black run of at least 100 m can be a **snow park** (unlocked at level 3). Open the run's inspector and press **Make a snow park** (or use the **Park** column in **Operations → Runs**); you need a Groomer Garage. Kickers, boxes and rails appear along the run by themselves. The snowcats shape the park when they groom it; a park nobody grooms, or that has seen a lot of riders, wears out (the inspector shows its shape), and a worn park draws fewer riders and more falls. **Freestylers** in magenta jackets come on winter days, ride the park on skis or a board, throw airs and pay a small fee. A **Halfpipe** (Recreation, level 3) beside the park adds a pipe and a few more riders. Rudi tells you when a run could be a park.
 
+{{fig:snow-park}}
+
 ### Race courses and racers
 
 A red or black run with at least 50 m of drop can be a **race course** (unlocked at level 3). Place a **Start Hut** beside the top of the run and a **Timing Hut** beside its foot (both in the building drawer, Recreation), then open the run's inspector and press **Make a race course** (or use the **Course** column in **Operations → Runs**). The button says what is missing: *Needs a Start Hut at the top*, *Needs a Timing Hut at the foot*, *Needs a red or black run*. Flags go up along the run by themselves, red and blue, and the Timing Hut shows a board with the best time and the number of racers today.
+
+{{fig:race-course}}
 
 **Racers** are a winter guest type that come to train on your course: they ski it faster, a few laps each, pay a small course fee on their first lap of the day and eat at your lodges. They like **fresh snow**: groom the course every night (set the run to *Groom first*) or fewer come; a **black** course draws more than a red one. Other skiers may still use the run. A closed course (by you, the weather or no snow) simply stops attracting racers. You can mark up to three courses. The huts are a small cost centre that pays back slowly, so build them for the look and the atmosphere, not for the money.
 

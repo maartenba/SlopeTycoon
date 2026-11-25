@@ -22,11 +22,11 @@ describe('site content', () => {
     expect(new Set(pages.map((p) => p.data.order)).size).toBe(pages.length);
     for (const p of pages) expect(p.data.summary?.length ?? 0, p.slug).toBeGreaterThan(20);
   });
-  it('every page renders; 0-4 figures; front-matter screenshots match the figures used', () => {
+  it('every page renders; 0-4 figures (lifts-pistes 6: park and race shots); front-matter screenshots match the figures used', () => {
     const gen = allGenerated();
     for (const p of pages) {
       const r = renderMarkdown(p.body, { rel: '../../', shots: fake, slugs, gen });
-      expect(r.figures.length, p.slug).toBeLessThanOrEqual(4 + (p.slug === 'shortcuts' ? 0 : 0));
+      expect(r.figures.length, p.slug).toBeLessThanOrEqual(p.slug === 'lifts-pistes' ? 6 : 4);
       expect([...new Set(r.figures)].sort(), `${p.slug}: front matter screenshots`).toEqual([...(p.data.screenshots ?? [])].sort());
       const html = guidePage(siteEnv({}), { rel: '../../', markSvg: '<svg/>', pages: pages.map((q) => ({ slug: q.slug, title: q.data.title, order: q.data.order })), slug: p.slug, title: p.data.title, description: p.data.description, html: r.html, toc: r.toc });
       expect(html).toContain('<h1>');

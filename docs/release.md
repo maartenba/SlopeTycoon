@@ -4,6 +4,8 @@ Current release: **0.9.0 (pre-release, never call it 1.0 until the owner says so
 
 ## 0.9.0 (2026-11-25, macOS, Node v24.22.3)
 
+Site screenshot budget raised from 8.5 MB to 10 MB (owner decision 2026-11-25, `scripts/site/crawl.ts`); new guide shots `snow-park` (65 + 29 kB) and `race-course` (60 + 29 kB) on *Lifts & pistes*; screenshots now 8.6 MB of 10.
+
 Snow parks, the Freestyler guest type and the placeable Halfpipe (`docs/snow-park.md`). Saves: new `snowPark` module v1, `runs` v3 (older saves load with no park). Only the staff golden `progression` part moved (`docs/balance.md` "0.9.0"). Owner playtest approved 2026-11-25.
 
 | Check | Command | Result |

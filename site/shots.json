@@ -2128,6 +2128,48 @@
         "target": "lodge",
         "pre": "(async()=>{const s=__slope,sim=s.sim,imp=(u)=>new Function('u','return import(u)')(u);const {findSite,anchors,planPathTo,buildNetwork}=await imp('/src/tutorial/suggest.ts');s.loop.setSpeed(0);sim.progression.bypass++;sim.economy.earn('other',500000);const site=findSite(sim,'chapel',anchors(sim).lodge,{rmax:24});const o=s.debugPlace('chapel',site.x,site.y,site.rot,true);const p=planPathTo(sim,site.rect);if(p&&p.length)buildNetwork(sim,1,p);sim.refreshCoverage(undefined,true);sim.buildings.reevaluate();sim.progression.bypass--;const cw=sim.weather.current;cw.kind='clear';cw.intensity=0;cw.fog=0;cw.wind=0.1;sim.game.date.minute=9*60;sim.wedding.force(5);const w=sim.wedding,r=w.rec,t=r.tBell+30;s.weddingView.now=()=>t;s.weddingView.update(5);const b=sim.buildings.get(o.building.id);const c=s.renderer.controls;c.target.set(b.x+b.w/2,s.grid.getCorner(Math.round(b.x),Math.round(b.y))*0.5,b.y+b.h/2);c.zoom=1;c.zoomBy(13);const u=document.getElementById('ui');if(u)u.style.display='none';return 'ok'})()"
       }
+    },
+    {
+      "id": "snow-park",
+      "alt": "Freestylers in magenta jackets mid-air over kickers and boxes on a snowy blue run turned into a snow park, on a clear winter day.",
+      "pages": [
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "A snow park: kickers, boxes and freestylers in the air.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,imp=(u)=>new Function('u','return import(u)')(u);const {Layer}=await imp('/src/world/Networks.ts');s.loop.setSpeed(0);const n=sim.size,main=()=>Array.from(sim.runIndex.runs()).sort((a,b)=>b.dropM-a.dropM)[0];const idOf=()=>sim.names.pisteId(main());sim.progression.setLevel(3);sim.economy.earn('other',400000);const cw=sim.weather.current;cw.kind='clear';cw.intensity=0;cw.fog=0;cw.wind=0.1;const focus=(zoom,yaw,pt)=>{const c2=s.renderer.controls;const x=pt.x,z=pt.z;c2.target.set(x,s.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);c2.zoom=1;c2.zoomBy(zoom);c2.yaw=yaw;const u=document.getElementById('ui');if(u)u.style.display='none'};const fell=(poly)=>{const t=[];let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const q of poly){x0=Math.min(x0,q%n);x1=Math.max(x1,q%n);y0=Math.min(y0,(q/n)|0);y1=Math.max(y1,(q/n)|0)}sim.props.removeInRect(x0-5,y0-5,x1+6,y1+6,t);s.refreshProps(t)};\nconst run0=main();sim.networks.paint(Layer.Ski,run0.tiles.map(t=>({x:t%n,y:(t/n)|0})),1);sim.setRunPark(idOf(),true);\nconst p=main().poly;let pipe=null;for(const t of p){for(let k=1;k<=5&&!pipe;k++)for(let dy=-k;dy<=k&&!pipe;dy++)for(let dx=-k;dx<=k&&!pipe;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==k)continue;for(const rot of [0,1]){const b=s.debugPlace('halfpipe',(t%n)+dx,((t/n)|0)+dy,rot,true);if(b.ok){sim.refreshCoverage(undefined,true);sim.buildings.reevaluate();const bb=sim.buildings.get(b.building.id);if(bb.active){pipe=bb;break}sim.buildings.remove(bb.id)}}}if(pipe)break}\nsim.guestSim.spawner.rateMult=8;const pv=s.parkView,st=sim.guestSim.store,out={h:0,spin:0,slide:false};const gAll=()=>{for(const t of sim.park.parks()[0].run.tiles)sim.ops.quality.groom(t)};\nfell(p);s.setHour(12);s.loop.setSpeed(1);let best=null;\nfor(let k=0;k<700;k++){if(k%120===0)gAll();s.loop.advance(1);pv.update(0.5);if(k<150)continue;let air=0,cand=null;for(let i=0;i<st.limit;i++)if(st.alive[i]&&st.type[i]===16&&pv.airFor(st.x[i],st.y[i],st.id[i],out)&&out.h>0.25){air++;cand={x:st.x[i],z:st.y[i]}}if(air>=2||(air>=1&&k>600)){best=cand;break}}\ns.loop.setSpeed(0);window.__park=!!best;const m=p[p.length>>1];const pt=best||{x:(m%n)+0.5,z:((m/n)|0)+0.5};focus(6,0.785398,pt);return String(!!best)})()"
+      }
+    },
+    {
+      "id": "race-course",
+      "alt": "A red race course with a start hut, red and blue gates down the run, racers skiing through them and the timing board at the finish.",
+      "pages": [
+        "lifts-pistes"
+      ],
+      "kind": "harness",
+      "caption": "A race course: gates, racers and the timing board at the finish.",
+      "shot": {
+        "size": 64,
+        "seed": 61,
+        "start": "winter",
+        "hour": 12,
+        "extra": "starter=1&mode=career&hints=0",
+        "w": 1600,
+        "h": 1000,
+        "zoom": 9,
+        "target": "lodge",
+        "pre": "(async()=>{const s=__slope,sim=s.sim,imp=(u)=>new Function('u','return import(u)')(u);const {Layer}=await imp('/src/world/Networks.ts');s.loop.setSpeed(0);const n=sim.size,main=()=>Array.from(sim.runIndex.runs()).sort((a,b)=>b.dropM-a.dropM)[0];const idOf=()=>sim.names.pisteId(main());sim.progression.setLevel(3);sim.economy.earn('other',400000);const cw=sim.weather.current;cw.kind='clear';cw.intensity=0;cw.fog=0;cw.wind=0.1;const focus=(zoom,yaw,pt)=>{const c2=s.renderer.controls;const x=pt.x,z=pt.z;c2.target.set(x,s.grid.getCorner(Math.round(x),Math.round(z))*0.5,z);c2.zoom=1;c2.zoomBy(zoom);c2.yaw=yaw;const u=document.getElementById('ui');if(u)u.style.display='none'};const fell=(poly)=>{const t=[];let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const q of poly){x0=Math.min(x0,q%n);x1=Math.max(x1,q%n);y0=Math.min(y0,(q/n)|0);y1=Math.max(y1,(q/n)|0)}sim.props.removeInRect(x0-5,y0-5,x1+6,y1+6,t);s.refreshProps(t)};\nconst run0=main();sim.networks.paint(Layer.Ski,run0.tiles.map(t=>({x:t%n,y:(t/n)|0})),2);const r=main();\nconst put=(type,tiles)=>{for(const t of tiles)for(let k=1;k<=3;k++)for(let dy=-k;dy<=k;dy++)for(let dx=-k;dx<=k;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==k)continue;const b=s.debugPlace(type,(t%n)+dx,((t/n)|0)+dy,0,true);if(b.ok)return sim.buildings.get(b.building.id)}return null};\nconst p=r.poly;put('startHut',[p[1],p[0],p[2]]);put('timingHut',[p[p.length-2],p[p.length-1],p[p.length-3]]);sim.refreshCoverage(undefined,true);sim.buildings.reevaluate();sim.setRunCourse(idOf(),true);\nsim.guestSim.spawner.rateMult=8;const st=sim.guestSim.store;fell(p);s.setHour(11);s.loop.setSpeed(1);let g=0,hit=0;while(g++<1500&&hit<3){s.loop.advance(1);hit=0;for(let i=0;i<st.limit;i++)if(st.alive[i]&&st.type[i]===14&&sim.race.courseTiles().has(Math.floor(st.y[i])*n+Math.floor(st.x[i])))hit++}\ns.loop.setSpeed(0);const c=sim.race.courses()[0];s.raceCourseView.update(1);const th=c.timing,tq=p[Math.floor(p.length*0.85)];focus(6,0.4,{x:(th.x+tq%n)/2+0.5,z:(th.y+((tq/n)|0))/2+0.5});return 'hit'+hit})()"
+      }
     }
   ]
 }
