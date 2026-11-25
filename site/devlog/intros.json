@@ -153,5 +153,10 @@
     "tagline": "a hint and a better flash",
     "lead": "A small one. If a red or black run is only a few metres short of the 50 m a race course needs, and you already have a hut beside it, Rudi now tells you how many metres it is missing. The photographers' camera flash also follows the light: a small glint in daylight and a proper flash at dusk and at night. Behind the scenes I fixed a bug that let two games running in one process leak state into each other. You cannot hit it in the real game, but it was muddying my test numbers. Old saves keep working. I have only seen the flash on a software renderer.",
     "shot": "schirmbar-open"
+  },
+  "0.9.0": {
+    "tagline": "snow parks and the halfpipe",
+    "lead": "You can now turn a blue, red or black run of 100 m or more into a snow park. Kickers, boxes and rails appear along it by themselves, and the snowcat keeps it in shape. Leave it ungroomed and it wears out, and riders stay away. A new winter guest, the freestyler, rides the park and throws airs, and you can place a halfpipe beside it. Rudi has a few tips about parks, and there is a new trophy. Old saves keep working. I have only seen it on a software renderer, so how it looks on a real screen is still open.",
+    "shot": "schirmbar-open"
   }
 }

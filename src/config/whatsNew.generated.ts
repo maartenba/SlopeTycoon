@@ -3,6 +3,16 @@ import type { WhatsNewEntry } from './whatsNew';
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
   {
+    "version": "0.9.0",
+    "date": "2026-11-25",
+    "highlights": [
+      "Snow parks: mark a blue, red or black run of 100 m or more as a snow park (level 3) and kickers, boxes and rails appear along it by themselves. The…",
+      "Freestylers: a new winter guest in magenta jackets rides the park, throws airs and spins off the kickers, slides the boxes and rails, and pays a…",
+      "Halfpipe: a placeable snow pipe (level 3) beside a park run. Pipe riders carve it while freestylers are about, and the park draws a few more riders.",
+      "Rudi and a trophy: tips for a run that could be a park, one that is almost long enough and one that has worn out, and the Stomped it trophy for a…"
+    ]
+  },
+  {
     "version": "0.8.3",
     "date": "2026-11-24",
     "highlights": [
@@ -20,16 +30,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
       "Downhill race days: book a weekend Downhill Race in summer; the trail closes to riders from 10:00 to 14:00, spectators gather at the finish and the…",
       "Shorter courses: a race course now needs a drop of 50 m instead of 60, so more runs qualify.",
       "Run names follow the colour: repaint a blue run red and it becomes Red Run N instead of staying Blue Run 1. Names you typed yourself never change."
-    ]
-  },
-  {
-    "version": "0.8.1",
-    "date": "2026-11-18",
-    "highlights": [
-      "Club Race days: book a Saturday or Sunday race on your course ($3,000, one a week). The run closes to the public from 10:00 to 14:00, the results go…",
-      "Spectators: guests walk over to the Timing Hut, stand around the finish and then eat and drink at the shops nearby, so a race day is a day to see.",
-      "A sponsor for your course: each course gets one of ten made-up Alpine sponsors that pays a little per race and gives a small, fading rating boost.",
-      "The World Cup on your course: it now needs a race course on a red or black run, runs a real race every day on it, and a black course draws a bigger…"
     ]
   }
 ];

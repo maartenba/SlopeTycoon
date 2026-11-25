@@ -1,6 +1,16 @@
 # Release notes and checklist
 
-Current release: **0.8.3 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+Current release: **0.9.0 (pre-release, never call it 1.0 until the owner says so)**. Per-release details: `CHANGELOG.md`.
+
+## 0.9.0 (2026-11-25, macOS, Node v24.22.3)
+
+Snow parks, the Freestyler guest type and the placeable Halfpipe (`docs/snow-park.md`). Saves: new `snowPark` module v1, `runs` v3 (older saves load with no park). Only the staff golden `progression` part moved (`docs/balance.md` "0.9.0"). Owner playtest approved 2026-11-25.
+
+| Check | Command | Result |
+|---|---|---|
+| Size | `npm run size` | 3294.5 kB raw / 1168.4 kB gzip (0.8.3: 1161.6 kB; budget 2048 kB) |
+| Site | `site:og`, `docs:img`, `build:site`, `site:check`, `verify:site` | see the Gate row below; no new screenshot, devlog reuses `schirmbar-open` |
+| Gate | `npm run gate:full` | `gate:full` (6 slots), wall 25.3 min, 41 stages, all passed first attempt, no flaky stage |
 
 ## 0.8.3 (2026-11-24, macOS, Node v24.22.3)
 

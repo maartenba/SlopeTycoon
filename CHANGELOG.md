@@ -2,7 +2,7 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.9.0] - 2026-11-25 (pre-release)
 
 ### Highlights
 
