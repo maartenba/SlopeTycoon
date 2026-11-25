@@ -128,7 +128,7 @@ export const SAVE_MODULES: SaveModule[] = [
   },
   { key: 'names', version: 1, serialize: (sim) => sim.names.serialize(), load: (sim, d) => sim.names.load(d as Parameters<Sim['names']['load']>[0]) },
   // Per-run player settings (manual close, grooming order) keyed by persistent run id; weekly traffic / last groomed are observer-only (`runStats`). Old saves: nothing closed, all Auto.
-  { key: 'runs', version: 2, // v2 (0.8.0): optional `course` (race course run ids); v1 saves have none
+  { key: 'runs', version: 3, // v2 (0.8.0): optional `course` (race course run ids); v3 (0.9.0): optional `park` (snow park run ids); older saves have none
      serialize: (sim) => sim.runSettings.serialize(), load: (sim, d) => { sim.runSettings.load(d as Parameters<Sim['runSettings']['load']>[0]); }, reset: (sim) => sim.runSettings.load(undefined) },
   // Race courses (0.8.0): racer lap records + the board (null while nothing has happened: hashes of resorts without a course are unchanged). The course flags live in `runs`.
   // v2 (0.8.1): race days (bookings, the running race, results, sponsors, the rating bonus) next to the lap records; v1 saves have only the laps and load with no race day.
@@ -136,6 +136,9 @@ export const SAVE_MODULES: SaveModule[] = [
     serialize: (sim) => { const a = sim.race.serialize(), b = sim.raceDay.serialize(); return a || b ? { ...(a ?? {}), ...(b ?? {}) } : null; },
     load: (sim, d) => { sim.race.load(d as Parameters<Sim['race']['load']>[0]); sim.raceDay.load(d as Parameters<Sim['raceDay']['load']>[0]); },
     reset: (sim) => { sim.race.reset(); sim.raceDay.reset(); } },
+  // Snow parks (0.9.0): shape per park, the Freestyler lap records (null while nothing has happened: hashes of resorts without a park are unchanged). The park flags live in `runs` (v3, optional `park`).
+  { key: 'snowPark', version: 1, omitWhenNull: true,
+    serialize: (sim) => sim.park.serialize(), load: (sim, d) => sim.park.load(d as Parameters<Sim['park']['load']>[0]), reset: (sim) => sim.park.reset() },
   { key: 'runStats', version: 1, observer: true, serialize: (sim) => sim.runSettings.serializeStats(), load: (sim, d) => sim.runSettings.loadStats(d as Parameters<Sim['runSettings']['loadStats']>[0]), reset: (sim) => sim.runSettings.loadStats(undefined) },
   { key: 'nature', version: 1, serialize: (sim) => sim.nature.serialize(), load: (sim, d) => sim.nature.load(d) },
   { key: 'leavers', version: 1, serialize: (sim) => sim.leavers.serialize(), load: (sim, d) => sim.leavers.load(d as { v: number }) },

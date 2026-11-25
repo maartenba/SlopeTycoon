@@ -2,6 +2,17 @@
 
 All notable changes to Slope Tycoon. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Highlights
+
+- **Snow parks**: mark a blue, red or black run of 100 m or more as a snow park (level 3) and kickers, boxes and rails appear along it by themselves. The snowcat keeps it shaped; leave it ungroomed and it wears out and riders stay away.
+- **Freestylers**: a new winter guest in magenta jackets rides the park, throws airs and spins off the kickers, slides the boxes and rails, and pays a small fee. Snowboarders lean towards a park a little too.
+- **Halfpipe**: a placeable snow pipe (level 3) beside a park run. Pipe riders carve it while freestylers are about, and the park draws a few more riders.
+- **Rudi and a trophy**: tips for a run that could be a park, one that is almost long enough and one that has worn out, and the *Stomped it* trophy for a hundred tricks.
+
+Added: `park:sanity`, `analysis:park`, the `snowPark` save module (older saves load with no park), the Freestyler type (index 16), the unlock rows `snowPark` and `halfpipe`. Balance: only the staff golden `progression` part moved (docs/balance.md "0.9.0").
+
 ## [0.8.3] - 2026-11-24 (pre-release)
 
 A small update: a Rudi tip for runs just under the race-course minimum, a flash that follows the light, and a fix for a bug that only test runs could hit. Old saves keep working; nothing moves in the economy.

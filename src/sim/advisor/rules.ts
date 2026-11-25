@@ -25,6 +25,7 @@ import { POSITIVE_HINTS } from '../Rating';
 import type { PanelRef } from '../goals/Goals';
 import { ENERGY } from '../../config/energy';
 import { RACE } from '../../config/race';
+import { PARK } from '../../config/park';
 import { SUSTAIN } from '../../config/rivals';
 import { CROSSING } from '../../config/crossings';
 import { CAMP } from '../attractions/Campground';
@@ -361,6 +362,22 @@ export const RULES: readonly Rule[] = [
   rule('race.course.ungroomed', 1, (c) => {
     const bad = c.sim.race.courses().find((k) => !k.mtb && k.open && k.quality < 0.5);
     return bad ? { id: 'race.course.ungroomed', severity: 'info', ...TEXT.raceCourseUngroomed(c.sim.names.pisteName(bad.run)), panel: { drawer: 'ops' } } : null;
+  }),
+  // Snow park (0.9.0, docs/snow-park.md): a blue or harder run long enough and no park yet; a park that is nearly long enough; a worn park. Never required by a goal.
+  rule('park.available', 1, (c) => {
+    const sim = c.sim;
+    if (sim.runSettings.parkIds().length || sim.progression.locked('landscape', 'snowPark') || sim.guestSim.store.count < (c.shown ? 10 : 15) || sim.rating.stars < 2) return null;
+    const best = sim.runIndex.runs().filter((u) => sim.park.reasonFor(u) === null).sort((x, y) => y.lengthM - x.lengthM)[0];
+    return best ? { id: 'park.available', severity: 'info', ...TEXT.parkAvailable(sim.names.pisteName(best)), target: { x: best.top.x, y: best.top.y } } : null;
+  }),
+  rule('park.short', 1, (c) => {
+    const sim = c.sim, near = sim.park.nearMiss();
+    if (!near || sim.runSettings.parkIds().length || sim.progression.locked('landscape', 'snowPark') || !sim.buildings.all().some((b) => b.type === 'groomerGarage' && b.active)) return null;
+    return { id: 'park.short', severity: 'info', ...TEXT.parkShort(sim.names.pisteName(near), Math.round(near.lengthM), PARK.minLengthM), target: { x: near.top.x, y: near.top.y } };
+  }),
+  rule('park.worn', 1, (c) => {
+    const bad = c.sim.park.parks().find((k) => k.open && k.worn && c.sim.park.total > 0);
+    return bad ? { id: 'park.worn', severity: 'info', ...TEXT.parkWorn(c.sim.names.pisteName(bad.run)), panel: { drawer: 'ops' } } : null;
   }),
   // Downhill course (0.8.2): an open course no bike lift reaches draws no riders; say so and what to do. Never required by a goal.
   rule('race.downhill.unreachable', 1, (c) => {

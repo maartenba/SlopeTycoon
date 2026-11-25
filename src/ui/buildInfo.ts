@@ -40,7 +40,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   skiSchoolHQ: '🏫', magicCarpet: '🧒', kidsGround: '⛷️', playground: '🛝', patrolHub: '⛑️', rangerStation: '🐻', firstAid: '🩹', helipad: '🚁',
   groomerGarage: '🚜', liftWorkshop: '🛠️', snowcatOutpost: '🛻', warningSign: '⚠️', iceRink: '⛸️', heatedTerrace: '🔥', stuntPark: '🏂', adventurePark: '🧗',
   alpineFarm: '🐄', boatRental: '🚣', beach: '🏖️', trainStation: '🚆', altiport: '🛩️', shuttleDepot: '🚌', reservoir: '💧', snowCannon: '❄️',
-  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', schirmbar: '🍹', pizzeria: '🍕', bakery: '🥐', touristOffice: 'ℹ️', chapel: '⛪', startHut: '🚩', timingHut: '⏱️', grassStrip: '🛩️', skydiveCentre: '🪂', launchRamp: '🪁', landingField: '🛬', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
+  smallHotel: '🏨', luxuryHotel: '🏩', coffeeStand: '🥤', schirmbar: '🍹', pizzeria: '🍕', bakery: '🥐', touristOffice: 'ℹ️', chapel: '⛪', startHut: '🚩', halfpipe: '🏂', timingHut: '⏱️', grassStrip: '🛩️', skydiveCentre: '🪂', launchRamp: '🪁', landingField: '🛬', campground: '⛺', pettingZoo: '🐐', viewpoint: '🔭', treehouse: '🌳', tackleHut: '🎣', fishingPier: '🪝', solarArray: '☀️', solarPlant: '🔆', windTurbine: '🌬️', smallHydro: '💦', biomassHeating: '🪵', treeNursery: '🌱', recyclingCentre: '♻️', ecoCentre: '🌿',
 };
 export const LIFT_ICONS: Record<LiftKind, string> = LIFT_FALLBACK_ICONS;
 
@@ -89,6 +89,7 @@ const DESCRIPTIONS: Record<string, string> = {
   bakery: 'Rolls and coffee from 06:00 to 12:00. Guests grab breakfast on the way; lodgings within 9 tiles get a small Facilities bonus. Needs a footpath or a road.',
   touristOffice: 'One per resort: maps, tips and a friendly desk. Always +6% arrivals while it is open. Needs a road or a footpath.',
   startHut: 'The starting hut of a race course: a gate, a bench and a rack of skis, beside the top of a red or black run or bike trail. Mark the run as a race course (a trail becomes a downhill course) and racers or downhillers come to train.',
+  halfpipe: 'A snow halfpipe beside a snow park run (mark the run as a snow park first). Freestylers on that park drop in for a few extra tricks and pay a little more; the snowcat shapes it with the park. Winter only.',
   timingHut: 'The finish of a race course: a timing hut with a board beside the foot of a red or black run or bike trail. Racers and downhillers pay a small course fee; the board shows the best time of the day.',
   chapel: 'A small whitewashed mountain chapel, one per resort. A touch of village charm for the rating, and now and then (most often on a summer Saturday) a wedding: the bell rings, the party stays two hours, then celebrates at a lodge nearby. Needs level ground beside a footpath or a road.',
   grassStrip: 'A cheap mown airfield with a windsock (not the Altiport). The jump plane of the Skydive Centre takes off from it; one per resort, flat ground, a road or a footpath.',

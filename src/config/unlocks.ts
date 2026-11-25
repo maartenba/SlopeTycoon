@@ -57,6 +57,9 @@ export const UNLOCKS: readonly UnlockDef[] = [
   { kind: 'building', id: 'smallHotel', level: 3 },
   // Level 3: backcountry routes (Phase 6 Task 32; winter ski-touring / off-piste extra, no goal or Advisor rule needs it: the Advisor only WARNS about routes you built).
   { kind: 'landscape', id: 'backcountry', level: 3 },
+  // Snow park (0.9.0, docs/snow-park.md; owner decision 2026-11-24): marking a run as a park, and the Halfpipe beside it, at level 3. Never needed by a goal / Advisor build action (the Stunt Park stays open).
+  { kind: 'landscape', id: 'snowPark', level: 3 },
+  { kind: 'building', id: 'halfpipe', level: 3 },
   // Level 3: the suspension footbridge (Phase 6 Task 46; a hiker attraction, nothing a goal or Advisor rule needs; regular bridges are always available).
   { kind: 'landscape', id: 'suspension', level: 3 },
   // Level 3 (Regional name): the heavy transport.

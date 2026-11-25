@@ -1,5 +1,6 @@
 import { EXPLORE } from '../../config/balance';
-import { RACER_TYPE } from '../../config/guestTypes';
+import { FREESTYLER_TYPE, RACER_TYPE, SNOWBOARDER_TYPE } from '../../config/guestTypes';
+import { PARK } from '../../config/park';
 import type { GuestStore } from './Guest';
 import { NavMode, type NavGraph } from './NavGraph';
 import { Layer } from '../../world/Networks';
@@ -28,6 +29,8 @@ export class Exploration {
   runChoice: ((tile: number, skill: number) => RunChoice | null) | null = null;
   /** Racers (0.8.0): the tiles of the open race courses; a racer's via pick is restricted to them (empty / null = normal pick). */
   racerTiles: (() => ReadonlySet<number>) | null = null;
+  /** Freestylers (0.9.0): the tiles of the open snow parks; a Freestyler's via pick is restricted to them, Snowboarders lean towards them (empty / null = normal pick). */
+  parkTiles: (() => ReadonlySet<number>) | null = null;
   /** Off = the pre-exploration behaviour (A/B in analysis & tests). */
   enabled = true;
   /** Runs through a via tile today, per tile (reset daily; display only - never read by the simulation, so it needs no saving). */
@@ -123,6 +126,9 @@ export class Exploration {
     const d = Math.max(0, Math.min(3, s.moveMode[slot]! - NavMode.Ski0));
     let list = this.valid(g, lift, d, fromStation);
     if (s.type[slot] === RACER_TYPE && this.racerTiles) { const ct = this.racerTiles(); if (ct.size) { const sub = list.filter((t) => ct.has(t)); if (sub.length) list = sub; } }
+    let pk: ReadonlySet<number> | null = null;
+    if (s.type[slot] === FREESTYLER_TYPE && this.parkTiles) { const ct = this.parkTiles(); if (ct.size) { const sub = list.filter((t) => ct.has(t)); if (sub.length) list = sub; } }
+    else if (s.type[slot] === SNOWBOARDER_TYPE && this.parkTiles) { const ct = this.parkTiles(); if (ct.size) pk = ct; }
     if (list.length === 0) return 0;
     const n = g.size, skill = s.skill[slot]!, lv = s.via[slot]!, last = lv !== 0 ? Math.abs(lv) - 1 : -1;
     let best = -1, bs = -Infinity;
@@ -137,6 +143,7 @@ export class Exploration {
         diff = rc.diff; // the run's own difficulty, not the tile's
         sc += -EXPLORE.runCrowdWeight * rc.crowd + EXPLORE.runQualityWeight * (rc.like - 0.5) - EXPLORE.moodEase * mood * (diff - 2.5) * 0.5;
       }
+      if (pk && pk.has(t)) sc += PARK.boarderBonus;
       if (last >= 0) sc += EXPLORE.farWeight * Math.min(1, Math.hypot((t % n) - (last % n), ((t / n) | 0) - ((last / n) | 0)) / EXPLORE.farTiles);
       // difficulty variety: experts/advanced like the harder lines, beginners the easy ones (a piste at their limit is fine)
       sc += EXPLORE.skillDiff[Math.max(0, Math.min(3, skill))]! * (diff - 1.5);

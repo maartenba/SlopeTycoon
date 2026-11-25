@@ -29,7 +29,9 @@ import { RunSettings, type GroomMode } from '../sim/RunSettings';
 import { RaceCourse, fmtTime, lapQuota } from '../sim/race/RaceCourse';
 import { RaceDay } from '../sim/race/RaceDay';
 import { RACE, RACE_DAY, reasonText } from '../config/race';
-import { DOWNHILLER_TYPE, RACER_TYPE } from '../config/guestTypes';
+import { DOWNHILLER_TYPE, FREESTYLER_TYPE, RACER_TYPE } from '../config/guestTypes';
+import { PARK } from '../config/park';
+import { SnowPark, parkQuota } from '../sim/park/SnowPark';
 import type { Run, RunNetwork } from '../world/Runs';
 import { Economy } from '../sim/Economy';
 import { Pricing } from '../sim/Pricing';
@@ -574,6 +576,31 @@ export function createSim(opts: SimOptions) {
   guestSim.spawner.raceDemand = () => race.demand(racersAlive());
   const ridersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === DOWNHILLER_TYPE) n++; return n; };
   guestSim.spawner.mtbDemand = () => race.demandMtb(ridersAlive());
+  // Snow parks (0.9.0, docs/snow-park.md): a property of a run; Freestylers ride it, the groomer shapes it. Wired here like the race course (runs, buildings, the open status, the guests).
+  const park = new SnowPark({
+    size, runs: () => runIndex.runs(), runId: (r) => names.pisteId(r), settings: runSettings,
+    hasGarage: () => buildings.all().some((b) => b.type === 'groomerGarage' && b.active),
+    halfpipes: () => buildings.all().filter((b) => b.type === 'halfpipe' && b.active).map((b) => ({ x: b.x, y: b.y, w: b.w, h: b.h, rot: b.rot })),
+    runOpen: (r) => { const st = openStatus.pisteAt(r.tiles[0]! % size, (r.tiles[0]! / size) | 0); return st ? st.open : true; },
+    day: absDayNow, earn: (a) => economy.earn('recreation', a),
+  });
+  { const prev = pq.onGroom; pq.onGroom = (i) => { prev?.(i); park.onGroom(i); }; }
+  guestSim.exploration.parkTiles = () => park.parkTiles();
+  guestSim.parkLap = (id, tile) => { park.onLap(id, tile); };
+  guestSim.parkDone = (id) => park.lapsOf(id) >= parkQuota(id);
+  guestSim.parkInjury = (tile) => park.injuryScale(tile);
+  bus.on('day:changed', () => park.prune((id) => guestSim.store.slotOf(id) >= 0));
+  const freestylersAlive = (): number => { const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && st.type[i] === FREESTYLER_TYPE) n++; return n; };
+  guestSim.spawner.parkDemand = () => park.demand(freestylersAlive());
+  const parkOf = (e: Run): { on: boolean; can: boolean; text: string; shape: number } => {
+    const id = names.pisteId(e), on = runSettings.isPark(id), why = park.reasonFor(e), lock = gate.locked('landscape', 'snowPark');
+    if (on) { const sh = Math.round(park.shapeOf(id) * 100); return { on, can: true, shape: park.shapeOf(id), text: why ? `Snow park, inactive: ${PARK.reasons[why]}` : `Snow park · ${park.ridersToday()} ${park.ridersToday() === 1 ? 'rider' : 'riders'} today · shape ${sh} %${park.shapeOf(id) < PARK.shape.worn ? ' (worn)' : ''}` }; }
+    return { on, can: !lock && why === null, shape: 0, text: lock ?? (why ? PARK.reasons[why] : 'Can be a snow park') };
+  };
+  const setRunPark = (id: number, on: boolean): { ok: boolean; reason?: string } => {
+    if (on) { const lock = gate.locked('landscape', 'snowPark'); if (lock) return { ok: false, reason: lock }; }
+    const r = park.setPark(id, on); return r.ok ? r : { ok: false, reason: r.reason ? PARK.reasons[r.reason] : undefined };
+  };
   /** Display name of a course: a ski run's name; a downhill trail is "Downhill N" by its place among the marked downhill courses. */
   const courseName = (c: { id: number; mtb: boolean; run: Run }): string => c.mtb ? `Downhill ${race.nameNo(c.id)}` : names.pisteName(c.run);
   const setRunCourse = (id: number, on: boolean): { ok: boolean; reason?: string } => { const r = race.setCourse(id, on); return r.ok ? r : { ok: false, reason: r.reason ? reasonText(r.reason, id >= RACE.mtb.idBase) : undefined }; };
@@ -875,7 +902,7 @@ export function createSim(opts: SimOptions) {
   const hasActive = (types: readonly string[]): boolean => buildings.all().some((b) => b.active && types.includes(b.type));
   const festDay = (): number => game.date.year * DAYS_PER_YEAR + game.date.day;
   /** Snowboard Park Jam bonus: an active Stunt Park within 12 tiles of the top station of an open lift. */
-  const parkNearLiftTop = (): boolean => buildings.all().some((b) => b.active && b.type === 'stuntPark' && lifts.all().some((l) => liftOpenForBusiness(l) && Math.hypot(l.top.x - (b.x + b.w / 2), l.top.y - (b.y + b.h / 2)) <= 12));
+  const parkNearLiftTop = (): boolean => park.active().some((p) => { const t = p.run.top; return lifts.all().some((l) => liftOpenForBusiness(l) && Math.hypot(l.top.x - t.x, l.top.y - t.y) <= 12); }) || buildings.all().some((b) => b.active && b.type === 'stuntPark' && lifts.all().some((l) => liftOpenForBusiness(l) && Math.hypot(l.top.x - (b.x + b.w / 2), l.top.y - (b.y + b.h / 2)) <= 12));
   /** Fish stock of every water an active Tackle hut reaches (Angler's Paradise prerequisite and effectiveness). */
   const hutWaters = (): number[] => attractions.all().filter((a) => a.spec.angling && a.b.active).flatMap((a) => anglingPlanner.plan(a.b).bodies.map((b) => fishStock.get(b.key)));
   const marketing = new Marketing({
@@ -906,7 +933,7 @@ export function createSim(opts: SimOptions) {
           case 'rental': return hasActive(['rental']);
           case 'railStation': return hasActive(['trainStation']) && (guestSim.spawner.status().arrivals?.rail.available ?? false);
           case 'stationPath': return hasActive(['trainStation']); // Dependencies: active = within walking reach of the lodge (path distance) or served by a Shuttle Depot
-          case 'stuntPark': return hasActive(['stuntPark']);
+          case 'stuntPark': return hasActive(['stuntPark']) || park.active().length > 0; // a Stunt Park or an open snow park (0.9.0)
           case 'campground': return hasActive(['campground']);
           case 'kidsOrZoo': return hasActive(['kidsGround', 'playground', 'magicCarpet', 'pettingZoo']);
           case 'tackleHut': return hasActive(['tackleHut']);
@@ -937,6 +964,7 @@ export function createSim(opts: SimOptions) {
     if (attractions.all().some((a) => a.open && a.b.type === 'sledRental')) f.push(COND_SLED); // Sledder (M7.3): an open Sled Rental (safe run, winter, snow)
     if (attractions.all().some((a) => a.open && a.b.type === 'alpineCoaster')) f.push(COND_COASTER);
     if (race.active().length) f.push(RACE.cond);
+    if (park.active().length) f.push(PARK.cond); // Freestyler (0.9.0): an open, valid snow park
     if (race.activeMtb().length && lifts.all().some((l) => liftOpenForBusiness(l) && LIFTS[l.kind]?.carriesBikes)) f.push(RACE.mtb.cond); // Downhiller (0.8.2): an open downhill course and an open bike lift // Racer (0.8.0): an open, valid race course
     if (guestSim.decider.touring.hasSafeRoute()) f.push(COND_BACKCOUNTRY); // Ski tourer (Task 34): an open backcountry route below danger 4
     return f;
@@ -1222,14 +1250,14 @@ export function createSim(opts: SimOptions) {
     return { on, can: on || why === null, text: on ? (why ? `Race course, inactive: ${RACE.reasons[why]}` : `Race course · ${race.racersToday()} ${race.racersToday() === 1 ? 'racer' : 'racers'} today${race.bestMs(names.pisteId(e)) === null ? '' : ` · best ${fmtTime(race.bestMs(names.pisteId(e))!)}`}`) : why ? RACE.reasons[why] : 'Can be a race course' };
   };
   /** Everything the inspector / Runs list shows about one run. */
-  type RunInfo = PisteReport & { tileIdx: number[]; x: number; y: number; closedByPlayer: boolean; groomMode: GroomMode; passesToday: number; passesWeek: number; groomedDaysAgo: number | null; nodeFrom: number; nodeTo: number; course: { on: boolean; can: boolean; text: string } };
+  type RunInfo = PisteReport & { tileIdx: number[]; x: number; y: number; closedByPlayer: boolean; groomMode: GroomMode; passesToday: number; passesWeek: number; groomedDaysAgo: number | null; nodeFrom: number; nodeTo: number; course: { on: boolean; can: boolean; text: string }; park: { on: boolean; can: boolean; text: string; shape: number } };
   const reportOf = (e: Run): RunInfo => {
     const r = pisteReport(e, { difficulty: networks.difficulty, quality: ops.quality, status: (c) => openStatus.pisteAt(c.tiles[0]! % size, (c.tiles[0]! / size) | 0), runsAt: (tiles) => guestSim.exploration.runsAt(tiles) });
     const id = names.pisteId(e), t = e.poly[e.poly.length >> 1] ?? e.tiles[0]!, lg = runSettings.lastGroomedDay(id);
     return {
       ...r, id, name: names.pisteName(e), autoName: names.pisteAutoName(e), tileIdx: e.tiles, x: (t % size) + 0.5, y: ((t / size) | 0) + 0.5,
       closedByPlayer: runSettings.isClosed(id), groomMode: runSettings.groomMode(id), passesToday: runPasses(e), passesWeek: runSettings.passesWeek(id) + runPasses(e),
-      groomedDaysAgo: lg === undefined ? null : Math.max(0, absDayNow() - lg), nodeFrom: e.from, nodeTo: e.to, course: courseOf(e),
+      groomedDaysAgo: lg === undefined ? null : Math.max(0, absDayNow() - lg), nodeFrom: e.from, nodeTo: e.to, course: courseOf(e), park: parkOf(e),
     };
   };
   const pisteReportAt = (x: number, y: number): RunInfo | null => {
@@ -1400,6 +1428,7 @@ export function createSim(opts: SimOptions) {
         get powderHounds(): number { return events.active().some((e) => e.id === 'powder') && marketing.running().some((m) => m.id === 'powder') ? 1 : 0; },
         get concert(): number { return events.active().some((e) => e.id === 'mountainConcertSummer' || e.id === 'mountainConcertWinter') ? 1 : 0; },
         get racerLaps(): number { return race.total; },
+        get parkTricks(): number { return park.tricks; },
         get masked(): number { if (!events.carnivalOn() || rating.stars < CARNIVAL.trophyStars) return 0; const st = guestSim.store; let n = 0; for (let i = 0; i < st.limit; i++) if (st.alive[i] && costumed(st.id[i]!)) n++; return n; },
         get suites(): number { let m = 0; for (const a of attractions.all()) if (a.b.type === 'luxuryHotel') m = Math.max(m, attractions.rooms.occupied(a.id)); return m; },
         get summerShare(): number { if (!r || r.partial) return 0; let all = 0, s = 0; for (const x of r.months) { all += x.income; if (x.month >= 2 && x.month <= 5) s += x.income; } return all > 0 ? Math.round((100 * s) / all * 10) / 10 : 0; },
@@ -1442,7 +1471,7 @@ export function createSim(opts: SimOptions) {
     backcountry, tours, waterEnv, fishStock, anglingPlanner, waterBodies, achievements, rivals, sustain, energy, eco, landscape, landscapeEnv, rivers, riverEnv, flow,
     crossings,
     scenario: scenarioRef as ScenarioRunner | null,
-    jumpToDay, trailRows, get mtbRuns() { return mtbRunIndex.runs(); }, courseName, pisteReportAt, renamePisteAt, runIndex, mtbRunIndex, runLabels, runSettings, race, raceDay, bookRaceDay, setRunCourse, runList, setRunClosed, setRunGroomMode, renameRun,
+    jumpToDay, trailRows, get mtbRuns() { return mtbRunIndex.runs(); }, courseName, pisteReportAt, renamePisteAt, runIndex, mtbRunIndex, runLabels, runSettings, race, raceDay, bookRaceDay, setRunCourse, park, setRunPark, runList, setRunClosed, setRunGroomMode, renameRun,
     size, seed, grid, terrainInfo, props, genMs, game, bus, eventLog, registry, loop,
     pricing, priceApi, marketing, economy, buildings, env, coverage, refreshCoverage, networks, networkProvider, lifts,
     weather, cond, reservoirs, snow, openStatus, navWorld, guestWorld, guestSim, ops, safety, attractions,

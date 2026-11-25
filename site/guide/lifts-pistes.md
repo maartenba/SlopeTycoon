@@ -91,6 +91,10 @@ Press <kbd>O</kbd> (or use the **View** drawer) until you reach the **Runs** ove
 
 Old saves load with every run open and every grooming order on Auto.
 
+### Snow parks and freestylers
+
+A blue, red or black run of at least 100 m can be a **snow park** (unlocked at level 3). Open the run's inspector and press **Make a snow park** (or use the **Park** column in **Operations → Runs**); you need a Groomer Garage. Kickers, boxes and rails appear along the run by themselves. The snowcats shape the park when they groom it; a park nobody grooms, or that has seen a lot of riders, wears out (the inspector shows its shape), and a worn park draws fewer riders and more falls. **Freestylers** in magenta jackets come on winter days, ride the park on skis or a board, throw airs and pay a small fee. A **Halfpipe** (Recreation, level 3) beside the park adds a pipe and a few more riders. Rudi tells you when a run could be a park.
+
 ### Race courses and racers
 
 A red or black run with at least 50 m of drop can be a **race course** (unlocked at level 3). Place a **Start Hut** beside the top of the run and a **Timing Hut** beside its foot (both in the building drawer, Recreation), then open the run's inspector and press **Make a race course** (or use the **Course** column in **Operations → Runs**). The button says what is missing: *Needs a Start Hut at the top*, *Needs a Timing Hut at the foot*, *Needs a red or black run*. Flags go up along the run by themselves, red and blue, and the Timing Hut shows a board with the best time and the number of racers today.

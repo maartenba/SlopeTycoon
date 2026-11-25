@@ -69,6 +69,7 @@ export function touchpoints(id: string): string[] {
 
 /** Buildings that are a player-driven extra with no goal / advisor / tutorial / campaign touchpoint (by design: nothing REQUIRES them). M7.2: the Helipad, Tree Nursery, Recycling Centre and the energy extras now have Advisor rules (heli.rescue, trees.nursery, eco.recycling, energy.more) and left this list. */
 export const OPTIONAL_EXTRAS: Readonly<Record<string, string>> = {
+  halfpipe: 'optional winter extra beside a snow park run (docs/snow-park.md; Rudi suggests the park, the pipe is the upgrade)',
   chalet: 'lodging is taught by the generic "guests have no bed" Advisor rule and the Base Lodge goals, not by id',
   fishingPier: 'extension of the Tackle & Bait Hut (which the Angler campaign requires)',
   treehouse: 'optional hiker / family extra (docs/viewpoints.md)',

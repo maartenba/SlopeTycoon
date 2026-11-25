@@ -113,6 +113,8 @@ export interface GuestTypeDef {
   racer?: boolean;
   /** Downhiller (0.8.2, docs/race-course.md "Downhill course"): a mountain biker who trains laps on a downhill course (the trail goal is forced onto it), leaves after a few laps. */
   downhiller?: boolean;
+  /** Freestyler (0.9.0, docs/snow-park.md): laps the player's snow park (the via pick is forced onto it), throws airs, wears the park, leaves after a few laps. */
+  freestyler?: boolean;
 }
 
 /**
@@ -137,10 +139,14 @@ export const SENIOR_WALK = 0.82;
 export const RACER_TYPE = 14;
 /** Type index of the Downhiller (0.8.2). */
 export const DOWNHILLER_TYPE = 15;
+/** Type index of the Freestyler (0.9.0). */
+export const FREESTYLER_TYPE = 16;
+/** Type index of the Snowboarder (Task 33; they prefer a snow park a little when one is open). */
+export const SNOWBOARDER_TYPE = 10;
 
 /**
  * The extra types the game ships, in index order (index = CORE_TYPE_COUNT + position; NEVER reorder, append only).
- * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer, 14 = Racer (0.8.0), 15 = Downhiller (0.8.2).
+ * 6 = Mountain biker (Phase 6 Task 25), 7 = Angler (Task 42), 8 = Senior, 9 = School group (Task 29), 10 = Snowboarder (Task 33), 11 = Ski tourer (Task 34), 12 = Sledder (M7.3), 13 = Photographer, 14 = Racer (0.8.0), 15 = Downhiller (0.8.2), 16 = Freestyler (0.9.0).
  */
 export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
   {
@@ -239,6 +245,15 @@ export const SHIPPED_TYPES: readonly GuestTypeDef[] = [
     appeal: { adventure: 0.9, rental: 0.6, restaurant: 0.7, bar: 0.7, terrace: 0.6, shop: 0.3, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.05, stunt: 0.2, beach: 0.3, boats: 0.2 },
     group: [1, 3], budget: [200, 380], overnight: 0.35, skill: [0, 0, 0.3, 0.7], pref: [0, 100],
     look: { top: 1, topShare: 0.9, colour: 0xf08a24, helmet: true, outfit: 1 }, // orange jerseys (`top` indexes CLOTH_COLORS: 1 = orange), helmets, the summer outfit
+  },
+  {
+    // 0.9.0 (docs/snow-park.md): rides the player's snow park on winter days; needs an open, valid park (pseudo id `@snowPark`). Skiers AND boarders (the render picks by hash), bright jackets, helmets.
+    // The arrival weight is scaled by the parks' shape (`Spawner.parkDemand`) and capped per park.
+    id: 'freestyler', label: 'Freestyler', seasons: { winter: 0.05 }, minLevel: 3, requires: ['@snowPark'], fallback: 'adventure', segment: 'adventure', freestyler: true,
+    weather: { rain: 0.2, storm: 0, heavySnow: 0.4, snow: 0.9 },
+    appeal: { stunt: 1.2, rental: 0.6, bar: 0.9, adventure: 0.6, restaurant: 0.5, terrace: 0.5, cafe: 0.4, kidsGround: 0.02, playground: 0.02, carpet: 0.02, rink: 0.2 },
+    group: [1, 4], budget: [150, 300], overnight: 0.35, skill: [0, 0.1, 0.45, 0.45], pref: [2, 0],
+    look: { top: 10, topShare: 0.8, colour: 0xd63fa0, helmet: true, beanie: 0.3 }, // magenta jackets, helmets; skis OR board by hash (GuestRenderer) (`top` indexes CLOTH_COLORS: 10 = magenta, 0xd63fa0)
   },
 ];
 /** Extra types, in index order (index = CORE_TYPE_COUNT + position). Starts as the shipped list; tests may reset / register more. */

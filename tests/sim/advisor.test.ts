@@ -58,6 +58,8 @@ const ecoCase = (s: Sim, score: number): void => {
   s.rating.breakdown = () => ({ score: 70, stars: 3.5, components: [{ id: 'sustainability', label: 'Sustainability', score, weight: 0.08, hint: 'Plant trees' }, { id: 'happiness', label: 'Guest happiness', score: 85, weight: 0.22, hint: 'Guests are happy' }], bonus: 0, bonusHints: [], hints: [] });
 };
 /** A red run that is 46 m high with huts beside it (the starter resort's runs are all 50 m or more: stub the near-miss read, so the case needs no huts and can share a resort with the other race cases; the real rule is tested on a real 45 m run in tests/sim/race/nearMiss.test.ts). */
+const parkAll = (s: Sim): void => { s.progression.unlockAll = true; guests(s, 20); s.park.reasonFor = () => null; }; // every run can be a park (the 64 maps' runs are short)
+const wornPark = (s: Sim, shape: number): void => { parkAll(s); const id = s.names.pisteId(mainRun(s)); s.runSettings.setPark(id, true); const d = s.game.date.year * 180 + s.game.date.day; s.park.load({ shape: [[id, shape]], stamp: [[id, d]], laps: [], total: 5, tricks: 10, day: d, today: 1 }); };
 const shortRun = (s: Sim): void => { const run = mainRun(s); s.race.nearMiss = () => ({ run: { ...run, dropM: 46 }, mtb: false }); };
 const CASES: Case[] = [
   { id: 'queue.long', cheap: true, trigger: (s) => { s.guestSim.queues.waitTicks = () => 40; }, calm: (s) => { s.guestSim.queues.waitTicks = () => 3; } },
@@ -96,6 +98,9 @@ const CASES: Case[] = [
   { id: 'race.course.available', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; paintRun(s, mainRun(s), 2); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; paintRun(s, mainRun(s), 2); s.runSettings.setCourse(s.names.pisteId(mainRun(s)), true); } },
   { id: 'race.course.short', trigger: (s) => { s.progression.unlockAll = true; shortRun(s); }, calm: (s) => { s.progression.unlockAll = true; } },
   { id: 'race.course.ungroomed', trigger: (s) => { s.progression.unlockAll = true; const id = prepareCourse(s, 2); s.setRunCourse(id, true); s.runSettings.loadStats(undefined); }, calm: (s) => { s.progression.unlockAll = true; const id = prepareCourse(s, 2); s.setRunCourse(id, true); s.runSettings.noteGroomed(id, s.game.date.year * DAYS_PER_YEAR + s.game.date.day); } },
+  { id: 'park.available', trigger: (s) => { parkAll(s); }, calm: (s) => { parkAll(s); s.runSettings.setPark(s.names.pisteId(mainRun(s)), true); } },
+  { id: 'park.short', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.park.nearMiss = () => mainRun(s); }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); } },
+  { id: 'park.worn', trigger: (s) => { wornPark(s, 0.1); }, calm: (s) => { wornPark(s, 0.9); } },
   { id: 'race.downhill.unreachable', trigger: (s) => { s.progression.unlockAll = true; const { id } = prepareDownhill(s, 2, true); s.lifts.all().forEach((l) => { l.kind = 'tbar'; }); s.setRunCourse(id, true); s.tick(1); }, calm: (s) => { s.progression.unlockAll = true; prepareDownhill(s, 2, true); s.tick(1); } },
   { id: 'tourist.office', trigger: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; }, calm: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 1_000; } },
   { id: 'photo.viewpoint', trigger: (s) => { guests(s, 20); placeSite(s, findSite(s, 'viewpoint', anchors(s).lodge, { rmax: 14 })!); s.tick(1); }, calm: (s) => { guests(s, 20); } },

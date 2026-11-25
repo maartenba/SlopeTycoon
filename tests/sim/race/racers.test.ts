@@ -12,7 +12,7 @@ const groomed = (s: Sim, id: number): void => s.runSettings.noteGroomed(id, day(
 describe('Racer type', () => {
   it('sits at the stored index (the Downhiller follows it)', () => {
     expect(SHIPPED_TYPES[RACER_TYPE - CORE_TYPE_COUNT]!.id).toBe('racer');
-    expect(SHIPPED_TYPES.length).toBe(RACER_TYPE - CORE_TYPE_COUNT + 2);
+    expect(SHIPPED_TYPES.length).toBe(RACER_TYPE - CORE_TYPE_COUNT + 3);
   });
   it('no racers (and no demand) without a valid course', () => {
     const s = mkWinter(); s.guestSim.spawner.rateMult = 6;

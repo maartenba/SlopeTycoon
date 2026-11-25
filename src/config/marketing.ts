@@ -137,7 +137,7 @@ export const CAMPAIGNS: readonly CampaignDef[] = [
   {
     id: 'parkJam', name: 'Snowboard Park Jam', icon: '🏂', blurb: 'A jam session in the Stunt Park for the snowboard crowd.', segment: 'Snowboarders',
     cost: 5000, durationDays: 10, targets: { adventure: 0.4 }, extraTargets: { snowboarder: 1.4 }, volumeBoost: 0.08, seasons: ['winter', 'spring'], offSeason: 0.2,
-    prereqs: [{ id: 'stuntPark', label: 'A Stunt Park', build: 'stuntPark', show: 'build' }, { id: 'openLift', label: 'An open lift' }, { id: 'rental', label: 'Rental', build: 'rental', show: 'build' }],
+    prereqs: [{ id: 'stuntPark', label: 'A Stunt Park or a snow park', build: 'stuntPark', show: 'build' }, { id: 'openLift', label: 'An open lift' }, { id: 'rental', label: 'Rental', build: 'rental', show: 'build' }],
     bonus: { id: 'parkLift', factor: 1.2 }, cooldownDays: 21,
   },
   {

@@ -1,3 +1,4 @@
+import { FREESTYLER_TYPE } from '../config/guestTypes';
 import { PHOTO_SHOOT, PhotoShoots } from './photoShoot';
 import * as THREE from 'three';
 import { isPerspective } from './view/cameraMath';
@@ -133,6 +134,7 @@ interface Batch { mesh: THREE.InstancedMesh; a: Float32Array; b: Float32Array; c
  * shader, plus a Points impostor used when zoomed far out. Appearance is derived from the guest id (see guestAppearance.ts); no sim state is added.
  * Per frame CPU work per visible guest: view cull, a few multiply-adds for heading/speed/animation phase, and ~28 float writes; no allocations.
  */
+const AIR = { h: 0, spin: 0, slide: false };
 export class GuestRenderer {
   readonly group = new THREE.Group();
   private batches: Batch[] = [];
@@ -207,6 +209,8 @@ export class GuestRenderer {
 
   /** Guests with an id below this keep the old cosmetic boarders (a save from before Snowboarder was a type); `main.ts` wires `Spawner.legacyBoarderBelow`. */
   legacyBoarderBelow: () => number = () => 0;
+  /** Snow park airs (0.9.0): fills `out` with the hop height / spin / slide of a freestyler at (x, y) near a park feature; `main.ts` wires `ParkView.airFor`. */
+  air: ((x: number, y: number, id: number, out: { h: number; spin: number; slide: boolean }) => boolean) | null = null;
 
   /** Photographers' raised-camera sessions (started by `photo:taken`, docs/photographers.md "Camera and flash") and the renderer's own clock (real seconds, only while the sim clock runs). */
   readonly shoots = new PhotoShoots();
@@ -325,7 +329,7 @@ export class GuestRenderer {
       const wn = s.wpN[i]!;
       if (wn > 0) { const p = pathPoint(s.px[i]!, s.py[i]!, s.x[i]!, s.y[i]!, s.wp, i * WP_MAX * 2, wn, alpha, this.tmpPt); x = p.x; y = p.y; pathN++; }
       else { x = s.px[i]! + (s.x[i]! - s.px[i]!) * alpha; y = s.py[i]! + (s.y[i]! - s.py[i]!) * alpha; }
-      const z = s.pz[i]! + (s.z[i]! - s.pz[i]!) * alpha;
+      let z = s.pz[i]! + (s.z[i]! - s.pz[i]!) * alpha;
       if (e) { // view culling (generic over ortho/perspective); margin covers figure size and one frame of camera lag
         const X = x, Y = z + 0.3, Z = y;
         const cw = e[3]! * X + e[7]! * Y + e[11]! * Z + e[15]!;
@@ -354,7 +358,7 @@ export class GuestRenderer {
       }
       const state = s.state[i]!;
       const uk = state === GState.Using && this.usingKind ? this.usingKind(i) : UsingKind.Other;
-      let gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!) ?? (s.id[i]! >= this.legacyBoarderBelow() ? 'ski' : undefined)); // Snowboarder is a type now: only guests of a pre-0.2.9 save keep the cosmetic boarders
+      let gear = gearFor(state, s.moveMode[i]!, s.id[i]!, uk, typeGearOf(s.type[i]!) ?? (s.type[i] === FREESTYLER_TYPE ? (rand01(s.id[i]!, 78) < 0.55 ? 'board' : 'ski') : s.id[i]! >= this.legacyBoarderBelow() ? 'ski' : undefined)); // Snowboarder is a type now: only guests of a pre-0.2.9 save keep the cosmetic boarders
       if (gear === Gear.Walk && spd === 0 && this.shoots.size > 0 && this.shoots.isPosing(s.id[i]!, this.shootClock)) { // a photographer standing at the spot: the camera comes up, and each shot glints
         gear = Gear.Shoot;
         if (this.onFlash && this.shoots.dueShots(s.id[i]!, this.shootClock) > 0) { const k = this.app[i * 12 + 10]!; this.onFlash(x + this.hs[i]! * PHOTO_SHOOT.flashForward * k, z + PHOTO_SHOOT.flashUp * k, y + this.hc[i]! * PHOTO_SHOOT.flashForward * k, k); }
@@ -369,7 +373,13 @@ export class GuestRenderer {
         if (want && nearTotal < GROUND_CAPS.figures && nbt.n < NEAR_CAPS.figuresPerBatch) { bt = nbt; nearTotal++; this.nearFlag[i] = 1; } else this.nearFlag[i] = 0;
       }
       const k = bt.n++;
-      const sc = this.app[i * 12 + 10]!, c = this.hc[i]!, sn = this.hs[i]!;
+      let c = this.hc[i]!, sn = this.hs[i]!;
+      if (this.air && s.type[i] === FREESTYLER_TYPE && (gear === Gear.Ski || gear === Gear.Board) && this.air(x, y, s.id[i]!, AIR)) { // an air over a snow park feature (0.9.0): a hop, a spin on the bigger kickers, a sideways slide on a box / rail
+        z += AIR.h;
+        const a = AIR.slide ? Math.PI / 2 * Math.min(1, AIR.h * 8) : AIR.spin, ca = Math.cos(a), sa = Math.sin(a);
+        const nc = c * ca - sn * sa; sn = sn * ca + c * sa; c = nc;
+      }
+      const sc = this.app[i * 12 + 10]!;
       const arr = bt.mesh.instanceMatrix.array as Float32Array, o = k * 16;
       arr[o] = c * sc; arr[o + 1] = 0; arr[o + 2] = -sn * sc; arr[o + 3] = 0;
       arr[o + 4] = 0; arr[o + 5] = sc; arr[o + 6] = 0; arr[o + 7] = 0;

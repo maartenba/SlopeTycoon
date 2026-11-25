@@ -68,10 +68,11 @@ const GOLDEN_BOT: Record<string, string> = {
   'goals': '7199ac40',
   'yearReports': '06deae66',
   'advisor': 'ca063e92',
-  'progression': '33375cb9',
+  'progression': 'a26946dc',
   'scenario': '77074ba4'
 };
 // RE-RECORDED (M7.1 economy pass, docs/balance.md "M7.1 re-record": the souvenir-stop score 0.2 -> 0.45 so a Shop earns (it earned ~$50 a year); money 233115.57 -> 234121.49 (+0.4 %); the Shuttle Bus Depot / Apres-Ski Bar / Wind Turbine changes never touch this bot).
+// RE-RECORDED (0.9.0 snow park: the two new unlock rows (landscape snowPark, building halfpipe, level 3): ONLY `progression` moved (33375cb9 -> a26946dc); every other part and the money are byte-identical, the plain Bot marks no park; docs/balance.md "0.9.0").
 // RE-RECORDED (energy / green buildings, item F: only `progression` moved, the unlock snapshot gained windTurbine + solarPlant; every other part is untouched, which is the proof that a game without generators is unchanged; the `energy` module is excluded like the other new modules).
 // RE-RECORDED (M6.3 STOP: rafting + canyoning level 3 unlock rows: ONLY `progression` moved (30be591e -> fa89ad3d); every other part byte-identical, money unchanged).
 // RE-RECORDED (M6.3 unlock rows: tackleHut level 2, treehouse level 2, crag, quadBase: ONLY `progression` moved (6d55bbeb -> 30be591e); every other part is byte-identical, so spawning, economy and rating are unchanged).

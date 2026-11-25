@@ -360,6 +360,21 @@ const SCENARIOS: Scenario[] = [
     fixes: [{ name: 'the party has gone home', apply: (s) => { s.wedding.rec = null; } }],
   },
   {
+    id: 'park.available', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.park.reasonFor = () => null; },
+    fixes: [{ name: 'the run is marked as a park', apply: (s) => { s.runSettings.setPark(s.names.pisteId(mainRun(s)), true); } }],
+  },
+  {
+    id: 'park.short', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.park.nearMiss = () => mainRun(s); },
+    fixes: [{ name: 'the run is lengthened', apply: (s) => { s.park.nearMiss = () => null; } }],
+  },
+  {
+    id: 'park.worn', daily: true,
+    setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.park.reasonFor = () => null; const id = s.names.pisteId(mainRun(s)); s.runSettings.setPark(id, true); const d = s.game.date.year * 180 + s.game.date.day; s.park.load({ shape: [[id, 0.1]], stamp: [[id, d]], laps: [], total: 5, tricks: 10, day: d, today: 1 }); },
+    fixes: [{ name: 'the park is shaped', apply: (s) => { const id = s.names.pisteId(mainRun(s)), d = s.game.date.year * 180 + s.game.date.day; s.park.load({ shape: [[id, 1]], stamp: [[id, d]], laps: [], total: 5, tricks: 10, day: d, today: 1 }); } }],
+  },
+  {
     id: 'race.course.available', daily: true,
     setup: (s) => { s.progression.unlockAll = true; guests(s, 20); s.game.money = 50_000; paintRun(s, mainRun(s), 2); },
     fixes: [

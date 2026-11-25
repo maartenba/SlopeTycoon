@@ -23,7 +23,7 @@ import { tickNeeds, type NeedEnv } from './Needs';
 import { ReviewDirector, type PlaceText } from './Reviews';
 import { injuryRisk, maxDifficultyFor, recordRun } from './Skill';
 import { OccFlag } from '../../world/Occupancy';
-import { CORE_TYPE_COUNT, DOWNHILLER_TYPE, RACER_TYPE, extraDef } from '../../config/guestTypes';
+import { CORE_TYPE_COUNT, DOWNHILLER_TYPE, FREESTYLER_TYPE, RACER_TYPE, extraDef } from '../../config/guestTypes';
 import { createSpawnerSystem, Spawner } from './Spawner';
 import { SpatialHash } from './SpatialHash';
 import { Layer } from '../../world/Networks';
@@ -82,6 +82,10 @@ export class GuestSim {
   raceLap: ((guestId: number, tile: number) => void) | null = null;
   /** Has this racer trained its laps (stateless: read from the saved lap record), so it leaves after the run. */
   raceDone: ((guestId: number) => boolean) | null = null;
+  /** Snow park (0.9.0): a Freestyler reached the via tile in a park; has it ridden its laps; the injury roll multiplier on a park tile. */
+  parkLap: ((guestId: number, tile: number) => void) | null = null;
+  parkDone: ((guestId: number) => boolean) | null = null;
+  parkInjury: ((tile: number) => number) | null = null;
   /** Downhill course hook (0.8.2): a downhiller reached the bottom goal of a downhill course (a lap). */
   mtbLap: ((guestId: number, tile: number) => void) | null = null;
   /** Downhill course hook: the centre line (top to bottom) of the usable course that starts at this tile, or null. */
@@ -802,7 +806,7 @@ export class GuestSim {
         return;
       }
       case Act.SkiDown:
-        if (s.via[i]! > 0) { this.exploration.recordVia(s.via[i]! - 1); if (s.type[i] === RACER_TYPE) this.raceLap?.(s.id[i]!, s.via[i]! - 1); s.via[i] = -s.via[i]!; this.nm?.reset(i); return; } // via reached: carry on to the bottom
+        if (s.via[i]! > 0) { this.exploration.recordVia(s.via[i]! - 1); if (s.type[i] === RACER_TYPE) this.raceLap?.(s.id[i]!, s.via[i]! - 1); else if (s.type[i] === FREESTYLER_TYPE) this.parkLap?.(s.id[i]!, s.via[i]! - 1); s.via[i] = -s.via[i]!; this.nm?.reset(i); return; } // via reached: carry on to the bottom
         this.finishRun(i, rng); return;
       case Act.ToTrail: {
         const pend = this.exc.pending.get(i);
@@ -837,12 +841,13 @@ export class GuestSim {
     if (fd) { const li = this.decider.lifts.find((l) => l.lift.id === s.liftId[i]); const fl = li?.flat?.[maxDifficultyFor(skill)] ?? 0; if (fl > 0) s.happiness[i] = Math.max(0, s.happiness[i]! - fd.flatHit * fl); }
     s.state[i] = GState.Idle; s.timer[i] = rng.int(EXPLORE.runPause[0], EXPLORE.runPause[1]); s.act[i] = Act.None;
     if (s.type[i] === RACER_TYPE && this.raceDone?.(s.id[i]!)) { this.startLeaving(i, Leave.Satisfied); return; } // a racer that trained its laps heads home (no injury roll after the last gate)
+    if (s.type[i] === FREESTYLER_TYPE && this.parkDone?.(s.id[i]!)) { this.startLeaving(i, Leave.Satisfied); return; } // a freestyler that rode its laps heads home
     const pq = this.pisteQualityAt?.(((s.y[i]! | 0) * this.world.mapSize) + (s.x[i]! | 0), skill);
     const offPiste = s.moveMode[i] === NavMode.SkiOff;
     const w = this.world.weather();
     const vis = w.kind === 'storm' ? 1.5 : w.kind === 'heavySnow' ? 1.3 : 1;
     const crowd = this.hash.countAt(s.x[i]!, s.y[i]!) > 8 ? 1.2 : 1;
-    if (rng.chance(injuryRisk(diff, skill, pq ? pq.injury : 0.5) * this.injuryMult * vis * crowd * (offPiste ? 1.8 : 1))) {
+    if (rng.chance(injuryRisk(diff, skill, pq ? pq.injury : 0.5) * this.injuryMult * vis * crowd * (offPiste ? 1.8 : 1) * (s.type[i] === FREESTYLER_TYPE ? this.parkInjury?.(((s.y[i]! | 0) * this.world.mapSize) + (s.x[i]! | 0)) ?? 1 : 1))) {
       this.injuries++;
       this.bus?.emit('incident:injury', { guestId: s.id[i]!, x: s.x[i]!, y: s.y[i]! });
       s.happiness[i] = Math.max(0, s.happiness[i]! - 0.25);

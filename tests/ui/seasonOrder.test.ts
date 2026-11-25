@@ -49,7 +49,7 @@ describe('relevance / seasonSort (pure)', () => {
     expect(ids.indexOf('beach')).toBeGreaterThan(ids.indexOf('stuntPark'));
     expect(ids.slice(0, 3)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark']);
     const summer = seasonSort(buildingsInTab('recreation'), (d) => d.season, 'summer', 'now').map((d) => d.id);
-    expect(summer.slice(-7)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark', 'sleighStable', 'snowshoeHut', 'snowscooterBase', 'sledRental']); // + the winter tour bases (Task 31)
+    expect(summer.slice(-8)).toEqual(['iceRink', 'heatedTerrace', 'stuntPark', 'sleighStable', 'snowshoeHut', 'snowscooterBase', 'halfpipe', 'sledRental']); // + the winter tour bases (Task 31)
     expect(summer[0]).not.toBe('iceRink');
   });
   it('badges and hints for off-season items only', () => {

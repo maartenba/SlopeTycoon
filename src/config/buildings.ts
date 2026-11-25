@@ -110,7 +110,7 @@ const FLAT: SiteRule = { maxSlope: 1, slopeKind: 'flat', autoFlatten: 'default',
 
 /** Season relevance per id where the needs don't say it (winter operations, summer attractions); else derived from `needs`. */
 const SEASON_OVERRIDE: Record<string, SeasonUse> = {
-  apresBar: 'winter', schirmbar: 'winter', skiSchoolHQ: 'winter', groomerGarage: 'winter', snowcatOutpost: 'winter',
+  apresBar: 'winter', schirmbar: 'winter', skiSchoolHQ: 'winter', groomerGarage: 'winter', snowcatOutpost: 'winter', halfpipe: 'winter',
   playground: 'shoulder', campground: 'summer', pettingZoo: 'summer',
 };
 function seasonFor(id: string, needs: NeedCondition[] | undefined): SeasonUse {
@@ -234,6 +234,8 @@ export const BUILDINGS: Record<string, BuildingDef> = Object.fromEntries([
   // Race course (0.8.0, docs/race-course.md): a Start Hut beside the top and a Timing Hut (with the board) beside the foot of a red or black run; mark the run as a course in its inspector / the Runs tab.
   b('startHut', 'Start Hut', 'recreation', 1, 1, 6000, 12, { access: 'pisteEdge', altAccess: ['path', 'trail'], pisteRule: 'edge', site: HUT, placeTip: 'Place the Start Hut beside the top of a red or black run or trail' }, { staff: 1 }),
   b('timingHut', 'Timing Hut', 'recreation', 2, 1, 14000, 30, { access: 'pisteEdge', altAccess: ['path', 'trail'], pisteRule: 'edge', site: HUT, placeTip: 'Place the Timing Hut beside the foot of a red or black run or trail' }, { staff: 1 }),
+  // Halfpipe (0.9.0, docs/snow-park.md): a 3 x 8 snow pipe beside a snow park run (within 3 tiles of it); the park's freestylers pay a little more and throw more tricks. Shaped by the park's groomer pass. Winter only.
+  b('halfpipe', 'Halfpipe', 'recreation', 3, 8, 12000, 22, { access: 'pisteEdge', altAccess: ['path'], pisteRule: 'edge', site: { maxSlope: 6, slopeKind: 'any', autoFlatten: 'default', slopeMessage: 'The halfpipe needs a gentle slope' }, placeTip: 'Place the Halfpipe beside a snow park run: it needs a park within 3 tiles to count' }, { staff: 1 }),
   // Grass Strip (owner decision: a cheap airfield, NOT the Altiport): a flat mown strip with a windsock, the plane's base for the Skydive Centre.
   b('grassStrip', 'Grass Strip', 'transport', 7, 2, 6000, 10, { access: 'road', altAccess: ['path'], maxCount: 1, site: { maxSlope: 2, slopeMessage: 'The strip must be flat' }, placeTip: 'Place the grass strip on flat ground beside a road or a footpath: the jump plane takes off from it' }, {}),
   // Skydive Centre: office + hangar beside the strip; daytime jumps in clear weather ($95 a jump). Needs the Grass Strip.

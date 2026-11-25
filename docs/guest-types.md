@@ -97,4 +97,5 @@ Finding: **school classes cause no injuries at all**. Children (and the teacher 
 ## Racer (0.8.0)
 | Index | Id | Seasons | Gate | Notes |
 |---|---|---|---|---|
+| 16 | `freestyler` Freestyler | winter 0.05 | level 3; `requires ['@snowPark']` | segment adventure; magenta jackets, skis or a board; laps a snow park, airs on the features, $16 a day. Scaled by `SnowPark.demand`; see `docs/snow-park.md`. |
 | 14 | `racer` Racer | winter 0.06 | level 3; `requires ['@raceCourse']` (an open, valid race course; pseudo id from `Spawner.flagsFn`) | segment adventure, fallback adventure; group 1-3, budget $180-360, expert skills; yellow bibs + helmets. An ADDITION to the arrival mix scaled by `RaceCourse.demand` (the quality of the courses; 0 without an open course, so no extra hash draw happens in a resort without one: the plain bot's goldens only move through the two new unlock rows). Never stops for a coffee or a Schirmbar drink; ~1.4 x ski speed; 3-6 laps then leaves. See `docs/race-course.md`. |

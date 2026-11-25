@@ -27,4 +27,6 @@ At a lift top the skier already picks a *via* tile (`Exploration.pickVia`: top -
 `tests/sim/staff.test.ts` goldens were re-recorded on purpose (names now hold run identities; open / closed per run changes the bot's 200 days: money 180221.69 -> see the test; see docs/balance.md).
 
 ## Race courses (0.8.0)
+A run can also be marked as a **snow park** (`RunSettings.park`, `runs` module v3, `docs/snow-park.md`).
+
 A run can be marked as a **race course** (`RunSettings.course`, the `runs` module v2 gets an optional `course` id list; nothing changes for runs that are not courses). A course is still a normal run for other skiers; racers are routed onto it through `Exploration.racerTiles`. Validity, gates, the Racer guest type and the saves are in `docs/race-course.md`.

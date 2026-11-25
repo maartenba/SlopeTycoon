@@ -54,6 +54,8 @@ export interface RunRow {
   groomMode: 'auto' | 'first' | 'skip'; groomedDaysAgo: number | null;
   /** Race course (0.8.0): marked, can be marked now, status line. */
   course?: { on: boolean; can: boolean; text: string };
+  /** Snow park (0.9.0): marked, can be marked now, status line. */
+  park?: { on: boolean; can: boolean; text: string; shape: number };
   /** A MTB trail row (0.8.2): a downhill course candidate; no grooming, no manual closing. */
   mtb?: boolean;
 }
@@ -62,6 +64,7 @@ export interface RunsApi {
   setClosed(id: number, closed: boolean): void;
   setGroom(id: number, mode: 'auto' | 'first' | 'skip'): void;
   setCourse?(id: number, on: boolean): void;
+  setPark?(id: number, on: boolean): void;
   /** Click on a name: move the camera to the run and highlight it. */
   focus(id: number): void;
 }
@@ -156,7 +159,7 @@ export class StOperations extends StElement {
     const rows = a.rows();
     if (!rows.length) return [el('div', 'small', 'No pistes yet. Paint a piste: every stretch between junctions and lift stations is a run.')];
     const tbl = el('table'), head = el('tr');
-    for (const h of ['Run', 'Level', 'Length', 'Drop', 'Today', 'Week', 'Surface', 'Groomed', 'Grooming', 'Course', 'Status']) head.append(el('th', '', h));
+    for (const h of ['Run', 'Level', 'Length', 'Drop', 'Today', 'Week', 'Surface', 'Groomed', 'Grooming', 'Course', 'Park', 'Status']) head.append(el('th', '', h));
     tbl.append(head);
     for (const r of rows) {
       const tr = el('tr'); tr.dataset.run = String(r.id);
@@ -169,11 +172,13 @@ export class StOperations extends StElement {
       g.addEventListener('click', () => { a.setGroom(r.id, modes[(modes.findIndex((m) => m[0] === r.groomMode) + 1) % modes.length]![0]); this.refresh(); });
       const cr = el('button', `tab${r.course?.on ? ' active' : ''}`, r.course?.on ? (r.mtb ? '⚑ Downhill' : '⚑ Course') : '—'); cr.dataset.course = String(r.id); cr.title = r.course?.text ?? '';
       cr.disabled = !r.course || !r.course.can; cr.addEventListener('click', () => { a.setCourse?.(r.id, !r.course?.on); this.refresh(); });
+      const pk = el('button', `tab${r.park?.on ? ' active' : ''}`, r.park?.on ? '★ Park' : '—'); pk.dataset.park = String(r.id); pk.title = r.park?.text ?? '';
+      pk.disabled = !r.park || !r.park.can || !!r.mtb; pk.addEventListener('click', () => { a.setPark?.(r.id, !r.park?.on); this.refresh(); });
       const st = el('button', `tab${r.open ? '' : ' active'}`, r.open ? 'Open' : 'Closed'); st.dataset.toggle = String(r.id);
       st.title = r.open ? 'Click to close this run' : r.closedByPlayer ? 'Closed by you: click to reopen' : (r.reason ?? 'Closed');
       st.disabled = !!r.mtb; st.addEventListener('click', () => { if (!r.mtb && (r.open || r.closedByPlayer)) { a.setClosed(r.id, r.open); this.refresh(); } });
       tr.append(td(name), td(dot, r.difficultyLabel), td(`${r.lengthM.toLocaleString('en-US')} m`), td(`${r.dropM.toLocaleString('en-US')} m`), td(String(r.passesToday)), td(String(r.passesWeek)),
-        td(r.quality ?? 'n/a'), td(r.mtb ? 'n/a' : r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(cr), td(st));
+        td(r.quality ?? 'n/a'), td(r.mtb ? 'n/a' : r.groomedDaysAgo === null ? 'never' : r.groomedDaysAgo === 0 ? 'today' : `${r.groomedDaysAgo} d ago`), td(g), td(cr), td(pk), td(st));
       tbl.append(tr);
     }
     return [tbl];

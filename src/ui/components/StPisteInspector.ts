@@ -14,6 +14,8 @@ export interface PisteInspectorInfo {
   passesToday?: number; passesWeek?: number; groomedDaysAgo?: number | null;
   /** Race course (0.8.0): marked or not, can it be marked now, and the one line to show (the reason when it cannot). */
   course?: { on: boolean; can: boolean; text: string };
+  /** Snow park (0.9.0): marked or not, can it be marked now, the one line to show (the reason / lock when it cannot), the shape 0..1. */
+  park?: { on: boolean; can: boolean; text: string; shape: number };
 }
 export interface PisteInspectorApi {
   /** Commit a name (already trimmed/clamped by the component; empty = reset to the automatic name). */
@@ -24,6 +26,8 @@ export interface PisteInspectorApi {
   setGroom?(mode: 'auto' | 'first' | 'skip'): void;
   /** Mark / unmark the run as a race course (docs/race-course.md). */
   setCourse?(on: boolean): void;
+  /** Mark / unmark the run as a snow park (docs/snow-park.md). */
+  setPark?(on: boolean): void;
 }
 
 export const PISTE_NAME_MAX = 24;
@@ -97,6 +101,15 @@ export class StPisteInspector extends StElement {
       tog.addEventListener('click', () => a.setCourse?.(!i.course!.on));
       row.append(tog);
       kids.push(row, line(i.course.text, i.course.can ? 'small' : 'warn'));
+    }
+    if (i.park && a?.setPark) {
+      const row = el('div', { className: 'row' });
+      const tog = el('button', { type: 'button', className: 'run-park', textContent: i.park.on ? 'Not a snow park' : 'Make a snow park', title: i.park.text });
+      tog.dataset.role = 'run-park'; tog.style.minHeight = '44px'; tog.disabled = !i.park.can;
+      tog.addEventListener('click', () => a.setPark?.(!i.park!.on));
+      row.append(tog);
+      kids.push(row, line(i.park.text, i.park.can ? 'small' : 'warn'));
+      if (i.park.on) { const bar = el('div', { className: 'run-park-shape' }); bar.dataset.role = 'run-park-shape'; bar.style.cssText = `height:6px;border-radius:3px;background:linear-gradient(90deg,#2f9e6a ${Math.round(i.park.shape * 100)}%,#555 ${Math.round(i.park.shape * 100)}%);margin:2px 0 6px`; bar.title = `Shape ${Math.round(i.park.shape * 100)} %: a snowcat pass on the park restores it`; kids.push(bar); }
     }
     for (const w of i.warnings) kids.push(line(`⚠ ${w}`, 'warn'));
     const hl = el('input', { type: 'checkbox', checked: i.highlighted });
